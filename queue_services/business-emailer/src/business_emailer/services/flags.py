@@ -67,7 +67,7 @@ class Flags:
         self.app = app
         self.sdk_key = app.config.get("LD_SDK_KEY")
 
-        env = app.config.get('FLASK_ENV')
+        env = app.config.get("FLASK_ENV")
 
         if self.sdk_key or env != "production":
 

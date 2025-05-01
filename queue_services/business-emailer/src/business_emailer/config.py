@@ -1,4 +1,4 @@
-7# Copyright © 2019 Province of British Columbia
+# Copyright © 2019 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -69,9 +69,9 @@ class Config:  # pylint: disable=too-few-public-methods
     # urls
     DASHBOARD_URL = os.getenv("DASHBOARD_URL", None)
     AUTH_WEB_URL = os.getenv("AUTH_WEB_URL", None)
-    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "") + os.getenv("NOTIFY_API_VERSION", "") + '/notify/'
+    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "") + os.getenv("NOTIFY_API_VERSION", "") + "/notify/"
     LEGAL_API_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION_2", "")
-    PAY_API_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "") + '/payment-requests'
+    PAY_API_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "") + "/payment-requests"
     AUTH_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
 
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
