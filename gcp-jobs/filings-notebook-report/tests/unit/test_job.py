@@ -1,3 +1,4 @@
+#THESE TESTS ONLY WORK LOCALLY THEY DO NOT RUN IN CI
 import os
 from unittest.mock import patch
 import shutil
