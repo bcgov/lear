@@ -70,7 +70,7 @@ def test_filings_monthly_notebook_report(mock_get,report_type):
     os.environ["PG_HOST"] = os.getenv("DATABASE_TEST_HOST")
     os.environ["PG_PORT"] = os.getenv("DATABASE_TEST_PORT")
     os.environ["PG_DB_NAME"] = os.getenv("DATABASE_TEST_NAME")
-    os.environ["RETRY_INTERVAL"] = "60"
+    os.environ["PG_SOCKET"] = ""
 
     data_dir = os.path.join(os.getcwd(), r'data/')
     if not os.path.exists(data_dir):
