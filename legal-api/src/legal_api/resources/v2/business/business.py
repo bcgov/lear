@@ -176,15 +176,7 @@ def search_businesses():
                 temp_identifiers.append(identifier)
             else:
                 business_identifiers.append(identifier)
-        
-        search_filters = Business.AffiliationSearchDetails(
-            search_identifier = json_input.get('identifier', None),
-            search_filter_name = json_input.get('name', None),
-            search_filter_type = json_input.get('type', []),
-            search_filter_status = json_input.get('status', []),
-            page = int(json_input.get('page',1)),
-            limit = int(json_input.get('limit',100)),
-    )
+        search_filters = Business.AffiliationSearchDetails.from_request_args(json_input)
         bus_results = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,
             identifiers=business_identifiers,

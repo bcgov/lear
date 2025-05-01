@@ -23,6 +23,7 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
+from requests import Request
 from sql_versioning import Versioned
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -293,6 +294,17 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         search_filter_type: Optional[str] = None
         page: int = 1
         limit: int = 100
+
+        @classmethod
+        def from_request_args(cls, req: Request):
+            return cls(
+                search_identifier = req.get('identifier', None),
+                search_filter_name = req.get('name', None),
+                search_filter_type = req.get('type', []),
+                search_filter_status = req.get('status', []),
+                page = int(req.get('page',1)),
+                limit = int(req.get('limit',100))
+            )
 
     @hybrid_property
     def identifier(self):
