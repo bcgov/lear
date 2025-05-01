@@ -70,10 +70,10 @@ def get_bearer_token(app: Flask, timeout):
 
 def get_filing_ids(app: Flask):
     """Get filing id to process."""
-    timeout = int(app.config.get("ACCOUNT_SVC_TIMEOUT"))
+    timeout = app.config["LEAR_SVC_TIMEOUT"]
     token = get_bearer_token(app, timeout)
     response = requests.get(
-        f'{app.config["LEGAL_API_URL"]}/internal/filings/future_effective',
+        f'{app.config["LEAR_SVC_URL"]}/internal/filings/future_effective',
         headers={"Content-Type": "application/json",
                  "Authorization": "Bearer " + token},
         timeout=timeout)
@@ -88,17 +88,18 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
     """Run the methods for applying future effective filings."""
     
     with application.app_context():
-        subject = application.config.get("QUEUE_FILER_SUBJECT")
+        subject = application.config["BUSINESS_FILER_TOPIC"]
         try:
             if not (filing_ids := get_filing_ids(application)):
                 application.logger.debug("No filings found to apply.")
             for filing_id in filing_ids:
-                msg = {"filing": {"id": filing_id}}
+                msg = {"filingMessage": {"filingIdentifier": filing_id}}
                 ce = SimpleCloudEvent(
                     id=str(uuid.uuid4()),
                     source=application.config.get("CLIENT_NAME"),
                     subject=subject,
                     time=datetime.now(UTC),
+                    type="filingMessage",
                     data = msg
                 )
                 gcp_queue.publish(subject, to_queue_message(ce))

@@ -56,19 +56,27 @@ def get_named_config(config_name: str = "production"):
 class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 
-    QUEUE_FILER_SUBJECT = os.getenv("QUEUE_FILER_SUBJECT", "")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "")
     CLIENT_NAME = os.getenv("CLIENT_NAME", "entity.filing.worker")
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL", "")
+    LEAR_SVC_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION_2", "")
+    LEAR_SVC_TIMEOUT = int(os.getenv("LEGAL_SVC_TIMEOUT", "20"))
 
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
-    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT", None)
-    if not ACCOUNT_SVC_TIMEOUT:
-        ACCOUNT_SVC_TIMEOUT = 20
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
+    ACCOUNT_SVC_TIMEOUT = int(os.getenv("ACCOUNT_SVC_TIMEOUT", "20"))
+
+    # Pub/Sub
+    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
 
     SECRET_KEY = "a secret"
 
@@ -88,10 +96,11 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     DEBUG = True
     TESTING = True
-    QUEUE_FILER_SUBJECT = os.getenv("QUEUE_FILER_SUBJECT_TEST", "")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC_TEST", "")
     CLIENT_NAME = os.getenv("CLIENT_NAME_TEST", "entity.filing.worker.test")
 
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL_TEST", "")
+    LEAR_SVC_URL = os.getenv("LEGAL_API_URL_TEST", "")
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_TEST", "")
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

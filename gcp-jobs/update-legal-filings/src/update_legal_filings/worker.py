@@ -69,8 +69,8 @@ def check_for_manual_filings(token: dict | None = None):
     """Check for colin filings in oracle."""
     id_list = []
     colin_events = None
-    legal_url = current_app.config["LEGAL_API_URL"] + "/businesses"
-    colin_url = current_app.config["COLIN_URL"]
+    legal_url = current_app.config["LEAR_SVC_URL"] + "/businesses"
+    colin_url = current_app.config["COLIN_SVC_URL"]
     corp_types = [ColinApiTypeCodes.COOP.value]
 
     # get max colin event_id from legal
@@ -151,7 +151,7 @@ def get_filing(event_info: dict | None = None, application: Flask | None = None,
     identifier = event_info["corp_num"]
     event_id = event_info["event_id"]
     response = requests.get(
-        f'{application.config["COLIN_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}',
+        f'{application.config["COLIN_SVC_URL"]}/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}',
         headers={**AccountService.CONTENT_TYPE_JSON,
                  "Authorization": AccountService.BEARER + token},
         timeout=AccountService.timeout
@@ -185,7 +185,7 @@ def update_filings():  # noqa: PLR0912
                     # call legal api with filing
                     current_app.logger.debug(f"sending filing with event info: {event_info} to legal api.")
                     response = requests.post(
-                        f'{current_app.config["LEGAL_API_URL"]}/businesses/{event_info["corp_num"]}/filings',
+                        f'{current_app.config["LEAR_SVC_URL"]}/businesses/{event_info["corp_num"]}/filings',
                         json=filing,
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                         timeout=AccountService.timeout
@@ -222,7 +222,7 @@ def update_filings():  # noqa: PLR0912
             # update max_event_id in legal_db
             current_app.logger.debug(f"setting last_event_id in legal_db to {max_event_id}")
             response = requests.post(
-                f'{current_app.config["LEGAL_API_URL"]}/businesses/internal/filings/colin_id/{max_event_id}',
+                f'{current_app.config["LEAR_SVC_URL"]}/businesses/internal/filings/colin_id/{max_event_id}',
                 headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                 timeout=AccountService.timeout
             )
@@ -283,7 +283,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
         # get identifiers with outstanding tax_ids
         current_app.logger.debug("Getting businesses with outstanding tax ids from legal api...")
         response = requests.get(
-            current_app.config["LEGAL_API_URL"] + "/businesses/internal/tax_ids",
+            current_app.config["LEAR_SVC_URL"] + "/businesses/internal/tax_ids",
             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
             timeout=AccountService.timeout
         )
@@ -302,7 +302,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                 # get tax ids that exist for above entities
                 current_app.logger.debug(f"Getting tax ids for {identifiers} from colin api...")
                 response = requests.get(
-                    current_app.config["COLIN_URL"] + "/internal/tax_ids",
+                    current_app.config["COLIN_SVC_URL"] + "/internal/tax_ids",
                     json={"identifiers": identifiers},
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                     timeout=AccountService.timeout
@@ -315,7 +315,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                     # update lear with new tax ids from colin
                     current_app.logger.debug(f"Updating tax ids for {tax_ids.keys()} in lear...")
                     response = requests.post(
-                        current_app.config["LEGAL_API_URL"] + "/businesses/internal/tax_ids",
+                        current_app.config["LEAR_SVC_URL"] + "/businesses/internal/tax_ids",
                         json=tax_ids,
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
                         timeout=AccountService.timeout

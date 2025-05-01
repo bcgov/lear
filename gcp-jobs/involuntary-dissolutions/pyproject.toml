@@ -129,7 +129,7 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["structured_logging", "gcp_queue", "business_model", "business_registry_dissolution", "business_registry_common"]
+known-first-party = ["structured_logging", "gcp_queue", "business_model", "dissolution_service", "business_common"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
