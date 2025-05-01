@@ -1,6 +1,7 @@
 """The Notebook Report - This module is the API for the Filings Notebook Report."""
 
 import ast
+import base64
 import fnmatch
 import os
 import shutil
@@ -8,9 +9,7 @@ import sys
 import time
 import traceback
 import warnings
-import json
 from datetime import UTC, datetime, timedelta
-import base64
 
 import papermill as pm
 import requests
@@ -100,7 +99,7 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # noqa: PLR
     email["requestBy"] = os.getenv("SENDER_EMAIL", "")
     notify_api= os.getenv("NOTIFY_API_URL", "")
     notify_version = os.getenv("NOTIFY_API_VERSION", "")
-    notify_url = notify_api + notify_version + '/notify'
+    notify_url = notify_api + notify_version + "/notify"
     token = AccountService.get_bearer_token()
     errored = False
     try:
