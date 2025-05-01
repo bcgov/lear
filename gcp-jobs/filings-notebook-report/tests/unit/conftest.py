@@ -43,7 +43,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event, text
 from dotenv import load_dotenv, find_dotenv
 
-import business_model_migrations
+import business_model_migrations # noqa: F401
 from business_model.models import db as _db
 from notebookreport.notebookreport import create_app
 
@@ -147,13 +147,13 @@ def db(app: Flask):
         sess = _db.session()
         sess.execute(text("SET TIME ZONE 'UTC';"))
 
-        Migrate(
-            app,
-            _db,
-            directory=business_model_migrations.__path__[0],
-            dialect_name="postgres",
-        )
-        upgrade()
+        # Migrate(
+        #     app,
+        #     _db,
+        #     directory=business_model_migrations.__path__[0],
+        #     dialect_name="postgres",
+        # )
+        # upgrade()
 
         yield _db
 
