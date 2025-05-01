@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Common setup and fixtures for the pytest suite used by this service."""
 import contextlib
-import json
+import os
 
 import pytest
 import sqlalchemy
