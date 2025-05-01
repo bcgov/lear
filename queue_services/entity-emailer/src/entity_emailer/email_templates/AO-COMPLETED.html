@@ -21,9 +21,19 @@
               <span>You have amalgamated out of B.C.<span>
             </p>
 
-            <p>The continuation out filing for {{ business.legalName }} is now effective. {{ business.legalName }} is no longer active on the business registry.</p>
+            [[divider.html]]
+            [[20px.html]]
+            <p>
+              {{ business.legalName }} has completed the amalgamation in 
+              {% if jurisdiction_region %}
+                {{ jurisdiction_region }}, {{ jurisdiction_country }},
+              {% else %}
+                {{ jurisdiction_country }},
+              {% endif %}
+              and is now historical in B.C.
+            </p>
 
-            [[business-information.html]]
+            [[amalgamation-out-information.html]]
 
             <p>The following documents are attached to this email:</p>
             <ul class="outputs">

@@ -15,10 +15,12 @@
 from __future__ import annotations
 
 import base64
+from datetime import datetime
 import re
 from http import HTTPStatus
 from pathlib import Path
 
+import pycountry
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
@@ -90,12 +92,25 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
+    effective_date = leg_tmz_effective_date.split(' at ')[0]
+    historical_date = datetime.strptime(filing.meta_data[f'{filing_type}']['amalgamationOutDate'],'%Y-%m-%d')
+    historical_date = historical_date.strftime(f'%B %d, %Y')
+    jurisdiction_region_code = filing.meta_data[f'{filing_type}']['region']
+    jurisdiction_country_code = filing.meta_data[f'{filing_type}']['country']
+    jurisdiction_country = pycountry.countries.get(alpha_2=jurisdiction_country_code).name
+    if jurisdiction_region_code and jurisdiction_region_code.upper() != 'FEDERAL':
+        jurisdiction_region = pycountry.subdivisions.get(code=f'{jurisdiction_country_code}-{jurisdiction_region_code}').name
+    else:
+        jurisdiction_region = None
+
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
         header=(filing.json)['filing']['header'],
-        filing_date_time=leg_tmz_filing_date,
-        effective_date_time=leg_tmz_effective_date,
+        historical_date=historical_date,
+        effective_date=effective_date,
+        jurisdiction_region=jurisdiction_region,
+        jurisdiction_country=jurisdiction_country,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
         (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
@@ -118,7 +133,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = 'Confirmation of Filing from the Business Registry'
+    subject = 'Amalgamation Out'
 
     legal_name = business.get('legalName', None)
     subject = f'{legal_name} - {subject}' if legal_name else subject
