@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the correction filing."""
+import copy
 import datetime
 from contextlib import suppress
 
@@ -175,6 +176,24 @@ def correct_business_data(business: Business,  # noqa: PLR0915
 
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
     """Create a new party or get them if they already exist."""
+    if correction_filing_rec.colin_event_ids:
+        # This may not be covering all the cases, introducing this to sync back the BEN to BC business as of today.
+        directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
+        for party_info in parties:
+            for director in directors:
+                existing_director_name = \
+                    director.party.first_name + director.party.middle_initial + director.party.last_name
+                current_new_director_name = \
+                    party_info['officer'].get('firstName') + party_info['officer'].get('middleInitial', '') + \
+                    party_info['officer'].get('lastName')
+                if existing_director_name.upper() == current_new_director_name.upper():
+                    party_info['officer']['id'] = director.party.id
+                    break
+
+        filing_json = copy.deepcopy(correction_filing_rec.filing_json)
+        filing_json['filing']['correction']['parties'] = parties
+        correction_filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update
+
     # Cease the party roles not present in the edit request
     if parties is None:
         return

@@ -49,7 +49,7 @@ def get_businesses_to_process():
     token = get_bearer_token(timeout)
 
     response = requests.get(
-        f'{current_app.config["LEGAL_API_URL"]}/internal/expired_restoration',
+        f'{current_app.config["LEAR_SVC_URL"]}/internal/expired_restoration',
         headers={
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}"
@@ -89,7 +89,7 @@ def create_put_back_off_filing(business: dict):
     }
 
     response = requests.post(
-        f'{current_app.config["LEGAL_API_URL"]}/businesses/{identifier}/filings',
+        f'{current_app.config["LEAR_SVC_URL"]}/businesses/{identifier}/filings',
         json=filing_data,
         headers={
             "Content-Type": "application/json",
