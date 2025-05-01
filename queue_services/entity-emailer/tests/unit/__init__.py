@@ -90,7 +90,7 @@ def create_business(identifier, legal_type=None, legal_name=None, parties=None):
     return business
 
 
-def create_filing(token=None, filing_json=None, 
+def create_filing(token=None, filing_json=None,
                   meta_data=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     filing = Filing()
