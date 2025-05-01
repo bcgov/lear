@@ -13,7 +13,7 @@ defaults:
     working-directory: ./gcp-jobs/filings-notebook-report
 
 jobs:
-  furnishings-ci:
+  filings-notebook-report-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "filings-notebook-report"
