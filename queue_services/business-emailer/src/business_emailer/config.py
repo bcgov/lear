@@ -70,7 +70,7 @@ class Config:  # pylint: disable=too-few-public-methods
     DASHBOARD_URL = os.getenv("DASHBOARD_URL", None)
     AUTH_WEB_URL = os.getenv("AUTH_WEB_URL", None)
     NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "") + os.getenv("NOTIFY_API_VERSION", "") + '/notify/'
-    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION2", "")
+    LEGAL_API_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION_2", "")
     PAY_API_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "") + '/payment-requests'
     AUTH_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
 
