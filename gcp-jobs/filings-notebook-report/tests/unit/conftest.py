@@ -129,16 +129,10 @@ def db(app: Flask):
 
     Drops all existing tables - Meta follows Postgres FKs
     """
-    user = app.config.get("PG_USER")
-    password = app.config.get("PG_PASSWORD")
-    database = app.config.get("PG_DB_NAME")
-    host = app.config.get("PG_HOST")
-    port = app.config.get("PG_PORT")
-    connectURL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
     with app.app_context():
         create_test_db(
-            database=database,
-            database_uri=connectURL,
+            database=app.config.get("DB_NAME"),
+            database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
         )
 
         sess = _db.session()
