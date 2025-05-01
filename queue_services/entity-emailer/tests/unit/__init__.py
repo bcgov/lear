@@ -261,13 +261,13 @@ def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_
             'country': 'CA'
         }
     }
+    filing_template['meta_data'] = test_meta_data
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
         business_id=business.id)
     filing.payment_completion_date = filing.filing_date
-    filing.meta_data = test_meta_data
 
     user = create_user('test_user')
     filing.submitter_id = user.id
@@ -299,13 +299,13 @@ def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, le
             'country': 'AL'
         }
     }
+    filing_template['meta_data'] = test_meta_data
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
         business_id=business.id)
     filing.payment_completion_date = filing.filing_date
-    filing.meta_data = test_meta_data
 
     user = create_user('test_user')
     filing.submitter_id = user.id
