@@ -36,14 +36,6 @@ def test_consent_amalgamation_out_notification(app, session, status, legal_type,
     # setup filing + business for email
     legal_name = 'test business'
     filing = prep_consent_amalgamation_out_filing(session, 'BC1234567', '1', legal_type, legal_name, submitter_role)
-    test_meta_data = {
-        'consentAmalgamationOut': {
-            'expiry': '2025-10-31T06:59:00+00:00',
-            'region': 'AB',
-            'country': 'CA'
-        }
-    }
-    filing.meta_data = test_meta_data
     token = 'token'
     # test processor
     with patch.object(consent_amalgamation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
