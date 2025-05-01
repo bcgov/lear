@@ -100,7 +100,7 @@ def create_filing(token=None, filing_json=None, meta_data=None, business_id=None
     if filing_json:
         filing.filing_json = filing_json
     if meta_data:
-        filing.meta_data = meta_data
+        filing._meta_data = meta_data
     if business_id:
         filing.business_id = business_id
     if bootstrap_id:
