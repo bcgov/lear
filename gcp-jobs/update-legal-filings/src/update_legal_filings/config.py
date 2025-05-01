@@ -26,7 +26,7 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    ENABLE_BN_UPDATES = bool(os.getenv('ENABLE_BN_UPDATES', 'True'))
+    ENABLE_BN_UPDATES = bool(os.getenv("ENABLE_BN_UPDATES", "True"))
 
     COLIN_SVC_URL = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
     COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "20"))

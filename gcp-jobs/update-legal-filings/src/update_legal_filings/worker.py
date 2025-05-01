@@ -40,7 +40,7 @@ from http import HTTPStatus
 
 import requests
 import simple_cloudevent
-from flask import Flask, current_app
+from flask import current_app
 from simple_cloudevent import to_queue_message
 
 from business_account.AccountService import AccountService
