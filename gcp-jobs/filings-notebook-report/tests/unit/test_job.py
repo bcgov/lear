@@ -1,5 +1,5 @@
-from datetime import datetime
 import os
+from unittest.mock import patch
 import shutil
 import psycopg2
 import pytest
@@ -36,7 +36,7 @@ def test_connection_succeed():
                                       host=os.getenv('PG_HOST', ''),
                                       port=os.getenv('PG_PORT', '5432'),
                                       database=os.getenv('PG_DB_NAME', ''))
-        cursor = connection.cursor()
+        connection.cursor()
         status = True
     except Exception:
         status = False
@@ -48,9 +48,19 @@ test_filings_monthly_data = [
     ("daily"), ("monthly"),
 ]
 
-
+@patch('requests.get')
 @pytest.mark.parametrize("report_type", test_filings_monthly_data)
-def test_filings_monthly_notebook_report(report_type):
+def test_filings_monthly_notebook_report(mock_get,report_type):
+    # Mock setup
+    mock_response = mock_get.return_value
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'key': 'value'}
+
+    days = ""
+    for i in range(1, 32):
+        days += str(i) + ","
+    os.environ["MONTH_REPORT_DATES"] = "[" + days[:-1] + "]"
+
     create_app()
     data_dir = os.path.join(os.getcwd(), r'data/')
     if not os.path.exists(data_dir):
