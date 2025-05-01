@@ -93,7 +93,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
     effective_date = leg_tmz_effective_date.split(' at ')[0]
-    historical_date = datetime.strptime(filing.meta_data[f'{filing_type}']['amalgamationOutDate'],'%Y-%m-%d')
+    historical_date = datetime.strptime(filing.meta_data[f'{filing_type}']['amalgamationOutDate'], '%Y-%m-%d')
     historical_date = historical_date.strftime(f'%B %d, %Y')
     jurisdiction_region_code = filing.meta_data[f'{filing_type}']['region']
     jurisdiction_country_code = filing.meta_data[f'{filing_type}']['country']

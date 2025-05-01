@@ -254,11 +254,19 @@ def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_
         'legalType': legal_type,
         'legalName': legal_name
     }
+    test_meta_data = {
+        'consentAmalgamationOut': {
+            'expiry': '2025-10-31T06:59:00+00:00',
+            'region': 'AB',
+            'country': 'CA'
+        }
+    }
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
-        business_id=business.id)
+        business_id=business.id,
+        meta_data=test_meta_data)
     filing.payment_completion_date = filing.filing_date
 
     user = create_user('test_user')
@@ -284,11 +292,19 @@ def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, le
         'legalType': legal_type,
         'legalName': legal_name
     }
+    test_meta_data = {
+        'amalgamationOut': {
+            'amalgamationOutDate': '2025-04-29',
+            'region': None,
+            'country': 'AL'
+        }
+    }
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
-        business_id=business.id)
+        business_id=business.id,
+        meta_data=test_meta_data)
     filing.payment_completion_date = filing.filing_date
 
     user = create_user('test_user')
