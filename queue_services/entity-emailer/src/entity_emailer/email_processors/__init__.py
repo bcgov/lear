@@ -172,10 +172,12 @@ def substitute_template_parts(template_code: str) -> str:
     - Do not comment out template parts as they may be replaced anyway!
     """
     template_parts = [
+        'amalgamation-out-information',
         'business-dashboard-link',
         'business-dashboard-link-alt',
         'business-info',
         'business-information',
+        'consent-letter-information',
         'continuation-application-details',
         'reg-business-info',
         'cra-notice',
