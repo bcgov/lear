@@ -36,6 +36,14 @@ def test_amalgamation_out_notification(app, session, status, legal_type, submitt
     # setup filing + business for email
     legal_name = 'test business'
     filing = prep_amalgamation_out_filing(session, 'BC1234567', '1', legal_type, legal_name, submitter_role)
+    test_meta_data = {
+        'amalgamationOut': {
+            'amalgamationOutDate': '2025-04-29',
+            'region': None,
+            'country': 'AL'
+        }
+    }
+    filing.meta_data = test_meta_data
     token = 'token'
     # test processor
     with patch.object(amalgamation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
