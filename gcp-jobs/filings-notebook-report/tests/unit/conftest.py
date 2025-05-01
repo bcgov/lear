@@ -155,8 +155,8 @@ def db(app: Flask):
         yield _db
 
         drop_test_db(
-            database=app.config.get("DB_NAME"),
-            database_uri=app.config.get("SQLALCHEMY_DATABASE_URI"),
+            database=DATABASE_TEST_NAME,
+            database_uri=conn_string,
         )
 
 
