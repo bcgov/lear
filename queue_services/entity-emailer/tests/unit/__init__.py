@@ -90,7 +90,7 @@ def create_business(identifier, legal_type=None, legal_name=None, parties=None):
     return business
 
 
-def create_filing(token=None, filing_json=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, filing_json=None, meta_data=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     filing = Filing()
     if token:
@@ -99,6 +99,8 @@ def create_filing(token=None, filing_json=None, business_id=None, filing_date=EP
 
     if filing_json:
         filing.filing_json = filing_json
+    if meta_data:
+        filing.meta_data = meta_data
     if business_id:
         filing.business_id = business_id
     if bootstrap_id:
@@ -254,11 +256,19 @@ def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_
         'legalType': legal_type,
         'legalName': legal_name
     }
+    test_meta_data = {
+        'consentAmalgamationOut': {
+            'expiry': '2025-10-31T06:59:00+00:00',
+            'region': 'AB',
+            'country': 'CA'
+        }
+    }
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
-        business_id=business.id)
+        business_id=business.id,
+        meta_data=test_meta_data)
     filing.payment_completion_date = filing.filing_date
 
     user = create_user('test_user')
@@ -284,11 +294,19 @@ def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, le
         'legalType': legal_type,
         'legalName': legal_name
     }
+    test_meta_data = {
+        'amalgamationOut': {
+            'amalgamationOutDate': '2025-04-29',
+            'region': None,
+            'country': 'AL'
+        }
+    }
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
-        business_id=business.id)
+        business_id=business.id,
+        meta_data=test_meta_data)
     filing.payment_completion_date = filing.filing_date
 
     user = create_user('test_user')
