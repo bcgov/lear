@@ -341,8 +341,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if filing.get('correction'):
             original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
             original_registrar = {**RegistrarInfo.get_registrar_info(original_filing.effective_date)}
-            filing['registrarInfo'] = original_registrar
             current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
+            filing['registrarInfo'] = current_registrar
             if original_registrar['name'] != current_registrar['name']:
                 filing['currentRegistrarInfo'] = current_registrar
         elif filing.get('annualReport'):
