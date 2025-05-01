@@ -392,7 +392,7 @@ class StageOneProcessor:
             "Authorization": f"Bearer {token}"
         }
 
-        url = f'{current_app.config.get("AUTH_URL")}/entities/{identifier}'
+        url = f'{current_app.config["AUTH_SVC_URL"]}/entities/{identifier}'
         try:
             contact_info = requests.get(url, headers=headers)
             contact_info.raise_for_status()

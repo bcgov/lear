@@ -64,8 +64,7 @@ class IapDbConnection:
             ip_type="public",
             db=db_config.database,
             user=db_config.user,
-            enable_iam_auth=db_config.enable_iam_auth,
-            password=db_config.password
+            enable_iam_auth=db_config.enable_iam_auth
         )
 
     def init_app(self, app: Flask):
