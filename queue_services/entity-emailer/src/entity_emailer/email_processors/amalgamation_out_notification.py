@@ -95,6 +95,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     effective_date = leg_tmz_effective_date.split(' at ')[0]
     historical_date = datetime.strptime(filing.meta_data[f'{filing_type}']['amalgamationOutDate'], '%Y-%m-%d')
     historical_date = historical_date.strftime('%B %d, %Y')
+    new_name = filing.meta_data[f'{filing_type}']['legalName']
     jurisdiction_region_code = filing.meta_data[f'{filing_type}']['region']
     jurisdiction_country_code = filing.meta_data[f'{filing_type}']['country']
     jurisdiction_country = pycountry.countries.get(alpha_2=jurisdiction_country_code).name
@@ -110,6 +111,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         header=(filing.json)['filing']['header'],
         historical_date=historical_date,
         effective_date=effective_date,
+        new_name=new_name,
         jurisdiction_region=jurisdiction_region,
         jurisdiction_country=jurisdiction_country,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
