@@ -370,7 +370,28 @@ def get_colin_event_id(colin_id=None):
     if not last_event_id or not last_event_id[0]:
         return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
 
-    return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+    return {'maxId': last_event_id[0]}, HTTPStatus.OK
+
+
+@bp.route('/internal/last-event-id/<identifier>', methods=['GET'])
+@cross_origin(origin='*')
+@jwt.has_one_of_roles([UserRoles.colin])
+def get_last_event_id(identifier):
+    """Get the last colin event id for the identifier."""
+    query = db.session.execute(
+        f"""
+        select max(colin_event_id) from colin_event_ids
+            join filings on filings.id = colin_event_ids.filing_id
+            join businesses on businesses.id = filings.business_id
+        where businesses.identifier = '{identifier}'
+        limit 1
+        """
+    )
+    last_event_id = query.scalar()
+    if not last_event_id:
+        return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
+
+    return {'maxId': last_event_id}, HTTPStatus.OK
 
 
 @bp.route('/internal/filings/colin_id/<int:colin_id>', methods=['POST'])
