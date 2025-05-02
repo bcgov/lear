@@ -47,10 +47,12 @@ from business_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
+    amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
     cease_receiver_notification,
     change_of_registration_notification,
+    consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
     continuation_out_notification,
@@ -228,6 +230,12 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
             send_email(email, token)
         elif etype == "correction":
             email = correction_notification.process(email_msg["email"], token)
+            send_email(email, token)
+        elif etype == 'consentAmalgamationOut':
+            email = consent_amalgamation_out_notification.process(email_msg['email'], token)
+            send_email(email, token)
+        elif etype == 'amalgamationOut':
+            email = amalgamation_out_notification.process(email_msg['email'], token)
             send_email(email, token)
         elif etype == "consentContinuationOut":
             email = consent_continuation_out_notification.process(email_msg["email"], token)
