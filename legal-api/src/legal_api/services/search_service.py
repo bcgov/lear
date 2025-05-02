@@ -99,6 +99,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         return business_states, filing_states
 
 
+    @staticmethod
     def try_parse_legal_type(legal_type: str) -> bool:
         try:
             Business.LegalTypes(legal_type)
