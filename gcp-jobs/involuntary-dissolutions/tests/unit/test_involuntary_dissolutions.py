@@ -32,8 +32,8 @@ from involuntary_dissolutions import (
     stage_2_process,
     stage_3_process,
 )
-from involuntary_dissolutions.involuntary_dissolution_types import DissolutionTypes
-from involuntary_dissolutions.utils import Flags
+from involuntary_dissolutions.utils.involuntary_dissolution_types import DissolutionTypes
+from involuntary_dissolutions.utils.flags import Flags
 
 from . import factory_batch, factory_batch_processing, factory_business
 

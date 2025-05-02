@@ -38,9 +38,14 @@ from dissolution_service import InvoluntaryDissolutionService
 from gcp_queue import GcpQueue
 from structured_logging import StructuredLogging
 
-from .config import get_named_config  # pylint: disable=import-error
-from .involuntary_dissolution_types import DissolutionTypes
-from .utils.flags import Flags
+try:
+    from config.config import get_named_config
+    from utils.flags import Flags
+    from utils.involuntary_dissolution_types import DissolutionTypes
+except ImportError:
+    from involuntary_dissolutions.config.config import get_named_config
+    from involuntary_dissolutions.utils.flags import Flags
+    from involuntary_dissolutions.utils.involuntary_dissolution_types import DissolutionTypes
 
 gcp_queue = GcpQueue()
 
