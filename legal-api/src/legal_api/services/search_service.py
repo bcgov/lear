@@ -62,6 +62,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     }
 
     # Function to check if codes belong in BUSINESS_TEMP_FILINGS_CORP_CODES
+    @staticmethod
     def check_and_get_respective_values(codes):
         result = {}
         
