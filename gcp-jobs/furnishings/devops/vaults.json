@@ -8,12 +8,33 @@
         ]
     },
     {
+        "vault": "database",
+        "application": [
+            "business-db"
+        ]
+    },
+    {
+        "vault": "api",
+        "application": [
+            "auth-api"
+        ]
+    },
+    {
+        "vault": "launchdarkly",
+        "application": [
+            "lear"
+        ]
+    },
+    {
+        "vault": "keycloak",
+        "application": [
+            "base",
+            "entity-service-account"
+        ]
+    },
+    {
         "vault": "entity",
         "application": [
-            "postgres-legal",
-            "sentry",
-            "launchdarkly",
-            "entity-service-account",
             "furnishings",
             "sftp-bclaws",
             "sftp-bcmail"

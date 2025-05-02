@@ -28,20 +28,18 @@ class _Config:
     SERVICE_NAME = "emailer-reminder-job"
 
     SEND_OUTSTANDING_BCOMPS = os.getenv("SEND_OUTSTANDING_BCOMPS", None)
-    SENTRY_DSN = os.getenv("SENTRY_DSN") or ""
-    SENTRY_DSN = "" if SENTRY_DSN.lower() == "null" else SENTRY_DSN
-    LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
+    LD_SDK_KEY = os.getenv("LEAR_LD_SDK_KEY", None)
 
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
+    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
 
     PAY_API_URL = os.getenv("PAY_API_URL", "")
     PAY_API_VERSION = os.getenv("PAY_API_VERSION", "")
     PAYMENT_SVC_FEES_URL = PAY_API_URL + PAY_API_VERSION + "/fees"
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
@@ -62,7 +60,10 @@ class _Config:
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
+    else:
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     TESTING = False
     DEBUG = False

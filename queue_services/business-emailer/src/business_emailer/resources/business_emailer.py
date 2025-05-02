@@ -47,10 +47,12 @@ from business_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
+    amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
     cease_receiver_notification,
     change_of_registration_notification,
+    consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
     continuation_out_notification,
@@ -76,7 +78,7 @@ bp = Blueprint("worker", __name__)
 
 
 @bp.route("/", methods=("POST",))
-async def worker():
+def worker():
     """Use endpoint to process Queue Msg objects."""
     try:
         if not request.data:
@@ -89,7 +91,8 @@ async def worker():
         current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
         # 1. Get cloud event
-        if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)) and not isinstance(ce, SimpleCloudEvent):
+        ce = gcp_queue.get_simple_cloud_event(request, wrapped=True)
+        if not ce and not isinstance(ce, SimpleCloudEvent):
             # todo: verify this ? this is how it is done in other GCP pub sub consumers
             # Decision here is to return a 200,
             # so the event is removed from the Queue
@@ -98,10 +101,11 @@ async def worker():
 
         current_app.logger.info(f"received ce: {ce!s}")
 
-        email_msg = json.loads(msg.data.decode("utf-8"))
+        email_msg = ce.data
         current_app.logger.debug("Extracted email msg: %s", email_msg)
 
         process_email(email_msg)
+        return {}, HTTPStatus.OK
 
     # ruff: noqa: PGH004
     except QueueException as err:  # noqa B902; pylint: disable=W0703; :
@@ -136,7 +140,7 @@ def send_email(email: dict, token: str):
 
     try:
         resp = requests.post(
-            f"{current_app.config.NOTIFY_API_URL}",
+            f"{current_app.config.get('NOTIFY_API_URL')}",
             json=email,
             headers={
                 "Content-Type": "application/json",
@@ -226,6 +230,12 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
             send_email(email, token)
         elif etype == "correction":
             email = correction_notification.process(email_msg["email"], token)
+            send_email(email, token)
+        elif etype == "consentAmalgamationOut":
+            email = consent_amalgamation_out_notification.process(email_msg["email"], token)
+            send_email(email, token)
+        elif etype == "amalgamationOut":
+            email = amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "consentContinuationOut":
             email = consent_continuation_out_notification.process(email_msg["email"], token)

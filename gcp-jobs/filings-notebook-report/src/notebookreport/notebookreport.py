@@ -1,28 +1,34 @@
 """The Notebook Report - This module is the API for the Filings Notebook Report."""
 
 import ast
+import base64
 import fnmatch
 import os
 import shutil
-import smtplib
 import sys
 import time
 import traceback
 import warnings
 from datetime import UTC, datetime, timedelta
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 
 import papermill as pm
+import requests
+from business_account.AccountService import AccountService
 from dateutil.relativedelta import relativedelta
 from dotenv import find_dotenv, load_dotenv
+from flask import Flask
 
 from structured_logging import StructuredLogging
 
+try:
+    from config.config import Config
+except ImportError:
+    from notebookreport.config.config import Config
+
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
+
+HTTP_OK = 200
 
 logging = StructuredLogging().get_logger()
 
@@ -33,21 +39,24 @@ def findfiles(directory, pattern):
             yield os.path.join(directory, filename)
 
 
-def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: disable-msg=too-many-locals
+def send_email(note_book, data_directory, emailtype, errormessage):  # noqa: PLR0915
     """Send email for results."""
-    message = MIMEMultipart()
+    email = {
+      "content": {}
+    }
     date = datetime.strftime(datetime.now() - timedelta(1), "%Y-%m-%d")
     last_month = datetime.now() - relativedelta(months=1)
     ext = ""
     filename = ""
-    if os.getenv("ENVIRONMENT", "") != "prod":
-        ext = " on " + os.getenv("ENVIRONMENT", "")
+    env = os.getenv("DEPLOYMENT_ENVIRONMENT", "dev")
+    if env != "prod":
+        ext = " on " + env
 
     if emailtype == "ERROR":
         subject = "Jupyter Notebook Error Notification from LEAR for processing '" \
             + note_book + "' on " + date + ext
         recipients = os.getenv("ERROR_EMAIL_RECIPIENTS", "")
-        message.attach(MIMEText("ERROR!!! \n" + errormessage, "plain"))
+        email["content"]["body"] = "ERROR!!! \n" + errormessage
     else:
         file_processing = note_book.split(".ipynb")[0]
 
@@ -69,37 +78,52 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # pylint: d
             recipients = os.getenv("BC_STATS_MONTHLY_REPORT_RECIPIENTS", "")
 
         # Add body to email
-        message.attach(MIMEText("Please see the attachment(s).", "plain"))
+        email["content"]["body"] = "Please see the attachment(s)."
 
         # Open file in binary mode
         with open(data_directory+filename, "rb") as attachment:
-            # Add file as application/octet-stream
-            # Email client can usually download this automatically as attachment
-            part = MIMEBase("application", "octet-stream")
-            part.set_payload(attachment.read())
-
-        # Encode file in ASCII characters to send by email
-        encoders.encode_base64(part)
-
-        # Add header as key/value pair to attachment part
-        part.add_header(
-            "Content-Disposition",
-            f"attachment; filename= {filename}",
-        )
+            part = base64.b64encode(attachment.read())
 
         # Add attachment to message and convert message to string
-        message.attach(part)
+        email["content"]["attachments"] = [{
+                "fileName": filename,
+                "fileBytes": part,
+                "fileUrl": "",
+                "attachOrder": str(1)
+        }]
 
-    message["Subject"] = subject
-    server = smtplib.SMTP(os.getenv("EMAIL_SMTP", ""))
-    server.connect()
-    email_list = recipients.strip("][").split(", ")
+    email["content"]["subject"] = subject
+    email_list = recipients.strip("][")
     logging.info("Email recipients list is: %s", email_list)
-    server.sendmail(os.getenv("SENDER_EMAIL", ""), email_list, message.as_string())
-    logging.info("Email with subject %s has been sent successfully!", subject)
-    server.quit()
-    if filename != "":
-        os.remove(os.path.join(os.getcwd(), r"data/")+filename)
+    email["recipients"] = email_list
+    email["requestBy"] = os.getenv("SENDER_EMAIL", "")
+    notify_api= os.getenv("NOTIFY_API_URL", "")
+    notify_version = os.getenv("NOTIFY_API_VERSION", "")
+    notify_url = notify_api + notify_version + "/notify"
+    token = AccountService.get_bearer_token()
+    errored = False
+    try:
+        resp = requests.post(
+            f"{notify_url}",
+            json=email,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {token}"
+            }
+        )
+        if resp.status_code != HTTP_OK:
+            errored = True
+            logging.error("Email %s error %s", subject, resp.text)
+    except Exception:
+        logging.exception("Error sending email for %s", subject)
+        errored = True
+
+    if errored:
+        logging.exception("Email with subject %s has failed to send!", subject)
+    else:
+        logging.info("Email with subject %s has been sent successfully!", subject)
+        if filename != "":
+            os.remove(os.path.join(os.getcwd(), r"data/")+filename)
 
 
 def processnotebooks(notebookdirectory, data_directory):
@@ -154,10 +178,16 @@ def processnotebooks(notebookdirectory, data_directory):
                 break
     return status
 
+def create_app():
+    app = Flask(__name__)
+    app.app_context().push()
+    app.logger = StructuredLogging(app).get_logger()
+    app.config.from_object(Config)
+    return app
 
 if __name__ == "__main__":
     start_time = datetime.now(UTC)
-
+    app = create_app()
     data_dir = os.path.join(os.getcwd(), r"data/")
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)

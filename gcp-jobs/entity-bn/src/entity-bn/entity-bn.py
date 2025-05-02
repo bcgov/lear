@@ -1,4 +1,5 @@
 import os
+import pathlib
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -20,8 +21,9 @@ if __name__ == "__main__":
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
+    path = pathlib.Path(__file__).parent.resolve()
+    file = os.path.join(path, "tracker-errors.ipynb")
     
-    file = os.path.basename("tracker-errors.ipynb")
     pm.execute_notebook(file, data_dir+"temp.ipynb", parameters=None)
 
     shutil.rmtree(data_dir)

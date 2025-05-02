@@ -104,6 +104,10 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             'middleInitial': (row.get('middle_nme', '') or '').strip(),
             'organizationName': (row.get('business_nme', '') or '').strip()
         }
+        if officer_obj['organizationName']:
+            officer_obj['partyType'] = 'organization'
+        else:
+            officer_obj['partyType'] = 'person'
         return officer_obj
 
     @classmethod

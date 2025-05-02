@@ -13,7 +13,7 @@ defaults:
     working-directory: ./queue_services/business-emailer
 
 jobs:
-  furnishings-ci:
+  business-emailer-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
       app_name: "business-emailer"

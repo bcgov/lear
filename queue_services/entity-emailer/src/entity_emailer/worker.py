@@ -47,6 +47,7 @@ from entity_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
+    amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
     cease_receiver_notification,
@@ -211,6 +212,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                     logger.debug('No email to send for: %s', email_msg)
             elif etype == 'consentAmalgamationOut':
                 email = consent_amalgamation_out_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'amalgamationOut':
+                email = amalgamation_out_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype == 'consentContinuationOut':
                 email = consent_continuation_out_notification.process(email_msg['email'], token)
