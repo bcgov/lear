@@ -25,15 +25,14 @@ import requests
 from flask import current_app
 from jinja2 import Template
 
-from business_model.models import Business, Filing, UserRoles
-from business_model.utils.legislation_datetime import LegislationDatetime
-
 from business_emailer.email_processors import (
     get_filing_document,
     get_filing_info,
     get_recipient_from_auth,
     substitute_template_parts,
 )
+from business_model.models import Business, Filing, UserRoles
+from business_model.utils.legislation_datetime import LegislationDatetime
 
 
 def _get_pdfs(
