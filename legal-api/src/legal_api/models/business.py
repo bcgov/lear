@@ -285,26 +285,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
     jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
 
-    @dataclass
-    class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
-        """Used for filtering Identifiers based on filters passed."""
-        search_identifier: Optional[str] = None
-        search_filter_status: Optional[str] = None
-        search_filter_name: Optional[str] = None
-        search_filter_type: Optional[str] = None
-        page: int = 1
-        limit: int = 100
-
-        @classmethod
-        def from_request_args(cls, req: Request):
-            return cls(
-                search_identifier = req.get('identifier', None),
-                search_filter_name = req.get('name', None),
-                search_filter_type = req.get('type', []),
-                search_filter_status = req.get('status', []),
-                page = int(req.get('page',1)),
-                limit = int(req.get('limit',100))
-            )
 
     @hybrid_property
     def identifier(self):

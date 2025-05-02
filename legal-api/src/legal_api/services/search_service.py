@@ -14,13 +14,15 @@
 
 """This provides the service for getting business details as of a filing."""
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from http import HTTPStatus
 from flask import current_app
 from operator import and_
-from typing import Final
+from typing import Final, Optional
 
 from legal_api.core import filing
+from requests import Request
 from sqlalchemy import or_ , func
 
 from legal_api.models import (
@@ -31,6 +33,27 @@ from legal_api.models import (
 from typing import List, Tuple
 
 from legal_api.models.business import Business
+
+@dataclass
+class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
+    """Used for filtering Identifiers based on filters passed."""
+    search_identifier: Optional[str] = None
+    search_filter_status: Optional[List[str]] = None
+    search_filter_name: Optional[str] = None
+    search_filter_type: Optional[List[str]] = None
+    page: int = 1
+    limit: int = 100
+
+    @classmethod
+    def from_request_args(cls, req: Request):
+        return cls(
+            search_identifier = req.get('identifier', None),
+            search_filter_name = req.get('name', None),
+            search_filter_type = req.get('type', []),
+            search_filter_status = req.get('status', []),
+            page = int(req.get('page',1)),
+            limit = int(req.get('limit',100))
+        )
 
 class BusinessSearchService:  # pylint: disable=too-many-public-methods
     """Provides service for getting business and filings details as of a filters."""
@@ -119,7 +142,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         return valid_types, invalid_types
     
     @staticmethod
-    def get_search_filtered_businesses_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
+    def get_search_filtered_businesses_results(business_json, identifiers=None, search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
 
         def _get(attr, default):
@@ -171,7 +194,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         return bus_results
     
     @staticmethod
-    def get_search_filtered_filings_results(business_json, identifiers=None, search_filters: Business.AffiliationSearchDetails = None):
+    def get_search_filtered_filings_results(business_json, identifiers=None, search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
         def _get(attr, default):
             return getattr(search_filters, attr, default) if search_filters else default

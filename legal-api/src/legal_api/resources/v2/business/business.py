@@ -21,7 +21,7 @@ from http import HTTPStatus
 from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
-from legal_api.services.search_service import BusinessSearchService
+from legal_api.services.search_service import BusinessSearchService , AffiliationSearchDetails
 from legal_api.models.business import Business
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
@@ -173,7 +173,7 @@ def search_businesses():
 
         temp_identifiers.extend(i for i in identifiers if i.startswith('T'))
         business_identifiers.extend(i for i in identifiers if not i.startswith('T'))
-        search_filters = Business.AffiliationSearchDetails.from_request_args(json_input)
+        search_filters = AffiliationSearchDetails.from_request_args(json_input)
         bus_results = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,
             identifiers=business_identifiers,
