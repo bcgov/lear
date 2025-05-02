@@ -22,12 +22,11 @@ from pathlib import Path
 
 import pycountry
 import requests
-from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
-from legal_api.models import Business, Filing, UserRoles
 
 from entity_emailer.email_processors import get_filing_info, get_recipient_from_auth, substitute_template_parts
+from business_model.models import Business, Filing, UserRoles
 
 
 def _get_pdfs(
@@ -60,7 +59,7 @@ def _get_pdfs(
         headers=headers
     )
     if receipt.status_code != HTTPStatus.CREATED:
-        logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
     else:
         receipt_encoded = base64.b64encode(receipt.content)
         pdfs.append(
@@ -78,7 +77,7 @@ def _get_pdfs(
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, too-many-branches
     """Build the email for Amalgamation Out notification."""
-    logger.debug("amalgamation_out_notification: %s", email_info)
+    current_app.logger.debug("amalgamation_out_notification: %s", email_info)
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing

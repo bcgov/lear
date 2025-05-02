@@ -232,10 +232,10 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
             email = correction_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "consentAmalgamationOut":
-            email = consent_amalgamation_out_notification.process(email_msg['email'], token)
+            email = consent_amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "amalgamationOut":
-            email = amalgamation_out_notification.process(email_msg['email'], token)
+            email = amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "consentContinuationOut":
             email = consent_continuation_out_notification.process(email_msg["email"], token)

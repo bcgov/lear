@@ -15,9 +15,9 @@
 from unittest.mock import patch
 
 import pytest
-from legal_api.models import Business
+from business_model.models import Business
 
-from entity_emailer.email_processors import consent_amalgamation_out_notification
+from business_emailer.email_processors import consent_amalgamation_out_notification
 from tests.unit import prep_consent_amalgamation_out_filing
 
 
