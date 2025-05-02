@@ -37,20 +37,20 @@ from legal_api.models.business import Business
 @dataclass
 class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
     """Used for filtering Identifiers based on filters passed."""
-    search_identifier: Optional[str] = None
-    search_filter_status: Optional[List[str]] = None
-    search_filter_name: Optional[str] = None
-    search_filter_type: Optional[List[str]] = None
+    identifier: Optional[str] = None
+    status: Optional[List[str]] = None
+    name: Optional[str] = None
+    type: Optional[List[str]] = None
     page: int = 1
     limit: int = 100
 
     @classmethod
     def from_request_args(cls, req: Request):
         return cls(
-            search_identifier = req.get('identifier', None),
-            search_filter_name = req.get('name', None),
-            search_filter_type = req.get('type', []),
-            search_filter_status = req.get('status', []),
+            identifier = req.get('identifier', None),
+            name = req.get('name', None),
+            type = req.get('type', []),
+            status = req.get('status', []),
             page = int(req.get('page',1)),
             limit = int(req.get('limit',100))
         )
@@ -148,10 +148,10 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         def _get(attr, default):
             return getattr(search_filters, attr, default) if search_filters else default
  
-        name = _get('search_filter_name', None)
-        types = _get('search_filter_type', [])
-        statuses = _get('search_filter_status', [])
-        identifier = _get('search_identifier', None)
+        name = _get('name', None)
+        types = _get('type', [])
+        statuses = _get('status', [])
+        identifier = _get('identifier', None)
         
         valid_types, _ = BusinessSearchService.separate_legal_types(types or [])
 
@@ -199,10 +199,10 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         def _get(attr, default):
             return getattr(search_filters, attr, default) if search_filters else default
  
-        name = _get('search_filter_name', None)
-        types = _get('search_filter_type', [])
-        statuses = _get('search_filter_status', [])
-        identifier = _get('search_identifier', None)
+        name = _get('name', None)
+        types = _get('type', [])
+        statuses = _get('status', [])
+        identifier = _get('identifier', None)
 
         _, valid_types = BusinessSearchService.separate_legal_types(types or [])
 

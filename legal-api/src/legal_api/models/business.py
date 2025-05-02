@@ -15,7 +15,6 @@
 
 The Business class and Schema are held in this module
 """
-from dataclasses import dataclass
 import re
 from enum import Enum, auto
 from typing import Final, Optional
@@ -23,7 +22,6 @@ from typing import Final, Optional
 import datedelta
 import pytz
 from flask import current_app
-from requests import Request
 from sql_versioning import Versioned
 from sqlalchemy.exc import OperationalError, ResourceClosedError
 from sqlalchemy.ext.hybrid import hybrid_property
