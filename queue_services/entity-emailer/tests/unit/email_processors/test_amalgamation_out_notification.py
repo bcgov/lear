@@ -11,14 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for the Consent Amalgamation Out email processor."""
+"""The Unit Tests for the Amalgamation Out email processor."""
 from unittest.mock import patch
 
 import pytest
 from legal_api.models import Business
 
-from entity_emailer.email_processors import consent_amalgamation_out_notification
-from tests.unit import prep_consent_amalgamation_out_filing
+from entity_emailer.email_processors import amalgamation_out_notification
+from tests.unit import prep_amalgamation_out_filing
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
@@ -31,20 +31,20 @@ from tests.unit import prep_consent_amalgamation_out_filing
     ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, 'staff')
 ])
-def test_consent_amalgamation_out_notification(app, session, status, legal_type, submitter_role):
-    """Assert that the consent_amalgamation_out email processor for corps works as expected."""
+def test_amalgamation_out_notification(app, session, status, legal_type, submitter_role):
+    """Assert that the amalgamation_out email processor for corps works as expected."""
     # setup filing + business for email
     legal_name = 'test business'
-    filing = prep_consent_amalgamation_out_filing(session, 'BC1234567', '1', legal_type, legal_name, submitter_role)
+    filing = prep_amalgamation_out_filing(session, 'BC1234567', '1', legal_type, legal_name, submitter_role)
     token = 'token'
     # test processor
-    with patch.object(consent_amalgamation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        with patch.object(consent_amalgamation_out_notification, 'get_recipient_from_auth',
+    with patch.object(amalgamation_out_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        with patch.object(amalgamation_out_notification, 'get_recipient_from_auth',
                           return_value='recipient@email.com'):
-            email = consent_amalgamation_out_notification.process(
-                {'filingId': filing.id, 'type': 'consentAmalgamationOut', 'option': status}, token)
+            email = amalgamation_out_notification.process(
+                {'filingId': filing.id, 'type': 'amalgamationOut', 'option': status}, token)
             assert email['content']['subject'] == \
-                legal_name + ' - Six Month Consent to Amalgamate Out'
+                legal_name + ' - Amalgamation Out'
 
             if submitter_role:
                 assert f'{submitter_role}@email.com' in email['recipients']

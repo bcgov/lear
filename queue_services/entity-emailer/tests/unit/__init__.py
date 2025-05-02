@@ -26,6 +26,7 @@ from registry_schemas.example_data import (
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
+    AMALGAMATION_OUT,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_REGISTRATION,
@@ -89,7 +90,8 @@ def create_business(identifier, legal_type=None, legal_name=None, parties=None):
     return business
 
 
-def create_filing(token=None, filing_json=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
+def create_filing(token=None, filing_json=None,
+                  meta_data=None, business_id=None, filing_date=EPOCH_DATETIME, bootstrap_id: str = None):
     """Return a test filing."""
     filing = Filing()
     if token:
@@ -98,6 +100,8 @@ def create_filing(token=None, filing_json=None, business_id=None, filing_date=EP
 
     if filing_json:
         filing.filing_json = filing_json
+    if meta_data:
+        filing._meta_data = meta_data
     if business_id:
         filing.business_id = business_id
     if bootstrap_id:
@@ -253,11 +257,58 @@ def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_
         'legalType': legal_type,
         'legalName': legal_name
     }
+    test_meta_data = {
+        'consentAmalgamationOut': {
+            'expiry': '2025-10-31T06:59:00+00:00',
+            'region': 'AB',
+            'country': 'CA'
+        }
+    }
 
     filing = create_filing(
         token=payment_id,
         filing_json=filing_template,
-        business_id=business.id)
+        business_id=business.id,
+        meta_data=test_meta_data)
+    filing.payment_completion_date = filing.filing_date
+
+    user = create_user('test_user')
+    filing.submitter_id = user.id
+    if submitter_role:
+        filing.submitter_roles = submitter_role
+
+    filing.save()
+    return filing
+
+
+def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
+    """Return a new amalgamation out filing prepped for email notification."""
+    business = create_business(identifier, legal_type, legal_name)
+    filing_template = copy.deepcopy(FILING_HEADER)
+    filing_template['filing']['header']['name'] = 'amalgamationOut'
+    if submitter_role:
+        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+
+    filing_template['filing']['amalgamationOut'] = copy.deepcopy(AMALGAMATION_OUT)
+    filing_template['filing']['business'] = {
+        'identifier': business.identifier,
+        'legalType': legal_type,
+        'legalName': legal_name
+    }
+    test_meta_data = {
+        'amalgamationOut': {
+            'amalgamationOutDate': '2025-04-29',
+            'legalName': 'test business',
+            'region': None,
+            'country': 'AL'
+        }
+    }
+
+    filing = create_filing(
+        token=payment_id,
+        filing_json=filing_template,
+        business_id=business.id,
+        meta_data=test_meta_data)
     filing.payment_completion_date = filing.filing_date
 
     user = create_user('test_user')
