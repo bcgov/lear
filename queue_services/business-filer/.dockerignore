@@ -9,9 +9,6 @@ venv
 .eggs
 Makefile
 devops
-k8s
 manage.py
 migrations
-pre-hook-update-db.sh
-requirements
 tests
