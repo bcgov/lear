@@ -36,7 +36,9 @@ class _Config:  # pylint: disable=too-few-public-methods
     SERVICE_NAME = "filer"
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
+    AUTH_SVC_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
+    PAYMENT_SVC_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "")
+
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -55,10 +57,9 @@ class _Config:  # pylint: disable=too-few-public-methods
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    COLIN_API = os.getenv("COLIN_API", "")
+    COLIN_API = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
 
     # service accounts
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "https://")
     ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
     ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
@@ -68,12 +69,15 @@ class _Config:  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_ENTITY_URL = os.getenv("ACCOUNT_SVC_ENTITY_URL")
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
     LEGAL_API_URL = os.getenv("LEGAL_API_URL")
-    NAMEX_API = os.getenv("NAMEX_API")
+
+    NAMEX_API = os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
+    LEGAL_API_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION", "")
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
 
-    NAICS_API_URL = os.getenv("NAICS_API_URL", "https://NAICS_API_URL/api/v2/naics")
+    NAICS_API_URL = os.getenv("NAICS_API_URL", "") + os.getenv("NAICS_API_VERSION", "")
+
 
     # GCP Queue Configs
     GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)

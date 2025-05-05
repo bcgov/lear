@@ -5,8 +5,7 @@ on:
     branches:
       - feature-legal-name
     paths:
-      - "queue_services/entity-filer/**"
-      - "queue_services/common/**"
+      - "queue_services/business-filer/**"
   workflow_dispatch:
     inputs:
       target:
@@ -25,7 +24,7 @@ jobs:
     with:
       target: ${{ inputs.target }}
       app_name: "business-filer"
-      working_directory: "./queue_services/entity-filer"
+      working_directory: "./queue_services/business-filer"
     secrets:
       WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
