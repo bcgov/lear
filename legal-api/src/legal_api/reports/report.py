@@ -339,12 +339,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_registrar_info(self, filing):
         if filing.get('correction'):
-            original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
-            original_registrar = {**RegistrarInfo.get_registrar_info(original_filing.effective_date)}
             current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
             filing['registrarInfo'] = current_registrar
-            if original_registrar['name'] != current_registrar['name']:
-                filing['currentRegistrarInfo'] = current_registrar
+            filing['currentRegistrarInfo'] = current_registrar
         elif filing.get('annualReport'):
             # effective_date in annualReport will be ar_date or agm_date, which could be in past.
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.filing_date)}
