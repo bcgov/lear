@@ -1,21 +1,19 @@
-[tool.poetry]
+[project]
 name = "update-legal-filings"
 version = "0.1.0"
 description = ""
-authors = ["Hrvoje Fekete <hrvoje.fekete@mindpoweredtech.com>"]
+authors = [{name = "SBC-Connect"}]
+license = {text = "BSD-3-Clause"}
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.13,<4"
 
-[tool.poetry.dependencies]
-python = "^3.13.0"
-Flask = "^3.1.0"
-requests = "^2.32.3"
-python-dotenv = "^1.1.0"
-# git dependencies
-gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/gcp-queue" }
-structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging" }
-#colin-api = { git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "colin-api" }
-business-registry-account = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account" }
+dependencies = [
+    "flask (>=3.1.0,<4.0.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
+    "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
+    "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
+]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"

@@ -52,7 +52,7 @@ def test_worker_run(requests_mock, app):
     lear_get_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=0&limit=50'
     get_filings_mock = requests_mock.get(lear_get_url, json=get_mocked_lear_resp(filing_id, filing_name, identifier, legal_type))
     # colin post filing mock
-    colin_url = f'{app.config["COLIN_SVC_URL"]}/{legal_type}/{identifier}/filings/{filing_name}'
+    colin_url = f'{app.config["COLIN_SVC_URL"]}/businesses/{legal_type}/{identifier}/filings/{filing_name}'
     update_colin_mock = requests_mock.post(colin_url, json=get_mocked_colin_resp(colin_ids), status_code=HTTPStatus.CREATED)
     # lear patch colin ids mock
     lear_patch_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings/{filing_id}'
