@@ -34,7 +34,6 @@
 #
 """This Module processes simple cloud event messages for the emailer.
 """
-import json
 from http import HTTPStatus
 
 import requests
@@ -107,7 +106,7 @@ def worker():
     # ruff: noqa: PGH004
     except QueueException as err:  # noqa B902; pylint: disable=W0703; :
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        current_app.logger.error("Queue Error: %s", json.dumps(ce.data), exc_info=True)
+        current_app.logger.error("Queue Error: %s", ce, exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
     except (EmailException, Exception) as err:
