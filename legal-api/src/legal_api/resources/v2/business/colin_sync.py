@@ -370,7 +370,7 @@ def get_colin_event_id(colin_id=None):
     if not last_event_id or not last_event_id[0]:
         return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
 
-    return {'maxId': last_event_id[0]}, HTTPStatus.OK
+    return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
 
 
 @bp.route('/internal/last-event-id/<identifier>', methods=['GET'])

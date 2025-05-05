@@ -17,13 +17,12 @@ This module is the API for the Legal Entity system.
 """
 import asyncio
 import sys
-import dateutil
 import logging
 import os
 import pytz
 import uuid
 
-import dateutil.parser
+import dateutil
 import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
 from colin_api.models.business import Business
@@ -203,7 +202,7 @@ def _get_correction_filing(application, token, event_info):
     return filing['name'], filing['filingId']
 
 
-def _format_filing(application, token, filing, event_info):
+def _format_filing(application, token, filing, event_info):  # pylint: disable=too-many-branches
     businesses = _get_ben_to_bc_identifiers()
     if event_info['corp_num'] not in businesses:
         return
@@ -292,7 +291,7 @@ def check_ben_to_bc_filings(application, token):
         )
         if response.status_code != 200:
             application.logger.error('legal-updater failed to get filings from colin-api.')
-            raise Exception
+            raise Exception  # pylint: disable=broad-exception-raised
         event_info = dict(response.json())
         events = event_info.get('events')
         for event in events:
