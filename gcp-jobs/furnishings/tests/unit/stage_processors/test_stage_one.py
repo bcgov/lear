@@ -53,7 +53,7 @@ def test_get_email_address_from_auth(requests_mock, app, session, test_name, moc
     """Assert that email address is returned."""
     identifier = "BC1234567"
     requests_mock.post(app.config.get("ACCOUNT_SVC_AUTH_URL"), json={"access_token": "token"})
-    requests_mock.get(f"{app.config.get('AUTH_URL')}/entities/{identifier}", json=mock_return)
+    requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/{identifier}", json=mock_return)
     
     email = StageOneProcessor._get_email_address_from_auth(identifier)
     if test_name == "NO_EMAIL":

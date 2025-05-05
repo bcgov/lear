@@ -681,14 +681,19 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             raise err
 
     @classmethod
-    def get_resolutions(cls, cursor, corp_num: str) -> List:
-        """Get all resolution dates for a company."""
+    def get_resolutions(cls, cursor, corp_num: str, event_id: str = None) -> List:
+        """Get all resolution dates for a company or for a specific event id."""
         try:
+            event_query = ''
+            if event_id:
+                event_query = f'and start_event_id = {event_id}'
+            else:
+                event_query = 'and end_event_id is null'
             resolution_dates = []
             cursor.execute(
-                """
+                f"""
                 select resolution_dt from resolution
-                where corp_num = :corp_num and end_event_id is null
+                where corp_num = :corp_num {event_query}
                 order by resolution_dt desc
                 """,
                 corp_num=corp_num

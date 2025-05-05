@@ -338,14 +338,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._format_address(filing['completingParty']['mailingAddress'])
 
     def _set_registrar_info(self, filing):
-        if filing.get('correction'):
-            original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
-            original_registrar = {**RegistrarInfo.get_registrar_info(original_filing.effective_date)}
-            filing['registrarInfo'] = original_registrar
-            current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
-            if original_registrar['name'] != current_registrar['name']:
-                filing['currentRegistrarInfo'] = current_registrar
-        elif filing.get('annualReport'):
+        if filing.get('annualReport'):
             # effective_date in annualReport will be ar_date or agm_date, which could be in past.
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.filing_date)}
         else:
@@ -1078,7 +1071,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return corp_type.full_desc if corp_type else None
 
     def _format_correction_data(self, filing):
-        if bool(filing.get('correction', {}).get('commentOnly', False)):
+        if bool(filing.get('correction', {}).get('commentOnly', False)) or \
+           bool(filing.get('header', {}).get('correctionBenStatement', False)):
             return
         if self._business.legal_type in ['SP', 'GP']:
             self._format_change_of_registration_data(filing, 'correction')

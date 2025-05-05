@@ -18,6 +18,7 @@ class EventFilings(str, Enum):
     FILE_AM_RM = 'FILE_AM_RM'
     FILE_AM_SS = 'FILE_AM_SS'
     FILE_AM_AR = 'FILE_AM_AR'
+    FILE_AM_LQ = 'FILE_AM_LQ'
 
     FILE_IAMGO = 'FILE_IAMGO'
     FILE_AMALO = 'FILE_AMALO'
@@ -52,10 +53,10 @@ class EventFilings(str, Enum):
 
     # Consent Continuation Out
     FILE_CONTO = 'FILE_CONTO'
-    
+
     # Continuation Out
     FILE_COUTI = 'FILE_COUTI'
-    
+
     # Continuation In
     FILE_CONTI = 'FILE_CONTI'
     FILE_CONTU = 'FILE_CONTU'
@@ -86,6 +87,7 @@ class EventFilings(str, Enum):
     FILE_CO_DI = 'FILE_CO_DI'
     FILE_CO_DO = 'FILE_CO_DO'
     FILE_CO_LI = 'FILE_CO_LI'
+    FILE_CO_LQ = 'FILE_CO_LQ'
     FILE_CO_RM = 'FILE_CO_RM'
     FILE_CO_RR = 'FILE_CO_RR'
     FILE_CO_SS = 'FILE_CO_SS'
@@ -130,6 +132,8 @@ class EventFilings(str, Enum):
     FILE_NOCDS = 'FILE_NOCDS'
     FILE_NOCEL = 'FILE_NOCEL'
     FILE_NOCER = 'FILE_NOCER'
+    FILE_NOLDS = 'FILE_NOLDS'
+    FILE_NOTRA = 'FILE_NOTRA'
 
     # TODO: Notice of Withdrawal - unsupported
     FILE_NWITH = 'FILE_NWITH'
@@ -173,7 +177,7 @@ class EventFilings(str, Enum):
     @classmethod
     def has_value(cls, value):
         return value in cls._value2member_map_
-    
+
 
 EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AGMDT: 'agmExtension',
@@ -185,6 +189,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_NOALC: 'alteration',
     EventFilings.FILE_AM_BC: 'alteration',
     EventFilings.FILE_AM_LI: 'alteration',
+    EventFilings.FILE_AM_LQ: 'alteration',
     EventFilings.FILE_AM_RM: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
     EventFilings.FILE_AM_AR: 'alteration',
@@ -242,6 +247,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CO_DI: 'correction',
     EventFilings.FILE_CO_DO: 'correction',
     EventFilings.FILE_CO_LI: 'correction',
+    EventFilings.FILE_CO_LQ: 'correction',
     EventFilings.FILE_CO_RM: 'correction',
     EventFilings.FILE_CO_RR: 'correction',
     EventFilings.FILE_CO_SS: 'correction',
@@ -279,6 +285,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_NOCDS: 'changeRespectingDCR',
     EventFilings.FILE_NOCEL: 'ceaseLiquidator',
     EventFilings.FILE_NOCER: 'ceaseReceiver',
+    EventFilings.FILE_NOLDS: 'locationDCR',
+    EventFilings.FILE_NOTRA: 'transferRecordsOffice',
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
 
@@ -316,6 +324,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOALC: 'Notice of Alteration from a BC Company to Become a Community Contribution Company',
     EventFilings.FILE_AM_BC: 'Amendment - Translated Name',
     EventFilings.FILE_AM_LI: 'Amendment - Ledger Information',
+    EventFilings.FILE_AM_LQ: 'Amendment - Liquidator',
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
     EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
@@ -356,6 +365,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_CO_DI: 'Correction - Director',
     EventFilings.FILE_CO_DO: 'Correction - Dissolved Office',
     EventFilings.FILE_CO_LI: 'Correction - Ledger Information',
+    EventFilings.FILE_CO_LQ: 'Correction - Liquidator',
     EventFilings.FILE_CO_RM: 'Correction - Receiver or Receiver Manager',
     EventFilings.FILE_CO_RR: 'Correction - Registered and Records Offices',
     EventFilings.FILE_CO_SS: 'Correction - Share Structure',
@@ -391,7 +401,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
     # NOLDS: "Notice of Location of Dissolved Company's Records"
-    # NOTRA: 'Notice of Transfer of Records'
     # NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office'
     # LIQUR: 'Liquidation Report'
     # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
@@ -400,6 +409,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOCDS: 'Notice of Change Respecting Dissolved Company\'s Records',
     EventFilings.FILE_NOCEL: 'Notice of Ceasing to Act as Liquidator',
     EventFilings.FILE_NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager',
+    EventFilings.FILE_NOLDS: 'Notice of Location of Dissolved Company\'s Records',
+    EventFilings.FILE_NOTRA: 'Notice of Transfer of Records',
     # LQSIN: 'Statement of Intent to Liquidate'
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
@@ -408,15 +419,13 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # ADVLQ: 'Application for Dissolution (Voluntary Liquidation)'
     # AM_LR: 'Amendment - Liquidation Report'
     # CO_LR: 'Correction - Liquidation Report'
-    # AM_LQ: 'Amendment - Liquidator'
-    # CO_LQ: 'Correction - Liquidator'
 
     EventFilings.FILE_NWITH: 'Notice of Withdrawal',
 
     EventFilings.SYSDL_NULL: None,
     EventFilings.FILE_AM_PF: 'Amendment - Put Back Off',
     EventFilings.FILE_CO_PF: 'Correction - Put Back Off',
-    
+
     EventFilings.FILE_AM_PO: 'Amendment - Put Back On',
     EventFilings.FILE_CO_PO: 'Correction - Put Back On',
 
@@ -493,7 +502,7 @@ LEAR_STATE_FILINGS = [
     'continuationOut',
     'amalgamationOut',
     # TODO: other state filings that lear doesn't support for now e.g. liquidation
-    
+
     # ingore the following since we won't map to them
     # 'dissolved', 'restorationApplication', 'continuedOut'
 ]

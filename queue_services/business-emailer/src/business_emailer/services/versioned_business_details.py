@@ -696,6 +696,8 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             business_revision.start_date) if business_revision.start_date else None
         business_json["continuationOutDate"] = LegislationDatetime.format_as_legislation_date(
             business_revision.continuation_out_date) if business_revision.continuation_out_date else None
+        business_json["amalgamationOutDate"] = LegislationDatetime.format_as_legislation_date(
+            business_revision.amalgamation_out_date) if business_revision.amalgamation_out_date else None
 
         if business_revision.tax_id:
             business_json["taxId"] = business_revision.tax_id

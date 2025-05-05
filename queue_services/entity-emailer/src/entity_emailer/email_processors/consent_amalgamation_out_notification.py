@@ -16,14 +16,17 @@ from __future__ import annotations
 
 import base64
 import re
+from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 
+import pycountry
 import requests
 from entity_queue_common.service_utils import logger
 from flask import current_app
 from jinja2 import Template
 from legal_api.models import Business, Filing, UserRoles
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from entity_emailer.email_processors import (
     get_filing_document,
@@ -109,12 +112,25 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)['filing'][f'{filing_type}']
+    expiry_date_time = datetime.fromisoformat(filing.meta_data[f'{filing_type}']['expiry'])
+    expiry_date = LegislationDatetime.as_legislation_timezone(expiry_date_time)
+    expiry_date = expiry_date.strftime('%B %d, %Y')
+    jurisdiction_region_code = filing.meta_data[f'{filing_type}']['region']
+    jurisdiction_country_code = filing.meta_data[f'{filing_type}']['country']
+    jurisdiction_country = pycountry.countries.get(alpha_2=jurisdiction_country_code).name
+    if jurisdiction_region_code and jurisdiction_region_code.upper() != 'FEDERAL':
+        subdivisions = pycountry.subdivisions.get(code=f'{jurisdiction_country_code}-{jurisdiction_region_code}')
+        jurisdiction_region = subdivisions.name
+    else:
+        jurisdiction_region = None
+
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
         header=(filing.json)['filing']['header'],
-        filing_date_time=leg_tmz_filing_date,
-        effective_date_time=leg_tmz_effective_date,
+        expiry_date=expiry_date,
+        jurisdiction_region=jurisdiction_region,
+        jurisdiction_country=jurisdiction_country,
         entity_dashboard_url=current_app.config.get('DASHBOARD_URL') +
         (filing.json)['filing']['business'].get('identifier', ''),
         email_header=filing_name.upper(),
@@ -137,7 +153,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = 'Confirmation of Filing from the Business Registry'
+    subject = 'Six Month Consent to Amalgamate Out'
 
     legal_name = business.get('legalName', None)
     subject = f'{legal_name} - {subject}' if legal_name else subject

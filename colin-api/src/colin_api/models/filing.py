@@ -397,7 +397,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         'ICORC': Business.TypeCodes.CCC_COMP.value,
         'NOALB': Business.TypeCodes.BC_COMP.value,
         'NOALC': Business.TypeCodes.CCC_COMP.value,
-        'NOALU': Business.TypeCodes.ULC_COMP.value
+        'NOALU': Business.TypeCodes.ULC_COMP.value,
+        'NOALR': Business.TypeCodes.BC_COMP.value,
     }
 
     USERS = {
@@ -757,7 +758,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         # build base querystring
         querystring = """
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
-            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd, arrangement_ind, court_order_num
+            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd, arrangement_ind, court_order_num, nr_num
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
@@ -882,7 +883,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 tmp_timestamp = event['date']
         return event_id if event_id else ar_filing_event_info['event_id']
 
-    # pylint: disable=too-many-branches, too-many-locals, too-many-statements;
+    # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
     @classmethod
     def get_filing(cls, filing: Filing, con=None, year: int = None) -> Dict:
         """Get a Filing."""
@@ -901,10 +902,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 )
             filing.paper_only = False
             filing.colin_only = False
-            filing.effective_date = filing_event_info['event_timestmp']
+            filing.effective_date = filing_event_info['effective_dt'] or filing_event_info['event_timestmp']
             filing.body = {
                 'eventId': filing_event_info['event_id']
             }
+
             # TODO: simplify after consolidating schema
             schema_name = convert_to_snake(filing.filing_type)
             schema = get_schema(f'{schema_name}.json')
@@ -917,12 +919,20 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 else:
                     components = schema['properties'][filing.filing_type].get('properties').keys()
 
+            if filing_event_info['filing_type_code'] == 'CO_DI':
+                components = ['parties']
+
             if 'annualReportDate' in components:
                 filing.body['annualReportDate'] = convert_to_json_date(filing_event_info['period_end_dt'])
                 filing.effective_date = filing_event_info['period_end_dt']
 
             if 'annualGeneralMeetingDate' in components:
                 filing.body['annualGeneralMeetingDate'] = convert_to_json_date(filing_event_info.get('agm_date', None))
+
+            if filing.filing_type == 'annualReport' and filing.business.corp_type == 'BC':
+                if parties := Party.get_by_event(cursor=cursor, corp_num=corp_num,
+                                                 event_id=filing_event_info['event_id'], role_type='Officer'):
+                    filing.body['parties'] = [x.as_dict() for x in parties]
 
             if 'offices' in components:
                 event_id = filing_event_info['event_id']
@@ -966,6 +976,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
                     parties = Party.get_by_event(
                         cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type='Custodian')
+                elif filing_event_info['filing_type_code'] == 'CO_DI':
+                    parties = Party.get_by_event(
+                        cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type='Director')
+
+                    filing.body['comment'] = cls._get_notation(cursor=cursor,
+                                                               corp_num=corp_num,
+                                                               filing_event_info=filing_event_info)
                 else:
                     parties = Party.get_by_event(
                         cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type=None)
@@ -977,6 +994,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 share_structure = ShareObject.get_all(cursor, corp_num, filing_event_info['event_id'])
                 if share_structure:
                     filing.body['shareStructure'] = share_structure.to_dict()
+
+                if resolution_dates := Business.get_resolutions(
+                        cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id']):
+                    filing.body['shareStructure']['resolutionDates'] = resolution_dates
 
             if 'nameTranslations' in components:
                 translations = CorpName.get_by_event(
@@ -1003,6 +1024,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                 'legalName': name.corp_name,
                                 'legalType': filing.business.corp_type
                             }
+                            if nr_num := filing_event_info.get('nr_num'):
+                                filing.body['nameRequest']['nrNumber'] = nr_num
                         else:
                             filing.body['legalName'] = name.corp_name
                         # should only ever be 1 active name for any given event
@@ -1099,6 +1122,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 'certifiedBy': filing_event_info['certifiedBy'],
                 'colinIds': [filing.body['eventId']],
                 'date': convert_to_json_date(filing_event_info['event_timestmp']),
+                'colinDate': convert_to_json_datetime(filing_event_info['event_timestmp']),
                 'effectiveDate': convert_to_json_datetime(filing.effective_date),
                 'email': filing_event_info['email'],
                 'name': filing.filing_type,
