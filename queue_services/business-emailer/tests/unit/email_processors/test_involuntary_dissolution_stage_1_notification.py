@@ -17,6 +17,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from simple_cloudevent import SimpleCloudEvent
 from business_model.models import Furnishing
 
 from business_emailer.email_processors import involuntary_dissolution_stage_1_notification
@@ -34,24 +35,14 @@ from tests.unit import create_business, create_furnishing  # noqa: I003
 def test_involuntary_dissolution_stage_1_notification(app, session, test_name, legal_type, furnishing_name):
     """Assert that the test_involuntary_dissolution_stage_1_notification can be processed."""
     token = 'token'
-    message_id = '16fd2111-8baf-433b-82eb-8c7fada84ccc'
     business_identifier = 'BC1234567'
     business = create_business(business_identifier, legal_type, 'Test Business')
     furnishing = create_furnishing(session, business=business, furnishing_name=furnishing_name)
     message_payload = {
-        'specversion': '1.x-wip',
-        'type': 'bc.registry.dissolution',
-        'source': 'furnishingsJob',
-        'id': message_id,
-        'time': '',
-        'datacontenttype': 'application/json',
-        'identifier': business_identifier,
-        'data': {
-            'furnishing': {
-                'type': 'INVOLUNTARY_DISSOLUTION',
-                'furnishingId': furnishing.id,
-                'furnishingName': furnishing.furnishing_name
-            }
+        'furnishing': {
+            'type': 'INVOLUNTARY_DISSOLUTION',
+            'furnishingId': furnishing.id,
+            'furnishingName': furnishing.furnishing_name
         }
     }
 

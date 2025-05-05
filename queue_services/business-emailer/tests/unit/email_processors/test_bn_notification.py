@@ -99,11 +99,7 @@ def test_bn_move_notificaton(app, session):
 
     # run processor
     with patch.object(bn_notification, 'get_recipient_from_auth', return_value='user@email.com'):
-        email = bn_notification.process_bn_move({'identifier': identifier,
-                                                 'data': {
-                                                     'oldBn': '993775204BC0001',
-                                                     'newBn': '993777399BC0001'
-                                                 }},
+        email = bn_notification.process_bn_move({'identifier': identifier, 'oldBn': '993775204BC0001', 'newBn': '993777399BC0001'},
                                                 token)
         # check email values
         assert 'user@email.com' in email['recipients']

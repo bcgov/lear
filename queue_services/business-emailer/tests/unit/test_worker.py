@@ -16,6 +16,7 @@ from datetime import datetime
 from unittest.mock import patch
 
 import pytest
+from simple_cloudevent import SimpleCloudEvent
 from business_model.models import Business, Furnishing
 from business_emailer.services.namex import NameXService
 from business_account.AccountService import AccountService
@@ -59,7 +60,10 @@ def test_process_incorp_email(app, session, mocker, option):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
-                    {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}})
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}}
+                    )
+                )
 
                 assert mock_get_pdfs.call_args[0][0] == option
                 assert mock_get_pdfs.call_args[0][1] == token
@@ -103,7 +107,10 @@ def test_maintenance_notification(app, session, status, filing_type):
                 as mock_get_recipients:
                 with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                     worker.process_email(
-                        {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}})
+                        SimpleCloudEvent(
+                            data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                        )
+                    )
 
                     assert mock_get_pdfs.call_args[0][0] == status
                     assert mock_get_pdfs.call_args[0][1] == token
@@ -141,7 +148,10 @@ def test_skips_notification(app, session, status, filing_type, identifier):
         with patch.object(filing_notification, '_get_pdfs', return_value=[]):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
-                    {'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}})
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                    )
+                )
 
                 assert not mock_send_email.call_args
 
@@ -155,7 +165,10 @@ def test_process_mras_email(app, session):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
             worker.process_email(
-                {'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'}})
+                SimpleCloudEvent(
+                    data={'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'}}
+                )
+            )
 
             # check vals
             assert mock_send_email.call_args[0][0]['content']['subject'] == 'BC Business Registry Partner Information'
@@ -183,7 +196,10 @@ def test_process_special_resolution_email(app, session, option, submitter_role):
                                   return_value='user@email.com'):
                     with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                         worker.process_email(
-                            {'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}})
+                            SimpleCloudEvent(
+                                data={'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}}
+                            )
+                        )
 
                         assert mock_get_pdfs.call_args[0][0] == token
                         assert mock_get_pdfs.call_args[0][1]['identifier'] == 'CP1234567'
@@ -222,7 +238,10 @@ def test_process_correction_cp_sr_email(app, session, option):
         with patch.object(correction_notification, '_get_pdfs', return_value=[]):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
-                    {'email': {'filingId': filing.id, 'type': 'correction', 'option': option}})
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}
+                    )
+                )
 
                 if option == 'PAID':
                     assert mock_send_email.call_args[0][0]['content']['subject'] == \
@@ -250,11 +269,19 @@ def test_process_ar_reminder_email(app, session):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value='test@test.com'):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email({'email': {
-                    'businessId': filing.business_id,
-                    'type': 'annualReport', 'option': 'reminder',
-                    'arFee': '100', 'arYear': '2021'
-                }})
+                worker.process_email(
+                    SimpleCloudEvent(
+                        data={
+                            'email': {
+                                'businessId': filing.business_id,
+                                'type': 'annualReport',
+                                'option': 'reminder',
+                                'arFee': '100',
+                                'arYear': '2021'
+                            }
+                        }
+                    )
+                )
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
@@ -279,7 +306,9 @@ def test_process_bn_email(app, session):
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
             worker.process_email(
-                {'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'}}
+                SimpleCloudEvent(
+                    data={'email': {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'}}
+                )
             )
             # check email values
             assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
@@ -333,19 +362,21 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
         with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
             as mock_query_nr_number:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email({
-                    'id': '123456789',
-                    'type': 'bc.registry.names.request',
-                    'source': f'/requests/{nr_number}',
-                    'identifier': nr_number,
-                    'data': {
-                        'request': {
-                            'nrNum': nr_number,
-                            'option': option,
-                            'refundValue': refund_value
+                worker.process_email(
+                    SimpleCloudEvent(
+                        id='123456789',
+                        type='bc.registry.names.request',
+                        source=f'/requests/{nr_number}',
+                        data={
+                            'identifier': nr_number,
+                            'request': {
+                                'nrNum': nr_number,
+                                'option': option,
+                                'refundValue': refund_value
+                            }
                         }
-                    }
-                })
+                    )
+                )
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == f'{nr_number} - {subject}'
@@ -393,19 +424,21 @@ def test_nr_receipt_notification(app, session):
             with patch.object(name_request, 'get_nr_bearer_token', return_value=token):
                 with patch.object(name_request, '_get_pdfs', return_value=pdfs) as mock_pdf:
                     with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                        worker.process_email({
-                            'id': '123456789',
-                            'type': 'bc.registry.names.request',
-                            'source': f'/requests/{nr_number}',
-                            'identifier': nr_number,
-                            'data': {
-                                'request': {
-                                    'header': {'nrNum': nr_number},
-                                    'paymentToken': payment_token,
-                                    'statusCode': 'DRAFT'  # not used
+                        worker.process_email(
+                            SimpleCloudEvent(
+                                id='123456789',
+                                type='bc.registry.names.request',
+                                source=f'/requests/{nr_number}',
+                                data={
+                                    'identifier': nr_number,
+                                    'request': {
+                                        'header': {'nrNum': nr_number},
+                                        'paymentToken': payment_token,
+                                        'statusCode': 'DRAFT'  # not used
+                                    }
                                 }
-                            }
-                        })
+                            )
+                        )
 
                         assert mock_pdf.call_args[0][0] == nr_id
                         assert mock_pdf.call_args[0][1] == payment_token
@@ -489,23 +522,18 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
         'business_emailer.email_processors.involuntary_dissolution_stage_1_notification._get_pdfs',
         return_value=[]
     )
-
-    message_payload = {
-        'specversion': '1.x-wip',
-        'type': 'bc.registry.dissolution',
-        'source': 'furnishingsJob',
-        'id': '16fd2111-8baf-433b-82eb-8c7fada84ccc',
-        'time': '',
-        'datacontenttype': 'application/json',
-        'identifier': business_identifier,
-        'data': {
+    message_payload = SimpleCloudEvent(
+        id='16fd2111-8baf-433b-82eb-8c7fada84ccc',
+        type='bc.registry.dissolution',
+        source='furnishingsJob',
+        data={
             'furnishing': {
                 'type': 'INVOLUNTARY_DISSOLUTION',
                 'furnishingId': furnishing.id,
                 'furnishingName': furnishing_name
             }
         }
-    }
+    )
 
     # run worker
     with patch.object(AccountService, 'get_bearer_token', return_value=1):
