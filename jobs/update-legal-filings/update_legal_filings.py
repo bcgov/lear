@@ -15,11 +15,10 @@
 
 This module is the API for the Legal Entity system.
 """
-import os
-import sys
-
 import asyncio
 import logging
+import os
+import sys
 import uuid
 
 import dateutil
