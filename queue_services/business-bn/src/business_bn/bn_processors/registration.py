@@ -140,7 +140,7 @@ def process( # noqa: PLR0912, PLR0915
         gcp_queue.publish(topic, to_queue_message(ce))
 
     except Exception as err:  # pylint: disable=broad-except, unused-variable
-        current_app.logger.error("Failed to publish BN email message onto the NATS emailer subject", exc_info=True)
+        current_app.logger.error("Failed to publish BN email message", exc_info=True)
         raise err
 
     # publish identifier (so other things know business has changed)

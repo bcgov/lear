@@ -81,7 +81,7 @@ def worker():
 
         current_app.logger.info(f"received ce: {ce!s}")
 
-        event_message = json.loads(msg.data.decode("utf-8"))
+        event_message = ce.data
         current_app.logger.debug("Event Message Received: %s", event_message)
         process_event(event_message)
         return {}, HTTPStatus.OK
@@ -94,9 +94,10 @@ def worker():
         raise err  # We don't want to handle the error, try again after sometime
     except BNRetryExceededException as err:
         current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, json.dumps(event_message), exc_info=True)
+        raise err
     except (QueueException, Exception) as err:  # pylint: disable=broad-except
         current_app.logger.error("Queue Error: %s, %s", err, json.dumps(event_message), exc_info=True)
-
+        return {}, HTTPStatus.BAD_REQUEST
 
 def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-statements
     """Process CRA request."""
@@ -114,7 +115,7 @@ def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-stat
         admin.process(msg)
         return
 
-    filing_submission = Filing.find_by_id(msg["data"]["filing"]["header"]["filingId"])
+    filing_submission = Filing.find_by_id(msg["filing"]["header"]["filingId"])
 
     if not filing_submission:
         raise QueueException
@@ -126,14 +127,17 @@ def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-stat
     if filing_submission.filing_type == FilingCore.FilingTypes.REGISTRATION.value:
         registration.process(business)
     elif filing_submission.filing_type == FilingCore.FilingTypes.CHANGEOFREGISTRATION.value:
+        current_app.logger.info(f"change of change of registration -- {business.id}")
         change_of_registration.process(business, filing_submission)
     elif filing_submission.filing_type == FilingCore.FilingTypes.CORRECTION.value and business.legal_type in (
         Business.LegalTypes.SOLE_PROP.value,
         Business.LegalTypes.PARTNERSHIP.value,
     ):
+        current_app.logger.info(f"correction (on;y for SP and GP) -- {business.id}")
         correction.process(business, filing_submission)
     elif filing_submission.filing_type in (
         FilingCore.FilingTypes.DISSOLUTION.value,
         FilingCore.FilingTypes.PUTBACKON.value,
     ) and business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+        current_app.logger.info(f"dissolution or put back on -- {business.id}")
         dissolution_or_put_back_on.process(business, filing_submission)
