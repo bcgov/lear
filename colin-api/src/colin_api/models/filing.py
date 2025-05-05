@@ -388,6 +388,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.CONTINUE_IN.value: 'IAMGO',
             Business.TypeCodes.ULC_CONTINUE_IN.value: 'IAMGO',
             Business.TypeCodes.CCC_CONTINUE_IN.value: 'IAMGO',
+        },
+        'amalgamationOut': {
+            'type_code_list': ['AMALO'],
+            Business.TypeCodes.BCOMP.value: 'AMALO',
+            Business.TypeCodes.BC_COMP.value: 'AMALO',
+            Business.TypeCodes.ULC_COMP.value: 'AMALO',
+            Business.TypeCodes.CCC_COMP.value: 'AMALO',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'AMALO',
+            Business.TypeCodes.CONTINUE_IN.value: 'AMALO',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'AMALO',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'AMALO',
         }
     }
 
@@ -664,7 +675,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
                                       'CONTO', 'COUTI', 'CO_PO', 'CO_PF',
-                                      'AGMDT', 'AGMLC', 'IAMGO',
+                                      'AGMDT', 'AGMLC', 'IAMGO', 'AMALO',
                                       'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
@@ -1292,11 +1303,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
-                                          'amalgamationApplication', 'annualReport', 'changeOfAddress',
-                                          'changeOfDirectors', 'consentAmalgamationOut', 'consentContinuationOut',
-                                          'continuationIn', 'continuationOut', 'courtOrder', 'dissolution',
-                                          'incorporationApplication', 'putBackOn', 'putBackOff', 'registrarsNotation',
-                                          'registrarsOrder', 'restoration', 'specialResolution', 'transition']:
+                                          'amalgamationApplication', 'amalgamationOut', 'annualReport',
+                                          'changeOfAddress', 'changeOfDirectors', 'consentAmalgamationOut',
+                                          'consentContinuationOut', 'continuationIn', 'continuationOut', 'courtOrder',
+                                          'dissolution', 'incorporationApplication', 'putBackOn', 'putBackOff',
+                                          'registrarsNotation', 'registrarsOrder', 'restoration', 'specialResolution',
+                                          'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             if filing.filing_sub_type \
@@ -1327,6 +1339,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             if filing.filing_type == 'amalgamationApplication':
                 cls._process_amalgamating_businesses(cursor, filing)
+            elif filing.filing_type == 'amalgamationOut':
+                cls._process_amalgamation_out(cursor, filing)
             elif filing.filing_type == 'continuationIn':
                 cls._process_continuation_in(cursor, filing)
             elif filing.filing_type == 'continuationOut':
@@ -1723,7 +1737,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         cls._insert_ledger_text(
             cursor,
             filing,
-            f'AMALGAMATED OUT TO {amalgamated_to} EFFECTIVE {aml_out_dt_str} UNDER THE NAME "{cont_out.home_company_nme}"'
+            f'AMALGAMATED OUT TO {amalgamated_to} EFFECTIVE {aml_out_dt_str} \
+                UNDER THE NAME "{cont_out.home_company_nme}"'
         )
 
         Business.update_corp_state(cursor, filing.event_id, corp_num, Business.CorpStateTypes.AMALGAMATE_OUT.value)
