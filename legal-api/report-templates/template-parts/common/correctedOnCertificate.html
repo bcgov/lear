@@ -5,12 +5,12 @@
       {% set date, time = effective_date_time.split(' at ') %}
       Corrected on {{date}}<br/>at {{time}}
       {% endautoescape %}
-      {% if currentRegistrarInfo %}
+      {% if registrarInfo %}
          <div class="current-registrar-signature">
-            <img alt="signature" src={{currentRegistrarInfo.signature}}>
+            <img alt="signature" src={{registrarInfo.signature}}>
          </div>
-         <div class="current-registrar-name">{{ currentRegistrarInfo.name }}</div>
-         <div class="current-registrar-title">{{ currentRegistrarInfo.title }}</div>
+         <div class="current-registrar-name">{{ registrarInfo.name }}</div>
+         <div class="current-registrar-title">{{ registrarInfo.title }}</div>
          <div class="current-registrar-province-country-info">
             <div>PROVINCE OF BRITISH COLUMBIA</div>
             <div>CANADA</div>

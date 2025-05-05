@@ -338,11 +338,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._format_address(filing['completingParty']['mailingAddress'])
 
     def _set_registrar_info(self, filing):
-        if filing.get('correction'):
-            current_registrar = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
-            filing['registrarInfo'] = current_registrar
-            filing['currentRegistrarInfo'] = current_registrar
-        elif filing.get('annualReport'):
+        if filing.get('annualReport'):
             # effective_date in annualReport will be ar_date or agm_date, which could be in past.
             filing['registrarInfo'] = {**RegistrarInfo.get_registrar_info(self._filing.filing_date)}
         else:
