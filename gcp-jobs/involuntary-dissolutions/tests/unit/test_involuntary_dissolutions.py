@@ -24,7 +24,7 @@ from freezegun import freeze_time
 
 from business_common.core.filing import Filing as CoreFiling
 from business_model.models import Batch, BatchProcessing, Configuration, Filing, Furnishing
-from involuntary_dissolutions import (
+from involuntary_dissolutions.involuntary_dissolutions import (
     check_run_schedule,
     create_invountary_dissolution_filing,
     mark_eligible_batches_completed,
@@ -528,7 +528,7 @@ def test_stage_3_process(app, session, test_name, status, step, furnishing_statu
         business.last_ar_date = datetime.now(UTC)
         business.save()
 
-    with patch("involuntary_dissolutions.put_filing_on_queue") as mock_put_filing_on_queue: # noqa: F841
+    with patch("involuntary_dissolutions.involuntary_dissolutions.put_filing_on_queue") as mock_put_filing_on_queue: # noqa: F841
         stage_3_process(app)
         if test_name == "DISSOLVE_BUSINESS":
             # This can't be uncommented right now as the call fails?
