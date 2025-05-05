@@ -15,17 +15,17 @@
 
 This module is the API for the Legal Entity system.
 """
-import asyncio
-import sys
-import logging
 import os
+import sys
+
+import asyncio
+import logging
 import uuid
 
 import dateutil
 import pytz
 import requests
 import sentry_sdk  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8
-
 from colin_api.models.business import Business
 from colin_api.models.filing import Filing
 from flask import Flask
