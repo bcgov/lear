@@ -48,6 +48,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     corp_party_id = None
     prev_party_id = None
     corp_num = None
+    offices_held = None
 
     role_types = {
         'Applicant': 'APP',
@@ -111,6 +112,19 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         return officer_obj
 
     @classmethod
+    def _get_offices_held(cls, cursor, corp_party_id: str) -> List[Dict]:
+        """Get the offices held by the party."""
+        query = """
+                SELECT officer_typ_cd
+                FROM offices_held
+                WHERE corp_party_id=:corp_party_id
+                """
+        cursor.execute(query, corp_party_id=corp_party_id)
+        offices = cursor.fetchall()
+
+        return [row[0] for row in offices]
+
+    @classmethod
     def _parse_party(cls, cursor, row: dict) -> Party:
         """Parse the party row."""
         party = Party()
@@ -131,6 +145,8 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         party.prev_party_id = row.get('prev_party_id', None)
         party.corp_num = row.get('corp_num', None)
 
+        if party.role_type == cls.role_types['Officer']:
+            party.offices_held = cls._get_offices_held(cursor, party.corp_party_id)
         return party
 
     @classmethod
@@ -364,7 +380,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             current_app.logger.error(f'error getting parties info for {corp_num}')
             raise err
 
-        if not parties_list:
+        if not parties_list and role_type != 'Officer':
             raise PartiesNotFoundException(identifier=corp_num)
 
         return parties_list

@@ -929,6 +929,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             if 'annualGeneralMeetingDate' in components:
                 filing.body['annualGeneralMeetingDate'] = convert_to_json_date(filing_event_info.get('agm_date', None))
 
+            if filing.filing_type == 'annualReport' and filing.business.corp_type == 'BC':
+                if parties := Party.get_by_event(cursor=cursor, corp_num=corp_num,
+                                                 event_id=filing_event_info['event_id'], role_type='Officer'):
+                    filing.body['parties'] = [x.as_dict() for x in parties]
+
             if 'offices' in components:
                 event_id = filing_event_info['event_id']
                 # special rules for ARs with offices included

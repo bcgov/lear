@@ -184,10 +184,10 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
                 existing_director_name = \
                     director.party.first_name + director.party.middle_initial + director.party.last_name
                 current_new_director_name = \
-                    party_info['officer'].get('firstName') + party_info['officer'].get('middleInitial', '') + \
-                    party_info['officer'].get('lastName')
+                    party_info["officer"].get("firstName") + party_info["officer"].get("middleInitial", "") + \
+                    party_info["officer"].get("lastName")
                 if existing_director_name.upper() == current_new_director_name.upper():
-                    party_info['officer']['id'] = director.party.id
+                    party_info["officer"]["id"] = director.party.id
                     break
 
         filing_json = copy.deepcopy(correction_filing_rec.filing_json)
