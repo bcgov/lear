@@ -20,7 +20,7 @@ on:
 
 jobs:
   business-filer-cd:
-    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-filer"
