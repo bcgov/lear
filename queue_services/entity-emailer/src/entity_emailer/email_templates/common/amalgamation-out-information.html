@@ -1,0 +1,44 @@
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]
+<div class="business-information">
+  <div>
+    <div class="name bold">Company Name in BC:</div>
+    <div class="value">{{ business.legalName }}</div>
+  </div>
+  
+  [[20px.html]]
+  <div>
+    <div class="name bold">Date made historical in B.C.:</div>
+    <div class="value">{{ historical_date }}</div>
+  </div>
+
+  [[20px.html]]
+  <div>
+    <div class="name bold">Business Name in New Jurisdiction:</div>
+    <div class="value">{{ new_name }}</div>
+  </div>
+  
+
+  [[20px.html]]
+  <div>
+    <div class="name bold">New Jurisdiction:</div>
+    <div class="value">
+      {% if jurisdiction_region %}
+        {{ jurisdiction_region }}, {{ jurisdiction_country }}
+      {% else %}
+        {{ jurisdiction_country }}
+      {% endif %}
+    </div>
+  </div>
+
+  [[20px.html]]
+  <div>
+    <div class="name bold">Amalgamation Effective Date:</div>
+    <div class="value">{{ effective_date }}</div>
+  </div>
+</div>
+
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]

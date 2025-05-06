@@ -300,6 +300,14 @@ from . import create_mock_message  # noqa: I003
                  'filingId': '1112223333'
              }
          }),
+        ('amalgamationOut_COMPLETED_1112223333',
+         {
+             'email': {
+                 'type': 'amalgamationOut',
+                 'option': 'COMPLETED',
+                 'filingId': '1112223333'
+             }
+         }),
         ('consentContinuationOut_COMPLETED_1112223333',
          {
              'email': {

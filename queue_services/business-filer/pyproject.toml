@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9,<4"
 
 dependencies = [
-   # "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
+    "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "flask (>=3.1.0,<4.0.0)",
@@ -20,7 +20,8 @@ dependencies = [
     "flask-babel (>=4.0.0,<5.0.0)",
     "dpath (>=2.2.0,<3.0.0)",
     "pg8000 (>=1.31.2,<2.0.0)",
-    "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
+  #  "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
+  "gunicorn (>=23.0.0,<24.0.0)"
 
 ]
 

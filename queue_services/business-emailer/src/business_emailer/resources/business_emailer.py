@@ -34,7 +34,6 @@
 #
 """This Module processes simple cloud event messages for the emailer.
 """
-import json
 from http import HTTPStatus
 
 import requests
@@ -47,10 +46,12 @@ from business_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_notification,
+    amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
     cease_receiver_notification,
     change_of_registration_notification,
+    consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
     continuation_out_notification,
@@ -76,7 +77,7 @@ bp = Blueprint("worker", __name__)
 
 
 @bp.route("/", methods=("POST",))
-async def worker():
+def worker():
     """Use endpoint to process Queue Msg objects."""
     try:
         if not request.data:
@@ -89,7 +90,8 @@ async def worker():
         current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
         # 1. Get cloud event
-        if not (ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)) and not isinstance(ce, SimpleCloudEvent):
+        ce = gcp_queue.get_simple_cloud_event(request, wrapped=True)
+        if not ce and not isinstance(ce, SimpleCloudEvent):
             # todo: verify this ? this is how it is done in other GCP pub sub consumers
             # Decision here is to return a 200,
             # so the event is removed from the Queue
@@ -98,15 +100,13 @@ async def worker():
 
         current_app.logger.info(f"received ce: {ce!s}")
 
-        email_msg = json.loads(msg.data.decode("utf-8"))
-        current_app.logger.debug("Extracted email msg: %s", email_msg)
-
-        process_email(email_msg)
+        process_email(ce)
+        return {}, HTTPStatus.OK
 
     # ruff: noqa: PGH004
     except QueueException as err:  # noqa B902; pylint: disable=W0703; :
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        current_app.logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
+        current_app.logger.error("Queue Error: %s", ce, exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
     except (EmailException, Exception) as err:
@@ -136,7 +136,7 @@ def send_email(email: dict, token: str):
 
     try:
         resp = requests.post(
-            f"{current_app.config.NOTIFY_API_URL}",
+            f"{current_app.config.get('NOTIFY_API_URL')}",
             json=email,
             headers={
                 "Content-Type": "application/json",
@@ -150,13 +150,14 @@ def send_email(email: dict, token: str):
         raise EmailException("Unsuccessful response when sending email.") from None
 
 
-def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
+def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
     """Process the email contained in the submission."""
-    current_app.logger.debug("Attempting to process email: %s", email_msg)
+    etype = ce.type
+    email_msg = ce.data
+    current_app.logger.debug("Attempting to process email: %s", ce.data)
     token = AccountService.get_bearer_token()
-    etype = email_msg.get("type")
     if etype and etype == "bc.registry.names.request":
-        option = email_msg.get("data", {}).get("request", {}).get("option", None)
+        option = email_msg.get("request", {}).get("option", None)
         if option and option in [nr_notification.Option.BEFORE_EXPIRY.value,
                                  nr_notification.Option.EXPIRED.value,
                                  nr_notification.Option.RENEWAL.value,
@@ -175,7 +176,7 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
         send_email(email, token)
     elif etype and etype == "bc.registry.dissolution":
         # Confirm the data.furnishingName
-        furnishing_name = email_msg.get("data", {}).get("furnishing", {}).get("furnishingName", None)
+        furnishing_name = email_msg.get("furnishing", {}).get("furnishingName", None)
         if furnishing_name \
             and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
             email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
@@ -226,6 +227,12 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
             send_email(email, token)
         elif etype == "correction":
             email = correction_notification.process(email_msg["email"], token)
+            send_email(email, token)
+        elif etype == "consentAmalgamationOut":
+            email = consent_amalgamation_out_notification.process(email_msg["email"], token)
+            send_email(email, token)
+        elif etype == "amalgamationOut":
+            email = amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "consentContinuationOut":
             email = consent_continuation_out_notification.process(email_msg["email"], token)

@@ -31,16 +31,19 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Email reminder job."""
+"""Run update legal filings job."""
 
 from update_legal_filings import create_app
-from update_legal_filings.worker import update_business_nos
+from update_legal_filings.worker import update_business_nos, update_filings
 
 if __name__ == "__main__":
     application = create_app()
     with application.app_context():
         try:
-            update_business_nos()
+            update_filings()
+            if application.config["ENABLE_BN_UPDATES"]:
+                # NOTE: COLIN in DEV does not add these so we skip it
+                update_business_nos()
         except Exception as err:
             application.logger.error(err)
             raise err

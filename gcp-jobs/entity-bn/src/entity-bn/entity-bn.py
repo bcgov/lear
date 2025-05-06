@@ -1,7 +1,7 @@
 import os
+import pathlib
 import shutil
 import sys
-import pathlib
 from datetime import UTC, datetime
 
 import papermill as pm

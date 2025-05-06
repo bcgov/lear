@@ -12,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
-import asyncio
 import contextlib
 import datetime
-import os
 import random
-import time
 from contextlib import contextmanager
 
 import pytest
@@ -254,13 +251,6 @@ def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
         conn.close()
 
 
-@pytest.fixture(scope='function')
-def future(event_loop):
-    """Return a future that is used for managing function tests."""
-    _future = asyncio.Future(loop=event_loop)
-    return _future
-
-
 @pytest.fixture
 def create_mock_coro(mocker, monkeypatch):
     """Return a mocked coroutine, and optionally patch-it in."""
@@ -268,7 +258,7 @@ def create_mock_coro(mocker, monkeypatch):
     def _create_mock_patch_coro(to_patch=None):
         mock = mocker.Mock()
 
-        async def _coro(*args, **kwargs):
+        def _coro(*args, **kwargs):
             return mock(*args, **kwargs)
 
         if to_patch:  # <-- may not need/want to patch anything

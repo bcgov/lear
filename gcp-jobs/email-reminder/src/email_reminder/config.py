@@ -28,7 +28,7 @@ class _Config:
     SERVICE_NAME = "emailer-reminder-job"
 
     SEND_OUTSTANDING_BCOMPS = os.getenv("SEND_OUTSTANDING_BCOMPS", None)
-    LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
+    LD_SDK_KEY = os.getenv("LEAR_LD_SDK_KEY", None)
 
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
     ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
@@ -39,7 +39,7 @@ class _Config:
     PAYMENT_SVC_FEES_URL = PAY_API_URL + PAY_API_VERSION + "/fees"
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )

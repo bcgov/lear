@@ -29,7 +29,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = \
-        get_filing_info(email_info["data"]["filing"]["header"]["filingId"])
+        get_filing_info(email_info["filing"]["header"]["filingId"])
     filing_type = filing.filing_type
     status = filing.status
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))

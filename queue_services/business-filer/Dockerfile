@@ -15,7 +15,7 @@ LABEL org.label-schema.vcs-ref=${VCS_REF} \
 LABEL maintainer="thorwolpert"
 LABEL vendor="BCROS"
 
-ARG APP_ENV \
+ARG APP_ENV="production" \
   # Needed for fixing permissions of files created by Docker:
   UID=1000 \
   GID=1000
@@ -32,7 +32,7 @@ ENV APP_ENV=${APP_ENV} \
   PIP_DEFAULT_TIMEOUT=100 \
   PIP_ROOT_USER_ACTION=ignore \
   # poetry:
-  POETRY_VERSION=1.3.2 \
+  POETRY_VERSION=2.1.1 \
   POETRY_NO_INTERACTION=1 \
   POETRY_VIRTUALENVS_CREATE=false \
   POETRY_CACHE_DIR='/var/cache/pypoetry' \

@@ -1,5 +1,5 @@
 git+https://github.com/bcgov/sbc-connect-common.git#egg=gcp-queue&subdirectory=python/gcp-queue
-git+https://github.com/bcgov/business-schemas.git@2.18.40#egg=registry_schemas
+git+https://github.com/bcgov/business-schemas.git@2.18.41#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common

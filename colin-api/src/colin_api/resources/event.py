@@ -60,25 +60,27 @@ class EventInfo(Resource):
 
 
 @cors_preflight('GET')
-@API.route('/event/corp_num/<string:corp_num>')
+@API.route('/event/corp_num/<string:corp_num>/<string:event_id>')
 class CorpEventInfo(Resource):
     """Return a subset of event related info for a given corp num."""
 
     @staticmethod
     @cors.crossdomain(origin='*')
     @jwt.requires_roles([COLIN_SVC_ROLE])
-    def get(corp_num):
+    def get(corp_num, event_id):
         """Return all event_ids of the corp_type that are greater than the given event_id."""
         querystring = """
             select e.event_id, e.corp_num, f.filing_typ_cd
             from event e
-            join filing f on e.event_id = f.event_id
-            where e.corp_num = :corp_num
-            order by e.event_id asc
+                left join filing f on e.event_id = f.event_id
+            where
+                e.event_typ_cd in ('FILE', 'SYSDF') and
+                e.corp_num = :corp_num and e.event_id > :event_id
+            order by e.event_timestmp, e.event_id asc
             """
         try:
             cursor = DB.connection.cursor()
-            cursor.execute(querystring, corp_num=corp_num)
+            cursor.execute(querystring, corp_num=corp_num, event_id=event_id)
             event_info = cursor.fetchall()
             event_list = []
 

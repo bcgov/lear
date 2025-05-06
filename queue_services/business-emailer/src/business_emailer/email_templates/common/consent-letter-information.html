@@ -1,0 +1,32 @@
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]
+<div class="business-information">
+  <div>
+    <div class="name bold">Company Name:</div>
+    <div class="value">{{ business.legalName }}</div>
+  </div>
+  
+  [[20px.html]]
+  <div>
+    <div class="name bold">Effective Until:</div>
+    <div class="value">{{ expiry_date }}</div>
+  </div>
+
+  
+  [[20px.html]]
+  <div>
+    <div class="name bold">New Jurisdiction:</div>
+    <div class="value">
+      {% if jurisdiction_region %}
+        {{ jurisdiction_region }}, {{ jurisdiction_country }}
+      {% else %}
+        {{ jurisdiction_country }}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+[[20px.html]]
+[[divider.html]]
+[[20px.html]]

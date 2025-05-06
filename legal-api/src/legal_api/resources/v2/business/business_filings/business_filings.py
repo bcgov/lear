@@ -685,7 +685,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
         try:
-            filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['date'])
+            filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json['filing']['header']['colinDate'] or
+                                                                 filing.filing_json['filing']['header']['date'])
             for colin_id in filing.filing_json['filing']['header']['colinIds']:
                 colin_event_id = ColinEventId()
                 colin_event_id.colin_event_id = colin_id

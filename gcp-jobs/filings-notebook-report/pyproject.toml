@@ -39,10 +39,15 @@ Werkzeug = "^3.1.3"
 certifi = "^2025.1.31"
 urllib3 = "^2.3.0"
 idna = "^3.10"
+pg8000 = "^1.31.2"
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
+business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account"}
+
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
 freezegun = "^1.5.1"
+business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
+flask_migrate = "^4.0.5"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
@@ -126,7 +131,7 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["structured_logging"]
+known-first-party = ["structured_logging", "business_registry_account"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"

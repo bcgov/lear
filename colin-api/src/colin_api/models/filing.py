@@ -388,6 +388,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.CONTINUE_IN.value: 'IAMGO',
             Business.TypeCodes.ULC_CONTINUE_IN.value: 'IAMGO',
             Business.TypeCodes.CCC_CONTINUE_IN.value: 'IAMGO',
+        },
+        'amalgamationOut': {
+            'type_code_list': ['AMALO'],
+            Business.TypeCodes.BCOMP.value: 'AMALO',
+            Business.TypeCodes.BC_COMP.value: 'AMALO',
+            Business.TypeCodes.ULC_COMP.value: 'AMALO',
+            Business.TypeCodes.CCC_COMP.value: 'AMALO',
+            Business.TypeCodes.BCOMP_CONTINUE_IN.value: 'AMALO',
+            Business.TypeCodes.CONTINUE_IN.value: 'AMALO',
+            Business.TypeCodes.ULC_CONTINUE_IN.value: 'AMALO',
+            Business.TypeCodes.CCC_CONTINUE_IN.value: 'AMALO',
         }
     }
 
@@ -397,7 +408,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         'ICORC': Business.TypeCodes.CCC_COMP.value,
         'NOALB': Business.TypeCodes.BC_COMP.value,
         'NOALC': Business.TypeCodes.CCC_COMP.value,
-        'NOALU': Business.TypeCodes.ULC_COMP.value
+        'NOALU': Business.TypeCodes.ULC_COMP.value,
+        'NOALR': Business.TypeCodes.BC_COMP.value,
     }
 
     USERS = {
@@ -663,7 +675,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                       'NOABE', 'NOALE', 'NOALR', 'NOALD',
                                       'NOALA', 'NOALB', 'NOALU', 'NOALC',
                                       'CONTO', 'COUTI', 'CO_PO', 'CO_PF',
-                                      'AGMDT', 'AGMLC', 'IAMGO',
+                                      'AGMDT', 'AGMLC', 'IAMGO', 'AMALO',
                                       'RESTF', 'RESTL', 'RESXL', 'RESXF',
                                       'REGSN', 'REGSO', 'COURT']:
                 arrangement_ind = 'N'
@@ -757,7 +769,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         # build base querystring
         querystring = """
             select event.event_id, event_timestmp, first_nme, middle_nme, last_nme, email_addr, period_end_dt,
-            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd, arrangement_ind, court_order_num
+            agm_date, effective_dt, event.corp_num, user_id, filing_typ_cd, arrangement_ind, court_order_num, nr_num
             from event
             join filing on filing.event_id = event.event_id
             left join filing_user on event.event_id = filing_user.event_id
@@ -882,7 +894,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 tmp_timestamp = event['date']
         return event_id if event_id else ar_filing_event_info['event_id']
 
-    # pylint: disable=too-many-branches, too-many-locals, too-many-statements;
+    # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
     @classmethod
     def get_filing(cls, filing: Filing, con=None, year: int = None) -> Dict:
         """Get a Filing."""
@@ -901,10 +913,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 )
             filing.paper_only = False
             filing.colin_only = False
-            filing.effective_date = filing_event_info['event_timestmp']
+            filing.effective_date = filing_event_info['effective_dt'] or filing_event_info['event_timestmp']
             filing.body = {
                 'eventId': filing_event_info['event_id']
             }
+
             # TODO: simplify after consolidating schema
             schema_name = convert_to_snake(filing.filing_type)
             schema = get_schema(f'{schema_name}.json')
@@ -917,12 +930,20 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 else:
                     components = schema['properties'][filing.filing_type].get('properties').keys()
 
+            if filing_event_info['filing_type_code'] == 'CO_DI':
+                components = ['parties']
+
             if 'annualReportDate' in components:
                 filing.body['annualReportDate'] = convert_to_json_date(filing_event_info['period_end_dt'])
                 filing.effective_date = filing_event_info['period_end_dt']
 
             if 'annualGeneralMeetingDate' in components:
                 filing.body['annualGeneralMeetingDate'] = convert_to_json_date(filing_event_info.get('agm_date', None))
+
+            if filing.filing_type == 'annualReport' and filing.business.corp_type == 'BC':
+                if parties := Party.get_by_event(cursor=cursor, corp_num=corp_num,
+                                                 event_id=filing_event_info['event_id'], role_type='Officer'):
+                    filing.body['parties'] = [x.as_dict() for x in parties]
 
             if 'offices' in components:
                 event_id = filing_event_info['event_id']
@@ -966,6 +987,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
                     parties = Party.get_by_event(
                         cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type='Custodian')
+                elif filing_event_info['filing_type_code'] == 'CO_DI':
+                    parties = Party.get_by_event(
+                        cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type='Director')
+
+                    filing.body['comment'] = cls._get_notation(cursor=cursor,
+                                                               corp_num=corp_num,
+                                                               filing_event_info=filing_event_info)
                 else:
                     parties = Party.get_by_event(
                         cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id'], role_type=None)
@@ -977,6 +1005,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 share_structure = ShareObject.get_all(cursor, corp_num, filing_event_info['event_id'])
                 if share_structure:
                     filing.body['shareStructure'] = share_structure.to_dict()
+
+                if resolution_dates := Business.get_resolutions(
+                        cursor=cursor, corp_num=corp_num, event_id=filing_event_info['event_id']):
+                    filing.body['shareStructure']['resolutionDates'] = resolution_dates
 
             if 'nameTranslations' in components:
                 translations = CorpName.get_by_event(
@@ -1003,6 +1035,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                 'legalName': name.corp_name,
                                 'legalType': filing.business.corp_type
                             }
+                            if nr_num := filing_event_info.get('nr_num'):
+                                filing.body['nameRequest']['nrNumber'] = nr_num
                         else:
                             filing.body['legalName'] = name.corp_name
                         # should only ever be 1 active name for any given event
@@ -1099,6 +1133,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 'certifiedBy': filing_event_info['certifiedBy'],
                 'colinIds': [filing.body['eventId']],
                 'date': convert_to_json_date(filing_event_info['event_timestmp']),
+                'colinDate': convert_to_json_datetime(filing_event_info['event_timestmp']),
                 'effectiveDate': convert_to_json_datetime(filing.effective_date),
                 'email': filing_event_info['email'],
                 'name': filing.filing_type,
@@ -1273,11 +1308,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
-                                          'amalgamationApplication', 'annualReport', 'changeOfAddress',
-                                          'changeOfDirectors', 'consentAmalgamationOut', 'consentContinuationOut',
-                                          'continuationIn', 'continuationOut', 'courtOrder', 'dissolution',
-                                          'incorporationApplication', 'putBackOn', 'putBackOff', 'registrarsNotation',
-                                          'registrarsOrder', 'restoration', 'specialResolution', 'transition']:
+                                          'amalgamationApplication', 'amalgamationOut', 'annualReport',
+                                          'changeOfAddress', 'changeOfDirectors', 'consentAmalgamationOut',
+                                          'consentContinuationOut', 'continuationIn', 'continuationOut', 'courtOrder',
+                                          'dissolution', 'incorporationApplication', 'putBackOn', 'putBackOff',
+                                          'registrarsNotation', 'registrarsOrder', 'restoration', 'specialResolution',
+                                          'transition']:
                 raise InvalidFilingTypeException(filing_type=filing.filing_type)
 
             if filing.filing_sub_type \
@@ -1308,6 +1344,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             if filing.filing_type == 'amalgamationApplication':
                 cls._process_amalgamating_businesses(cursor, filing)
+            elif filing.filing_type == 'amalgamationOut':
+                cls._process_amalgamation_out(cursor, filing)
             elif filing.filing_type == 'continuationIn':
                 cls._process_continuation_in(cursor, filing)
             elif filing.filing_type == 'continuationOut':
@@ -1674,6 +1712,43 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             CorpInvolved.create_corp_involved(cursor, corp_involved)
 
     @classmethod
+    def _process_amalgamation_out(cls, cursor, filing):
+        """Process amalgamation out."""
+        corp_num = filing.get_corp_num()
+
+        cont_out = ContOut()
+        cont_out.corp_num = corp_num
+        cont_out.start_event_id = filing.event_id
+        cont_out.cont_out_dt = filing.body.get('amalgamationOutDate')
+        cont_out.home_company_nme = filing.body.get('legalName')
+
+        foreign_jurisdiction = filing.body.get('foreignJurisdiction')
+        country_code = foreign_jurisdiction.get('country').upper()
+        region_code = (foreign_jurisdiction.get('region') or '').upper()
+        if country_code == 'CA':
+            if region_code == 'FEDERAL':
+                cont_out.can_jur_typ_cd = 'FD'
+            else:
+                cont_out.can_jur_typ_cd = region_code
+        else:
+            cont_out.can_jur_typ_cd = 'OT'
+            cont_out.othr_juri_desc = \
+                f'{country_code}, {region_code}' if region_code else country_code
+
+        ContOut.create_cont_out(cursor, cont_out)
+
+        amalgamated_to = cont_out.othr_juri_desc if cont_out.can_jur_typ_cd == 'OT' else cont_out.can_jur_typ_cd
+        aml_out_dt_str = datetime.datetime.fromisoformat(cont_out.cont_out_dt).strftime('%B %-d, %Y')
+        cls._insert_ledger_text(
+            cursor,
+            filing,
+            f'AMALGAMATED OUT TO {amalgamated_to} EFFECTIVE {aml_out_dt_str} \
+                UNDER THE NAME "{cont_out.home_company_nme}"'
+        )
+
+        Business.update_corp_state(cursor, filing.event_id, corp_num, Business.CorpStateTypes.AMALGAMATE_OUT.value)
+
+    @classmethod
     # pylint: disable=too-many-arguments;
     def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str) -> str:
         """Process specific to annual report."""
@@ -1713,8 +1788,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 corp_num=corp_num,
                 office_type=office_type
             )
-            office_desc = (office_type.replace('O', ' O')).title()
-            return f'Change to the {office_desc}.'
+            return ''
 
         for office_type in filing.body.get('offices', []):
             Office.create_new_office(
