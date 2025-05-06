@@ -18,7 +18,6 @@ from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import List
-from urllib.parse import urljoin
 
 import jwt as pyjwt
 from flask import Response, current_app, request
@@ -544,7 +543,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         allowed_filings = get_allowed_filings(business, business.state, business.legal_type, jwt)
 
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    filing_submission_url = urljoin(base_url, f'{business.identifier}/filings')
+    filing_submission_url = f'{base_url}/{business.identifier}/filings'
 
     result = {
         'filing': {
