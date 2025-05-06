@@ -84,4 +84,4 @@ USER web
 FROM development_build AS production_build
 COPY --chown=web:web . /code
 
-CMD [ "python", "/code/src/future_effective_filings/file_future_effective.py" ]
+CMD [ "python", "/code/src/involuntary_dissolutions/involuntary_dissolutions.py" ]

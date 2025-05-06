@@ -21,7 +21,7 @@ import sqlalchemy
 from flask_migrate import Migrate, upgrade
 
 from business_model.models.db import db as _db
-from involuntary_dissolutions import create_app
+from involuntary_dissolutions.involuntary_dissolutions import create_app
 
 event = sqlalchemy.event
 text = sqlalchemy.text
