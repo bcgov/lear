@@ -38,7 +38,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     """Build the email for Involuntary dissolution notification."""
     current_app.logger.debug("involuntary_dissolution_stage_1_notification: %s", email_info)
     # get business
-    furnishing_id = email_info["data"]["furnishing"]["furnishingId"]
+    furnishing_id = email_info["furnishing"]["furnishingId"]
     furnishing = Furnishing.find_by_id(furnishing_id)
     business = furnishing.business
     business_identifier = business.identifier
@@ -106,7 +106,7 @@ def get_extra_provincials(response: dict):
 
 def post_process(email_msg: dict, status: str):
     """Update corresponding furnishings entry as PROCESSED or FAILED depending on notification status."""
-    furnishing_id = email_msg["data"]["furnishing"]["furnishingId"]
+    furnishing_id = email_msg["furnishing"]["furnishingId"]
     furnishing = Furnishing.find_by_id(furnishing_id)
     furnishing.status = status
     furnishing.processed_date = datetime.now(tz=UTC)

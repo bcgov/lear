@@ -34,7 +34,6 @@
 #
 """This Module processes simple cloud event messages for the emailer.
 """
-import json
 from http import HTTPStatus
 
 import requests
@@ -101,16 +100,13 @@ def worker():
 
         current_app.logger.info(f"received ce: {ce!s}")
 
-        email_msg = ce.data
-        current_app.logger.debug("Extracted email msg: %s", email_msg)
-
-        process_email(email_msg)
+        process_email(ce)
         return {}, HTTPStatus.OK
 
     # ruff: noqa: PGH004
     except QueueException as err:  # noqa B902; pylint: disable=W0703; :
         # Catch Exception so that any error is still caught and the message is removed from the queue
-        current_app.logger.error("Queue Error: %s", json.dumps(email_msg), exc_info=True)
+        current_app.logger.error("Queue Error: %s", ce, exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
     except (EmailException, Exception) as err:
@@ -154,13 +150,14 @@ def send_email(email: dict, token: str):
         raise EmailException("Unsuccessful response when sending email.") from None
 
 
-def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
+def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
     """Process the email contained in the submission."""
-    current_app.logger.debug("Attempting to process email: %s", email_msg)
+    etype = ce.type
+    email_msg = ce.data
+    current_app.logger.debug("Attempting to process email: %s", ce.data)
     token = AccountService.get_bearer_token()
-    etype = email_msg.get("type")
     if etype and etype == "bc.registry.names.request":
-        option = email_msg.get("data", {}).get("request", {}).get("option", None)
+        option = email_msg.get("request", {}).get("option", None)
         if option and option in [nr_notification.Option.BEFORE_EXPIRY.value,
                                  nr_notification.Option.EXPIRED.value,
                                  nr_notification.Option.RENEWAL.value,
@@ -179,7 +176,7 @@ def process_email(email_msg: dict):  # pylint: disable=too-many-branches, too-ma
         send_email(email, token)
     elif etype and etype == "bc.registry.dissolution":
         # Confirm the data.furnishingName
-        furnishing_name = email_msg.get("data", {}).get("furnishing", {}).get("furnishingName", None)
+        furnishing_name = email_msg.get("furnishing", {}).get("furnishingName", None)
         if furnishing_name \
             and furnishing_name in involuntary_dissolution_stage_1_notification.PROCESSABLE_FURNISHING_NAMES:
             email = involuntary_dissolution_stage_1_notification.process(email_msg, token)
