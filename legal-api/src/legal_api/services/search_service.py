@@ -16,14 +16,11 @@
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from http import HTTPStatus
-from flask import current_app
 from operator import and_
 from typing import Final, Optional
 
-from legal_api.core import filing
 from requests import Request
-from sqlalchemy import or_ , func
+from sqlalchemy import func
 
 from legal_api.models import (
     Business,
@@ -37,12 +34,12 @@ from legal_api.models.business import Business
 @dataclass
 class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
     """Used for filtering Identifiers based on filters passed."""
-    identifier: Optional[str] = None
-    status: Optional[List[str]] = None
-    name: Optional[str] = None
-    type: Optional[List[str]] = None
-    page: int = 1
-    limit: int = 100
+    identifier: Optional[str]
+    status: Optional[List[str]]
+    name: Optional[str]
+    type: Optional[List[str]]
+    page: int
+    limit: int
 
     @classmethod
     def from_request_args(cls, req: Request):
@@ -51,8 +48,8 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
             name = req.get('name', None),
             type = req.get('type', []),
             status = req.get('status', []),
-            page = int(req.get('page',1)),
-            limit = int(req.get('limit',100))
+            page = int(req.get('page', 1)),
+            limit = int(req.get('limit', 100000))
         )
 
 class BusinessSearchService:  # pylint: disable=too-many-public-methods
@@ -64,7 +61,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         Business.State.LIQUIDATION.value
     ]
 
-    
     FILINGS_ELIGIBLE_STATES: Final = [
         Filing.Status.APPROVED.value,
         Filing.Status.AWAITING_REVIEW.value,
@@ -78,24 +74,18 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
     #Reverse Mapping for Filing to get filing type from temp code coming as filter such as: ATMP >>  amalgamationApplication
     BUSINESS_TEMP_FILINGS_CORP_CODES: Final = {
-        Filing.FILINGS['amalgamationApplication']['temporaryCorpTypeCode']: Filing.FILINGS['amalgamationApplication']['name'],
-        Filing.FILINGS['continuationIn']['temporaryCorpTypeCode']: Filing.FILINGS['continuationIn']['name'],
-        Filing.FILINGS['incorporationApplication']['temporaryCorpTypeCode']: Filing.FILINGS['incorporationApplication']['name'],
-        Filing.FILINGS['registration']['temporaryCorpTypeCode']: Filing.FILINGS['registration']['name'],
+        details['temporaryCorpTypeCode']: details['name']
+        for key, details in Filing.FILINGS.items()
+        if key in {f.value for f in Filing.TempCorpFilingType}
     }
 
     # Function to check if codes belong in BUSINESS_TEMP_FILINGS_CORP_CODES
     @staticmethod
     def check_and_get_respective_values(codes):
-        result = {}
-        
-        for code in codes:
-            if code in BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES:
-                result[code] = BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES[code]
-            else:
-                result[code] = None
-        
-        return result
+        return {
+            code: BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES.get(code)
+            for code in codes
+        }
 
     @classmethod
     def separate_states_by_type(cls, states: List[str]) -> Tuple[List[str], List[str]]:
@@ -177,7 +167,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if not filters:
             return []
 
-        limit = min(_get('limit', 100), 100)
+        limit = _get('limit', 100)
         offset = ((_get('page', 1) - 1) * limit)
         bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
         bus_results = []
@@ -232,7 +222,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         ]
         
 
-        limit = min(_get('limit', 100), 100)
+        limit = _get('limit', 100)
         offset = ((_get('page', 1) - 1) * limit)
         draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
         draft_results = []
