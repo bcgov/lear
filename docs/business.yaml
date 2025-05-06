@@ -5516,8 +5516,8 @@ components:
         effectiveDate:
           type: string
           format: date-time
-          title: The date and time a filing should become valid and applied. Required for Change of Directors filing.
-          description: Date and time the filing is taking effect.
+          title: The date and time a filing should become valid and applied. 
+          description: Date and time the filing is taking effect. Required for Change of Directors filing.
         paymentToken:
           type: string
           title: A valid payment token for this filing against this business.
