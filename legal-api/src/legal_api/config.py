@@ -60,6 +60,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     SERVICE_NAME = 'legal-api'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+    DEPLOYMENT_PLATFORM = os.getenv('DEPLOYMENT_PLATFORM', 'OCP')
 
     LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
     COLIN_URL = os.getenv('COLIN_URL', '')
@@ -117,6 +118,18 @@ class _Config():  # pylint: disable=too-few-public-methods
     NATS_ENTITY_EVENT_SUBJECT = os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events')
     NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
     NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
+
+    # Pub/Sub
+    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
+    AUDIENCE = os.getenv(
+        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
+    )
+    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC")
+    BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC")
 
     # NAMEX PROXY Settings
     NAMEX_AUTH_SVC_URL = os.getenv('NAMEX_AUTH_SVC_URL', 'http://')
