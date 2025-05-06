@@ -57,7 +57,7 @@ def process( # noqa: PLR0912, PLR0915
             raise QueueException("code issue: msg is required for admin request")
 
         message_id = msg.get("id")
-        business_number = msg.get("data", {}).get("header", {}).get("businessNumber") or None
+        business_number = msg.get("header", {}).get("businessNumber") or None
     elif business.tax_id and len(business.tax_id) == 9:
         business_number = business.tax_id
 

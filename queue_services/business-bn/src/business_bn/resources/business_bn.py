@@ -81,27 +81,28 @@ def worker():
 
         current_app.logger.info(f"received ce: {ce!s}")
 
-        event_message = ce.data
-        current_app.logger.debug("Event Message Received: %s", event_message)
-        process_event(event_message)
+        process_event(ce)
         return {}, HTTPStatus.OK
 
     except OperationalError as err:
-        current_app.logger.error("Queue Blocked - Database Issue: %s", json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue Blocked - Database Issue: %s", json.dumps(ce), exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except BNException as err:
-        current_app.logger.error("Queue BN Issue: %s, %s", err, json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue BN Issue: %s, %s", err, json.dumps(ce), exc_info=True)
         raise err  # We don't want to handle the error, try again after sometime
     except BNRetryExceededException as err:
-        current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, json.dumps(ce), exc_info=True)
         raise err
     except (QueueException, Exception) as err:  # pylint: disable=broad-except
-        current_app.logger.error("Queue Error: %s, %s", err, json.dumps(event_message), exc_info=True)
+        current_app.logger.error("Queue Error: %s, %s", err, json.dumps(ce), exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
-def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-statements
+def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches,too-many-statements
     """Process CRA request."""
-    if not msg or msg.get("type") not in [
+    event_type = ce.type
+    msg = ce.data
+    msg["id"] = ce.id
+    if event_type not in [
         "bc.registry.business.registration",
         "bc.registry.business.changeOfRegistration",
         "bc.registry.business.correction",
@@ -111,7 +112,7 @@ def process_event(msg: dict):  # pylint: disable=too-many-branches,too-many-stat
     ]:
         return None
 
-    if msg["type"] == "bc.registry.admin.bn":
+    if event_type == "bc.registry.admin.bn":
         admin.process(msg)
         return
 

@@ -15,6 +15,7 @@
 import xml.etree.ElementTree as Et
 
 import pytest
+from simple_cloudevent import SimpleCloudEvent
 from business_model.models import RequestTracker
 
 from business_bn.bn_processors import bn_note
@@ -67,14 +68,16 @@ def test_change_of_registration(app, session, mocker, legal_type):
     mocker.patch('business_bn.bn_processors.change_of_registration.has_previous_address', return_value=True)
     mocker.patch('business_bn.bn_processors.change_of_registration.has_party_name_changed', return_value=True)
 
-    process_event({
-        'type': 'bc.registry.business.changeOfRegistration',
-        'data': {
-            'filing': {
-                'header': {'filingId': filing_id}
+    process_event(
+        SimpleCloudEvent(
+            type = 'bc.registry.business.changeOfRegistration',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
             }
-        }
-    })
+        )
+    )
 
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -149,14 +152,16 @@ def test_bn15_not_available_change_of_registration(app, session, mocker, legal_t
     mocker.patch('business_bn.bn_processors.change_of_registration.has_previous_address', return_value=True)
     mocker.patch('business_bn.bn_processors.change_of_registration.has_party_name_changed', return_value=True)
 
-    process_event({
-        'type': 'bc.registry.business.changeOfRegistration',
-        'data': {
-            'filing': {
-                'header': {'filingId': filing_id}
+    process_event(
+        SimpleCloudEvent(
+            type = 'bc.registry.business.changeOfRegistration',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
             }
-        }
-    })
+        )
+    )
 
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -237,14 +242,16 @@ def test_retry_change_of_registration(app, session, mocker, request_type, data):
 
     for _ in range(10):
         try:
-            process_event({
-                'type': 'bc.registry.business.changeOfRegistration',
-                'data': {
-                    'filing': {
-                        'header': {'filingId': filing_id}
+            process_event(
+                SimpleCloudEvent(
+                    type = 'bc.registry.business.changeOfRegistration',
+                    data = {
+                        'filing': {
+                            'header': {'filingId': filing_id}
+                        }
                     }
-                }
-            })
+                )
+            )
 
         except BNException:
             continue

@@ -16,6 +16,7 @@ import uuid
 import xml.etree.ElementTree as Et
 
 import pytest
+from simple_cloudevent import SimpleCloudEvent
 from business_model.models import Business, RequestTracker
 
 from business_bn.resources.business_bn import process_event
@@ -35,7 +36,7 @@ acknowledgement_response = """<?xml version="1.0"?>
     ('BN15', '993775204'),
     ('BN15', ''),
     ('BN15', None),
-    ('RESUBMIT_INFORM_CRA', None),
+    ('RESUBMIT_INFORM_CRA', None)
 ])
 def test_admin_bn15(app, session, mocker, request_type, business_number):
     """Test inform cra about new SP/GP registration."""
@@ -72,17 +73,19 @@ def test_admin_bn15(app, session, mocker, request_type, business_number):
     )
 
     business = Business.find_by_internal_id(business_id)
-    process_event({
-        'id': message_id,
-        'type': 'bc.registry.admin.bn',
-        'data': {
-            'header': {
-                'request': request_type,
-                'businessNumber': business_number
-            },
-            'business': {'identifier': business.identifier}
-        }
-    })
+    process_event(
+        SimpleCloudEvent(
+            id = message_id,
+            type = 'bc.registry.admin.bn',
+            data = {
+                'header': {
+                    'request': request_type,
+                    'businessNumber': business_number
+                },
+                'business': {'identifier': business.identifier}
+            }
+        )
+    )
 
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -136,17 +139,19 @@ def test_admin_resubmit(app, session, mocker, request_type, request_xml):
     mocker.patch('business_bn.bn_processors.admin.request_bn_hub', side_effect=side_effect)
 
     business = Business.find_by_internal_id(business_id)
-    process_event({
-        'id': message_id,
-        'type': 'bc.registry.admin.bn',
-        'data': {
-            'header': {
-                'request': f'RESUBMIT_{request_type.name}',
-                'businessNumber': None
-            },
-            'business': {'identifier': business.identifier}
-        }
-    })
+    process_event(
+        SimpleCloudEvent(
+            id = message_id,
+            type = 'bc.registry.admin.bn',
+            data = {
+                'header': {
+                    'request': f'RESUBMIT_{request_type.name}',
+                    'businessNumber': None
+                },
+                'business': {'identifier': business.identifier}
+            }
+        )
+    )
 
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,

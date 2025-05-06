@@ -24,13 +24,13 @@ from business_model.models import Business, RequestTracker
 
 def process(msg: dict):
     """Process admin actions."""
-    business = Business.find_by_identifier(msg["data"]["business"]["identifier"])
-    if msg["data"]["header"]["request"] == "BN15":
+    business = Business.find_by_identifier(msg["business"]["identifier"])
+    if msg["header"]["request"] == "BN15":
         registration.process(business, is_admin=True, msg=msg)
-    elif msg["data"]["header"]["request"] == "RESUBMIT_INFORM_CRA":
+    elif msg["header"]["request"] == "RESUBMIT_INFORM_CRA":
         # Keeping it separate due to the colin-api call to get BN15
         registration.process(business, is_admin=True, msg=msg, skip_build=True)
-    elif msg["data"]["header"]["request"] in [
+    elif msg["header"]["request"] in [
         "RESUBMIT_CHANGE_DELIVERY_ADDRESS",
         "RESUBMIT_CHANGE_MAILING_ADDRESS",
         "RESUBMIT_CHANGE_NAME",
@@ -38,7 +38,7 @@ def process(msg: dict):
         "RESUBMIT_CHANGE_PARTY",
     ]:
         message_id = msg.get("id")
-        request_type = msg["data"]["header"]["request"].replace("RESUBMIT_", "")
+        request_type = msg["header"]["request"].replace("RESUBMIT_", "")
         request_trackers = RequestTracker.find_by(
             business.id,
             RequestTracker.ServiceName.BN_HUB,
