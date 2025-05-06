@@ -1,0 +1,24 @@
+name: Business Filer CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "queue_services/business-filer/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./queue_services/business-filer
+
+jobs:
+  business-filer-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-filer"
+      working_directory: "./queue_services/business-filer"
+      codecov_flag: "business-filer"
