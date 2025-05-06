@@ -103,6 +103,10 @@ def format_offices_data(data: dict) -> list[dict]:
         # Note: only process RC, RG, LQ now (done in SQL)
         if (office_type := x['o_office_typ_cd']) not in office_mapping.keys():
             continue
+        # Skip ceased DS (it's only used for ceased custodian)
+        if office_type == 'DS' and x['o_end_event_id'] is not None:
+            continue
+
         office = copy.deepcopy(OFFICE)
         office['offices']['office_type'] = office_mapping[office_type]
 
@@ -136,15 +140,16 @@ def format_parties_data(data: dict) -> list[dict]:
         # Additional roles can be added here in the future
     }
 
-    df = pd.DataFrame(parties_data)
-    df['group_by_key'] = (df['partial_group_key'] + '_' + df['cp_party_typ_cd'] + '_' +
-                          df['cp_cessation_dt_str'].fillna('active'))
+    # Only officers use prev_party_id = 0, exclude them in prev_party_ids set
+    prev_party_ids = {x['cp_prev_party_id'] for x in parties_data \
+                      if x['cp_prev_party_id'] not in (None, Decimal('0'))}
 
     # Format party
-    grouped_parties = df.groupby('group_by_key')
-    for _, group in grouped_parties:
+    for party_info in parties_data:
+        # Skip if it's not the latest party
+        if party_info['cp_corp_party_id'] in prev_party_ids:
+            continue
         party = copy.deepcopy(PARTY)
-        party_info = group.iloc[0].to_dict()
         party['parties']['cp_full_name'] = party_info['cp_full_name']
         party['parties']['first_name'] = (party_info['cp_first_name'] or '').upper()
         party['parties']['middle_initial'] = (party_info['cp_middle_name'] or '').upper()
@@ -157,40 +162,40 @@ def format_parties_data(data: dict) -> list[dict]:
 
         # Format party role
         formatted_party_roles = party['party_roles']
-        for _, r in group.iterrows():
 
-            if (role_code := r['cp_party_typ_cd']) not in role_mapping.keys():
-                continue
+        if (role_code := party_info['cp_party_typ_cd']) not in role_mapping.keys():
+            continue
 
-            role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
+        role = role_mapping[role_code]  # Will raise KeyError if role_code not in mapping
 
-            party_role = copy.deepcopy(PARTY_ROLE)
-            party_role['role'] = role
+        party_role = copy.deepcopy(PARTY_ROLE)
+        party_role['role'] = role
 
-            appointment_date = None
-            if appointment_date := r['cp_appointment_dt_str']:
-                appointment_date = appointment_date + ' 00:00:00+00:00'
-            party_role['appointment_date'] = appointment_date
+        appointment_date = None
+        earliest_party_info = find_earliest_party(party_info, parties_data)
+        if appointment_date := earliest_party_info['cp_appointment_dt_str']:
+            appointment_date = appointment_date + ' 00:00:00+00:00'
+        party_role['appointment_date'] = appointment_date
 
-            cessation_date = None
-            if role_code == 'LIQ':
-                if end_event_date := r['cp_end_event_dt_str']:
-                    cessation_date = end_event_date + ' 00:00:00+00:00'
-            elif cessation_date := r['cp_cessation_dt_str']:
-                cessation_date = cessation_date + ' 00:00:00+00:00'
-            party_role['cessation_date'] = cessation_date
+        cessation_date = None
+        if role_code in ('LIQ', 'RCM', 'RCC'):
+            if end_event_date := party_info['cp_end_event_dt_str']:
+                cessation_date = end_event_date + ' 00:00:00+00:00'
+        elif cessation_date := party_info['cp_cessation_dt_str']:
+            cessation_date = cessation_date + ' 00:00:00+00:00'
+        party_role['cessation_date'] = cessation_date
 
-            formatted_party_roles.append(party_role)
+        formatted_party_roles.append(party_role)
 
         # Prepare to format party addresses 
         # Note: can be index 0
-        if (ma_index := group['cp_mailing_addr_id'].first_valid_index()) is not None:
-            mailing_addr_data = group.loc[ma_index].to_dict()
+        if party_info['cp_mailing_addr_id'] is not None:
+            mailing_addr_data = party_info
         else:
             mailing_addr_data = None
 
-        if (da_index := group['cp_delivery_addr_id'].first_valid_index()) is not None:
-            delivery_addr_data = group.loc[da_index].to_dict()
+        if party_info['cp_delivery_addr_id'] is not None:
+            delivery_addr_data = party_info
         else:
             delivery_addr_data = None
 
@@ -221,6 +226,16 @@ def format_parties_data(data: dict) -> list[dict]:
         formatted_parties.append(party)
 
     return formatted_parties
+
+
+def find_earliest_party(curr_party: dict, parties_data: list[dict]) -> dict:
+    prev_party = next(
+        (x for x in parties_data if x['cp_corp_party_id'] == curr_party['cp_prev_party_id']),
+        None
+    )
+    if not prev_party:
+        return curr_party
+    return find_earliest_party(prev_party, parties_data)
 
 
 def format_offices_held_data(data: dict) -> list[dict]:
