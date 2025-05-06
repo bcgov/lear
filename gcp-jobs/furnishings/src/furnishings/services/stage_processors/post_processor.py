@@ -14,7 +14,7 @@
 """Furnishings job processing rules after stage runs of involuntary dissolution."""
 import base64
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
 from typing import Final
@@ -158,13 +158,13 @@ class PostProcessor:
             for furnishing in furnishings:
                 if furnishing_group_id:
                     furnishing.furnishing_group_id = furnishing_group_id
-                    furnishing.processed_date = datetime.utcnow()
+                    furnishing.processed_date = datetime.now(UTC)
 
                 if notes:
                     furnishing.notes = notes
 
                 furnishing.status = funishing_status
-                furnishing.last_modified = datetime.utcnow()
+                furnishing.last_modified = datetime.now(UTC)
                 furnishing.save()
 
     def process(self):
