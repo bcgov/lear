@@ -142,7 +142,6 @@ from event e
    , corporation_cte c
 where c.corp_num = e.corp_num
   and event_typ_cd not in ('BNUPD','ADDLEDGR') --not doing anything
-  and event_id NOT in (select event_id from filing_user where user_id='BCOMPS')
 order by e.event_id desc;
 
 
