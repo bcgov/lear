@@ -85,16 +85,16 @@ def worker():
         return {}, HTTPStatus.OK
 
     except OperationalError as err:
-        current_app.logger.error("Queue Blocked - Database Issue: %s", json.dumps(ce), exc_info=True)
+        current_app.logger.error("Queue Blocked - Database Issue: %s", ce, exc_info=True)
         raise err  # We don't want to handle the error, as a DB down would drain the queue
     except BNException as err:
-        current_app.logger.error("Queue BN Issue: %s, %s", err, json.dumps(ce), exc_info=True)
+        current_app.logger.error("Queue BN Issue: %s, %s", err, ce, exc_info=True)
         raise err  # We don't want to handle the error, try again after sometime
     except BNRetryExceededException as err:
-        current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, json.dumps(ce), exc_info=True)
+        current_app.logger.error("Queue BN Retry Exceeded: %s, %s", err, ce, exc_info=True)
         raise err
     except (QueueException, Exception) as err:  # pylint: disable=broad-except
-        current_app.logger.error("Queue Error: %s, %s", err, json.dumps(ce), exc_info=True)
+        current_app.logger.error("Queue Error: %s, %s", err, ce, exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
 def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches,too-many-statements
