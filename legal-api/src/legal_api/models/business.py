@@ -283,7 +283,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
     jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
 
-
     @hybrid_property
     def identifier(self):
         """Return the unique business identifier."""

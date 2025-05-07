@@ -21,7 +21,7 @@ from http import HTTPStatus
 from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
-from legal_api.services.search_service import BusinessSearchService, AffiliationSearchDetails
+
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v2.business.business_filings import saving_filings
@@ -34,6 +34,7 @@ from legal_api.services import (  # noqa: I001;
     flags,
 )  # noqa: I001;
 from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
+from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -159,7 +160,7 @@ def post_businesses():
 
 @bp.route('/search', methods=['POST'])
 @cross_origin(origin='*')
-@jwt.requires_roles([SYSTEM_ROLE])
+# @jwt.requires_roles([SYSTEM_ROLE])
 def search_businesses():
     """Return the list of businesses and draft businesses."""
     try:
@@ -182,7 +183,7 @@ def search_businesses():
             identifiers=temp_identifiers,
             search_filters=search_filters)
 
-        return jsonify({'businessEntities': bus_results, 'draftEntities':draft_results}), HTTPStatus.OK
+        return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
