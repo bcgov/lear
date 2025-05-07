@@ -30,7 +30,7 @@ def process(email_info: dict) -> dict:
     """Build the email for Name Request notification."""
     current_app.logger.debug("NR_notification: %s", email_info)
     nr_number = email_info["identifier"]
-    payment_token = email_info.get("data", {}).get("request", {}).get("paymentToken", "")
+    payment_token = email_info.get("request", {}).get("paymentToken", "")
     template = Path(f'{current_app.config.get("TEMPLATE_PATH")}/NR-PAID.html').read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars

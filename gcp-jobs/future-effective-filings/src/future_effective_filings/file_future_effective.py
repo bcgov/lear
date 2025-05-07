@@ -15,7 +15,6 @@
 
 This module script is for putting filings with future effective dates on the entity filer queue.
 """
-import asyncio
 import os
 import uuid
 from datetime import UTC, datetime
@@ -72,6 +71,7 @@ def get_filing_ids(app: Flask):
     """Get filing id to process."""
     timeout = app.config["LEAR_SVC_TIMEOUT"]
     token = get_bearer_token(app, timeout)
+    app.logger.debug("Fetching from lear")
     response = requests.get(
         f'{app.config["LEAR_SVC_URL"]}/internal/filings/future_effective',
         headers={"Content-Type": "application/json",
@@ -81,10 +81,11 @@ def get_filing_ids(app: Flask):
         app.logger.error(f"Failed to collect filings from legal-api. \
             {response} {response.json()} {response.status_code}")
         raise Exception  # pylint: disable=broad-exception-raised;
+    app.logger.debug("Successfully fetched from lear")
     return response.json()
 
 
-async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
+def run(application: Flask):  # pylint: disable=redefined-outer-name
     """Run the methods for applying future effective filings."""
     
     with application.app_context():
@@ -93,6 +94,7 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
             if not (filing_ids := get_filing_ids(application)):
                 application.logger.debug("No filings found to apply.")
             for filing_id in filing_ids:
+                application.logger.debug(f"Attempting to place filing on Filer Queue with id {filing_id}")
                 msg = {"filingMessage": {"filingIdentifier": filing_id}}
                 ce = SimpleCloudEvent(
                     id=str(uuid.uuid4()),
@@ -110,8 +112,7 @@ async def run(loop, application: Flask):  # pylint: disable=redefined-outer-name
 if __name__ == "__main__":
     application = create_app()
     try:
-        event_loop = asyncio.get_event_loop()
-        event_loop.run_until_complete(run(event_loop, application))
+        run(application)
     except Exception as err:
         application.logger.error(err)
         raise err

@@ -132,6 +132,7 @@ class FilingInfo(Resource):
                     'agmLocationChange': json_data.get('agmLocationChange', None),
                     'alteration': json_data.get('alteration', None),
                     'amalgamationApplication': json_data.get('amalgamationApplication', None),
+                    'amalgamationOut': json_data.get('amalgamationOut', None),
                     'annualReport': json_data.get('annualReport', None),
                     'changeOfAddress': json_data.get('changeOfAddress', None),
                     'changeOfDirectors': json_data.get('changeOfDirectors', None),

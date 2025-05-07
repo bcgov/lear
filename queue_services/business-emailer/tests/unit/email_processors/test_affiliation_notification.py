@@ -30,13 +30,9 @@ def test_notifications(app, session):
     with patch.object(affiliation_notification, 'get_recipients', return_value=testing_email):
         email = affiliation_notification.process(
             {
-                'data': {
-                        'filing': {
-                            'header': {'filingId': filing.id}
-                        }
-                },
-                'type': 'bc.registry.affiliation',
-                'identifier': 'BC1234567'
+                'filing': {
+                    'header': {'filingId': filing.id}
+                }
             },
             token
         )

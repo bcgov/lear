@@ -64,6 +64,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         ACTIVE = 'ACT'
         ADMINISTRATIVE_DISSOLUTION = 'HDA'
         AMALGAMATED = 'HAM'
+        AMALGAMATE_OUT = 'HAO'
         CONTINUE_IN = 'HCI'
         CONTINUE_OUT = 'HCO'
         INVOLUNTARY_DISSOLUTION_NO_AR = 'HDF'  # this corp state is also used for Put back off

@@ -77,8 +77,8 @@ def process_bn_move(email_msg: dict, token: str) -> dict:
     html_out = jnja_template.render(
         business=business.json(),
         entityDescription=corp_type.full_desc if corp_type else "",
-        old_bn=email_msg["data"]["oldBn"],
-        new_bn=email_msg["data"]["newBn"]
+        old_bn=email_msg["oldBn"],
+        new_bn=email_msg["newBn"]
     )
 
     recipients = []

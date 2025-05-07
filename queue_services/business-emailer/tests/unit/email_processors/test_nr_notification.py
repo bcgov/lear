@@ -56,16 +56,11 @@ def test_nr_notification(app, session, option, nr_number, subject, expiration_da
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response) \
             as mock_query_nr_number:
         email = nr_notification.process({
-            'id': '123456789',
-            'type': 'bc.registry.names.request',
-            'source': f'/requests/{nr_number}',
             'identifier': nr_number,
-            'data': {
-                'request': {
-                    'nrNum': nr_number,
-                    'option': option,
-                    'refundValue': refund_value
-                }
+            'request': {
+                'nrNum': nr_number,
+                'option': option,
+                'refundValue': refund_value
             }
         }, option)
 

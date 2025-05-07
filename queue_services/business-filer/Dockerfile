@@ -15,7 +15,7 @@ LABEL org.label-schema.vcs-ref=${VCS_REF} \
 LABEL maintainer="thorwolpert"
 LABEL vendor="BCROS"
 
-ARG APP_ENV \
+ARG APP_ENV="production" \
   # Needed for fixing permissions of files created by Docker:
   UID=1000 \
   GID=1000
