@@ -133,14 +133,10 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                                identifiers=None,
                                                search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
-
-        def _get(attr, default):
-            return getattr(search_filters, attr, default) if search_filters else default
-
-        name = _get('name', None)  # pylint: disable=too-many-locals
-        types = _get('type', [])
-        statuses = _get('status', [])
-        identifier = _get('identifier', None)
+        name = search_filters.name
+        types = search_filters.type
+        statuses = search_filters.status
+        identifier = search_filters.identifier
 
         valid_types, _ = BusinessSearchService.separate_legal_types(types or [])
 
@@ -171,8 +167,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if not filters:
             return []
 
-        limit = _get('limit', 100)
-        offset = (_get('page', 1) - 1) * limit
+        limit = search_filters.limit or 100
+        offset = ((search_filters.page or 1) - 1) * limit
         bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
         bus_results = []
         for business in bus_query.all():
@@ -193,15 +189,10 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                             identifiers=None,
                                             search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
-        def _get(attr, default):
-            return (
-                getattr(search_filters, attr, default)
-                if search_filters else default)
-
-        name = _get('name', None)
-        types = _get('type', [])
-        statuses = _get('status', [])
-        identifier = _get('identifier', None)
+        name = search_filters.name
+        types = search_filters.type
+        statuses = search_filters.status
+        identifier = search_filters.identifier
 
         _, valid_types = BusinessSearchService.separate_legal_types(types or [])
 
@@ -238,8 +229,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             ] if expr is not None
         ]
 
-        limit = _get('limit', 100)
-        offset = (_get('page', 1) - 1) * limit
+        limit = search_filters.limit or 100
+        offset = ((search_filters.page or 1) - 1) * limit
         draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
