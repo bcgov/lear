@@ -16,16 +16,14 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 from contextlib import suppress
-from datetime import datetime, timezone
 from http import HTTPStatus
 
 from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
-from sqlalchemy import and_
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap, db
+from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
@@ -36,6 +34,7 @@ from legal_api.services import (  # noqa: I001;
     flags,
 )  # noqa: I001;
 from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
+from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -167,54 +166,25 @@ def search_businesses():
     try:
         json_input = request.get_json()
         identifiers = json_input.get('identifiers', None)
+        temp_identifiers = []
+        business_identifiers = []
         if not identifiers or not isinstance(identifiers, list):
             return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
 
-        # base business query
-        bus_query = db.session.query(Business).filter(Business._identifier.in_(identifiers))  # noqa: E501; pylint: disable=protected-access
-
-        # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
-        draft_query = db.session.query(Filing).filter(
-            and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None)))
-
-        bus_results = []
-
-        # SBC-AUTH only uses alternateNames for SP and GP at the moment
-        # we are not returning alternateNames for non-firms due to performance issues
-        for business in bus_query.all():
-            business_json = business.json(slim=True)
-            # add alternateNames array to slim json only to firms
-            if business.legal_type in (Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP):
-                business_json['alternateNames'] = business.get_alternate_names()
-            bus_results.append(business_json)
-
-        draft_results = []
-        for draft_dao in draft_query.all():
-            draft = {
-                'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
-                'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
-                'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
-                'draftStatus': draft_dao.status
-            }
-
-            if (draft_dao.status == Filing.Status.PAID.value and
-                    draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
-                draft['effectiveDate'] = draft_dao.effective_date.isoformat()
-
-            if draft_dao.json_nr:
-                draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
-            # Retrieves the legal name from the filing JSON. Defaults to None if not found.
-            draft['legalName'] = (draft_dao.filing_json.get('filing', {})
-                                  .get(draft_dao.filing_type, {})
-                                  .get('nameRequest', {})
-                                  .get('legalName'))
-
-            if draft['legalName'] is None:
-                # Fallback to a generic legal name based on the legal type if no specific legal name is found
-                draft['legalName'] = (Business.BUSINESSES
-                                      .get(draft_dao.json_legal_type, {})
-                                      .get('numberedDescription'))
-            draft_results.append(draft)
+        for identifier in identifiers:
+            if identifier.startswith('T'):
+                temp_identifiers.append(identifier)
+            else:
+                business_identifiers.append(identifier)
+        search_filters = AffiliationSearchDetails.from_request_args(json_input)
+        bus_results = BusinessSearchService.get_search_filtered_businesses_results(
+            business_json=json_input,
+            identifiers=business_identifiers,
+            search_filters=search_filters)
+        draft_results = BusinessSearchService.get_search_filtered_filings_results(
+            business_json=json_input,
+            identifiers=temp_identifiers,
+            search_filters=search_filters)
 
         return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
     except Exception as err:

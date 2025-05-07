@@ -40,6 +40,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     Manages the filing ledger for the associated business.
     """
 
+    class TempCorpFilingType(str, Enum):
+        """Render enum of temporary corporation filing types."""
+
+        AMALGAMATION = 'amalgamationApplication'
+        CONTINUATION_IN = 'continuationIn'
+        INCORPORATION = 'incorporationApplication'
+        REGISTRATION = 'registration'
+
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
