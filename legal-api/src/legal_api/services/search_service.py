@@ -72,9 +72,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     # Reverse Mapping for Filing to get filing type from
     # Temp code coming as filter such as: ATMP >>  amalgamationApplication
     BUSINESS_TEMP_FILINGS_CORP_CODES: Final = {
-        details['temporaryCorpTypeCode']: details['name']
-        for key, details in Filing.FILINGS.items()
-        if key in {f.value for f in Filing.TempCorpFilingType}
+        Filing.FILINGS[filing_type.value]['temporaryCorpTypeCode']: Filing.FILINGS[filing_type.value]['name']
+        for filing_type in Filing.TempCorpFilingType
     }
 
     @staticmethod
