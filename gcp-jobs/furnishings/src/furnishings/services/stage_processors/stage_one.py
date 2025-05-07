@@ -156,7 +156,7 @@ class StageOneProcessor:
         for furnishing in furnishings_list:
             furnishing.notes = furnishing_notes
             furnishing.status = funishing_status
-            furnishing.processed_date = datetime.utcnow()
+            furnishing.processed_date = datetime.now(UTC)
             furnishing.save()
 
     def process_paper_letters(self):
@@ -262,7 +262,7 @@ class StageOneProcessor:
         if not eligible_details:
             return
 
-        business = Business.find_by_identifier(batch_processing.business_identifier)
+        business: Business = Business.find_by_identifier(batch_processing.business_identifier)
         new_furnishing = self._create_new_furnishing(
             batch_processing,
             eligible_details,
@@ -317,8 +317,8 @@ class StageOneProcessor:
             batch_id=batch_processing.batch_id,
             business_id=batch_processing.business_id,
             business_identifier=batch_processing.business_identifier,
-            created_date=datetime.utcnow(),
-            last_modified=datetime.utcnow(),
+            created_date=datetime.now(UTC),
+            last_modified=datetime.now(UTC),
             status=Furnishing.FurnishingStatus.QUEUED,
             furnishing_group_id=furnishing_group_id,
             last_ar_date=last_ar_date,
@@ -349,7 +349,6 @@ class StageOneProcessor:
     def _send_email(self, furnishing: Furnishing):
         """Put email message on the queue for all email furnishing entries."""
         try:
-            # TODO: update this
             topic = self._app.config["BUSINESS_EMAILER_TOPIC"]
             ce = SimpleCloudEvent(
                 id=str(uuid.uuid4()),
@@ -357,7 +356,7 @@ class StageOneProcessor:
                 subject="filing",
                 time=datetime.now(UTC),
                 type="bc.registry.dissolution",
-                data = {
+                data={
                     "furnishing": {
                         "type": "INVOLUNTARY_DISSOLUTION",
                         "furnishingId": furnishing.id,

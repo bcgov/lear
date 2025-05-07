@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Furnishings job processing rules for stage three of involuntary dissolution."""
-from datetime import datetime
+from datetime import UTC, datetime
 
 from flask import current_app
 from sqlalchemy import exists, not_
@@ -53,7 +53,7 @@ def process(xml_furnishings: dict):
         ep_furnishings = []
 
         for batch_processing in batch_processings:
-            business = batch_processing.business
+            business: Business = batch_processing.business
             furnishing_name = (
                 Furnishing.FurnishingName.CORP_DISSOLVED_XPRO
                 if business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value
@@ -65,8 +65,8 @@ def process(xml_furnishings: dict):
                 batch_id=batch_processing.batch_id,
                 business_id=batch_processing.business_id,
                 business_identifier=batch_processing.business_identifier,
-                created_date=datetime.utcnow(),
-                last_modified=datetime.utcnow(),
+                created_date=datetime.now(UTC),
+                last_modified=datetime.now(UTC),
                 status=Furnishing.FurnishingStatus.QUEUED,
                 business_name=business.legal_name
             )

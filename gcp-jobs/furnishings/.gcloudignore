@@ -10,3 +10,4 @@ devops
 manage.py
 migrations
 tests
+sa-secret
