@@ -22,9 +22,8 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
 from flask_cors import cross_origin
 from legal_api.services.search_service import BusinessSearchService, AffiliationSearchDetails
-from legal_api.models.business import Business
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap, db
+from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,
@@ -182,7 +181,7 @@ def search_businesses():
             business_json=json_input,
             identifiers=temp_identifiers,
             search_filters=search_filters)
-        
+
         return jsonify({'businessEntities': bus_results, 'draftEntities':draft_results}), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)

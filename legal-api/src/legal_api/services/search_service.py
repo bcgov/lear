@@ -17,7 +17,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from operator import and_
-from typing import Final, Optional
+from typing import Final, Optional, List, Tuple
 
 from requests import Request
 from sqlalchemy import func
@@ -27,9 +27,6 @@ from legal_api.models import (
     Filing,
     db,
 )
-from typing import List, Tuple
-
-from legal_api.models.business import Business
 
 @dataclass
 class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
@@ -43,6 +40,7 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def from_request_args(cls, req: Request):
+        """Used for getting filters passed."""
         return cls(
             identifier = req.get('identifier', None),
             name = req.get('name', None),
@@ -79,9 +77,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if key in {f.value for f in Filing.TempCorpFilingType}
     }
 
-    # Function to check if codes belong in BUSINESS_TEMP_FILINGS_CORP_CODES
     @staticmethod
     def check_and_get_respective_values(codes):
+        """Function to check if codes belong in BUSINESS_TEMP_FILINGS_CORP_CODES"""
         return {
             code: BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES.get(code)
             for code in codes
@@ -114,12 +112,15 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def try_parse_legal_type(legal_type: str) -> bool:
+        """
+        Function to check if legal type exists in Business.LegalTypes
+        """
         try:
             Business.LegalTypes(legal_type)
             return True
         except ValueError:
             return False
-        
+
     @staticmethod
     def separate_legal_types(legal_types: List[str]) -> Tuple[List[str], List[str]]:
         """
@@ -130,25 +131,26 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         valid_types = [t for t in input_normalized if BusinessSearchService.try_parse_legal_type(t)]
         invalid_types = [t for t in input_normalized if not BusinessSearchService.try_parse_legal_type(t)]
         return valid_types, invalid_types
-    
+
+    # pylint: disable=too-many-locals
     @staticmethod
     def get_search_filtered_businesses_results(business_json, identifiers=None, search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
 
         def _get(attr, default):
             return getattr(search_filters, attr, default) if search_filters else default
- 
-        name = _get('name', None)
+
+        name = _get('name', None) # pylint: disable=too-many-locals
         types = _get('type', [])
         statuses = _get('status', [])
         identifier = _get('identifier', None)
-        
+
         valid_types, _ = BusinessSearchService.separate_legal_types(types or [])
 
-        #edge case: if type searched for doesnt belong to table business such as 'ATMP' Returns early
+        # Edge case: if type searched for doesnt belong to table business such as 'ATMP' Returns early
         if types and not valid_types:
             return []
-        
+
         states, _ = BusinessSearchService.separate_states_by_type(statuses or [])
 
         # If status was provided but none of them are valid, return no results
@@ -156,9 +158,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return []
         filters = [
             expr for expr in [
-                Business._identifier.in_(identifiers) if identifiers else None,
-                Business._identifier.ilike(f'%{identifier}%') if identifier else None,
-                Business.legal_name.ilike(f'%{name}%') if name else None,
+                Business._identifier.in_(identifiers) if identifiers else None, # pylint: disable=protected-access
+                Business._identifier.ilike(f'%{identifier}%') if identifier else None, # pylint: disable=protected-access
+                Business.legal_name.ilike(f'%{name}%') if name else None, # pylint: disable=protected-access
                 Business.legal_type.in_(valid_types) if valid_types else None,
                 Business.state.in_(states) if states else None
             ] if expr is not None
@@ -168,7 +170,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return []
 
         limit = _get('limit', 100)
-        offset = ((_get('page', 1) - 1) * limit)
+        offset = (_get('page', 1) - 1) * limit
         bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
         bus_results = []
         for business in bus_query.all():
@@ -182,13 +184,14 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
             bus_results.append(business_json)
         return bus_results
-    
+
+    # pylint: disable=too-many-locals
     @staticmethod
     def get_search_filtered_filings_results(business_json, identifiers=None, search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
         def _get(attr, default):
             return getattr(search_filters, attr, default) if search_filters else default
- 
+
         name = _get('name', None)
         types = _get('type', [])
         statuses = _get('status', [])
@@ -199,31 +202,31 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         #edge case: if type searched for doesnt belong to table filings such as 'bc' Returns early
         if types and not valid_types:
             return []
-        
+
         _, filing_states = BusinessSearchService.separate_states_by_type(statuses or [])
         # If status was provided but none of them are valid, return no results
         if statuses and not filing_states:
             return []
-    
+
         # Retrieve the corresponding filing name using the BUSINESS_TEMP_FILINGS_CORP_CODES mapping
         filing_name = [filing_names for filing_names in BusinessSearchService.check_and_get_respective_values(valid_types).values() if filing_names is not None]
-        
+
         filters = [
             expr for expr in [
                 and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
                 if isinstance(identifiers, list) and identifiers else None,
                 Filing.temp_reg.ilike(f'%{identifier}%') if identifier else None,
-                Filing._status.in_(filing_states) if filing_states else None,
-                Filing._filing_type.in_(filing_name) if filing_name else None,
+                Filing._status.in_(filing_states) if filing_states else None, # pylint: disable=protected-access
+                Filing._filing_type.in_(filing_name) if filing_name else None, # pylint: disable=protected-access
                 func.jsonb_extract_path_text(
-                    Filing._filing_json, 'filing', Filing._filing_type, 'nameRequest', 'legalName'
+                    Filing._filing_json, 'filing', Filing._filing_type, 'nameRequest', 'legalName' # pylint: disable=protected-access
                 ).ilike(f'%{name}%') if name else None
             ] if expr is not None
         ]
-        
+
 
         limit = _get('limit', 100)
-        offset = ((_get('page', 1) - 1) * limit)
+        offset = (_get('page', 1) - 1) * limit
         draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
@@ -254,5 +257,5 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                             .get(draft_dao.json_legal_type, {})
                                             .get('numberedDescription'))
                 draft_results.append(draft)
-        
+
         return draft_results
