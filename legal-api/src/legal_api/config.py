@@ -203,6 +203,15 @@ class _Config:  # pylint: disable=too-few-public-methods
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-bn")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", "business-bn-emailer")
 
+    # NATS / STAN
+    NATS_SERVERS = os.getenv("NATS_SERVERS")
+    NATS_CLIENT_NAME = os.getenv("NATS_CLIENT_NAME", "entity.legal_api")
+    NATS_CLUSTER_ID = os.getenv("NATS_CLUSTER_ID", "test-cluster")
+    NATS_FILER_SUBJECT = os.getenv("NATS_FILER_SUBJECT", "entity.filing.filer")
+    NATS_ENTITY_EVENT_SUBJECT = os.getenv("NATS_ENTITY_EVENT_SUBJECT", "entity.events")
+    NATS_EMAILER_SUBJECT = os.getenv("NATS_EMAILER_SUBJECT", "entity.email")
+    NATS_QUEUE = os.getenv("NATS_QUEUE", "entity-filer-worker")
+
     TESTING = False
     DEBUG = False
 
