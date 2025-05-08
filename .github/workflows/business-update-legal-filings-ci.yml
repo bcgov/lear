@@ -1,8 +1,11 @@
-name: GCP Update Legal Filings CI
+name: Business Update Legal Filings Job CI
 
 on:
   pull_request:
-    types: [assigned, synchronize]
+    branches:
+      - main
+      - feature*
+      - hotfix*
     paths:
       - "gcp-jobs/update-legal-filings/**"
   workflow_dispatch:
@@ -13,9 +16,9 @@ defaults:
     working-directory: ./gcp-jobs/update-legal-filings
 
 jobs:
-  update-legal-filings-ci:
+  business-update-legal-filings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
-      app_name: "update-legal-filings"
+      app_name: "business-update-legal-filings"
       working_directory: "./gcp-jobs/update-legal-filings"
-      codecov_flag: "update-legal-filings"
+      codecov_flag: "business-update-legal-filings"

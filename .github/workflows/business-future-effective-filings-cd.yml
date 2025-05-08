@@ -3,9 +3,11 @@ name: Business Future Effective Filings Job CD
 on:
   push:
     branches:
-      - feature-legal-name
+      - main
+      - feature*
+      - hotfix*
     paths:
-      - "./jobs/future-effective-filings/**"
+      - "./gcp-jobs/future-effective-filings/**"
   workflow_dispatch:
     inputs:
       target:
@@ -13,18 +15,26 @@ on:
         required: true
         type: choice
         options:
-        - dev
-        - test
-        - sandbox
-        - prod
+          - "dev"
+          - "test"
+          - "sandbox"
+          - "prod"
+      redeploy:
+        description: "Redeploy Application"
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   business-future-effective-filings-cd:
-    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-job-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-job-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-future-effective-filings"
-      working_directory: "./jobs/future-effective-filings"
+      working_directory: "./gcp-jobs/future-effective-filings"
+      redeploy: ${{ inputs.redeploy }}
     secrets:
       WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

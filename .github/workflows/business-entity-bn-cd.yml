@@ -1,4 +1,4 @@
-name: Business Update Legal Filings Job CD
+name: Business Entity BN Job CD
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/update-legal-filings/**"
+      - "./gcp-jobs/entity-bn/**"
   workflow_dispatch:
     inputs:
       target:
@@ -28,12 +28,12 @@ on:
           - "true"
 
 jobs:
-  business-update-legal-filings-cd:
+  business-entity-bn-cd:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-job-cd.yaml@main
     with:
       target: ${{ inputs.target }}
-      app_name: "business-update-legal-filings"
-      working_directory: "./gcp-jobs/update-legal-filings"
+      app_name: "business-entity-bn"
+      working_directory: "./gcp-jobs/entity-bn"
       redeploy: ${{ inputs.redeploy }}
     secrets:
       WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}

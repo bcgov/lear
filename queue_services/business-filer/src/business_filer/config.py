@@ -70,7 +70,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
 
     NAMEX_API = os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION", "")
+    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")

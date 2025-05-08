@@ -2,7 +2,10 @@ name: GCP Future Effective Filings CI
 
 on:
   pull_request:
-    types: [assigned, synchronize]
+    branches:
+      - main
+      - feature*
+      - hotfix*
     paths:
       - "gcp-jobs/future-effective-filings/**"
   workflow_dispatch:
@@ -13,9 +16,9 @@ defaults:
     working-directory: ./gcp-jobs/future-effective-filings
 
 jobs:
-  furnishings-ci:
+  business-future-effective-filings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
-      app_name: "future-effective-filings"
+      app_name: "business-future-effective-filings"
       working_directory: "./gcp-jobs/future-effective-filings"
-      codecov_flag: "future-effective-filings"
+      codecov_flag: "business-future-effective-filings"

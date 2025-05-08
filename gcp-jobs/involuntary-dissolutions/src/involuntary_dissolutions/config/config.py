@@ -23,7 +23,7 @@ CONFIGURATION = {
     "development": ".config.DevConfig",
     "testing": ".config.TestConfig",
     "production": ".config.ProdConfig",
-    "default": ".config.ProdConfig"
+    "default": ".config.ProdConfig",
 }
 
 
@@ -48,9 +48,6 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
 
-    CLIENT_NAME = os.getenv("CLIENT_NAME", "involuntary-dissolutions-job")
-    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC")
-
     SECRET_KEY = "a secret"
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -70,12 +67,10 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
-    AUDIENCE = os.getenv(
-        "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
-    )
-    PUBLISHER_AUDIENCE = os.getenv(
-        "PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher"
-    )
+    AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
+    PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
+    CLIENT_NAME = os.getenv("CLIENT_NAME", "involuntary-dissolutions-job")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC")
 
     TESTING = False
     DEBUG = False
