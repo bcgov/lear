@@ -1,0 +1,24 @@
+name: Business Update Legal Filings Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/update-legal-filings/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/update-legal-filings
+
+jobs:
+  business-update-legal-filings-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-update-legal-filings"
+      working_directory: "./gcp-jobs/update-legal-filings"
+      codecov_flag: "business-update-legal-filings"

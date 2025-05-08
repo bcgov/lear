@@ -2,8 +2,13 @@
   <div class="no-page-break">
     <div class="section-title mt-4">BC Benefit Company Statement</div>
     <div class="section-data mt-4">
+      {% if enable_new_ben_statements %}
+          This company is a benefit company and, as such, is committed to conducting its
+          business in a responsible and sustainable manner and promoting one or more public benefits.
+      {% else %}
         This company is a benefit company and, as such, has purposes that include conducting its
         business in a responsible and sustainable manner and promoting one or more public benefits.
+      {% endif %} 
     </div>
   </div>
 {% elif newLegalType in ['CC', 'CCC'] %}

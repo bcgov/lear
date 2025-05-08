@@ -19,6 +19,7 @@ All modules and lookups get their configuration from the
 Flask config, rather than reading environment variables directly
 or by accessing this configuration directly.
 """
+
 import os
 
 from dotenv import find_dotenv, load_dotenv
@@ -30,7 +31,7 @@ CONFIGURATION = {
     "development": "legal_api.config.DevConfig",
     "testing": "legal_api.config.TestConfig",
     "production": "legal_api.config.ProdConfig",
-    "default": "legal_api.config.ProdConfig"
+    "default": "legal_api.config.ProdConfig",
 }
 
 
@@ -60,7 +61,7 @@ class Config:  # pylint: disable=too-few-public-methods
     SERVICE_NAME = "emailer"
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    FLASK_ENV = os.getenv("FLASK_ENV", "production") # used for setting up flags.py
+    FLASK_ENV = os.getenv("FLASK_ENV", "production")  # used for setting up flags.py
 
     MSG_RETRY_NUM = int(os.getenv("MSG_RETRY_NUM", "5"))
 
@@ -69,28 +70,35 @@ class Config:  # pylint: disable=too-few-public-methods
     # urls
     DASHBOARD_URL = os.getenv("DASHBOARD_URL", None)
     AUTH_WEB_URL = os.getenv("AUTH_WEB_URL", None)
-    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "") + os.getenv("NOTIFY_API_VERSION", "") + "/notify/"
-    LEGAL_API_URL = os.getenv("LEGAL_API_URL", "") + os.getenv("LEGAL_API_VERSION_2", "")
-    PAY_API_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "") + "/payment-requests"
-    AUTH_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
-
-    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
-    # secrets
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
+    NAME_REQUEST_URL = os.getenv("NAME_REQUEST_URL", "")
+    DECIDE_BUSINESS_URL = os.getenv("DECIDE_BUSINESS_URL", "")
+    COLIN_URL = os.getenv("COLIN_URL", "")
+    CORP_FORMS_URL = os.getenv("CORP_FORMS_URL", "")
+    SOCIETIES_URL = os.getenv("SOCIETIES_URL", "")
+    
+    # service accounts
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
+    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT", "20")
+    NAMEX_SVC_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
+    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv("NAMEX_SERVICE_CLIENT_USERNAME", None)
+    NAMEX_SERVICE_CLIENT_SECRET = os.getenv("NAMEX_SERVICE_CLIENT_SECRET", None)
 
     # variables
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
     TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
 
-    #GCP
+    # GCP
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
 
-    NAMEX_AUTH_SVC_URL =  os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
-    NAMEX_SVC_URL = os.getenv("NAMEX_SVC_URL", None)
-    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv("NAMEX_SERVICE_CLIENT_USERNAME", None)
-    NAMEX_SERVICE_CLIENT_SECRET = os.getenv("NAMEX_SERVICE_CLIENT_SECRET", None)
+    # API URLs
+    NAMEX_AUTH_SVC_URL = os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
+    NOTIFY_API_URL = os.getenv("NOTIFY_API_URL", "") + os.getenv("NOTIFY_API_VERSION", "") + "/notify/"
+    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
+    PAY_API_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "") + "/payment-requests"
+    AUTH_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
 
     # POSTGRESQL
     DB_USER = os.getenv("DATABASE_USERNAME", "")
@@ -102,12 +110,6 @@ class Config:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
     else:
         SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
-    NAME_REQUEST_URL = os.getenv("NAME_REQUEST_URL", "")
-    DECIDE_BUSINESS_URL = os.getenv("DECIDE_BUSINESS_URL", "")
-    COLIN_URL = os.getenv("COLIN_URL", "")
-    CORP_FORMS_URL = os.getenv("CORP_FORMS_URL", "")
-    SOCIETIES_URL = os.getenv("SOCIETIES_URL", "")
 
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
@@ -137,6 +139,7 @@ class TestConfig(Config):  # pylint: disable=too-few-public-methods
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
     TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "src/business_emailer/email_templates")
     DASHBOARD_URL = os.getenv("DASHBOARD_URL", "https://dev.bcregistry.ca/businesses/")
+
 
 class ProdConfig(Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""

@@ -15,6 +15,7 @@
 import xml.etree.ElementTree as Et
 
 import pytest
+from simple_cloudevent import SimpleCloudEvent
 from business_model.models import RequestTracker
 
 from business_bn.bn_processors import bn_note
@@ -64,14 +65,16 @@ def test_change_of_status(app, session, mocker, legal_type, filing_type):
 
     mocker.patch('business_bn.bn_processors.dissolution_or_put_back_on.request_bn_hub', side_effect=side_effect)
 
-    process_event({
-        'type': f'bc.registry.business.{filing_type}',
-        'data': {
-            'filing': {
-                'header': {'filingId': filing_id}
+    process_event(
+        SimpleCloudEvent(
+            type = f'bc.registry.business.{filing_type}',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
             }
-        }
-    })
+        )
+    )
 
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -120,14 +123,16 @@ def test_bn15_not_available_change_of_status(app, session, mocker, legal_type, f
     filing.save()
     filing_id = filing.id
 
-    process_event({
-        'type': f'bc.registry.business.{filing_type}',
-        'data': {
-            'filing': {
-                'header': {'filingId': filing_id}
+    process_event(
+        SimpleCloudEvent(
+            type = f'bc.registry.business.{filing_type}',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
             }
-        }
-    })
+        )
+    )
 
     request_trackers = RequestTracker.find_by(business_id,
                                               RequestTracker.ServiceName.BN_HUB,
@@ -162,14 +167,16 @@ def test_retry_change_of_status(app, session, mocker):
 
     for _ in range(10):
         try:
-            process_event({
-                'type': 'bc.registry.business.dissolution',
-                'data': {
-                    'filing': {
-                        'header': {'filingId': filing_id}
+            process_event(
+                SimpleCloudEvent(
+                    type = 'bc.registry.business.dissolution',
+                    data = {
+                        'filing': {
+                            'header': {'filingId': filing_id}
+                        }
                     }
-                }
-            })
+                )
+            )
 
         except BNException:
             continue

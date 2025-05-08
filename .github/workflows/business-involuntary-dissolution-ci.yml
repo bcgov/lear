@@ -1,0 +1,24 @@
+name: Business Involuntary Dissolutions Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/involuntary-dissolutions/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/involuntary-dissolutions
+
+jobs:
+  business-involuntary-dissolutions-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-involuntary-dissolutions"
+      working_directory: "./gcp-jobs/involuntary-dissolutions"
+      codecov_flag: "business-involuntary-dissolutions"

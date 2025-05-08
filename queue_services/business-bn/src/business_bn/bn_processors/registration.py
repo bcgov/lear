@@ -50,6 +50,7 @@ def process( # noqa: PLR0912, PLR0915
 ):
     """Process the incoming registration request."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
+    skip_bn_hub_request = current_app.config.get("SKIP_BN_HUB_REQUEST", False)
 
     message_id, business_number = None, None
     if is_admin:
@@ -57,7 +58,7 @@ def process( # noqa: PLR0912, PLR0915
             raise QueueException("code issue: msg is required for admin request")
 
         message_id = msg.get("id")
-        business_number = msg.get("data", {}).get("header", {}).get("businessNumber") or None
+        business_number = msg.get("header", {}).get("businessNumber") or None
     elif business.tax_id and len(business.tax_id) == 9:
         business_number = business.tax_id
 
@@ -79,22 +80,23 @@ def process( # noqa: PLR0912, PLR0915
 
     _inform_cra(business, inform_cra_tracker, business_number, skip_build)
 
-    if not inform_cra_tracker.is_processed:
-        if skip_build:
-            return  # No retry for resubmit admin request
+    if not skip_bn_hub_request:
+        if not inform_cra_tracker.is_processed:
+            if skip_build:
+                return  # No retry for resubmit admin request
 
-        if inform_cra_tracker.retry_number < max_retry:
-            raise BNException(
-                f"Retry number: {inform_cra_tracker.retry_number + 1}"
-                + f" for {business.identifier}, TrackerId: {inform_cra_tracker.id}."
+            if inform_cra_tracker.retry_number < max_retry:
+                raise BNException(
+                    f"Retry number: {inform_cra_tracker.retry_number + 1}"
+                    + f" for {business.identifier}, TrackerId: {inform_cra_tracker.id}."
+                )
+
+            raise BNRetryExceededException(
+                f"Retry exceeded the maximum count for {business.identifier}, TrackerId: {inform_cra_tracker.id}."
             )
 
-        raise BNRetryExceededException(
-            f"Retry exceeded the maximum count for {business.identifier}, TrackerId: {inform_cra_tracker.id}."
-        )
-
-    root = Et.fromstring(inform_cra_tracker.response_object)
-    transaction_id = root.find("./header/transactionID").text
+        root = Et.fromstring(inform_cra_tracker.response_object)
+        transaction_id = root.find("./header/transactionID").text
 
     request_trackers = RequestTracker.find_by(
         business.id, RequestTracker.ServiceName.BN_HUB, RequestTracker.RequestType.GET_BN, message_id=message_id
@@ -113,18 +115,18 @@ def process( # noqa: PLR0912, PLR0915
         get_bn_tracker.last_modified = datetime.utcnow()
         get_bn_tracker.retry_number += 1
 
-    _get_bn(business, get_bn_tracker, transaction_id)
+    if not skip_bn_hub_request:
+        _get_bn(business, get_bn_tracker, transaction_id)
+        if not get_bn_tracker.is_processed:
+            if get_bn_tracker.retry_number < max_retry:
+                raise BNException(
+                    f"Retry number: {get_bn_tracker.retry_number + 1}"
+                    + f" for {business.identifier}, TrackerId: {get_bn_tracker.id}."
+                )
 
-    if not get_bn_tracker.is_processed:
-        if get_bn_tracker.retry_number < max_retry:
-            raise BNException(
-                f"Retry number: {get_bn_tracker.retry_number + 1}"
-                + f" for {business.identifier}, TrackerId: {get_bn_tracker.id}."
+            raise BNRetryExceededException(
+                f"Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}."
             )
-
-        raise BNRetryExceededException(
-            f"Retry exceeded the maximum count for {business.identifier}, TrackerId: {get_bn_tracker.id}."
-        )
 
     try:
         # Once BN15 received send an email to user
@@ -140,7 +142,7 @@ def process( # noqa: PLR0912, PLR0915
         gcp_queue.publish(topic, to_queue_message(ce))
 
     except Exception as err:  # pylint: disable=broad-except, unused-variable
-        current_app.logger.error("Failed to publish BN email message onto the NATS emailer subject", exc_info=True)
+        current_app.logger.error("Failed to publish BN email message", exc_info=True)
         raise err
 
     # publish identifier (so other things know business has changed)

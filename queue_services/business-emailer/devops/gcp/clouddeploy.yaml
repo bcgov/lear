@@ -52,8 +52,8 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "production"
-      deploy-project-id: "a083gt-tools"
+      deploy-env: "sandbox"
+      deploy-project-id: "a083gt-integration"
       service-name: "business-emailer-sandbox"
       container-name: "business-emailer-sandbox"
       cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
