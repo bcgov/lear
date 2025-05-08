@@ -37,9 +37,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     SERVICE_NAME = "filer"
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    AUTH_SVC_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
-    PAYMENT_SVC_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "")
-
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
@@ -65,17 +62,18 @@ class _Config:  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
     ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
 
-    # BCRegistry Services
+    # API URLs
+    AUTH_SVC_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
+    PAYMENT_SVC_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "")
+    NAMEX_API = os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
+    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
+    NAICS_API_URL = os.getenv("NAICS_API_URL", "") + os.getenv("NAICS_API_VERSION", "")
+
     ACCOUNT_SVC_ENTITY_URL = os.getenv("ACCOUNT_SVC_ENTITY_URL")
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
 
-    NAMEX_API = os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
-    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
-
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
-
-    NAICS_API_URL = os.getenv("NAICS_API_URL", "") + os.getenv("NAICS_API_VERSION", "")
 
     # GCP Queue Configs
     GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)

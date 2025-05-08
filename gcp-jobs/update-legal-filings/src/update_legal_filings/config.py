@@ -40,9 +40,9 @@ class _Config:  # pylint: disable=too-few-public-methods
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-bn")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", None)
 
-    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
     ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT", "20")
 
     SECRET_KEY = "a secret"
