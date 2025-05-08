@@ -1,4 +1,4 @@
-name: GCP Future Effective Filings CI
+name: Business Future Effective Filings CI
 
 on:
   pull_request:
