@@ -34,7 +34,6 @@
 #
 """This Module processes simple cloud event messages for possible filing payments."""
 
-import json
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, request
