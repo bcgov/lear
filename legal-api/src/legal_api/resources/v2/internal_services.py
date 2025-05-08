@@ -66,11 +66,12 @@ def update_bn_move():
         if response and (response_code != HTTPStatus.CREATED):
             current_app.logger.error('Unable to complete payment for registrars notation (bn move)')
             current_app.logger.error('%s, %s', response, response_code)
-
+        # TODO: marked
         publish_event(business,
                       'bc.registry.bnmove',
                       {'oldBn': old_bn, 'newBn': new_bn},
                       current_app.config.get('NATS_EMAILER_SUBJECT'))
+        # TODO: marked
         publish_event(business,
                       'bc.registry.business.bn',
                       {},

@@ -482,6 +482,7 @@ class ListFilingResource(Resource):
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}
+                # TODO: marked
                 queue.publish_json(payload)
 
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED

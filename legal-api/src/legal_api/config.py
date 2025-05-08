@@ -25,6 +25,7 @@ import sys
 
 from dotenv import find_dotenv, load_dotenv
 
+
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
@@ -60,6 +61,7 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     SERVICE_NAME = "legal-api"
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+    DEPLOYMENT_PLATFORM = os.getenv('DEPLOYMENT_PLATFORM', 'OCP')
 
     # API Endpoints
     AUTH_API_URL = os.getenv("AUTH_API_URL", "")

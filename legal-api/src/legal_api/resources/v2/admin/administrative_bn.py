@@ -64,6 +64,7 @@ def publish_entity_event(business: Business,
             }
         }
         subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
+        # TODO: marked
         queue.publish_json(payload, subject)
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Admin Event Error: business.id=' + str(business.id) + str(err), level='error')
