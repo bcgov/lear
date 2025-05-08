@@ -45,7 +45,7 @@ serialPipeline:
       container-name: "business-bn-test"
       cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
       service-account: "sa-api@a083gt-test.iam.gserviceaccount.com"
- - targetId: a083gt-integration
+ - targetId: a083gt-sandbox
    profiles: [sandbox]
    strategy:
     standard:
