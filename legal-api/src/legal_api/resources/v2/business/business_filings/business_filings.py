@@ -587,7 +587,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}
+                # TODO: marked
                 queue.publish_json(payload)
+                # publish_event(business, None, payload, current_app.config['NATS_FILER_SUBJECT'])
 
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
@@ -1138,6 +1140,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             return
 
         # emailer notification
+        # TODO: marked
         queue.publish_json(
             {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             current_app.config.get('NATS_EMAILER_SUBJECT')
