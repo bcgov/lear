@@ -153,6 +153,7 @@ def save_review(review_id: int):
     filing.set_review_decision(status_mapping[status])
 
     # emailer notification
+    # TODO: marked
     queue.publish_json(
         {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
         current_app.config.get('NATS_EMAILER_SUBJECT')
