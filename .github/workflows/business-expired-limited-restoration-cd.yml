@@ -1,0 +1,40 @@
+name: Business Expired Limited Restoration Job CD
+
+on:
+  push:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "./gcp-jobs/expired-limited-restoration/**"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy To"
+        required: true
+        type: choice
+        options:
+          - "dev"
+          - "test"
+          - "sandbox"
+          - "prod"
+      redeploy:
+        description: "Redeploy Application"
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  business-expired-limited-restoration-cd:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-job-cd.yaml@main
+    with:
+      target: ${{ inputs.target }}
+      app_name: "business-expired-limited-restoration"
+      working_directory: "./gcp-jobs/expired-limited-restoration"
+      redeploy: ${{ inputs.redeploy }}
+    secrets:
+      WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

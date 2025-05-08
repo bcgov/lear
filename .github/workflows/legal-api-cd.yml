@@ -1,11 +1,11 @@
 name: Legal API CD
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "legal-api/**"
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - "legal-api/**"
   workflow_dispatch:
     inputs:
       environment:

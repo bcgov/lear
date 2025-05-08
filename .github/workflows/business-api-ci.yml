@@ -1,0 +1,24 @@
+name: Business API CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "legal-api/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./legal-api/
+
+jobs:
+  business-api-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-api"
+      working_directory: "./legal-api/"
+      codecov_flag: "business-api"

@@ -1,0 +1,24 @@
+name: Business Expired Limited Restoration Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/expired-limited-restoration/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/expired-limited-restoration
+
+jobs:
+  business-expired-limited-restoration-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-expired-limited-restoration"
+      working_directory: "./gcp-jobs/expired-limited-restoration"
+      codecov_flag: "business-expired-limited-restoration"
