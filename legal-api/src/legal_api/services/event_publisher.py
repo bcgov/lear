@@ -41,7 +41,7 @@ def _publish_to_nats_with_wrapper(data, subject, business, event_type, message_i
         'type': event_type,
         'source': source,
         'id': message_id or str(uuid.uuid4()),
-        'time': datetime.utcnow().isoformat(),
+        'time': time,
         'datacontenttype': 'application/json',
         'identifier': business.identifier,
         'data': data
@@ -70,18 +70,19 @@ def _publish_to_gcp(data, subject, business: Business, event_type:str):
     topic = nats_to_gcp_topic[subject]
 
     ce = SimpleCloudEvent(id=str(uuid.uuid4()),
-                                  source='https://pubsub.googleapis.com/google.pubsub.v1.Subscriber',
+                                  source=source,
                                   subject=business.identifier,
                                   time=time,
                                   type=event_type,
-                                  data = {'identifier': business.identifier, **data})
+                                  data={'identifier': business.identifier, **data}
+                          )
 
     gcp_queue.publish(topic, to_queue_message(ce))
 
 def publish_to_queue(
     data:dict,
     subject:str,
-    business: Business,
+    business: Business, # todo: make this optional ... as some places will not have business ...
     event_type:str,
     message_id:Optional[str],
     is_wrapped:Optional[bool] = True
