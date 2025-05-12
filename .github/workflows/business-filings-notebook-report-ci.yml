@@ -1,4 +1,4 @@
-name: Business Filings Notebook Report CI
+name: Business Filings Notebook Report Job CI
 
 on:
   pull_request:

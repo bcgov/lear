@@ -1,4 +1,4 @@
-name: Business Email Reminder CI
+name: Business Email Reminder Job CI
 
 on:
   pull_request:

@@ -1,8 +1,11 @@
-name: FURNISHINGS GCP CI
+name: Business Furnishings Job CI
 
 on:
   pull_request:
-    types: [assigned, synchronize]
+    branches:
+      - main
+      - feature*
+      - hotfix*
     paths:
       - "gcp-jobs/furnishings/**"
   workflow_dispatch:
@@ -13,9 +16,9 @@ defaults:
     working-directory: ./gcp-jobs/furnishings
 
 jobs:
-  furnishings-ci:
+  business-furnishings-ci:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
     with:
-      app_name: "furnishings"
+      app_name: "business-furnishings"
       working_directory: "./gcp-jobs/furnishings"
-      codecov_flag: "furnishings"
+      codecov_flag: "business-furnishings"

@@ -31,9 +31,9 @@ class _Config:
     LD_SDK_KEY = os.getenv("LEAR_LD_SDK_KEY", None)
 
     AUTH_SVC_URL = os.getenv("AUTH_API_URL", "") + os.getenv("AUTH_API_VERSION", "")
-    ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_URL", None)
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_ID", None)
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ENTITY_SERVICE_ACCOUNT_CLIENT_SECRET", None)
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL", None)
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID", None)
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET", None)
 
     SECRET_KEY = "a secret"
 
@@ -49,7 +49,7 @@ class _Config:
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
-    # Used to setup IapDbConnection when set. Will override ^ SQLALCHEMY_DATABASE_URI 
+    # Used to setup IapDbConnection when set. Will override ^ SQLALCHEMY_DATABASE_URI
     DB_CONNECTION_NAME = os.getenv("DATABASE_CONNECTION_NAME")  # project:region:instance-name
 
     # Pub/Sub
@@ -127,7 +127,7 @@ class UnitTestingConfig(_Config):
     BCMAIL_SFTP_STORAGE_DIRECTORY = "bcmail"
     BCMAIL_SFTP_PRIVATE_KEY = ""
     BCMAIL_SFTP_HOST = None
-    
+
     # Mocked urls
     AUTH_SVC_URL = "http://test-AUTH_URL.fake"
     ACCOUNT_SVC_AUTH_URL = "http://test-ACCOUNT_SVC_AUTH_URL.fake"
