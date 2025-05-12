@@ -203,7 +203,8 @@ class _Config:  # pylint: disable=too-few-public-methods
         os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "false").lower() == "true"
     )
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-bn")
-    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", "business-bn-emailer")
+    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", "business-emailer")
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "business-filer")
 
     # NATS / STAN
     NATS_SERVERS = os.getenv("NATS_SERVERS")
