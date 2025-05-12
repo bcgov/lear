@@ -48,22 +48,6 @@ def publish_entity_event(business: Business,
                          business_number: str = None):
     """Publish the admin message on to the NATS events subject."""
     try:
-        # payload = {
-        #     'specversion': '1.x-wip',
-        #     'type': 'bc.registry.admin.bn',
-        #     'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
-        #     'id': message_id or str(uuid.uuid4()),
-        #     'time': datetime.utcnow().isoformat(),
-        #     'datacontenttype': 'application/json',
-        #     'identifier': business.identifier,
-        #     'data': {
-        #         'header': {
-        #             'request': request_name,
-        #             'businessNumber': business_number
-        #         },
-        #         'business': {'identifier': business.identifier}
-        #     }
-        # }
         payload_data = {
             'header': {
                 'request': request_name,
