@@ -21,6 +21,7 @@ from sentry_sdk import capture_message
 
 from legal_api.models import Business, UserRoles
 from legal_api.services import queue
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 
@@ -47,25 +48,39 @@ def publish_entity_event(business: Business,
                          business_number: str = None):
     """Publish the admin message on to the NATS events subject."""
     try:
-        payload = {
-            'specversion': '1.x-wip',
-            'type': 'bc.registry.admin.bn',
-            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
-            'id': message_id or str(uuid.uuid4()),
-            'time': datetime.utcnow().isoformat(),
-            'datacontenttype': 'application/json',
-            'identifier': business.identifier,
-            'data': {
-                'header': {
-                    'request': request_name,
-                    'businessNumber': business_number
-                },
-                'business': {'identifier': business.identifier}
-            }
+        # payload = {
+        #     'specversion': '1.x-wip',
+        #     'type': 'bc.registry.admin.bn',
+        #     'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
+        #     'id': message_id or str(uuid.uuid4()),
+        #     'time': datetime.utcnow().isoformat(),
+        #     'datacontenttype': 'application/json',
+        #     'identifier': business.identifier,
+        #     'data': {
+        #         'header': {
+        #             'request': request_name,
+        #             'businessNumber': business_number
+        #         },
+        #         'business': {'identifier': business.identifier}
+        #     }
+        # }
+        payload_data = {
+            'header': {
+                'request': request_name,
+                'businessNumber': business_number
+            },
+            'business': {'identifier': business.identifier}
         }
         subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
         # TODO: marked
-        queue.publish_json(payload, subject)
+        # queue.publish_json(payload, subject)
+        publish_to_queue(
+            data=payload_data,
+            business=business,
+            subject=subject,
+            event_type='bc.registry.admin.bn',
+            message_id=message_id
+        )
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
         capture_message('Queue Publish Admin Event Error: business.id=' + str(business.id) + str(err), level='error')
         current_app.logger.error('Queue Publish Event Error: business.id=%s', business.id, exc_info=True)

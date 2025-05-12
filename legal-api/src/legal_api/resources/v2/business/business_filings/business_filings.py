@@ -64,6 +64,7 @@ from legal_api.services import (
     queue,
 )
 from legal_api.services.authz import is_allowed
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -588,8 +589,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             else:
                 payload = {'filing': {'id': filing.id}}
                 # TODO: marked
-                queue.publish_json(payload)
+                # queue.publish_json(payload)
                 # publish_event(business, None, payload, current_app.config['NATS_FILER_SUBJECT'])
+                publish_to_queue(
+                    data=payload,
+                    subject=current_app.config.get('NATS_FILER_SUBJECT'),
+                    business=business,
+                    event_type='unknown:fixme', # leaving empty as it does not currently have a specific type
+                    message_id=None,
+                    is_wrapped=False
+                )
 
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
@@ -1144,11 +1153,21 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
             return
 
+        business = Business.find_by_internal_id(filing.business_id)
+
         # emailer notification
         # TODO: marked
-        queue.publish_json(
-            {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
-            current_app.config.get('NATS_EMAILER_SUBJECT')
+        # queue.publish_json(
+        #     {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
+        #     current_app.config.get('NATS_EMAILER_SUBJECT')
+        # )
+        publish_to_queue(
+            data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
+            subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
+            business=business,
+            event_type='unknown:fixme', # todo: fixme: set proper event type
+            message_id=None,
+            is_wrapped=False
         )
 
     @staticmethod

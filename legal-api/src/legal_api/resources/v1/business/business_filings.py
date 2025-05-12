@@ -45,6 +45,7 @@ from legal_api.services import (
     queue,
 )
 from legal_api.services.authz import is_allowed
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -484,6 +485,14 @@ class ListFilingResource(Resource):
                 payload = {'filing': {'id': filing.id}}
                 # TODO: marked
                 queue.publish_json(payload)
+                publish_to_queue(
+                    data=payload,
+                    subject=current_app.config.get('NATS_FILER_SUBJECT'),
+                    business=business,
+                    event_type='', # leaving empty as it does not currently have a specific type
+                    message_id=None,
+                    is_wrapped=False
+                )
 
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
