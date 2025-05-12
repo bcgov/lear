@@ -72,8 +72,6 @@ def publish_entity_event(business: Business,
             'business': {'identifier': business.identifier}
         }
         subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
-        # TODO: marked
-        # queue.publish_json(payload, subject)
         publish_to_queue(
             data=payload_data,
             business=business,

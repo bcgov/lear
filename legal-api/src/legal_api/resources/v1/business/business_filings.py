@@ -483,8 +483,6 @@ class ListFilingResource(Resource):
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}
-                # TODO: marked
-                queue.publish_json(payload)
                 publish_to_queue(
                     data=payload,
                     subject=current_app.config.get('NATS_FILER_SUBJECT'),

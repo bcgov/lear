@@ -157,11 +157,6 @@ def save_review(review_id: int):
     business = Business.find_by_internal_id(filing.business_id)
 
     # emailer notification
-    # TODO: marked
-    # queue.publish_json(
-    #     {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
-    #     current_app.config.get('NATS_EMAILER_SUBJECT')
-    # )
     if business is not None:
         publish_to_queue(
             data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
