@@ -588,9 +588,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 filing.save()
             else:
                 payload = {'filing': {'id': filing.id}}
-                # TODO: marked
-                # queue.publish_json(payload)
-                # publish_event(business, None, payload, current_app.config['NATS_FILER_SUBJECT'])
                 publish_to_queue(
                     data=payload,
                     subject=current_app.config.get('NATS_FILER_SUBJECT'),
@@ -1156,11 +1153,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         business = Business.find_by_internal_id(filing.business_id)
 
         # emailer notification
-        # TODO: marked
-        # queue.publish_json(
-        #     {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
-        #     current_app.config.get('NATS_EMAILER_SUBJECT')
-        # )
         publish_to_queue(
             data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
