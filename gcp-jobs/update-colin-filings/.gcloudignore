@@ -6,7 +6,6 @@ __pycache__
 .env*
 .eggs
 Makefile
-devops
 manage.py
 migrations
 tests
