@@ -1,0 +1,24 @@
+name: Business Pay CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "queue_services/business-pay/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./queue_services/business-pay
+
+jobs:
+  business-pay-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-pay"
+      working_directory: "./queue_services/business-pay"
+      codecov_flag: "business-pay"
