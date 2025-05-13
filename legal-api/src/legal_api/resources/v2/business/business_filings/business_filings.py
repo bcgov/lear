@@ -61,7 +61,6 @@ from legal_api.services import (
     authorized,
     flags,
     namex,
-    queue,
 )
 from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
@@ -591,8 +590,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 publish_to_queue(
                     data=payload,
                     subject=current_app.config.get('NATS_FILER_SUBJECT'),
-                    business=business,
-                    event_type='unknown:fixme', # leaving empty as it does not currently have a specific type
+                    identifier=business.identifier,
+                    event_type=None,
                     message_id=None,
                     is_wrapped=False
                 )
@@ -1156,8 +1155,8 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         publish_to_queue(
             data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
             subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
-            business=business,
-            event_type='unknown:fixme', # todo: fixme: set proper event type
+            identifier=business.identifier,
+            event_type=None,
             message_id=None,
             is_wrapped=False
         )

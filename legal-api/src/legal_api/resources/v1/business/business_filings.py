@@ -42,7 +42,6 @@ from legal_api.services import (
     RegistrationBootstrapService,
     authorized,
     namex,
-    queue,
 )
 from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
@@ -486,7 +485,7 @@ class ListFilingResource(Resource):
                 publish_to_queue(
                     data=payload,
                     subject=current_app.config.get('NATS_FILER_SUBJECT'),
-                    business=business,
+                    identifier=business.identifier,
                     event_type='', # leaving empty as it does not currently have a specific type
                     message_id=None,
                     is_wrapped=False

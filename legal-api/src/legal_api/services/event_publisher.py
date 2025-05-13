@@ -21,21 +21,24 @@ from flask import current_app
 
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from legal_api.models import Business
 from legal_api.services import queue, gcp_queue
 from legal_api.utils.datetime import datetime
 
 
-def _get_source_and_time(business: Business):
-    source = ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier])
+def _get_source_and_time(identifier: str):
     time = datetime.utcnow().isoformat()
+
+    if identifier:
+        source = ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', identifier])
+    else:
+        source = ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/'])
 
     return source, time
 
 
-def _publish_to_nats_with_wrapper(data, subject, business, event_type, message_id):
+def _publish_to_nats_with_wrapper(data, subject, identifier, event_type, message_id):
     """Publish the wrapped message onto the NATS subject."""
-    source, time = _get_source_and_time(business)
+    source, time = _get_source_and_time(identifier)
     payload = {
         'specversion': '1.x-wip',
         'type': event_type,
@@ -43,24 +46,24 @@ def _publish_to_nats_with_wrapper(data, subject, business, event_type, message_i
         'id': message_id or str(uuid.uuid4()),
         'time': time,
         'datacontenttype': 'application/json',
-        'identifier': business.identifier,
+        'identifier': identifier,
         'data': data
     }
-    queue.publish(
+    queue.publish_json(
         subject=subject,
         payload=payload
     )
 
 def _publish_to_nats(payload, subject):
     """Publish the event message onto the NATS subject."""
-    queue.publish(
+    queue.publish_json(
         subject=subject,
         payload=payload
     )
 
-def _publish_to_gcp(data, subject, business: Business, event_type:str):
+def _publish_to_gcp(data, subject, identifier, event_type):
     """Publish the event message onto the GCP topic."""
-    source, time = _get_source_and_time(business)
+    source, time = _get_source_and_time(identifier)
     nats_to_gcp_topic = {
         current_app.config['NATS_FILER_SUBJECT']: current_app.config['BUSINESS_FILER_TOPIC'],
         current_app.config['NATS_ENTITY_EVENT_SUBJECT']: current_app.config['BUSINESS_EVENTS_TOPIC'],
@@ -69,49 +72,68 @@ def _publish_to_gcp(data, subject, business: Business, event_type:str):
 
     topic = nats_to_gcp_topic[subject]
 
-    ce = SimpleCloudEvent(id=str(uuid.uuid4()),
-                                  source=source,
-                                  subject=business.identifier,
-                                  time=time,
-                                  type=event_type,
-                                  data={'identifier': business.identifier, **data}
-                          )
+    if  identifier is not None:
+        payload = {'identifier': identifier, **data}
+    else:
+        payload = data
+
+    ce = SimpleCloudEvent(
+        id=str(uuid.uuid4()),
+        source=source,
+        subject=topic,
+        time=time,
+        type=event_type,
+        data=payload
+    )
 
     gcp_queue.publish(topic, to_queue_message(ce))
 
 def publish_to_queue(
     data:dict,
     subject:str,
-    business: Business, # todo: make this optional ... as some places will not have business ...
-    event_type:str,
-    message_id:Optional[str],
-    is_wrapped:Optional[bool] = True
+    event_type:Optional[str]=None,
+    message_id:Optional[str]=None,
+    identifier:Optional[str]=None,
+    is_wrapped:Optional[bool]=True
 ) -> None:
     """
-    Publishes a payload to a message queue based on the configured deployment platform
-    and optional wrapping conditions. Supports publishing to GCP or NATS.
+    Publishes data to a message queue based on the configured deployment platform and optional parameters.
 
-    Arguments:
-        data (dict): The payload data to be published to the message queue
-        subject (str): The subject or topic associated with the message
-            in case subject is unknown fallback to `current_app.config.get('NATS_FILER_SUBJECT')`
-        business (Business): Business entity data used in the publishing process
-        event_type (str): The event type associated with the publishing operation
-        message_id (str): Optional. The message identifier to be used in the publishing process.
-        is_wrapped (bool): Optional. Specifies if the payload should be wrapped before
-            being published. Defaults to True
+    This function handles publishing messages to different platforms (e.g., GCP or NATS) based on the application's
+    configuration. It supports optional message wrapping and identification, and provides a fallback mechanism in
+    case of missing business context. Logs are generated in case of errors during the publishing process.
+
+    Parameters:
+    data : dict
+        The data payload to be sent to the queue.
+    subject : str
+        The subject or topic under which the message will be published.
+    event_type : Optional[str]
+        The type/category of the event being published. Defaults to None.
+    message_id : Optional[str]
+        The unique identifier for the message being published. Defaults to None.
+    identifier : Optional[str]
+        An optional identifier that may be used for additional context. Defaults to None.
+    is_wrapped : Optional[bool]
+        Boolean flag indicating whether the message should be wrapped in additional metadata.
+        Defaults to True.
+
+    Returns:
+    None
+        This function does not return any value.
 
     Raises:
-        Exception: If an error occurs during the publish operation, it is logged.
+    Exception
+        Logs errors that occur during the publishing process. Specific details are logged for debugging.
     """
     try:
         if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
-            _publish_to_gcp(data=data, subject=subject, business=business, event_type=event_type)
+            _publish_to_gcp(data=data, subject=subject, identifier=identifier, event_type=event_type)
         elif is_wrapped:
             _publish_to_nats_with_wrapper (
                 data=data,
                 subject=subject,
-                business=business,
+                identifier=identifier,
                 event_type=event_type,
                 message_id=message_id
             )
@@ -119,4 +141,8 @@ def publish_to_queue(
             _publish_to_nats(payload=data, subject=subject)
 
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
-        current_app.logger.error('Queue Publish %s Error: business.id=%s', subject, business.id, exc_info=True)
+        current_app.logger.error(
+            'Queue Publish Error: data=%s; subject=%s, identifier=%s, event_typ=%s, message_id=%s',
+            data, subject, identifier, event_type, message_id
+        )
+        current_app.logger.error(err)
