@@ -522,17 +522,16 @@ class Filing:  # pylint: disable=too-many-public-methods
         if filing.storage and filing.storage.filing_type in no_output_filings:
             return documents
 
-        user_is_ca = is_competent_authority(jwt.get_token_auth_header())
+        user_is_ca = is_competent_authority()
 
         # return a receipt for filings completed in our system (but not for ca users
         # see https://github.com/bcgov/entity/issues/21881
-        if not(user_is_ca):
-            if filing.storage and filing.storage.payment_completion_date:
-                if filing.filing_type == 'courtOrder' and \
-                        (filing.storage.documents.filter(
-                            Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
-                    documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
-                documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
+        if not user_is_ca and filing.storage and filing.storage.payment_completion_date:
+            if filing.filing_type == 'courtOrder' and \
+                    (filing.storage.documents.filter(
+                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
+                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
+            documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
 
         no_legal_filings_in_paid_withdrawn_status = [
             Filing.FilingTypes.AMALGAMATIONOUT.value,
