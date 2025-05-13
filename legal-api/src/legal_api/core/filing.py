@@ -522,7 +522,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         if filing.storage and filing.storage.filing_type in no_output_filings:
             return documents
 
-        user_is_ca = is_competent_authority()
+        user_is_ca = is_competent_authority(jwt)
 
         # return a receipt for filings completed in our system (but not for ca users
         # see https://github.com/bcgov/entity/issues/21881
