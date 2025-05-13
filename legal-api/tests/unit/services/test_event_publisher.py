@@ -4,8 +4,6 @@ from legal_api.services.event_publisher import (
     publish_to_queue, _publish_to_nats, _publish_to_nats_with_wrapper,
     _publish_to_gcp, _get_source_and_time
 )
-from services.filings.validations.test_incorporation_application import identifier
-
 
 @pytest.mark.parametrize("identifier,extra_on_expected_source", [
     ('BC123', '/BC123'),
@@ -133,7 +131,7 @@ def test_publish_to_queue_error_handling(app):
             subject='test.subject',
             event_type='test.event',
             message_id=None,
-            identifier=identifier
+            identifier='123'
         )
 
         mock_logger.assert_called()

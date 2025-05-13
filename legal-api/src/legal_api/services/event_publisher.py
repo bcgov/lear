@@ -88,7 +88,7 @@ def _publish_to_gcp(data, subject, identifier, event_type):
 
     gcp_queue.publish(topic, to_queue_message(ce))
 
-def publish_to_queue(
+def publish_to_queue( # pylint: disable=too-many-arguments
     data:dict,
     subject:str,
     event_type:Optional[str]=None,
