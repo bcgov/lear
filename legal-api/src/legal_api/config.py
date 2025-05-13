@@ -320,6 +320,8 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = 1
 
+    LEGAL_API_BASE_URL="https://LEGAL_API_BASE_URL/api/v2/businesses"
+
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
