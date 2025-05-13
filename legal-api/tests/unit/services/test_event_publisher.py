@@ -21,8 +21,8 @@ def test_get_source_and_time(app, identifier, extra_on_expected_source):
 
 @pytest.mark.parametrize("platform,is_wrapped,expected_function", [
     ('GCP', True, '_publish_to_gcp'),
-    ('NATS', True, '_publish_to_nats_with_wrapper'),
-    ('NATS', False, '_publish_to_nats'),
+    ('OCP', True, '_publish_to_nats_with_wrapper'),
+    ('OCP', False, '_publish_to_nats'),
 ])
 def test_publish_to_queue_routing(app, platform, is_wrapped, expected_function):
     """Test routing to different publish functions based on configuration."""
@@ -101,21 +101,26 @@ def test_publish_to_gcp(app):
         args = mock_gcp_publish.call_args
         assert args[0][0] == app.config.get('BUSINESS_FILER_TOPIC')
 
-
-def test_publish_to_queue_with_none_identifier(app):
+@pytest.mark.parametrize("platform,is_wrapped,patch_name", [
+    ('GCP', True, 'legal_api.services.gcp_queue.publish'),
+    ('OCP', True, 'legal_api.services.queue.publish_json'),
+    ('OCP', False, 'legal_api.services.queue.publish_json'),
+])
+def test_publish_to_queue_with_none_identifier(app, platform, is_wrapped, patch_name):
     """Test publishing with no identifier provided."""
     test_data = {'test': 'data'}
     test_subject = app.config.get('NATS_FILER_SUBJECT')
     test_event_type = 'test.event'
 
-    with app.app_context(),\
-        patch('legal_api.services.gcp_queue.publish') as mock_gcp_publish:
+    with app.app_context(), patch(patch_name) as mock_gcp_publish:
+        app.config['DEPLOYMENT_PLATFORM'] = platform
         publish_to_queue(
             data=test_data,
             subject=test_subject,
             event_type=test_event_type,
             message_id=None,
-            identifier=None
+            identifier=None,
+            is_wrapped=is_wrapped
         )
 
         mock_gcp_publish.assert_called_once()
@@ -125,7 +130,7 @@ def test_publish_to_queue_error_handling(app):
     with app.app_context(), \
         patch('legal_api.services.gcp_queue.publish', side_effect=Exception("Test error")), \
         patch('flask.current_app.logger.error') as mock_logger:
-
+        app.config['DEPLOYMENT_PLATFORM'] = 'GCP'
         publish_to_queue(
             data={'test': 'data'},
             subject='test.subject',
@@ -143,10 +148,9 @@ def test_publish_to_queue_error_handling(app):
 ])
 def test_gcp_topic_mapping(app, nats_subject, gcp_subject):
     """Test GCP topic mapping from NATS subjects."""
-    app.config['DEPLOYMENT_PLATFORM'] = 'GCP'
 
-    with app.app_context(), \
-        patch('legal_api.services.gcp_queue.publish') as mock_gcp_publish:
+    with app.app_context(), patch('legal_api.services.gcp_queue.publish') as mock_gcp_publish:
+        app.config['DEPLOYMENT_PLATFORM'] = 'GCP'
 
         _publish_to_gcp(
             data={'test': 'data'},
