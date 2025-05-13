@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """API endpoints for managing an Administrative BN resource."""
-import uuid
 from http import HTTPStatus
 
 from flask import current_app

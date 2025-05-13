@@ -17,8 +17,8 @@ from http import HTTPStatus
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles, Business
-from legal_api.services import namex, queue
+from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
+from legal_api.services import namex
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.utils.auth import jwt
 
