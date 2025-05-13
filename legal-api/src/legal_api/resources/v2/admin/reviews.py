@@ -153,21 +153,15 @@ def save_review(review_id: int):
     }
     filing.set_review_decision(status_mapping[status])
 
-    # todo: verify this is correct relation
-    business = Business.find_by_internal_id(filing.business_id)
-
     # emailer notification
-    if business is not None:
-        publish_to_queue(
-            data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
-            subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
-            business=business,
-            event_type='unknown:fixme', # todo: fixme add correct event_type
-            message_id=None,
-            is_wrapped=False
-        )
-    else:
-        current_app.logger.error('Business not found for filing.id=%s; no email sent !', filing.id)
+    publish_to_queue(
+        data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
+        subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
+        identifier=None, # todo: when new review types are added if they have business, add business identifier here
+        event_type=None,
+        message_id=None,
+        is_wrapped=False
+    )
 
     return jsonify({'message': 'Review saved.'}), HTTPStatus.CREATED
 

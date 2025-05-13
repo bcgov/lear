@@ -20,10 +20,8 @@ from flask_cors import cross_origin
 from sentry_sdk import capture_message
 
 from legal_api.models import Business, UserRoles
-from legal_api.services import queue
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.utils.auth import jwt
-from legal_api.utils.datetime import datetime
 
 from .bp import bp_admin
 
@@ -58,7 +56,7 @@ def publish_entity_event(business: Business,
         subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
         publish_to_queue(
             data=payload_data,
-            business=business,
+            identifier=business.identifier,
             subject=subject,
             event_type='bc.registry.admin.bn',
             message_id=message_id
