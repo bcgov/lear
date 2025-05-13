@@ -1008,4 +1008,5 @@ def has_product(code: str, token: str) -> bool:
     return any(p['code'] == code and p['subscriptionStatus'] == 'ACTIVE' for p in user_products)
 
 def is_competent_authority() -> bool:
+    """Return if the user has the active ca_search subscription."""
     return has_product('CA_SEARCH', jwt.get_token_auth_header())
