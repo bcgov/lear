@@ -321,6 +321,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     NAICS_VERSION = 1
 
     LEGAL_API_BASE_URL="https://LEGAL_API_BASE_URL/api/v2/businesses"
+    PAYMENT_SVC_URL="https://PAY_SVC_URL/api/v1/payment-requests"
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
