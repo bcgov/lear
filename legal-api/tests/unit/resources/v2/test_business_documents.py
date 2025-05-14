@@ -75,6 +75,7 @@ def test_get_business_documents(session, client, jwt):
     docs_json = rv.json
     assert docs_json['documents']
     assert docs_json['documents']['summary']
+    assert docs_json['documents']['receipt']
 
 def test_get_business_documents_ca(requests_mock, session, client, jwt):
     """Assert that business summary is not returned."""
@@ -94,7 +95,7 @@ def test_get_business_documents_ca(requests_mock, session, client, jwt):
     docs_json = rv.json
     assert docs_json['documents']
     assert docs_json['documents']['summary']
-    assert not docs_json['documents']['receipt']
+    assert not docs_json['documents'].get('receipt', False)
 
 
 def test_get_document_invalid_authorization(session, client, jwt):
