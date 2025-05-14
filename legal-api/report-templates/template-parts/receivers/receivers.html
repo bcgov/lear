@@ -1,0 +1,118 @@
+{% if newReceivers %}
+<div class="no-page-break">
+    <div class="section-title mt-4">
+        <span>New Receivers Appointed</span>
+    </div>
+    <table class="section-data section-data-table mt-4" role="presentation">
+        {% for receiver in newReceivers %}
+          <div class="section-data mt-4">
+            <div class="title">
+              <span class="capitalize-text section-sub-title">{{ receiver.officer.lastName }}</span>,
+              <span class="capitalize-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              {% if receiver.officer.middleInitial is defined %}
+              <span class="capitalize-text section-sub-title">{{ receiver.officer.middleInitial }}</span>
+              {% endif %}
+            </div>
+          </div>
+          <tr class="no-page-break">
+            {% if receiver.mailingAddress is defined %}
+              <td>
+                <div class="section-sub-title">Mailing Address</div>
+                <div class="pt-2">{{ receiver.mailingAddress.streetAddress }}</div>
+                <div>{{ receiver.mailingAddress.streetAddressAdditional }}</div>
+                <div>
+                  {{ receiver.mailingAddress.addressCity }}
+                  {{ receiver.mailingAddress.addressRegion }}
+                  &nbsp;{{ receiver.mailingAddress.postalCode }}
+                </div>
+                <div>{{ receiver.mailingAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ receiver.mailingAddress.deliveryInstructions }}</div>
+              </td>
+            {% endif %}
+            {% if receiver.deliveryAddress is defined %}
+              <td>
+                <div class="section-sub-title">Delivery Address</div>
+                <div class="pt-2">{{ receiver.deliveryAddress.streetAddress }}</div>
+                <div>{{ receiver.deliveryAddress.streetAddressAdditional }}</div>
+                <div>
+                    {{ receiver.deliveryAddress.addressCity }}
+                    {{ receiver.deliveryAddress.addressRegion }}
+                    &nbsp;{{ receiver.deliveryAddress.postalCode }}
+                </div>
+                <div>{{ receiver.deliveryAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ receiver.deliveryAddress.deliveryInstructions }}</div>
+              </td>
+            {% endif %}
+            <td>
+              {% for role in receiver.roles %}
+                {% if role.roleType == 'Receiver' %}
+                  <div class="section-sub-title">Appointed</div>
+                  <div class="pt-2">{{ role.appointmentDate }}</div>
+                {% endif %}
+              {% endfor %}
+            </td>
+          {% endfor %}
+          </tr>
+    </table>
+    <div class="separator mt-4"></div>
+</div>
+{% endif %}
+
+{% if currentReceivers %}
+  <div class="no-page-break">
+    <div class="section-title mt-4">
+      <span>All Receivers as of {{ effective_date }}</span>
+    </div>
+    <table class="section-data section-data-table mt-4" role="presentation">
+      {% for receiver in currentReceivers %}
+        <div class="section-data mt-4">
+          <div class="title">
+            <span class="capitalize-text section-sub-title">{{ receiver.officer.lastName }}</span>,
+            <span class="capitalize-text section-sub-title">{{ receiver.officer.firstName }}</span>
+            {% if receiver.officer.middleInitial is defined %}
+            <span class="capitalize-text section-sub-title">{{ receiver.officer.middleInitial }}</span>
+            {% endif %}
+          </div>
+        </div>
+        <tr class="no-page-break">
+          {% if receiver.mailingAddress is defined %}
+            <td>
+              <div class="section-sub-title">Mailing Address</div>
+              <div class="pt-2">{{ receiver.mailingAddress.streetAddress }}</div>
+              <div>{{ receiver.mailingAddress.streetAddressAdditional }}</div>
+              <div>
+                {{ receiver.mailingAddress.addressCity }}
+                {{ receiver.mailingAddress.addressRegion }}
+                &nbsp;{{ receiver.mailingAddress.postalCode }}
+              </div>
+              <div>{{ receiver.mailingAddress.addressCountry }}</div>
+              <div class="delivery-instructions pt-1">{{ receiver.mailingAddress.deliveryInstructions }}</div>
+            </td>
+          {% endif %}
+          {% if receiver.deliveryAddress is defined %}
+            <td>
+              <div class="section-sub-title">Delivery Address</div>
+              <div class="pt-2">{{ receiver.deliveryAddress.streetAddress }}</div>
+              <div>{{ receiver.deliveryAddress.streetAddressAdditional }}</div>
+              <div>
+                  {{ receiver.deliveryAddress.addressCity }}
+                  {{ receiver.deliveryAddress.addressRegion }}
+                  &nbsp;{{ receiver.deliveryAddress.postalCode }}
+              </div>
+              <div>{{ receiver.deliveryAddress.addressCountry }}</div>
+              <div class="delivery-instructions pt-1">{{ receiver.deliveryAddress.deliveryInstructions }}</div>
+            </td>
+          {% endif %}
+          <td>
+            {% for role in receiver.roles %}
+              {% if role.roleType == 'Receiver' %}
+                <div class="section-sub-title">Appointed</div>
+                <div class="pt-2">{{ role.appointmentDate }}</div>
+              {% endif %}
+            {% endfor %}
+          </td>
+        {% endfor %}
+        </tr>
+    </table>
+  </div>
+{% endif %}
