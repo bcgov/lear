@@ -76,7 +76,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -128,7 +131,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        case
@@ -142,7 +148,6 @@ from event e
    , corporation_cte c
 where c.corp_num = e.corp_num
   and event_typ_cd not in ('BNUPD','ADDLEDGR') --not doing anything
-  and event_id NOT in (select event_id from filing_user where user_id='BCOMPS')
 order by e.event_id desc;
 
 
@@ -164,7 +169,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -198,7 +206,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -234,7 +245,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        f.filing_typ_cd    as filing_type_cd,
@@ -282,7 +296,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        u.user_id,
@@ -318,7 +335,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -353,7 +373,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select distinct ADDR_ID,
                 PROVINCE,
@@ -434,7 +457,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select cc.comment_dts,
        case
@@ -471,7 +497,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        l.notation,
@@ -503,7 +532,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select p.corp_party_id,
        p.mailing_addr_id,
@@ -549,7 +581,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select cpr.CORP_PARTY_ID, cpr.RELATIONSHIP_TYP_CD
 from CORP_PARTY_RELATIONSHIP cpr,
@@ -579,7 +614,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select oh.CORP_PARTY_ID, oh.OFFICER_TYP_CD
 from OFFICES_HELD oh,
@@ -609,7 +647,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        cp.MAILING_ADDR_ID,
@@ -643,7 +684,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        sp.MAILING_ADDR_ID,
@@ -685,7 +729,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -718,7 +765,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -754,7 +804,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        ce.effective_dt,
@@ -794,7 +847,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
     cl.LEDGER_TITLE_TXT,
@@ -825,7 +881,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select *
 from (select e.event_id, -- SELECT BY EVENT
@@ -907,7 +966,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        case
@@ -943,7 +1005,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -980,7 +1045,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        case
@@ -1014,7 +1082,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1052,7 +1123,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1086,7 +1160,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1118,7 +1195,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1170,7 +1250,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select case
            when c.CORP_TYP_CD in ('BC', 'ULC', 'CC') then 'BC' || c.CORP_NUM
@@ -1215,7 +1298,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        n.METHOD_TYP_CD,
@@ -1252,7 +1338,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select e.event_id,
        nr.METHOD_TYP_CD,
@@ -1289,7 +1378,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select pn.PARTY_ID,
        pn.METHOD_TYP_CD,
@@ -1327,7 +1419,10 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-    and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+        
+         -- altered from BC to BEN then BEN to BC before directed launch
+        and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select p.event_id,
        p.payment_typ_cd,

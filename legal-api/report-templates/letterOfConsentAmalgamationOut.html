@@ -23,19 +23,21 @@
         &nbsp;{{ office.mailingAddress.postalCode }}
       </div>
       <div class="mt-7">Dear Applicant,</div>
-      <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+      <div class="mt-5">Re: <span class="bold">{{ business.legalName }} ({{ business.identifier }})</span></div>
       <div class="mt-5">
-        The above company was authorized on {{effective_date}} to amalgamate with one or more foreign corporations to
-        form an amalgamated foreign corporation outside of British Columbia, under section 284 of the Business Corporations Act.
-        Please note this letter of consent expires on {{ cco_expiry_date }}.
+        {{ business.legalName }} ({{ business.identifier }}) was authorized on {{effective_date}} to amalgamate with one or more foreign corporations to
+        form an amalgamated foreign corporation in <span class="bold">{{ jurisdiction }}.</span>
+      </div>
+      <div class="mt-5 bold">
+        This authorization expires on {{ cco_expiry_date }}.
       </div>
       <div class="mt-5">
-        Section 286(1) states that “the amalgamated foreign corporation must promptly file with the registrar a copy of
-        any record issued to the amalgamated foreign corporation by the amalgamated foreign corporation’s jurisdiction
-        to effect or confirm the amalgamation.”
+        Section 286(1) states that "the amalgamated foreign corporation must promptly file with the registrar a copy of
+        any record issued to the amalgamated foreign corporation by the amalgamated foreign corporation's jurisdiction
+        to effect or confirm the amalgamation."
       </div>
       <div class="mt-5">
-        Please forward a copy of this record in order to remove the above company from the corporate register in British Columbia.
+        Our office must receive this copy of the amalgamation record in order to make the company historical in B.C.
       </div>
       <p class="mt-5">Yours truly,</p>
       <div class="registrar-info">

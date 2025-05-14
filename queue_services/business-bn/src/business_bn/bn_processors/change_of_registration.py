@@ -64,6 +64,7 @@ def change_name(
 ):
     """Inform CRA about change of name."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
+    skip_bn_hub_request = current_app.config.get("SKIP_BN_HUB_REQUEST", False)
     request_trackers = RequestTracker.find_by(business.id, RequestTracker.ServiceName.BN_HUB, name_type, filing.id)
     if not request_trackers:
         request_tracker = RequestTracker()
@@ -141,7 +142,7 @@ def change_name(
     request_tracker.response_object = response
     request_tracker.save()
 
-    if not request_tracker.is_processed:
+    if not skip_bn_hub_request and not request_tracker.is_processed:
         if request_tracker.retry_number < max_retry:
             raise BNException(
                 f"Retry number: {request_tracker.retry_number + 1}"
@@ -160,6 +161,7 @@ def change_address(
 ):
     """Inform CRA about change of address."""
     max_retry = current_app.config.get("BN_HUB_MAX_RETRY")
+    skip_bn_hub_request = current_app.config.get("SKIP_BN_HUB_REQUEST", False)
 
     address_type_code = {
         RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS: "01",
@@ -217,7 +219,7 @@ def change_address(
     request_tracker.response_object = response
     request_tracker.save()
 
-    if not request_tracker.is_processed:
+    if not skip_bn_hub_request and not request_tracker.is_processed:
         if request_tracker.retry_number < max_retry:
             raise BNException(
                 f"Retry number: {request_tracker.retry_number + 1}"

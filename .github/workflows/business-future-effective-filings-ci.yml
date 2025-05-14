@@ -1,0 +1,24 @@
+name: Business Future Effective Filings Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/future-effective-filings/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/future-effective-filings
+
+jobs:
+  business-future-effective-filings-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-future-effective-filings"
+      working_directory: "./gcp-jobs/future-effective-filings"
+      codecov_flag: "business-future-effective-filings"

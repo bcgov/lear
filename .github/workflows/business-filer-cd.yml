@@ -3,7 +3,9 @@ name: Business Filer CD
 on:
   push:
     branches:
-      - feature-legal-name
+      - main
+      - feature*
+      - hotfix*
     paths:
       - "queue_services/business-filer/**"
   workflow_dispatch:
@@ -13,10 +15,17 @@ on:
         required: true
         type: choice
         options:
-        - dev
-        - test
-        - sandbox
-        - prod
+          - "dev"
+          - "test"
+          - "sandbox"
+          - "prod"
+      redeploy:
+        description: "Redeploy Application"
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   business-filer-cd:
@@ -25,6 +34,7 @@ jobs:
       target: ${{ inputs.target }}
       app_name: "business-filer"
       working_directory: "./queue_services/business-filer"
+      redeploy: ${{ inputs.redeploy }}
     secrets:
       WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

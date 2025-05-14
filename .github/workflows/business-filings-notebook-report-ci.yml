@@ -1,0 +1,24 @@
+name: Business Filings Notebook Report Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/filings-notebook-report/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/filings-notebook-report
+
+jobs:
+  business-filings-notebook-report-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-filings-notebook-report"
+      working_directory: "./gcp-jobs/filings-notebook-report"
+      codecov_flag: "business-filings-notebook-report"

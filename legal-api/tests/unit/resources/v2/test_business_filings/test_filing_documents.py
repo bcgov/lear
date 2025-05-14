@@ -147,6 +147,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['filingId'] = '123456'
 MOCK_NOTICE_OF_WITHDRAWAL['hasTakenEffect'] = False
 MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
 
+
 @pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
     ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
      'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND, None
@@ -1631,6 +1632,7 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
     filing.skip_status_listener = True
     filing._status = 'PAID'
     filing._payment_token = payment_id
+    filing._payment_completion_date = filing_date
     filing.save()
 
     requests_mock.post(f"{current_app.config.get('PAYMENT_SVC_URL')}/{payment_id}/receipts",
@@ -1658,10 +1660,10 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
      )
 ])
 def test_temp_document_list_for_now(mocker, session, client, jwt,
-                                                      test_name,
-                                                      temp_identifier,
-                                                      entity_type,
-                                                      expected_msg, expected_http_code):
+                                    test_name,
+                                    temp_identifier,
+                                    entity_type,
+                                    expected_msg, expected_http_code):
     """Test document list for noticeOfWithdrawal states with temp identifier."""
     # Setup
 

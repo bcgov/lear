@@ -85,6 +85,13 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
         return _get_document_list(business, filing)
 
     if 'application/pdf' in request.accept_mimetypes:
+        file_name = (legal_filing_name or file_key)
+        if not _is_document_available(business, filing, file_name):
+            return jsonify(
+                message=get_error_message(ErrorCode.DOCUMENT_NOT_FOUND,
+                                          **{'file_name': file_name, 'filing_id': filing_id, 'identifier': identifier})
+            ), HTTPStatus.NOT_FOUND
+
         if legal_filing_name:
             if legal_filing_name.lower().startswith('receipt'):
                 return _get_receipt(business, filing, jwt.get_token_auth_header())
@@ -100,6 +107,22 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
                 )
 
     return {}, HTTPStatus.NOT_FOUND
+
+
+def _is_document_available(business, filing, file_name):
+    """Check if the document is available."""
+    document_list = Filing.get_document_list(business, filing, jwt)
+    documents = {}
+    if legal_filings := document_list.get('documents').pop('legalFilings', None):
+        for doc in legal_filings:
+            documents = {**documents, **doc}
+    if static_documents := document_list.get('documents').pop('staticDocuments', None):
+        for file in static_documents:  # file_key is the last part of the url
+            documents = {**documents, **{file['url'].split('/')[-1]: file['url']}}
+    if docs := document_list.get('documents'):
+        documents = {**documents, **docs}
+
+    return file_name in documents
 
 
 def _get_document_list(business, filing):

@@ -3,10 +3,11 @@ name: Business Emailer CD
 on:
   push:
     branches:
-      - feature-legal-name
+      - main
+      - feature*
+      - hotfix*
     paths:
-      - "queue_services/entity-emailer/**"
-      - "queue_services/common/**"
+      - "queue_services/business-emailer/**"
   workflow_dispatch:
     inputs:
       target:
@@ -14,18 +15,26 @@ on:
         required: true
         type: choice
         options:
-        - dev
-        - test
-        - sandbox
-        - prod
+          - "dev"
+          - "test"
+          - "sandbox"
+          - "prod"
+      redeploy:
+        description: "Redeploy Application"
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   business-emailer-cd:
-    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-emailer"
-      working_directory: "./queue_services/entity-emailer"
+      working_directory: "./queue_services/business-emailer"
+      redeploy: ${{ inputs.redeploy }}
     secrets:
       WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

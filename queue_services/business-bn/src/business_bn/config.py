@@ -74,6 +74,7 @@ class Config:  # pylint: disable=too-few-public-methods
     BN_HUB_CLIENT_ID = os.getenv("BN_HUB_CLIENT_ID", None)
     BN_HUB_CLIENT_SECRET = os.getenv("BN_HUB_CLIENT_SECRET", None)
     BN_HUB_MAX_RETRY = int(os.getenv("BN_HUB_MAX_RETRY", "9"))
+    SKIP_BN_HUB_REQUEST = os.getenv("SKIP_BN_HUB_REQUEST", "false").lower() == "true"
     TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "src/business_bn/bn_templates")
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -99,7 +100,7 @@ class Config:  # pylint: disable=too-few-public-methods
     PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
-    SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
+    SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "false").lower() == "true"
 
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-bn")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", "business-bn-emailer")

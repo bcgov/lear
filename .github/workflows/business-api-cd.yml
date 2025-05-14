@@ -1,11 +1,13 @@
 name: Business API CD
 
 on:
-  push:
-    branches:
-      - feature-legal-name
-    paths:
-      - "legal-api/**"
+  #push:
+  #  branches:
+  #    - main
+  #    - feature*
+  #    - hotfix*
+  #  paths:
+  #    - "legal-api/**"
   workflow_dispatch:
     inputs:
       target:
@@ -13,18 +15,26 @@ on:
         required: true
         type: choice
         options:
-        - dev
-        - test
-        - sandbox
-        - prod
+          - "dev"
+          - "test"
+          - "sandbox"
+          - "prod"
+      redeploy:
+        description: "Redeploy Application"
+        required: true
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   business-api-cd:
-    uses: bcgov/bcregistry-sre/.github/workflows/cloud-run-service-cd.yaml@main
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-cd.yaml@main
     with:
       target: ${{ inputs.target }}
       app_name: "business-api"
       working_directory: "./legal-api"
+      redeploy: ${{ inputs.redeploy }}
     secrets:
       WORKLOAD_IDENTIFY_POOLS_PROVIDER: ${{ secrets.WORKLOAD_IDENTIFY_POOLS_PROVIDER }}
       GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}

@@ -1,0 +1,24 @@
+name: Business Entity BN Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/entity-bn/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/entity-bn
+
+jobs:
+  business-entity-bn-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-entity-bn"
+      working_directory: "./gcp-jobs/entity-bn"
+      codecov_flag: "business-entity-bn"

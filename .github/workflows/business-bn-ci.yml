@@ -2,7 +2,10 @@ name: Business BN CI
 
 on:
   pull_request:
-    types: [assigned, synchronize]
+    branches:
+      - main
+      - feature*
+      - hotfix*
     paths:
       - "queue_services/business-bn/**"
   workflow_dispatch:
