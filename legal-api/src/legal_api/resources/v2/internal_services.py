@@ -70,7 +70,7 @@ def update_bn_move():
             data={'oldBn': old_bn, 'newBn': new_bn},
             subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
             event_type='bc.registry.bnmove',
-            identifier=business.identifier,
+            identifier=business.identifier if business else None,
             message_id=None,
             is_wrapped=True
         )
@@ -78,7 +78,7 @@ def update_bn_move():
             data={},
             subject=current_app.config.get('NATS_ENTITY_EVENT_SUBJECT'),
             event_type='bc.registry.business.bn',
-            identifier=business.identifier,
+            identifier=business.identifier if business else None,
             message_id=None,
             is_wrapped=True
         )

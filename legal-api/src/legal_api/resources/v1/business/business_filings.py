@@ -485,7 +485,7 @@ class ListFilingResource(Resource):
                 publish_to_queue(
                     data=payload,
                     subject=current_app.config.get('NATS_FILER_SUBJECT'),
-                    identifier=business.identifier,
+                    identifier=business.identifier if business else None,
                     event_type='', # leaving empty as it does not currently have a specific type
                     message_id=None,
                     is_wrapped=False

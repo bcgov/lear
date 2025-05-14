@@ -55,7 +55,7 @@ def publish_entity_event(business: Business,
         subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
         publish_to_queue(
             data=payload_data,
-            identifier=business.identifier,
+            identifier=business.identifier if business else None,
             subject=subject,
             event_type='bc.registry.admin.bn',
             message_id=message_id
