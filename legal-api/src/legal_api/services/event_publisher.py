@@ -88,6 +88,7 @@ def _publish_to_gcp(data, subject, identifier, event_type):
 
     gcp_queue.publish(topic, to_queue_message(ce))
 
+# pylint disable is temporary until NATS is removed, then the is_wrapped param will go away
 def publish_to_queue( # pylint: disable=too-many-arguments
     data:dict,
     subject:str,
