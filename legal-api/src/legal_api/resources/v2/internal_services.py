@@ -19,7 +19,7 @@ from flask_cors import cross_origin
 
 from legal_api.models import Business, Filing, User, UserRoles
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services import publish_event
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import date, datetime
 
@@ -66,15 +66,22 @@ def update_bn_move():
         if response and (response_code != HTTPStatus.CREATED):
             current_app.logger.error('Unable to complete payment for registrars notation (bn move)')
             current_app.logger.error('%s, %s', response, response_code)
-
-        publish_event(business,
-                      'bc.registry.bnmove',
-                      {'oldBn': old_bn, 'newBn': new_bn},
-                      current_app.config.get('NATS_EMAILER_SUBJECT'))
-        publish_event(business,
-                      'bc.registry.business.bn',
-                      {},
-                      current_app.config.get('NATS_ENTITY_EVENT_SUBJECT'))
+        publish_to_queue(
+            data={'oldBn': old_bn, 'newBn': new_bn},
+            subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
+            event_type='bc.registry.bnmove',
+            identifier=business.identifier if business else None,
+            message_id=None,
+            is_wrapped=True
+        )
+        publish_to_queue(
+            data={},
+            subject=current_app.config.get('NATS_ENTITY_EVENT_SUBJECT'),
+            event_type='bc.registry.business.bn',
+            identifier=business.identifier if business else None,
+            message_id=None,
+            is_wrapped=True
+        )
     else:
         current_app.logger.error('Unable to update tax_id for (%s), which is missing in lear', old_bn)
     return jsonify({'message': 'Successfully updated tax id.'}), HTTPStatus.OK

@@ -209,12 +209,13 @@ def test_save_review(app, session, client, jwt, mocker, status, comment):
         'comment': comment
     }
 
-    subjects_in_queue = {}
-
     def publish_json(payload, subject):
-        subjects_in_queue[subject] = payload
+        pass
 
-    mocker.patch('legal_api.resources.v2.admin.reviews.queue.publish_json', side_effect=publish_json)
+    mock_publish = mocker.patch('legal_api.resources.v2.admin.reviews.publish_to_queue')
+    mock_publish_json = mocker.patch('legal_api.services.queue', side_effect=publish_json)
+    mock_publish.return_value = None
+    mock_publish_json.return_value = None
 
     rv = client.post(f'/api/v2/admin/reviews/{review.id}',
                      json=data,
@@ -235,7 +236,15 @@ def test_save_review(app, session, client, jwt, mocker, status, comment):
     filing = Filing.find_by_id(review.filing_id)
     assert filing.status == status_mapping[status]
 
-    assert current_app.config.get('NATS_EMAILER_SUBJECT') in subjects_in_queue
+    mock_publish.assert_called_with(
+        data=mocker.ANY, # for the payload parameter
+        subject=current_app.config.get('NATS_EMAILER_SUBJECT'),  # for the subject parameter,
+        identifier=None,
+        event_type=None,
+        message_id=None,
+        is_wrapped=False
+    )
+
 
 
 @pytest.mark.parametrize('data, message, response_code', [
@@ -248,7 +257,7 @@ def test_save_review_validation(app, session, client, jwt, mocker, data, message
     """Assert that a save review can be validated."""
     review = create_review('T1z3a567', 'NR 8798951')
 
-    mocker.patch('legal_api.resources.v2.admin.reviews.queue.publish_json', return_value=None)
+    mocker.patch('legal_api.resources.v2.admin.reviews.publish_to_queue', return_value=None)
     rv = client.post(f'/api/v2/admin/reviews/{review.id}',
                      json=data,
                      headers=create_header(jwt, [STAFF_ROLE], 'user'))
@@ -270,7 +279,7 @@ def test_save_review_not_allowed(app, session, client, jwt, mocker, status):
         'comment': 'Upload all documents'
     }
 
-    mocker.patch('legal_api.resources.v2.admin.reviews.queue.publish_json', return_value=None)
+    mocker.patch('legal_api.resources.v2.admin.reviews.publish_to_queue', return_value=None)
     rv = client.post(f'/api/v2/admin/reviews/{review.id}',
                      json=data,
                      headers=create_header(jwt, [STAFF_ROLE], 'user'))

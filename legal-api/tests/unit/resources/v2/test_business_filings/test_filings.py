@@ -177,7 +177,7 @@ def test_get_withdrawn_temp_business_filing(session, client, jwt, jwt_role, expe
     # validate that the NoW is embedded in the withdrawn filing
     assert 'noticeOfWithdrawal' in rv.json['filing']
 
-    # withdraw bootstrap filing 
+    # withdraw bootstrap filing
     new_business_filing._status = Filing.Status.WITHDRAWN.value
     new_business_filing.withdrawal_pending = False
     new_business_filing.save()
@@ -217,7 +217,7 @@ def test_get_filing_valid_filing_id(session, client, jwt):
     assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
     assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
 
-    
+
 def test_get_one_business_filing_by_id(session, client, jwt):
     """Assert that the business info cannot be received in a valid JSONSchema format."""
     identifier = 'CP7654321'
@@ -873,8 +873,8 @@ def test_delete_draft_now_filing(session, client, jwt):
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
-    
-    # validate that no NoW is embedded 
+
+    # validate that no NoW is embedded
     assert rv.status_code == HTTPStatus.OK
     assert 'noticeOfWithdrawal' not in rv.json['filing']
 
@@ -1501,7 +1501,7 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
 
         rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
                         headers=create_header(jwt, [jwt_role], identifier))
-        
+
     except Exception as err:
         print(err)
 
@@ -1651,7 +1651,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
     mocker.patch(
         'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.check_and_update_nr',
         return_value=None)
-    mocker.patch('legal_api.resources.v2.business.business_filings.business_filings.queue.publish_json', return_value=None)
+    mocker.patch('legal_api.resources.v2.business.business_filings.business_filings.publish_to_queue', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
@@ -1809,7 +1809,7 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
     rv_validation = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
                      json=now_json_data,
                      headers=create_header(jwt, [STAFF_ROLE], identifier))
-    
+
     assert rv_validation.status_code == HTTPStatus.OK
     assert rv_validation.json['filing']['header']['name'] == 'noticeOfWithdrawal'
 
@@ -1817,7 +1817,7 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
     rv_draft = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
                      json=now_json_data,
                      headers=create_header(jwt, [STAFF_ROLE], identifier))
-    
+
     # validate
     assert rv_draft.status_code == HTTPStatus.CREATED
     assert rv_draft.json['filing']['header']['name'] == 'noticeOfWithdrawal'
@@ -1852,7 +1852,7 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
     rv_draft = client.put(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}?draft=true',
                      json=now_json_data,
                      headers=create_header(jwt, [STAFF_ROLE], identifier))
-    
+
     # validate
     assert rv_draft.status_code == HTTPStatus.ACCEPTED
     assert rv_draft.json['filing']['header']['certifiedBy'] == 'test123'
