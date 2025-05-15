@@ -298,12 +298,14 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             is_ia_or_after (bool): Flag for incorporation application or after
             role (str): Optional role filter
         """
+        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
         # TODO: remove all workaround logic to get tombstone specific data displaying after corp migration is complete
         party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
         parties = []
 
-        # TODO: remove filter that excludes officer when we have plans to deal with it
+        # TODO: remove filter that excludes unsupported parties when we have plans to deal with it
         # Get versioned party roles
+        unsupported_roles = flags.value('unsupported-party-roles') or []
         versioned_party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= filing.transaction_id) \
             .filter(party_role_version.operation_type != 2) \
@@ -312,7 +314,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > filing.transaction_id)) \
-            .filter(party_role_version.role != PartyRole.RoleTypes.OFFICER.value) \
+            .filter(party_role_version.role.notin_(unsupported_roles)) \
             .order_by(party_role_version.transaction_id).all()
 
         # Process versioned party roles
