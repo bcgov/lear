@@ -157,7 +157,7 @@ def save_review(review_id: int):
     publish_to_queue(
         data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
         subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
-        identifier=None, # todo: when new review types are added if they have business, add business identifier here
+        identifier=None,  # todo: when new review types are added if they have business, add business identifier here
         event_type=None,
         message_id=None,
         is_wrapped=False

@@ -18,10 +18,9 @@ import uuid
 from typing import Optional
 
 from flask import current_app
-
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from legal_api.services import queue, gcp_queue
+from legal_api.services import gcp_queue, queue
 from legal_api.utils.datetime import datetime
 
 
@@ -54,12 +53,14 @@ def _publish_to_nats_with_wrapper(data, subject, identifier, event_type, message
         payload=payload
     )
 
+
 def _publish_to_nats(payload, subject):
     """Publish the event message onto the NATS subject."""
     queue.publish_json(
         subject=subject,
         payload=payload
     )
+
 
 def _publish_to_gcp(data, subject, identifier, event_type):
     """Publish the event message onto the GCP topic."""
@@ -72,7 +73,7 @@ def _publish_to_gcp(data, subject, identifier, event_type):
 
     topic = nats_to_gcp_topic[subject]
 
-    if  identifier is not None:
+    if identifier is not None:  # Fixed E271
         payload = {'identifier': identifier, **data}
     else:
         payload = data
@@ -88,17 +89,17 @@ def _publish_to_gcp(data, subject, identifier, event_type):
 
     gcp_queue.publish(topic, to_queue_message(ce))
 
-# pylint disable is temporary until NATS is removed, then the is_wrapped param will go away
-def publish_to_queue( # pylint: disable=too-many-arguments
-    data:dict,
-    subject:str,
-    event_type:Optional[str]=None,
-    message_id:Optional[str]=None,
-    identifier:Optional[str]=None,
-    is_wrapped:Optional[bool]=True
+
+# pylint: disable is temporary until NATS is removed, then the is_wrapped param will go away  # Fixed E261
+def publish_to_queue(  # pylint: disable=too-many-arguments
+    data: dict,  # Fixed E231
+    subject: str,  # Fixed E231
+    event_type: Optional[str] = None,  # Fixed E231, E252
+    message_id: Optional[str] = None,  # Fixed E231, E252
+    identifier: Optional[str] = None,  # Fixed E231, E252
+    is_wrapped: Optional[bool] = True  # Fixed E231, E252
 ) -> None:
-    """
-    Publishes data to a message queue based on the configured deployment platform and optional parameters.
+    """Publish data to a message queue.
 
     This function handles publishing messages to different platforms (e.g., GCP or NATS) based on the application's
     configuration. It supports optional message wrapping and identification, and provides a fallback mechanism in
@@ -131,7 +132,7 @@ def publish_to_queue( # pylint: disable=too-many-arguments
         if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
             _publish_to_gcp(data=data, subject=subject, identifier=identifier, event_type=event_type)
         elif is_wrapped:
-            _publish_to_nats_with_wrapper (
+            _publish_to_nats_with_wrapper(
                 data=data,
                 subject=subject,
                 identifier=identifier,
