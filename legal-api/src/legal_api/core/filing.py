@@ -526,7 +526,7 @@ class Filing:  # pylint: disable=too-many-public-methods
 
         # return a receipt for filings completed in our system (but not for ca users
         # see https://github.com/bcgov/entity/issues/21881
-        if not user_is_ca and filing.storage and filing.storage.payment_completion_date:
+        if filing.storage and filing.storage.payment_completion_date:
             if filing.filing_type == 'courtOrder' and \
                     (filing.storage.documents.filter(
                         Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
@@ -555,6 +555,8 @@ class Filing:  # pylint: disable=too-many-public-methods
                  ):
             documents['documents']['legalFilings'] = \
                 [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
+            if user_is_ca:
+                del documents['documents']['receipt']
             return documents
 
         if filing.status in (
@@ -606,4 +608,6 @@ class Filing:  # pylint: disable=too-many-public-methods
                     if static_docs := FilingMeta.get_static_documents(filing.storage, f'{base_url}{doc_url}/static'):
                         documents['documents']['staticDocuments'] = static_docs
 
+        if user_is_ca:
+            del documents['documents']['receipt']
         return documents
