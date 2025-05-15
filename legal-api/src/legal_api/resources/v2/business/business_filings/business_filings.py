@@ -936,6 +936,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
         }
 
+        # mailing_address may not be available for the migrated businesses from COLIN
         if mailing_address:
             payload['businessInfo']['contactInfo'] = {
                 'city': mailing_address.city,
