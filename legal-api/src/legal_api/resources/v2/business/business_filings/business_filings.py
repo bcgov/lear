@@ -923,6 +923,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if filing.filing_type == Filing.FILINGS['transparencyRegister']['name']:
                 corp_type = 'BTR'
 
+        if mailing_address is None:
+            mailing_address = Address()
+            mailing_address.city = "unknown"
+            mailing_address.postalCode = "unknown"
+            mailing_address.province = "unknown"
+            mailing_address.addressLine1 = "unknown"
+            mailing_address.country = "unknown"
+
         payload = {
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
