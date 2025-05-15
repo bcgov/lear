@@ -923,24 +923,11 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             if filing.filing_type == Filing.FILINGS['transparencyRegister']['name']:
                 corp_type = 'BTR'
 
-        if mailing_address is None:
-            mailing_address = Address()
-            mailing_address.city = "unknown"
-            mailing_address.postalCode = "unknown"
-            mailing_address.province = "unknown"
-            mailing_address.addressLine1 = "unknown"
-            mailing_address.country = "unknown"
-
         payload = {
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
                 'corpType': f'{corp_type}',
-                'businessName': f'{business.legal_name}',
-                'contactInfo': {'city': mailing_address.city,
-                                'postalCode': mailing_address.postal_code,
-                                'province': mailing_address.region,
-                                'addressLine1': mailing_address.street,
-                                'country': mailing_address.country}
+                'businessName': f'{business.legal_name}'
             },
             'filingInfo': {
                 'filingIdentifier': f'{filing.id}',
@@ -948,6 +935,15 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             },
             'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
         }
+
+        if mailing_address:
+            payload['businessInfo']['contactInfo'] = {
+                'city': mailing_address.city,
+                'postalCode': mailing_address.postal_code,
+                'province': mailing_address.region,
+                'addressLine1': mailing_address.street,
+                'country': mailing_address.country
+            }
         folio_number = filing.json['filing']['header'].get('folioNumber', None)
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
