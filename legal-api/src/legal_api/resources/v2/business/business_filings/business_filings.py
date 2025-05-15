@@ -927,12 +927,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
                 'corpType': f'{corp_type}',
-                'businessName': f'{business.legal_name}',
-                'contactInfo': {'city': mailing_address.city,
-                                'postalCode': mailing_address.postal_code,
-                                'province': mailing_address.region,
-                                'addressLine1': mailing_address.street,
-                                'country': mailing_address.country}
+                'businessName': f'{business.legal_name}'
             },
             'filingInfo': {
                 'filingIdentifier': f'{filing.id}',
@@ -940,6 +935,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             },
             'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
         }
+
+        # mailing_address may not be available for the migrated businesses from COLIN
+        if mailing_address:
+            payload['businessInfo']['contactInfo'] = {
+                'city': mailing_address.city,
+                'postalCode': mailing_address.postal_code,
+                'province': mailing_address.region,
+                'addressLine1': mailing_address.street,
+                'country': mailing_address.country
+            }
         folio_number = filing.json['filing']['header'].get('folioNumber', None)
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
