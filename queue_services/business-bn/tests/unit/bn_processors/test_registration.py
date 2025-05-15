@@ -16,6 +16,7 @@ import xml.etree.ElementTree as Et
 
 from flask import current_app
 import pytest
+from simple_cloudevent import SimpleCloudEvent
 from business_model.models import RequestTracker, Business
 
 from business_bn.exceptions import BNException, BNRetryExceededException
@@ -68,14 +69,16 @@ def test_registration(app, session, mocker, legal_type):
         'program_account_ref_no': program_account_ref_no})
     )
 
-    process_event({
-        'type': 'bc.registry.business.registration',
-        'data': {
-            'filing': {
-                'header': {'filingId': filing_id}
+    process_event(
+        SimpleCloudEvent(
+            type = 'bc.registry.business.registration',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
             }
-        }
-    })
+        )
+    )
 
 
     request_trackers = RequestTracker.find_by(business_id,
@@ -126,14 +129,16 @@ def test_retry_registration(app, session, mocker, request_type):
 
     for _ in range(10):
         try:
-            process_event({
-                'type': 'bc.registry.business.registration',
-                'data': {
-                    'filing': {
-                        'header': {'filingId': filing_id}
+            process_event(
+                SimpleCloudEvent(
+                    type = 'bc.registry.business.registration',
+                    data = {
+                        'filing': {
+                            'header': {'filingId': filing_id}
+                        }
                     }
-                }
-            })
+                )
+            )
 
         except BNException:
             continue

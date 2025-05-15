@@ -203,9 +203,6 @@ def _get_correction_filing(application, token, event_info):
 
 
 def _format_filing(application, token, filing, event_info):  # pylint: disable=too-many-branches
-    businesses = _get_ben_to_bc_identifiers()
-    if event_info['corp_num'] not in businesses:
-        return
     filing['filing']['business']['identifier'] = event_info['corp_num']
     filing['filing']['business']['adminFreeze'] = filing['filing']['business']['adminFreeze'] == 'True'
     del filing['filing']['business']['goodStanding']
@@ -295,9 +292,10 @@ def check_ben_to_bc_filings(application, token):
         event_info = dict(response.json())
         events = event_info.get('events')
         for event in events:
-            event['corp_num'] = identifier
-        colin_events.extend(events)
-
+            # None filing_typ_cd found in 'BC1294238', 'BC1265645', 'BC1263326', 'BC1263195' without filings
+            if event['filing_typ_cd'] not in ['COGS1', None]:
+                event['corp_num'] = identifier
+                colin_events.append(event)
     return colin_events
 
 
@@ -315,6 +313,13 @@ def update_ben_to_bc(application):  # pylint: disable=redefined-outer-name, too-
             for event_info in manual_filings_info:
                 if event_info['corp_num'] not in corps_with_failed_filing:
                     filing = get_filing(event_info, application, token)
+                    if (filing['filing']['header']['name'] == 'annualReport' and
+                            'parties' in filing['filing']['annualReport']):
+                        application.logger.debug(
+                            f'{event_info["corp_num"]}: Officer party type is not implemented in legal-api yet.')
+                        corps_with_failed_filing.append(event_info['corp_num'])
+                        continue
+
                     _format_filing(application, token, filing, event_info)
 
                     # call legal api with filing

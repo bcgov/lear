@@ -1,0 +1,24 @@
+name: Business Email Reminder Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/email-reminder/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/email-reminder
+
+jobs:
+  business-email-reminder-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-email-reminder"
+      working_directory: "./gcp-jobs/email-reminder"
+      codecov_flag: "business-email-reminder"
