@@ -582,8 +582,7 @@ def is_allowed(business: Business,
 
 def get_could_files(jwt: JwtManager, business_type: str, business_state: str):
     """Get allowable actions."""
-    is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
-    if is_competent_authority:
+    if is_competent_authority(jwt):
         allowed_filings = []
     else:
         allowed_filings = get_could_file(business_type, business_state, jwt)
@@ -598,8 +597,7 @@ def get_could_files(jwt: JwtManager, business_type: str, business_state: str):
 
 def get_allowable_actions(jwt: JwtManager, business: Business):
     """Get allowable actions."""
-    is_competent_authority = has_product('CA_SEARCH', jwt.get_token_auth_header())
-    if is_competent_authority:
+    if is_competent_authority(jwt):
         allowed_filings = []
     else:
         allowed_filings = get_allowed_filings(business, business.state, business.legal_type, jwt)
@@ -614,7 +612,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         },
         'digitalBusinessCard': are_digital_credentials_allowed(business, jwt),
         'digitalBusinessCardPreconditions': get_digital_credentials_preconditions(business, jwt),
-        'viewAll': is_competent_authority
+        'viewAll': is_competent_authority(jwt)
     }
     return result
 
@@ -1008,3 +1006,7 @@ def has_product(code: str, token: str) -> bool:
         return False
 
     return any(p['code'] == code and p['subscriptionStatus'] == 'ACTIVE' for p in user_products)
+
+def is_competent_authority(jwt: JwtManager) -> bool:
+    """Return if the user has the active ca_search subscription."""
+    return has_product('CA_SEARCH', jwt.get_token_auth_header())
