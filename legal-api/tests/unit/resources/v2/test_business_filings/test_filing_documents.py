@@ -1684,7 +1684,7 @@ def test_get_receipt_no_receipt_ca(session, client, jwt, requests_mock):
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt,
-                                          [STAFF_ROLE],
+                                          [],
                                           identifier,
                                           **{'accept': 'application/pdf', 'Account-Id': '123456'})
                     )
