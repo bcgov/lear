@@ -508,8 +508,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['resolutions'] = formatted_dates
 
     def _format_receiver_data(self, filing):
-        filing['newReceivers'] = filing.get('appointReceiver').get('parties', [])
-        filing['newReceivers'] = self._format_receiver_dates(filing['newReceivers'])
+        if self._filing.filing_type == 'appointReceiver':
+            new_receivers = filing.get('appointReceiver').get('parties', [])
+            filing['newReceivers'] = self._format_receiver_dates(new_receivers)
+
+        if self._filing.filing_type == 'ceaseReceiver':
+            ceased_receivers = filing.get('ceaseReceiver').get('parties', [])
+            filing['ceasedReceivers'] = self._format_receiver_dates(ceased_receivers)
 
         all_receivers = PartyRole.get_party_roles(self._business.id,
                                                   datetime.now(tz=timezone.utc).date(),
@@ -518,21 +523,24 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         for receiver in all_receivers:
             if receiver.cessation_date is None:
                 receiver_json = receiver.party.json
+                receiver_json['appointmentDate'] = receiver.appointment_date.strftime(OUTPUT_DATE_FORMAT)
+                receiver_json['cessationDate'] = receiver.cessation_date.strftime(
+                    OUTPUT_DATE_FORMAT) if receiver.cessation_date else None
                 current_receivers.append(receiver_json)
         filing['currentReceivers'] = current_receivers
-        print('currentReceivers', filing['currentReceivers'])
-        print('newReceivers', filing['newReceivers'])
 
     def _format_receiver_dates(self, receivers):
         for receiver in receivers:
-            if receiver.get('appointmentDate'):
-                appointment_date = LegislationDatetime.as_legislation_timezone_from_date_str(
-                    receiver['appointmentDate'])
-                receiver['appointmentDate'] = appointment_date.strftime(OUTPUT_DATE_FORMAT)
-            if receiver.get('cessationDate'):
-                cessation_date = LegislationDatetime.as_legislation_timezone_from_date_str(
-                    receiver['cessationDate'])
-                receiver['cessationDate'] = cessation_date.strftime(OUTPUT_DATE_FORMAT)
+            for role in receiver['roles']:
+                if role.get('appointmentDate'):
+                    appointment_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                        role['appointmentDate'])
+                    receiver['appointmentDate'] = appointment_date.strftime(OUTPUT_DATE_FORMAT)
+                if role.get('cessationDate'):
+                    cessation_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                        role['cessationDate'])
+                    receiver['cessationDate'] = cessation_date.strftime(OUTPUT_DATE_FORMAT)
+        return receivers
 
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])

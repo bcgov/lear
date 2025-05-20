@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for Cease Receiver notifications."""
+"""Email processing rules and actions for Appoint Receiver notifications."""
 import base64
 import re
 from http import HTTPStatus
@@ -32,8 +32,8 @@ from entity_emailer.email_processors import (
 
 
 def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-locals
-    """Build the email for Cease Receiver notification."""
-    logger.debug('cease_receiver: %s', email_info)
+    """Build the email for Appoint Receiver notification."""
+    logger.debug('appoint_receiver: %s', email_info)
     # get template and fill in parts
     filing_type = email_info['type']
 
@@ -41,7 +41,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info['filingId'])
 
     template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/CEASE_RECVR.html'
+        f'{current_app.config.get("TEMPLATE_PATH")}/APPOINT_RECVR.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
     # render template with vars
@@ -59,6 +59,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
+    
     print(html_out)
 
     # get attachments
@@ -73,7 +74,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = 'Receiver cSeased'
+    subject = 'Receiver appointed'
     legal_name = business.get('legalName', None)
     legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
     subject = f'{legal_name} - {subject}' if legal_name else subject
@@ -95,7 +96,7 @@ def _get_pdfs(
         filing: Filing,
         filing_date_time: str,
         effective_date: str) -> list:
-    """Get the PDFs for the Cease Receiver output."""
+    """Get the PDFs for the Appoint Receiver output."""
     pdfs = []
     attach_order = 1
     headers = {
@@ -104,12 +105,12 @@ def _get_pdfs(
     }
 
     # add filing PDF
-    filing_pdf_type = 'ceaseReceiver'
+    filing_pdf_type = 'appointReceiver'
     filing_pdf_encoded = get_filing_document(business['identifier'], filing.id, filing_pdf_type, token)
     if filing_pdf_encoded:
         pdfs.append(
             {
-                'fileName': 'Cease Receiver.pdf',
+                'fileName': 'Appoint Receiver.pdf',
                 'fileBytes': filing_pdf_encoded.decode('utf-8'),
                 'fileUrl': '',
                 'attachOrder': str(attach_order)
