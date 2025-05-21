@@ -317,6 +317,18 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = 1
 
+    LEGAL_API_BASE_URL="https://LEGAL_API_BASE_URL/api/v2/businesses"
+    PAYMENT_SVC_URL="https://PAY_SVC_URL/api/v1/payment-requests"
+
+    BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")
+    BUSINESS_CRED_DEF_ID = os.getenv("BUSINESS_CRED_DEF_ID", "TEST_BUSINESS_SCHEMA_ID")
+
+    TRACTION_API_URL = os.getenv("TRACTION_API_URL", "https://TRACTION_API_URL")
+    TRACTION_TENANT_ID = os.getenv("TRACTION_TENANT_ID", "TRACTION_TENANT_ID")
+    TRACTION_API_KEY = os.getenv("TRACTION_API_KEY", "TRACTION_API_KEY")
+    TRACTION_PUBLIC_SCHEMA_DID = os.getenv("TRACTION_PUBLIC_SCHEMA_DID", "TRACTION_PUBLIC_SCHEMA_DID")
+    TRACTION_PUBLIC_ISSUER_DID = os.getenv("TRACTION_PUBLIC_ISSUER_DID", "TRACTION_PUBLIC_ISSUER_DID")
+
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
