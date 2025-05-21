@@ -105,7 +105,7 @@ def test_update_bn_move(session, client, jwt):
     business.save()
 
     new_bn = '993777399BC0001'
-    with patch.object(internal_services, 'publish_event'):
+    with patch.object(internal_services, 'publish_to_queue'):
         with patch.object(ListFilingResource, 'create_invoice', return_value=(
                 {'isPaymentActionRequired': False}, HTTPStatus.CREATED)):
             rv = client.post('/api/v2/internal/bnmove',
