@@ -586,7 +586,11 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 filing.set_processed(business.legal_type)
                 filing.save()
             else:
-                payload = {'filing': {'id': filing.id}}
+                # todo: when removing nats, leave only filingMessage, and remove 'filing' as this part is used by OCP
+                payload = {
+                    'filing': {'id': filing.id},
+                    'filingMessage': {'filingIdentifier': filing.id}
+                }
                 publish_to_queue(
                     data=payload,
                     subject=current_app.config.get('NATS_FILER_SUBJECT'),
