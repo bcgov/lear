@@ -15,7 +15,7 @@
 apiVersion: deploy.cloud.google.com/v1
 kind: DeliveryPipeline
 metadata:
- name: business-filer-pipeline
+ name: business-api-pipeline
 description: Deployment pipeline
 serialPipeline:
  stages:
@@ -28,8 +28,8 @@ serialPipeline:
    - values:
       deploy-env: "development"
       deploy-project-id: "a083gt-dev"
-      service-name: "business-filer-dev"
-      container-name: "business-filer-dev"
+      service-name: "business-api-dev"
+      container-name: "business-api-dev"
       cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
       service-account: "sa-api@a083gt-dev.iam.gserviceaccount.com"
  - targetId: a083gt-test
@@ -41,8 +41,8 @@ serialPipeline:
    - values:
       deploy-env: "development"
       deploy-project-id: "a083gt-test"
-      service-name: "business-filer-test"
-      container-name: "business-filer-test"
+      service-name: "business-api-test"
+      container-name: "business-api-test"
       cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
       service-account: "sa-api@a083gt-test.iam.gserviceaccount.com"
  - targetId: a083gt-sandbox
@@ -54,8 +54,8 @@ serialPipeline:
    - values:
       deploy-env: "production"
       deploy-project-id: "a083gt-integration"
-      service-name: "business-filer-sandbox"
-      container-name: "business-filer-sandbox"
+      service-name: "business-api-sandbox"
+      container-name: "business-api-sandbox"
       cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
       service-account: "sa-api@a083gt-integration.iam.gserviceaccount.com"
  - targetId: a083gt-prod
@@ -67,8 +67,8 @@ serialPipeline:
    - values:
       deploy-env: "production"
       deploy-project-id: "a083gt-prod"
-      service-name: "business-filer-prod"
-      container-name: "business-filer-prod"
+      service-name: "business-api-prod"
+      container-name: "business-api-prod"
       container-concurrency: "60"
       resources-cpu: "8000m"
       resources-memory: "4Gi"
