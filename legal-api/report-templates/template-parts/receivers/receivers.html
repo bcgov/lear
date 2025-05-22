@@ -7,115 +7,8 @@
       <table class="section-data section-data-table mt-4">
           <div class="section-data mt-4">
             <div class="title">
-              <span class="capitalize-text section-sub-title">{{ receiver.officer.lastName }}</span>,
-              <span class="capitalize-text section-sub-title">{{ receiver.officer.firstName }}</span>
-            </div>
-          </div>
-          <tr class="no-page-break">
-            {% if receiver.mailingAddress is defined %}
-              <td>
-                <div class="section-sub-title">Mailing Address</div>
-                <div class="pt-2">{{ receiver.mailingAddress.streetAddress }}</div>
-                <div>{{ receiver.mailingAddress.streetAddressAdditional }}</div>
-                <div>
-                  {{ receiver.mailingAddress.addressCity }}
-                  {{ receiver.mailingAddress.addressRegion }}
-                  &nbsp;{{ receiver.mailingAddress.postalCode }}
-                </div>
-                <div>{{ receiver.mailingAddress.addressCountry }}</div>
-                <div class="delivery-instructions pt-1">{{ receiver.mailingAddress.deliveryInstructions }}</div>
-              </td>
-            {% endif %}
-            {% if receiver.deliveryAddress is defined %}
-              <td>
-                <div class="section-sub-title">Delivery Address</div>
-                <div class="pt-2">{{ receiver.deliveryAddress.streetAddress }}</div>
-                <div>{{ receiver.deliveryAddress.streetAddressAdditional }}</div>
-                <div>
-                    {{ receiver.deliveryAddress.addressCity }}
-                    {{ receiver.deliveryAddress.addressRegion }}
-                    &nbsp;{{ receiver.deliveryAddress.postalCode }}
-                </div>
-                <div>{{ receiver.deliveryAddress.addressCountry }}</div>
-                <div class="delivery-instructions pt-1">{{ receiver.deliveryAddress.deliveryInstructions }}</div>
-              </td>
-            {% endif %}
-            <td>
-              <div class="section-sub-title">Appointed</div>
-              <div class="pt-2">{{ receiver.appointmentDate }}</div>
-            </td>
-          </tr>
-      </table>
-      <div class="separator mt-4"></div>
-    {% endfor %}
-</div>
-{% endif %}
-
-{% if ceasedReceivers %}
-<div class="no-page-break">
-    <div class="section-title mt-4">
-        <span>Ceased Receivers</span>
-    </div>
-    {% for receiver in ceasedReceivers %}
-      <table class="section-data section-data-table mt-4">
-          <div class="section-data mt-4">
-            <div class="title">
-              <span class="capitalize-text section-sub-title">{{ receiver.officer.lastName }}</span>,
-              <span class="capitalize-text section-sub-title">{{ receiver.officer.firstName }}</span>
-            </div>
-          </div>
-          <tr class="no-page-break">
-            {% if receiver.mailingAddress is defined %}
-              <td>
-                <div class="section-sub-title">Mailing Address</div>
-                <div class="pt-2">{{ receiver.mailingAddress.streetAddress }}</div>
-                <div>{{ receiver.mailingAddress.streetAddressAdditional }}</div>
-                <div>
-                  {{ receiver.mailingAddress.addressCity }}
-                  {{ receiver.mailingAddress.addressRegion }}
-                  &nbsp;{{ receiver.mailingAddress.postalCode }}
-                </div>
-                <div>{{ receiver.mailingAddress.addressCountry }}</div>
-                <div class="delivery-instructions pt-1">{{ receiver.mailingAddress.deliveryInstructions }}</div>
-              </td>
-            {% endif %}
-            {% if receiver.deliveryAddress is defined %}
-              <td>
-                <div class="section-sub-title">Delivery Address</div>
-                <div class="pt-2">{{ receiver.deliveryAddress.streetAddress }}</div>
-                <div>{{ receiver.deliveryAddress.streetAddressAdditional }}</div>
-                <div>
-                    {{ receiver.deliveryAddress.addressCity }}
-                    {{ receiver.deliveryAddress.addressRegion }}
-                    &nbsp;{{ receiver.deliveryAddress.postalCode }}
-                </div>
-                <div>{{ receiver.deliveryAddress.addressCountry }}</div>
-                <div class="delivery-instructions pt-1">{{ receiver.deliveryAddress.deliveryInstructions }}</div>
-              </td>
-            {% endif %}
-            <td>
-              <div class="section-sub-title">Ceased</div>
-              <div class="pt-2">{{ receiver.cessationDate }}</div>
-            </td>
-          </tr>
-      </table>
-      <div class="separator mt-4"></div>
-    {% endfor %}
-</div>
-{% endif %}
-
-
-<div class="no-page-break">
-  <div class="section-title mt-4">
-    <span>All Receivers as of {{ effective_date }}</span>
-  </div>
-  {% if currentReceivers %}
-    {% for receiver in currentReceivers %}
-      <table class="section-data section-data-table mt-4">
-          <div class="section-data mt-4">
-            <div class="title">
-              <span class="capitalize-text section-sub-title">{{ receiver.officer.lastName }}</span>,
-              <span class="capitalize-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>,
+              <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
             </div>
           </div>
           <tr class="no-page-break">
@@ -154,7 +47,119 @@
           </tr>
       </table>
       {% if not loop.last %}
-        <div class="separator mt-4"></div>
+        <div class="solid-row-separator mt-4"></div>
+      {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if ceasedReceivers %}
+<div class="no-page-break">
+    <div class="section-title mt-4">
+        <span>Ceased Receivers</span>
+    </div>
+    {% for receiver in ceasedReceivers %}
+      <table class="section-data section-data-table mt-4">
+          <div class="section-data mt-4">
+            <div class="title">
+              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>,
+              <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+            </div>
+          </div>
+          <tr class="no-page-break">
+            {% if receiver.mailingAddress is defined %}
+              <td>
+                <div class="section-sub-title">Mailing Address</div>
+                <div class="pt-2">{{ receiver.mailingAddress.streetAddress }}</div>
+                <div>{{ receiver.mailingAddress.streetAddressAdditional }}</div>
+                <div>
+                  {{ receiver.mailingAddress.addressCity }}
+                  {{ receiver.mailingAddress.addressRegion }}
+                  &nbsp;{{ receiver.mailingAddress.postalCode }}
+                </div>
+                <div>{{ receiver.mailingAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ receiver.mailingAddress.deliveryInstructions }}</div>
+              </td>
+            {% endif %}
+            {% if receiver.deliveryAddress is defined %}
+              <td>
+                <div class="section-sub-title">Delivery Address</div>
+                <div class="pt-2">{{ receiver.deliveryAddress.streetAddress }}</div>
+                <div>{{ receiver.deliveryAddress.streetAddressAdditional }}</div>
+                <div>
+                    {{ receiver.deliveryAddress.addressCity }}
+                    {{ receiver.deliveryAddress.addressRegion }}
+                    &nbsp;{{ receiver.deliveryAddress.postalCode }}
+                </div>
+                <div>{{ receiver.deliveryAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ receiver.deliveryAddress.deliveryInstructions }}</div>
+              </td>
+            {% endif %}
+            <td>
+              <div class="section-sub-title">Ceased</div>
+              <div class="pt-2">{{ receiver.cessationDate }}</div>
+            </td>
+          </tr>
+      </table>
+      {% if not loop.last %}
+        <div class="solid-row-separator mt-4"></div>
+      {% endif %}
+    {% endfor %}
+</div>
+{% endif %}
+
+
+<div class="no-page-break">
+  <div class="separator mt-4"></div>
+  <div class="section-title mt-4">
+    <span>All Receivers as of {{ effective_date }}</span>
+  </div>
+  {% if currentReceivers %}
+    {% for receiver in currentReceivers %}
+      <table class="section-data section-data-table mt-4">
+          <div class="section-data mt-4">
+            <div class="title">
+              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>,
+              <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+            </div>
+          </div>
+          <tr class="no-page-break">
+            {% if receiver.mailingAddress is defined %}
+              <td>
+                <div class="section-sub-title">Mailing Address</div>
+                <div class="pt-2">{{ receiver.mailingAddress.streetAddress }}</div>
+                <div>{{ receiver.mailingAddress.streetAddressAdditional }}</div>
+                <div>
+                  {{ receiver.mailingAddress.addressCity }}
+                  {{ receiver.mailingAddress.addressRegion }}
+                  &nbsp;{{ receiver.mailingAddress.postalCode }}
+                </div>
+                <div>{{ receiver.mailingAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ receiver.mailingAddress.deliveryInstructions }}</div>
+              </td>
+            {% endif %}
+            {% if receiver.deliveryAddress is defined %}
+              <td>
+                <div class="section-sub-title">Delivery Address</div>
+                <div class="pt-2">{{ receiver.deliveryAddress.streetAddress }}</div>
+                <div>{{ receiver.deliveryAddress.streetAddressAdditional }}</div>
+                <div>
+                    {{ receiver.deliveryAddress.addressCity }}
+                    {{ receiver.deliveryAddress.addressRegion }}
+                    &nbsp;{{ receiver.deliveryAddress.postalCode }}
+                </div>
+                <div>{{ receiver.deliveryAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ receiver.deliveryAddress.deliveryInstructions }}</div>
+              </td>
+            {% endif %}
+            <td>
+              <div class="section-sub-title">Appointed</div>
+              <div class="pt-2">{{ receiver.appointmentDate }}</div>
+            </td>
+          </tr>
+      </table>
+      {% if not loop.last %}
+        <div class="solid-row-separator mt-4"></div>
       {% endif %}
     {% endfor %}
   </div>

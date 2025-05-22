@@ -1,0 +1,53 @@
+{% if receivers|length > 0 %}
+  <div class="no-page-break">
+    <div class="separator mt-4"></div>
+    <div class="section-title mt-4">Receiver Information</div>
+  </div>
+  {% for party in receivers | sort(attribute='officer.lastName') %}
+    <table class="section-data section-data-table mt-4">
+      <div class="section-data mt-4">
+        <div class="title">
+          <span class="upper-text section-sub-title">{{ party.officer.lastName }}</span>,
+          <span class="upper-text section-sub-title">{{ party.officer.firstName }}</span>
+        </div>
+      </div>
+      <tr class="no-page-break">
+        {% if party.mailingAddress is defined %}
+          <td>
+            <div class="section-sub-title">Mailing Address</div>
+            <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
+            <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+            <div>
+              {{ party.mailingAddress.addressCity }}
+              {{ party.mailingAddress.addressRegion }}
+              &nbsp;{{ party.mailingAddress.postalCode }}
+            </div>
+            <div>{{ party.mailingAddress.addressCountry }}</div>
+            <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+          </td>
+        {% endif %}
+        {% if party.deliveryAddress is defined %}
+          <td>
+            <div class="section-sub-title">Delivery Address</div>
+            <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
+            <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+            <div>
+                {{ party.deliveryAddress.addressCity }}
+                {{ party.deliveryAddress.addressRegion }}
+                &nbsp;{{ party.deliveryAddress.postalCode }}
+            </div>
+            <div>{{ party.deliveryAddress.addressCountry }}</div>
+            <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+          </td>
+        {% endif %}
+        <td>
+          <div class="section-sub-title">Appointed</div>
+          <div class="pt-2">{{ party.appointmentDate }}</div>
+        </td>
+      </tr>
+    </table>
+    {% if not loop.first and not loop.last %}
+      <div class="solid-row-separator mt-4"></div>
+    {% endif %}
+  {% endfor %}
+{% endif %}

@@ -59,7 +59,6 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
         email_header=filing_name.upper(),
         filing_type=filing_type
     )
-    print(html_out)
 
     # get attachments
     pdfs = _get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
