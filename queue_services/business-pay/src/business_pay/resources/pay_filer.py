@@ -179,10 +179,8 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
         f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
     try:
         if filing.effective_date <= filing.payment_completion_date:
-            flag_on = flags.is_on("enable-sandbox")
-            logger.debug(f"enable-sandbox flag on: {flag_on}")
-            # use Pub/Sub if FF on, otherwise NATS
-            if flag_on:
+            # use Pub/Sub if in GCP, otherwise NATS
+            if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
                 data = create_gcp_filing_msg(filing.id)
 
                 ce = SimpleCloudEvent(

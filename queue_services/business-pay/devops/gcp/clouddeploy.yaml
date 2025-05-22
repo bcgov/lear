@@ -26,7 +26,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "development"
+      deploy-env: "production"
       deploy-project-id: "a083gt-dev"
       service-name: "business-pay-dev"
       container-name: "business-pay-dev"
@@ -39,7 +39,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "development"
+      deploy-env: "production"
       deploy-project-id: "a083gt-test"
       service-name: "business-pay-test"
       container-name: "business-pay-test"
@@ -52,7 +52,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "sandbox"
+      deploy-env: "production"
       deploy-project-id: "a083gt-integration"
       service-name: "business-pay-sandbox"
       container-name: "business-pay-sandbox"
