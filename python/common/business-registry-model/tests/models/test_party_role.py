@@ -296,3 +296,63 @@ def test_get_party_roles_by_filing(session):
 
     party_roles = PartyRole.get_party_roles_by_filing(filing.id, datetime.datetime.utcnow())
     assert len(party_roles) == 1
+
+
+def test_get_party_roles_unsupported_list(session):
+    """Assert that the get_party_roles works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton',
+        middle_initial='',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_1.save()
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.OFFICER.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_2.save()
+    party_role_3 = PartyRole(
+        role=PartyRole.RoleTypes.RECEIVER.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_3.save()
+    party_role_4 = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_4.save()
+    # Find by all party roles
+    unsupported_list = ['officer', 'receiver', 'liquidator']
+
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
+    assert len(party_roles) == 4 - len(unsupported_list)
+
+    for role in party_roles:
+        assert role.role not in unsupported_list
+
+    # Find by party role
+    for role in unsupported_list:
+        party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), role)
+        assert len(party_roles) == 1
