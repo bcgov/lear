@@ -144,10 +144,10 @@ class PartyRole(db.Model, Versioned):
                 filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
 
         # TODO: rework the unsupported party roles section; change-on-change to still bring back these roles
-        if not role or role.lower() not in unsupported_roles:
-            party_roles = party_roles.filter(PartyRole.role.notin_(unsupported_roles))
-        if role is not None:
+        if role:
             party_roles = party_roles.filter(PartyRole.role == role.lower())
+        else:
+            party_roles = party_roles.filter(PartyRole.role.notin_(unsupported_roles))
 
         party_roles = party_roles.all()
         return party_roles
