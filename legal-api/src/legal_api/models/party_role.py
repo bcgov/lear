@@ -128,13 +128,16 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_party_roles(business_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
+        unsupported_roles = [
+            PartyRole.RoleTypes.OFFICER.value,
+            PartyRole.RoleTypes.LIQUIDATOR.value,
+            PartyRole.RoleTypes.RECEIVER.value,
+        ]
 
         party_roles = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id)
 
         # TODO: rework the unsupported party roles section; change-on-change to still bring back these roles
-        unsupported_roles = flags.value('unsupported-party-roles') or []
         if not role or role.lower() not in unsupported_roles:
             party_roles = party_roles.filter(PartyRole.role.notin_(unsupported_roles))
         if role is not None:

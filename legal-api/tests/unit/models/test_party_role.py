@@ -302,16 +302,7 @@ def test_get_party_roles_by_filing(session):
     assert len(party_roles) == 1
 
 
-@pytest.mark.parametrize(
-    'test_name, unsupported_list', [
-        ('unsupported_empty', []),
-        ('unsupported_officer', ['officer']),
-        ('unsupported_receiver', ['receiver']),
-        ('unsupported_liquidator', ['liquidator']),
-        ('unsupported_multiple', ['officer', 'receiver', 'liquidator'])
-    ]
-)
-def test_get_party_roles_unsupported_list(session, test_name, unsupported_list):
+def test_get_party_roles_unsupported_list(session):
     """Assert that the get_party_roles works as expected."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
@@ -357,13 +348,15 @@ def test_get_party_roles_unsupported_list(session, test_name, unsupported_list):
     )
     party_role_4.save()
     # Find by all party roles
-    with patch.object(flags, 'value', return_value=unsupported_list):
-        party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
-        assert len(party_roles) == 4 - len(unsupported_list)
-        for role in party_roles:
-            assert role.role not in unsupported_list
+    unsupported_list = ['officer', 'receiver', 'liquidator']
 
-        # Find by party role
-        for role in unsupported_list:
-            party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), role)
-            assert len(party_roles) == 1
+    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
+    assert len(party_roles) == 4 - len(unsupported_list)
+
+    for role in party_roles:
+        assert role.role not in unsupported_list
+
+    # Find by party role
+    for role in unsupported_list:
+        party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), role)
+        assert len(party_roles) == 1

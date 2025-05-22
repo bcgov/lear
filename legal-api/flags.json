@@ -22,7 +22,6 @@
             "dissolutions-job": true,
             "furnishings-job": true,
             "emailer-reminder-job": true
-        },
-        "unsupported-party-roles": ["officer", "receiver", "liquidator"]
+        }
     }
 }
