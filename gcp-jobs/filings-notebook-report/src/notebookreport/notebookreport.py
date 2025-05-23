@@ -48,7 +48,7 @@ def send_email(note_book, data_directory, emailtype, errormessage):  # noqa: PLR
     last_month = datetime.now() - relativedelta(months=1)
     ext = ""
     filename = ""
-    env = os.getenv("DEPLOYMENT_ENVIRONMENT", "dev")
+    env = os.getenv("DEPLOYMENT_ENV", "dev")
     if env != "prod":
         ext = " on " + env
 

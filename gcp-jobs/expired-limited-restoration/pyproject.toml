@@ -1,18 +1,24 @@
-[tool.poetry]
+[project]
 name = "expired-limited-restoration"
 version = "0.1.0"
 description = ""
-authors = ["Hrvoje Fekete <hrvoje.fekete@mindpoweredtech.com>"]
+authors = [
+    {name = "SBC-Connect"}
+]
+license = {text = "BSD-3-clause"}
 readme = "README.md"
-package-mode = false
+requires-python = ">=3.13,<4"
+dependencies = [
+    "flask (>=3.1.1,<4.0.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging"
+]
 
-[tool.poetry.dependencies]
-python = "^3.13.0"
-Flask = "^3.1.0"
-requests = "^2.32.3"
-python-dotenv = "^1.1.0"
-# git dependencies
-structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging" }
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
@@ -156,8 +162,4 @@ exclude_lines = [
     "if 0:",
     'if __name__ == "__main__":',
 ]
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
 

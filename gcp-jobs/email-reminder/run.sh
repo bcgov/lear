@@ -1,4 +1,4 @@
 #! /bin/sh
-echo 'run email-reminder.py'
-python3 run_reminder.py
-echo 'run email-reminder.py done'
+echo 'run email-reminder'
+python3 run_reminders.py
+echo 'run email-reminder done'
