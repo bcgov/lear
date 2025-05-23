@@ -179,10 +179,8 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
         f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
     try:
         if filing.effective_date <= filing.payment_completion_date:
-            flag_on = flags.is_on("enable-sandbox")
-            logger.debug(f"enable-sandbox flag on: {flag_on}")
-            # use Pub/Sub if FF on, otherwise NATS
-            if flag_on:
+            # use Pub/Sub if in GCP, otherwise NATS
+            if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
                 data = create_gcp_filing_msg(filing.id)
 
                 ce = SimpleCloudEvent(
@@ -221,12 +219,25 @@ def publish_to_emailer(filing: Filing):
             logger.debug("Skip publishing to emailer.")
             return
 
-        mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
         email_msg = create_email_msg(filing.id, filing.filing_type)
-        # await queue.publish(subject=mail_topic, msg=email_msg)
-        queue.publish_json(subject=mail_topic, payload=email_msg)
-        logger.info(
-            f"published to emailer for filing-id: {filing.id}")
+
+        if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
+            ce = SimpleCloudEvent(
+                id=str(uuid.uuid4()),
+                source='business_pay',
+                subject='filing',
+                time=datetime.now(timezone.utc),
+                data=email_msg
+            )
+            topic = current_app.config.get('BUSINESS_EMAILER_TOPIC')
+            gcp_queue.publish(topic, to_queue_message(ce))
+            logger.debug(f"Emailer pub/sub message: {str(ce)}")
+        else:
+            mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
+            # await queue.publish(subject=mail_topic, msg=email_msg)
+            queue.publish_json(subject=mail_topic, payload=email_msg)
+            logger.info(
+                f"published to emailer for filing-id: {filing.id}")
 
 
 def get_payment_token(ce: SimpleCloudEvent):

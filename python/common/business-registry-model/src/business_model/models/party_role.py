@@ -41,6 +41,7 @@ class PartyRole(db.Model, Versioned):
         PROPRIETOR = 'proprietor'
         PARTNER = 'partner'
         RECEIVER = 'receiver'
+        OFFICER = 'officer'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'
@@ -129,6 +130,12 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_party_roles(business_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
+        unsupported_roles = [
+            PartyRole.RoleTypes.OFFICER.value,
+            PartyRole.RoleTypes.LIQUIDATOR.value,
+            PartyRole.RoleTypes.RECEIVER.value,
+        ]
+
         party_roles = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id)
 
@@ -136,8 +143,11 @@ class PartyRole(db.Model, Versioned):
             party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date). \
                 filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
 
-        if role is not None:
+        # TODO: rework the unsupported party roles section; change-on-change to still bring back these roles
+        if role:
             party_roles = party_roles.filter(PartyRole.role == role.lower())
+        else:
+            party_roles = party_roles.filter(PartyRole.role.notin_(unsupported_roles))
 
         party_roles = party_roles.all()
         return party_roles
