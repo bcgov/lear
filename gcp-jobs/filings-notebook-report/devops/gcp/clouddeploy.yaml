@@ -26,11 +26,10 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "development"
+      deploy-env: "dev"
       deploy-project-id: "a083gt-dev"
       job-name: "business-filings-notebook-report-dev"
       cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
-      run-command: "./run.sh"
       service-account: "sa-job@a083gt-dev.iam.gserviceaccount.com"
  - targetId: a083gt-test
    profiles: [test]
@@ -39,11 +38,10 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "development"
+      deploy-env: "test"
       deploy-project-id: "a083gt-test"
       job-name: "business-filings-notebook-report-test"
       cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
-      run-command: "./run.sh"
       service-account: "sa-job@a083gt-test.iam.gserviceaccount.com"
  - targetId: a083gt-sandbox
    profiles: [sandbox]
@@ -56,7 +54,6 @@ serialPipeline:
       deploy-project-id: "a083gt-integration"
       job-name: "business-filings-notebook-report-sandbox"
       cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
-      run-command: "./run.sh"
       service-account: "sa-job@a083gt-integration.iam.gserviceaccount.com"
  - targetId: a083gt-prod
    profiles: [prod]
@@ -65,9 +62,8 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "production"
+      deploy-env: "prod"
       deploy-project-id: "a083gt-prod"
       job-name: "business-filings-notebook-report-prod"
       cloudsql-instances: "a083gt-prod:northamerica-northeast1:businesses-db-prod"
-      run-command: "./run.sh"
       service-account: "sa-job@a083gt-prod.iam.gserviceaccount.com"
