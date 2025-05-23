@@ -40,6 +40,7 @@ from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
+from legal_api.utils.datetime import timezone
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -193,6 +194,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'registration-statement/party',
             'registration-statement/business-info',
             'registration-statement/completingParty',
+            'receivers/receivers',
             'common/statement',
             'common/benefitCompanyStmt',
             'dissolution/custodianOfRecords',
@@ -310,7 +312,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_continuation_in_data(filing)
         elif self._report_key == 'noticeOfWithdrawal':
             self._format_notice_of_withdrawal_data(filing)
-        if self._report_key == 'ceaseReceiver':
+        elif self._report_key == 'appointReceiver':
+            self._format_receiver_data(filing)
+        elif self._report_key == 'ceaseReceiver':
             self._format_receiver_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
@@ -504,7 +508,39 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['resolutions'] = formatted_dates
 
     def _format_receiver_data(self, filing):
-        filing['parties'] = filing['ceaseReceiver']['parties']
+        if self._filing.filing_type == 'appointReceiver':
+            new_receivers = filing.get('appointReceiver').get('parties', [])
+            filing['newReceivers'] = self._format_receiver_dates(new_receivers)
+
+        if self._filing.filing_type == 'ceaseReceiver':
+            ceased_receivers = filing.get('ceaseReceiver').get('parties', [])
+            filing['ceasedReceivers'] = self._format_receiver_dates(ceased_receivers)
+
+        all_receivers = PartyRole.get_party_roles(self._business.id,
+                                                  datetime.now(tz=timezone.utc).date(),
+                                                  PartyRole.RoleTypes.RECEIVER.value)
+        current_receivers = []  # Initialize the receivers list
+        for receiver in all_receivers:
+            if receiver.cessation_date is None:
+                receiver_json = receiver.party.json
+                receiver_json['appointmentDate'] = receiver.appointment_date.strftime(OUTPUT_DATE_FORMAT)
+                receiver_json['cessationDate'] = receiver.cessation_date.strftime(
+                    OUTPUT_DATE_FORMAT) if receiver.cessation_date else None
+                current_receivers.append(receiver_json)
+        filing['currentReceivers'] = current_receivers
+
+    def _format_receiver_dates(self, receivers):
+        for receiver in receivers:
+            for role in receiver['roles']:
+                if role.get('appointmentDate'):
+                    appointment_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                        role['appointmentDate'])
+                    receiver['appointmentDate'] = appointment_date.strftime(OUTPUT_DATE_FORMAT)
+                if role.get('cessationDate'):
+                    cessation_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                        role['cessationDate'])
+                    receiver['cessationDate'] = cessation_date.strftime(OUTPUT_DATE_FORMAT)
+        return receivers
 
     def _format_incorporation_data(self, filing):
         self._format_address(filing['incorporationApplication']['offices']['registeredOffice']['deliveryAddress'])
@@ -1507,6 +1543,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'noticeOfWithdrawal': {
             'filingDescription': 'Notice of Withdrawal',
             'fileName': 'noticeOfWithdrawal'
+        },
+        'appointReceiver': {
+            'filingDescription': 'Appoint Receiver',
+            'fileName': 'appointReceiver'
         },
         'ceaseReceiver': {
             'filingDescription': 'Cease Receiver',

@@ -358,14 +358,16 @@
                {% endif %}
                <div class="pt-2">{{ report_date_time }}</div>
             </td>
-         {% elif header.name == 'ceaseReceiver' %}
+         {% elif header.name in ['appointReceiver', 'ceaseReceiver'] %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
+               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
+               <div class="pt-2">{{ report_date_time }}</div>
             </td>
          {% endif %}
          {% if reportType != 'summary' %}

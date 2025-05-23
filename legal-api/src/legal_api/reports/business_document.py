@@ -95,6 +95,7 @@ class BusinessDocument:
             'business-summary/amalgamationOut',
             'business-summary/recordKeeper',
             'business-summary/parties',
+            'business-summary/receiverInformation',
             'common/addresses',
             'common/businessDetails',
             'common/footerMOCS',
@@ -177,6 +178,7 @@ class BusinessDocument:
                 # set party groups
                 self._set_directors(business_json)
                 self._set_record_keepers(business_json)
+                self._set_receivers(business_json)
 
         except Exception as e:
             current_app.logger.error(e)
@@ -315,6 +317,20 @@ class BusinessDocument:
             if party.get('deliveryAddress'):
                 party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
         business['parties'] = party_json
+
+    def _set_receivers(self, business: dict):
+        """Set the receivers of the business (all parties)."""
+        receiver_json = [party_role.json for party_role in self._business.party_roles.all()
+                         if party_role.role.lower() == 'receiver' and party_role.cessation_date is None]
+        for receiver in receiver_json:
+            if receiver.get('mailingAddress'):
+                receiver['mailingAddress'] = BusinessDocument._format_address(receiver['mailingAddress'])
+            if receiver.get('deliveryAddress'):
+                receiver['deliveryAddress'] = BusinessDocument._format_address(receiver['deliveryAddress'])
+            appointment_date = LegislationDatetime.as_legislation_timezone_from_date_str(
+                        receiver['appointmentDate'])
+            receiver['appointmentDate'] = appointment_date.strftime(OUTPUT_DATE_FORMAT)
+        business['receivers'] = receiver_json
 
     def _set_name_translations(self, business: dict):
         """Set the aliases."""

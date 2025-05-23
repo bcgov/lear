@@ -63,11 +63,11 @@ def validate_party(business: Business, filing: Dict) -> list:
     receivers = PartyRole.get_party_roles(business.id,
                                           datetime.now(tz=timezone.utc).date(),
                                           PartyRole.RoleTypes.RECEIVER.value)
-    receiver_role_ids = [receiver_party_role.id for receiver_party_role in receivers]
+    receiver_party_ids = [receiver_party_role.party_id for receiver_party_role in receivers]
 
     # Check if party is a valid party of receiver role
     for party in parties:
-        if party.get('officer').get('id') not in receiver_role_ids:
+        if party.get('officer').get('id') not in receiver_party_ids:
             msg.append({'error': 'Must be a valid Receiver party.', 'path': '/filing/ceaseReceiver/parties'})
 
     return msg
