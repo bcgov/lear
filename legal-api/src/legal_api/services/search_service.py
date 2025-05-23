@@ -45,7 +45,6 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
 
         def clean_list(values: List[str]) -> List[str]:
             return [v.strip() for v in values if v.strip()]
-        
         return cls(
             identifier=clean_str(req.get('identifier', None)),
             name=clean_str(req.get('name', None)),
