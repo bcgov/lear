@@ -126,7 +126,7 @@ async def worker():
     if not (
         filing := Filing.get_filing_by_payment_token(pay_token=str(payment_token.id))
     ):
-        if payment_token.filing_identifier == None and \
+        if payment_token.filing_identifier is None and \
            payment_token.corp_type_code == "BC":
             logger.debug(
                 f"Take Off Queue - BOGUS Filing Not Found: {payment_token} for : {str(ce)}")
@@ -145,7 +145,8 @@ async def worker():
     logger.info(f"processing payment: {payment_token.id}")
 
     # setting the payment_completion_date, marks the filing as paid
-    filing.payment_completion_date = datetime.now(timezone.utc)
+    # in the unlikely event that the CE time is null, use now()
+    filing.payment_completion_date = ce.time or datetime.now(timezone.utc)
     filing.payment_status_code = "COMPLETED"
     filing.status = Filing.Status.PAID
     filing.save()
