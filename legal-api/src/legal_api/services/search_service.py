@@ -292,8 +292,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             {
                 'id': row.filing_id,
                 'identifier': row.identifier,
-                'nrid': row.nrNum,
-                'bootstrap_id': row.temp_reg
+                'nrId': row.nrNum,
+                'bootstrapId': row.temp_reg
             }
             for row in rows
         ]
