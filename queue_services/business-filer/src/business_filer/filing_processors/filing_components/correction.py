@@ -53,9 +53,8 @@ from business_filer.filing_processors.filing_components import (
     update_address,
 )
 
-
 CEASE_ROLE_MAPPING = {
-    **{legal_type: PartyRole.RoleTypes.DIRECTOR.value for legal_type in Business.CORPS},
+    **dict.fromkeys(Business.CORPS, PartyRole.RoleTypes.DIRECTOR.value),
     Business.LegalTypes.COOP.value: PartyRole.RoleTypes.DIRECTOR.value,
     Business.LegalTypes.PARTNERSHIP.value: PartyRole.RoleTypes.PARTNER.value,
     Business.LegalTypes.SOLE_PROP.value: PartyRole.RoleTypes.PROPRIETOR.value,
@@ -199,7 +198,7 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
                     break
 
         filing_json = copy.deepcopy(correction_filing_rec.filing_json)
-        filing_json['filing']['correction']['parties'] = parties
+        filing_json["filing"]["correction"]["parties"] = parties
         correction_filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update
 
     # Cease the party roles not present in the edit request

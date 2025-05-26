@@ -36,7 +36,7 @@ from entity_filer.filing_processors.filing_components import (
 
 
 CEASE_ROLE_MAPPING = {
-    **{legal_type: PartyRole.RoleTypes.DIRECTOR.value for legal_type in Business.CORPS},
+    **dict.fromkeys(Business.CORPS, PartyRole.RoleTypes.DIRECTOR.value),
     Business.LegalTypes.COOP.value: PartyRole.RoleTypes.DIRECTOR.value,
     Business.LegalTypes.PARTNERSHIP.value: PartyRole.RoleTypes.PARTNER.value,
     Business.LegalTypes.SOLE_PROP.value: PartyRole.RoleTypes.PROPRIETOR.value,
