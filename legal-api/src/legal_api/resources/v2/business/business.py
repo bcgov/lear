@@ -17,8 +17,6 @@ Provides all the search and retrieval from the business entity datastore.
 """
 from contextlib import suppress
 from http import HTTPStatus
-import select
-from typing import Optional
 
 from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel  # noqa: N813
@@ -40,8 +38,7 @@ from legal_api.services.search_service import AffiliationSearchDetails, Business
 from legal_api.utils.auth import jwt
 
 from .bp import bp
-from legal_api.models import db
-from sqlalchemy.orm import aliased
+
 
 @bp.route('/<string:identifier>', methods=['GET'])
 @cross_origin(origin='*')
@@ -195,16 +192,16 @@ def search_businesses():
         current_app.logger.error('Error searching over business information for: %s', identifiers)
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
+
 @bp.route('/search/<int:org_id>/affiliation_mappings', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_roles([SYSTEM_ROLE])
 def get_filing_details(org_id: str):
-    """Return the list of Business filings with name requests. Being called from auth api"""
-
+    """Return the list of Business filings with name requests. Being called from auth api."""
     results = BusinessSearchService.get_affiliation_mapping_results(org_id=org_id)
     return jsonify({
-        "count": len(results),
-        "results": results
+        'count': len(results),
+        'results': results
     })
 
 

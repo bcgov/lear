@@ -22,7 +22,7 @@ from typing import Final, List, Optional, Tuple
 from requests import Request
 from sqlalchemy import func
 
-from legal_api.models import Business, Filing, db, RegistrationBootstrap
+from legal_api.models import Business, Filing, RegistrationBootstrap, db
 
 
 @dataclass
@@ -276,22 +276,24 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         query = db.session.query(
             Filing.id.label('filing_id'),
             Business.identifier,
-            Filing.filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber'].label('nrNum'),
-            RegistrationBootstrap.identifier.label('temp_reg'),
+            Filing
+            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
+            .label('nrNum'),
+            RegistrationBootstrap.identifier.label('temp_reg'),  # pylint: disable=no-member
             RegistrationBootstrap.account.label('account_id')
-        ).select_from(Filing) \
-        .outerjoin(Business, Filing.business_id == Business.id) \
-        .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)  \
-        .filter(RegistrationBootstrap.account == org_id)
-        
+                ).select_from(Filing) \
+            .outerjoin(Business, Filing.business_id == Business.id) \
+            .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)  \
+            .filter(RegistrationBootstrap.account == org_id)
+
         rows = query.all()
-        
+
         result_list = [
             {
-                "id": row.filing_id,
-                "identifier": row.identifier,
-                "nrid": row.nrNum,
-                "bootstrap_id": row.temp_reg
+                'id': row.filing_id,
+                'identifier': row.identifier,
+                'nrid': row.nrNum,
+                'bootstrap_id': row.temp_reg
             }
             for row in rows
         ]
