@@ -26,7 +26,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "development"
+      deploy-env: "dev"
       deploy-project-id: "a083gt-dev"
       job-name: "business-filings-notebook-report-dev"
       cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
@@ -39,7 +39,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "development"
+      deploy-env: "test"
       deploy-project-id: "a083gt-test"
       job-name: "business-filings-notebook-report-test"
       cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
@@ -65,7 +65,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "production"
+      deploy-env: "prod"
       deploy-project-id: "a083gt-prod"
       job-name: "business-filings-notebook-report-prod"
       cloudsql-instances: "a083gt-prod:northamerica-northeast1:businesses-db-prod"
