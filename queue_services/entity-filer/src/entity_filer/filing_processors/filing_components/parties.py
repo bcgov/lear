@@ -74,4 +74,9 @@ def delete_parties(business: Business):
     """Delete the party_roles for a business."""
     if existing_party_roles := business.party_roles.all():
         for role in existing_party_roles:
-            business.party_roles.remove(role)
+            if role.role not in [
+                PartyRole.RoleTypes.OFFICER.value,
+                PartyRole.RoleTypes.RECEIVER.value,
+                PartyRole.RoleTypes.LIQUIDATOR.value,
+            ]:
+                business.party_roles.remove(role)

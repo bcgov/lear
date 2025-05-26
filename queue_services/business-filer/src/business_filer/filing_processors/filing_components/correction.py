@@ -210,7 +210,7 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
                          party.get("officer").get("id") is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
     for party_role in existing_party_roles:
-        # For safety, skip roles that should not be ceased
+        # Safety check, skip roles that should not be ceased
         if (expected_role := CEASE_ROLE_MAPPING.get(business.legal_type)) and \
                 party_role.role != expected_role:
             continue
