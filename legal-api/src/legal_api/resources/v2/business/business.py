@@ -201,7 +201,7 @@ def get_filing_details(org_id: str):
     results = BusinessSearchService.get_affiliation_mapping_results(org_id=org_id)
     return jsonify({
         'count': len(results),
-        'entity_details': results
+        'entityDetails': results
     })
 
 
