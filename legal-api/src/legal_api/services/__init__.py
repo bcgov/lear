@@ -14,11 +14,7 @@
 """This module wraps the calls to external services used by the API."""
 import uuid
 
-from flask import current_app
-from sentry_sdk import capture_message
-
-from legal_api.models import Business
-from legal_api.utils.datetime import datetime
+from gcp_queue import GcpQueue
 
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
@@ -51,27 +47,8 @@ from .authz import (  # noqa: I001; noqa: I001;
 
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
+gcp_queue = GcpQueue()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
-
-
-def publish_event(business: Business, event_type: str, data: dict, subject: str, message_id: str = None):
-    """Publish the event message onto the given NATS subject."""
-    try:
-        payload = {
-            'specversion': '1.x-wip',
-            'type': event_type,
-            'source': ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', business.identifier]),
-            'id': message_id or str(uuid.uuid4()),
-            'time': datetime.utcnow().isoformat(),
-            'datacontenttype': 'application/json',
-            'identifier': business.identifier,
-            'data': data
-        }
-        queue.publish_json(payload, subject)
-    except Exception as err:  # pylint: disable=broad-except; # noqa: B902
-        capture_message(f'Legal-api queue publish {subject} error: business.id=' + str(business.id) + str(err),
-                        level='error')
-        current_app.logger.error('Queue Publish %s Error: business.id=%s', subject, business.id, exc_info=True)

@@ -74,6 +74,7 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
 
     business.state = Business.State.HISTORICAL
     business.state_filing_id = filing_rec.id
+    business.restoration_expiry_date = None
 
     # add custodial party if in filing
     if parties := dissolution_filing.get("parties"):

@@ -18,7 +18,8 @@ from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
 
 from legal_api.models import Filing, Review, ReviewResult, ReviewStatus, User, UserRoles
-from legal_api.services import namex, queue
+from legal_api.services import namex
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
@@ -153,9 +154,13 @@ def save_review(review_id: int):
     filing.set_review_decision(status_mapping[status])
 
     # emailer notification
-    queue.publish_json(
-        {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
-        current_app.config.get('NATS_EMAILER_SUBJECT')
+    publish_to_queue(
+        data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
+        subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
+        identifier=None,  # todo: when new review types are added if they have business, add business identifier here
+        event_type=None,
+        message_id=None,
+        is_wrapped=False
     )
 
     return jsonify({'message': 'Review saved.'}), HTTPStatus.CREATED

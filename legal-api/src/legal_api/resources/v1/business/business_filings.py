@@ -42,9 +42,9 @@ from legal_api.services import (
     RegistrationBootstrapService,
     authorized,
     namex,
-    queue,
 )
 from legal_api.services.authz import is_allowed
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -481,8 +481,19 @@ class ListFilingResource(Resource):
                 filing.set_processed(business.legal_type)
                 filing.save()
             else:
-                payload = {'filing': {'id': filing.id}}
-                queue.publish_json(payload)
+                # todo: when removing nats, leave only filingMessage, and remove 'filing' as this part is used by OCP
+                payload = {
+                    'filing': {'id': filing.id},
+                    'filingMessage': {'filingIdentifier': filing.id}
+                }
+                publish_to_queue(
+                    data=payload,
+                    subject=current_app.config.get('NATS_FILER_SUBJECT'),
+                    identifier=business.identifier if business else None,
+                    event_type=None,
+                    message_id=None,
+                    is_wrapped=False
+                )
 
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:

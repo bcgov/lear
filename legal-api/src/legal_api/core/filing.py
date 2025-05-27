@@ -30,7 +30,7 @@ from legal_api.models import Business, Document, DocumentType
 from legal_api.models import Filing as FilingStorage  # noqa: I001
 from legal_api.models import UserRoles
 from legal_api.services import VersionedBusinessDetailsService  # noqa: I005
-from legal_api.services.authz import has_roles  # noqa: I005
+from legal_api.services.authz import has_roles, is_competent_authority  # noqa: I005
 from legal_api.utils.datetime import date, datetime  # noqa: I005
 
 from .constants import REDACTED_STAFF_SUBMITTER
@@ -522,7 +522,10 @@ class Filing:  # pylint: disable=too-many-public-methods
         if filing.storage and filing.storage.filing_type in no_output_filings:
             return documents
 
-        # return a receipt for filings completed in our system
+        user_is_ca = is_competent_authority(jwt)
+
+        # return a receipt for filings completed in our system (but not for ca users
+        # see https://github.com/bcgov/entity/issues/21881
         if filing.storage and filing.storage.payment_completion_date:
             if filing.filing_type == 'courtOrder' and \
                     (filing.storage.documents.filter(
@@ -552,6 +555,8 @@ class Filing:  # pylint: disable=too-many-public-methods
                  ):
             documents['documents']['legalFilings'] = \
                 [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
+            if user_is_ca:
+                del documents['documents']['receipt']
             return documents
 
         if filing.status in (
@@ -603,4 +608,6 @@ class Filing:  # pylint: disable=too-many-public-methods
                     if static_docs := FilingMeta.get_static_documents(filing.storage, f'{base_url}{doc_url}/static'):
                         documents['documents']['staticDocuments'] = static_docs
 
+        if user_is_ca:
+            del documents['documents']['receipt']
         return documents
