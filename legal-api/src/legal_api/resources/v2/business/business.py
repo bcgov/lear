@@ -193,7 +193,7 @@ def search_businesses():
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@bp.route('/search/<int:org_id>/affiliation_mappings', methods=['GET'])
+@bp.route('/search/affiliation_mappings', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_roles([SYSTEM_ROLE])
 def get_filing_details():
