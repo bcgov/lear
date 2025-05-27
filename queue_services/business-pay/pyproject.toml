@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-pay"
-version = "0.3.1"
+version = "0.3.0"
 description = "BC Registries  - business-payment-processor"
 authors = ["thor <thor@wolpert.ca>"]
 license = "BSD-3-Clause"
