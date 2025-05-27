@@ -35,6 +35,5 @@ def update_parties(parties: dict, business: Business):
     """Cease receiver party role."""
     end_date_time = datetime.datetime.utcnow()
     for party in parties:
-        party_role = PartyRole.get_party_roles_by_party_id(business.id, party.get('officer').get('id'))[0]
+        party_role = PartyRole.get_party_roles(business.id, end_date_time.date(), PartyRole.RoleTypes.RECEIVER.value)
         party_role.cessation_date = end_date_time
-        # party_role[0]['cessation_date'] = end_date_time
