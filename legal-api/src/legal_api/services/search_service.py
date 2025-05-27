@@ -271,7 +271,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         return draft_results
 
     @staticmethod
-    def get_affiliation_mapping_results(org_id: int = None):
+    def get_affiliation_mapping_results():
         """Return affiliation mapping results for the given organization ID."""
         query = db.session.query(
             Filing.id.label('filing_id'),
@@ -279,18 +279,16 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             Filing
             .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
             .label('nrNum'),
-            RegistrationBootstrap.identifier.label('temp_reg'),  # pylint: disable=no-member
-            RegistrationBootstrap.account.label('account_id')
+            RegistrationBootstrap.identifier.label('temp_reg')  # pylint: disable=no-member
                 ).select_from(Filing) \
             .outerjoin(Business, Filing.business_id == Business.id) \
-            .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)  \
-            .filter(RegistrationBootstrap.account == org_id)
+            .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
 
         rows = query.all()
 
         result_list = [
             {
-                'id': row.filing_id,
+                'filingId': row.filing_id,
                 'identifier': row.identifier,
                 'nrId': row.nrNum,
                 'bootstrapId': row.temp_reg

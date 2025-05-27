@@ -196,9 +196,9 @@ def search_businesses():
 @bp.route('/search/<int:org_id>/affiliation_mappings', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_roles([SYSTEM_ROLE])
-def get_filing_details(org_id: str):
+def get_filing_details():
     """Return the list of Business filings with name requests. Being called from auth api."""
-    results = BusinessSearchService.get_affiliation_mapping_results(org_id=org_id)
+    results = BusinessSearchService.get_affiliation_mapping_results()
     return jsonify({
         'count': len(results),
         'entityDetails': results
