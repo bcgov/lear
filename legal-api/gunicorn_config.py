@@ -18,11 +18,18 @@
 import os
 import gunicorn_server
 
-workers = int(os.environ.get('GUNICORN_PROCESSES', '1'))  # pylint: disable=invalid-name
-threads = int(os.environ.get('GUNICORN_THREADS', '1'))  # pylint: disable=invalid-name
+# https://docs.gunicorn.org/en/stable/settings.html#workers
+workers = int(os.environ.get("GUNICORN_PROCESSES", "1"))  # gunicorn default - 1
+worker_class = os.environ.get("GUNICORN_WORKER_CLASS", "sync")  # gunicorn default - sync
+worker_connections = int(os.environ.get("GUNICORN_WORKER_CONNECIONS", "1000"))  # gunicorn default - 1000
+threads = int(os.environ.get("GUNICORN_THREADS", "3"))  # gunicorn default - 1
+timeout = int(os.environ.get("GUNICORN_TIMEOUT", "100"))  # gunicorn default - 30
+keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "2"))  # gunicorn default - 2
+# WHEN MIGRATING TO GCP -  GUNICORN_THREADS = 8, GUNICORN_TIMEOUT = 0, GUNICORN_PROCESSES = 1
 
-forwarded_allow_ips = '*'  # pylint: disable=invalid-name
-secure_scheme_headers = {'X-Forwarded-Proto': 'https'}  # pylint: disable=invalid-name
+
+forwarded_allow_ips = "*"  # pylint: disable=invalid-name
+secure_scheme_headers = {"X-Forwarded-Proto": "https"}  # pylint: disable=invalid-name
 
 # Server Hooks
 pre_fork = gunicorn_server.pre_fork
