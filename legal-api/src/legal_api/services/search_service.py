@@ -283,17 +283,16 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             .outerjoin(Business, Filing.business_id == Business.id) \
             .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
 
-        if identifiers:
-            query = query.filter(
-                db.or_(
-                    Business._identifier.in_(identifiers),  # pylint: disable=protected-access
-                    Filing
-                    .filing_json['filing'][Filing._filing_type]
-                    ['nameRequest']['nrNumber']  # pylint: disable=protected-access
-                    .astext.in_(identifiers),
-                    RegistrationBootstrap._identifier.in_(identifiers)  # pylint: disable=protected-access
-                )
+        query = query.filter(
+            db.or_(
+                Business._identifier.in_(identifiers),  # pylint: disable=protected-access
+                Filing
+                .filing_json['filing'][Filing._filing_type]
+                ['nameRequest']['nrNumber']  # pylint: disable=protected-access
+                .astext.in_(identifiers),
+                RegistrationBootstrap._identifier.in_(identifiers)  # pylint: disable=protected-access
             )
+        )
 
         rows = query.all()
         result_list = [dict(row) for row in rows]
