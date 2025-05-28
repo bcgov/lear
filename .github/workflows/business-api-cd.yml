@@ -32,6 +32,7 @@ jobs:
     uses: bcgov/bcregistry-sre/.github/workflows/backend-cd.yaml@main
     with:
       target: ${{ inputs.target }}
+      cd_runner_version: "1.0.0"
       app_name: "business-api"
       working_directory: "./legal-api"
       redeploy: ${{ inputs.redeploy }}
