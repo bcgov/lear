@@ -87,7 +87,7 @@ class Config:  # pylint: disable=too-few-public-methods
 
     # variables
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
-    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", None)
+    TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "src/business_emailer/email_templates")
 
     # GCP
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
