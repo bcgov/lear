@@ -1,0 +1,16 @@
+Dockerfile
+.dockerignore
+.pytest_cache
+__pycache__
+.venv
+venv
+.env
+.env*
+.eggs
+.devcontainer
+.history
+.vscode
+Makefile
+k8s
+requirements
+tests
