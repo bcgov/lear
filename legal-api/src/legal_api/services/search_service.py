@@ -22,7 +22,7 @@ from typing import Final, List, Optional, Tuple
 from requests import Request
 from sqlalchemy import func
 
-from legal_api.models import Business, Filing, db
+from legal_api.models import Business, Filing, RegistrationBootstrap, db
 
 
 @dataclass
@@ -269,3 +269,41 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 draft_results.append(draft)
 
         return draft_results
+
+    @staticmethod
+    def get_affiliation_mapping_results(identifiers):
+        """Return affiliation mapping results for the given list of identifiers."""
+        query = db.session.query(
+            Business._identifier.label('identifier'),  # pylint: disable=protected-access
+            Filing
+            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
+            .label('nrNumber'),
+            RegistrationBootstrap._identifier.label('bootstrapIdentifier')  # pylint: disable=protected-access
+        ).select_from(Filing) \
+            .outerjoin(Business, Filing.business_id == Business.id) \
+            .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
+
+        temp_identifiers, nr_identifiers, business_identifiers = [], [], []
+        for identifier in identifiers:
+            if identifier.startswith('T'):
+                temp_identifiers.append(identifier)
+            elif identifier.startswith('NR'):
+                nr_identifiers.append(identifier)
+            else:
+                business_identifiers.append(identifier)
+        conditions = []
+        if business_identifiers:
+            conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
+        if nr_identifiers:
+            conditions.append(Filing
+                              .filing_json['filing'][Filing._filing_type]  # pylint: disable=protected-access
+                              ['nameRequest']['nrNumber']
+                              .astext.in_(nr_identifiers))
+        if temp_identifiers:
+            conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
+        query = query.filter(db.or_(*conditions))
+
+        rows = query.all()
+        result_list = [dict(row) for row in rows]
+
+        return result_list
