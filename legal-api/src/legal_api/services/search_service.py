@@ -271,28 +271,30 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         return draft_results
 
     @staticmethod
-    def get_affiliation_mapping_results():
-        """Return affiliation mapping results for the given organization ID."""
+    def get_affiliation_mapping_results(identifiers):
+        """Return affiliation mapping results for the given list of identifiers."""
+
         query = db.session.query(
-            Filing.id.label('filing_id'),
-            Business.identifier,
+            Filing.id.label('filingId'),
+            Business.identifier.label('identifier'),
             Filing
-            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
-            .label('nrNum'),
-            RegistrationBootstrap.identifier.label('temp_reg')  # pylint: disable=no-member
-                ).select_from(Filing) \
+            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']
+            .label('nrNumber'),
+            RegistrationBootstrap.identifier.label('bootstrapIdentifier')
+        ).select_from(Filing) \
             .outerjoin(Business, Filing.business_id == Business.id) \
             .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
 
-        rows = query.all()
+        if identifiers:
+            query = query.filter(
+                db.or_(
+                    Business.identifier.in_(identifiers),
+                    Filing.filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber'].astext.in_(identifiers),
+                    RegistrationBootstrap.identifier.in_(identifiers)
+                )
+            )
 
-        result_list = [
-            {
-                'filingId': row.filing_id,
-                'identifier': row.identifier,
-                'bootstrapIdentifier': row.temp_reg,
-                'nrNumber': row.nrNum
-            }
-            for row in rows
-        ]
+        rows = query.all()
+        result_list = [dict(row) for row in rows]
+
         return result_list

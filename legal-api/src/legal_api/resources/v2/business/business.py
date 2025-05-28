@@ -198,7 +198,10 @@ def search_businesses():
 @jwt.requires_roles([SYSTEM_ROLE])
 def get_filing_details():
     """Return the list of Business filings with name requests. Being called from auth api."""
-    results = BusinessSearchService.get_affiliation_mapping_results()
+    data = request.get_json()
+    identifiers = data.get('identifiers', [])
+    
+    results = BusinessSearchService.get_affiliation_mapping_results(identifiers)
     return jsonify({
         'count': len(results),
         'entityDetails': results
