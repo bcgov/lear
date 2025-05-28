@@ -296,12 +296,12 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
         if nr_identifiers:
             conditions.append(Filing
-                .filing_json['filing'][Filing._filing_type]  # pylint: disable=protected-access
-                ['nameRequest']['nrNumber']
-                .astext.in_(nr_identifiers))
+                              .filing_json['filing'][Filing._filing_type]  # pylint: disable=protected-access
+                              ['nameRequest']['nrNumber']
+                              .astext.in_(nr_identifiers))
         if temp_identifiers:
             conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
-        query = query.filter(db.or_(conditions))
+        query = query.filter(db.or_(*conditions))
 
         rows = query.all()
         result_list = [dict(row) for row in rows]
