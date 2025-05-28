@@ -273,14 +273,13 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_affiliation_mapping_results(identifiers):
         """Return affiliation mapping results for the given list of identifiers."""
-
         query = db.session.query(
             Filing.id.label('filingId'),
-            Business.identifier.label('identifier'),
+            Business._identifier.label('identifier'),  # pylint: disable=protected-access
             Filing
-            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']
+            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
             .label('nrNumber'),
-            RegistrationBootstrap.identifier.label('bootstrapIdentifier')
+            RegistrationBootstrap._identifier.label('bootstrapIdentifier')  # pylint: disable=protected-access
         ).select_from(Filing) \
             .outerjoin(Business, Filing.business_id == Business.id) \
             .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
@@ -288,9 +287,12 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if identifiers:
             query = query.filter(
                 db.or_(
-                    Business.identifier.in_(identifiers),
-                    Filing.filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber'].astext.in_(identifiers),
-                    RegistrationBootstrap.identifier.in_(identifiers)
+                    Business._identifier.in_(identifiers),  # pylint: disable=protected-access
+                    Filing
+                    .filing_json['filing'][Filing._filing_type]
+                    ['nameRequest']['nrNumber']  # pylint: disable=protected-access
+                    .astext.in_(identifiers),
+                    RegistrationBootstrap._identifier.in_(identifiers)  # pylint: disable=protected-access
                 )
             )
 

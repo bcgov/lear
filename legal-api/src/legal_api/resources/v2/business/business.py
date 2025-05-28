@@ -193,14 +193,13 @@ def search_businesses():
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@bp.route('/search/affiliation_mappings', methods=['GET'])
+@bp.route('/search/affiliation_mappings', methods=['POST'])
 @cross_origin(origin='*')
 @jwt.requires_roles([SYSTEM_ROLE])
 def get_filing_details():
     """Return the list of Business filings with name requests. Being called from auth api."""
     data = request.get_json()
     identifiers = data.get('identifiers', [])
-    
     results = BusinessSearchService.get_affiliation_mapping_results(identifiers)
     return jsonify({
         'count': len(results),
