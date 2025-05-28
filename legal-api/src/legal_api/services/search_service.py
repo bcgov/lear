@@ -287,8 +287,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             db.or_(
                 Business._identifier.in_(identifiers),  # pylint: disable=protected-access
                 Filing
-                .filing_json['filing'][Filing._filing_type]
-                ['nameRequest']['nrNumber']  # pylint: disable=protected-access
+                .filing_json['filing'][Filing._filing_type]  # pylint: disable=protected-access
+                ['nameRequest']['nrNumber']
                 .astext.in_(identifiers),
                 RegistrationBootstrap._identifier.in_(identifiers)  # pylint: disable=protected-access
             )

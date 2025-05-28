@@ -201,7 +201,7 @@ def get_filing_details():
     data = request.get_json()
     identifiers = data.get('identifiers', [])
     if not identifiers or not isinstance(identifiers, list):
-            return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
+        return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
     results = BusinessSearchService.get_affiliation_mapping_results(identifiers)
     return jsonify({
         'count': len(results),
