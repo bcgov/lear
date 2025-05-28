@@ -274,7 +274,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     def get_affiliation_mapping_results(identifiers):
         """Return affiliation mapping results for the given list of identifiers."""
         query = db.session.query(
-            Filing.id.label('filingId'),
             Business._identifier.label('identifier'),  # pylint: disable=protected-access
             Filing
             .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
