@@ -302,7 +302,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
         parties = []
 
-        # TODO: remove filter that excludes officer when we have plans to deal with it
+        # TODO: remove filter that excludes unsupported parties when we have plans to deal with it
         # Get versioned party roles
         versioned_party_roles = db.session.query(party_role_version)\
             .filter(party_role_version.transaction_id <= filing.transaction_id) \
@@ -312,7 +312,11 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
                         party_role_version.role == role)) \
             .filter(or_(party_role_version.end_transaction_id == None,   # pylint: disable=singleton-comparison # noqa: E711,E501;
                         party_role_version.end_transaction_id > filing.transaction_id)) \
-            .filter(party_role_version.role != PartyRole.RoleTypes.OFFICER.value) \
+            .filter(party_role_version.role.notin_([
+                PartyRole.RoleTypes.OFFICER.value,
+                PartyRole.RoleTypes.LIQUIDATOR.value,
+                PartyRole.RoleTypes.RECEIVER.value,
+            ])) \
             .order_by(party_role_version.transaction_id).all()
 
         # Process versioned party roles

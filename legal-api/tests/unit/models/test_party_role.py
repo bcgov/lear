@@ -18,8 +18,12 @@ Test-Suite to ensure that the PartyRole Model is working as expected.
 """
 import datetime
 import json
+from unittest.mock import patch
+
+import pytest
 
 from legal_api.models import Filing, Party, PartyRole
+from legal_api.services import flags
 from tests.unit.models import factory_business
 
 
@@ -298,7 +302,7 @@ def test_get_party_roles_by_filing(session):
     assert len(party_roles) == 1
 
 
-def test_get_party_roles_officers(session):
+def test_get_party_roles_unsupported_list(session):
     """Assert that the get_party_roles works as expected."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
@@ -327,10 +331,32 @@ def test_get_party_roles_officers(session):
         business_id=business.id
     )
     party_role_2.save()
+    party_role_3 = PartyRole(
+        role=PartyRole.RoleTypes.RECEIVER.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_3.save()
+    party_role_4 = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_4.save()
     # Find by all party roles
+    unsupported_list = ['officer', 'receiver', 'liquidator']
+
     party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
-    assert len(party_roles) == 1
+    assert len(party_roles) == 4 - len(unsupported_list)
+
+    for role in party_roles:
+        assert role.role not in unsupported_list
 
     # Find by party role
-    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), PartyRole.RoleTypes.OFFICER.value)
-    assert len(party_roles) == 1
+    for role in unsupported_list:
+        party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), role)
+        assert len(party_roles) == 1

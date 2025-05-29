@@ -1,3 +1,3 @@
 businesses = [
-    'BC1XXXXXX'
+    'BCXXXXXXX'
 ]
