@@ -34,7 +34,6 @@ import requests
 from entity_queue_common.service import QueueServiceManager
 from entity_queue_common.service_utils import EmailException, QueueException, logger
 from flask import Flask
-from legal_api import db  # noqa:F401,I001;pylint:disable=unused-import;
 from legal_api.models import Filing, Furnishing
 from legal_api.models.db import init_db
 from legal_api.services.bootstrap import AccountService
@@ -72,6 +71,8 @@ from entity_emailer.email_processors import (
 )
 
 from .message_tracker import tracker as tracker_util
+
+
 # noqa:I003
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
