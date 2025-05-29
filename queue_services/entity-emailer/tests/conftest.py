@@ -22,8 +22,9 @@ from contextlib import contextmanager
 import pytest
 from flask import Flask
 from flask_migrate import Migrate, upgrade
-from legal_api import jwt as _jwt
 from legal_api.models import db as _db
+# from legal_api import jwt as _jwt
+from legal_api.utils.auth import _jwt
 from nats.aio.client import Client as Nats
 from sqlalchemy import event, text
 from sqlalchemy.schema import DropConstraint, MetaData
