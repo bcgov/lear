@@ -26,7 +26,7 @@ from entity_emailer.config import get_named_config  # noqa: I001
 from tracker.config import get_named_config as get_tracker_named_config  # noqa: I001
 from tracker.models import db as _tracker_db  # noqa: I001
 from entity_emailer import worker  # noqa: I001
-from legal_api.models import db as _db
+from legal_api import db as _db
 from legal_api import jwt as _jwt
 from nats.aio.client import Client as Nats
 from sqlalchemy import event, text
