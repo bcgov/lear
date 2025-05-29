@@ -20,6 +20,7 @@ from pathlib import Path
 import requests
 from flask import current_app
 from jinja2 import Template
+
 from business_model.models import Business, Filing
 
 from business_model.email_processors import (
