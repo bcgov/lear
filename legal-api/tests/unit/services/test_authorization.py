@@ -39,6 +39,7 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     DISSOLUTION,
     FILING_TEMPLATE,
+    INTENT_TO_LIQUIDATE,
     PUT_BACK_OFF,
     PUT_BACK_ON,
     RESTORATION,
@@ -163,6 +164,7 @@ class FilingKey(str, Enum):
     TRANSPARENCY_REGISTER_INITIAL = 'TRANSPARENCY_REGISTER_INITIAL'
     APPOINT_RECEIVER = 'APPOINT_RECEIVER'
     CEASE_RECEIVER = 'CEASE_RECEIVER'
+    INTENT_TO_LIQUIDATE = 'INTENT_TO_LIQUIDATE'
 
 
 EXPECTED_DATA = {
@@ -246,7 +248,8 @@ EXPECTED_DATA = {
     FilingKey.TRANSPARENCY_REGISTER_CHANGE: {'name': 'transparencyRegister', 'type': 'change', 'displayName': 'Transparency Register Filing', 'feeCode': 'REGSIGIN'},
     FilingKey.TRANSPARENCY_REGISTER_INITIAL: {'name': 'transparencyRegister', 'type': 'initial', 'displayName': 'Transparency Register Filing', 'feeCode': 'REGSIGIN'},
     FilingKey.APPOINT_RECEIVER: {'displayName': 'Appoint Receiver', 'feeCode': 'NOARM', 'name': 'appointReceiver'},
-    FilingKey.CEASE_RECEIVER: {'displayName': 'Cease Receiver', 'feeCode': 'NOCER', 'name': 'ceaseReceiver'}
+    FilingKey.CEASE_RECEIVER: {'displayName': 'Cease Receiver', 'feeCode': 'NOCER', 'name': 'ceaseReceiver'},
+    FilingKey.INTENT_TO_LIQUIDATE: {'displayName': 'Statement of Intent to Liquidate', 'feeCode': 'LQSIN', 'name': 'intentToLiquidate'}
 }
 
 EXPECTED_DATA_CONT_IN = {
@@ -335,7 +338,8 @@ EXPECTED_DATA_CONT_IN = {
     FilingKey.TRANSPARENCY_REGISTER_CHANGE: {'name': 'transparencyRegister', 'type': 'change', 'displayName': 'Transparency Register Filing', 'feeCode': 'REGSIGIN'},
     FilingKey.TRANSPARENCY_REGISTER_INITIAL: {'name': 'transparencyRegister', 'type': 'initial', 'displayName': 'Transparency Register Filing', 'feeCode': 'REGSIGIN'},
     FilingKey.APPOINT_RECEIVER: {'displayName': 'Appoint Receiver', 'feeCode': 'NOARM', 'name': 'appointReceiver'},
-    FilingKey.CEASE_RECEIVER: {'displayName': 'Cease Receiver', 'feeCode': 'NOCER', 'name': 'ceaseReceiver'}  
+    FilingKey.CEASE_RECEIVER: {'displayName': 'Cease Receiver', 'feeCode': 'NOCER', 'name': 'ceaseReceiver'},
+    FilingKey.INTENT_TO_LIQUIDATE: {'displayName': 'Statement of Intent to Liquidate', 'feeCode': 'LQSIN', 'name': 'intentToLiquidate'}
 }
 
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
@@ -378,6 +382,9 @@ CONSENT_AMALGAMATION_OUT_TEMPLATE['filing']['consentAmalgamationOut'] = CONSENT_
 CONSENT_CONTINUATION_OUT_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 CONSENT_CONTINUATION_OUT_TEMPLATE['filing']['consentContinuationOut'] = CONSENT_CONTINUATION_OUT
 
+INTENT_TO_LIQUIDATE_FILING_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+INTENT_TO_LIQUIDATE_FILING_TEMPLATE['filing']['intentToLiquidate'] = INTENT_TO_LIQUIDATE
+
 FILING_DATA = {
     'agmExtension': AGM_EXTENSION_FILING_TEMPLATE,
     'agmLocationChange': AGM_LOCATION_CHANGE_FILING_TEMPLATE,
@@ -394,7 +401,8 @@ FILING_DATA = {
     'continuationIn': CONTINUATION_IN_TEMPLATE,
     'continuationOut': CONTINUATION_OUT_TEMPLATE,
     'consentAmalgamationOut': CONSENT_AMALGAMATION_OUT_TEMPLATE,
-    'consentContinuationOut': CONSENT_CONTINUATION_OUT_TEMPLATE
+    'consentContinuationOut': CONSENT_CONTINUATION_OUT_TEMPLATE,
+    'intentToLiquidate': INTENT_TO_LIQUIDATE_FILING_TEMPLATE
 }
 
 MISSING_BUSINESS_INFO_WARNINGS = [{'warningType': WarningType.MISSING_REQUIRED_BUSINESS_INFO,
@@ -1017,7 +1025,8 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_continue_in_corps', True, Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'staff',
          [STAFF_ROLE],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
@@ -1041,7 +1050,8 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                                             FilingKey.PUT_BACK_OFF,
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
-                                            FilingKey.TRANSITION])),
+                                            FilingKey.TRANSITION,
+                                            FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -1326,7 +1336,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_continue_in_corps', True, Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'],
          'staff', [STAFF_ROLE],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
@@ -1350,7 +1361,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                                             FilingKey.PUT_BACK_OFF,
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
-                                            FilingKey.TRANSITION])),
+                                            FilingKey.TRANSITION,
+                                            FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -2145,7 +2157,8 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
                                             FilingKey.AGM_EXTENSION,
@@ -2168,7 +2181,8 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
                                             FilingKey.PUT_BACK_OFF,
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
-                                            FilingKey.TRANSITION])),
+                                            FilingKey.TRANSITION,
+                                            FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -2321,7 +2335,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION,
                           FilingKey.RESTRN_LTD_EXT_CORPS,
-                          FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
+                          FilingKey.RESTRN_LTD_TO_FULL_CORPS,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_continue_in_corps_valid_state_filing_success', Business.State.ACTIVE,
          ['C', 'CBEN', 'CCC', 'CUL'], 'staff', [STAFF_ROLE],
          ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'],
@@ -2348,7 +2363,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                                             FilingKey.REGISTRARS_ORDER,
                                             FilingKey.TRANSITION,
                                             FilingKey.RESTRN_LTD_EXT_CORPS,
-                                            FilingKey.RESTRN_LTD_TO_FULL_CORPS])),
+                                            FilingKey.RESTRN_LTD_TO_FULL_CORPS,
+                                            FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_corps_valid_state_filing_fail', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -2372,7 +2388,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_continue_in_corps_valid_state_filing_fail', Business.State.ACTIVE, ['C', 'CBEN', 'CCC', 'CUL'],
          'staff', [STAFF_ROLE], [None, 'restoration'], [None, 'fullRestoration'],
          expected_lookup_continue_in_corps([FilingKey.ADMN_FRZE,
@@ -2396,7 +2413,8 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
                                             FilingKey.PUT_BACK_OFF,
                                             FilingKey.REGISTRARS_NOTATION,
                                             FilingKey.REGISTRARS_ORDER,
-                                            FilingKey.TRANSITION])),
+                                            FilingKey.TRANSITION,
+                                            FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_llc_valid_state_filing_success', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
          ['restoration', 'restoration'], ['limitedRestoration', 'limitedRestorationExtension'], []),
         ('staff_active_llc_valid_state_filing_fail', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE],
@@ -2714,7 +2732,8 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentContinuationOut', 'consentContinuationOut'], [None, None], [True, False],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -2747,7 +2766,8 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
         ('staff_active_corps_completed_filing_success', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff',
          [STAFF_ROLE], ['consentAmalgamationOut', 'consentAmalgamationOut'], [None, None], [True, False],
          expected_lookup([FilingKey.ADMN_FRZE,
@@ -2795,7 +2815,8 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
-                          FilingKey.TRANSITION])),
+                          FilingKey.TRANSITION,
+                          FilingKey.INTENT_TO_LIQUIDATE])),
     ]
 )
 def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
