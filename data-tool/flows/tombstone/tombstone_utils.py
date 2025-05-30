@@ -498,6 +498,8 @@ def format_filings_data(data: dict) -> dict:
             'hide_in_ledger': hide_in_ledger,
             'status': status,
             'submitter_id': user_id,  # will be updated to real user_id when loading data into db
+            'court_order_file_number' : x['court_order_num'],
+            'court_order_effect_of_order' : 'planOfArrangement' if x['arrangement_ind'] == True else None,
         }
 
         # conversion still need to populate create-new-business info

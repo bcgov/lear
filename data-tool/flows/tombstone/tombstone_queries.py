@@ -629,7 +629,9 @@ def get_filings_query(corp_num):
             co.can_jur_typ_cd as out_can_jur_typ_cd,
             to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
             co.othr_juri_desc as out_othr_juri_desc,
-            co.home_company_nme as out_home_company_nme
+            co.home_company_nme as out_home_company_nme,
+            f.arrangement_ind,
+            f.court_order_num
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id
