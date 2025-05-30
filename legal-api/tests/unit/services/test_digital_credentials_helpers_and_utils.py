@@ -18,7 +18,7 @@ Test suite to ensure that helpers and utility functions for digital credentials 
 
 import pytest
 from legal_api.models import Party, User
-from legal_api.services.digital_credentials_utils import FormattedUser
+from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
 
 
 @pytest.mark.parametrize(
@@ -40,3 +40,55 @@ def test_formatted_user(app, session, test_user, expected):
     """Assert that the user is formatted correctly."""
 
     assert FormattedUser(test_user).__dict__ == expected
+
+@pytest.mark.parametrize(
+    'flag_value, valid_registration_types, valid_incorporation_types, expected',
+    [
+        ({"types" :['SP', 'BEN', 'GP']}, ['SP', 'GP'], ['BEN'], ['SP', 'BEN', 'GP']),
+        ({"types" :['SP', 'BEN', 'GP', 'CBEN']}, ['SP', 'GP'], ['BEN'], ['SP', 'BEN', 'GP']),
+        ({"types" :['SP']}, ['SP', 'GP'], ['BEN'], ['SP']),
+        ({"types" :[]}, ['SP', 'GP'], ['BEN'], []),
+        ({"types" :['SP', 'GP']}, [], ['BEN'], []),
+        ({"types" :['SP', 'BEN']}, ['SP', 'GP'], [], ['SP'])
+    ]
+)
+def test_determine_allowed_business_types(monkeypatch, flag_value, valid_registration_types, valid_incorporation_types, expected):
+    """Test filtering of allowed business types based on flag values."""
+
+    # Mock flag values
+    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: True)
+    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.value', lambda _: flag_value)
+
+    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
+    assert sorted(result) == sorted(expected)
+
+@pytest.mark.parametrize(
+    'flag_value, valid_registration_types, valid_incorporation_types, expected',
+    [
+        (['SP', 'BEN', 'GP'], ['SP', 'GP'], ['BEN'], []),
+        ({}, ['SP'], ['BEN'], []),
+        ({"types" : "SP"}, ['SP'], ['BEN'], []),
+        ({"types" : 123}, ['SP'], ['BEN'], []),
+        ({"type" : ['SP', 'BEN', 'GP']}, ['SP'], ['BEN'], []),
+        ('not-a-object', ['SP'], ['BEN'], []),
+        (123, ['SP'], ['BEN'], []), 
+    ]
+)
+def test_determine_allowed_business_types_invalid_flags(monkeypatch, flag_value, valid_registration_types, valid_incorporation_types, expected):
+    """Test filtering of allowed business types based on flag values."""
+
+    # Mock flag values
+    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: True)
+    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.value', lambda _: flag_value)
+
+    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
+    assert sorted(result) == sorted(expected)
+
+def test_determine_allowed_business_types_missing_flag(monkeypatch):
+    """Test filtering of allowed business types based on flag value not set."""
+
+    # Mock flag values
+    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: False)
+
+    result = determine_allowed_business_types(['SP', 'GP'], ['BEN'])
+    assert result == []
