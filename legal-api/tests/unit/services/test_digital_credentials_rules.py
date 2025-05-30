@@ -181,11 +181,13 @@ def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_u
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
+@patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
 def test_has_specific_access_true_when_correct_business_type_and_filing_role(mock_user_has_business_party_role,
                                                                              mock_user_has_filing_party_role,
                                                                              monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
+
 
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
@@ -202,6 +204,7 @@ def test_has_specific_access_true_when_correct_business_type_and_filing_role(moc
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
+@patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
 def test_has_specific_access_true_when_correct_business_type_and_party_role(mock_user_has_business_party_role,
                                                                             mock_user_has_filing_party_role,
                                                                             monkeypatch, app, session, legal_type, jwt, rules):
