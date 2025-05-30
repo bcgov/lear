@@ -23,9 +23,20 @@ urllib3==1.26.11
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
-git+https://github.com/bcgov/sbc-connect-common.git#egg=gcp_queue&subdirectory=python/gcp-queue
+#git+https://github.com/bcgov/sbc-connect-common.git#egg=gcp_queue&subdirectory=python/gcp-queue
 git+https://github.com/bcgov/sbc-connect-common.git#egg=structured_logging&subdirectory=python/structured-logging
 git+https://github.com/bcgov/business-schemas.git@2.18.41#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
+
+# fix due to conflicting versions from legal-api import
+protobuf==3.19.5
+googleapis-common-protos==1.56.2
+grpcio-status==1.48.0
+grpc-google-iam-v1==0.12.4
+google-auth==2.38.0
+google-cloud-pubsub==2.21.4
+google-api-core==2.24.2
+proto-plus==1.26.1
+git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue
