@@ -72,8 +72,6 @@ from entity_emailer.email_processors import (
 )
 
 from .message_tracker import tracker as tracker_util
-
-
 # noqa:I003
 
 qsm = QueueServiceManager()  # pylint: disable=invalid-name
