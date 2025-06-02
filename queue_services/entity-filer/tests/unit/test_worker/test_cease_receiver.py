@@ -17,7 +17,7 @@ import copy
 import random
 from datetime import datetime
 
-from legal_api.models import PartyRole
+from legal_api.models import Party, PartyRole
 from registry_schemas.example_data import CEASE_RECEIVER, FILING_TEMPLATE
 
 from entity_filer.filing_meta import FilingMeta
@@ -31,10 +31,19 @@ def test_cease_receiver_filing_process(app, session):
     identifier = 'BC1234567'
     business = create_business(identifier, legal_type='BC')
 
+    party = Party(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe'
+    )
+    party.save()
+    assert party.id
+
     party_role = PartyRole(
         role=PartyRole.RoleTypes.RECEIVER.value,
         appointment_date=datetime(2017, 5, 17),
-        business_id=business.id
+        business_id=business.id,
+        party_id=party.id,
     )
     party_role.save()
     business.save()
@@ -44,7 +53,7 @@ def test_cease_receiver_filing_process(app, session):
     filing_json['filing']['header']['name'] = 'ceaseReceiver'
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['ceaseReceiver'] = copy.deepcopy(CEASE_RECEIVER)
-    filing_json['filing']['ceaseReceiver']['parties'][0]['officer']['id'] = party_role.id
+    filing_json['filing']['ceaseReceiver']['parties'][0]['officer']['id'] = party.id
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = create_filing(payment_id, filing_json, business_id=business.id)
