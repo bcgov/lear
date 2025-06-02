@@ -12,7 +12,8 @@ BUSINESS = {
     'send_ar_ind': True,
     'last_ar_year': None,
     'last_ar_date': None,
-    'last_ar_reminder_year': None
+    'last_ar_reminder_year': None,
+    'restriction_ind': None
     # 'no_dissolution' : False  # db sets default value
 }
 

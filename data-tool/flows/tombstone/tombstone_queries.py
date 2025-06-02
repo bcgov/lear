@@ -278,7 +278,11 @@ def get_business_query(corp_num, suffix):
             else false
         end admin_freeze,
         c.admin_email,
-        c.corp_password as pass_code
+        c.corp_password as pass_code,
+    -- restriction
+        exists(select 1 from corp_restriction cr 
+                where cr.corp_num = '{corp_num}' and cr.end_event_id is null and restriction_ind = true
+        ) as restriction_ind
     from corporation c
     left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1
