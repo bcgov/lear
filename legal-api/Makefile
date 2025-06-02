@@ -119,7 +119,7 @@ build: ## Build the docker container
 		--build-arg BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 build-nc: ## Build the docker container without caching
-	docker build --no-cache -t $(DOCKER_NAME) -f Dockerfile-ocp.
+	docker build --no-cache -t $(DOCKER_NAME) -f Dockerfile-ocp .
 
 REGISTRY_IMAGE=$(OPENSHIFT_DOCKER_REGISTRY)/$(OPENSHIFT_REPOSITORY)-tools/$(DOCKER_NAME)
 push: #build ## Push the docker container to the registry & tag latest
