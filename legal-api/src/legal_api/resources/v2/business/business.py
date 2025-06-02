@@ -197,6 +197,22 @@ def search_businesses():
         return {'error': 'Unable to retrieve businesses.'}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@bp.route('/search/affiliation_mappings', methods=['POST'])
+@cross_origin(origin='*')
+@jwt.requires_roles([SYSTEM_ROLE])
+def get_filing_details():
+    """Return the list of Business filings with name requests. Being called from auth api."""
+    data = request.get_json()
+    identifiers = data.get('identifiers', [])
+    if not identifiers or not isinstance(identifiers, list):
+        return {'message': "Expected a list of 1 or more for '/identifiers'"}, HTTPStatus.BAD_REQUEST
+    results = BusinessSearchService.get_affiliation_mapping_results(identifiers)
+    return jsonify({
+        'count': len(results),
+        'entityDetails': results
+    })
+
+
 @bp.route('/allowable/<string:business_type>/<string:business_state>', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_auth

@@ -28,12 +28,14 @@ def process(business: Business, filing: Dict, filing_rec: Filing, filing_meta: F
         return
 
     if parties := cease_receiver_filing.get('parties'):
-        update_parties(parties)
+        update_parties(parties, business)
 
 
-def update_parties(parties: dict):
+def update_parties(parties: dict, business: Business):
     """Cease receiver party role."""
     end_date_time = datetime.datetime.utcnow()
-    for party in parties:
-        party_role = PartyRole.find_by_internal_id(internal_id=party.get('officer').get('id'))
-        party_role.cessation_date = end_date_time
+    parties = [party.get('officer').get('id') for party in parties if party.get('officer').get('id') is not None]
+    party_roles = PartyRole.get_party_roles(business.id, end_date_time.date(), PartyRole.RoleTypes.RECEIVER.value)
+    for party_role in party_roles:
+        if party_role.party_id in parties:
+            party_role.cessation_date = end_date_time
