@@ -189,12 +189,13 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_NOALB: 'alteration',
     EventFilings.FILE_NOALU: 'alteration',
     EventFilings.FILE_NOALC: 'alteration',
+    EventFilings.FILE_AM_AR: 'alteration',
     EventFilings.FILE_AM_BC: 'alteration',
     EventFilings.FILE_AM_LI: 'alteration',
     EventFilings.FILE_AM_LQ: 'alteration',
     EventFilings.FILE_AM_RM: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
-    EventFilings.FILE_AM_AR: 'alteration',
+    EventFilings.FILE_AM_TR: 'alteration',
 
     EventFilings.FILE_IAMGO: 'consentAmalgamationOut',
     EventFilings.FILE_AMALO: 'amalgamationOut',
@@ -264,7 +265,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
-    EventFilings.DISLV_NULL: ['dissolution', 'voluntary'],  # TODO: re-map
+    EventFilings.DISLV_NULL: ['dissolution', 'voluntaryLiquidation'],
     EventFilings.DISLC_NULL: ['dissolution', 'administrative'],  # TODO: re-map
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
@@ -279,7 +280,6 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.ADCORP_NULL: 'legacyOther',
     EventFilings.ADFIRM_NULL: 'legacyOther',
     EventFilings.ADMIN_NULL: 'legacyOther',
-    EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
     EventFilings.FILE_NOAPL: 'appointLiquidator',
@@ -326,12 +326,13 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOALB: 'Notice of Alteration from a BC Unlimited Liability Company to Become a BC Company',
     EventFilings.FILE_NOALU: 'Notice of Alteration from a BC Company to Become a BC Unlimited Liability Company',
     EventFilings.FILE_NOALC: 'Notice of Alteration from a BC Company to Become a Community Contribution Company',
+    EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
     EventFilings.FILE_AM_BC: 'Amendment - Translated Name',
     EventFilings.FILE_AM_LI: 'Amendment - Ledger Information',
     EventFilings.FILE_AM_LQ: 'Amendment - Liquidator',
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
-    EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
+    EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     EventFilings.FILE_IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted',
     EventFilings.FILE_AMALO: 'Record of Amalgamation',
@@ -386,7 +387,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
-    EventFilings.DISLV_NULL: None,  # TODO: re-map, voluntary - no ledger in colin + status liquidated
+    EventFilings.DISLV_NULL: None,
     EventFilings.DISLC_NULL: None,  # TODO: re-map, admin - no ledger in colin + status liquidated
     EventFilings.SYSDA_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDS_NULL: None,  # admin - status Administrative Dissolution
@@ -401,7 +402,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.ADCORP_NULL: None,
     EventFilings.ADFIRM_NULL: None,
     EventFilings.ADMIN_NULL: None,
-    EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
     # NOLDS: "Notice of Location of Dissolved Company's Records"
