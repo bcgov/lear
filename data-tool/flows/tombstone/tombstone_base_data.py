@@ -203,6 +203,8 @@ FILING = {
         'withdrawn_filing_id': None,
         # others
         'submitter_roles': None,
+        'court_order_file_number' : None,  # optional
+        'court_order_effect_of_order' : None,  # optional
     },
     'jurisdiction': None,  # optional
     'amalgamations': None,  # optional
