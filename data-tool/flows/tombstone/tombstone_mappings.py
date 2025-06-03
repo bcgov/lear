@@ -13,12 +13,13 @@ class EventFilings(str, Enum):
     FILE_NOALB = 'FILE_NOALB'
     FILE_NOALU = 'FILE_NOALU'
     FILE_NOALC = 'FILE_NOALC'
+    FILE_AM_AR = 'FILE_AM_AR'
     FILE_AM_BC = 'FILE_AM_BC'
     FILE_AM_LI = 'FILE_AM_LI'
     FILE_AM_RM = 'FILE_AM_RM'
     FILE_AM_SS = 'FILE_AM_SS'
-    FILE_AM_AR = 'FILE_AM_AR'
     FILE_AM_LQ = 'FILE_AM_LQ'
+    FILE_AM_TR = 'FILE_AM_TR'
 
     FILE_IAMGO = 'FILE_IAMGO'
     FILE_AMALO = 'FILE_AMALO'
@@ -105,14 +106,17 @@ class EventFilings(str, Enum):
     ## voluntary
     FILE_ADVD2 = 'FILE_ADVD2'
     FILE_ADVDS = 'FILE_ADVDS'
-    DISLV_NULL = 'DISLV_NULL'
     ## admin
-    DISLC_NULL = 'DISLC_NULL'
     SYSDA_NULL = 'SYSDA_NULL'
     SYSDS_NULL = 'SYSDS_NULL'
-    # involuntary
+    ## involuntary
     SYSDF_NULL = 'SYSDF_NULL'
     SYSDT_NULL = 'SYSDT_NULL'
+    ## voluntaryLiquidation
+    DISLV_NULL = 'DISLV_NULL'
+    ## courtOrderedLiquidation
+    DISLC_NULL = 'DISLC_NULL'
+
 
     # Incorporation Application
     FILE_ICORP = 'FILE_ICORP'
@@ -123,7 +127,6 @@ class EventFilings(str, Enum):
     ADCORP_NULL = 'ADCORP_NULL'
     ADFIRM_NULL = 'ADFIRM_NULL'
     ADMIN_NULL = 'ADMIN_NULL'
-    FILE_AM_TR = 'FILE_AM_TR'
 
     # TODO: Liquidation - unsupported
     # FILE_ADCOL = 'FILE_ADCOL'
@@ -265,12 +268,12 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
-    EventFilings.DISLV_NULL: ['dissolution', 'voluntaryLiquidation'],
-    EventFilings.DISLC_NULL: ['dissolution', 'administrative'],  # TODO: re-map
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
     EventFilings.SYSDT_NULL: ['dissolution', 'involuntary'],
+    EventFilings.DISLV_NULL: ['dissolution', 'voluntaryLiquidation'],
+    EventFilings.DISLC_NULL: ['dissolution', 'courtOrderedLiquidation'],
 
     EventFilings.FILE_ICORP: 'incorporationApplication',
     EventFilings.FILE_ICORU: 'incorporationApplication',
@@ -387,12 +390,12 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
-    EventFilings.DISLV_NULL: None,
-    EventFilings.DISLC_NULL: None,  # TODO: re-map, admin - no ledger in colin + status liquidated
     EventFilings.SYSDA_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDS_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDF_NULL: None,  # invol - no ledger in lear & colin
     EventFilings.SYSDT_NULL: None,  # invol - no ledger in lear & colin
+    EventFilings.DISLV_NULL: None,  # voluntary liquidation - no ledger in colin
+    EventFilings.DISLC_NULL: None,  # court ordered liquidation - no ledger in colin
 
     EventFilings.FILE_ICORP: 'Incorporation Application',
     EventFilings.FILE_ICORU: 'Incorporation Application for a BC Unlimited Liability Company',
