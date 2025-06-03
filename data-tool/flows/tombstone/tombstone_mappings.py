@@ -129,7 +129,8 @@ class EventFilings(str, Enum):
     ADMIN_NULL = 'ADMIN_NULL'
 
     # TODO: Liquidation - unsupported
-    # FILE_ADCOL = 'FILE_ADCOL'
+    FILE_ADCOL = 'FILE_ADCOL'
+    FILE_ADVLQ = 'FILE_ADVLQ'
     FILE_NOAPL = 'FILE_NOAPL'
     FILE_NOARM = 'FILE_NOARM'
     FILE_NOCAL = 'FILE_NOCAL'
@@ -140,7 +141,7 @@ class EventFilings(str, Enum):
     FILE_NOCRM = 'FILE_NOCRM'
     FILE_NOTRA = 'FILE_NOTRA'
 
-    # TODO: Notice of Withdrawal - unsupported
+    # Notice of Withdrawal
     FILE_NWITH = 'FILE_NWITH'
 
     # Put Back Off
@@ -285,6 +286,8 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.ADMIN_NULL: 'legacyOther',
 
     # TODO: Liquidation - unsupported
+    EventFilings.FILE_ADCOL: 'courtOrderedLiquidation',
+    EventFilings.FILE_ADVLQ: 'voluntaryLiquidation',
     EventFilings.FILE_NOAPL: 'appointLiquidator',
     EventFilings.FILE_NOARM: 'appointReceiver',
     EventFilings.FILE_NOCAL: 'changeLiquidatorAddress',
@@ -410,6 +413,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # NOLDS: "Notice of Location of Dissolved Company's Records"
     # LIQUR: 'Liquidation Report'
     # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
+    EventFilings.FILE_ADCOL: 'Application for Dissolution (Court Ordered Liquidation)',
+    EventFilings.FILE_ADVLQ: 'Application for Dissolution (Voluntary Liquidation)',
     EventFilings.FILE_NOAPL: 'Notice of Appointment of Liquidator',
     EventFilings.FILE_NOARM: 'Notice of Appointment of Receiver or Receiver Manager',
     EventFilings.FILE_NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office',
@@ -423,7 +428,6 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
     # LQCON: 'Continuance of Liquidation - Court Ordered'
-    # ADVLQ: 'Application for Dissolution (Voluntary Liquidation)'
     # AM_LR: 'Amendment - Liquidation Report'
     # CO_LR: 'Correction - Liquidation Report'
 
