@@ -36,6 +36,9 @@ pytest-cov = "^6.0.0"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.5"
+testcontainers = "^4.10.0"
+google-cloud-datastore = "^2.21.0"
+psycopg2-binary = "^2.9.10"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
@@ -158,7 +161,7 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+-- addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
 python_files = [
    "test*.py"
 ]

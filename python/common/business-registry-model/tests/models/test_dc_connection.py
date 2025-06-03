@@ -16,6 +16,8 @@
 
 Test-Suite to ensure that the DCConnection Model is working as expected.
 """
+import random
+import uuid
 
 from business_model.models import DCConnection
 from tests.models import factory_business
@@ -23,7 +25,7 @@ from tests.models import factory_business
 
 def test_valid_dc_connection_save(session):
     """Assert that a valid dc_connection can be saved."""
-    identifier = 'FM1234567'
+    identifier = f'FM{random.randint(1000000, 9999999)}'
     business = factory_business(identifier)
     connection = create_dc_connection(business)
     assert connection.id
@@ -31,7 +33,7 @@ def test_valid_dc_connection_save(session):
 
 def test_find_by_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
+    identifier = f'FM{random.randint(1000000, 9999999)}'
     business = factory_business(identifier)
     connection = create_dc_connection(business)
 
@@ -43,7 +45,7 @@ def test_find_by_id(session):
 
 def test_find_dc_connection_by_connection_id(session):
     """Assert that the method returns correct value."""
-    identifier = 'FM1234567'
+    identifier = f'FM{random.randint(1000000, 9999999)}'
     business = factory_business(identifier)
     connection = create_dc_connection(business)
 
@@ -80,7 +82,8 @@ def test_find_by(session):
 def create_dc_connection(business, is_active=False):
     """Create new dc_connection object."""
     connection = DCConnection(
-        connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
+        # connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
+        connection_id=str(uuid.uuid4()),
         invitation_url="""http://192.168.65.3:8020?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb
 25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICIyZjU1M2JkZS01YWJlLTRkZDctODIwZi1mNWQ2Mjc1OWQxODgi
 LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY

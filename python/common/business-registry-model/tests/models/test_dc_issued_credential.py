@@ -16,6 +16,7 @@
 
 Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 """
+import random
 
 from business_model.models import DCIssuedCredential
 from tests.models import factory_business
@@ -58,7 +59,7 @@ def test_find_by(session):
 def create_dc_issued_credential(business=None):
     """Create new dc_issued_credential object."""
     if not business:
-        identifier = 'FM1234567'
+        identifier = f'FM{random.randint(1000000, 9999999)}'
         business = factory_business(identifier)
     definition = create_dc_definition()
     connection = create_dc_connection(business, is_active=True)
