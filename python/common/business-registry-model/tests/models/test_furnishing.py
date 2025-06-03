@@ -16,6 +16,8 @@
 
 Test-Suite to ensure that the Furnishing Model is working as expected.
 """
+import random
+
 import pytest
 
 from business_model.models import Furnishing
@@ -109,7 +111,7 @@ def test_find_furnishing_by_id(session):
 )
 def test_find_furnishing_by(session, params):
     """Assert that the method returns correct values."""
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     business = factory_business(identifier)
     batch = factory_batch()
     furnishing_group = factory_furnishing_group()
