@@ -19,6 +19,8 @@ Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 import random
 import uuid
 
+import pytest
+
 from business_model.models import DCIssuedCredential
 from tests.models import factory_business
 from tests.models.test_dc_connection import create_dc_connection

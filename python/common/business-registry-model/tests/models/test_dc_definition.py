@@ -18,6 +18,8 @@ Test-Suite to ensure that the DCDefinition Model is working as expected.
 """
 import uuid
 
+import pytest
+
 from business_model.models import DCDefinition
 
 
