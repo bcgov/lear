@@ -465,7 +465,7 @@ def format_filings_data(data: dict) -> dict:
 
         if (
             raw_filing_type == 'conversion'
-            or raw_filing_subtype in ('involuntary', 'voluntaryLiquidation')
+            or raw_filing_subtype in ('involuntary', 'voluntaryLiquidation', 'courtOrderedLiquidation')
             or event_file_type in ['SYSDL_NULL', 'ADCORP_NULL', 'ADFIRM_NULL', 'ADMIN_NULL']
         ):
             hide_in_ledger = True
