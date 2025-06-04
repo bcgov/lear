@@ -61,7 +61,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     BUSINESS_ELIGIBLE_STATES: Final = [
         Business.State.ACTIVE.value,
         Business.State.HISTORICAL.value,
-        Business.State.LIQUIDATION.value
     ]
 
     FILINGS_ELIGIBLE_STATES: Final = [
