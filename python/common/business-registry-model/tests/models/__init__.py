@@ -33,6 +33,7 @@ from business_model.models import (
     FurnishingGroup,
     Office,
     Party,
+    PartyClass,
     PartyRole,
     ShareClass,
     ShareSeries,
