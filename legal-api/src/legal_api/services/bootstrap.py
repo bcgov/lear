@@ -75,17 +75,25 @@ class RegistrationBootstrapService:
     @staticmethod
     def register_bootstrap(bootstrap: RegistrationBootstrap,
                            business_name: str,
+                           nr_number: str = None,
                            corp_type_code: str = 'TMP',
                            corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
         if not bootstrap:
             return {'error': babel('An account number must be provided.')}
 
+        details = {
+            'bootstrapIdentifier': bootstrap.identifier,
+            'identifier': None,
+            'nrNumber': nr_number
+        }
+
         rv = AccountService.create_affiliation(account=bootstrap.account,
                                                business_registration=bootstrap.identifier,
                                                business_name=business_name,
                                                corp_type_code=corp_type_code,
                                                corp_sub_type_code=corp_sub_type_code,
+                                               details=details,
                                                flags=flags)
 
         if rv == HTTPStatus.OK:

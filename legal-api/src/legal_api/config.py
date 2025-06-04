@@ -19,6 +19,7 @@ All modules and lookups get their configuration from the
 Flask config, rather than reading environment variables directly
 or by accessing this configuration directly.
 """
+
 import os
 import sys
 
@@ -32,7 +33,7 @@ CONFIGURATION = {
     'development': 'legal_api.config.DevConfig',
     'testing': 'legal_api.config.TestConfig',
     'production': 'legal_api.config.ProdConfig',
-    'default': 'legal_api.config.ProdConfig'
+    'default': 'legal_api.config.ProdConfig',
 }
 
 
@@ -52,7 +53,7 @@ def get_named_config(config_name: str = 'production'):
     return config
 
 
-class _Config():  # pylint: disable=too-few-public-methods
+class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
 
     Used as the base for all the other configurations.
@@ -60,19 +61,35 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     SERVICE_NAME = 'legal-api'
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+    DEPLOYMENT_PLATFORM = os.getenv('DEPLOYMENT_PLATFORM', 'OCP')
 
-    LEGAL_API_BASE_URL = os.getenv('LEGAL_API_BASE_URL', 'https://LEGAL_API_BASE_URL/api/v1/businesses')
-    COLIN_URL = os.getenv('COLIN_URL', '')
-    PAYMENT_SVC_URL = os.getenv('PAYMENT_SVC_URL', 'http://PAYMENT_BASE/api/v1/payment-request')
-    AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://')
-    REPORT_SVC_URL = os.getenv('REPORT_SVC_URL', 'http://')
+    # API Endpoints
+    AUTH_API_URL = os.getenv('AUTH_API_URL', '')
+    AUTH_API_VERSION = os.getenv('AUTH_API_VERSION', '')
+    BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
+    BUSINESS_API_VERSION_2 = os.getenv('BUSINESS_API_VERSION2', '')
+    NAMEX_API_URL = os.getenv('NAMEX_API_URL', '')
+    NAMEX_API_VERSION = os.getenv('NAMEX_API_VERSION', '')
+    PAY_API_URL = os.getenv('PAY_API_URL', '')
+    PAY_API_VERSION = os.getenv('PAY_API_VERSION', '')
+    REPORT_API_URL = os.getenv('REPORT_API_URL', '')
+    REPORT_API_VERSION = os.getenv('REPORT_API_VERSION', '')
+    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
+    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
+
+    COLIN_URL = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
+    LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
+    NAMEX_SVC_URL = f'{NAMEX_API_URL + NAMEX_API_VERSION}'
+    PAYMENT_SVC_URL = f'{PAY_API_URL + PAY_API_VERSION}/payment-requests'
+    AUTH_SVC_URL = f'{AUTH_API_URL + AUTH_API_VERSION}'
+    REPORT_SVC_URL = f'{REPORT_API_URL + REPORT_API_VERSION}/reports'
+    NAICS_API_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/naics'
+
     REPORT_TEMPLATE_PATH = os.getenv('REPORT_PATH', 'report-templates')
     FONTS_PATH = os.getenv('FONTS_PATH', 'fonts')
 
     GO_LIVE_DATE = os.getenv('GO_LIVE_DATE')
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
     SECRET_KEY = 'a secret'
 
@@ -89,7 +106,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     if DB_UNIX_SOCKET := os.getenv('DATABASE_UNIX_SOCKET', None):
         SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}'
     else:
-        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+        SQLALCHEMY_DATABASE_URI = (
+            f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+        )
 
     # JWT_OIDC Settings
     JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv('JWT_OIDC_WELL_KNOWN_CONFIG')
@@ -109,20 +128,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     except (TypeError, ValueError):
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
-    # NATS / STAN
-    NATS_SERVERS = os.getenv('NATS_SERVERS')
-    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', 'entity.legal_api')
-    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', 'test-cluster')
-    NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
-    NATS_ENTITY_EVENT_SUBJECT = os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events')
-    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
-    NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
-
     # NAMEX PROXY Settings
     NAMEX_AUTH_SVC_URL = os.getenv('NAMEX_AUTH_SVC_URL', 'http://')
     NAMEX_SERVICE_CLIENT_USERNAME = os.getenv('NAMEX_SERVICE_CLIENT_USERNAME')
     NAMEX_SERVICE_CLIENT_SECRET = os.getenv('NAMEX_SERVICE_CLIENT_SECRET')
-    NAMEX_SVC_URL = os.getenv('NAMEX_SVC_URL', 'http://')
 
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
@@ -144,8 +153,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     NAICS_YEAR = int(os.getenv('NAICS_YEAR', '2022'))
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = int(os.getenv('NAICS_VERSION', '1'))
-
-    NAICS_API_URL = os.getenv('NAICS_API_URL', 'https://NAICS_API_URL/api/v2/naics')
 
     # Traction ACA-Py tenant settings to issue credentials from
     TRACTION_API_URL = os.getenv('TRACTION_API_URL')
@@ -175,10 +182,6 @@ class _Config():  # pylint: disable=too-few-public-methods
     MRAS_SVC_URL = os.getenv('MRAS_SVC_URL')
     MRAS_SVC_API_KEY = os.getenv('MRAS_SVC_API_KEY')
 
-    # GCP Gotenberg report service
-    REPORT_API_GOTENBERG_AUDIENCE = os.getenv('REPORT_API_GOTENBERG_AUDIENCE', '')
-    REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
-
     # involuntary dissolution
     STAGE_1_DELAY = int(os.getenv('STAGE_1_DELAY', '42'))
     STAGE_2_DELAY = int(os.getenv('STAGE_2_DELAY', '30'))
@@ -186,12 +189,38 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Transparency Register
     TR_START_DATE = os.getenv('TR_START_DATE', '').strip()  # i.e. '2025-02-01'
 
+    # Pub/Sub
+    GCP_AUTH_KEY = os.getenv('GCP_AUTH_KEY', None)
+    AUDIENCE = os.getenv(
+        'AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Subscriber'
+    )
+    PUBLISHER_AUDIENCE = os.getenv(
+        'PUBLISHER_AUDIENCE', 'https://pubsub.googleapis.com/google.pubsub.v1.Publisher'
+    )
+    SUB_AUDIENCE = os.getenv('SUB_AUDIENCE', '')
+    SUB_SERVICE_ACCOUNT = os.getenv('SUB_SERVICE_ACCOUNT', '')
+    SBC_CONNECT_GCP_QUEUE_DEBUG = (
+        os.getenv('SBC_CONNECT_GCP_QUEUE_DEBUG', 'false').lower() == 'true'
+    )
+    BUSINESS_EVENTS_TOPIC = os.getenv('BUSINESS_EVENTS_TOPIC', 'business-bn')
+    BUSINESS_EMAILER_TOPIC = os.getenv('BUSINESS_EMAILER_TOPIC', 'business-emailer')
+    BUSINESS_FILER_TOPIC = os.getenv('BUSINESS_FILER_TOPIC', 'business-filer')
+
+    # NATS / STAN
+    NATS_SERVERS = os.getenv('NATS_SERVERS')
+    NATS_CLIENT_NAME = os.getenv('NATS_CLIENT_NAME', 'entity.legal_api')
+    NATS_CLUSTER_ID = os.getenv('NATS_CLUSTER_ID', 'test-cluster')
+    NATS_FILER_SUBJECT = os.getenv('NATS_FILER_SUBJECT', 'entity.filing.filer')
+    NATS_ENTITY_EVENT_SUBJECT = os.getenv('NATS_ENTITY_EVENT_SUBJECT', 'entity.events')
+    NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
+    NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
+
     TESTING = False
     DEBUG = False
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
-    """Creates the Development Config object."""
+    """reates the Development Config object."""
 
     TESTING = False
     DEBUG = True
@@ -215,7 +244,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     if DB_UNIX_SOCKET := os.getenv('DATABASE_UNIX_SOCKET', None):
         SQLALCHEMY_DATABASE_URI = f'postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}'
     else:
-        SQLALCHEMY_DATABASE_URI = f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+        SQLALCHEMY_DATABASE_URI = (
+            f'postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
+        )
 
     # URLs
     AUTH_SVC_URL = os.getenv('AUTH_SVC_URL', 'http://test-auth-url')
@@ -236,7 +267,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
                 'alg': 'RS256',
                 'use': 'sig',
                 'n': 'AN-fWcpCyE5KPzHDjigLaSUVZI0uYrcGcc40InVtl-rQRDmAh-C2W8H4_Hxhr5VLc6crsJ2LiJTV_E72S03pzpOOaaYV6-TzAjCou2GYJIXev7f6Hh512PuG5wyxda_TlBSsI-gvphRTPsKCnPutrbiukCYrnPuWxX5_cES9eStR',  # noqa: E501
-                'e': 'AQAB'
+                'e': 'AQAB',
             }
         ]
     }
@@ -255,7 +286,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
                 'q': 'AOjX3OnPJnk0ZFUQBwhduCweRi37I6DAdLTnhDvcPTrrNWuKPg9uGwHjzFCJgKd8KBaDQ0X1rZTZLTqi3peT43s',
                 'dp': 'AN9kBoA5o6_Rl9zeqdsIdWFmv4DB5lEqlEnC7HlAP-3oo3jWFO9KQqArQL1V8w2D4aCd0uJULiC9pCP7aTHvBhc',
                 'dq': 'ANtbSY6njfpPploQsF9sU26U0s7MsuLljM1E8uml8bVJE1mNsiu9MgpUvg39jEu9BtM2tDD7Y51AAIEmIQex1nM',
-                'qi': 'XLE5O360x-MhsdFXx8Vwz4304-MJg-oGSJXCK_ZWYOB_FGXFRTfebxCsSYi0YwJo-oNu96bvZCuMplzRI1liZw'
+                'qi': 'XLE5O360x-MhsdFXx8Vwz4304-MJg-oGSJXCK_ZWYOB_FGXFRTfebxCsSYi0YwJo-oNu96bvZCuMplzRI1liZw',
             }
         ]
     }
@@ -288,6 +319,18 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     NAICS_YEAR = 2022
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = 1
+
+    LEGAL_API_BASE_URL = 'https://LEGAL_API_BASE_URL/api/v2/businesses'
+    PAYMENT_SVC_URL = 'https://PAY_SVC_URL/api/v1/payment-requests'
+
+    BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID', 'TEST_BUSINESS_SCHEMA_ID')
+    BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID', 'TEST_BUSINESS_SCHEMA_ID')
+
+    TRACTION_API_URL = os.getenv('TRACTION_API_URL', 'https://TRACTION_API_URL')
+    TRACTION_TENANT_ID = os.getenv('TRACTION_TENANT_ID', 'TRACTION_TENANT_ID')
+    TRACTION_API_KEY = os.getenv('TRACTION_API_KEY', 'TRACTION_API_KEY')
+    TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID', 'TRACTION_PUBLIC_SCHEMA_DID')
+    TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID', 'TRACTION_PUBLIC_ISSUER_DID')
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

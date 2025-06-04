@@ -128,14 +128,20 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_party_roles(business_id: int, end_date: datetime = None, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
+        unsupported_roles = [
+            PartyRole.RoleTypes.OFFICER.value,
+            PartyRole.RoleTypes.LIQUIDATOR.value,
+            PartyRole.RoleTypes.RECEIVER.value,
+        ]
+
         party_roles = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id)
 
-        # TODO: rework the Officers section; change-on-change to still bring back officers
-        if not role or role != PartyRole.RoleTypes.OFFICER.value:
-            party_roles = party_roles.filter(PartyRole.role != PartyRole.RoleTypes.OFFICER.value)
-        if role is not None:
+        # TODO: rework the unsupported party roles section; change-on-change to still bring back these roles
+        if role:
             party_roles = party_roles.filter(PartyRole.role == role.lower())
+        else:
+            party_roles = party_roles.filter(PartyRole.role.notin_(unsupported_roles))
 
         if end_date is not None:
             party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date). \

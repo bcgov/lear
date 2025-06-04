@@ -21,7 +21,7 @@ from enum import Enum
 from typing import List
 
 from legal_api.models import Business, Filing, Party, PartyRole, User
-from legal_api.services.digital_credentials_utils import FormattedUser
+from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
 from legal_api.utils.logging import setup_logging
 
 
@@ -50,9 +50,8 @@ class DigitalCredentialsRulesService:
 
     valid_incorporation_types = [
         Business.LegalTypes.BCOMP.value,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value
     ]
-
-    valid_business_types = valid_registration_types + valid_incorporation_types
 
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
         """Return True if the user is allowed to access digital credentials."""
@@ -91,7 +90,11 @@ class DigitalCredentialsRulesService:
             logging.debug('No business is provided.')
             return False
 
-        if business.legal_type in self.valid_business_types:
+        allowed_business_types = determine_allowed_business_types(
+            self.valid_registration_types, self.valid_incorporation_types)
+        logging.debug('Allowed business types: %s', allowed_business_types)
+
+        if business.legal_type in allowed_business_types:
             return (self.user_has_filing_party_role(user, business)
                     or self.user_has_business_party_role(user, business))
 

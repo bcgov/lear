@@ -278,7 +278,11 @@ def get_business_query(corp_num, suffix):
             else false
         end admin_freeze,
         c.admin_email,
-        c.corp_password as pass_code
+        c.corp_password as pass_code,
+    -- restriction
+        exists(select 1 from corp_restriction cr 
+                where cr.corp_num = '{corp_num}' and cr.end_event_id is null and restriction_ind = true
+        ) as restriction_ind
     from corporation c
     left outer join event e on e.corp_num = c.corp_num and e.event_type_cd IN ('CONVICORP', 'CONVAMAL') -- need to add other event like CONVCIN...
     where 1 = 1
@@ -358,8 +362,11 @@ def get_offices_and_addresses_query(corp_num):
     where 1 = 1
 --        and e.corp_num = 'BC0043406' -- office_typ_cd: RG, RC, TH, SH
         and e.corp_num = '{corp_num}'
-        and o.end_event_id is null
-        and o.office_typ_cd in ('RG', 'RC', 'DS', 'LQ')
+        and (
+            (o.office_typ_cd in ('RG', 'RC', 'LQ') and o.end_event_id is null)
+            or
+            (o.office_typ_cd = 'DS')
+        )
     ;
     """
     return query
@@ -389,10 +396,6 @@ def get_parties_and_addresses_query(corp_num):
         nullif(trim(cp.first_name), '')           as cp_first_name,
         concat_ws(' ', nullif(trim(cp.first_name),''), nullif(trim(cp.middle_name),''), nullif(trim(cp.last_name),'')) as cp_full_name,
         nullif(trim(cp.business_name), '')    as cp_business_name,
-        coalesce(
-		    nullif(trim(cp.business_name), ''),
-		    nullif(concat_ws(' ', nullif(trim(cp.first_name),''), nullif(trim(cp.middle_name),''), nullif(trim(cp.last_name),'')), '')
-		) as partial_group_key,
         -- TODO: need to figure it out, thougth according to the spreadsheet, it converts to identifier
 --        case 
 --                when cp.bus_company_num = '' then NULL
@@ -465,10 +468,10 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and (
-            (cp.party_typ_cd in ('DIR', 'OFF', 'RCC', 'RCM')
+            (cp.party_typ_cd = 'OFF'
                 and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null)))
             or
-            (cp.party_typ_cd = 'LIQ' and not exists (select * from corp_party prev_cp where prev_cp.prev_party_id = cp.corp_party_id))
+            (cp.party_typ_cd in ('DIR', 'LIQ', 'RCC', 'RCM'))
         )
     --order by e.event_id
     order by cp_full_name, e.event_id
@@ -630,7 +633,9 @@ def get_filings_query(corp_num):
             co.can_jur_typ_cd as out_can_jur_typ_cd,
             to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
             co.othr_juri_desc as out_othr_juri_desc,
-            co.home_company_nme as out_home_company_nme
+            co.home_company_nme as out_home_company_nme,
+            f.arrangement_ind,
+            f.court_order_num
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join filing_user u on u.event_id = e.event_id

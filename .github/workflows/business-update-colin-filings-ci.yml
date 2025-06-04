@@ -1,0 +1,24 @@
+name: Business Update Colin Filings Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/update-colin-filings/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/update-colin-filings
+
+jobs:
+  business-update-colin-filings-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-update-colin-filings"
+      working_directory: "./gcp-jobs/update-colin-filings"
+      codecov_flag: "business-update-colin-filings"

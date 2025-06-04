@@ -61,9 +61,9 @@ from legal_api.services import (
     authorized,
     flags,
     namex,
-    queue,
 )
 from legal_api.services.authz import is_allowed
+from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
@@ -586,8 +586,19 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 filing.set_processed(business.legal_type)
                 filing.save()
             else:
-                payload = {'filing': {'id': filing.id}}
-                queue.publish_json(payload)
+                # todo: when removing nats, leave only filingMessage, and remove 'filing' as this part is used by OCP
+                payload = {
+                    'filing': {'id': filing.id},
+                    'filingMessage': {'filingIdentifier': filing.id}
+                }
+                publish_to_queue(
+                    data=payload,
+                    subject=current_app.config.get('NATS_FILER_SUBJECT'),
+                    identifier=business.identifier if business else None,
+                    event_type=None,
+                    message_id=None,
+                    is_wrapped=False
+                )
 
             return {'filing': {'id': filing.id}}, HTTPStatus.CREATED
         except KeyError:
@@ -927,12 +938,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             'businessInfo': {
                 'businessIdentifier': f'{business.identifier}',
                 'corpType': f'{corp_type}',
-                'businessName': f'{business.legal_name}',
-                'contactInfo': {'city': mailing_address.city,
-                                'postalCode': mailing_address.postal_code,
-                                'province': mailing_address.region,
-                                'addressLine1': mailing_address.street,
-                                'country': mailing_address.country}
+                'businessName': f'{business.legal_name}'
             },
             'filingInfo': {
                 'filingIdentifier': f'{filing.id}',
@@ -940,6 +946,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             },
             'details': ListFilingResource.details_for_invoice(business.identifier, corp_type)
         }
+
+        # mailing_address may not be available for the migrated businesses from COLIN
+        if mailing_address:
+            payload['businessInfo']['contactInfo'] = {
+                'city': mailing_address.city,
+                'postalCode': mailing_address.postal_code,
+                'province': mailing_address.region,
+                'addressLine1': mailing_address.street,
+                'country': mailing_address.country
+            }
         folio_number = filing.json['filing']['header'].get('folioNumber', None)
         if folio_number:
             payload['filingInfo']['folioNumber'] = folio_number
@@ -1137,10 +1153,16 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
             return
 
+        business = Business.find_by_internal_id(filing.business_id)
+
         # emailer notification
-        queue.publish_json(
-            {'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
-            current_app.config.get('NATS_EMAILER_SUBJECT')
+        publish_to_queue(
+            data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': review.status}},
+            subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
+            identifier=business.identifier if business else None,
+            event_type=None,
+            message_id=None,
+            is_wrapped=False
         )
 
     @staticmethod

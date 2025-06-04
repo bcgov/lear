@@ -149,6 +149,8 @@ class DigitalCredentialsService:
                                      headers=self._get_headers(),
                                      params={'auto_accept': 'true'},
                                      data=json.dumps({
+                                         'goal': 'To issue a Digital Business Card credential',
+                                         'goal_code': 'aries.vc.issue',
                                          'handshake_protocols': ['https://didcomm.org/didexchange/1.1']
                                      }))
             response.raise_for_status()

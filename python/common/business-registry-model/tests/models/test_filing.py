@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     SPECIAL_RESOLUTION,
 )
+from sqlalchemy.exc import IntegrityError
 
 from business_model.exceptions import BusinessException
 from business_model.models import Business, Filing, User
@@ -193,7 +194,7 @@ def test_filing_dump_json(session):
     filings = factory_filing(b, ar)
     filings.save()
     filings.submitter_id = -1  # some bogus id to throw an error
-    with pytest.raises(KeyError):
+    with pytest.raises(IntegrityError):
         filings.json()
 
 

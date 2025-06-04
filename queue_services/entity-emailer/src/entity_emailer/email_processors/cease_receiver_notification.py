@@ -72,7 +72,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = 'Ceased Receiver Successfully'
+    subject = 'Receiver Ceased'
     legal_name = business.get('legalName', None)
     legal_name = 'Numbered Company' if legal_name.startswith(identifier) else legal_name
     subject = f'{legal_name} - {subject}' if legal_name else subject

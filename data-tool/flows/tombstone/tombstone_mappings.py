@@ -13,12 +13,13 @@ class EventFilings(str, Enum):
     FILE_NOALB = 'FILE_NOALB'
     FILE_NOALU = 'FILE_NOALU'
     FILE_NOALC = 'FILE_NOALC'
+    FILE_AM_AR = 'FILE_AM_AR'
     FILE_AM_BC = 'FILE_AM_BC'
     FILE_AM_LI = 'FILE_AM_LI'
     FILE_AM_RM = 'FILE_AM_RM'
     FILE_AM_SS = 'FILE_AM_SS'
-    FILE_AM_AR = 'FILE_AM_AR'
     FILE_AM_LQ = 'FILE_AM_LQ'
+    FILE_AM_TR = 'FILE_AM_TR'
 
     FILE_IAMGO = 'FILE_IAMGO'
     FILE_AMALO = 'FILE_AMALO'
@@ -105,14 +106,17 @@ class EventFilings(str, Enum):
     ## voluntary
     FILE_ADVD2 = 'FILE_ADVD2'
     FILE_ADVDS = 'FILE_ADVDS'
-    DISLV_NULL = 'DISLV_NULL'
     ## admin
-    DISLC_NULL = 'DISLC_NULL'
     SYSDA_NULL = 'SYSDA_NULL'
     SYSDS_NULL = 'SYSDS_NULL'
-    # involuntary
+    ## involuntary
     SYSDF_NULL = 'SYSDF_NULL'
     SYSDT_NULL = 'SYSDT_NULL'
+    ## voluntaryLiquidation
+    DISLV_NULL = 'DISLV_NULL'
+    ## courtOrderedLiquidation
+    DISLC_NULL = 'DISLC_NULL'
+
 
     # Incorporation Application
     FILE_ICORP = 'FILE_ICORP'
@@ -123,19 +127,21 @@ class EventFilings(str, Enum):
     ADCORP_NULL = 'ADCORP_NULL'
     ADFIRM_NULL = 'ADFIRM_NULL'
     ADMIN_NULL = 'ADMIN_NULL'
-    FILE_AM_TR = 'FILE_AM_TR'
 
     # TODO: Liquidation - unsupported
-    # FILE_ADCOL = 'FILE_ADCOL'
+    FILE_ADCOL = 'FILE_ADCOL'
+    FILE_ADVLQ = 'FILE_ADVLQ'
     FILE_NOAPL = 'FILE_NOAPL'
     FILE_NOARM = 'FILE_NOARM'
+    FILE_NOCAL = 'FILE_NOCAL'
     FILE_NOCDS = 'FILE_NOCDS'
     FILE_NOCEL = 'FILE_NOCEL'
     FILE_NOCER = 'FILE_NOCER'
     FILE_NOLDS = 'FILE_NOLDS'
+    FILE_NOCRM = 'FILE_NOCRM'
     FILE_NOTRA = 'FILE_NOTRA'
 
-    # TODO: Notice of Withdrawal - unsupported
+    # Notice of Withdrawal
     FILE_NWITH = 'FILE_NWITH'
 
     # Put Back Off
@@ -187,12 +193,13 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_NOALB: 'alteration',
     EventFilings.FILE_NOALU: 'alteration',
     EventFilings.FILE_NOALC: 'alteration',
+    EventFilings.FILE_AM_AR: 'alteration',
     EventFilings.FILE_AM_BC: 'alteration',
     EventFilings.FILE_AM_LI: 'alteration',
     EventFilings.FILE_AM_LQ: 'alteration',
     EventFilings.FILE_AM_RM: 'alteration',
     EventFilings.FILE_AM_SS: 'alteration',
-    EventFilings.FILE_AM_AR: 'alteration',
+    EventFilings.FILE_AM_TR: 'alteration',
 
     EventFilings.FILE_IAMGO: 'consentAmalgamationOut',
     EventFilings.FILE_AMALO: 'amalgamationOut',
@@ -262,12 +269,12 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
-    EventFilings.DISLV_NULL: ['dissolution', 'voluntary'],  # TODO: re-map
-    EventFilings.DISLC_NULL: ['dissolution', 'administrative'],  # TODO: re-map
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
     EventFilings.SYSDT_NULL: ['dissolution', 'involuntary'],
+    EventFilings.DISLV_NULL: ['dissolution', 'voluntaryLiquidation'],
+    EventFilings.DISLC_NULL: ['dissolution', 'courtOrderedLiquidation'],
 
     EventFilings.FILE_ICORP: 'incorporationApplication',
     EventFilings.FILE_ICORU: 'incorporationApplication',
@@ -277,15 +284,18 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.ADCORP_NULL: 'legacyOther',
     EventFilings.ADFIRM_NULL: 'legacyOther',
     EventFilings.ADMIN_NULL: 'legacyOther',
-    EventFilings.FILE_AM_TR: 'legacyOther',
 
     # TODO: Liquidation - unsupported
+    EventFilings.FILE_ADCOL: 'courtOrderedLiquidation',
+    EventFilings.FILE_ADVLQ: 'voluntaryLiquidation',
     EventFilings.FILE_NOAPL: 'appointLiquidator',
     EventFilings.FILE_NOARM: 'appointReceiver',
+    EventFilings.FILE_NOCAL: 'changeLiquidatorAddress',
     EventFilings.FILE_NOCDS: 'changeRespectingDCR',
     EventFilings.FILE_NOCEL: 'ceaseLiquidator',
     EventFilings.FILE_NOCER: 'ceaseReceiver',
     EventFilings.FILE_NOLDS: 'locationDCR',
+    EventFilings.FILE_NOCRM: 'changeReceiverAddress',
     EventFilings.FILE_NOTRA: 'transferRecordsOffice',
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
@@ -322,12 +332,13 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOALB: 'Notice of Alteration from a BC Unlimited Liability Company to Become a BC Company',
     EventFilings.FILE_NOALU: 'Notice of Alteration from a BC Company to Become a BC Unlimited Liability Company',
     EventFilings.FILE_NOALC: 'Notice of Alteration from a BC Company to Become a Community Contribution Company',
+    EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
     EventFilings.FILE_AM_BC: 'Amendment - Translated Name',
     EventFilings.FILE_AM_LI: 'Amendment - Ledger Information',
     EventFilings.FILE_AM_LQ: 'Amendment - Liquidator',
     EventFilings.FILE_AM_RM: 'Amendment - Receiver or Receiver Manager',
     EventFilings.FILE_AM_SS: 'Amendment - Share Structure',
-    EventFilings.FILE_AM_AR: 'Amendment - Annual Report',
+    EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     EventFilings.FILE_IAMGO: 'Application For Authorization For Amalgamation (into a Foreign Corporation) with 6 months consent granted',
     EventFilings.FILE_AMALO: 'Record of Amalgamation',
@@ -382,12 +393,12 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
-    EventFilings.DISLV_NULL: None,  # TODO: re-map, voluntary - no ledger in colin + status liquidated
-    EventFilings.DISLC_NULL: None,  # TODO: re-map, admin - no ledger in colin + status liquidated
     EventFilings.SYSDA_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDS_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDF_NULL: None,  # invol - no ledger in lear & colin
     EventFilings.SYSDT_NULL: None,  # invol - no ledger in lear & colin
+    EventFilings.DISLV_NULL: None,  # voluntary liquidation - no ledger in colin
+    EventFilings.DISLC_NULL: None,  # court ordered liquidation - no ledger in colin
 
     EventFilings.FILE_ICORP: 'Incorporation Application',
     EventFilings.FILE_ICORU: 'Incorporation Application for a BC Unlimited Liability Company',
@@ -397,26 +408,26 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.ADCORP_NULL: None,
     EventFilings.ADFIRM_NULL: None,
     EventFilings.ADMIN_NULL: None,
-    EventFilings.FILE_AM_TR: 'Amendment - Transition',
 
     # TODO: Liquidation - unsupported (need to check if anything missing)
     # NOLDS: "Notice of Location of Dissolved Company's Records"
-    # NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office'
     # LIQUR: 'Liquidation Report'
     # LQWOS: 'Notice of Withdrawal Statement of Intent to Liquidate'
+    EventFilings.FILE_ADCOL: 'Application for Dissolution (Court Ordered Liquidation)',
+    EventFilings.FILE_ADVLQ: 'Application for Dissolution (Voluntary Liquidation)',
     EventFilings.FILE_NOAPL: 'Notice of Appointment of Liquidator',
     EventFilings.FILE_NOARM: 'Notice of Appointment of Receiver or Receiver Manager',
+    EventFilings.FILE_NOCAL: 'Notice of Change of Address of Liquidator And/Or Liquidation Records Office',
     EventFilings.FILE_NOCDS: 'Notice of Change Respecting Dissolved Company\'s Records',
     EventFilings.FILE_NOCEL: 'Notice of Ceasing to Act as Liquidator',
     EventFilings.FILE_NOCER: 'Notice of Ceasing to Act as Receiver or Receiver Manager',
     EventFilings.FILE_NOLDS: 'Notice of Location of Dissolved Company\'s Records',
+    EventFilings.FILE_NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager',
     EventFilings.FILE_NOTRA: 'Notice of Transfer of Records',
     # LQSIN: 'Statement of Intent to Liquidate'
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
     # LQCON: 'Continuance of Liquidation - Court Ordered'
-    # NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager'
-    # ADVLQ: 'Application for Dissolution (Voluntary Liquidation)'
     # AM_LR: 'Amendment - Liquidation Report'
     # CO_LR: 'Correction - Liquidation Report'
 

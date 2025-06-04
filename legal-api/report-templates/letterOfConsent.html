@@ -23,19 +23,21 @@
         &nbsp;{{ office.mailingAddress.postalCode }}
       </div>
       <div class="mt-7">Dear Applicant,</div>
-      <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
+      <div class="mt-5">Re: <span class="bold">{{ business.legalName }} | {{ business.identifier }}</span></div>
       <div class="mt-5">
-        The above company was authorized on {{effective_date}} to continue out of British Columbia, 
-        under section 308 of the Business Corporations Act, to the jurisdiction of {{ jurisdiction }}.
+        {{ business.legalName }} was authorized on {{effective_date}} to continue out of British Columbia
+         to the jurisdiction of <span class="bold">{{ jurisdiction }}</span>.
+      </div>
+      <div class="mt-5 bold">
+        This authorization expires on {{ cco_expiry_date }}.
       </div>
       <div class="mt-5">
         Section 311(1) states that "Promptly after the date on which a company is continued into another jurisdiction,
         the continued corporation must file with the registrar a copy of any record issued to it by the other
-        jurisdiction to effect or confirm the continuation." Please forward a copy of this record in order to remove
-        the above company from the companies registered in British Columbia.
+        jurisdiction to effect or confirm the continuation."
       </div>
       <div class="mt-5">
-        This consent is <span class="bold">valid for six months, ending {{ cco_expiry_date }}</span>.
+        Our office must receive a copy of this record in order to make the company historical in British Columbia.
       </div>
       <p class="mt-5">Yours truly,</p>
       <div class="registrar-info">

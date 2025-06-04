@@ -76,6 +76,26 @@ def test_get_business_documents(session, client, jwt):
     assert docs_json['documents']
     assert docs_json['documents']['summary']
 
+def test_get_business_documents_ca(requests_mock, session, client, jwt):
+    """Assert that business summary is not returned."""
+    # setup
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    requests_mock.get(
+        f"{current_app.config.get('AUTH_SVC_URL')}/orgs/123456/products?include_hidden=true",
+        json=[{"code": "CA_SEARCH", "subscriptionStatus": "ACTIVE"}],
+    )
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier, **{'Account-Id': '123456'})
+                    )
+    # check
+    assert rv.status_code == HTTPStatus.OK
+    docs_json = rv.json
+    assert docs_json['documents']
+    assert docs_json['documents']['summary']
+    assert not docs_json['documents'].get('receipt', False)
+
 
 def test_get_document_invalid_authorization(session, client, jwt):
     """Assert that business summary is not returned."""

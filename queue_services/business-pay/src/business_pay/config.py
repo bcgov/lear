@@ -39,11 +39,11 @@ All modules and lookups get their configuration from the
 Flask config, rather than reading environment variables directly
 or by accessing this configuration directly.
 """
+
 import os
 import random
 
 from dotenv import find_dotenv, load_dotenv
-
 
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
@@ -77,14 +77,15 @@ class Config:  # pylint: disable=too-few-public-methods
 
     Used as the base for all the other configurations.
     """
+
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
-    PAYMENT_SVC_URL = os.getenv("PAYMENT_SVC_URL", "")
+    SENTRY_DSN = os.getenv("SENTRY_DSN") or ""
+    SENTRY_DSN = "" if SENTRY_DSN.lower() == "null" else SENTRY_DSN
+    
+    DEPLOYMENT_PLATFORM = os.getenv("DEPLOYMENT_PLATFORM", "OCP")
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
-
-    LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
+    LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
@@ -134,7 +135,7 @@ class Config:  # pylint: disable=too-few-public-methods
         "subject": os.getenv("NATS_EMAILER_SUBJECT", "entity.email"),
     }
 
-    ENVIRONMENT = os.getenv("ENVIRONMENT", "production")
+    ENVIRONMENT = os.getenv("DEPLOYMENT_ENV", "production")
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
@@ -147,9 +148,10 @@ class Config:  # pylint: disable=too-few-public-methods
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
     SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
-    BUSINESS_FILER_TOPIC = os.getenv('BUSINESS_FILER_TOPIC', 'business-filer')
+    BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "business-filer")
 
-    NATS_CONNECT_ERROR_COUNT_MAX =  os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)
+    NATS_CONNECT_ERROR_COUNT_MAX = os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)
+
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""

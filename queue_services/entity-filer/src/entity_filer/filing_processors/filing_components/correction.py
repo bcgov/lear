@@ -35,6 +35,14 @@ from entity_filer.filing_processors.filing_components import (
 )
 
 
+CEASE_ROLE_MAPPING = {
+    **dict.fromkeys(Business.CORPS, PartyRole.RoleTypes.DIRECTOR.value),
+    Business.LegalTypes.COOP.value: PartyRole.RoleTypes.DIRECTOR.value,
+    Business.LegalTypes.PARTNERSHIP.value: PartyRole.RoleTypes.PARTNER.value,
+    Business.LegalTypes.SOLE_PROP.value: PartyRole.RoleTypes.PROPRIETOR.value,
+}
+
+
 def correct_business_data(business: Business,  # pylint: disable=too-many-locals, too-many-statements
                           correction_filing_rec: Filing,
                           correction_filing: Dict,
@@ -183,6 +191,10 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
                          party.get('officer').get('id') is not None]
     existing_party_roles = PartyRole.get_party_roles(business.id, end_date_time.date())
     for party_role in existing_party_roles:
+        # Safety check, skip roles that should not be ceased
+        if (expected_role := CEASE_ROLE_MAPPING.get(business.legal_type)) and \
+                party_role.role != expected_role:
+            continue
         if party_role.party_id not in parties_to_update:
             party_role.cessation_date = end_date_time
 

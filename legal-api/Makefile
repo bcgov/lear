@@ -113,12 +113,13 @@ endif
 
 build: ## Build the docker container
 	docker build . -t $(DOCKER_NAME) \
+		-f Dockerfile-ocp \
 		--platform linux/amd64 \
 		--build-arg VCS_REF=$(shell git rev-parse --short HEAD) \
 		--build-arg BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 build-nc: ## Build the docker container without caching
-	docker build --no-cache -t $(DOCKER_NAME) .
+	docker build --no-cache -t $(DOCKER_NAME) -f Dockerfile-ocp .
 
 REGISTRY_IMAGE=$(OPENSHIFT_DOCKER_REGISTRY)/$(OPENSHIFT_REPOSITORY)-tools/$(DOCKER_NAME)
 push: #build ## Push the docker container to the registry & tag latest
