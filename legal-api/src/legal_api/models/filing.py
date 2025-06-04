@@ -61,8 +61,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         PENDING_CORRECTION = 'PENDING_CORRECTION'
         WITHDRAWN = 'WITHDRAWN'
 
-        TOMBSTONE = 'TOMBSTONE'
-
         # filings with staff review
         APPROVED = 'APPROVED'
         AWAITING_REVIEW = 'AWAITING_REVIEW'

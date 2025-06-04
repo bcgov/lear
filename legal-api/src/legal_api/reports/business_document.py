@@ -194,7 +194,7 @@ class BusinessDocument:
 
     def _set_tombstone_date(self):
         """Set the tombstone filing date if the business is tombstone."""
-        tombstone_filing = Filing.get_filings_by_status(self._business.id, [Filing.Status.TOMBSTONE])
+        tombstone_filing = Filing.get_filings_by_types(self._business.id, ['lear_tombstone'])
         if tombstone_filing:
             self._tombstone_filing_date = tombstone_filing[0].effective_date
 

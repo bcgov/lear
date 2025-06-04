@@ -1032,7 +1032,7 @@ def build_epoch_filing(business_id: int) -> dict:
         'filing_date': now.isoformat(),
         'completion_date': now.isoformat(),
         'effective_date': now.isoformat(),
-        'status': 'TOMBSTONE'
+        'status': 'COMPLETED'
     }
     return filing
 
