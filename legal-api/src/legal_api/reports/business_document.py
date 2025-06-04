@@ -592,7 +592,7 @@ class BusinessDocument:
         liquidation = Filing.get_filings_by_types(self._business.id, ['voluntaryLiquidation'])
         if liquidation:
             liquidation_info['filingDateTime'] = liquidation[0].filing_date.isoformat()
-            business['business']['state'] = Business.State.LIQUIDATION.name
+            business['business']['state'] = 'LIQUIDATION'
             if self._epoch_filing_date and liquidation[0].effective_date < self._epoch_filing_date:
                 liquidation_info['custodian'] = 'Not Available'
                 records_office_info = {}
