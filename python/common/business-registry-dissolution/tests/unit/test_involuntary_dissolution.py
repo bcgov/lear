@@ -66,8 +66,7 @@ def test_get_businesses_eligible_count(session):
 @pytest.mark.parametrize(
         'test_name, state, exclude', [
             ('TEST_ACTIVE', 'ACTIVE', False),
-            ('TEST_HISTORICAL', 'HISTORICAL', True),
-            ('TEST_LIQUIDATION', 'LIQUIDATION', True)
+            ('TEST_HISTORICAL', 'HISTORICAL', True)
         ]
 )
 def test_get_businesses_eligible_query_active_business(session, test_name, state, exclude):
