@@ -50,6 +50,7 @@ class DigitalCredentialsRulesService:
 
     valid_incorporation_types = [
         Business.LegalTypes.BCOMP.value,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value
     ]
 
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
