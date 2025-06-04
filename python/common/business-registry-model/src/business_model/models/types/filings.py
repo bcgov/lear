@@ -20,6 +20,7 @@ class FilingTypes(BaseEnum):
     CHANGEOFADDRESS = 'changeOfAddress'
     CHANGEOFDIRECTORS = 'changeOfDirectors'
     CHANGEOFNAME = 'changeOfName'
+    CHANGEOFOFFICERS = 'changeOfOfficers' # new type
     CHANGEOFREGISTRATION = 'changeOfRegistration'
     CONSENTAMALGAMATIONOUT = 'consentAmalgamationOut'
     CONSENTCONTINUATIONOUT = 'consentContinuationOut'
