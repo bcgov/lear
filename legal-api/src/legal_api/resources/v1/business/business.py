@@ -85,13 +85,16 @@ class BusinessResource(Resource):
 
         try:
             business_name = json_input['filing'][filing_type]['nameRequest']['nrNumber']
+            nr_number = json_input['filing'][filing_type]['nameRequest']['nrNumber']
         except KeyError:
             business_name = bootstrap.identifier
+            nr_number = None
 
         legal_type = json_input['filing'][filing_type]['nameRequest']['legalType']
         corp_type_code = Filing.FILINGS[filing_type]['temporaryCorpTypeCode']
-        rv = RegistrationBootstrapService.register_bootstrap(bootstrap,
-                                                             business_name,
+        rv = RegistrationBootstrapService.register_bootstrap(bootstrap=bootstrap,
+                                                             business_name=business_name,
+                                                             nr_number=nr_number,
                                                              corp_type_code=corp_type_code,
                                                              corp_sub_type_code=legal_type)
         if not isinstance(rv, HTTPStatus):

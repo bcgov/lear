@@ -13,8 +13,7 @@
 # limitations under the License.
 """This module holds all of the basic data about a business."""
 
-from enum import Enum, EnumMeta
-from typing import Optional
+from enum import Enum, EnumMeta, auto
 
 
 class BaseMeta(EnumMeta):
@@ -34,9 +33,37 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
     """Replace autoname from Enum class."""
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
                 return enum_value
         return None
+
+
+class EnumLower(BaseEnum):
+    """Enum where auto() will create lower case string values of the keys."""
+
+    #pragma warning disable S5720;
+    # disable sonar cloud complaining about this signature
+    def _generate_next_value_(name, start, count, last_values):  # noqa: N805
+        """Return the name of the key."""
+        return name.lower()
+
+class EnumUpper(BaseEnum):
+    """Enum where auto() will create upper case string values of the keys."""
+
+    #pragma warning disable S5720;
+    # disable sonar cloud complaining about this signature
+    def _generate_next_value_(name, start, count, last_values):  # noqa: N805
+        """Return the name of the key."""
+        return name.upper()
+
+class EnumTitle(BaseEnum):
+    """Enum where auto() will create the title string values of the keys."""
+
+    #pragma warning disable S5720;
+    # disable sonar cloud complaining about this signature
+    def _generate_next_value_(name, start, count, last_values):  # noqa: N805
+        """Return the name of the key."""
+        return name.title()

@@ -12,7 +12,8 @@ BUSINESS = {
     'send_ar_ind': True,
     'last_ar_year': None,
     'last_ar_date': None,
-    'last_ar_reminder_year': None
+    'last_ar_reminder_year': None,
+    'restriction_ind': None
     # 'no_dissolution' : False  # db sets default value
 }
 
@@ -203,6 +204,8 @@ FILING = {
         'withdrawn_filing_id': None,
         # others
         'submitter_roles': None,
+        'court_order_file_number' : None,  # optional
+        'court_order_effect_of_order' : None,  # optional
     },
     'jurisdiction': None,  # optional
     'amalgamations': None,  # optional

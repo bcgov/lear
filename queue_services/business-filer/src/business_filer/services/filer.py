@@ -253,7 +253,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     filing_submission = transition.process(business, filing_submission, filing, filing_meta)
 
                 case "transparencyRegister":
-                    transparency_register.process(business, filing_submission, filing_submission.json)
+                    transparency_register.process(business, filing_submission, filing)
 
         # Add the current transaction
         filing_submission.transaction_id = transaction_id

@@ -396,7 +396,7 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
                         flags)
 
                 elif filing.get('transparencyRegister'):
-                    transparency_register.process(business, filing_submission, filing_core_submission.json)
+                    transparency_register.process(business, filing_submission, filing)
 
                 elif filing.get('appointReceiver'):
                     appoint_receiver.process(business, filing, filing_submission, filing_meta)
