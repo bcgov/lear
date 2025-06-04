@@ -84,7 +84,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
         ACTIVE = auto()
         HISTORICAL = auto()
-        LIQUIDATION = auto()
 
     # NB: commented out items that exist in namex but are not yet supported by Lear
     class LegalTypes(str, Enum):
