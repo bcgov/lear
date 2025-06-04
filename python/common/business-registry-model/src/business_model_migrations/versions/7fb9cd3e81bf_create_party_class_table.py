@@ -7,7 +7,7 @@ Create Date: 2025-06-03 13:10:28.750570
 """
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy.dialects import postgresql
+from sqlalchemy import MetaData, Table
 
 # revision identifiers, used by Alembic.
 revision = '7fb9cd3e81bf'
@@ -46,6 +46,37 @@ def upgrade():
 
     with op.batch_alter_table('party_roles_version', schema=None) as batch_op:
         batch_op.add_column(sa.Column('party_class_type', sa.Enum('ATTORNEY', 'AGENT', 'DIRECTOR', 'OFFICER', name='partyclasstype'), nullable=True))    
+
+    # add default party classes
+    bind = op.get_bind()
+    meta = MetaData()
+    party_class_table = Table('party_class', meta, autoload_with=bind)
+
+    op.bulk_insert(
+        party_class_table,
+        [
+            {
+                'class_type': 'ATTORNEY',
+                'short_description': 'TBD',
+                'full_description': 'TBD'
+            },
+            {
+                'class_type': 'AGENT',
+                'short_description': 'TBD',
+                'full_description': 'TBD'
+            },
+            {
+                'class_type': 'DIRECTOR',
+                'short_description': 'TBD',
+                'full_description': 'TBD'
+            },
+            {
+                'class_type': 'OFFICER',
+                'short_description': 'TBD',
+                'full_description': 'TBD'
+            }
+        ]
+    )
 
     # ### end Alembic commands ###
 
