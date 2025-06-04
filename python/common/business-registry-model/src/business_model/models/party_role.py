@@ -19,12 +19,12 @@ from enum import Enum
 
 from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
-from .types.party_class_type import PartyClassType
 
 from .db import db
 from .party import (
     Party,
 )
+from .types.party_class_type import PartyClassType
 
 
 class PartyRole(db.Model, Versioned):

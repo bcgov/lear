@@ -14,17 +14,15 @@
 """This module holds data for party roles in a business."""
 from __future__ import annotations
 
-from typing import List
-
 from sql_versioning import Versioned
 from sqlalchemy import select
 from sqlalchemy.orm import Mapped, mapped_column
-from .types.party_class_type import PartyClassType
 
 from .db import db
 from .party_role import (
     PartyRole,
 )
+from .types.party_class_type import PartyClassType
 
 
 class PartyClass(db.Model, Versioned):
@@ -38,7 +36,7 @@ class PartyClass(db.Model, Versioned):
     short_description: Mapped[str] = mapped_column(db.String(512))
     full_description: Mapped[str] = mapped_column(db.String(1024))
 
-    party_roles: Mapped[List["PartyRole"]] = db.relationship(back_populates="party_class")
+    party_roles: Mapped[list[PartyRole]] = db.relationship(back_populates="party_class")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -48,14 +46,12 @@ class PartyClass(db.Model, Versioned):
     @property
     def json(self) -> dict:
         """Return the party class as a json object."""
-        partyClass = {
+        return {
             'id': self.id,
             'classType': self.class_type,
             'shortDescription': self.short_description,
             'fullDescription': self.full_description
         }
-
-        return partyClass
 
     @classmethod
     def find_by_internal_id(cls, internal_id: int) -> PartyClass | None:

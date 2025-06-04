@@ -17,15 +17,11 @@
 Test-Suite to ensure that the PartyClass Model is working as expected.
 """
 import datetime
-import json
-import pytest
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from business_model.models import PartyClass
-from business_model.models import PartyRole
-from tests.models import factory_business
+from business_model.models import PartyClass, PartyRole
 from business_model.models.types.party_class_type import PartyClassType
 
 party_class_data = [
