@@ -691,10 +691,6 @@ def test_get_could_file(session, client, jwt):
             "name": "incorporationApplication"
         },
         {
-            "displayName": "Statement of Intent to Liquidate",
-            "name": "intentToLiquidate",
-        },
-        {
             "displayName": "Correction - Put Back Off",
             "name": "putBackOff",
         },
@@ -723,6 +719,10 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "Notice of Withdrawal",
             "name": "noticeOfWithdrawal"
+        },
+        {
+            "displayName": "Statement of Intent to Liquidate",
+            "name": "intentToLiquidate",
         }
     ]
 
