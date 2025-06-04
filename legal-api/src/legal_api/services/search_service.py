@@ -217,8 +217,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             for filing_names in BusinessSearchService.check_and_get_respective_values(valid_types).values()
             if filing_names is not None
             ]
-        # If no valid filing names are found, return an empty list
-        if len(valid_types)>0 and not filing_name:
+        # Return early if valid_types is not empty and no filing_name found, such as 'NR' type
+        if len(valid_types) > 0 and not filing_name:
             return []
         filters = [
             expr for expr in [
