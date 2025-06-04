@@ -48,7 +48,7 @@ class PartyClass(db.Model, Versioned):
         """Return the party class as a json object."""
         return {
             'id': self.id,
-            'classType': self.class_type,
+            'classType': self.class_type.name,
             'shortDescription': self.short_description,
             'fullDescription': self.full_description
         }
