@@ -17,8 +17,8 @@
 Test-Suite to ensure that the PartyClass Model is working as expected.
 """
 import datetime
-import pytest
 
+import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 

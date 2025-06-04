@@ -1,6 +1,7 @@
 
-from business_model.utils.base import BaseEnum
 from enum import auto
+
+from business_model.utils.base import BaseEnum
 
 
 class PartyClassType(BaseEnum):
