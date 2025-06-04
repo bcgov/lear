@@ -630,7 +630,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'inDissolution': self.in_dissolution,
-            'inLiquidation': self.in_liquidation or False,
+            'inLiquidation': self.in_liquidation,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name,
