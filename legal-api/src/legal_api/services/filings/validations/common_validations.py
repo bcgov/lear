@@ -128,6 +128,13 @@ def validate_shares(item, memoize_names, filing_type, index) -> Error:
             err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
             msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
 
+    # Add validation for series when hasRightsOrRestrictions is false
+    if not item.get('hasRightsOrRestrictions', False) and 'series' in item:
+        err_path = '/filing/{0}/shareClasses/{1}/series/'.format(filing_type, index)
+        msg.append({'error': 'Share class %s cannot have series when hasRightsOrRestrictions is false' % item['name'],
+                    'path': err_path})
+        return msg
+
     series_msg = validate_series(item, memoize_names, filing_type, index)
     if series_msg:
         msg.extend(series_msg)
