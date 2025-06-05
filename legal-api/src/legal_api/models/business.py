@@ -559,7 +559,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def is_tombstone(self):
         """Return True if it's a tombstone business, otherwise False."""
-        tombstone_filing = Filing.get_filings_by_types(self.id, ['lear_tombstone'])
+        tombstone_filing = Filing.get_filings_by_status(self.id, [Filing.Status.TOMBSTONE])
         return bool(tombstone_filing)
 
     def save(self):
