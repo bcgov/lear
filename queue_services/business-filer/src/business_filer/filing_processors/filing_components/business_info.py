@@ -33,6 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Manages the type of Business."""
 from datetime import UTC, datetime
+from http import HTTPStatus
 
 import requests
 from business_model.models import Business, BusinessIdentifier, BusinessType, Filing, PartyRole
@@ -130,7 +131,7 @@ def get_next_corp_num(legal_type: str, flags: Flags = None):
     if (
         legal_type in (BusinessType.COOPERATIVE, BusinessType.PARTNERSHIP_AND_SOLE_PROP)
         or
-        (Flags.is_on('enable-sandbox') and legal_type in (BusinessType.CORPORATION, BusinessType.CONTINUE_IN))
+        (Flags.is_on("enable-sandbox") and legal_type in (BusinessType.CORPORATION, BusinessType.CONTINUE_IN))
     ):
         if business_type := BusinessType.get_enum_by_value(legal_type):
             return BusinessIdentifier.next_identifier(business_type)
@@ -141,17 +142,17 @@ def get_next_corp_num(legal_type: str, flags: Flags = None):
         token = AccountService.get_bearer_token()
         resp = requests.post(
             f'{current_app.config["COLIN_API"]}/{legal_type}',
-            headers={'Accept': 'application/json',
-                     'Authorization': f'Bearer {token}'}
+            headers={"Accept": "application/json",
+                     "Authorization": f"Bearer {token}"}
         )
     except requests.exceptions.ConnectionError:
         current_app.logger.error(f'Failed to connect to {current_app.config["COLIN_API"]}')
         return None
 
-    if resp.status_code == 200:
-        new_corpnum = int(resp.json()['corpNum'])
-        if new_corpnum and new_corpnum <= 9999999:
-            return f'{legal_type}{new_corpnum:07d}'
+    if resp.status_code == HTTPStatus.OK:
+        new_corpnum = int(resp.json()["corpNum"])
+        if new_corpnum and new_corpnum <= 9999999:  # noqa: PLR2004
+            return f"{legal_type}{new_corpnum:07d}"
     return None
 
 
