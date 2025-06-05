@@ -19,8 +19,6 @@ Test-Suite to ensure that the DCIssuedCredential Model is working as expected.
 import random
 import uuid
 
-import pytest
-
 from business_model.models import DCIssuedCredential
 from tests.models import factory_business
 from tests.models.test_dc_connection import create_dc_connection
@@ -29,23 +27,20 @@ from tests.models.test_dc_definition import create_dc_definition
 
 def test_valid_dc_issued_credential_save(session):
     """Assert that a valid dc_issued_credential can be saved."""
-    issued_credential = create_dc_issued_credential()
+    issued_credential = create_dc_issued_credential(session)
     assert issued_credential.id
 
 
 def test_find_by_id(session):
     """Assert that the method returns correct value."""
-    issued_credential = create_dc_issued_credential()
+    issued_credential = create_dc_issued_credential(session)
     res = DCIssuedCredential.find_by_id(issued_credential.id)
     assert res
 
 
-@pytest.mark.skip('Not working yet')
 def test_find_by_credential_exchange_id(session):
-    """Assert that the method returns correct value.
-    
-    TODO: fix this """
-    issued_credential = create_dc_issued_credential()
+    """Assert that the method returns correct value."""
+    issued_credential = create_dc_issued_credential(session)
     res = DCIssuedCredential.find_by_credential_exchange_id(issued_credential.credential_exchange_id)
 
     assert res
@@ -54,7 +49,7 @@ def test_find_by_credential_exchange_id(session):
 
 def test_find_by(session):
     """Assert that the method returns correct value."""
-    issued_credential = create_dc_issued_credential()
+    issued_credential = create_dc_issued_credential(session)
     res = DCIssuedCredential.find_by(dc_connection_id=issued_credential.dc_connection_id,
                                      dc_definition_id=issued_credential.dc_definition_id)
 
@@ -62,12 +57,12 @@ def test_find_by(session):
     assert res[0].id == issued_credential.id
 
 
-def create_dc_issued_credential(business=None):
+def create_dc_issued_credential(session, business=None):
     """Create new dc_issued_credential object."""
     if not business:
         identifier = f'FM{random.randint(1000000, 9999999)}'
         business = factory_business(identifier)
-    definition = create_dc_definition()
+    definition = create_dc_definition(session)
     connection = create_dc_connection(business, is_active=True)
     issued_credential = DCIssuedCredential(
         dc_definition_id=definition.id,
