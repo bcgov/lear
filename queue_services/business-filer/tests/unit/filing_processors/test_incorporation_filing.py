@@ -170,7 +170,10 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
 
 
 @pytest.mark.parametrize('registry,business_type,prefix,num_length', [
-    ('br', 'BEN', 'BC', 9),
+    ('colin', 'BEN', 'BC', 9),
+    ('colin', 'BC', 'BC', 9),
+    ('br', 'CP', 'CP', 9),
+    ('br', 'FM', 'FM', 9)
 ])
 def test_get_next_corp_num(requests_mock, mocker, app,
                            registry,
@@ -179,15 +182,15 @@ def test_get_next_corp_num(requests_mock, mocker, app,
                            num_length,
                            ):
     """Assert that the corpnum is the correct format."""
-    # if registry == 'colin':
-        # from flask import current_app
-        # mocker.patch('business_filer.services.AccountService.get_bearer_token', return_value='')
-        # colin_api = current_app.config.get("COLIN_API", "http://test.test")
+    if registry == 'colin':
+        from flask import current_app
+        mocker.patch('business_filer.filing_processors.filing_components.business_info.AccountService.get_bearer_token', return_value='token')
+        colin_api = current_app.config.get("COLIN_API", "http://test.test")
 
-        # with app.app_context():
-        #     requests_mock.post(f'{colin_api}/BC', json={'corpNum': response})
+        with app.app_context():
+            requests_mock.post(f'{colin_api}/BC', json={'corpNum': '1234567'})
 
-        #     corp_num = business_info.get_next_corp_num(business_type)
+            corp_num = business_info.get_next_corp_num(business_type)
     
     if registry == 'br':
         corp_num = business_info.get_next_corp_num(business_type)
