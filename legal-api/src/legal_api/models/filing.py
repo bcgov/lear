@@ -1256,7 +1256,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the previous completed filing."""
         query = db.session.query(Filing). \
             filter(Filing.business_id == filing.business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value)
+            filter(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.TOMBSTONE.value]))
 
         if filing.transaction_id:  # transaction_id will be None for the pending filings (intermediate state)
             query = query.filter(Filing.transaction_id < filing.transaction_id)
