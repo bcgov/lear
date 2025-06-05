@@ -892,18 +892,18 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         return False
 
-    def set_processed(self, business_type):
+    def set_processed(self):
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
             self._completion_date = datetime.utcnow()
-        if not self.effective_date_can_be_before_payment_completion_date(business_type) and (
+        if not self.effective_date_can_be_before_payment_completion_date() and (
                 self.effective_date is None or (
                     self.payment_completion_date
                     and self.effective_date < self.payment_completion_date  # pylint: disable=comparison-with-callable
                 )):
             self.effective_date = self.payment_completion_date
 
-    def effective_date_can_be_before_payment_completion_date(self, business_type):
+    def effective_date_can_be_before_payment_completion_date(self):
         """For AR or COD filings then the effective date can be before the payment date."""
         return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
                                     Filing.FILINGS['changeOfDirectors'].get('name'),
