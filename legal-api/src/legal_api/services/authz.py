@@ -57,6 +57,7 @@ class BusinessBlocker(str, Enum):
     NOT_IN_GOOD_STANDING = 'NOT_IN_GOOD_STANDING'
     AMALGAMATING_BUSINESS = 'AMALGAMATING_BUSINESS'
     IN_DISSOLUTION = 'IN_DISSOLUTION'
+    IN_LIQUIDATION = 'IN_LIQUIDATION'
     FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
 
 
@@ -354,6 +355,15 @@ def get_allowable_filings_dict():
                         'business': [BusinessBlocker.FILING_WITHDRAWAL]
                     },
                     'businessRequirement': BusinessRequirement.NO_RESTRICTION
+                },
+                'intentToLiquidate': {
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT,
+                                     BusinessBlocker.NOT_IN_GOOD_STANDING,
+                                     BusinessBlocker.IN_DISSOLUTION,
+                                     BusinessBlocker.IN_LIQUIDATION],
+                    }
                 }
             },
             Business.State.HISTORICAL: {
@@ -783,6 +793,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.NOT_IN_GOOD_STANDING: False,
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
         BusinessBlocker.IN_DISSOLUTION: False,
+        BusinessBlocker.IN_LIQUIDATION: False,
         BusinessBlocker.FILING_WITHDRAWAL: False
     }
 
@@ -805,6 +816,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if business.in_dissolution:
         business_blocker_checks[BusinessBlocker.IN_DISSOLUTION] = True
+
+    if business.in_liquidation:
+        business_blocker_checks[BusinessBlocker.IN_LIQUIDATION] = True
 
     if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True

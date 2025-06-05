@@ -218,6 +218,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'foreign_legal_name',
             'founding_date',
             'identifier',
+            'in_liquidation',
             'jurisdiction',
             'last_agm_date',
             'last_ar_date',
@@ -275,6 +276,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
     state_filing_id = db.Column('state_filing_id', db.Integer)
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
+    in_liquidation = db.Column('in_liquidation', db.Boolean, unique=False, default=False)
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
     send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
@@ -646,6 +648,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'goodStanding': self.good_standing,
             'identifier': self.identifier,
             'inDissolution': self.in_dissolution,
+            'inLiquidation': self.in_liquidation or False,
             'legalName': self.business_legal_name,
             'legalType': self.legal_type,
             'state': self.state.name if self.state else Business.State.ACTIVE.name,
