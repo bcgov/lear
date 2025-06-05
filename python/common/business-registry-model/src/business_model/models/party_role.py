@@ -43,7 +43,6 @@ class PartyRole(db.Model, Versioned):
         PARTNER = 'partner'
         RECEIVER = 'receiver'
         OFFICER = 'officer'
-        # new role types
         CEO = 'ceo'
         CFO = 'cfo'
         PRESIDENT = 'president'
