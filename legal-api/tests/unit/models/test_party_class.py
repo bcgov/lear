@@ -106,3 +106,20 @@ def test_party_class_party_role_relationship(session: Session):
     assert parent.id
 
     assert len(parent.party_roles) == 2
+
+
+def test_all_party_classes_in_db(session: Session):
+    """Assert that all Party Classes are in the DB"""
+
+    class_type_list = list(PartyClass.PartyClassType)
+    
+    for type in class_type_list:
+        found = session.execute(
+            select(PartyClass).where(PartyClass.class_type == type)
+        ).scalar_one_or_none()
+
+        print(found, found.class_type)
+
+        assert found is not None
+        assert found.class_type == type
+
