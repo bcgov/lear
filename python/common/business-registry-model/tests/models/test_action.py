@@ -18,6 +18,7 @@ Test-Suite to ensure that the Action Model is working as expected.
 """
 from business_model.models import Action
 
+
 def test_action_save(session):
     """Assert that an Action saves correctly."""
     action = Action(action_name='TEST_ACTION_SAVE')
