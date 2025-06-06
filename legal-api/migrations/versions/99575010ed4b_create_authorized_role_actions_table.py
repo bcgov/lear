@@ -1,7 +1,7 @@
 """create_authorized_role_actions_table
 
 Revision ID: 99575010ed4b
-Revises: 957a67bde783
+Revises: 1dd76abf128a
 Create Date: 2025-06-04 01:03:37.254302
 
 """
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '99575010ed4b'
-down_revision = '957a67bde783'
+down_revision = '1dd76abf128a'
 branch_labels = None
 depends_on = None
 
