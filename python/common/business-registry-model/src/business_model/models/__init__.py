@@ -14,10 +14,12 @@
 
 """This exports all of the models and schemas used by the application."""
 from .db import db  # noqa: I001
+from .action import Action
 from .address import Address
 from .alias import Alias
 from .amalgamating_business import AmalgamatingBusiness
 from .amalgamation import Amalgamation
+from .authorized_role_actions import AuthorizedRoleAction
 from .batch import Batch
 from .batch_processing import BatchProcessing
 from .business import Business
@@ -48,6 +50,7 @@ from .request_tracker import RequestTracker
 from .resolution import Resolution
 from .review import Review, ReviewStatus
 from .review_result import ReviewResult
+from .role import Role
 from .share_class import ShareClass
 from .share_series import ShareSeries
 from .user import User, UserRoles
@@ -55,10 +58,12 @@ from .xml_payload import XmlPayload
 
 
 __all__ = (
+    'Action',
     'Address',
     'Alias',
     'AmalgamatingBusiness',
     'Amalgamation',
+    'AuthorizedRoleAction',
     'Batch',
     'BatchProcessing',
     'Business',
@@ -93,6 +98,7 @@ __all__ = (
     'Review',
     'ReviewResult',
     'ReviewStatus',
+    'Role',
     'ShareClass',
     'ShareSeries',
     'User',
