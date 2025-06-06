@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the AuthorizedRoleAction Model is working as expected.
 """
-from legal_api.models import Action, AuthorizedRoleAction, Role
+from business_model.models import Action, AuthorizedRoleAction, Role
 
 def test_authorized_role_action_save(session):
     """Assert that an AuthorizedRoleAction saves correctly."""
@@ -34,3 +34,4 @@ def test_authorized_role_action_save(session):
     assert action in [a.action for a in role.authorized_actions]
     # Check relationship from Action to Role
     assert role in [r.role for r in action.authorized_roles]
+
