@@ -21,6 +21,7 @@ from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from .db import db  # noqa: I001
+from .party_class import PartyClass
 from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
@@ -40,6 +41,15 @@ class PartyRole(db.Model, Versioned):
         PARTNER = 'partner'
         RECEIVER = 'receiver'
         OFFICER = 'officer'
+        CEO = 'ceo'
+        CFO = 'cfo'
+        PRESIDENT = 'president'
+        VICE_PRESIDENT = 'vice_president'
+        CHAIR = 'chair'
+        TREASURER = 'treasurer'
+        SECRETARY = 'secretary'
+        ASSISTANT_SECRETARY = 'assistant_secretary'
+        OTHER = 'other'
 
     __versioned__ = {}
     __tablename__ = 'party_roles'
@@ -52,9 +62,15 @@ class PartyRole(db.Model, Versioned):
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
     party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))
+    party_class_type = db.Column(
+        'party_class_type',
+        db.Enum(PartyClass.PartyClassType),
+        db.ForeignKey('party_class.class_type')
+    )
 
     # relationships
     party = db.relationship('Party')
+    party_class = db.relationship('PartyClass', back_populates='party_roles')
 
     def save(self):
         """Save the object to the database immediately."""
