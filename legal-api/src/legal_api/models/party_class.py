@@ -15,9 +15,11 @@
 from __future__ import annotations
 
 from enum import auto
+
 from sql_versioning import Versioned
 
 from legal_api.utils.base import BaseEnum
+
 from .db import db
 
 
@@ -26,11 +28,11 @@ class PartyClass(db.Model, Versioned):
 
     class PartyClassType(BaseEnum):
         """Render an Enum of the party class types."""
+
         ATTORNEY = auto()
         AGENT = auto()
         DIRECTOR = auto()
         OFFICER = auto()
-
 
     __versioned__ = {}
     __tablename__ = 'party_class'
