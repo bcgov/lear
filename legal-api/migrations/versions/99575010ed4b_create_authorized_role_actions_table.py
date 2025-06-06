@@ -151,6 +151,7 @@ def upgrade():
         {'name': 'STAFF_FILINGS', 'description': 'Authorized to access staff filings.'},
         {'name': 'STAFF_PAYMENT', 'description': 'Authorized to see staff payment component in filings.'}, 
         {'name': 'THIRD_PARTY_CERTIFY_STMT', 'description': 'Authorized to see third-party ("they are authorized...") instead of first-party ("I am authorized...") certify statement.'},
+        {'name': 'TRANSITION_FILING', 'description': 'Authorized to access Transition filing.'},
         {'name': 'VOLUNTARY_DISSOLUTION_FILING', 'description': 'Authorized to access (non-firm) Voluntary Dissolution filing.'},
     ]
 
@@ -335,6 +336,7 @@ def upgrade():
         {'role': 'staff', 'action': 'STAFF_FILINGS'},
         {'role': 'staff', 'action': 'STAFF_PAYMENT'},
         {'role': 'staff', 'action': 'THIRD_PARTY_CERTIFY_STMT'},
+        {'role': 'staff', 'action': 'TRANSITION_FILING'},
         {'role': 'staff', 'action': 'VOLUNTARY_DISSOLUTION_FILING'},
     ]
 
