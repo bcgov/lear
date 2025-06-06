@@ -25,6 +25,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_foreign_jurisdiction,
     validate_name_request,
     validate_parties_names,
+    validate_phone_number,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
@@ -73,6 +74,13 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
                                                 legal_type,
                                                 amalgamation_type,
                                                 account_id))
+
+    contact_point_path = '/filing/amalgamationApplication/contactPoint'
+    contact_point_dict = amalgamation_json['filing']['amalgamationApplication'].get('contactPoint', {})
+    if contact_point_dict.get('phone'):
+        err = validate_phone_number(contact_point_dict, contact_point_path)
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

@@ -30,6 +30,7 @@ from .common_validations import (  # noqa: I001
     validate_name_request,
     validate_parties_names,
     validate_pdf,
+    validate_phone_number,
     validate_share_structure,
 )
 
@@ -81,6 +82,13 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.extend(err)
 
     msg.extend(validate_ia_court_order(incorporation_json))
+
+    contact_point_path = '/filing/incorporationApplication/contactPoint'
+    contact_point_dict = incorporation_json['filing']['incorporationApplication'].get('contactPoint', {})
+    if contact_point_dict.get('phone'):
+        err = validate_phone_number(contact_point_dict, contact_point_path)
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

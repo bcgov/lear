@@ -4776,11 +4776,11 @@ components:
           type: string
           format: phone
           example: (250) 234-4433
-          description: 'Phone number to be used to contact the business eg: (250) 234-4433.'
+          description: 'Phone number to be used to contact the business eg: (250) 234-4433, maximum 10 digits.'
         extension:
           type: number
           example: 123
-          description: Extension number of the business contact phone number (555) 555-5555.
+          description: Extension number of the business contact phone number (555) 555-5555, extension maximum 5 digits.
       required:
         - email
     Conversion:

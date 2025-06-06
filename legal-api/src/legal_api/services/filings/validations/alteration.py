@@ -26,6 +26,7 @@ from .common_validations import (
     validate_court_order,
     validate_name_request,
     validate_pdf,
+    validate_phone_number,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
 )
@@ -46,6 +47,13 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
 
     if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
         msg.append(err)
+
+    contact_point_path = '/filing/alteration/contactPoint'
+    contact_point_dict = filing['filing']['alteration'].get('contactPoint', {})
+    if contact_point_dict.get('phone'):
+        err = validate_phone_number(contact_point_dict, contact_point_path)
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

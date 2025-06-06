@@ -13,6 +13,7 @@
 # limitations under the License.
 """Common validations share through the different filings."""
 import io
+import re
 from datetime import datetime
 from typing import Optional
 
@@ -340,4 +341,25 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
           not pycountry.subdivisions.get(code=f'{country_code}-{region}')):
         msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
 
+    return msg
+
+
+def validate_phone_number(contact_point_dict: dict, contact_point_path: str) -> list:
+    msg = []
+    phone_num = contact_point_dict.get('phone')
+    # if pure digits (max 10)
+    if phone_num.isdigit():
+        if len(phone_num) != 10:
+            msg.append({'error': 'Invalid phone number', 'path': f'{contact_point_path}/phone'})
+    else:
+        # Check various phone formats
+        # (123) 456-7890 / 123-456-7890 / 123.456.7890 / 123 456 7890
+        phone_pattern = r'^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$'  
+        if not re.match(phone_pattern, phone_num):
+            msg.append({'error': 'Invalid phone number', 'path': f'{contact_point_path}/phone'})
+
+    if extension := contact_point_dict.get('extension'):
+        if len(str(extension)) > 5:
+            msg.append({'error': 'Invalid extension', 'path': f'{contact_point_path}/extension'})
+    
     return msg
