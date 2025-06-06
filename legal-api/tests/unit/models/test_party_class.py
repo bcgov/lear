@@ -114,12 +114,18 @@ def test_all_party_classes_in_db(session: Session):
     class_type_list = list(PartyClass.PartyClassType)
     
     for type in class_type_list:
-        found = session.execute(
-            select(PartyClass).where(PartyClass.class_type == type)
-        ).scalar_one_or_none()
-
-        print(found, found.class_type)
+        found = session.query(PartyClass).filter_by(class_type=type).one_or_none()
 
         assert found is not None
         assert found.class_type == type
 
+
+def test_party_class_type_is_enum_value(session: Session):
+    """Assert that all PartyClass.class_type is a valid enum in PartyClassType"""
+
+    pct = session.query(PartyClass).all()
+    for pc in pct:
+        assert pc.class_type is not None
+        assert pc.class_type in PartyClass.PartyClassType
+
+    assert len(pct) == len(PartyClass.PartyClassType)    
