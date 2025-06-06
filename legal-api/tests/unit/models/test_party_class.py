@@ -56,26 +56,19 @@ def test_party_class_json(session: Session):
 
 def test_party_class_find_by_internal_id(session: Session):
     """Assert the party class can be found by id."""
-    # ONLY 4 PARTYCLASSES
-    # assert 4 items can be found by id
-    for i in range(4):
+    for i in range(len(PartyClass.PartyClassType)):
         target_id = i + 1
         found = PartyClass.find_by_internal_id(target_id)
 
         assert found is not None
         assert found.id == target_id
 
-    # id 5 should not exist
-    assert PartyClass.find_by_internal_id(5) == None
-
 
 def test_party_class_find_by_class_type(session: Session):
     """Assert the party class can be found by its class type."""
-    # ONLY 4 PARTYCLASSES
-    # assert 4 items can be found by class type
-    party_class_types = [PartyClass.PartyClassType.DIRECTOR, PartyClass.PartyClassType.AGENT, PartyClass.PartyClassType.ATTORNEY, PartyClass.PartyClassType.OFFICER]
+    class_type_list = list(PartyClass.PartyClassType)
 
-    for type in party_class_types:
+    for type in class_type_list:
         found = PartyClass.find_by_class_type(type)
 
         assert found is not None
@@ -120,7 +113,7 @@ def test_all_party_classes_in_db(session: Session):
         assert found.class_type == type
 
 
-def test_party_class_type_is_enum_value(session: Session):
+def test_party_class_type_is_valid_enum(session: Session):
     """Assert that all PartyClass.class_type is a valid enum in PartyClassType"""
 
     pct = session.query(PartyClass).all()
