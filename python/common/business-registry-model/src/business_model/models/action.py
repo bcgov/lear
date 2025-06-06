@@ -13,7 +13,7 @@
 # limitations under the License.
 """This module holds data for actions."""
 
-from datetime import datetime
+from sqlalchemy import func
 
 from .db import db
 
@@ -26,8 +26,8 @@ class Action(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     action_name = db.Column('action_name', db.String(100), nullable=False, unique=True)
     description = db.Column('description', db.String(255), nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)
     modified_by_id = db.Column(db.Integer, nullable=True)
 

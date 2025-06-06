@@ -13,7 +13,7 @@
 # limitations under the License.
 """This module holds data for the authorized actions for user roles."""
 
-from datetime import datetime
+from sqlalchemy import func
 
 from .db import db
 
@@ -25,8 +25,8 @@ class AuthorizedRoleAction(db.Model):
 
     role_id = db.Column(db.Integer, db.ForeignKey('user_roles.id'), primary_key=True)
     action_id = db.Column(db.Integer, db.ForeignKey('actions.id'), primary_key=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)
     modified_by_id = db.Column(db.Integer, nullable=True)
 
