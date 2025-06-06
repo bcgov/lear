@@ -163,7 +163,6 @@ def test_set_effective(session):
     with freeze_time(now):
 
         payment_date  = now + datedelta.DAY
-        legal_type = 'SP'
 
         filing = Filing()
         filing_type = 'annualReport'
@@ -177,7 +176,7 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()
 
-        filing.storage.set_processed(legal_type)
+        filing.storage.set_processed()
 
         # assert that the effective date is now, instead of the payment date
         assert filing._storage.effective_date
@@ -191,7 +190,7 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = alt_payment_date
         filing._storage.save()
 
-        filing.storage.set_processed(legal_type)
+        filing.storage.set_processed()
 
         # assert that the effective date is the future date
         assert filing._storage.effective_date
@@ -204,8 +203,7 @@ def test_set_effective(session):
         filing._storage.payment_completion_date = payment_date
         filing._storage.save()
 
-        legal_type = 'CP'
-        filing.storage.set_processed(legal_type)
+        filing.storage.set_processed()
 
         # assert that the effective date is unchanged by payment date
         assert filing._storage.effective_date

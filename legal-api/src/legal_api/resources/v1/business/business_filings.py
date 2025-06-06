@@ -478,7 +478,7 @@ class ListFilingResource(Resource):
                 ) and \
                     ListFilingResource._is_before_epoch_filing(filing.filing_json, business):
                 filing.transaction_id = epoch_filing[0].transaction_id
-                filing.set_processed(business.legal_type)
+                filing.set_processed()
                 filing.save()
             else:
                 # todo: when removing nats, leave only filingMessage, and remove 'filing' as this part is used by OCP
