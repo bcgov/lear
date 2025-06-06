@@ -18,6 +18,7 @@ Test-Suite to ensure that the AuthorizedRoleAction Model is working as expected.
 """
 from business_model.models import Action, AuthorizedRoleAction, Role
 
+
 def test_authorized_role_action_save(session):
     """Assert that an AuthorizedRoleAction saves correctly."""
     role = Role(role_name=Role.RoleType.STAFF)

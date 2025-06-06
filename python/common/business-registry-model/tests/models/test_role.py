@@ -18,6 +18,7 @@ Test-Suite to ensure that the Role Model is working as expected.
 """
 from business_model.models import Role
 
+
 def test_role_save(session):
     """Assert that a Role saves correctly."""
     role = Role(role_name=Role.RoleType.STAFF)
