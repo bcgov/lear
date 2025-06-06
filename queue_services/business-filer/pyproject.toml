@@ -7,7 +7,7 @@ authors = [
 ]
 license = {text = "BSD-3-Clause"}
 readme = "README.md"
-requires-python = ">=3.9,<4"
+requires-python = ">=3.13,<4"
 
 dependencies = [
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
@@ -21,7 +21,8 @@ dependencies = [
     "dpath (>=2.2.0,<3.0.0)",
     "pg8000 (>=1.31.2,<2.0.0)",
   #  "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
-  "gunicorn (>=23.0.0,<24.0.0)"
+  "gunicorn (>=23.0.0,<24.0.0)",
+  "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account"
 
 ]
 
@@ -128,7 +129,7 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["flask_jwt_oidc", "structured_logging", "gcp_queue"]
+known-first-party = ["flask_jwt_oidc", "structured_logging", "gcp_queue", "business_account"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
