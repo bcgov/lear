@@ -17,7 +17,7 @@ pycountry==20.7.3
 pyrsistent==0.17.3
 python-dateutil==2.8.1
 python-dotenv==0.17.1
-sentry-sdk==1.20.0
+sentry-sdk==1.45.1
 six==1.15.0
 urllib3==1.26.11
 minio==7.0.2
