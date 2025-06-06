@@ -166,7 +166,12 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     """Validate continuation in authorization."""
     msg = []
     authorization_path = f'/filing/{filing_type}/authorization'
-    for index, file in enumerate(filing_json['filing'][filing_type]['authorization']['files']):
+    file_list = filing_json['filing'][filing_type]['authorization']['files']
+    if len(file_list) > 4:  # max 5 files
+            msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
+            return msg
+
+    for index, file in enumerate(file_list):
         file_key = file['fileKey']
         file_key_path = f'{authorization_path}/files/{index}/fileKey'
         if err := validate_pdf(file_key, file_key_path, False):
