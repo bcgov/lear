@@ -21,7 +21,6 @@ from .db import db
 class AuthorizedRoleAction(db.Model):
     """This class manages all of the authorized role actions."""
 
-    __versioned__ = {}
     __tablename__ = 'authorized_role_actions'
 
     role_id = db.Column(db.Integer, db.ForeignKey('user_roles.id'), primary_key=True)

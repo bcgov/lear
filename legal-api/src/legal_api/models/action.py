@@ -21,7 +21,6 @@ from .db import db
 class Action(db.Model):
     """This class manages all of the actions."""
 
-    __versioned__ = {}
     __tablename__ = 'actions'
 
     id = db.Column(db.Integer, primary_key=True)

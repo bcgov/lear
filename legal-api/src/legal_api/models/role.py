@@ -31,7 +31,6 @@ class Role(db.Model):
         SBC = 'sbc_staff'
         STAFF = 'staff'
 
-    __versioned__ = {}
     __tablename__ = 'user_roles'
 
     id = db.Column(db.Integer, primary_key=True)
