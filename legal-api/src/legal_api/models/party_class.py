@@ -17,8 +17,8 @@ from __future__ import annotations
 from enum import auto
 from sql_versioning import Versioned
 
-from .db import db
 from legal_api.utils.base import BaseEnum
+from .db import db
 
 
 class PartyClass(db.Model, Versioned):
@@ -64,7 +64,7 @@ class PartyClass(db.Model, Versioned):
         if internal_id:
             party_class = cls.query.filter_by(id=internal_id).one_or_none()
         return party_class
-    
+
     @classmethod
     def find_by_class_type(cls, class_type: PartyClassType) -> PartyClass | None:
         """Return a party class by the class type."""

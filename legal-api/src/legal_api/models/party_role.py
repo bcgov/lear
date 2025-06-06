@@ -47,7 +47,7 @@ class PartyRole(db.Model, Versioned):
         VICE_PRESIDENT = 'vice_president'
         CHAIR = 'chair'
         TREASURER = 'treasurer'
-        SECRETARY = 'secretary'  
+        SECRETARY = 'secretary'
         ASSISTANT_SECRETARY = 'assistant_secretary'
         OTHER = 'other'
 

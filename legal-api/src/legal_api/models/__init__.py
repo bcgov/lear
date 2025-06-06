@@ -82,7 +82,7 @@ __all__ = (
     'Office',
     'OfficeType',
     'Party',
-    'PartyClass'
+    'PartyClass',
     'PartyRole',
     'RegistrationBootstrap',
     'RequestTracker',
