@@ -141,7 +141,7 @@ def get_next_corp_num(legal_type: str, flags: Flags = None):
     try:
         token = AccountService.get_bearer_token()
         resp = requests.post(
-            f'{current_app.config["COLIN_API"]}/{legal_type}',
+            f'{current_app.config["COLIN_API"]}/businesses/{legal_type}',
             headers={"Accept": "application/json",
                      "Authorization": f"Bearer {token}"}
         )
