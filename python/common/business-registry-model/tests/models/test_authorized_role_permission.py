@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the AuthorizedRolePermission Model is working as expected.
 """
-from business_model.models import Permission, AuthorizedRolePermission, AuthorizedRole
+from business_model.models import AuthorizedRole, AuthorizedRolePermission, Permission
 
 
 def test_authorized_role_permission_save(session):
