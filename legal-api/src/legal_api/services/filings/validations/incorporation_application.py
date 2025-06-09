@@ -90,6 +90,12 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         if err:
             msg.extend(err)
 
+    if not incorporation_json['filing']['incorporationApplication']['offices'].get('recordsOffice', {}):
+        msg.append({
+            'error': 'recordsOffice is required', 
+            'path': '/filing/incorporationApplication/offices/recordsOffice'
+        })
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

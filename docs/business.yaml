@@ -3943,6 +3943,7 @@ components:
               type: object
               required:
                 - registeredOffice
+                - recordsOffice
               description: 'Addresses related to the business.   '
               properties:
                 registeredOffice:
@@ -4037,7 +4038,16 @@ components:
                   - appointmentDate
                   - cessationDate
             offices:
-              $ref: '#/components/schemas/Office'
+              type: object
+              description: 'Addresses related to the business.'
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
+              required:
+              - registeredOffice
+              - recordsOffice
       required:
         - annualReport
       x-examples:
@@ -4729,6 +4739,7 @@ components:
                   $ref: '#/components/schemas/Office'
               required:
               - registeredOffice
+              - recordsOffice
             parties:
               type: array
               description: 'Persons having a role in the corporation eg: company officer.'
@@ -5932,6 +5943,9 @@ components:
               $ref: '#/components/schemas/Name_translations'
             offices:
               type: object
+              required:
+                - registeredOffice
+                - recordsOffice
               description: 'Addresses related to the business.   '
               properties:
                 registeredOffice:

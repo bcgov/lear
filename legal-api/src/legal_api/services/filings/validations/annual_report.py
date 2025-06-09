@@ -47,6 +47,12 @@ def validate(business: Business, annual_report: Dict) -> Error:
     if err:
         return err
 
+    if not annual_report['filing']['annualReport']['offices'].get('recordsOffice', {}):
+        msg.append({
+            'error': 'recordsOffice is required', 
+            'path': '/filing/annualReport/offices/recordsOffice'
+        })
+
     return None
 
 

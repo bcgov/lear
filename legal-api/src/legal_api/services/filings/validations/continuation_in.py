@@ -83,6 +83,12 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         if err:
             msg.extend(err)
 
+    if not filing_json['filing']['continuationIn']['offices'].get('recordsOffice', {}):
+        msg.append({
+            'error': 'recordsOffice is required', 
+            'path': '/filing/continuationIn/offices/recordsOffice'
+        })
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
