@@ -12,16 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the Action Model.
+"""Tests to assure the AuthorizedRole Model.
 
-Test-Suite to ensure that the Action Model is working as expected.
+Test-Suite to ensure that the AuthorizedRole Model is working as expected.
 """
-from business_model.models import Action
+from business_model.models import AuthorizedRole
 
 
-def test_action_save(session):
-    """Assert that an Action saves correctly."""
-    action = Action(action_name='TEST_ACTION_SAVE')
-    action.save()
-    assert action.id
-    assert action.action_name == 'TEST_ACTION_SAVE'
+def test_role_save(session):
+    """Assert that a Role saves correctly."""
+    role = AuthorizedRole(role_name=AuthorizedRole.RoleType.STAFF)
+    role.save()
+    assert role.id
+    assert role.role_name == AuthorizedRole.RoleType.STAFF
+

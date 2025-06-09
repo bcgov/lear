@@ -12,17 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests to assure the Role Model.
+"""Tests to assure the Permission Model.
 
-Test-Suite to ensure that the Role Model is working as expected.
+Test-Suite to ensure that the Permission Model is working as expected.
 """
-from business_model.models import Role
+from business_model.models import Permission
 
 
-def test_role_save(session):
-    """Assert that a Role saves correctly."""
-    role = Role(role_name=Role.RoleType.STAFF)
-    role.save()
-    assert role.id
-    assert role.role_name == Role.RoleType.STAFF
-
+def test_permission_save(session):
+    """Assert that an Permission saves correctly."""
+    permission = Permission(permission_name='TEST_PERMISSION_SAVE')
+    permission.save()
+    assert permission.id
+    assert permission.permission_name == 'TEST_PERMISSION_SAVE'
