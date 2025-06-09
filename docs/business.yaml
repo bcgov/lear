@@ -6396,6 +6396,10 @@ components:
       title: Person Schema
       description: 'An individual that is currently or had previously occupied a role in relation to a business.'
       properties:
+        firstName:
+          type: string
+          maxLength: 30
+          description: First name of the individual. Required for corps filings.
         givenName:
           type: string
           maxLength: 30
@@ -6404,6 +6408,10 @@ components:
           type: string
           maxLength: 30
           description: Last name or surname of the individual.
+        lastName:
+          type: string
+          maxLength: 30
+          description: Last name or surname of the individual. Required for corps filings.
         additionalName:
           type: string
           title: 'An additional name for a Person, can be used for a middle name.'

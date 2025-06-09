@@ -237,22 +237,24 @@ def validate_party_name(party: dict, party_path: str) -> list:
         party_roles = [x.get('roleType') for x in party['roles']]
         party_roles_str = ', '.join(party_roles)
 
-        first_name = officer['firstName']
-        if len(first_name) > custom_allowed_max_length:
+        first_name = officer.get('firstName', None)
+        if not first_name:
+            msg.append({'error': 'firstName is required', 'path': f'{party_path}/firstName'})
+        elif len(first_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'
-            msg.append({'error': err_msg, 'path': party_path})
+            msg.append({'error': err_msg, 'path': f'{party_path}/firstName'})
 
         if 'middleInitial' in officer \
                 and (middle_initial := officer['middleInitial']) \
                 and len(middle_initial) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters'
-            msg.append({'error': err_msg, 'path': party_path})
+            msg.append({'error': err_msg, 'path': f'{party_path}/middleInitial'})
 
         if 'middleName' in officer \
                 and (middle_name := officer['middleName']) \
                 and len(middle_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters'
-            msg.append({'error': err_msg, 'path': party_path})
+            msg.append({'error': err_msg, 'path': f'{party_path}/middleName'})
 
     return msg
 
