@@ -27,7 +27,10 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_names,
     validate_share_structure,
 )
-from legal_api.services.filings.validations.incorporation_application import validate_offices
+from legal_api.services.filings.validations.incorporation_application import (
+    validate_offices,
+    validate_parties_delivery_address,
+)
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 # noqa: I003
@@ -58,6 +61,9 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
         msg.extend(validate_offices(amalgamation_json, filing_type))
         err = validate_share_structure(amalgamation_json, filing_type)
+        if err:
+            msg.extend(err)
+        err = validate_parties_delivery_address(amalgamation_json, legal_type, filing_type)
         if err:
             msg.extend(err)
 
