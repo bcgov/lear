@@ -31,6 +31,7 @@ from legal_api.services.filings.validations.common_validations import (
 from legal_api.services.filings.validations.incorporation_application import (
     validate_incorporation_effective_date,
     validate_offices,
+    validate_parties_delivery_address,
     validate_parties_mailing_address,
 )
 from legal_api.services.utils import get_bool, get_str
@@ -61,6 +62,9 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         msg.extend(validate_parties_names(filing_json, filing_type))
 
         if err := validate_parties_mailing_address(filing_json, legal_type, filing_type):
+            msg.extend(err)
+
+        if err := validate_parties_delivery_address(filing_json, legal_type, filing_type):
             msg.extend(err)
 
         if err := validate_share_structure(filing_json, filing_type):
