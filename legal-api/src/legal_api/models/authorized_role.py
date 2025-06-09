@@ -41,7 +41,7 @@ class AuthorizedRole(db.Model):
     modified_by_id = db.Column(db.Integer, nullable=True)
 
     permissions = db.relationship(
-        'AuthorizedRoleAction',
+        'AuthorizedRolePermission',
         back_populates='role',
         cascade='all, delete-orphan'
     )

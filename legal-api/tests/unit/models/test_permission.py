@@ -18,9 +18,9 @@ Test-Suite to ensure that the Permission Model is working as expected.
 """
 from legal_api.models import Permission
 
-def test_action_save(session):
+def test_permission_save(session):
     """Assert that an Permission saves correctly."""
-    permission = Permission(action_name='TEST_PERMISSION_SAVE')
+    permission = Permission(permission_name='TEST_PERMISSION_SAVE')
     permission.save()
     assert permission.id
-    assert permission.action_name == 'TEST_PERMISSION_SAVE'
+    assert permission.permission_name == 'TEST_PERMISSION_SAVE'

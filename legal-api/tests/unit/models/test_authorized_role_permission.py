@@ -31,6 +31,6 @@ def test_authorized_role_permission_save(session):
     assert auth.permission_id == permission.id
 
     # Check relationship from AuthorizedRole to Permission
-    assert permission in [a.permission for a in role.authorized_permissions]
+    assert permission in [a.permission for a in role.permissions]
     # Check relationship from Permission to AuthorizedRole
     assert role in [r.role for r in permission.authorized_roles]
