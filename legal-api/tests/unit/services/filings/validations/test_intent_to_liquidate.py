@@ -40,8 +40,7 @@ from tests.unit.models import factory_business
 def test_business_state_validation(session, test_status, legal_type, business_state, good_standing, expected_code, expected_msg):
     """Assert that business state validation works correctly."""
     # Setup
-    business = factory_business('BC1234567', entity_type=legal_type)
-    business.state = business_state
+    business = factory_business('BC1234567', entity_type=legal_type, state=business_state)
     if not good_standing:
         business.founding_date = datetime.utcnow() - timedelta(days=365 * 2)
 
