@@ -121,6 +121,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
         business = Business.find_by_internal_id(filing_submission.business_id)
 
+        # Updating effective_date before processing the filing
+        filing_submission.set_processed()
+
         filing_meta = FilingMeta(application_date=filing_submission.effective_date,
                                     legal_filings=[item for sublist in
                                                 [list(x.keys()) for x in legal_filings]
@@ -258,9 +261,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         # Add the current transaction
         filing_submission.transaction_id = transaction_id
 
-        business_type = business.legal_type if business \
-            else filing_submission.filing_json.get("filing", {}).get("business", {}).get("legalType")
-        filing_submission.set_processed(business_type)
         if business:
             business.last_modified = filing_submission.completion_date
             db.session.add(business)
