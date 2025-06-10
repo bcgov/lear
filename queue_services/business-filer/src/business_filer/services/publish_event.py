@@ -46,6 +46,9 @@ class PublishEvent:
                 },
                 "identifier": identifier
             }
+            if filing.temp_reg:
+                data["tempIdentifier"] = filing.temp_reg
+
             ce = PublishEvent._create_cloud_event(app, business, filing, subject, data)
             gcp_queue.publish(subject, to_queue_message(ce))
 
@@ -66,7 +69,7 @@ class PublishEvent:
             FilingTypes.INCORPORATIONAPPLICATION
         ]:
             try:
-                subject = app.config.get("BUSINESS_MRAS_TOPIC")
+                subject = app.config.get("BUSINESS_MAILER_TOPIC")
                 data = {"email": {"filingId": filing.id, "type": filing.filing_type, "option": "mras"}}
                 ce = PublishEvent._create_cloud_event(app, business, filing, subject, data)
                 gcp_queue.publish(subject, to_queue_message(ce))

@@ -79,7 +79,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-event-dev")
     BUSINESS_MAILER_TOPIC = os.getenv("BUSINESS_MAILER_TOPIC", "business-mailer-dev")
-    BUSINESS_MRAS_TOPIC = os.getenv("BUSINESS_MRAS_TOPIC", "business-mras-dev")
     BUSINESS_PAY_TOPIC = os.getenv("BUSINESS_PAY_TOPIC", "business-pay-dev")
     NAMEX_PAY_TOPIC = os.getenv("NAMEX_PAY_TOPIC", "namex-pay-dev")
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
