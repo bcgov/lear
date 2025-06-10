@@ -41,13 +41,14 @@ from tests.unit.models import factory_business
          'Business already in dissolution.'),
     ]
 )
-def test_business_state_validation(session, test_status, legal_type, business_state, good_standing, 
+def test_business_state_validation(session, test_status, legal_type, business_state, good_standing,
                                   in_liquidation, in_dissolution, expected_code, expected_msg):
     """Assert that business state validation works correctly."""
     # Setup
-    business = factory_business('BC1234567', legal_type=legal_type)
+    business = factory_business('BC1234567', entity_type=legal_type)
     business.state = business_state
-    business.good_standing = good_standing
+    if not good_standing:
+        business.founding_date = datetime.utcnow() - timedelta(days=365 * 2)
     business.in_liquidation = in_liquidation
     business.in_dissolution = in_dissolution
 
@@ -80,7 +81,12 @@ def test_business_state_validation(session, test_status, legal_type, business_st
 def test_liquidation_date_validation(session, test_status, liquidation_date, expected_code, expected_msg):
     """Assert that liquidation date validation works correctly."""
     # Setup
-    business = factory_business('BC1234567')
+    business = Business(
+        identifier='BC1234567',
+        entity_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
@@ -113,7 +119,12 @@ def test_liquidation_date_validation(session, test_status, liquidation_date, exp
 def test_parties_validation(session, test_status, has_parties, has_liquidator, expected_code, expected_msg):
     """Assert that parties validation works correctly."""
     # Setup
-    business = factory_business('BC1234567')
+    business = Business(
+        identifier='BC1234567',
+        entity_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
@@ -149,7 +160,12 @@ def test_office_validation(session, test_status, has_liquidation_office, office_
                           expected_code, expected_msg):
     """Assert that office validation works correctly."""
     # Setup
-    business = factory_business('BC1234567')
+    business = Business(
+        identifier='BC1234567',
+        entity_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
@@ -187,7 +203,12 @@ def test_office_validation(session, test_status, has_liquidation_office, office_
 def test_court_order_validation(session, test_status, has_court_order, file_number, expected_code, expected_msg):
     """Assert that court order validation works correctly."""
     # Setup
-    business = factory_business('BC1234567')
+    business = Business(
+        identifier='BC1234567',
+        entity_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
@@ -219,7 +240,12 @@ def test_court_order_validation(session, test_status, has_court_order, file_numb
 def test_complete_valid_filing(session):
     """Assert that a complete valid filing passes validation."""
     # Setup
-    business = factory_business('BC1234567')
+    business = Business(
+        identifier='BC1234567',
+        entity_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
@@ -235,7 +261,12 @@ def test_complete_valid_filing(session):
 def test_multiple_liquidators(session):
     """Assert that multiple liquidators are allowed."""
     # Setup
-    business = factory_business('BC1234567')
+    business = Business(
+        identifier='BC1234567',
+        entity_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
