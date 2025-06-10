@@ -291,9 +291,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
             name_request.consume_nr(business, filing_submission, flags=flags)
             business_profile.update_business_profile(business, filing_submission, flags=flags)
-            # this is a double negative so that we don't have to break test / prod
-            if not flags.is_on("disable-mras-email"):
-                PublishEvent.publish_mras_email(current_app, business, filing_submission)
+            PublishEvent.publish_mras_email(current_app, business, filing_submission)
         elif not flags.is_on("enable-sandbox"):
             for filing_type in filing_meta.legal_filings:
                 if filing_type in [
