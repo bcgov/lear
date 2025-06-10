@@ -134,12 +134,14 @@ def validate_offices(filing_json: Dict) -> Optional[list]:
             address_path = f'{offices_path}/liquidationOffice/{address_type}'
 
             region = address.get('addressRegion')
-            if region != 'BC':
+            if region and region != 'BC':
                 msg.append({'error': babel("Address Region must be 'BC'."),
                             'path': f'{address_path}/addressRegion'})
 
             country = address.get('addressCountry')
-
+            if country and country != 'CA':
+                msg.append({'error': babel("Address Country must be 'CA'."),
+                            'path': f'{address_path}/addressCountry'})
 
     return msg if msg else None
 
