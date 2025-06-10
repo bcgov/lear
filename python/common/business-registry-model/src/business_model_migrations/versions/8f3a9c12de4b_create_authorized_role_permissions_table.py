@@ -172,8 +172,8 @@ def upgrade():
 
     # Map role-permission pairs
     bind = op.get_bind()
-    role_map = {r['role_name']: r['id'] for r in bind.execute(sa.text("SELECT id, role_name FROM authorized_roles"))}
-    permission_map = {a['permission_name']: a['id'] for a in bind.execute(sa.text("SELECT id, permission_name FROM permissions"))}
+    role_map = {r[1]: r[0] for r in bind.execute(sa.text("SELECT id, role_name FROM authorized_roles"))}
+    permission_map = {a[1]: a[0] for a in bind.execute(sa.text("SELECT id, permission_name FROM permissions"))}
 
     authorized_role_permissions = sa.table('authorized_role_permissions',
         sa.column('role_id', sa.Integer),
