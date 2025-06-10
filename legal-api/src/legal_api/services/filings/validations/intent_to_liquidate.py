@@ -132,7 +132,10 @@ def validate_offices(filing_json: Dict) -> Optional[list]:
                             'path': f'{address_path}/addressRegion'})
 
             country = address.get('addressCountry')
-            
+            if country:
+                if country != 'CA' and country != 'Canada':
+                    msg.append({'error': babel("Address Country must be 'CA'."),
+                                'path': f'{address_path}/addressCountry'})
 
     return msg if msg else None
 

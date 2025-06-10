@@ -81,7 +81,7 @@ def test_liquidation_date_validation(session, test_status, liquidation_date, exp
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
-    
+
     if liquidation_date:
         filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = liquidation_date
     else:
