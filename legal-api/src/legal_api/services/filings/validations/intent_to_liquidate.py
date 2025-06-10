@@ -138,14 +138,7 @@ def validate_offices(filing_json: Dict) -> Optional[list]:
                             'path': f'{address_path}/addressRegion'})
 
             country = address.get('addressCountry')
-            if country:
-                try:
-                    country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                    if country_code != 'CA':
-                        raise LookupError
-                except LookupError:
-                    msg.append({'error': babel("Address Country must be 'CA'."),
-                                'path': f'{address_path}/addressCountry'})
+
 
     return msg if msg else None
 
