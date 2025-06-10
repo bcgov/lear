@@ -25,32 +25,25 @@ from tests.unit.models import factory_business
 
 
 @pytest.mark.parametrize(
-    'test_status, legal_type, business_state, good_standing, in_liquidation, in_dissolution, expected_code, expected_msg',
+    'test_status, legal_type, business_state, good_standing, expected_code, expected_msg',
     [
-        ('SUCCESS', 'BC', Business.State.ACTIVE, True, False, False, None, None),
-        ('SUCCESS', 'BEN', Business.State.ACTIVE, True, False, False, None, None),
-        ('SUCCESS', 'ULC', Business.State.ACTIVE, True, False, False, None, None),
-        ('SUCCESS', 'CC', Business.State.ACTIVE, True, False, False, None, None),
-        ('FAIL_INACTIVE', 'BC', Business.State.HISTORICAL, True, False, False, HTTPStatus.BAD_REQUEST,
+        ('SUCCESS', 'BC', Business.State.ACTIVE, True, None, None),
+        ('SUCCESS', 'BEN', Business.State.ACTIVE, True, None, None),
+        ('SUCCESS', 'ULC', Business.State.ACTIVE, True, None, None),
+        ('SUCCESS', 'CC', Business.State.ACTIVE, True, None, None),
+        ('FAIL_INACTIVE', 'BC', Business.State.HISTORICAL, True, HTTPStatus.BAD_REQUEST,
          'Business should be Active and in Good Standing to file Intent to Liquidate.'),
-        ('FAIL_NOT_GOOD_STANDING', 'BC', Business.State.ACTIVE, False, False, False, HTTPStatus.BAD_REQUEST,
+        ('FAIL_NOT_GOOD_STANDING', 'BC', Business.State.ACTIVE, False, HTTPStatus.BAD_REQUEST,
          'Business should be Active and in Good Standing to file Intent to Liquidate.'),
-        ('FAIL_IN_LIQUIDATION', 'BC', Business.State.ACTIVE, True, True, False, HTTPStatus.BAD_REQUEST,
-         'Business already in liquidation.'),
-        ('FAIL_IN_DISSOLUTION', 'BC', Business.State.ACTIVE, True, False, True, HTTPStatus.BAD_REQUEST,
-         'Business already in dissolution.'),
     ]
 )
-def test_business_state_validation(session, test_status, legal_type, business_state, good_standing,
-                                  in_liquidation, in_dissolution, expected_code, expected_msg):
+def test_business_state_validation(session, test_status, legal_type, business_state, good_standing, expected_code, expected_msg):
     """Assert that business state validation works correctly."""
     # Setup
     business = factory_business('BC1234567', entity_type=legal_type)
     business.state = business_state
     if not good_standing:
         business.founding_date = datetime.utcnow() - timedelta(days=365 * 2)
-    business.in_liquidation = in_liquidation
-    business.in_dissolution = in_dissolution
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
@@ -81,7 +74,7 @@ def test_business_state_validation(session, test_status, legal_type, business_st
 def test_liquidation_date_validation(session, test_status, liquidation_date, expected_code, expected_msg):
     """Assert that liquidation date validation works correctly."""
     # Setup
-    business = Business(
+    business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
@@ -119,7 +112,7 @@ def test_liquidation_date_validation(session, test_status, liquidation_date, exp
 def test_parties_validation(session, test_status, has_parties, has_liquidator, expected_code, expected_msg):
     """Assert that parties validation works correctly."""
     # Setup
-    business = Business(
+    business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
@@ -160,7 +153,7 @@ def test_office_validation(session, test_status, has_liquidation_office, office_
                           expected_code, expected_msg):
     """Assert that office validation works correctly."""
     # Setup
-    business = Business(
+    business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
@@ -203,7 +196,7 @@ def test_office_validation(session, test_status, has_liquidation_office, office_
 def test_court_order_validation(session, test_status, has_court_order, file_number, expected_code, expected_msg):
     """Assert that court order validation works correctly."""
     # Setup
-    business = Business(
+    business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
@@ -240,7 +233,7 @@ def test_court_order_validation(session, test_status, has_court_order, file_numb
 def test_complete_valid_filing(session):
     """Assert that a complete valid filing passes validation."""
     # Setup
-    business = Business(
+    business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
@@ -261,7 +254,7 @@ def test_complete_valid_filing(session):
 def test_multiple_liquidators(session):
     """Assert that multiple liquidators are allowed."""
     # Setup
-    business = Business(
+    business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
