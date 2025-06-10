@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Intent to Liquidate filing."""
-from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, Optional
 
