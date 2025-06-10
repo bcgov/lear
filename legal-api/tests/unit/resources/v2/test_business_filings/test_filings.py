@@ -345,7 +345,7 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
                      headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
                      )
 
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_post_not_allowed_historical(session, client, jwt):
@@ -358,7 +358,7 @@ def test_post_not_allowed_historical(session, client, jwt):
                      headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
                      )
 
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.status_code == HTTPStatus.FORBIDDEN
 
 
 def test_post_allowed_historical(session, client, jwt):
@@ -1736,7 +1736,7 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
                     json=json_data,
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
-    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.status_code == HTTPStatus.FORBIDDEN
 
 @pytest.mark.parametrize(
         'test_name, legal_type, filing_type, filing_json, is_temp',
