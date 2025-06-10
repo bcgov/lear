@@ -31,7 +31,7 @@ from tests.unit.models import factory_business
         ('SUCCESS', 'BEN', Business.State.ACTIVE, True, False, False, None, None),
         ('SUCCESS', 'ULC', Business.State.ACTIVE, True, False, False, None, None),
         ('SUCCESS', 'CC', Business.State.ACTIVE, True, False, False, None, None),
-        ('FAIL_INACTIVE', 'BC', Business.State.LIQUIDATION, True, False, False, HTTPStatus.BAD_REQUEST,
+        ('FAIL_INACTIVE', 'BC', Business.State.HISTORICAL, True, False, False, HTTPStatus.BAD_REQUEST,
          'Business should be Active and in Good Standing to file Intent to Liquidate.'),
         ('FAIL_NOT_GOOD_STANDING', 'BC', Business.State.ACTIVE, False, False, False, HTTPStatus.BAD_REQUEST,
          'Business should be Active and in Good Standing to file Intent to Liquidate.'),
