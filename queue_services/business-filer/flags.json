@@ -2,6 +2,7 @@
     "flagValues": {
         "enable-involuntary-dissolution": true,
         "namex-nro-decommissioned": true,
-        "enable-sandbox": false
+        "enable-sandbox": false,
+        "disable-mras-email": false
     }
 }
