@@ -42,12 +42,16 @@ def test_business_state_validation(session, test_status, legal_type, business_st
     # Setup
     business = factory_business('BC1234567', entity_type=legal_type, state=business_state, founding_date=datetime.utcnow())
     if not good_standing:
-        business.founding_date = datetime.utcnow() - timedelta(days=365 * 2)
+        business.founding_date = datetime.utcnow() - timedelta(days=365 * 10)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['business']['legalType'] = legal_type
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     # Test
     err = validate(business, filing)
@@ -61,29 +65,37 @@ def test_business_state_validation(session, test_status, legal_type, business_st
 
 
 @pytest.mark.parametrize(
-    'test_status, liquidation_date, expected_code, expected_msg',
+    'test_status, founding_date_offset, liquidation_date_offset, expected_code, expected_msg',
     [
-        ('SUCCESS', '2024-01-15', None, None),
-        ('FAIL_MISSING_DATE', None, HTTPStatus.BAD_REQUEST, 
+        ('SUCCESS', -365, -30, None, None),  # Founding 1 year ago, liquidation 30 days ago
+        ('SUCCESS', -365, 0, None, None),    # Founding 1 year ago, liquidation today
+        ('FAIL_MISSING_DATE', -365, None, HTTPStatus.BAD_REQUEST,
          'Date of commencement of liquidation must be a valid date.'),
+        ('FAIL_DATE_BEFORE_FOUNDING', -365, -400, HTTPStatus.BAD_REQUEST,
+         'Date of commencement of liquidation must be later than the business founding date.'),
+        ('FAIL_DATE_SAME_AS_FOUNDING', -365, -365, HTTPStatus.BAD_REQUEST,
+         'Date of commencement of liquidation must be later than the business founding date.'),
     ]
 )
-def test_liquidation_date_validation(session, test_status, liquidation_date, expected_code, expected_msg):
+def test_liquidation_date_validation(session, test_status, founding_date_offset, liquidation_date_offset, expected_code, expected_msg):
     """Assert that liquidation date validation works correctly."""
-    # Setup
+    # Setup founding date
+    founding_date = datetime.utcnow() + timedelta(days=founding_date_offset)
+    
     business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
         state=Business.State.ACTIVE,
-        founding_date=datetime.utcnow()
+        founding_date=founding_date
     )
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
 
-    if liquidation_date:
-        filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = liquidation_date
+    if liquidation_date_offset is not None:
+        liquidation_date = datetime.utcnow() + timedelta(days=liquidation_date_offset)
+        filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = liquidation_date.strftime('%Y-%m-%d')
     else:
         del filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation']
 
@@ -119,6 +131,10 @@ def test_parties_validation(session, test_status, has_parties, has_liquidator, e
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     if not has_parties:
         filing['filing']['intentToLiquidate']['parties'] = []
@@ -160,6 +176,10 @@ def test_office_validation(session, test_status, has_liquidation_office, office_
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     if not has_liquidation_office:
         del filing['filing']['intentToLiquidate']['offices']['liquidationOffice']
@@ -203,6 +223,10 @@ def test_court_order_validation(session, test_status, has_court_order, file_numb
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     if has_court_order:
         court_order = copy.deepcopy(COURT_ORDER)
@@ -240,6 +264,10 @@ def test_complete_valid_filing(session):
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     # Test
     err = validate(business, filing)
@@ -261,6 +289,10 @@ def test_multiple_liquidators(session):
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     # Add a second liquidator
     second_liquidator = copy.deepcopy(filing['filing']['intentToLiquidate']['parties'][0])

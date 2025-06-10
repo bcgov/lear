@@ -48,7 +48,7 @@ def validate(business: Business, filing_json: Dict) -> Optional[Error]:
 
     msg = []
 
-    err = validate_liquidation_date(filing_json)
+    err = validate_liquidation_date(filing_json, business)
     if err:
         msg.extend(err)
 
@@ -69,7 +69,7 @@ def validate(business: Business, filing_json: Dict) -> Optional[Error]:
     return None
 
 
-def validate_liquidation_date(filing_json: Dict) -> Optional[list]:
+def validate_liquidation_date(filing_json: Dict, business: Business = None) -> Optional[list]:
     """Validate the date of commencement of liquidation."""
     msg = []
     liquidation_date_path = '/filing/intentToLiquidate/dateOfCommencementOfLiquidation'
@@ -78,6 +78,13 @@ def validate_liquidation_date(filing_json: Dict) -> Optional[list]:
     if not liquidation_date:
         msg.append({'error': babel('Date of commencement of liquidation must be a valid date.'),
                     'path': liquidation_date_path})
+        return msg
+
+    # Validate that liquidation date is later than founding date
+    if business and business.founding_date:
+        if liquidation_date <= business.founding_date:
+            msg.append({'error': babel('Date of commencement of liquidation must be later than the business founding date.'),
+                        'path': liquidation_date_path})
 
     return msg if msg else None
 
@@ -133,7 +140,11 @@ def validate_offices(filing_json: Dict) -> Optional[list]:
 
             country = address.get('addressCountry')
             if country:
-                if country != 'CA' and country != 'Canada':
+                try:
+                    country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                    if country_code != 'CA':
+                        raise LookupError
+                except LookupError:
                     msg.append({'error': babel("Address Country must be 'CA'."),
                                 'path': f'{address_path}/addressCountry'})
 
