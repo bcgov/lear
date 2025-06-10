@@ -41,7 +41,7 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
     __tablename__ = 'amalgamating_businesses'
 
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column('role', db.Enum(Role), nullable=False)
+    role = db.Column('role', db.Enum(Role, name='amalgamating_business_role'), nullable=False)
     foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
     foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
     foreign_name = db.Column('foreign_name', db.String(100))

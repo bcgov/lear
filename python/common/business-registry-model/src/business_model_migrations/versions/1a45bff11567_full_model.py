@@ -60,7 +60,7 @@ def upgrade():
     op.create_index(op.f('ix_aliases_version_transaction_id'), 'aliases_version', ['transaction_id'], unique=False)
     op.create_table('amalgamating_businesses_version',
     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
-    sa.Column('role', sa.Enum('amalgamating', 'holding', 'primary', name='role'), autoincrement=False, nullable=False),
+    sa.Column('role', sa.Enum('amalgamating', 'holding', 'primary', name='amalgamating_business_role'), autoincrement=False, nullable=False),
     sa.Column('foreign_jurisdiction', sa.String(length=10), autoincrement=False, nullable=True),
     sa.Column('foreign_jurisdiction_region', sa.String(length=10), autoincrement=False, nullable=True),
     sa.Column('foreign_name', sa.String(length=100), autoincrement=False, nullable=True),
@@ -78,7 +78,7 @@ def upgrade():
     op.create_index(op.f('ix_amalgamating_businesses_version_transaction_id'), 'amalgamating_businesses_version', ['transaction_id'], unique=False)
     op.create_table('amalgamations_version',
     sa.Column('id', sa.Integer(), autoincrement=False, nullable=False),
-    sa.Column('amalgamation_type', sa.Enum('regular', 'vertical', 'horizontal', 'unknown', name='amalgamationtypes'), autoincrement=False, nullable=False),
+    sa.Column('amalgamation_type', sa.Enum('regular', 'vertical', 'horizontal', 'unknown', name='amalgamation_type'), autoincrement=False, nullable=False),
     sa.Column('amalgamation_date', sa.DateTime(timezone=True), autoincrement=False, nullable=False),
     sa.Column('court_approval', sa.Boolean(), autoincrement=False, nullable=True),
     sa.Column('business_id', sa.Integer(), autoincrement=False, nullable=True),
@@ -636,7 +636,7 @@ def upgrade():
     op.create_index(op.f('ix_addresses_street'), 'addresses', ['street'], unique=False)
     op.create_table('amalgamations',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('amalgamation_type', sa.Enum('regular', 'vertical', 'horizontal', 'unknown', name='amalgamationtypes'), nullable=False),
+    sa.Column('amalgamation_type', sa.Enum('regular', 'vertical', 'horizontal', 'unknown', name='amalgamation_type'), nullable=False),
     sa.Column('amalgamation_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('court_approval', sa.Boolean(), nullable=True),
     sa.Column('business_id', sa.Integer(), nullable=True),
@@ -794,7 +794,7 @@ def upgrade():
     op.create_index(op.f('ix_share_series_name'), 'share_series', ['name'], unique=False)
     op.create_table('amalgamating_businesses',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('role', sa.Enum('amalgamating', 'holding', 'primary', name='role'), nullable=False),
+    sa.Column('role', sa.Enum('amalgamating', 'holding', 'primary', name='amalgamating_business_role'), nullable=False),
     sa.Column('foreign_jurisdiction', sa.String(length=10), nullable=True),
     sa.Column('foreign_jurisdiction_region', sa.String(length=10), nullable=True),
     sa.Column('foreign_name', sa.String(length=100), nullable=True),

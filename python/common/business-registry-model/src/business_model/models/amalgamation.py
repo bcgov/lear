@@ -43,7 +43,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     __tablename__ = 'amalgamations'
 
     id = db.Column(db.Integer, primary_key=True)
-    amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes), nullable=False)
+    amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes, name='amalgamation_type'), nullable=False)
     amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=False)
     court_approval = db.Column('court_approval', db.Boolean())
 
