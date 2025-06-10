@@ -49,23 +49,6 @@ def test_business_state_validation(session, test_status, legal_type, business_st
     filing['filing']['business']['legalType'] = legal_type
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
 
-    # DEBUG: Print the test data to see what country values we actually have
-    if test_status == 'SUCCESS' and legal_type == 'BC':
-        print(f"DEBUG: INTENT_TO_LIQUIDATE test data structure:")
-        if 'offices' in filing['filing']['intentToLiquidate']:
-            offices = filing['filing']['intentToLiquidate']['offices']
-            print(f"Offices: {offices}")
-            if 'liquidationOffice' in offices:
-                liquidation_office = offices['liquidationOffice']
-                if 'mailingAddress' in liquidation_office:
-                    mailing = liquidation_office['mailingAddress']
-                    print(f"Mailing address country: '{mailing.get('addressCountry')}'")
-                    print(f"Mailing address region: '{mailing.get('addressRegion')}'")
-                if 'deliveryAddress' in liquidation_office:
-                    delivery = liquidation_office['deliveryAddress']
-                    print(f"Delivery address country: '{delivery.get('addressCountry')}'")
-                    print(f"Delivery address region: '{delivery.get('addressRegion')}'")
-
     # Test
     err = validate(business, filing)
 
@@ -74,11 +57,6 @@ def test_business_state_validation(session, test_status, legal_type, business_st
         assert expected_code == err.code
         assert expected_msg == err.msg[0]['error']
     else:
-        # DEBUG: Print error details if validation unexpectedly fails
-        if err:
-            print(f"DEBUG: Unexpected validation error occurred for SUCCESS case")
-            print(f"Error code: {err.code}")
-            print(f"Error messages: {err.msg}")
         assert not err
 
 
