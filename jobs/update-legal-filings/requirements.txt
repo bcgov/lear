@@ -26,8 +26,18 @@ urllib3==1.26.11
 asyncio-nats-client==0.11.4
 asyncio-nats-streaming==0.4.0
 nest_asyncio
-protobuf==3.15.8
 git+https://github.com/bcgov/lear.git#subdirectory=colin-api
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
 git+https://github.com/bcgov/lear.git#egg=sql-versioning&subdirectory=python/common/sql-versioning
 git+https://github.com/bcgov/business-schemas.git@2.18.27#egg=registry_schemas
+
+# fix due to conflicting versions from legal-api import
+protobuf==3.19.5
+googleapis-common-protos==1.56.2
+grpcio-status==1.48.0
+grpc-google-iam-v1==0.12.4
+google-auth==2.38.0
+google-cloud-pubsub==2.21.4
+google-api-core==2.24.2
+proto-plus==1.26.1
+git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue
