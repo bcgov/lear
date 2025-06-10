@@ -13,12 +13,12 @@
 # limitations under the License.
 """Validation for the Annual Report filing."""
 from http import HTTPStatus
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Address, Business
 from legal_api.services.utils import get_date
 from legal_api.utils.datetime import datetime
 
@@ -48,10 +48,15 @@ def validate(business: Business, annual_report: Dict) -> Error:
         return err
 
     if not annual_report['filing']['annualReport']['offices'].get('recordsOffice', {}):
-        msg.append({
-            'error': 'recordsOffice is required', 
-            'path': '/filing/annualReport/offices/recordsOffice'
-        })
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': 'recordsOffice is required', 
+                       'path': '/filing/annualReport/offices/recordsOffice'}])
+    
+    
+    err = validate_directors_addresses(annual_report)
+
+    if err:
+        return err
 
     return None
 
@@ -130,4 +135,21 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
     #                                 'The business will be dissolved, unless an extension and an AGM are held.'),
     #                    'path': 'filing/annualReport/annualGeneralMeetingDate'}])
     #
+    return None
+
+def validate_directors_addresses(annual_report: Dict) -> Optional[Error]:
+    msg = []
+    directors = annual_report['filing']['annualReport']['directors']
+
+    for idx, director in enumerate(directors):
+        for address_type in Address.JSON_ADDRESS_TYPES:
+            if address_type not in director:
+                msg.append({
+                    'error': f'missing {address_type}', 
+                    'path': f'/filing/annualReport/directors/{idx}/{address_type}'
+                })
+
+    if msg:
+        return Error(HTTPStatus.BAD_REQUEST, msg)
+    
     return None
