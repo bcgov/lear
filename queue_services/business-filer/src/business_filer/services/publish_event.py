@@ -47,7 +47,7 @@ class PublishEvent:
                 "identifier": identifier
             }
             if filing.temp_reg:
-                data["tempIdentifier"] = filing.temp_reg
+                data["tempidentifier"] = filing.temp_reg
 
             ce = PublishEvent._create_cloud_event(app, business, filing, subject, data)
             gcp_queue.publish(subject, to_queue_message(ce))
