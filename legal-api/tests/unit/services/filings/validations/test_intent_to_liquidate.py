@@ -65,8 +65,6 @@ def test_business_state_validation(session, test_status, legal_type, business_st
     'test_status, liquidation_date, expected_code, expected_msg',
     [
         ('SUCCESS', '2024-01-15', None, None),
-        ('FAIL_FUTURE_DATE', (datetime.utcnow().date() + timedelta(days=1)).strftime('%Y-%m-%d'), 
-         HTTPStatus.BAD_REQUEST, 'Date of commencement of liquidation cannot be in the future.'),
         ('FAIL_MISSING_DATE', None, HTTPStatus.BAD_REQUEST, 
          'Date of commencement of liquidation must be a valid date.'),
     ]
@@ -77,8 +75,7 @@ def test_liquidation_date_validation(session, test_status, liquidation_date, exp
     business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
-        state=Business.State.ACTIVE,
-        founding_date=datetime.utcnow()
+        state=Business.State.ACTIVE
     )
 
     filing = copy.deepcopy(FILING_HEADER)

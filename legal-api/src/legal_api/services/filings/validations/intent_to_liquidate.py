@@ -78,12 +78,6 @@ def validate_liquidation_date(filing_json: Dict) -> Optional[list]:
     if not liquidation_date:
         msg.append({'error': babel('Date of commencement of liquidation must be a valid date.'),
                     'path': liquidation_date_path})
-        return msg
-
-    # The liquidation date cannot be in the future
-    if liquidation_date > datetime.utcnow().date():
-        msg.append({'error': babel('Date of commencement of liquidation cannot be in the future.'),
-                    'path': liquidation_date_path})
 
     return msg if msg else None
 
