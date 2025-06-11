@@ -72,7 +72,7 @@ def _get_traction_token():
                 continue
 
             check_response.raise_for_status()
-            current_app.logger.debug(f'New Traction token obtained: {token}')
+            current_app.logger.debug('New Traction token obtained')
             return token
 
         except pyjwt.InvalidTokenError as err:
