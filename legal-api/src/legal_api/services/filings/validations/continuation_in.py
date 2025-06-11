@@ -85,7 +85,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
 
     if not filing_json['filing']['continuationIn']['offices'].get('recordsOffice', {}):
         msg.append({
-            'error': 'recordsOffice is required', 
+            'error': 'recordsOffice is required',
             'path': '/filing/continuationIn/offices/recordsOffice'
         })
 
@@ -174,8 +174,8 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     authorization_path = f'/filing/{filing_type}/authorization'
     file_list = filing_json['filing'][filing_type]['authorization']['files']
     if len(file_list) > 4:  # max 5 files
-            msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
-            return msg
+        msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
+        return msg
 
     for index, file in enumerate(file_list):
         file_key = file['fileKey']

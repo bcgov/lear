@@ -347,21 +347,26 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
 
 
 def validate_phone_number(contact_point_dict: dict, contact_point_path: str) -> list:
+    """Validate phone number."""
     msg = []
     phone_num = contact_point_dict.get('phone')
     # if pure digits (max 10)
     if phone_num.isdigit():
         if len(phone_num) != 10:
-            msg.append({'error': 'Invalid phone number, maximum 10 digits in phone number format', 'path': f'{contact_point_path}/phone'})
+            msg.append({
+                'error': 'Invalid phone number, maximum 10 digits in phone number format',
+                'path': f'{contact_point_path}/phone'})
     else:
         # Check various phone formats
         # (123) 456-7890 / 123-456-7890 / 123.456.7890 / 123 456 7890
-        phone_pattern = r'^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$'  
+        phone_pattern = r'^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$'
         if not re.match(phone_pattern, phone_num):
-            msg.append({'error': 'Invalid phone number, maximum 10 digits in phone number format', 'path': f'{contact_point_path}/phone'})
+            msg.append({
+                'error': 'Invalid phone number, maximum 10 digits in phone number format',
+                'path': f'{contact_point_path}/phone'})
 
     if extension := contact_point_dict.get('extension'):
         if len(str(extension)) > 5:
             msg.append({'error': 'Invalid extension, maximum 5 digits', 'path': f'{contact_point_path}/extension'})
-    
+
     return msg

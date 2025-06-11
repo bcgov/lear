@@ -49,10 +49,9 @@ def validate(business: Business, annual_report: Dict) -> Error:
 
     if not annual_report['filing']['annualReport']['offices'].get('recordsOffice', {}):
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': 'recordsOffice is required', 
+                     [{'error': 'recordsOffice is required',
                        'path': '/filing/annualReport/offices/recordsOffice'}])
-    
-    
+
     err = validate_directors_addresses(annual_report)
 
     if err:
@@ -137,7 +136,9 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
     #
     return None
 
+
 def validate_directors_addresses(annual_report: Dict) -> Optional[Error]:
+    """Validate directors contain both deliveryAddress and mailingAddress."""
     msg = []
     directors = annual_report['filing']['annualReport']['directors']
 
@@ -145,11 +146,11 @@ def validate_directors_addresses(annual_report: Dict) -> Optional[Error]:
         for address_type in Address.JSON_ADDRESS_TYPES:
             if address_type not in director:
                 msg.append({
-                    'error': f'missing {address_type}', 
+                    'error': f'missing {address_type}',
                     'path': f'/filing/annualReport/directors/{idx}/{address_type}'
                 })
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
-    
+
     return None

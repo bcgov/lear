@@ -67,7 +67,7 @@ def validate_directors_addresses(cod: Dict) -> List:
                                 'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry'})
             else:
                 msg.append({
-                    'error': f'missing {address_type}', 
+                    'error': f'missing {address_type}',
                     'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}'
                 })
     return msg
