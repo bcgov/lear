@@ -315,6 +315,22 @@ FILINGS: Final = {
             'CP': 'OTCON'
         }
     },
+    'changeOfOfficers': {
+        'name': 'changeOfOfficers',
+        'title': 'Change of Officers Filing',
+        'displayName': 'Officer Change',
+        'codes': {
+            'CP': 'BCCOO',
+            'BEN': 'BCCOO',
+            'BC': 'BCCOO',
+            'ULC': 'BCCOO',
+            'CC': 'BCCOO',
+            'CBEN': 'BCCOO',
+            'C': 'BCCOO',
+            'CUL': 'BCCOO',
+            'CCC': 'BCCOO'
+        }
+    },
     'changeOfRegistration': {
         'name': 'changeOfRegistration',
         'title': 'Change of Registration',
