@@ -78,8 +78,10 @@ def validate_liquidation_date(filing_json: Dict, business: Business = None) -> O
     if business and business.founding_date:
         founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
         if liquidation_date <= founding_date_leg:
-            msg.append({'error': babel('Date of commencement of liquidation must be later than the business founding date.'),
-                        'path': liquidation_date_path})
+            msg.append({
+                'error': babel('Date of commencement of liquidation must be later than the business founding date.'),
+                'path': liquidation_date_path
+            })
 
     return msg if msg else None
 
@@ -90,10 +92,6 @@ def validate_parties(filing_json: Dict) -> Optional[list]:
     parties_path = '/filing/intentToLiquidate/parties'
 
     parties = filing_json.get('filing', {}).get('intentToLiquidate', {}).get('parties', [])
-
-    if not parties:
-        msg.append({'error': babel('At least one party is required.'), 'path': parties_path})
-        return msg
 
     liquidator_count = 0
     for party in parties:

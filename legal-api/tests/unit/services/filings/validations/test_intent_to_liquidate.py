@@ -106,14 +106,13 @@ def test_liquidation_date_validation(session, test_status, founding_date_offset,
 
 
 @pytest.mark.parametrize(
-    'test_status, has_parties, has_liquidator, expected_code, expected_msg',
+    'test_status, has_liquidator, expected_code, expected_msg',
     [
-        ('SUCCESS', True, True, None, None),
-        ('FAIL_NO_PARTIES', False, False, HTTPStatus.BAD_REQUEST, 'At least one party is required.'),
-        ('FAIL_NO_LIQUIDATOR', True, False, HTTPStatus.BAD_REQUEST, 'At least one liquidator is required.'),
+        ('SUCCESS', True, None, None),
+        ('FAIL_NO_LIQUIDATOR', False, HTTPStatus.BAD_REQUEST, 'At least one liquidator is required.'),
     ]
 )
-def test_parties_validation(session, test_status, has_parties, has_liquidator, expected_code, expected_msg):
+def test_parties_validation(session, test_status, has_liquidator, expected_code, expected_msg):
     """Assert that parties validation works correctly."""
     # Setup
     business = factory_business(
@@ -126,14 +125,12 @@ def test_parties_validation(session, test_status, has_parties, has_liquidator, e
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
-    
+
     # Override liquidation date to be after founding date
     future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
     filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
-    if not has_parties:
-        filing['filing']['intentToLiquidate']['parties'] = []
-    elif not has_liquidator:
+    if not has_liquidator:
         # Change the role type to something other than Liquidator
         filing['filing']['intentToLiquidate']['parties'][0]['roles'][0]['roleType'] = 'Director'
 
