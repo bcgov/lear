@@ -30,21 +30,6 @@ def validate(business: Business, filing_json: Dict) -> Optional[Error]:
     if not business or not filing_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
-    if business.state != Business.State.ACTIVE or not business.good_standing:
-        return Error(HTTPStatus.BAD_REQUEST, [{
-            'error': babel('Business should be Active and in Good Standing to file Intent to Liquidate.')
-        }])
-
-    if business.in_liquidation:
-        return Error(HTTPStatus.BAD_REQUEST, [{
-            'error': babel('Business already in liquidation.')
-        }])
-
-    if business.in_dissolution:
-        return Error(HTTPStatus.BAD_REQUEST, [{
-            'error': babel('Business already in dissolution.')
-        }])
-
     msg = []
 
     err = validate_liquidation_date(filing_json, business)

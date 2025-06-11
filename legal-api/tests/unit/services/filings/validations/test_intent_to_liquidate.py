@@ -25,35 +25,28 @@ from tests.unit.models import factory_business
 
 
 @pytest.mark.parametrize(
-    'test_status, legal_type, business_state, good_standing, expected_code, expected_msg',
+    'test_status, legal_type, business_state, expected_code, expected_msg',
     [
-        ('SUCCESS', 'BC', Business.State.ACTIVE, True, None, None),
-        ('SUCCESS', 'C', Business.State.ACTIVE, True, None, None),
-        ('SUCCESS', 'BEN', Business.State.ACTIVE, True, None, None),
-        ('SUCCESS', 'CBEN', Business.State.ACTIVE, True, None, None),
-        ('SUCCESS', 'ULC', Business.State.ACTIVE, True, None, None),
-        ('SUCCESS', 'CUL', Business.State.ACTIVE, True, None, None),
-        ('SUCCESS', 'CC', Business.State.ACTIVE, True, None, None),
-        ('FAIL_INACTIVE', 'CCC', Business.State.HISTORICAL, True, HTTPStatus.BAD_REQUEST,
-         'Business should be Active and in Good Standing to file Intent to Liquidate.'),
-        ('FAIL_INACTIVE', 'BC', Business.State.HISTORICAL, True, HTTPStatus.BAD_REQUEST,
-         'Business should be Active and in Good Standing to file Intent to Liquidate.'),
-        ('FAIL_NOT_GOOD_STANDING', 'BC', Business.State.ACTIVE, False, HTTPStatus.BAD_REQUEST,
-         'Business should be Active and in Good Standing to file Intent to Liquidate.'),
+        ('SUCCESS', 'BC', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'C', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'BEN', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'CBEN', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'ULC', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'CUL', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'CC', Business.State.ACTIVE, None, None),
+        ('SUCCESS', 'CCC', Business.State.ACTIVE, None, None)
     ]
 )
-def test_business_state_validation(session, test_status, legal_type, business_state, good_standing, expected_code, expected_msg):
+def test_business_state_validation(session, test_status, legal_type, business_state, expected_code, expected_msg):
     """Assert that business state validation works correctly."""
     # Setup
     business = factory_business('BC1234567', entity_type=legal_type, state=business_state, founding_date=datetime.utcnow())
-    if not good_standing:
-        business.founding_date = datetime.utcnow() - timedelta(days=365 * 10)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['business']['legalType'] = legal_type
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
-    
+
     # Override liquidation date to be after founding date
     future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
     filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
