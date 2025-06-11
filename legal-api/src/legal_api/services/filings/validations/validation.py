@@ -33,6 +33,7 @@ from .cease_receiver import validate as cease_receiver_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
+from .change_of_officers import validate as coo_validate
 from .change_of_registration import validate as change_of_registration_validate
 from .consent_amalgamation_out import validate as consent_amalgamation_out_validate
 from .consent_continuation_out import validate as consent_continuation_out_validate
@@ -131,6 +132,9 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['changeOfName'].get('name'):
                     err = con_validate(business, filing_json)
+                
+                elif k == Filing.FILINGS['changeOfOfficers'].get('name'):
+                    err = coo_validate(business, filing_json)
 
                 elif k == Filing.FILINGS['dissolution'].get('name'):
                     err = dissolution_validate(business, filing_json)
