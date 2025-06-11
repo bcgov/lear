@@ -21,7 +21,7 @@ from business_model.models import AuthorizedRole, AuthorizedRolePermission, Perm
 
 def test_authorized_role_permission_save(session):
     """Assert that an AuthorizedRolePermission saves correctly."""
-    role = AuthorizedRole(role_name=AuthorizedRole.RoleType.STAFF)
+    role = AuthorizedRole(role_name='test_staff_role')
     permission = Permission(permission_name='TEST_PERMISSION_AUTH')
     role.save()
     permission.save()

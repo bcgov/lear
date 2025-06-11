@@ -21,8 +21,8 @@ from business_model.models import AuthorizedRole
 
 def test_role_save(session):
     """Assert that a Role saves correctly."""
-    role = AuthorizedRole(role_name=AuthorizedRole.RoleType.STAFF)
+    role = AuthorizedRole(role_name='test_new_role')
     role.save()
     assert role.id
-    assert role.role_name == AuthorizedRole.RoleType.STAFF
+    assert role.role_name == 'test_new_role'
 
