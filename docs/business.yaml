@@ -789,6 +789,19 @@ paths:
                   summary: Notice of Withdrawal - Not a staff
                   value:
                     message: You are not authorized to submit a filing for BC1234567.
+        '403':
+          description: Forbidden - The user does not have valid role or permission for the target resource or a business rule does not allow updating of target resource.
+          content:
+            application/json:
+              examples:
+                edit-action-unauthorized-response:
+                  summary: Edit Action - Unauthorized User
+                  value:
+                    message: You are not authorized to submit filings for BC1218840.
+                business-rule-violation-response:
+                  summary: Business Rule - Not Allowed to File.  e.g. a draft filing exists and subsequent filings cannot be filed until draft is updated or submitted and processed to completion.
+                  value:
+                    message: You are not allowed to submit this type of filing for BC1218840.
         '404':
           description: Cannot found, when a value cannot be found in the records
           content:
