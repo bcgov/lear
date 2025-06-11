@@ -16,12 +16,38 @@
 
 Test-Suite to ensure that the AuthorizedRole Model is working as expected.
 """
-from legal_api.models import AuthorizedRole
+from legal_api.models import AuthorizedRolePermission, AuthorizedRole, Permission
 
 def test_role_save(session):
     """Assert that a Role saves correctly."""
-    role = AuthorizedRole(role_name=AuthorizedRole.RoleType.STAFF)
+    role = AuthorizedRole(role_name='test_new_role')
     role.save()
     assert role.id
-    assert role.role_name == AuthorizedRole.RoleType.STAFF
+    assert role.role_name == 'test_new_role'
+
+def test_get_authorized_permissions_by_role_name_empty(session):
+    """Assert that an empty list is returned when the role has no authorized permissions."""
+    role = AuthorizedRole(role_name='test_unauthorized_user')
+    session.add(role)
+    session.commit()
+
+    authorized_role_permissions = AuthorizedRole.get_authorized_permissions_by_role_name('test_unauthorized_user')
+    assert authorized_role_permissions == []    
+
+def test_get_authorized_permissions_by_role_name(session):
+    """Assert that a list of authorized permissions are returned for a given role name."""
+    permission = Permission(permission_name='TEST_NEW_PERMISSION')
+    session.add(permission)
+    session.commit()
+
+    role = AuthorizedRole(role_name='test_staff_role')
+    session.add(role)
+    session.commit()
+
+    role_permission = AuthorizedRolePermission(role_id=role.id, permission_id=permission.id)
+    session.add(role_permission)
+    session.commit()
+
+    authorized_role_permissions = AuthorizedRole.get_authorized_permissions_by_role_name('test_staff_role')
+    assert authorized_role_permissions == ['TEST_NEW_PERMISSION']
 

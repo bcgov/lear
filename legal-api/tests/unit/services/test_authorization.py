@@ -24,7 +24,7 @@ from http import HTTPStatus
 
 import pytest
 from unittest.mock import patch, PropertyMock
-from flask import jsonify
+from flask import g, jsonify
 from registry_schemas.example_data import (
     AGM_EXTENSION,
     AGM_LOCATION_CHANGE,
@@ -46,8 +46,9 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import Business, Filing
-from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, STAFF_ROLE, \
-    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
+from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
+    PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
+    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_authorized_user_role
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
@@ -550,6 +551,25 @@ def test_authorized_bad_url(monkeypatch, app, jwt):
 
     assert not rv
 
+@pytest.mark.parametrize(
+    "test_name, roles_in_token, expected_role",
+    [
+        ('staff ', [STAFF_ROLE], STAFF_ROLE),
+        ('sbc_staff ', [SBC_STAFF_ROLE], SBC_STAFF_ROLE), 
+        ('maximus_staff ', [CONTACT_CENTRE_STAFF_ROLE], CONTACT_CENTRE_STAFF_ROLE),
+        ('contact_centre_staff ', [MAXIMUS_STAFF_ROLE], MAXIMUS_STAFF_ROLE),
+        ('public_user ', [PUBLIC_USER], PUBLIC_USER),
+        ('multiple user roles ', [PUBLIC_USER, STAFF_ROLE], STAFF_ROLE), 
+        ('no roles in token ', [], None),
+        ('unauthorized_user_role ', ['unauthorized_user_role'], None),
+    ]
+)
+def test_get_authorized_user_role(app, test_name, roles_in_token, expected_role):
+    """Assert that the correct authorized role is returned or None."""
+
+    with app.test_request_context():
+        setattr(g, 'jwt_oidc_token_info', {'realm_access': {'roles': roles_in_token}})
+        assert get_authorized_user_role() == expected_role
 
 def test_authorized_invalid_roles(monkeypatch, app, jwt):
     """Assert that an invalid role returns False."""
