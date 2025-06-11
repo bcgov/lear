@@ -800,6 +800,8 @@ paths:
                     message: You are not authorized to submit filings for BC1218840.
                 business-rule-violation-response:
                   summary: Business Rule - Not Allowed to File.  e.g. a draft filing exists and subsequent filings cannot be filed until draft is updated or submitted and processed to completion.
+                  value:
+                    message: You are not allowed to submit this type of filing for BC1218840.
         '404':
           description: Cannot found, when a value cannot be found in the records
           content:
