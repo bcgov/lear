@@ -242,6 +242,12 @@ def get_allowable_filings_dict():
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
+                'changeOfOfficers': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
                 'changeOfRegistration': {
                     'legalTypes': ['SP', 'GP'],
                     'blockerChecks': {
@@ -467,6 +473,12 @@ def get_allowable_filings_dict():
                     }
                 },
                 'changeOfDirectors': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfOfficers': {
                     'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT]
