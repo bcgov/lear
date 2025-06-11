@@ -69,8 +69,6 @@ def test_business_state_validation(session, test_status, legal_type, business_st
     [
         ('SUCCESS', -365, -30, None, None),  # Founding 1 year ago, liquidation 30 days ago
         ('SUCCESS', -365, 0, None, None),    # Founding 1 year ago, liquidation today
-        ('FAIL_MISSING_DATE', -365, None, HTTPStatus.BAD_REQUEST,
-         'Date of commencement of liquidation must be a valid date.'),
         ('FAIL_DATE_BEFORE_FOUNDING', -365, -400, HTTPStatus.BAD_REQUEST,
          'Date of commencement of liquidation must be later than the business founding date.'),
         ('FAIL_DATE_SAME_AS_FOUNDING', -365, -365, HTTPStatus.BAD_REQUEST,
@@ -81,7 +79,7 @@ def test_liquidation_date_validation(session, test_status, founding_date_offset,
     """Assert that liquidation date validation works correctly."""
     # Setup founding date
     founding_date = datetime.utcnow() + timedelta(days=founding_date_offset)
-    
+
     business = factory_business(
         identifier='BC1234567',
         entity_type='BC',
@@ -93,11 +91,8 @@ def test_liquidation_date_validation(session, test_status, founding_date_offset,
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
 
-    if liquidation_date_offset is not None:
-        liquidation_date = datetime.utcnow() + timedelta(days=liquidation_date_offset)
-        filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = liquidation_date.strftime('%Y-%m-%d')
-    else:
-        del filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation']
+    liquidation_date = datetime.utcnow() + timedelta(days=liquidation_date_offset)
+    filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = liquidation_date.strftime('%Y-%m-%d')
 
     # Test
     err = validate(business, filing)
@@ -154,16 +149,14 @@ def test_parties_validation(session, test_status, has_parties, has_liquidator, e
 
 
 @pytest.mark.parametrize(
-    'test_status, has_liquidation_office, office_region, office_country, expected_code, expected_msg',
+    'test_status, office_region, office_country, expected_code, expected_msg',
     [
-        ('SUCCESS', True, 'BC', 'Canada', None, None),
-        ('FAIL_NO_OFFICE', False, None, None, HTTPStatus.BAD_REQUEST, 'Liquidation office is required.'),
-        ('FAIL_WRONG_REGION', True, 'AB', 'CA', HTTPStatus.BAD_REQUEST, "Address Region must be 'BC'."),
-        ('FAIL_WRONG_COUNTRY', True, 'BC', 'US', HTTPStatus.BAD_REQUEST, "Address Country must be 'CA'."),
+        ('SUCCESS', 'BC', 'CA', None, None),
+        ('FAIL_WRONG_REGION', 'AB', 'CA', HTTPStatus.BAD_REQUEST, "Address Region must be 'BC'."),
+        ('FAIL_WRONG_COUNTRY', 'BC', 'US', HTTPStatus.BAD_REQUEST, "Address Country must be 'CA'."),
     ]
 )
-def test_office_validation(session, test_status, has_liquidation_office, office_region, office_country, 
-                          expected_code, expected_msg):
+def test_office_validation(session, test_status, office_region, office_country, expected_code, expected_msg):
     """Assert that office validation works correctly."""
     # Setup
     business = factory_business(
@@ -181,15 +174,12 @@ def test_office_validation(session, test_status, has_liquidation_office, office_
     future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
     filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
-    if not has_liquidation_office:
-        del filing['filing']['intentToLiquidate']['offices']['liquidationOffice']
-    else:
-        if office_region:
-            filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['mailingAddress']['addressRegion'] = office_region
-            filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['deliveryAddress']['addressRegion'] = office_region
-        if office_country:
-            filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['mailingAddress']['addressCountry'] = office_country
-            filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['deliveryAddress']['addressCountry'] = office_country
+    if office_region:
+        filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['mailingAddress']['addressRegion'] = office_region
+        filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['deliveryAddress']['addressRegion'] = office_region
+    if office_country:
+        filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['mailingAddress']['addressCountry'] = office_country
+        filing['filing']['intentToLiquidate']['offices']['liquidationOffice']['deliveryAddress']['addressCountry'] = office_country
 
     # Test
     err = validate(business, filing)

@@ -20,6 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.utils import get_date
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .common_validations import validate_court_order
 
@@ -73,15 +74,10 @@ def validate_liquidation_date(filing_json: Dict, business: Business = None) -> O
     liquidation_date_path = '/filing/intentToLiquidate/dateOfCommencementOfLiquidation'
 
     liquidation_date = get_date(filing_json, liquidation_date_path)
-    if not liquidation_date:
-        msg.append({'error': babel('Date of commencement of liquidation must be a valid date.'),
-                    'path': liquidation_date_path})
-        return msg
-
     # Validate that liquidation date is later than founding date
     if business and business.founding_date:
-        founding_date = business.founding_date.date()
-        if liquidation_date <= founding_date:
+        founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+        if liquidation_date <= founding_date_leg:
             msg.append({'error': babel('Date of commencement of liquidation must be later than the business founding date.'),
                         'path': liquidation_date_path})
 
@@ -121,10 +117,6 @@ def validate_offices(filing_json: Dict) -> Optional[list]:
 
     offices = filing_json.get('filing', {}).get('intentToLiquidate', {}).get('offices', {})
     liquidation_office = offices.get('liquidationOffice')
-
-    if not liquidation_office:
-        msg.append({'error': babel('Liquidation office is required.'), 'path': f'{offices_path}/liquidationOffice'})
-        return msg
 
     # Validate liquidation office addresses
     for address_type in ['mailingAddress', 'deliveryAddress']:
