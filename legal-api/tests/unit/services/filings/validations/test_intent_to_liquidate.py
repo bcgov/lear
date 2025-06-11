@@ -158,8 +158,8 @@ def test_parties_validation(session, test_status, has_parties, has_liquidator, e
     [
         ('SUCCESS', True, 'BC', 'Canada', None, None),
         ('FAIL_NO_OFFICE', False, None, None, HTTPStatus.BAD_REQUEST, 'Liquidation office is required.'),
-        ('FAIL_WRONG_REGION', True, 'AB', 'Canada', HTTPStatus.BAD_REQUEST, "Address Region must be 'BC'."),
-        ('FAIL_WRONG_COUNTRY', True, 'BC', 'United States', HTTPStatus.BAD_REQUEST, "Address Country must be 'CA'."),
+        ('FAIL_WRONG_REGION', True, 'AB', 'CA', HTTPStatus.BAD_REQUEST, "Address Region must be 'BC'."),
+        ('FAIL_WRONG_COUNTRY', True, 'BC', 'US', HTTPStatus.BAD_REQUEST, "Address Country must be 'CA'."),
     ]
 )
 def test_office_validation(session, test_status, has_liquidation_office, office_region, office_country, 

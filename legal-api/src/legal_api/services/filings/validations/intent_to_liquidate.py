@@ -80,7 +80,7 @@ def validate_liquidation_date(filing_json: Dict, business: Business = None) -> O
 
     # Validate that liquidation date is later than founding date
     if business and business.founding_date:
-        founding_date = business.founding_date.date() if hasattr(business.founding_date, 'date') else business.founding_date
+        founding_date = business.founding_date.date()
         if liquidation_date <= founding_date:
             msg.append({'error': babel('Date of commencement of liquidation must be later than the business founding date.'),
                         'path': liquidation_date_path})
