@@ -85,8 +85,9 @@ class AuthService:
         # Create an account:business affiliation
         affiliate_data = {
             'businessIdentifier': business_registration,
-            'passCode': pass_code
         }
+        if pass_code:
+            affiliate_data['passCode'] = pass_code
         if details:
             affiliate_data['entityDetails'] = details
         affiliate = requests.post(
