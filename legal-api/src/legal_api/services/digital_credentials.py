@@ -80,6 +80,9 @@ class DigitalCredentialsService:
             # credential definition are stored in Traction tenant.
             # These calls also include a ledger lookup to see if the schema
             # and credential definition are published.
+            # As these are the first API calls over to Traction, the Token that subsequent
+            # calls will use is fetched upon the first authentication check.
+            # That is done by the decorator `requires_traction_auth`.
             ###
 
             # Look for a schema first, and copy it into the Traction tenant if it's not there
