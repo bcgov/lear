@@ -42,7 +42,7 @@ def setup_permissions(session):
     session.add(role_permission)
     session.commit()
 
-def test_permissions_endpoint_with_unknown_role(client, jwt, setup_permissions):
+def test_get_permissions_with_unknown_role(client, jwt, setup_permissions):
     """Should return empty authorizedPermissions for an unknown role."""
     rv = client.get(
         '/api/v2/permissions',
@@ -52,7 +52,7 @@ def test_permissions_endpoint_with_unknown_role(client, jwt, setup_permissions):
     assert rv.json['authorizedPermissions'] == []
     assert 'message' in rv.json     
 
-def test_permissions_endpoint_with_staff_role(client, jwt, setup_permissions):
+def test_get_permissions_with_staff_role(client, jwt, setup_permissions):
     """Should return newly added permission in the authorizedPermissions for a staff user."""
     rv = client.get(
         '/api/v2/permissions',
@@ -61,7 +61,7 @@ def test_permissions_endpoint_with_staff_role(client, jwt, setup_permissions):
     assert rv.status_code == HTTPStatus.OK
     assert 'STAFF_ONLY_PERMISSION' in rv.json['authorizedPermissions']
 
-def test_permissions_endpoint_with_public_user_role(client, jwt, setup_permissions):
+def test_get_permissions_with_public_user_role(client, jwt, setup_permissions):
     """Should not return newly added permission in the authorizedPermissions for a public user."""
     rv = client.get(
         '/api/v2/permissions',
