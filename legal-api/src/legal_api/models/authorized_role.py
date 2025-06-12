@@ -39,11 +39,3 @@ class AuthorizedRole(db.Model):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
-
-    @classmethod
-    def get_authorized_permissions_by_role_name(cls, role_name):
-        """Return a list of authorized permissions for a given role."""
-        role = cls.query.filter_by(role_name=role_name).first()
-        if not role:
-            return []
-        return [p.permission.permission_name for p in role.permissions]

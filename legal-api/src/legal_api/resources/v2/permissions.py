@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models.authorized_role import AuthorizedRole
+from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services.authz import get_authorized_user_role
 from legal_api.utils.auth import jwt
 
@@ -33,5 +33,5 @@ def get_permissions():
     authorized_role = get_authorized_user_role()
     if not authorized_role:
         return jsonify({'message': 'No authorized role found.', 'authorizedPermissions': []}), HTTPStatus.OK
-    authorized_permissions = AuthorizedRole.get_authorized_permissions_by_role_name(authorized_role)
+    authorized_permissions = AuthorizedRolePermission.get_authorized_permissions_by_role_name(authorized_role)
     return jsonify({'authorizedPermissions': authorized_permissions}), HTTPStatus.OK

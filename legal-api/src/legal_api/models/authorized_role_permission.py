@@ -15,6 +15,8 @@
 
 from sqlalchemy import func
 
+from legal_api.models import AuthorizedRole
+
 from .db import db
 
 
@@ -37,3 +39,11 @@ class AuthorizedRolePermission(db.Model):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
+
+    @classmethod
+    def get_authorized_permissions_by_role_name(cls, role_name):
+        """Return a list of authorized permissions for a given role."""
+        role = AuthorizedRole.query.filter_by(role_name=role_name).first()
+        if not role:
+            return []
+        return [arp.permission.permission_name for arp in cls.query.filter_by(role_id=role.id).all() if arp.permission]

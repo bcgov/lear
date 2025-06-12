@@ -143,7 +143,7 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     return False
 
 
-def get_authorized_user_role(jwt=None) -> str:
+def get_authorized_user_role() -> str:
     """Return the first matching authorized role from the JWT, based on priority."""
     role_priority = [
         STAFF_ROLE,
