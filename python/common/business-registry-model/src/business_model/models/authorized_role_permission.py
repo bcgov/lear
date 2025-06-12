@@ -41,8 +41,8 @@ class AuthorizedRolePermission(db.Model):
     @classmethod
     def get_authorized_permissions_by_role_name(cls, role_name):
         """Return a list of authorized permissions for a given role."""
-        from .permission import Permission  # pylint: disable=import-outside-toplevel
         from .authorized_role import AuthorizedRole  # pylint: disable=import-outside-toplevel
+        from .permission import Permission  # pylint: disable=import-outside-toplevel
 
         authorized_permissions = (
             db.session.query(Permission)
