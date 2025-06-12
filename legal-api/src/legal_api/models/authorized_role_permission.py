@@ -15,8 +15,6 @@
 
 from sqlalchemy import func
 
-from legal_api.models import AuthorizedRole
-
 from .db import db
 
 
@@ -43,7 +41,14 @@ class AuthorizedRolePermission(db.Model):
     @classmethod
     def get_authorized_permissions_by_role_name(cls, role_name):
         """Return a list of authorized permissions for a given role."""
-        role = AuthorizedRole.query.filter_by(role_name=role_name).first()
-        if not role:
-            return []
-        return [arp.permission.permission_name for arp in cls.query.filter_by(role_id=role.id).all() if arp.permission]
+        from .permission import Permission  # pylint: disable=import-outside-toplevel
+        from .authorized_role import AuthorizedRole  # pylint: disable=import-outside-toplevel
+
+        authorized_permissions = (
+            db.session.query(Permission)
+            .join(cls, cls.permission_id == Permission.id)
+            .join(AuthorizedRole, AuthorizedRole.id == cls.role_id)
+            .filter(AuthorizedRole.role_name == role_name)
+            .all()
+        )
+        return [ap.permission_name for ap in authorized_permissions]

@@ -68,4 +68,4 @@ def test_get_permissions_with_public_user_role(client, jwt, setup_permissions):
         headers=create_header(jwt, [PUBLIC_USER], 'user')
     )
     assert rv.status_code == HTTPStatus.OK
-    assert 'STAFF_ONLY_PERMISSION' not in rv.json['authorizedPermissions']    
+    assert 'STAFF_ONLY_PERMISSION' not in rv.json['authorizedPermissions']

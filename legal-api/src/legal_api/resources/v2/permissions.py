@@ -14,20 +14,27 @@
 """Retrieve permissions for a user role."""
 from http import HTTPStatus
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, g, jsonify
 from flask_cors import cross_origin
 
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-from legal_api.services.authz import get_authorized_user_role
+from legal_api.services.authz import cache, get_authorized_user_role
 from legal_api.utils.auth import jwt
 
 
 bp = Blueprint('PERMISSIONS2', __name__, url_prefix='/api/v2/permissions')
 
 
+def get_permissions_cache_key():
+    """Return a cache key for the permissions endpoint based on the user's JWT."""
+    token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
+    return f"permissions:{token_info.get('sub', '')}:{token_info.get('realm_access', {}).get('roles', [])}"
+
+
 @bp.route('', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_auth
+@cache.cached(timeout=600, key_prefix=get_permissions_cache_key)
 def get_permissions():
     """Return a list of authorized permissions for the user."""
     authorized_role = get_authorized_user_role()
