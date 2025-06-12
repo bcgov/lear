@@ -25,6 +25,7 @@ from .meta import bp as meta_bp
 from .mras import bp as mras_bp
 from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
+from .permissions import bp as permissions_bp
 from .request_tracker import bp as request_tracker_bp
 
 
@@ -52,6 +53,7 @@ class V2Endpoint:
         self.app.register_blueprint(request_tracker_bp)
         self.app.register_blueprint(internal_bp)
         self.app.register_blueprint(mras_bp)
+        self.app.register_blueprint(permissions_bp)
 
 
 v2_endpoint = V2Endpoint()
