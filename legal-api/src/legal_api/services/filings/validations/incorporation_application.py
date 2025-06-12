@@ -90,12 +90,6 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         if err:
             msg.extend(err)
 
-    if not incorporation_json['filing']['incorporationApplication']['offices'].get('recordsOffice', {}):
-        msg.append({
-            'error': 'recordsOffice is required',
-            'path': '/filing/incorporationApplication/offices/recordsOffice'
-        })
-
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
@@ -113,6 +107,14 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
         else:
             msg.append({'error': f'Invalid office {item}. Only registeredOffice and recordsOffice are allowed.',
                         'path': f'/filing/{filing_type}/offices'})
+
+        legal_type_path = f'/filing/{filing_type}/nameRequest/legalType'
+        legal_type = get_str(filing_json, legal_type_path)
+        if legal_type != Business.LegalTypes.COOP.value \
+           and 'recordsOffice' not in addresses.keys():
+            msg.append({
+                'error': 'recordsOffice is required',
+                'path': f'/filing/{filing_type}/offices'})
 
     return msg
 

@@ -32,7 +32,6 @@ from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
-    ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CONTINUATION_IN,
@@ -75,6 +74,7 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
+from tests.unit import ANNUAL_REPORT_SAMPLE as ANNUAL_REPORT
 
 
 @pytest.mark.parametrize(

@@ -30,7 +30,6 @@ from minio.error import S3Error
 from reportlab.lib.pagesizes import letter
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
-    ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CORRECTION_AR,
@@ -59,6 +58,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_filing,
     factory_party_role
 )
+from tests.unit import ANNUAL_REPORT_SAMPLE as ANNUAL_REPORT
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
 

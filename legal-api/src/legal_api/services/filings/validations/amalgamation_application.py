@@ -82,11 +82,6 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
         if err:
             msg.extend(err)
 
-    if not amalgamation_json['filing']['amalgamationApplication']['offices'].get('recordsOffice', {}):
-        msg.append({
-            'error': 'recordsOffice is required',
-            'path': '/filing/amalgamationApplication/offices/recordsOffice'})
-
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
