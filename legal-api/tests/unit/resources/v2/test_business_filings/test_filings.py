@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_OFFICERS,
     CONTINUATION_IN,
     CONTINUATION_IN_FILING_TEMPLATE,
     CORRECTION_AR,
@@ -1858,3 +1859,48 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
     assert rv_draft.json['filing']['header']['certifiedBy'] == 'test123'
 
 
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier',
+    [
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('CP', Business.LegalTypes.COOP.value, 'CP1234567')
+    ]
+)
+def test_coo(session, requests_mock, client, jwt, test_name, legal_type, identifier):
+    """Assert Change of Officers is submitted correctly for entity types."""
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfOfficers'
+    coa['filing']['changeOfOfficers'] = CHANGE_OF_OFFICERS
+    # sample data uses 'canada' as address, must change to 2 character iso_2 value
+    coa['filing']['changeOfOfficers']['relationships'][0]['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfOfficers']['relationships'][0]['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfOfficers']['relationships'][1]['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfOfficers']['relationships'][1]['mailingAddress']['addressCountry'] = 'CA'
+
+    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    factory_business_mailing_address(b)
+    coa['filing']['business']['identifier'] = identifier
+
+    requests_mock.post(
+        current_app.config.get('PAYMENT_SVC_URL'),
+        json={
+                'id': 21322,
+                'statusCode': 'COMPLETED',
+                'isPaymentActionRequired': False
+            },
+            status_code=HTTPStatus.CREATED
+    )
+    rv = client.post(
+        f'/api/v2/businesses/{identifier}/filings',
+        json=coa,
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+
+    assert rv.status_code == HTTPStatus.CREATED

@@ -272,6 +272,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CP': 'OTCON',
             }
         },
+        'changeOfOfficers': {
+            'name': 'changeOfOfficers',
+            'title': 'Change of Officers Filing',
+            'codes': {
+                'CP': 'BCCOO',
+                'BEN': 'BCCOO',
+                'BC': 'BCCOO',
+                'ULC': 'BCCOO',
+                'CC': 'BCCOO',
+                'C': 'BCCOO',
+                'CBEN': 'BCCOO',
+                'CUL': 'BCCOO',
+                'CCC': 'BCCOO'
+            }
+        },
         'changeOfRegistration': {
             'name': 'changeOfRegistration',
             'title': 'Change of Registration',
