@@ -1071,17 +1071,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     @staticmethod
     def _has_party_name_change(prev_party_json, current_party_json):
         changed = False
-        middle_name = current_party_json['officer'].get('middleName', current_party_json['officer'].
-                                                        get('middleInitial', ''))
-        if current_party_json.get('officer').get('partyType') == 'person':
-            if prev_party_json['officer'].get('firstName').upper() != current_party_json['officer'].get('firstName').\
-                    upper() or prev_party_json['officer'].get('middleName', '').upper() != \
-                    middle_name.upper() or prev_party_json['officer'].get('lastName').upper() != \
-                    current_party_json['officer'].get('lastName').upper():
+        officer = current_party_json.get('officer')
+        prev_officer = prev_party_json.get('officer')
+
+        if officer.get('partyType') != prev_officer.get('partyType'):
+            # This is not a common scenario, adding it for migrated data
+            changed = True
+        elif officer.get('partyType') == 'person':
+            middle_name = officer.get('middleName', officer.get('middleInitial', ''))
+            if prev_officer.get('firstName').upper() != officer.get('firstName').upper() or \
+                    prev_officer.get('middleName', '').upper() != middle_name.upper() or \
+                    prev_officer.get('lastName').upper() != officer.get('lastName').upper():
                 changed = True
-        elif current_party_json.get('officer').get('partyType') == 'organization':
-            if prev_party_json['officer'].get('organizationName').upper() != \
-                    current_party_json['officer'].get('organizationName').upper():
+        elif officer.get('partyType') == 'organization':
+            if prev_officer.get('organizationName').upper() != officer.get('organizationName').upper():
                 changed = True
         return changed
 
