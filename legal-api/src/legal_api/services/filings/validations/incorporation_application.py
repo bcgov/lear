@@ -83,12 +83,13 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     msg.extend(validate_ia_court_order(incorporation_json))
 
-    contact_point_path = '/filing/incorporationApplication/contactPoint'
-    contact_point_dict = incorporation_json['filing']['incorporationApplication'].get('contactPoint', {})
-    if contact_point_dict.get('phone'):
-        err = validate_phone_number(contact_point_dict, contact_point_path)
-        if err:
-            msg.extend(err)
+    if legal_type in Business.CORPS:
+        contact_point_path = '/filing/incorporationApplication/contactPoint'
+        contact_point_dict = incorporation_json['filing']['incorporationApplication'].get('contactPoint', {})
+        if contact_point_dict.get('phone'):
+            err = validate_phone_number(contact_point_dict, contact_point_path)
+            if err:
+                msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -110,7 +111,7 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
 
         legal_type_path = f'/filing/{filing_type}/nameRequest/legalType'
         legal_type = get_str(filing_json, legal_type_path)
-        if legal_type != Business.LegalTypes.COOP.value \
+        if legal_type in Business.CORPS \
            and 'recordsOffice' not in addresses.keys():
             msg.append({
                 'error': 'recordsOffice is required',

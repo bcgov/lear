@@ -47,12 +47,14 @@ def validate(business: Business, annual_report: Dict) -> Error:
     if err:
         return err
 
-    if not annual_report['filing']['annualReport'].get('offices', {}).get('recordsOffice', {}):
-        return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': 'recordsOffice is required',
-                       'path': '/filing/annualReport/offices/recordsOffice'}])
+    legal_type = annual_report['filing']['business'].get('legalType', '')
+    if legal_type in Business.CORPS:
+        if not annual_report['filing']['annualReport'].get('offices', {}).get('recordsOffice', {}):
+            return Error(HTTPStatus.BAD_REQUEST,
+                         [{'error': 'recordsOffice is required',
+                           'path': '/filing/annualReport/offices/recordsOffice'}])
 
-    err = validate_directors_addresses(annual_report)
+        err = validate_directors_addresses(annual_report)
 
     if err:
         return err

@@ -76,12 +76,13 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
 
         msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
 
-        contact_point_path = '/filing/continuationIn/contactPoint'
-        contact_point_dict = filing_json['filing']['continuationIn'].get('contactPoint', {})
-        if contact_point_dict.get('phone'):
-            err = validate_phone_number(contact_point_dict, contact_point_path)
-            if err:
-                msg.extend(err)
+        if legal_type in Business.CORPS:
+            contact_point_path = '/filing/continuationIn/contactPoint'
+            contact_point_dict = filing_json['filing']['continuationIn'].get('contactPoint', {})
+            if contact_point_dict.get('phone'):
+                err = validate_phone_number(contact_point_dict, contact_point_path)
+                if err:
+                    msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -167,7 +168,10 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str) 
     msg = []
     authorization_path = f'/filing/{filing_type}/authorization'
     file_list = filing_json['filing'][filing_type]['authorization']['files']
-    if len(file_list) > 4:  # max 5 files
+
+    legal_type_path = '/filing/continuationIn/nameRequest/legalType'
+    legal_type = get_str(filing_json, legal_type_path)
+    if legal_type in Business.CORPS and len(file_list) > 4:  # max 5 files
         msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
         return msg
 
