@@ -132,7 +132,7 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
                 elif k == Filing.FILINGS['changeOfName'].get('name'):
                     err = con_validate(business, filing_json)
-                
+
                 elif k == Filing.FILINGS['changeOfOfficers'].get('name'):
                     err = coo_validate(business, filing_json)
 
