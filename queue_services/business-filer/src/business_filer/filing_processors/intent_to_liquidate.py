@@ -15,8 +15,8 @@
 from contextlib import suppress
 
 import dpath
-from flask import current_app
 from business_model.models import Business, Comment, Filing
+from flask import current_app
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
