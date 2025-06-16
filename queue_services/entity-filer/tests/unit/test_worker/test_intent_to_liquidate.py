@@ -41,7 +41,7 @@ from tests.unit import create_business, create_filing
 async def test_intent_to_liquidate_filing_process(app, session, mocker, test_name, legal_type):
     """Assert that the intent to liquidate object is correctly populated to model objects."""
     # Setup
-    identifier = f'{legal_type}1234567'
+    identifier = 'BC1234567'
     business = create_business(identifier, legal_type=legal_type)
     business.in_liquidation = False
     business.save()

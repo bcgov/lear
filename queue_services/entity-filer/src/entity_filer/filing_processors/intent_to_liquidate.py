@@ -40,7 +40,7 @@ def process(business: Business,
     filing_meta.intent_to_liquidate = {
         **filing_meta.intent_to_liquidate,
         'dateOfCommencementOfLiquidation': liquidation_date,
-        'liquidationOfficer': intent_to_liquidate.get('parties').get('officer'),
+        'liquidationOfficer': intent_to_liquidate.get('parties')[0].get('officer'),
         'liquidationOffice': intent_to_liquidate.get('offices').get('liquidationOffice')
     }
 
