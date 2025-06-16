@@ -15,6 +15,7 @@
 
 import copy
 import random
+from datetime import datetime, timedelta
 
 import pytest
 from legal_api.models import Business, Filing
@@ -25,15 +26,19 @@ from tests.unit import create_business, create_filing
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, has_court_order',
+    'test_name, legal_type',
     [
-        ('bc_company_with_court_order', 'BC', True),
-        ('bc_company_no_court_order', 'BC', False),
-        ('ben_company_with_court_order', 'BEN', True),
-        ('ben_company_no_court_order', 'BEN', False),
+        ('bc_company', 'BC'),
+        ('c_company', 'C'),
+        ('ben_company', 'BEN'),
+        ('cben_company', 'CBEN'),
+        ('ulc_company', 'ULC'),
+        ('cul_company', 'CUL'),
+        ('cc_company', 'CC'),
+        ('ccc_company', 'CCC'),
     ]
 )
-async def test_intent_to_liquidate_filing_process(app, session, test_name, legal_type, has_court_order):
+async def test_intent_to_liquidate_filing_process(app, session, mocker, test_name, legal_type):
     """Assert that the intent to liquidate object is correctly populated to model objects."""
     # Setup
     identifier = f'{legal_type}1234567'
@@ -46,10 +51,21 @@ async def test_intent_to_liquidate_filing_process(app, session, test_name, legal
     filing_json['filing']['header']['name'] = 'intentToLiquidate'
     filing_json['filing']['business']['identifier'] = identifier
     filing_json['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing_json['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = create_filing(payment_id, filing_json, business_id=business.id)
     filing_msg = {'filing': {'id': filing.id}}
+
+    # mock out the email sender and event publishing
+    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
+    mocker.patch('entity_filer.worker.publish_event', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
 
     # Test
     await process_filing(filing_msg, app)
@@ -64,11 +80,11 @@ async def test_intent_to_liquidate_filing_process(app, session, test_name, legal
     
     # Check filing metadata
     filing_meta = filing.meta_data.get('intentToLiquidate', {})
-    assert filing_meta['dateOfCommencementOfLiquidation'] == '2025-05-15'
+    assert filing_meta['dateOfCommencementOfLiquidation'] == future_date
     assert filing_meta['liquidationOfficer'] is not None
     assert filing_meta['liquidationOffice'] is not None
     
     # Check comment was added
     comment = filing.comments[0]
-    assert 'Liquidation is scheduled to commence on 2025-05-15' in comment.comment
+    assert f'Liquidation is scheduled to commence on {future_date}' in comment.comment
     assert comment.staff_id == filing.submitter_id
