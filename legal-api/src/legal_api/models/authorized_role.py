@@ -14,27 +14,16 @@
 """This module holds data for authorized roles."""
 from sqlalchemy import func
 
-from legal_api.utils.base import BaseEnum
-
 from .db import db
 
 
 class AuthorizedRole(db.Model):
     """This class manages all of the authorized roles."""
 
-    class RoleType(BaseEnum):
-        """Render an Enum of the user role types."""
-
-        CONTACT_CENTRE = 'contact_centre_staff'
-        MAXIMUS = 'maximus_staff'
-        PUBLIC = 'public_user'
-        SBC = 'sbc_staff'
-        STAFF = 'staff'
-
     __tablename__ = 'authorized_roles'
 
     id = db.Column(db.Integer, primary_key=True)
-    role_name = db.Column('role_name', db.Enum(RoleType), nullable=False, unique=True, default=RoleType.PUBLIC)
+    role_name = db.Column('role_name', db.String(50), nullable=False, unique=True, default='public_user')
     created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
     last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)

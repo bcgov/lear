@@ -24,7 +24,7 @@ from business_model.models import AuthorizedRole, AuthorizedRolePermission, Perm
 @pytest.mark.skip()
 def test_authorized_role_permission_save(session):
     """Assert that an AuthorizedRolePermission saves correctly."""
-    role = AuthorizedRole(role_name=AuthorizedRole.RoleType.STAFF)
+    role = AuthorizedRole(role_name='test_staff_role')
     permission = Permission(permission_name='TEST_PERMISSION_AUTH')
     role.save()
     permission.save()
@@ -39,3 +39,28 @@ def test_authorized_role_permission_save(session):
     # Check relationship from Permission to AuthorizedRole
     assert role in [r.role for r in permission.authorized_roles]
 
+def test_get_authorized_permissions_by_role_name_empty(session):
+    """Assert that an empty list is returned when the role has no authorized permissions."""
+    role = AuthorizedRole(role_name='test_unauthorized_user')
+    session.add(role)
+    session.commit()
+
+    authorized_role_permissions = AuthorizedRolePermission.get_authorized_permissions_by_role_name('test_unauthorized_user')
+    assert authorized_role_permissions == []    
+
+def test_get_authorized_permissions_by_role_name(session):
+    """Assert that a list of authorized permissions are returned for a given role name."""
+    permission = Permission(permission_name='TEST_NEW_PERMISSION')
+    session.add(permission)
+    session.commit()
+
+    role = AuthorizedRole(role_name='test_staff_role')
+    session.add(role)
+    session.commit()
+
+    role_permission = AuthorizedRolePermission(role_id=role.id, permission_id=permission.id)
+    session.add(role_permission)
+    session.commit()
+
+    authorized_role_permissions = AuthorizedRolePermission.get_authorized_permissions_by_role_name('test_staff_role')
+    assert authorized_role_permissions == ['TEST_NEW_PERMISSION']

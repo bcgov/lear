@@ -37,3 +37,18 @@ class AuthorizedRolePermission(db.Model):
         """Save the object to the database immediately."""
         db.session.add(self)
         db.session.commit()
+
+    @classmethod
+    def get_authorized_permissions_by_role_name(cls, role_name):
+        """Return a list of authorized permissions for a given role."""
+        from .authorized_role import AuthorizedRole  # pylint: disable=import-outside-toplevel
+        from .permission import Permission  # pylint: disable=import-outside-toplevel
+
+        authorized_permissions = (
+            db.session.query(Permission)
+            .join(cls, cls.permission_id == Permission.id)
+            .join(AuthorizedRole, AuthorizedRole.id == cls.role_id)
+            .filter(AuthorizedRole.role_name == role_name)
+            .all()
+        )
+        return [ap.permission_name for ap in authorized_permissions]
