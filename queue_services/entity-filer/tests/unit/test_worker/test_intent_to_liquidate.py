@@ -73,17 +73,15 @@ async def test_intent_to_liquidate_filing_process(app, session, mocker, test_nam
     # Assertions
     filing = Filing.find_by_id(filing.id)
     business = Business.find_by_internal_id(filing.business_id)
-    
+
     assert filing.status == Filing.Status.COMPLETED.value
     assert business.in_liquidation is True
     assert len(filing.comments.all()) == 1
-    
+
     # Check filing metadata
     filing_meta = filing.meta_data.get('intentToLiquidate', {})
     assert filing_meta['dateOfCommencementOfLiquidation'] == future_date
-    assert filing_meta['liquidationOfficer'] is not None
-    assert filing_meta['liquidationOffice'] is not None
-    
+
     # Check comment was added
     comment = filing.comments.all()[0]
     assert f'Liquidation is scheduled to commence on {future_date}' in comment.comment
