@@ -28,23 +28,24 @@ def process(business: Business,
             filing_rec: Filing,
             filing_meta: FilingMeta):
     """Render the intent to liquidate filing unto the model objects."""
-    if not (intent_to_liquidate := filing.get('intentToLiquidate')):
-        current_app.logger.error('Could not find intentToLiquidate in: %s', filing)
-        raise QueueException(f'legal_filing:intentToLiquidate missing from {filing}')
+    if not (intent_to_liquidate := filing.get("intentToLiquidate")):
+        current_app.logger.error("Could not find intentToLiquidate in: %s", filing)
+        raise QueueException(f"legal_filing:intentToLiquidate missing from {filing}")
 
-    current_app.logger.debug('processing intentToLiquidate: %s', filing)
+    current_app.logger.debug("processing intentToLiquidate: %s", filing)
 
-    liquidation_date = intent_to_liquidate.get('dateOfCommencementOfLiquidation')
+    liquidation_date = intent_to_liquidate.get("dateOfCommencementOfLiquidation")
 
     filing_meta.intent_to_liquidate = {}
     filing_meta.intent_to_liquidate = {
-        **filing_meta.intent_to_liquidate
+        **filing_meta.intent_to_liquidate,
+        "dateOfCommencementOfLiquidation": liquidation_date
     }
 
     # Add comment about liquidation date
     filing_rec.comments.append(
             Comment(
-                comment=f'Liquidation is scheduled to commence on {liquidation_date}.',
+                comment=f"Liquidation is scheduled to commence on {liquidation_date}.",
                 staff_id=filing_rec.submitter_id
             )
         )
@@ -54,5 +55,5 @@ def process(business: Business,
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, '/intentToLiquidate/courtOrder')
+        court_order_json = dpath.util.get(filing, "/intentToLiquidate/courtOrder")
         filings.update_filing_court_order(filing_rec, court_order_json)

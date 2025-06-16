@@ -38,7 +38,8 @@ def process(business: Business,
 
     filing_meta.intent_to_liquidate = {}
     filing_meta.intent_to_liquidate = {
-        **filing_meta.intent_to_liquidate
+        **filing_meta.intent_to_liquidate,
+        'dateOfCommencementOfLiquidation': liquidation_date
     }
 
     # Add comment about liquidation date
