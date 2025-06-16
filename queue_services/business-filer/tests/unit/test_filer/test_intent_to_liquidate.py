@@ -21,7 +21,7 @@ import pytest
 from business_model.models import Business, Filing
 from registry_schemas.example_data import INTENT_TO_LIQUIDATE, FILING_TEMPLATE
 
-from business_filer.filing_processors import process_filing
+from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
 
 
