@@ -15,10 +15,10 @@
 from contextlib import suppress
 
 import dpath
-from business_filer.exceptions import QueueException
 from flask import current_app
 from business_model.models import Business, Comment, Filing
 
+from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import filings
 
