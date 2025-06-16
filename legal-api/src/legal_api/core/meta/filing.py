@@ -320,15 +320,15 @@ FILINGS: Final = {
         'title': 'Change of Officers Filing',
         'displayName': 'Officer Change',
         'codes': {
-            'CP': 'BCCOO',
-            'BEN': 'BCCOO',
-            'BC': 'BCCOO',
-            'ULC': 'BCCOO',
-            'CC': 'BCCOO',
-            'CBEN': 'BCCOO',
-            'C': 'BCCOO',
-            'CUL': 'BCCOO',
-            'CCC': 'BCCOO'
+            'CP': 'NOCOI',
+            'BEN': 'NOCOI',
+            'BC': 'NOCOI',
+            'ULC': 'NOCOI',
+            'CC': 'NOCOI',
+            'CBEN': 'NOCOI',
+            'C': 'NOCOI',
+            'CUL': 'NOCOI',
+            'CCC': 'NOCOI'
         }
     },
     'changeOfRegistration': {
