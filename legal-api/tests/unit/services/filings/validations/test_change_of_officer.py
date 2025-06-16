@@ -115,12 +115,7 @@ def test_validate_coo(session, test_name, address_type, country, expected_code, 
         'relationships': [relationship]
     }
 
-    # print(f['filing']['changeOfOfficers']['relationships'])
-
-    # assert False
-
     # perform test
-    # with freeze_time(now):
     err = validate(business, f)
     if err:
         print(test_name, err.msg)
