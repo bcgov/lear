@@ -60,14 +60,13 @@ def has_rights_or_restrictions_true_in_share_series(share_class) -> bool:
     return any(x.get('hasRightsOrRestrictions', False) for x in series)
 
 
-def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
+def validate_share_structure(incorporation_json, filing_type, legal_type) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing'][filing_type] \
         .get('shareStructure', {}).get('shareClasses', [])
     msg = []
     memoize_names = []
 
-    legal_type = incorporation_json['filing'][filing_type].get('nameRequest', {}).get('legalType')
     for index, item in enumerate(share_classes):
         shares_msg = validate_shares(item, memoize_names, filing_type, index, legal_type)
         if shares_msg:
