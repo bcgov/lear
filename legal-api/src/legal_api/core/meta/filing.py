@@ -724,14 +724,14 @@ FILINGS: Final = {
         'title': 'Transition',
         'displayName': 'Transition Application',
         'codes': {
-            'BC': 'TRANS',
-            'BEN': 'TRANS',
-            'ULC': 'TRANS',
-            'CC': 'TRANS',
-            'C': 'TRANS',
-            'CBEN': 'TRANS',
-            'CUL': 'TRANS',
-            'CCC': 'TRANS'
+            'BC': 'TRANP',
+            'BEN': 'TRANP',
+            'ULC': 'TRANP',
+            'CC': 'TRANP',
+            'C': 'TRANP',
+            'CBEN': 'TRANP',
+            'CUL': 'TRANP',
+            'CCC': 'TRANP'
         },
         'additional': [
             {
