@@ -1501,3 +1501,131 @@ def test_validate_incorporation_application_parties_delivery_address(mocker, app
         assert any(expected_msg in msg['error'] for msg in err.msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'legal_type, has_rights_or_restrictions, has_series, should_pass',
+    [
+        (Business.LegalTypes.BCOMP.value, False, True, False),
+        (Business.LegalTypes.BCOMP.value, False, False, True),
+        (Business.LegalTypes.BCOMP.value, True, True, True),
+        (Business.LegalTypes.BCOMP.value, True, False, True),
+
+        (Business.LegalTypes.BC_ULC_COMPANY.value, False, True, False),
+        (Business.LegalTypes.BC_ULC_COMPANY.value, False, False, True),
+        (Business.LegalTypes.BC_ULC_COMPANY.value, True, True, True),
+        (Business.LegalTypes.BC_ULC_COMPANY.value, True, False, True),
+
+        (Business.LegalTypes.BC_CCC.value, False, True, False),
+        (Business.LegalTypes.BC_CCC.value, False, False, True),
+        (Business.LegalTypes.BC_CCC.value, True, True, True),
+        (Business.LegalTypes.BC_CCC.value, True, False, True),
+
+        (Business.LegalTypes.COMP.value, False, True, False),
+        (Business.LegalTypes.COMP.value, False, False, True),
+        (Business.LegalTypes.COMP.value, True, True, True),
+        (Business.LegalTypes.COMP.value, True, False, True),
+    ]
+)
+def test_incorporation_application_share_class_series_validation(mocker, app, session, legal_type,
+                                                       has_rights_or_restrictions, has_series, should_pass):
+    """Test share class/series validation in incorporation application."""
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing'].pop('business')
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+
+    if 'shareStructure' in filing_json['filing'][incorporation_application_name]:
+        for share_class in filing_json['filing'][incorporation_application_name]['shareStructure']['shareClasses']:
+            share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+            if not has_rights_or_restrictions:
+                if not has_series:
+                    share_class.pop('series', None)
+
+    err = validate(None, filing_json)
+
+    if should_pass:
+        assert err is None
+    else:
+        assert err
+        assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
+
+
+@pytest.mark.parametrize(
+    'test_name, has_delivery_address, expected_code, expected_msg',
+    [
+        ('MISSING_DELIVERY_ADDRESS', False, HTTPStatus.BAD_REQUEST, 'deliveryAddress is required.'),
+        ('SUCCESS', True, None, None),
+    ]
+)
+def test_validate_incorporation_application_parties_delivery_address(mocker, app, session, test_name,
+                                                                     has_delivery_address, expected_code, expected_msg):
+    """Test parties delivery address validation in incorporation application."""
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing'].pop('business')
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+
+    if not has_delivery_address:
+        if 'deliveryAddress' in filing_json['filing'][incorporation_application_name]['parties'][0]:
+            del filing_json['filing'][incorporation_application_name]['parties'][0]['deliveryAddress']
+
+    err = validate(None, filing_json)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert any(expected_msg in msg['error'] for msg in err.msg)
+    else:
+        assert err is None
+
+@pytest.mark.parametrize('should_pass, phone_number, extension', [
+    (True, '1234567890', 12345),
+    (True, '1234567890', 1234),
+    (True, '1234567890', 123),
+    (True, '1234567890', 12),
+    (True, '1234567890', 1),
+    (False, '1234567890', 123456),
+    (False, '12345678901', 12345),
+    (True, '(123)456-7890', None),
+    (False, '(1234)456-7890', None),
+    (False, '(123)4567-7890', None),
+    (False, '(123)456-78901', None),
+    (True, '123-456-7890', None),
+    (False, '1234-456-7890', None),
+    (False, '123-4567-7890', None),
+    (False, '123-456-78901', None),
+    (True, '123.456.7890', None),
+    (False, '1234.456.7890', None),
+    (False, '123.4567.7890', None),
+    (False, '123.456.78901', None),
+    (True, '123 456 7890', None),
+    (False, '1234 456 7890', None),
+    (False, '123 4567 7890', None),
+    (False, '123 456 78901', None),
+    (True, None, None)
+])
+def test_ia_phone_number_validation(session, should_pass, phone_number, extension):
+    """Test validate phone number and / or extension if they are provided."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    if phone_number:
+        filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = phone_number
+    if extension:
+        filing_json['filing'][incorporation_application_name]['contactPoint']['extension'] = extension
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    if should_pass:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code

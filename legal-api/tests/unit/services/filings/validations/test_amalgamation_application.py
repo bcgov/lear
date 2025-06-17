@@ -1529,3 +1529,52 @@ def test_amalgamation_share_class_series_validation(mocker, app, session, jwt, a
     else:
         assert err
         assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
+
+@pytest.mark.parametrize('should_pass, phone_number, extension', [
+    (True, '1234567890', 12345),
+    (True, '1234567890', 1234),
+    (True, '1234567890', 123),
+    (True, '1234567890', 12),
+    (True, '1234567890', 1),
+    (False, '1234567890', 123456),
+    (False, '12345678901', 12345),
+    (True, '(123)456-7890', None),
+    (False, '(1234)456-7890', None),
+    (False, '(123)4567-7890', None),
+    (False, '(123)456-78901', None),
+    (True, '123-456-7890', None),
+    (False, '1234-456-7890', None),
+    (False, '123-4567-7890', None),
+    (False, '123-456-78901', None),
+    (True, '123.456.7890', None),
+    (False, '1234.456.7890', None),
+    (False, '123.4567.7890', None),
+    (False, '123.456.78901', None),
+    (True, '123 456 7890', None),
+    (False, '1234 456 7890', None),
+    (False, '123 4567 7890', None),
+    (False, '123 456 78901', None),
+    (True, None, None)
+])
+def test_amalgamation_phone_number_validation(mocker, app, session, jwt, should_pass, phone_number, extension):
+    """Test validate phone number and / or extension if they are provided."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+
+    if phone_number:
+        filing['filing']['amalgamationApplication']['contactPoint']['phone'] = phone_number
+    if extension:
+        filing['filing']['amalgamationApplication']['contactPoint']['extension'] = extension
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('BC')):
+        err = validate(None, filing)
+
+    if should_pass:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code

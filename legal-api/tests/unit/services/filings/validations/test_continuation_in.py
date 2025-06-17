@@ -955,3 +955,156 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
         assert any(expected_msg in msg['error'] for msg in err.msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'legal_type, has_rights_or_restrictions, has_series, should_pass',
+    [
+        (Business.LegalTypes.CONTINUE_IN.value, False, True, False),
+        (Business.LegalTypes.CONTINUE_IN.value, False, False, True),
+        (Business.LegalTypes.CONTINUE_IN.value, True, True, True),
+        (Business.LegalTypes.CONTINUE_IN.value, True, False, True),
+
+        (Business.LegalTypes.BCOMP_CONTINUE_IN.value, False, True, False),
+        (Business.LegalTypes.BCOMP_CONTINUE_IN.value, False, False, True),
+        (Business.LegalTypes.BCOMP_CONTINUE_IN.value, True, True, True),
+        (Business.LegalTypes.BCOMP_CONTINUE_IN.value, True, False, True),
+
+        (Business.LegalTypes.CCC_CONTINUE_IN.value, False, True, False),
+        (Business.LegalTypes.CCC_CONTINUE_IN.value, False, False, True),
+        (Business.LegalTypes.CCC_CONTINUE_IN.value, True, True, True),
+        (Business.LegalTypes.CCC_CONTINUE_IN.value, True, False, True),
+
+        (Business.LegalTypes.ULC_CONTINUE_IN.value, False, True, False),
+        (Business.LegalTypes.ULC_CONTINUE_IN.value, False, False, True),
+        (Business.LegalTypes.ULC_CONTINUE_IN.value, True, True, True),
+        (Business.LegalTypes.ULC_CONTINUE_IN.value, True, False, True),
+    ]
+)
+def test_continuation_in_share_class_series_validation(mocker, app, session, legal_type,
+                                                       has_rights_or_restrictions, has_series, should_pass):
+    """Test share class/series validation in continuation in application."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+
+    filing['filing']['continuationIn']['nameRequest'] = {}
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
+
+    if 'shareStructure' in filing['filing']['continuationIn']:
+        for share_class in filing['filing']['continuationIn']['shareStructure']['shareClasses']:
+            share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+            if not has_rights_or_restrictions:
+                if not has_series:
+                    share_class.pop('series', None)
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+                 return_value=[])
+
+    err = validate(None, filing)
+
+    if should_pass:
+        assert err is None
+    else:
+        assert err
+        assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
+
+
+@pytest.mark.parametrize(
+    'test_name, has_delivery_address, expected_code, expected_msg',
+    [
+        ('MISSING_DELIVERY_ADDRESS', False, HTTPStatus.BAD_REQUEST, 'deliveryAddress is required.'),
+        ('SUCCESS', True, None, None),
+    ]
+)
+def test_continuation_in_parties_delivery_address_validation(mocker, app, session, test_name, has_delivery_address,
+                                                             expected_code, expected_msg):
+    """Test parties delivery address validation in continuation in application."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+
+    filing['filing']['continuationIn']['nameRequest'] = {}
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'BC'
+
+
+    if not has_delivery_address:
+        if 'deliveryAddress' in filing['filing']['continuationIn']['parties'][0]:
+            del filing['filing']['continuationIn']['parties'][0]['deliveryAddress']
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+
+    err = validate(None, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert any(expected_msg in msg['error'] for msg in err.msg)
+    else:
+        assert err is None
+
+@pytest.mark.parametrize('should_pass, phone_number, extension', [
+    (True, '1234567890', 12345),
+    (True, '1234567890', 1234),
+    (True, '1234567890', 123),
+    (True, '1234567890', 12),
+    (True, '1234567890', 1),
+    (False, '1234567890', 123456),
+    (False, '12345678901', 12345),
+    (True, '(123)456-7890', None),
+    (False, '(1234)456-7890', None),
+    (False, '(123)4567-7890', None),
+    (False, '(123)456-78901', None),
+    (True, '123-456-7890', None),
+    (False, '1234-456-7890', None),
+    (False, '123-4567-7890', None),
+    (False, '123-456-78901', None),
+    (True, '123.456.7890', None),
+    (False, '1234.456.7890', None),
+    (False, '123.4567.7890', None),
+    (False, '123.456.78901', None),
+    (True, '123 456 7890', None),
+    (False, '1234 456 7890', None),
+    (False, '123 4567 7890', None),
+    (False, '123 456 78901', None),
+    (True, None, None)
+])
+def test_continuation_in_phone_number_validation(mocker, app, session, jwt, should_pass, phone_number, extension):
+    """Test validate phone number and / or extension if they are provided."""
+    legal_type = Business.LegalTypes.CONTINUE_IN.value
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
+
+    if phone_number:
+        filing['filing']['continuationIn']['contactPoint']['phone'] = phone_number
+    if extension:
+        filing['filing']['continuationIn']['contactPoint']['extension'] = extension
+
+    filing['filing']['continuationIn']['isApproved'] = True
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+                 return_value=[])
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        err = validate(None, filing)
+
+    if should_pass:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code    
