@@ -42,7 +42,8 @@ def format_business_data(data: dict) -> dict:
     last_ar_reminder_year = business_data['last_ar_reminder_year']
 
     # last_ar_reminder_year can be None if send_ar_ind is false or the business is in the 1st financial year
-    if business_data['send_ar_ind'] and last_ar_reminder_year is None:
+    if (business_data['send_ar_ind'] and 
+            (last_ar_reminder_year is None or (last_ar_year and last_ar_reminder_year < last_ar_year))):
         last_ar_reminder_year = last_ar_year
 
     formatted_business = {
