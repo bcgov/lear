@@ -53,14 +53,14 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
-    msg.extend(validate_continuation_in_authorization(filing_json, filing_type))
+    msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
 
     if get_bool(filing_json, '/filing/continuationIn/isApproved'):
-        msg.extend(validate_offices(filing_json, filing_type))
+        msg.extend(validate_offices(filing_json, legal_type, filing_type))
         msg.extend(validate_roles(filing_json, legal_type, filing_type))
-        msg.extend(validate_parties_names(filing_json, filing_type))
+        msg.extend(validate_parties_names(filing_json, filing_type, legal_type))
 
         if err := validate_parties_mailing_address(filing_json, legal_type, filing_type):
             msg.extend(err)
@@ -163,14 +163,12 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
     return msg
 
 
-def validate_continuation_in_authorization(filing_json: dict, filing_type: str) -> list:
+def validate_continuation_in_authorization(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate continuation in authorization."""
     msg = []
     authorization_path = f'/filing/{filing_type}/authorization'
     file_list = filing_json['filing'][filing_type]['authorization']['files']
 
-    legal_type_path = '/filing/continuationIn/nameRequest/legalType'
-    legal_type = get_str(filing_json, legal_type_path)
     if legal_type in Business.CORPS and len(file_list) > 4:  # max 5 files
         msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
         return msg

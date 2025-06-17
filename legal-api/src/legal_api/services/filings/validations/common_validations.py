@@ -210,7 +210,7 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     return None
 
 
-def validate_parties_names(filing_json: dict, filing_type: str) -> list:
+def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate the parties name for COLIN sync."""
     # FUTURE: This validation should be removed when COLIN sync back is no longer required.
     # This is required to work around first and middle name length mismatches between LEAR and COLIN.
@@ -220,12 +220,12 @@ def validate_parties_names(filing_json: dict, filing_type: str) -> list:
     party_path = f'/filing/{filing_type}/parties'
 
     for item in parties_array:
-        msg.extend(validate_party_name(item, party_path))
+        msg.extend(validate_party_name(item, party_path, legal_type))
 
     return msg
 
 
-def validate_party_name(party: dict, party_path: str) -> list:
+def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
     msg = []
 
@@ -238,7 +238,7 @@ def validate_party_name(party: dict, party_path: str) -> list:
         party_roles_str = ', '.join(party_roles)
 
         first_name = officer.get('firstName', None)
-        if not first_name:
+        if (legal_type in Business.CORPS) and (not first_name):
             msg.append({'error': 'firstName is required', 'path': f'{party_path}/firstName'})
         elif len(first_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'

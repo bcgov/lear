@@ -97,13 +97,13 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
     if filing_dict.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
     if filing_dict.get('filing', {}).get('correction', {}).get('offices', None):
-        msg.extend(validate_corp_offices(filing_dict, filing_type))
+        msg.extend(validate_corp_offices(filing_dict, legal_type, filing_type))
     if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
         err = validate_roles(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        msg.extend(validate_parties_names(filing_dict, filing_type))
+        msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
 
         err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:
@@ -140,7 +140,7 @@ def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg
         if err:
             msg.extend(err)
 
-        msg.extend(validate_parties_names(filing_dict, filing_type))
+        msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
 
         err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:

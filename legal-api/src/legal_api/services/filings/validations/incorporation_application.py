@@ -48,13 +48,13 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    msg.extend(validate_offices(incorporation_json))
+    msg.extend(validate_offices(incorporation_json, legal_type))
 
     err = validate_roles(incorporation_json, legal_type)
     if err:
         msg.extend(err)
 
-    msg.extend(validate_parties_names(incorporation_json, filing_type))
+    msg.extend(validate_parties_names(incorporation_json, filing_type, legal_type))
 
     err = validate_parties_mailing_address(incorporation_json, legal_type)
     if err:
@@ -96,7 +96,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     return None
 
 
-def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> list:
+def validate_offices(filing_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> list:
     """Validate the office addresses of the specified corp filing type."""
     offices_array = filing_json['filing'][filing_type]['offices']
     addresses = offices_array
@@ -109,8 +109,6 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
             msg.append({'error': f'Invalid office {item}. Only registeredOffice and recordsOffice are allowed.',
                         'path': f'/filing/{filing_type}/offices'})
 
-        legal_type_path = f'/filing/{filing_type}/nameRequest/legalType'
-        legal_type = get_str(filing_json, legal_type_path)
         if legal_type in Business.CORPS \
            and 'recordsOffice' not in addresses.keys():
             msg.append({
