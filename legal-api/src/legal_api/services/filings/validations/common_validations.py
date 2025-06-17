@@ -67,8 +67,9 @@ def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylin
     msg = []
     memoize_names = []
 
+    legal_type = incorporation_json['filing'][filing_type].get('nameRequest', {}).get('legalType')
     for index, item in enumerate(share_classes):
-        shares_msg = validate_shares(item, memoize_names, filing_type, index)
+        shares_msg = validate_shares(item, memoize_names, filing_type, index, legal_type)
         if shares_msg:
             msg.extend(shares_msg)
 
@@ -106,7 +107,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
     return msg
 
 
-def validate_shares(item, memoize_names, filing_type, index) -> Error:
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
     """Validate a wellformed share structure."""
     msg = []
     if item['name'] in memoize_names:
@@ -128,12 +129,15 @@ def validate_shares(item, memoize_names, filing_type, index) -> Error:
             err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
             msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
 
-    # Add validation for series when hasRightsOrRestrictions is false
-    if not item.get('hasRightsOrRestrictions', False) and 'series' in item:
-        err_path = '/filing/{0}/shareClasses/{1}/series/'.format(filing_type, index)
-        msg.append({'error': 'Share class %s cannot have series when hasRightsOrRestrictions is false' % item['name'],
-                    'path': err_path})
-        return msg
+    # Validate that corps type companies cannot have series in share classes when hasRightsOrRestrictions is false
+    if legal_type in Business.CORPS:
+        if not item.get('hasRightsOrRestrictions', False) and 'series' in item:
+            err_path = '/filing/{0}/shareClasses/{1}/series/'.format(filing_type, index)
+            msg.append({
+                'error': 'Share class %s cannot have series when hasRightsOrRestrictions is false' % item['name'],
+                'path': err_path
+            })
+            return msg
 
     series_msg = validate_series(item, memoize_names, filing_type, index)
     if series_msg:
