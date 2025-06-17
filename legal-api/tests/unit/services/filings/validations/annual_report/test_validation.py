@@ -18,10 +18,10 @@ from datetime import date, datetime
 import datedelta
 import pytest
 from freezegun import freeze_time
+from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
 from legal_api.services.filings.validations.annual_report import validate
-from tests.unit import ANNUAL_REPORT_SAMPLE
 
 
 # from tests.unit.models import factory_business, factory_business_mailing_address, factory_filing
@@ -38,7 +38,7 @@ def test_validate(session, test_name, now, ar_date, agm_date,
     business = Business(identifier=identifier, last_ledger_timestamp=founding_date)
     business.founding_date = datetime(founding_date.year, founding_date.month, founding_date.day)
 
-    ar = copy.deepcopy(ANNUAL_REPORT_SAMPLE)
+    ar = copy.deepcopy(ANNUAL_REPORT)
     ar['filing']['business']['identifier'] = identifier
     ar['filing']['annualReport']['annualReportDate'] = ar_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = agm_date.isoformat()

@@ -19,11 +19,10 @@ from http import HTTPStatus
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, FILING_HEADER
 
 from legal_api.models import Business
 from legal_api.services.filings import validate
-from tests.unit import ANNUAL_REPORT_SAMPLE as ANNUAL_REPORT
 
 from . import lists_are_equal
 
