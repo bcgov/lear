@@ -79,6 +79,10 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     COLIN_URL = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
     LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
+    # Temporary while there is inconsistency between OCP / GCP versions of 1pass env
+    if NAMEX_API_VERSION[-1] == '/':
+        # remove the slash
+        NAMEX_API_VERSION = NAMEX_API_VERSION[:-1]
     NAMEX_SVC_URL = f'{NAMEX_API_URL + NAMEX_API_VERSION}'
     PAYMENT_SVC_URL = f'{PAY_API_URL + PAY_API_VERSION}/payment-requests'
     AUTH_SVC_URL = f'{AUTH_API_URL + AUTH_API_VERSION}'
