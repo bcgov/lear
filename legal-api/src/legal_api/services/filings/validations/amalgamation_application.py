@@ -60,7 +60,7 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
 
     if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
         msg.extend(validate_offices(amalgamation_json, filing_type))
-        err = validate_share_structure(amalgamation_json, filing_type)
+        err = validate_share_structure(amalgamation_json, filing_type, legal_type)
         if err:
             msg.extend(err)
         err = validate_parties_delivery_address(amalgamation_json, legal_type, filing_type)

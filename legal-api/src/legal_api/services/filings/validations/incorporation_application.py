@@ -67,7 +67,9 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     if legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
                       Business.LegalTypes.COMP.value, Business.LegalTypes.BC_CCC.value]:
-        err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
+        err = validate_share_structure(incorporation_json,
+                                       coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value,
+                                       legal_type)
         if err:
             msg.extend(err)
 

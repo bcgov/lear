@@ -109,7 +109,7 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
         if err:
             msg.extend(err)
     if filing_dict.get('filing', {}).get('correction', {}).get('shareStructure', None):
-        err = validate_share_structure(filing_dict, filing_type)
+        err = validate_share_structure(filing_dict, filing_type, legal_type)
         if err:
             msg.extend(err)
 

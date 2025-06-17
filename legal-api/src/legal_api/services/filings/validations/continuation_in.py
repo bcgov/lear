@@ -67,7 +67,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         if err := validate_parties_delivery_address(filing_json, legal_type, filing_type):
             msg.extend(err)
 
-        if err := validate_share_structure(filing_json, filing_type):
+        if err := validate_share_structure(filing_json, filing_type, legal_type):
             msg.extend(err)
 
         if err := validate_incorporation_effective_date(filing_json):
