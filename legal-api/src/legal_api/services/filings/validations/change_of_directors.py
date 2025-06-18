@@ -65,6 +65,13 @@ def validate_directors_addresses(cod: Dict) -> List:
                 except LookupError:
                     msg.append({'error': babel('Address Country must resolve to a valid ISO-2 country.'),
                                 'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry'})
+            else:
+                legal_type = cod['filing']['business'].get('legalType', '')
+                if legal_type in Business.CORPS:
+                    msg.append({
+                        'error': f'missing {address_type}',
+                        'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}'
+                    })
     return msg
 
 

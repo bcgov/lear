@@ -26,6 +26,7 @@ from .common_validations import (
     validate_court_order,
     validate_name_request,
     validate_pdf,
+    validate_phone_number,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
 )
@@ -46,6 +47,12 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
 
     if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
         msg.append(err)
+
+    new_legal_type = filing['filing']['alteration'].get('business', {}).get('legalType', None)
+    err = validate_phone_number(filing, new_legal_type or business.legal_type, 'alteration')
+
+    if err:
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

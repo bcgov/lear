@@ -13,8 +13,9 @@
 # limitations under the License.
 """Common validations share through the different filings."""
 import io
+import re
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 
 import pycountry
 import PyPDF2
@@ -209,7 +210,7 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     return None
 
 
-def validate_parties_names(filing_json: dict, filing_type: str) -> list:
+def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate the parties name for COLIN sync."""
     # FUTURE: This validation should be removed when COLIN sync back is no longer required.
     # This is required to work around first and middle name length mismatches between LEAR and COLIN.
@@ -219,12 +220,12 @@ def validate_parties_names(filing_json: dict, filing_type: str) -> list:
     party_path = f'/filing/{filing_type}/parties'
 
     for item in parties_array:
-        msg.extend(validate_party_name(item, party_path))
+        msg.extend(validate_party_name(item, party_path, legal_type))
 
     return msg
 
 
-def validate_party_name(party: dict, party_path: str) -> list:
+def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
     msg = []
 
@@ -236,8 +237,10 @@ def validate_party_name(party: dict, party_path: str) -> list:
         party_roles = [x.get('roleType') for x in party['roles']]
         party_roles_str = ', '.join(party_roles)
 
-        first_name = officer['firstName']
-        if len(first_name) > custom_allowed_max_length:
+        first_name = officer.get('firstName', None)
+        if (legal_type in Business.CORPS) and (not first_name):
+            msg.append({'error': 'firstName is required', 'path': f'{party_path}/firstName'})
+        elif len(first_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})
 
@@ -339,5 +342,37 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
           is_region_for_us_required and
           not pycountry.subdivisions.get(code=f'{country_code}-{region}')):
         msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
+
+    return msg
+
+
+def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) -> list:
+    """Validate phone number."""
+    if legal_type not in Business.CORPS:
+        return []
+
+    contact_point_path = f'/filing/{filing_type}/contactPoint'
+    contact_point_dict = filing_json['filing'][filing_type].get('contactPoint', {})
+
+    msg = []
+    if phone_num := contact_point_dict.get('phone', None):
+        # if pure digits (max 10)
+        if phone_num.isdigit():
+            if len(phone_num) != 10:
+                msg.append({
+                    'error': 'Invalid phone number, maximum 10 digits in phone number format',
+                    'path': f'{contact_point_path}/phone'})
+        else:
+            # Check various phone formats
+            # (123) 456-7890 / 123-456-7890 / 123.456.7890 / 123 456 7890
+            phone_pattern = r'^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$'
+            if not re.match(phone_pattern, phone_num):
+                msg.append({
+                    'error': 'Invalid phone number, maximum 10 digits in phone number format',
+                    'path': f'{contact_point_path}/phone'})
+
+    if extension := contact_point_dict.get('extension'):
+        if len(str(extension)) > 5:
+            msg.append({'error': 'Invalid extension, maximum 5 digits', 'path': f'{contact_point_path}/extension'})
 
     return msg

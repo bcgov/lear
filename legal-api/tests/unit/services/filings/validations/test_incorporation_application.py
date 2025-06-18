@@ -948,7 +948,7 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_names(filing_json, incorporation_application_name)
+        err = validate_parties_names(filing_json, incorporation_application_name, legal_type)
 
     # validate outcomes
     if expected_msg:
@@ -1501,3 +1501,51 @@ def test_validate_incorporation_application_parties_delivery_address(mocker, app
         assert any(expected_msg in msg['error'] for msg in err.msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize('should_pass, phone_number, extension', [
+    (True, '1234567890', 12345),
+    (True, '1234567890', 1234),
+    (True, '1234567890', 123),
+    (True, '1234567890', 12),
+    (True, '1234567890', 1),
+    (False, '1234567890', 123456),
+    (False, '12345678901', 12345),
+    (True, '(123)456-7890', None),
+    (False, '(1234)456-7890', None),
+    (False, '(123)4567-7890', None),
+    (False, '(123)456-78901', None),
+    (True, '123-456-7890', None),
+    (False, '1234-456-7890', None),
+    (False, '123-4567-7890', None),
+    (False, '123-456-78901', None),
+    (True, '123.456.7890', None),
+    (False, '1234.456.7890', None),
+    (False, '123.4567.7890', None),
+    (False, '123.456.78901', None),
+    (True, '123 456 7890', None),
+    (False, '1234 456 7890', None),
+    (False, '123 4567 7890', None),
+    (False, '123 456 78901', None),
+    (True, None, None)
+])
+def test_ia_phone_number_validation(session, should_pass, phone_number, extension):
+    """Test validate phone number and / or extension if they are provided."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    if phone_number:
+        filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = phone_number
+    if extension:
+        filing_json['filing'][incorporation_application_name]['contactPoint']['extension'] = extension
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    if should_pass:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
