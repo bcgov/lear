@@ -349,7 +349,7 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
 def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) -> list:
     """Validate phone number."""
     if legal_type not in Business.CORPS:
-        return None
+        return []
 
     contact_point_path = f'/filing/{filing_type}/contactPoint'
     contact_point_dict = filing_json['filing'][filing_type].get('contactPoint', {})
