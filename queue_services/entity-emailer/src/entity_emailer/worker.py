@@ -63,6 +63,7 @@ from entity_emailer.email_processors import (
     involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
+    intent_to_liquidate_notification,
     notice_of_withdrawal_notification,
     nr_notification,
     registration_notification,
@@ -231,6 +232,9 @@ def process_email(email_msg: dict, flask_app: Flask):  # pylint: disable=too-man
                 send_email(email, token)
             elif etype == 'continuationIn':
                 email = continuation_in_notification.process(email_msg['email'], token)
+                send_email(email, token)
+            elif etype == 'intentToLiquidate':
+                email = intent_to_liquidate_notification.process(email_msg['email'], token)
                 send_email(email, token)
             elif etype == 'noticeOfWithdrawal' and option == Filing.Status.COMPLETED.value:
                 email = notice_of_withdrawal_notification.process(email_msg['email'], token)
