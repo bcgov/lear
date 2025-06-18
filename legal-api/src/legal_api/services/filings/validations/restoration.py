@@ -32,7 +32,6 @@ APPROVAL_TYPE_PATH = '/filing/restoration/approvalType'
 def validate(business: Business, restoration: Dict) -> Optional[Error]:
     """Validate the Restoration filing."""
     filing_type = 'restoration'
-    legal_type = restoration['filing']['restoration'].get('nameRequest', {}).get('legalType', '')
     if not business or not restoration:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
