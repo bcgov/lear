@@ -63,7 +63,7 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
                     'path': '/filing/restoration/nameRequest'})
 
     msg.extend(validate_party(restoration))
-    msg.extend(validate_offices(restoration, legal_type, filing_type))
+    msg.extend(validate_offices(restoration, business.legal_type, filing_type))
     msg.extend(validate_approval_type(restoration, restoration_type, limited_restoration))
     msg.extend(validate_restoration_court_order(restoration, restoration_type, limited_restoration))
     msg.extend(validate_restoration_registrar(restoration, restoration_type))
