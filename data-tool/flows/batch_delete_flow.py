@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from http import HTTPStatus
 
 import requests
-from common.init_utils import colin_init, get_config, lear_init
+from common.init_utils import colin_extract_init, get_config, lear_init
 from prefect import flow, task
 from prefect.futures import wait
 from sqlalchemy import Connection, text
@@ -556,7 +556,7 @@ def batch_delete_flow():
     try:
         # init
         config = get_config()
-        colin_engine = colin_init(config)
+        colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
         # use AUTH API for now
         # auth_engine = auth_init(config)

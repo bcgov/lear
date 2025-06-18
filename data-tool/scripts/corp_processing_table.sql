@@ -21,7 +21,9 @@ create table if not exists corp_processing
     environment             varchar(25),
     create_date             timestamp with time zone,
     last_modified           timestamp with time zone,
-                                          last_error              varchar(1000),
+    last_error              varchar(1000),
+    claimed_at              timestamp with time zone,
+    flow_run_id             uuid,
     corp_type_cd            varchar(3),
     filings_count           integer,
     constraint unq_corp_processing

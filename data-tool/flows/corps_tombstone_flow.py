@@ -6,10 +6,9 @@ from http import HTTPStatus
 from pathlib import Path
 
 from common.auth_service import AuthService
-from common.corp_processing_queue_service import \
-    CorpProcessingQueueService as CorpProcessingService
-from common.corp_processing_queue_service import ProcessingStatuses
-from common.init_utils import colin_init, get_config, lear_init
+from common.extract_tracking_service import \
+    ExtractTrackingService as CorpProcessingService, ProcessingStatuses
+from common.init_utils import colin_extract_init, get_config, lear_init
 from common.query_utils import convert_result_set_to_dict
 from prefect import flow, serve, task
 from prefect.context import get_run_context
@@ -453,7 +452,7 @@ def tombstone_flow():
     # TODO: current pipeline doesn't support migrating TED & TING at the same time, need a better strategy
     try:
         config = get_config()
-        colin_engine = colin_init(config)
+        colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
         flow_run_id = get_run_context().flow_run.id
         processing_service = CorpProcessingService(config.DATA_LOAD_ENV, colin_engine, 'tombstone-flow')

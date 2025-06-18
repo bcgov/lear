@@ -2,6 +2,7 @@ from config import get_named_config
 from prefect import task
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+import oracledb
 
 
 @task
@@ -11,22 +12,44 @@ def get_config():
 
 
 @task
-def check_db_connection(db_engine: Engine):
+def check_postgres_connection(db_engine: Engine):
+    """Postgres DB Connection Check."""
     with db_engine.connect() as conn:
         res = conn.execute(text('SELECT current_database()')).scalar()
         if not res:
             raise ValueError("Failed to retrieve the current database name.")
-        print(f'✅ Connected to database: {res}')
+        print(f'✅ Connected to Postgres database: {res}')
 
 
 @task
-def colin_init(config):
+def colin_extract_init(config):
     try:
         engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
-        check_db_connection(engine)
+        check_postgres_connection(engine)
         return engine
     except Exception as e:
-        raise Exception('Failed to create engine for COLIN DB') from e
+        raise Exception('Failed to create engine for COLIN Extract DB') from e
+
+
+@task
+def colin_oracle_init(config):
+    try:
+        # Make sure instant client is installed and thick mode is enabled
+        oracledb.init_oracle_client()
+        print('👷 Enable thick mode:', not oracledb.is_thin_mode())
+        print('👷 Instant Client version:', oracledb.clientversion())
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE)
+        # Check oracle connection
+        with engine.connect() as conn:
+            res = conn.execute(
+                text("""SELECT SYS_CONTEXT('USERENV', 'DB_NAME') FROM DUAL""")
+            ).scalar()
+            if not res:
+                raise ValueError("Failed to retrieve the current database name.")
+            print(f'✅ Connected to Oracle database: {res}')
+        return engine
+    except Exception as e:
+        raise Exception('Failed to create engine for COLIN Oracle DB') from e
 
 
 @task
@@ -36,7 +59,7 @@ def lear_init(config):
             config.SQLALCHEMY_DATABASE_URI,
             **config.SQLALCHEMY_ENGINE_OPTIONS
         )
-        check_db_connection(engine)
+        check_postgres_connection(engine)
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for LEAR DB') from e
@@ -46,7 +69,7 @@ def lear_init(config):
 def auth_init(config):
     try:
         engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)
-        check_db_connection(engine)
+        check_postgres_connection(engine)
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for AUTH DB') from e
