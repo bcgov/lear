@@ -796,3 +796,22 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 # return if the last AR or founding date was within a year and 2 months
                 return last_file_date + datedelta(years=1, months=2, days=1) > datetime.utcnow()
         return None
+
+    @classmethod
+    def update_transition_dt(cls, cursor, corp_num: str, transition_dt: str = None):
+        """Update transition date in corporations table."""
+        try:
+            if transition_dt:
+                cursor.execute(
+                    """
+                    UPDATE corporation
+                    SET transition_dt = TO_TIMESTAMP_TZ(:transition_dt,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM')
+                    WHERE corp_num = :corp_num
+                    """,
+                    corp_num=corp_num,
+                    transition_dt=transition_dt
+                )
+
+        except Exception as err:
+            current_app.logger.error(err.with_traceback(None))
+            raise err
