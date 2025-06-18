@@ -1479,3 +1479,53 @@ def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_
         assert expected_msg == err.msg[0]['error']
     else:
         assert not err
+
+
+@pytest.mark.parametrize(
+    'amalgamation_type, legal_type, has_rights_or_restrictions, has_series, should_pass',
+    [
+        (Amalgamation.AmalgamationTypes.regular.name, Business.LegalTypes.BCOMP.value, False, True, False),
+        (Amalgamation.AmalgamationTypes.regular.name, Business.LegalTypes.BCOMP.value, False, False, True),
+        (Amalgamation.AmalgamationTypes.regular.name, Business.LegalTypes.BCOMP.value, True, True, True),
+        (Amalgamation.AmalgamationTypes.regular.name, Business.LegalTypes.BCOMP.value, True, False, True),
+
+        (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, False, True, True),
+        (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, False, False, True),
+        (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, True, True, True),
+        (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, True, False, True),
+
+        (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, False, True, True),
+        (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, False, False, True),
+        (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, True, True, True),
+        (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, True, False, True),
+    ]
+)
+def test_amalgamation_share_class_series_validation(mocker, app, session, jwt, amalgamation_type, legal_type,
+                                                    has_rights_or_restrictions, has_series, should_pass):
+    """Test share class/series validation in amalgamation application with different amalgamation types."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
+    filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+
+    if 'shareStructure' in filing['filing']['amalgamationApplication']:
+        for share_class in filing['filing']['amalgamationApplication']['shareStructure']['shareClasses']:
+            share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+            if not has_rights_or_restrictions:
+                if not has_series:
+                    share_class.pop('series', None)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+
+    err = validate(None, filing)
+
+    if should_pass:
+        assert err is None
+    else:
+        assert err
+        assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
