@@ -784,6 +784,9 @@ def prep_intent_to_liquidate_filing(session, identifier, payment_id, legal_type,
         filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
 
     filing_template['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    # Override liquidation date to be after founding date
+    future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
+    filing_template['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
     filing_template['filing']['business'] = {
         'identifier': business.identifier,
         'legalType': legal_type,
@@ -791,7 +794,7 @@ def prep_intent_to_liquidate_filing(session, identifier, payment_id, legal_type,
     }
     test_meta_data = {
         'intentToLiquidate': {
-            'dateOfCommencementOfLiquidation': (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+            'dateOfCommencementOfLiquidation': future_date
         }
     }
 
