@@ -189,3 +189,58 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
         assert lists_are_equal(err.msg, err_msg)
     else:
         assert None is err
+
+
+@pytest.mark.parametrize(
+    'legal_type, has_rights_or_restrictions, has_series, should_pass',
+    [
+        ('BC', False, True, False),
+        ('BC', False, False, True),
+        ('BC', True, True, True),
+        ('BC', True, False, True),
+        ('ULC', False, True, False),
+        ('ULC', False, False, True),
+        ('ULC', True, True, True),
+        ('ULC', True, False, True),
+        ('CC', False, True, False),
+        ('CC', False, False, True),
+        ('CC', True, True, True),
+        ('CC', True, False, True),
+        ('BEN', False, True, False),
+        ('BEN', False, False, True),
+        ('BEN', True, True, True),
+        ('BEN', True, False, True),
+    ]
+)
+def test_correction_share_class_series_validation(session, legal_type, has_rights_or_restrictions,
+                                                  has_series, should_pass):
+    """Test share class/series validation in correction filing."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['business']['legalType'] = legal_type
+
+    if legal_type == 'CC':
+        director = copy.deepcopy(filing['filing']['correction']['parties'][0])
+        del director['roles'][0]
+        filing['filing']['correction']['parties'].append(director)
+        filing['filing']['correction']['parties'].append(director)
+
+    if 'shareStructure' in filing['filing']['correction']:
+        for share_class in filing['filing']['correction']['shareStructure']['shareClasses']:
+            share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+            if not has_rights_or_restrictions:
+                if not has_series:
+                    share_class.pop('series', None)
+
+    err = validate(business, filing)
+
+    if should_pass:
+        assert err is None
+    else:
+        assert err
+        assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
