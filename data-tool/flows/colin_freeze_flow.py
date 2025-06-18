@@ -95,7 +95,7 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
     return reserved
 
 
-def covert_to_colin_format(corp_num: str) -> str:
+def convert_to_colin_format(corp_num: str) -> str:
     if corp_num.startswith('BC'):
         return corp_num[2:]
     return corp_num
@@ -107,7 +107,7 @@ def update_colin_oracle(config, colin_oracle_engine: Engine, corp_num: str):
         transaction = conn.begin()
         try:
             res1, res2 = None, None
-            colin_corp_num = covert_to_colin_format(corp_num)
+            colin_corp_num = convert_to_colin_format(corp_num)
             if config.FREEZE_COLIN_CORPS:
                 res1 = conn.execute(
                     text(colin_freeze_query),
