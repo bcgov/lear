@@ -180,7 +180,7 @@ def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optio
     party_path = '/filing/dissolution/parties'
 
     if len(parties) > 0:
-        msg.extend(_validate_officer_email(parties, dissolution_type, legal_type))
+        msg.extend(_validate_custodian_email(parties, dissolution_type, legal_type))
 
         err, address_in_bc, address_in_ca = _validate_address_location(parties)
         if err:
@@ -267,14 +267,14 @@ def _validate_court_order(filing):
     return []
 
 
-def _validate_officer_email(parties, dissolution_type, legal_type) -> list:
-    """Validate officer email for voluntary dissolution."""
+def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
+    """Validate custodian email for voluntary dissolution."""
     msg = []
     for idx, party in enumerate(parties):
         if dissolution_type == DissolutionTypes.VOLUNTARY and legal_type in Business.CORPS:
             email = get_str(party, '/officer/email')
             if not email:
-                msg.append({'error': 'Officer email is required for voluntary dissolution.',
+                msg.append({'error': 'Custodian email is required for voluntary dissolution.',
                             'path': f'/filing/dissolution/parties/{idx}/officer/email'})
     return msg
 
