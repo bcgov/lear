@@ -372,6 +372,14 @@ from . import create_mock_message  # noqa: I003
                  'filingId': '111222335'
              }
          }),
+         ('intentToLiquidate_COMPLETED_111222335',
+         {
+             'email': {
+                 'type': 'intentToLiquidate',
+                 'option': 'COMPLETED',
+                 'filingId': '111222335'
+             }
+         }),
         ('noticeOfWithdrawal_COMPLETED_111222335',
          {
              'email': {

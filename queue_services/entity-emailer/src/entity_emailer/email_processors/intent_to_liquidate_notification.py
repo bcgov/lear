@@ -77,7 +77,7 @@ def process(email_info: dict, token: str) -> dict:   # pylint: disable=too-many-
     recipients = ', '.join(filter(None, recipients)).strip()
 
     # assign subject
-    subject = 'Statement of Intent to Liquidate filed Successfully'
+    subject = 'Statement of Intent to Liquidate'
     legal_name = business.get('legalName', None)
     subject = f'{legal_name} - {subject}' if legal_name else subject
 
