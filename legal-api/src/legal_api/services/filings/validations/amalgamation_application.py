@@ -75,7 +75,7 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
                                                 amalgamation_type,
                                                 account_id))
 
-    err = validate_phone_number(amalgamation_json, legal_type, 'amalgamationApplication')
+    err = validate_phone_number(amalgamation_json, legal_type, filing_type)
 
     if err:
         msg.extend(err)

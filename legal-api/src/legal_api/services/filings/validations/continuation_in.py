@@ -76,7 +76,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
 
         msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
 
-        err = validate_phone_number(filing_json, legal_type, 'continuationIn')
+        err = validate_phone_number(filing_json, legal_type, filing_type)
 
         if err:
             msg.extend(err)

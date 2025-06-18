@@ -65,13 +65,12 @@ def validate(business: Business, filing: Dict) -> Error:
         msg.append({'error': _('Corrected filing is not a valid filing for this business.'), 'path': path})
 
     # validations for firms
-    if legal_type := business.legal_type:
-        if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-            _validate_firms_correction(business, filing, legal_type, msg)
-        elif legal_type in Business.CORPS:
-            _validate_corps_correction(filing, legal_type, msg)
-        elif legal_type in [Business.LegalTypes.COOP.value]:
-            _validate_special_resolution_correction(filing, legal_type, msg)
+    if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        _validate_firms_correction(business, filing, business.legal_type, msg)
+    elif business.legal_type in Business.CORPS:
+        _validate_corps_correction(filing, business.legal_type, msg)
+    elif business.legal_type in [Business.LegalTypes.COOP.value]:
+        _validate_special_resolution_correction(filing, business.legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
