@@ -1,7 +1,7 @@
 import math
 
 import pandas as pd
-from common.init_utils import colin_init, get_config, lear_init
+from common.init_utils import colin_extract_init, get_config, lear_init
 from prefect import flow, task
 from sqlalchemy import Engine, text
 
@@ -62,7 +62,7 @@ def verify(colin_engine: Engine, lear_engine: Engine, limit: int, offset: int) -
 def verify_flow():
     try:
         config = get_config()
-        colin_engine = colin_init(config)
+        colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
 
         total = get_verify_count(colin_engine)
