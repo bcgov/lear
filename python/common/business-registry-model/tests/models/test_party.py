@@ -31,6 +31,7 @@ def test_party_json(session):
         first_name='Michael',
         last_name='Crane',
         middle_initial='Joe',
+        alternate_name='Mike J Crane',
         title='VP'
     )
     person.save()
@@ -41,6 +42,7 @@ def test_party_json(session):
             'firstName': person.first_name,
             'lastName': person.last_name,
             'middleInitial': person.middle_initial,
+            'alternateName': person.alternate_name,
             'email': None
         },
         'title': person.title
