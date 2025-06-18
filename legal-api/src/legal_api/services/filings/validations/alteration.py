@@ -39,7 +39,7 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
 
     msg.extend(type_change_validation(filing, business))
     msg.extend(company_name_validation(filing, business))
-    msg.extend(share_structure_validation(filing))
+    msg.extend(share_structure_validation(filing, business))
     msg.extend(court_order_validation(filing))
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
@@ -63,11 +63,15 @@ def court_order_validation(filing):
     return []
 
 
-def share_structure_validation(filing):
+def share_structure_validation(filing, business: Business):
     """Validate share structure."""
     share_structure_path: Final = '/filing/alteration/shareStructure'
+    new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
+
     if get_str(filing, share_structure_path):
-        err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
+        err = validate_share_structure(filing,
+                                       Filing.FilingTypes.ALTERATION.value,
+                                       new_legal_type or business.legal_type)
         if err:
             return err
     return []

@@ -83,6 +83,10 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
+    err = validate_custodial_office(dissolution, business.legal_type, dissolution_type)
+    if err:
+        msg.extend(err)
+
     msg.extend(_validate_court_order(dissolution))
 
     if msg:
@@ -165,6 +169,9 @@ def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optio
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
 
+    if 'parties' not in filing_json['filing']['dissolution']:
+        return [{'error': 'Parties are required.', 'path': '/filing/dissolution/parties'}]
+
     parties_json = filing_json['filing']['dissolution']['parties']
     parties = list(filter(lambda x: _is_dissolution_party_role(x.get('roles', [])), parties_json))
     msg = []
@@ -173,6 +180,8 @@ def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optio
     party_path = '/filing/dissolution/parties'
 
     if len(parties) > 0:
+        msg.extend(_validate_custodian_email(parties, dissolution_type, legal_type))
+
         err, address_in_bc, address_in_ca = _validate_address_location(parties)
         if err:
             msg.extend(err)
@@ -256,3 +265,30 @@ def _validate_court_order(filing):
         if err:
             return err
     return []
+
+
+def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
+    """Validate custodian email for voluntary dissolution."""
+    msg = []
+    for idx, party in enumerate(parties):
+        if dissolution_type == DissolutionTypes.VOLUNTARY and legal_type in Business.CORPS:
+            email = get_str(party, '/officer/email')
+            if not email:
+                msg.append({'error': 'Custodian email is required for voluntary dissolution.',
+                            'path': f'/filing/dissolution/parties/{idx}/officer/email'})
+    return msg
+
+
+def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Optional[list]:
+    """Validate custodial office of the dissolution filing."""
+    # Only validate for CORP voluntary dissolution
+    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
+        return None
+
+    dissolution = filing_json.get('filing', {}).get('dissolution', {})
+
+    if 'custodialOffice' not in dissolution:
+        return [{'error': 'Custodial office is required for voluntary dissolution.',
+                'path': '/filing/dissolution/custodialOffice'}]
+
+    return None

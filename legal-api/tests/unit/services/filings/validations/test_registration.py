@@ -267,8 +267,8 @@ def test_invalid_business_address(mocker, app, session, jwt, test_name, filing):
     """Assert that delivery business address is invalid."""
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
-    filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = 'invalid'
-    filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = 'invalid'
+    filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressRegion'] = 'AB'
+    filing['filing']['registration']['offices']['businessOffice']['deliveryAddress']['addressCountry'] = 'US'
 
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):

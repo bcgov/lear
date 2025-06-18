@@ -60,7 +60,7 @@ def has_rights_or_restrictions_true_in_share_series(share_class) -> bool:
     return any(x.get('hasRightsOrRestrictions', False) for x in series)
 
 
-def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
+def validate_share_structure(incorporation_json, filing_type, legal_type) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing'][filing_type] \
         .get('shareStructure', {}).get('shareClasses', [])
@@ -68,7 +68,7 @@ def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylin
     memoize_names = []
 
     for index, item in enumerate(share_classes):
-        shares_msg = validate_shares(item, memoize_names, filing_type, index)
+        shares_msg = validate_shares(item, memoize_names, filing_type, index, legal_type)
         if shares_msg:
             msg.extend(shares_msg)
 
@@ -106,7 +106,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
     return msg
 
 
-def validate_shares(item, memoize_names, filing_type, index) -> Error:
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
     """Validate a wellformed share structure."""
     msg = []
     if item['name'] in memoize_names:
@@ -127,6 +127,16 @@ def validate_shares(item, memoize_names, filing_type, index) -> Error:
         if not item.get('currency', None):
             err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
             msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
+
+    # Validate that corps type companies cannot have series in share classes when hasRightsOrRestrictions is false
+    if legal_type in Business.CORPS:
+        if not item.get('hasRightsOrRestrictions', False) and 'series' in item:
+            err_path = '/filing/{0}/shareClasses/{1}/series/'.format(filing_type, index)
+            msg.append({
+                'error': 'Share class %s cannot have series when hasRightsOrRestrictions is false' % item['name'],
+                'path': err_path
+            })
+            return msg
 
     series_msg = validate_series(item, memoize_names, filing_type, index)
     if series_msg:
