@@ -319,13 +319,13 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
     'test_status, legal_type, dissolution_type, has_email, expected_code, expected_msg',
     [
         ('FAIL', 'BC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-         'Officer email is required for voluntary dissolution.'),
+         'Custodian email is required for voluntary dissolution.'),
         ('FAIL', 'BEN', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-         'Officer email is required for voluntary dissolution.'),
+         'Custodian email is required for voluntary dissolution.'),
         ('FAIL', 'CC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-         'Officer email is required for voluntary dissolution.'),
+         'Custodian email is required for voluntary dissolution.'),
         ('FAIL', 'ULC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-         'Officer email is required for voluntary dissolution.'),
+         'Custodian email is required for voluntary dissolution.'),
         ('SUCCESS', 'CP', 'voluntary', False, None, None),
         ('SUCCESS', 'BC', 'voluntary', True, None, None),
         ('SUCCESS', 'BEN', 'voluntary', True, None, None),
@@ -334,8 +334,8 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
         ('SUCCESS', 'BC', 'administrative', False, None, None),
     ]
 )
-def test_dissolution_officer_email(session, test_status, legal_type, dissolution_type, has_email, expected_code, expected_msg):
-    """Test officer email validation in voluntary dissolution."""
+def test_dissolution_custodian_email(session, test_status, legal_type, dissolution_type, has_email, expected_code, expected_msg):
+    """Test custodian email validation in voluntary dissolution."""
     business = Business(identifier='BC1234567', legal_type=legal_type)
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
