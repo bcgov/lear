@@ -76,13 +76,10 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
 
         msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
 
-        if legal_type in Business.CORPS:
-            contact_point_path = '/filing/continuationIn/contactPoint'
-            contact_point_dict = filing_json['filing']['continuationIn'].get('contactPoint', {})
-            if contact_point_dict.get('phone'):
-                err = validate_phone_number(contact_point_dict, contact_point_path)
-                if err:
-                    msg.extend(err)
+        err = validate_phone_number(filing_json, legal_type, 'continuationIn')
+
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

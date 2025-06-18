@@ -75,13 +75,10 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
                                                 amalgamation_type,
                                                 account_id))
 
-    if legal_type in Business.CORPS:
-        contact_point_path = '/filing/amalgamationApplication/contactPoint'
-        contact_point_dict = amalgamation_json['filing']['amalgamationApplication'].get('contactPoint', {})
-        if contact_point_dict.get('phone'):
-            err = validate_phone_number(contact_point_dict, contact_point_path)
-            if err:
-                msg.extend(err)
+    err = validate_phone_number(amalgamation_json, legal_type, 'amalgamationApplication')
+
+    if err:
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

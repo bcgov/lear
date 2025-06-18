@@ -83,13 +83,10 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     msg.extend(validate_ia_court_order(incorporation_json))
 
-    if legal_type in Business.CORPS:
-        contact_point_path = '/filing/incorporationApplication/contactPoint'
-        contact_point_dict = incorporation_json['filing']['incorporationApplication'].get('contactPoint', {})
-        if contact_point_dict.get('phone'):
-            err = validate_phone_number(contact_point_dict, contact_point_path)
-            if err:
-                msg.extend(err)
+    err = validate_phone_number(incorporation_json, legal_type, 'incorporationApplication')
+
+    if err:
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
