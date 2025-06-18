@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_OFFICERS,
     CONTINUATION_IN,
     CONTINUATION_IN_FILING_TEMPLATE,
     CORRECTION_AR,
@@ -116,6 +117,7 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing']['header']['name'] == filing_type
     assert rv.json['filing'][filing_type] == filing_json
 
+
 @pytest.mark.parametrize(
     'jwt_role, expected',
     [
@@ -190,6 +192,7 @@ def test_get_withdrawn_temp_business_filing(session, client, jwt, jwt_role, expe
     assert 'noticeOfWithdrawal' in rv.json['filing']
     assert rv.json['filing']['noticeOfWithdrawal'] is not None
     assert rv.json['filing']['noticeOfWithdrawal']['filing']['header']['submitter'] == expected
+
 
 def test_get_filing_not_found(session, client, jwt):
     """Assert that the request fails if the filing ID doesn't match an existing filing."""
@@ -818,6 +821,7 @@ def test_delete_filing_in_draft(session, client, jwt):
                        )
 
     assert rv.status_code == HTTPStatus.OK
+
 
 def test_delete_draft_now_filing(session, client, jwt):
     """Assert that when a NoW from a temporary business is deleted, the business is unlinked and not deleted."""
@@ -1738,16 +1742,17 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
 
     assert rv.status_code == HTTPStatus.FORBIDDEN
 
+
 @pytest.mark.parametrize(
-        'test_name, legal_type, filing_type, filing_json, is_temp',
-        [
-            ('T-BUSINESS-IA', 'BC', 'incorporationApplication', INCORPORATION, True),
-            ('T-BUSINESS-CONT-IN', 'BEN', 'continuationIn', CONTINUATION_IN, True),
-            ('T-BUSINESS-AMALGAMATION', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
-            ('REGULAR-BUSINESS-COA', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
-            ('REGULAR-BUSINESS-CONT-ALTERATION', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
-            ('REGULAR-BUSINESS-DISSOLUTION', 'CBEN', 'dissolution', DISSOLUTION, False)
-        ]
+    'test_name, legal_type, filing_type, filing_json, is_temp',
+    [
+        ('T-BUSINESS-IA', 'BC', 'incorporationApplication', INCORPORATION, True),
+        ('T-BUSINESS-CONT-IN', 'BEN', 'continuationIn', CONTINUATION_IN, True),
+        ('T-BUSINESS-AMALGAMATION', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
+        ('REGULAR-BUSINESS-COA', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
+        ('REGULAR-BUSINESS-CONT-ALTERATION', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
+        ('REGULAR-BUSINESS-DISSOLUTION', 'CBEN', 'dissolution', DISSOLUTION, False)
+    ]
 )
 def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type, filing_type, filing_json, is_temp):
     """Assert that notice of withdrawal for new business filings can be filed"""
@@ -1807,16 +1812,16 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
 
     # Test validation OK
     rv_validation = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
-                     json=now_json_data,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+                                json=now_json_data,
+                                headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     assert rv_validation.status_code == HTTPStatus.OK
     assert rv_validation.json['filing']['header']['name'] == 'noticeOfWithdrawal'
 
     # Test can create a draft
     rv_draft = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=now_json_data,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+                           json=now_json_data,
+                           headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     # validate
     assert rv_draft.status_code == HTTPStatus.CREATED
@@ -1850,11 +1855,56 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
     now_json_data['filing']['header']['certifiedBy'] = 'test123'
 
     rv_draft = client.put(f'/api/v2/businesses/{identifier}/filings/{now_filing.id}?draft=true',
-                     json=now_json_data,
-                     headers=create_header(jwt, [STAFF_ROLE], identifier))
+                          json=now_json_data,
+                          headers=create_header(jwt, [STAFF_ROLE], identifier))
 
     # validate
     assert rv_draft.status_code == HTTPStatus.ACCEPTED
     assert rv_draft.json['filing']['header']['certifiedBy'] == 'test123'
 
 
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier',
+    [
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('CP', Business.LegalTypes.COOP.value, 'CP1234567')
+    ]
+)
+def test_coo(session, requests_mock, client, jwt, test_name, legal_type, identifier):
+    """Assert Change of Officers is submitted correctly for entity types."""
+    coo = copy.deepcopy(FILING_HEADER)
+    coo['filing']['header']['name'] = 'changeOfOfficers'
+    coo['filing']['changeOfOfficers'] = CHANGE_OF_OFFICERS
+    # sample data uses 'canada' as address, must change to 2 character iso_2 value
+    coo['filing']['changeOfOfficers']['relationships'][0]['deliveryAddress']['addressCountry'] = 'CA'
+    coo['filing']['changeOfOfficers']['relationships'][0]['mailingAddress']['addressCountry'] = 'CA'
+    coo['filing']['changeOfOfficers']['relationships'][1]['deliveryAddress']['addressCountry'] = 'CA'
+    coo['filing']['changeOfOfficers']['relationships'][1]['mailingAddress']['addressCountry'] = 'CA'
+
+    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    factory_business_mailing_address(b)
+    coo['filing']['business']['identifier'] = identifier
+
+    requests_mock.post(
+        current_app.config.get('PAYMENT_SVC_URL'),
+        json={
+            'id': 21322,
+            'statusCode': 'COMPLETED',
+            'isPaymentActionRequired': False
+        },
+        status_code=HTTPStatus.CREATED
+    )
+    rv = client.post(
+        f'/api/v2/businesses/{identifier}/filings',
+        json=coo,
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+
+    assert rv.status_code == HTTPStatus.CREATED
