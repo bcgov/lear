@@ -18,6 +18,7 @@ Test-Suite to ensure that the PartyRole Model is working as expected.
 """
 import datetime
 import json
+
 import pytest
 
 from business_model.models import Filing, Party, PartyRole
