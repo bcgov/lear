@@ -61,7 +61,7 @@ def test_nr_correction(session, new_name, legal_type, nr_legal_type, nr_type, er
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
 
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
@@ -137,7 +137,7 @@ def test_parties_correction(session, test_name, legal_type, correction_type, err
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
 
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
@@ -216,7 +216,7 @@ def test_correction_share_class_series_validation(session, legal_type, has_right
                                                   has_series, should_pass):
     """Test share class/series validation in correction filing."""
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
     corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
 
     filing = copy.deepcopy(CORRECTION)
