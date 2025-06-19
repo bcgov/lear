@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The Unit Tests for the Consent Amalgamation Out email processor."""
+"""The Unit Tests for the Intent to Liquidate email processor."""
 from unittest.mock import patch
 
 import pytest
@@ -22,14 +22,14 @@ from tests.unit import prep_intent_to_liquidate_filing
 
 
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
-    ('COMPLETED', Business.LegalTypes.COMP.value, None),
-    ('COMPLETED', Business.LegalTypes.BCOMP.value, None),
-    ('COMPLETED', Business.LegalTypes.BC_CCC.value, None),
-    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, None),
     ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BCOMP.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BC_CCC.value, 'staff'),
-    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, 'staff')
+    ('COMPLETED', Business.LegalTypes.BC_ULC_COMPANY.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.CCC_CONTINUE_IN.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.CONTINUE_IN.value, 'staff'),
+    ('COMPLETED', Business.LegalTypes.ULC_CONTINUE_IN.value, 'staff')
 ])
 def test_intent_to_liquidate_notification(app, session, status, legal_type, submitter_role):
     """Assert that the intent_to_liquidate email processor for corps works as expected."""

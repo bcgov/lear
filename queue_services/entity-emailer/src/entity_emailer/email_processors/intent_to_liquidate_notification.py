@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Email processing rules and actions for Notice of Withdrawal notifications."""
+"""Email processing rules and actions for Intent to Liquidate notifications."""
 import base64
 import re
 from http import HTTPStatus
