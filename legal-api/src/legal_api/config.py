@@ -215,6 +215,13 @@ class _Config:  # pylint: disable=too-few-public-methods
     NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
     NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
 
+    # Document Service
+    DOCUMENT_API_URL = os.getenv('DOCUMENT_API_URL')
+    DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION')
+    DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+    DOCUMENT_PRODUCT_CODE = os.getenv('DOCUMENT_PRODUCT_CODE', 'LEGAL_API')
+    DOCUMENT_API_KEY = os.getenv('DOCUMENT_API_KEY')
+
     TESTING = False
     DEBUG = False
 

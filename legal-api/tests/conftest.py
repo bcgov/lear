@@ -20,6 +20,9 @@ import pytest
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
 from sqlalchemy.schema import DropConstraint, MetaData
+from unittest import mock
+import requests
+import os
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
@@ -207,3 +210,51 @@ def minio_server(docker_services):
     with suppress(Exception):
         docker_services.wait_for_service('minio', 9000)
     time.sleep(10)
+
+
+DOCUMENT_API_URL = os.getenv('DOCUMENT_API_URL')
+DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION')
+DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+DOCUMENT_PRODUCT_CODE = os.getenv('DOCUMENT_PRODUCT_CODE', 'LEGAL_API')
+
+class MockResponse:
+  def __init__(self, json_data, status_code):
+    self.content = json_data
+    self.status_code = status_code
+
+def document_service_patch_get(*args, **kwargs):
+  get_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+  get_response = {
+      'identifier': 1,
+      'url': 'https://document-service.com/document/1'
+  }
+
+  if kwargs['url'].find(get_url) == 0:
+      return MockResponse(get_response, 200)
+
+  return requests._actual_get(*args, **kwargs)
+
+def document_service_patch_post(*args, **kwargs):
+  
+  post_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+  post_response = {
+      'identifier': 1,
+      'url': 'https://document-service.com/document/1'
+  }
+
+  if kwargs['url'].find(post_url) == 0:
+      return MockResponse(post_response, 201)
+
+  return requests._actual_post(*args, **kwargs)
+
+@pytest.fixture(scope='session', autouse=True)
+def mock_doc_service_get(app):
+    requests._actual_get = requests.get
+    with mock.patch.object(requests, 'get', side_effect=document_service_patch_get) as _fixture:
+        yield _fixture
+
+@pytest.fixture(scope='session', autouse=True)
+def mock_doc_service_post(app):
+    requests._actual_post = requests.post
+    with mock.patch.object(requests, 'post', side_effect=document_service_patch_post) as _fixture:
+        yield _fixture

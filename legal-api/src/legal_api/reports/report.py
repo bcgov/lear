@@ -43,7 +43,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import timezone
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
+from legal_api.reports.document_service import DocumentService
 
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 
@@ -58,6 +58,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._business = None
         self._report_key = None
         self._report_date_time = LegislationDatetime.now()
+        self._document_service = DocumentService()
 
     def get_pdf(self, report_type=None):
         """Render a pdf for the report."""
@@ -77,6 +78,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
+        document, status = self._document_service.get_document(self._business.identifier, self._document_key, self._report_date_time)
+        if status == HTTPStatus.OK:
+            return current_app.response_class(
+                response=document,
+                status=status,
+                mimetype='application/pdf'
+            )
+
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)
@@ -96,6 +105,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
+
+        self._document_service.create_document(self._business.identifier, self._filing.identifier, self._report_key, jwt.get_account_id(), response.content)
 
         return current_app.response_class(
             response=response.content,
