@@ -34,6 +34,7 @@ from legal_api.models import (
     Office,
     Party,
     PartyRole,
+    PartyClass,
     ShareClass,
     ShareSeries,
     User,
@@ -242,11 +243,11 @@ def factory_completed_filing(business,
             filing._filing_type = filing_type
         if filing_sub_type:
             filing._filing_sub_type = filing_sub_type
-        
+
         if (filing.filing_type == 'adminFreeze' or
-            (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary')):
+                (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary')):
             filing.hide_in_ledger = True
-        
+
         filing.save()
 
         transaction_id = VersioningProxy.get_transaction_id(db.session())
@@ -335,7 +336,7 @@ def factory_comment(
 
 
 def factory_party_role(delivery_address: Address, mailing_address: Address, officer: dict, appointment_date: datetime,
-                       cessation_date: datetime, role_type: PartyRole.RoleTypes):
+                       cessation_date: datetime, role_type: PartyRole.RoleTypes, class_type: PartyClass.PartyClassType = None):
     """Create a role."""
     party = Party(
         first_name=officer['firstName'],
@@ -351,7 +352,8 @@ def factory_party_role(delivery_address: Address, mailing_address: Address, offi
         role=role_type.value,
         appointment_date=appointment_date,
         cessation_date=cessation_date,
-        party_id=party.id
+        party_id=party.id,
+        party_class_type=class_type
     )
     return party_role
 
