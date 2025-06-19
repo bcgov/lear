@@ -132,7 +132,9 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
     # Validate that corps type companies cannot have series in share classes when hasRightsOrRestrictions is false
     if legal_type in Business.CORPS:
         series = item.get('series', [])
-        has_series = True if len(series) > 0 else False
+        has_series = False
+        if len(series) > 0:
+            has_series = True
 
         if not item.get('hasRightsOrRestrictions', False) and has_series:
             err_path = '/filing/{0}/shareClasses/{1}/series/'.format(filing_type, index)
