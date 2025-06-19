@@ -32,8 +32,37 @@ def test_create_document(session):
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     document_service = DocumentService()
     assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') == False
-    response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', 3113, completed_filing.filing_type)
+    response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', '3113', completed_filing.filing_type)
     assert status == HTTPStatus.CREATED
     assert response['identifier'] == 1
     assert response['url'] == 'https://document-service.com/document/1'
     assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
+
+
+def test_get_document(session):
+    founding_date = datetime.utcnow()
+    business = factory_business('CP1234567', founding_date=founding_date)
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing']['header']['name'] = 'Involuntary Dissolution'
+    completed_filing = \
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    document_service = DocumentService()
+    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') == False
+    response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', '3113', completed_filing.filing_type)
+    assert response
+    response, status = document_service.get_document(business.identifier, completed_filing.id, 'annualReport', '3113')
+    assert response
+    assert status == HTTPStatus.OK
+    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
+
+def test_get_document_with_file_key(session):
+    founding_date = datetime.utcnow()
+    business = factory_business('CP1234567', founding_date=founding_date)
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing']['header']['name'] = 'Involuntary Dissolution'
+    completed_filing = \
+        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
+    document_service = DocumentService()
+    response, status = document_service.get_document(business.identifier, completed_filing.id, 'annualReport', '3113', '123')
+    assert status == HTTPStatus.OK
+    assert response
