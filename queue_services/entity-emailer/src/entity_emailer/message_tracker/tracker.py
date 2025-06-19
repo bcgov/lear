@@ -107,14 +107,15 @@ def get_message_context_properties(queue_msg: nats.aio.client.Msg):
 
         if etype in ('dissolution', 'registration', 'changeOfRegistration',
                      'restoration', 'specialResolution', 'correction', 'amalgamationApplication', 'continuationIn',
-                     'transition', 'intentToLiquidate') \
+                     'transition') \
                 and (option := email.get('option', None)) \
                 and (filing_id := email.get('filingId', None)):
             # option contains current status of filing - PAID or COMPLETED or CHANGE_REQUESTED, etc
             message_id = f'{etype}_{option}_{filing_id}'
             return create_message_context_properties(etype, message_id, None, None, False)
 
-        if etype in ('consentContinuationOut', 'continuationOut', 'consentAmalgamationOut', 'amalgamationOut') \
+        if etype in ('consentContinuationOut', 'continuationOut', 'consentAmalgamationOut', 'amalgamationOut',
+                     'intentToLiquidate') \
                 and (option := email.get('option', None)) \
                 and option == 'COMPLETED' \
                 and (filing_id := email.get('filingId', None)):
