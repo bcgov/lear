@@ -44,6 +44,7 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
     first_name = db.Column('first_name', db.String(30), index=True)
     middle_initial = db.Column('middle_initial', db.String(30), index=True)
     last_name = db.Column('last_name', db.String(30))
+    alternate_name = db.Column('alternate_name', db.String(90))
     title = db.Column('title', db.String(1000))
     # organization
     organization_name = db.Column('organization_name', db.String(150))
@@ -83,6 +84,8 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
                 member['title'] = self.title
             if self.middle_initial:
                 member['officer']['middleInitial'] = self.middle_initial
+            if self.alternate_name:
+                member['officer']['alternateName'] = self.alternate_name
         else:
             member = {
                 'officer': {

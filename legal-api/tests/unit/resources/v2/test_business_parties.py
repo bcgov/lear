@@ -21,7 +21,7 @@ import pytest
 from http import HTTPStatus
 
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from tests.unit.models import Address, Party, PartyRole, factory_business, factory_party_role
+from tests.unit.models import Address, Party, PartyRole, PartyClass, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -327,3 +327,139 @@ def test_get_parties_unauthorized(app, session, client, jwt, requests_mock):
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
     assert rv.json == {'message': f'You are not authorized to view parties for {identifier}.'}
+
+
+# start get_parties_by_class_type tests
+@pytest.fixture(scope='function')
+def parties_by_class_type_test_data(session):
+    """Sets up multiple businesses, parties and roles."""
+    business_a = factory_business('CP1234567')
+    business_b = factory_business('BC1234567')
+
+    party_a = Party(
+        first_name='A',
+        last_name='Horton',
+        middle_initial=''
+    )
+    party_b = Party(
+        first_name='B',
+        last_name='Horton',
+        middle_initial=''
+    )
+    party_a.save()
+    party_b.save()
+
+    def _factory_party_role(business_id: int, party_id: int, role: PartyRole.RoleTypes, class_type: PartyClass.PartyClassType, cessation_date: datetime.date = None):
+        party_role = PartyRole(
+            role=role.value,
+            appointment_date=datetime.datetime(2017, 5, 17),
+            cessation_date=cessation_date,
+            party_id=party_id,
+            business_id=business_id,
+            party_class_type=class_type
+        )
+        party_role.save()
+        return party_role
+
+    created = {
+        # Business A Data
+        'ceo_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CEO, PartyClass.PartyClassType.OFFICER),
+        'cfo_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CFO, PartyClass.PartyClassType.OFFICER, cessation_date=datetime.date(2022, 1, 1)),
+        'director_a': _factory_party_role(business_a.id, party_b.id, PartyRole.RoleTypes.DIRECTOR, PartyClass.PartyClassType.DIRECTOR),
+        'chair_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CHAIR, PartyClass.PartyClassType.DIRECTOR),
+
+        # Business B Data
+        'ceo_b': _factory_party_role(business_b.id, party_a.id, PartyRole.RoleTypes.CEO, PartyClass.PartyClassType.OFFICER),
+    }
+
+    return {'businesses': {'a': business_a, 'b': business_b}, 'parties': {'a': party_a, 'b': party_b}, 'roles': created}
+
+
+get_by_party_class_scenarios = [
+    (
+        "Find business a active Officers",
+        'a',
+        'classType=officer',
+        HTTPStatus.OK,
+        {'a': ['Ceo']}  # business a has 1 party with class type officer, party a has ceo role
+    ),
+    (
+        "Find business a all officers (with end date)",
+        'a',
+        'classType=officer&date=2021-06-01',
+        HTTPStatus.OK,
+        {'a': ['Ceo', 'Cfo']}  # business a has 1 party with class type officer, party a has 2 roles when adding historic end date
+    ),
+    (
+        "Find directors",
+        'a',
+        'classType=DIRECTOR',
+        HTTPStatus.OK,
+        {'a': ['Chair'], 'b': ['Director']}  # business a has 2 parties with class type director, party a chair role, party b director role
+    ),
+    (
+        "Find business b officers",
+        'b',
+        'classType=OFFICER',
+        HTTPStatus.OK,
+        {'a': ['Ceo']}  # business b has 1 party with class type officer, party a with ceo role
+    ),
+    (
+        "Find agents for business a, empty response",
+        'a',
+        'classType=AGENT',
+        HTTPStatus.OK,
+        {}  # business a has no parties with class type agent
+    ),
+    (
+        "Test invalid classType key",
+        'a',
+        'classType=INVALID',
+        HTTPStatus.BAD_REQUEST,
+        "Invalid classType 'INVALID'"  # should error
+    )
+]
+
+
+@pytest.mark.parametrize("test_name, business_key, params, expected_status, expected_outcome", get_by_party_class_scenarios)
+def test_get_parties_by_class_type(session, client, jwt, parties_by_class_type_test_data, test_name, business_key, params, expected_status, expected_outcome):
+    """Assert that the get_party_roles_by_class_type works as expected."""
+    identifier = parties_by_class_type_test_data['businesses'][business_key].identifier
+    parties = parties_by_class_type_test_data['parties']
+
+    # test
+    rv = client.get(f'/api/v2/businesses/{identifier}/parties?{params}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+    # check
+    print(test_name)
+    assert rv.status_code == expected_status
+
+    json = rv.json
+
+    if expected_status == HTTPStatus.OK:
+
+        returned_parties = {}
+        expected_parties = {}
+
+        # create dict with party id as key and roles set as value from returned json
+        for party in rv.json['parties']:
+            returned_party_id = party['officer']['id']
+            if returned_party_id not in returned_parties:
+                returned_parties[returned_party_id] = set()
+            for role in party.get('roles', []):
+                returned_parties[returned_party_id].add(role['roleType'])
+
+        # create dict with party id as key and roles set as value from expected outcome
+        for party_key, expected_roles in expected_outcome.items():
+            expected_party_id = parties[party_key].id
+            if expected_party_id not in expected_parties:
+                expected_parties[expected_party_id] = set()
+            for role in expected_roles:
+                expected_parties[expected_party_id].add(role.title())
+
+        assert returned_parties == expected_parties
+        assert len(returned_parties.items()) == len(expected_outcome.items())
+    else:
+        assert expected_outcome in json['message']
+# end get parties by class type test

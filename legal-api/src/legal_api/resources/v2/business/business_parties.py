@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the parties for the entity."""
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, PartyRole
+from legal_api.models import Business, PartyRole, PartyClass
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -47,20 +47,35 @@ def get_parties(identifier, party_id=None):
         if not party_roles:
             return jsonify({'message': f'Party {party_id} not found'}), HTTPStatus.NOT_FOUND
     else:
-        end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date() \
-            if request.args.get('date') else datetime.utcnow().date()
+        end_date = datetime.strptime(request.args.get('date'), '%Y-%m-%d').date() \
+            if request.args.get('date') else datetime.now(timezone.utc).date()
         if str(request.args.get('all', None)).lower() == 'true':
             end_date = None
-        party_roles = PartyRole.get_party_roles(business.id, end_date, request.args.get('role'))
+
+        class_type_str = request.args.get('classType')
+        if class_type_str:
+            try:
+                class_type_enum = PartyClass.PartyClassType[class_type_str.upper()]
+            except KeyError:
+                valid_types = [e.name for e in PartyClass.PartyClassType]
+                return jsonify({"message": f"Invalid classType '{class_type_str}'. Valid types: {valid_types}"}), HTTPStatus.BAD_REQUEST
+
+            party_roles = PartyRole.get_party_roles_by_class_type(
+                business.id,
+                class_type_enum,
+                end_date
+            )
+        else:
+            party_roles = PartyRole.get_party_roles(business.id, end_date, request.args.get('role'))
 
     party_role_dict = {}
     party_list = []
     for party_role in party_roles:
         party_role_json = party_role.json
         party_role_dict.setdefault(party_role.party_id, []).append(
-              {'roleType': party_role_json['role'].replace('_', ' ').title(),
-               'appointmentDate': party_role_json['appointmentDate'],
-               'cessationDate': party_role_json['cessationDate']})
+            {'roleType': party_role_json['role'].replace('_', ' ').title(),
+             'appointmentDate': party_role_json['appointmentDate'],
+             'cessationDate': party_role_json['cessationDate']})
     for key, value in party_role_dict.items():
         party = [x for x in party_roles if x.party_id == key][0]
         party_json = party.json
