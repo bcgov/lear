@@ -219,13 +219,13 @@ DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION')
 DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
 DOCUMENT_PRODUCT_CODE = os.getenv('DOCUMENT_PRODUCT_CODE', 'LEGAL_API')
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def mock_doc_service():
   mock_response = {
       'identifier': 1,
       'url': 'https://document-service.com/document/1'
   }
-  with requests_mock.Mocker() as mock:
+  with requests_mock.Mocker(real_http=True) as mock:
     post_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
     mock.post(re.compile(f"{post_url}.*"), status_code=HTTPStatus.CREATED, text=json.dumps(mock_response))
     get_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'

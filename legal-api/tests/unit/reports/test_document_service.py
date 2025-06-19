@@ -23,7 +23,7 @@ from legal_api.reports.document_service import DocumentService
 from tests.unit.models import factory_business, factory_completed_filing
 from registry_schemas.example_data import FILING_TEMPLATE
 
-def test_create_document(session):
+def test_create_document(session, mock_doc_service):
     founding_date = datetime.utcnow()
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
@@ -39,7 +39,7 @@ def test_create_document(session):
     assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
 
 
-def test_get_document(session):
+def test_get_document(session, mock_doc_service):
     founding_date = datetime.utcnow()
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
@@ -55,7 +55,7 @@ def test_get_document(session):
     assert status == HTTPStatus.OK
     assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
 
-def test_get_document_with_file_key(session):
+def test_get_document_with_file_key(session, mock_doc_service):
     founding_date = datetime.utcnow()
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
