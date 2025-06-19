@@ -1882,11 +1882,6 @@ def test_coo(session, requests_mock, client, jwt, test_name, legal_type, identif
     coo = copy.deepcopy(FILING_HEADER)
     coo['filing']['header']['name'] = 'changeOfOfficers'
     coo['filing']['changeOfOfficers'] = CHANGE_OF_OFFICERS
-    # sample data uses 'canada' as address, must change to 2 character iso_2 value
-    coo['filing']['changeOfOfficers']['relationships'][0]['deliveryAddress']['addressCountry'] = 'CA'
-    coo['filing']['changeOfOfficers']['relationships'][0]['mailingAddress']['addressCountry'] = 'CA'
-    coo['filing']['changeOfOfficers']['relationships'][1]['deliveryAddress']['addressCountry'] = 'CA'
-    coo['filing']['changeOfOfficers']['relationships'][1]['mailingAddress']['addressCountry'] = 'CA'
 
     b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
     factory_business_mailing_address(b)
