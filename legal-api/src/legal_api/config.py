@@ -341,7 +341,9 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
 
     DOCUMENT_API_URL = os.getenv('DOCUMENT_API_URL', 'http://document-api.com')
     DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION', '/api/v1')
-    DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+    DOCUMENT_SVC_URL = ''
+    if DOCUMENT_API_URL and DOCUMENT_API_VERSION:
+        DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
