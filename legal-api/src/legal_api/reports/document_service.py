@@ -1,7 +1,19 @@
+# Copyright © 2025 Province of British Columbia
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+# the License. You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+# an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+# specific language governing permissions and limitations under the License.
+"""Works with the document service api."""
+
 import requests
-from flask import current_app, jsonify
-from http import HTTPStatus
 import json
+from http import HTTPStatus
+from flask import current_app, jsonify
 
 from legal_api.models import Document, Business
 from legal_api.exceptions import BusinessException
@@ -24,7 +36,7 @@ class DocumentService:
             pass
         return c
 
-    def create_document_record(self, business_id: int, filing_id: int, report_type: str, file_key: str, file_name: str): #pylint disable=too-many-arguments
+    def create_document_record(self, business_id: int, filing_id: int, report_type: str, file_key: str, file_name: str): #pylint: disable=too-many-arguments
         """Create a document record in the document table."""
         new_document = Document(
             business_id=business_id,
@@ -48,7 +60,7 @@ class DocumentService:
         document = Document.find_one_by(business_id, filing_identifier, report_type)
         return document if document else False
 
-    def create_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, binary_or_url): #pylint disable=too-many-arguments
+    def create_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, binary_or_url): #pylint: disable=too-many-arguments
         """
         Create a document in the document service.
         business_identifier: The business identifier.
@@ -72,7 +84,7 @@ class DocumentService:
         self.create_document_record(Business.find_by_identifier(business_identifier).id, filing_identifier, report_type, content['identifier'], f'{business_identifier}_{filing_identifier}_{report_type}.pdf')
         return content, response.status_code
 
-    def get_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, file_key: str=None): #pylint disable=too-many-arguments
+    def get_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, file_key: str=None): #pylint: disable=too-many-arguments
         """
         Get a document from the document service.
         business_identifier: The business identifier.

@@ -22,7 +22,7 @@ from typing import Final
 import pycountry
 import requests
 from dateutil.relativedelta import relativedelta
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 
 from legal_api.core.meta.filing import FILINGS, FilingMeta
 from legal_api.models import (
