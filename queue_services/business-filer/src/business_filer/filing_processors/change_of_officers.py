@@ -33,24 +33,24 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the change of directors."""
 import copy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from business_model.models import Business, Filing, PartyRole, Party, Address, db
+from business_model.models import Address, Business, Filing, Party, PartyRole, db
 from business_model.models.types.party_class_type import PartyClassType
 
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import update_address, create_address
+from business_filer.filing_processors.filing_components import create_address, update_address
 
 OFFICER_ROLE_CONVERTER = {
-    'ceo': PartyRole.RoleTypes.CEO,
-    'cfo': PartyRole.RoleTypes.CFO,
-    'president': PartyRole.RoleTypes.PRESIDENT,
-    'vice president': PartyRole.RoleTypes.VICE_PRESIDENT,
-    'chair': PartyRole.RoleTypes.CHAIR,
-    'treasurer': PartyRole.RoleTypes.TREASURER,
-    'secretary': PartyRole.RoleTypes.SECRETARY,
-    'assistant secretary': PartyRole.RoleTypes.ASSISTANT_SECRETARY,
-    'other': PartyRole.RoleTypes.OTHER,
+    "ceo": PartyRole.RoleTypes.CEO,
+    "cfo": PartyRole.RoleTypes.CFO,
+    "president": PartyRole.RoleTypes.PRESIDENT,
+    "vice president": PartyRole.RoleTypes.VICE_PRESIDENT,
+    "chair": PartyRole.RoleTypes.CHAIR,
+    "treasurer": PartyRole.RoleTypes.TREASURER,
+    "secretary": PartyRole.RoleTypes.SECRETARY,
+    "assistant secretary": PartyRole.RoleTypes.ASSISTANT_SECRETARY,
+    "other": PartyRole.RoleTypes.OTHER,
 }
 
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0912
@@ -62,7 +62,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
         return
 
     # get all active officers to compare when updating parties
-    end_date = datetime.now(timezone.utc).date()
+    end_date = datetime.now(UTC).date()
     active_roles = PartyRole.get_party_roles_by_class_type(business.id, PartyClassType.OFFICER, end_date)
     existing_officers: dict[int, list[PartyRole]] = {} # { party_id: [PartyRole, PartyRole, ...] }
 
@@ -74,8 +74,8 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
 
     # loop through submitted officers and create or update Party, Address and PartyRole's
     for officer in submitted_officers:
-        entity = officer.get('entity', {})
-        id_str = entity.get('identifier')
+        entity = officer.get("entity", {})
+        id_str = entity.get("identifier")
         party_id = None
 
         # submitted identifier is a string, convert to int to match party id
@@ -93,13 +93,13 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
                 continue
             
             # update party fields
-            party.first_name = entity.get('givenName', '').strip().upper()
-            party.last_name = entity.get('familyName', '').strip().upper()
-            party.middle_initial = entity.get('middleInitial', '').strip().upper()
-            party.alternate_name = entity.get('alternateName', '').strip().upper()
+            party.first_name = entity.get("givenName", "").strip().upper()
+            party.last_name = entity.get("familyName", "").strip().upper()
+            party.middle_initial = entity.get("middleInitial", "").strip().upper()
+            party.alternate_name = entity.get("alternateName", "").strip().upper()
 
             # update or create party addresses
-            if new_delivery_address := officer.get('deliveryAddress'):
+            if new_delivery_address := officer.get("deliveryAddress"):
                 if party.delivery_address:
                     party.delivery_address = update_address(party.delivery_address, new_delivery_address)
                 else:
@@ -107,7 +107,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
                     party.delivery_address = new_address
                     db.session.add(new_address)
 
-            if new_mailing_address := officer.get('mailingAddress'):
+            if new_mailing_address := officer.get("mailingAddress"):
                 if party.mailing_address:
                     party.mailing_address = update_address(party.mailing_address, new_mailing_address)
                 else:
@@ -117,15 +117,15 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
             
             # update or create roles for party
             current_party_roles = existing_officers.get(party_id, [])
-            for role in officer.get('roles', []):
-                role_str = role.get('roleType', '').strip().lower()
+            for role in officer.get("roles", []):
+                role_str = role.get("roleType", "").strip().lower()
                 role_enum = OFFICER_ROLE_CONVERTER.get(role_str)
 
                 # skip role if not found
                 if not role_enum:
                     continue
 
-                has_cessation_date = role.get('cessationDate') is not None
+                has_cessation_date = role.get("cessationDate") is not None
                 
                 # check if role already exists
                 existing_role = next((pr for pr in current_party_roles if pr.role == role_enum.value), None)
@@ -134,41 +134,40 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
                     # cease role if submitted with cessation date, else do not update the role
                     if has_cessation_date:
                         existing_role.cessation_date = filing_rec.effective_date        
-                else:
-                    # create new role for party, ignore new roles submitted with a cessation date
-                    if not has_cessation_date:
-                        new_party_role = PartyRole(
-                            role=role_enum.value,
-                            appointment_date=filing_rec.effective_date,
-                            party_class_type=PartyClassType.OFFICER,
-                            party=party
-                        )
-                        db.session.add(new_party_role)
+                # create new role for party, ignore new roles submitted with a cessation date
+                elif not has_cessation_date:
+                    new_party_role = PartyRole(
+                        role=role_enum.value,
+                        appointment_date=filing_rec.effective_date,
+                        party_class_type=PartyClassType.OFFICER,
+                        party=party
+                    )
+                    db.session.add(new_party_role)
         # create new party and roles
         else:
             new_party = Party(
-                first_name=entity.get('givenName', '').strip().upper(),
-                last_name=entity.get('familyName', '').strip().upper(),
-                middle_initial=entity.get('middleInitial', '').strip().upper(),
-                alternate_name=entity.get('alternateName', '').strip().upper()
+                first_name=entity.get("givenName", "").strip().upper(),
+                last_name=entity.get("familyName", "").strip().upper(),
+                middle_initial=entity.get("middleInitial", "").strip().upper(),
+                alternate_name=entity.get("alternateName", "").strip().upper()
             )
             db.session.add(new_party)
 
             # create addresses for new party
-            if new_delivery_address := officer.get('deliveryAddress'):
+            if new_delivery_address := officer.get("deliveryAddress"):
                 new_address = create_address(new_delivery_address, Address.DELIVERY)
                 new_party.delivery_address = new_address
                 db.session.add(new_address)
-            if new_mailing_address := officer.get('mailingAddress'):
+            if new_mailing_address := officer.get("mailingAddress"):
                 new_address = create_address(new_mailing_address, Address.MAILING)
                 new_party.mailing_address = new_address
                 db.session.add(new_address)
 
             # create roles for new party
-            for role in officer.get('roles', []):
+            for role in officer.get("roles", []):
                 # ignore roles submitted with cessation date
-                if not role.get('cessationDate'):
-                    role_str = role.get('roleType', '').strip().lower()
+                if not role.get("cessationDate"):
+                    role_str = role.get("roleType", "").strip().lower()
                     role_enum = OFFICER_ROLE_CONVERTER.get(role_str)
                     new_party_role = PartyRole(
                         role=role_enum.value,
