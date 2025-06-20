@@ -46,7 +46,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         CONTINUATION_IN = 'continuationIn'
         INCORPORATION = 'incorporationApplication'
         REGISTRATION = 'registration'
-
+        
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
@@ -676,46 +676,33 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     id = db.Column(db.Integer, primary_key=True)
     _completion_date = db.Column('completion_date', db.DateTime(timezone=True))
-    _filing_date = db.Column('filing_date', db.DateTime(
-        timezone=True), default=func.now())
+    _filing_date = db.Column('filing_date', db.DateTime(timezone=True), default=func.now())
     _filing_type = db.Column('filing_type', db.String(30))
     _filing_sub_type = db.Column('filing_sub_type', db.String(30))
     _filing_json = db.Column('filing_json', JSONB)
     _meta_data = db.Column('meta_data', JSONB)
     _payment_status_code = db.Column('payment_status_code', db.String(50))
     _payment_token = db.Column('payment_id', db.String(4096))
-    _payment_completion_date = db.Column(
-        'payment_completion_date', db.DateTime(timezone=True))
+    _payment_completion_date = db.Column('payment_completion_date', db.DateTime(timezone=True))
     _status = db.Column('status', db.String(20), default=Status.DRAFT)
     _source = db.Column('source', db.String(15), default=Source.LEAR.value)
-    paper_only = db.Column('paper_only', db.Boolean,
-                           unique=False, default=False)
-    colin_only = db.Column('colin_only', db.Boolean,
-                           unique=False, default=False)
+    paper_only = db.Column('paper_only', db.Boolean, unique=False, default=False)
+    colin_only = db.Column('colin_only', db.Boolean, unique=False, default=False)
     payment_account = db.Column('payment_account', db.String(30))
-    effective_date = db.Column('effective_date', db.DateTime(
-        timezone=True), default=func.now())
+    effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=func.now())
     submitter_roles = db.Column('submitter_roles', db.String(200))
     tech_correction_json = db.Column('tech_correction_json', JSONB)
-    court_order_file_number = db.Column(
-        'court_order_file_number', db.String(20))
-    court_order_date = db.Column(
-        'court_order_date', db.DateTime(timezone=True), default=None)
-    court_order_effect_of_order = db.Column(
-        'court_order_effect_of_order', db.String(500))
+    court_order_file_number = db.Column('court_order_file_number', db.String(20))
+    court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
+    court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
     order_details = db.Column(db.String(2000))
-    deletion_locked = db.Column(
-        'deletion_locked', db.Boolean, unique=False, default=False)
+    deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
     approval_type = db.Column('approval_type', db.String(15))
-    application_date = db.Column(
-        'application_date', db.DateTime(timezone=True))
+    application_date = db.Column('application_date', db.DateTime(timezone=True))
     notice_date = db.Column('notice_date', db.DateTime(timezone=True))
-    resubmission_date = db.Column(
-        'resubmission_date', db.DateTime(timezone=True))
-    hide_in_ledger = db.Column(
-        'hide_in_ledger', db.Boolean, unique=False, default=False)
-    withdrawal_pending = db.Column(
-        'withdrawal_pending', db.Boolean, unique=False, default=False)
+    resubmission_date = db.Column('resubmission_date', db.DateTime(timezone=True))
+    hide_in_ledger = db.Column('hide_in_ledger', db.Boolean, unique=False, default=False)
+    withdrawal_pending = db.Column('withdrawal_pending', db.Boolean, unique=False, default=False)
 
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
@@ -728,8 +715,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                              db.ForeignKey('users.id'))
 
     filing_submitter = db.relationship('User',
-                                       backref=backref(
-                                           'filing_submitter', uselist=False),
+                                       backref=backref('filing_submitter', uselist=False),
                                        foreign_keys=[submitter_id])
 
     colin_event_ids = db.relationship('ColinEventId', lazy='select')
@@ -854,8 +840,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             self._raise_default_lock_exception()
 
         try:
-            self._filing_type = json_data.get(
-                'filing', {}).get('header', {}).get('name')
+            self._filing_type = json_data.get('filing', {}).get('header', {}).get('name')
             if not self._filing_type:
                 raise Exception  # pylint: disable=broad-exception-raised
         except Exception as err:
@@ -864,8 +849,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 status_code=HTTPStatus.UNPROCESSABLE_ENTITY
             ) from err
 
-        self._filing_sub_type = self.get_filings_sub_type(
-            self._filing_type, json_data)
+        self._filing_sub_type = self.get_filings_sub_type(self._filing_type, json_data)
 
         if self._payment_token:
             valid, err = rsbc_schemas.validate(json_data, 'filing')
@@ -887,8 +871,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filing = self._filing_json.get('filing', {})
         legal_type = filing.get('business', {}).get('legalType', None)
         if legal_type is None:
-            legal_type = filing.get(self.filing_type, {}).get(
-                'nameRequest').get('legalType', None)
+            legal_type = filing.get(self.filing_type, {}).get('nameRequest').get('legalType', None)
         return legal_type
 
     @property
@@ -935,8 +918,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def effective_date_can_be_before_payment_completion_date(self):
         """For AR or COD filings then the effective date can be before the payment date."""
         return self.filing_type in (Filing.FILINGS['annualReport'].get('name'),
-                                    Filing.FILINGS['changeOfDirectors'].get(
-                                        'name'),
+                                    Filing.FILINGS['changeOfDirectors'].get('name'),
                                     Filing.FILINGS['transparencyRegister'].get('name'))
 
     @staticmethod
@@ -1003,8 +985,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         try:
             json_submission = copy.deepcopy(self.filing_json)
-            json_submission['filing']['header']['date'] = self._filing_date.isoformat(
-            )
+            json_submission['filing']['header']['date'] = self._filing_date.isoformat()
             json_submission['filing']['header']['filingId'] = self.id
             json_submission['filing']['header']['name'] = self.filing_type
             json_submission['filing']['header']['status'] = self.status
@@ -1013,8 +994,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['deletionLocked'] = self.deletion_locked
 
             if self.effective_date:  # pylint: disable=using-constant-test
-                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat(
-                )
+                json_submission['filing']['header']['effectiveDate'] = self.effective_date.isoformat()
             if self._payment_status_code:
                 json_submission['filing']['header']['paymentStatusCode'] = self.payment_status_code
             if self._payment_token:
@@ -1025,16 +1005,13 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 json_submission['filing']['header']['paymentAccount'] = self.payment_account
 
             # add colin_event_ids
-            json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(
-                self.id)
+            json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
 
             # add comments
-            json_submission['filing']['header']['comments'] = [
-                comment.json for comment in self.comments]
+            json_submission['filing']['header']['comments'] = [comment.json for comment in self.comments]
 
             # add affected filings list
-            json_submission['filing']['header']['affectedFilings'] = [
-                filing.id for filing in self.children]
+            json_submission['filing']['header']['affectedFilings'] = [filing.id for filing in self.children]
 
             # add corrected flags
             json_submission['filing']['header']['isCorrected'] = self.is_corrected
@@ -1068,8 +1045,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     db.and_(  # special case for NoW
                         Filing.id == filing_id,
                         Filing._filing_type == 'noticeOfWithdrawal',
-                        Filing.withdrawn_filing_id == db.session.query(
-                            Filing.id)
+                        Filing.withdrawn_filing_id == db.session.query(Filing.id)
                         .filter(Filing.temp_reg == temp_reg_id)
                         .scalar_subquery()
                     )
@@ -1103,8 +1079,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
             filter(Filing._status.in_(status)). \
-            order_by(Filing._filing_date.desc(),
-                     Filing.effective_date.desc())  # pylint: disable=no-member;
+            order_by(Filing._filing_date.desc(), Filing.effective_date.desc())  # pylint: disable=no-member;
         # member provided via SQLAlchemy
 
         if after_date:
@@ -1144,9 +1119,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == business_id). \
             filter(Filing._filing_type == 'conversion'). \
             filter(
-                Filing._meta_data.op(
-                    '->')('conversion').op('->>')('convFilingType').in_(filing_types)
-        ). \
+                Filing._meta_data.op('->')('conversion').op('->>')('convFilingType').in_(filing_types)
+            ). \
             order_by(desc(Filing.transaction_id)). \
             all()
 
@@ -1219,8 +1193,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if filing_type:
             query = query.filter(Filing._filing_type == filing_type)
             if filing_sub_type:
-                query = query.filter(
-                    Filing._filing_sub_type == filing_sub_type)
+                query = query.filter(Filing._filing_sub_type == filing_sub_type)
 
         query = query.order_by(Filing.transaction_id.desc())
         return query.first()
@@ -1258,8 +1231,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'registrarsOrder',
             'transparencyRegister'
         ]
-        excluded_businesses = [
-            Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
+        excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
         filings = db.session.query(Filing).join(Business). \
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
@@ -1294,8 +1266,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == filing.business_id). \
             filter(Filing._status == Filing.Status.COMPLETED.value)
 
-        # transaction_id will be None for the pending filings (intermediate state)
-        if filing.transaction_id:
+        if filing.transaction_id:  # transaction_id will be None for the pending filings (intermediate state)
             query = query.filter(Filing.transaction_id < filing.transaction_id)
 
         return query.order_by(Filing.transaction_id.desc()).first()
@@ -1327,8 +1298,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filing_dict = Filing.FILINGS.get(filing_type, None)
 
         if filing_sub_type:
-            fee_code = filing_dict[filing_sub_type]['codes'].get(
-                legal_type, None)
+            fee_code = filing_dict[filing_sub_type]['codes'].get(legal_type, None)
         else:
             if fee_code := filing_dict.get('code', None):
                 return fee_code
@@ -1402,7 +1372,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if not (self.filing_json
                 or
                 self.tech_correction_json
-                ):
+            ):
             return None
 
         legal_filings = []
