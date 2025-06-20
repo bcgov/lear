@@ -339,6 +339,10 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID', 'TRACTION_PUBLIC_SCHEMA_DID')
     TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID', 'TRACTION_PUBLIC_ISSUER_DID')
 
+    DOCUMENT_API_URL = os.getenv('DOCUMENT_API_URL', 'http://document-api.com')
+    DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION', '/api/v1')
+    DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
     """Production environment configuration."""
