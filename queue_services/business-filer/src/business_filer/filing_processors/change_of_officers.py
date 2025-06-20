@@ -60,7 +60,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
     # get list of submitted officers
     if not (submitted_officers := filing_json["filing"]["changeOfOfficers"].get("relationships")):
         return
-    
+
     # get all active officers to compare when updating parties
     end_date = datetime.now(timezone.utc).date()
     active_roles = PartyRole.get_party_roles_by_class_type(business.id, PartyClassType.OFFICER, end_date)
@@ -72,7 +72,6 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
             existing_officers[pr.party_id] = []
         existing_officers[pr.party_id].append(pr)
 
-    
     # loop through submitted officers and create or update Party, Address and PartyRole's
     for officer in submitted_officers:
         entity = officer.get('entity', {})
@@ -175,6 +174,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
                         role=role_enum.value,
                         appointment_date=filing_rec.effective_date,
                         party_class_type=PartyClassType.OFFICER,
-                        party=new_party
+                        party=new_party,
+                        business_id=business.id
                     )
                     db.session.add(new_party_role)
