@@ -10,9 +10,9 @@
 # specific language governing permissions and limitations under the License.
 """Works with the document service api."""
 
-import requests
 import json
 from http import HTTPStatus
+import requests
 from flask import current_app, jsonify
 
 from legal_api.models import Document, Business
