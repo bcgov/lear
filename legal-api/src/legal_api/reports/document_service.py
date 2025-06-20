@@ -1,11 +1,13 @@
-from legal_api.models import Document, Business
-from legal_api.exceptions import BusinessException
 import requests
 from flask import current_app, jsonify
 from http import HTTPStatus
 import json
 
+from legal_api.models import Document, Business
+from legal_api.exceptions import BusinessException
+
 class DocumentService:
+    """Service to create document records in document service api."""
 
     def __init__(self):
         self.url = current_app.config.get('DOCUMENT_SVC_URL')
@@ -13,15 +15,17 @@ class DocumentService:
         self.api_key = current_app.config.get('DOCUMENT_API_KEY')
 
     def get_content(self, response):
-      c = response.content
-      try:
-        c = c.decode()
-        c = json.loads(c)
-      except:
-        pass
-      return c
+        """Get the content of the response useful for test methods."""
+        c = response.content
+        try:
+            c = c.decode()
+            c = json.loads(c)
+        except Exception:
+            pass
+        return c
 
-    def create_document_record(self, business_id: int, filing_id: int, report_type: str, file_key: str, file_name: str):
+    def create_document_record(self, business_id: int, filing_id: int, report_type: str, file_key: str, file_name: str): #pylint disable=too-many-arguments
+        """Create a document record in the document table."""
         new_document = Document(
             business_id=business_id,
             filing_id=filing_id,
@@ -44,7 +48,7 @@ class DocumentService:
         document = Document.find_one_by(business_id, filing_identifier, report_type)
         return document if document else False
 
-    def create_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, binary_or_url):
+    def create_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, binary_or_url): #pylint disable=too-many-arguments
         """
         Create a document in the document service.
         business_identifier: The business identifier.
@@ -68,7 +72,7 @@ class DocumentService:
         self.create_document_record(Business.find_by_identifier(business_identifier).id, filing_identifier, report_type, content['identifier'], f'{business_identifier}_{filing_identifier}_{report_type}.pdf')
         return content, response.status_code
 
-    def get_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, file_key: str=None):
+    def get_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, file_key: str=None): #pylint disable=too-many-arguments
         """
         Get a document from the document service.
         business_identifier: The business identifier.
@@ -85,17 +89,17 @@ class DocumentService:
         }
         get_url = ''
         if file_key is not None:
-          get_url = f'{self.url}/application-reports/{self.product_code}/{file_key}'
+            get_url = f'{self.url}/application-reports/{self.product_code}/{file_key}'
         else:
-          document = self.has_document(business_identifier, filing_identifier, report_type)
-          if document is False:
-            raise BusinessException('Document not found', HTTPStatus.NOT_FOUND)
-          get_url = f'{self.url}/application-reports/{self.product_code}/{document.file_key}'
-        
+            document = self.has_document(business_identifier, filing_identifier, report_type)
+            if document is False:
+                raise BusinessException('Document not found', HTTPStatus.NOT_FOUND)
+            get_url = f'{self.url}/application-reports/{self.product_code}/{document.file_key}'
+
         if get_url != '':
-          response = requests.get(url=get_url, headers=headers)
-          content = self.get_content(response)
-          if response.status_code != HTTPStatus.OK:
-              return jsonify(message=str(content)), response.status_code
-          return content, response.status_code
+            response = requests.get(url=get_url, headers=headers)
+            content = self.get_content(response)
+            if response.status_code != HTTPStatus.OK:
+                return jsonify(message=str(content)), response.status_code
+            return content, response.status_code
         return jsonify(message='Document not found'), HTTPStatus.NOT_FOUND
