@@ -37,13 +37,13 @@ from legal_api.models import (
     PartyRole,
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
+from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
+from legal_api.services import MinioService, VersionedBusinessDetailsService, flags  # pylint: disable=line-too-long
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import timezone
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.reports.document_service import DocumentService
 
 
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'

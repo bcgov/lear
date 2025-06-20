@@ -12,17 +12,19 @@
 
 import json
 from http import HTTPStatus
+
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Document, Business
 from legal_api.exceptions import BusinessException
+from legal_api.models import Business, Document
 
 
 class DocumentService:
     """Service to create document records in document service api."""
 
     def __init__(self):
+        """Initialize the document service."""
         self.url = current_app.config.get('DOCUMENT_SVC_URL')
         self.product_code = current_app.config.get('DOCUMENT_PRODUCT_CODE')
         self.api_key = current_app.config.get('DOCUMENT_API_KEY')
@@ -37,7 +39,13 @@ class DocumentService:
             pass
         return c
 
-    def create_document_record(self, business_id: int, filing_id: int, report_type: str, file_key: str, file_name: str): #pylint: disable=too-many-arguments
+    def create_document_record(
+      self,
+      business_id: int,
+      filing_id: int,
+      report_type: str,
+      file_key: str,
+      file_name: str):  # pylint: disable=too-many-arguments
         """Create a document record in the document table."""
         new_document = Document(
             business_id=business_id,
@@ -48,9 +56,14 @@ class DocumentService:
         )
         new_document.save()
 
-    def has_document(self, business_identifier: str, filing_identifier: int, report_type: str):
+    def has_document(
+      self,
+      business_identifier: str,
+      filing_identifier: int,
+      report_type: str):
         """
         Check if a document exists in the document service.
+
         business_identifier: The business identifier.
         filing_identifier: The filing identifier.
         report_type: The report type.
@@ -58,12 +71,22 @@ class DocumentService:
         return: True if the document exists, False otherwise.
         """
         business_id = Business.find_by_identifier(business_identifier).id
-        document = Document.find_one_by(business_id, filing_identifier, report_type)
+        document = Document.find_one_by(
+          business_id,
+          filing_identifier,
+          report_type)
         return document if document else False
 
-    def create_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, binary_or_url): #pylint: disable=too-many-arguments
+    def create_document(
+      self,
+      business_identifier: str,
+      filing_identifier: int,
+      report_type: str,
+      account_id: str,
+      binary_or_url):  # pylint: disable=too-many-arguments
         """
         Create a document in the document service.
+
         business_identifier: The business identifier.
         filing_identifier: The filing identifier.
         report_type: The report type.
@@ -77,24 +100,36 @@ class DocumentService:
             'X-Api-Key': self.api_key,
             'Account-Id': account_id
         }
-        post_url = f'{self.url}/application-reports/{self.product_code}/{business_identifier}/{filing_identifier}/{report_type}'
+        post_url = (f'{self.url}/application-reports/'
+                    f'{self.product_code}/{business_identifier}/'
+                    f'{filing_identifier}/{report_type}')
         response = requests.post(url=post_url, headers=headers, data=binary_or_url)
         content = self.get_content(response)
         if response.status_code != HTTPStatus.CREATED:
             return jsonify(message=str(content)), response.status_code
-        self.create_document_record(Business.find_by_identifier(business_identifier).id, filing_identifier, report_type, content['identifier'], f'{business_identifier}_{filing_identifier}_{report_type}.pdf')
+        self.create_document_record(
+          Business.find_by_identifier(business_identifier).id,
+          filing_identifier, report_type, content['identifier'],
+          f'{business_identifier}_{filing_identifier}_{report_type}.pdf'
+        )
         return content, response.status_code
 
-    def get_document(self, business_identifier: str, filing_identifier: int, report_type: str, account_id: str, file_key: str=None): #pylint: disable=too-many-arguments
+    def get_document(
+      self,
+      business_identifier: str,
+      filing_identifier: int,
+      report_type: str,
+      account_id: str,
+      file_key: str = None):  # pylint: disable=too-many-arguments
         """
         Get a document from the document service.
+
         business_identifier: The business identifier.
         filing_identifier: The filing identifier.
         report_type: The report type.
         account_id: The account id.
         return: The document url (or binary).
         """
-
         headers = {
             'X-Api-Key': self.api_key,
             'Account-Id': account_id,
