@@ -4108,7 +4108,8 @@ components:
               type: object
               required:
                 - registeredOffice
-              description: 'Addresses related to the business.   '
+                - recordsOffice
+              description: 'Addresses related to the business.'
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
@@ -4199,10 +4200,20 @@ components:
                 required:
                   - officer
                   - deliveryAddress
+                  - mailingAddress
                   - appointmentDate
                   - cessationDate
             offices:
-              $ref: '#/components/schemas/Office'
+              type: object
+              required:
+                - registeredOffice
+                - recordsOffice
+              description: 'Addresses related to the business.'
+              properties:
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
       required:
         - annualReport
       x-examples:
@@ -4861,6 +4872,7 @@ components:
                 files:
                   type: array
                   minItems: 1
+                  maxItems: 5
                   items:
                     required:
                     - fileKey
@@ -4888,7 +4900,7 @@ components:
               $ref: '#/components/schemas/Name_translations'
             offices:
               type: object
-              description: 'Addresses related to the business.   '
+              description: 'Addresses related to the business.'
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
@@ -4896,6 +4908,7 @@ components:
                   $ref: '#/components/schemas/Office'
               required:
               - registeredOffice
+              - recordsOffice
             parties:
               type: array
               description: 'Persons having a role in the corporation eg: company officer.'
@@ -4944,11 +4957,11 @@ components:
           type: string
           format: phone
           example: (250) 234-4433
-          description: 'Phone number to be used to contact the business eg: (250) 234-4433.'
+          description: 'Phone number to be used to contact the business eg: (250) 234-4433, maximum 10 digits'
         extension:
           type: number
           example: 123
-          description: Extension number of the business contact phone number (555) 555-5555.
+          description: 'Extension number of the business contact phone number (555) 555-5555, maximum 5 digits'
       required:
         - email
     Conversion:
@@ -5289,9 +5302,13 @@ components:
             - firstName
             - lastName
         deliveryAddress:
-          $ref: '#/components/schemas/Address'
+          allOf:
+            - $ref: '#/components/schemas/Address'
+          description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country, postal code and instructions for delivery. Required for Change of Directors filing and Annual Report filing.'
         mailingAddress:
-          $ref: '#/components/schemas/Address'
+          allOf:
+            - $ref: '#/components/schemas/Address'
+          description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country, postal code and instructions for delivery. Required for Change of Directors filing and Annual Report filing.'
         title:
           type: string
           description: 'Official title or position of the director in the company.'
@@ -5409,13 +5426,15 @@ components:
               description: 'Whether the company has liability or not: Yes/No.'
             parties:
               type: array
-              description: Can be the company directors or applicant of the filing.
+              description: Can be the company directors or applicant of the filing. This field is required for voluntary dissolution filings.
               items:
                 $ref: '#/components/schemas/party'
             courtOrder:
               $ref: '#/components/schemas/Court_order'
             custodialOffice:
-              $ref: '#/components/schemas/Office'
+              description: 'Corporations required custodial office when applying for voluntary dissolution.'
+              allOf:
+                - $ref: '#/components/schemas/Office'
             affidavitFileKey:
               type: string
               title: The Identifier for affidavit file in file server
@@ -6101,12 +6120,15 @@ components:
               $ref: '#/components/schemas/Name_translations'
             offices:
               type: object
-              description: 'Addresses related to the business.   '
+              description: 'Addresses related to the business.'
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
                 recordsOffice:
                   $ref: '#/components/schemas/Office'
+              required:
+              - registeredOffice
+              - recordsOffice
             parties:
               type: array
               description: 'Persons having a role in the corporation eg: company director.'
@@ -6503,7 +6525,9 @@ components:
                 - $ref: '#/components/schemas/Business'
               description: Officer is a key management executive of the business
             deliveryAddress:
-              $ref: '#/components/schemas/Address'
+              allOf:
+                - $ref: '#/components/schemas/Address'
+              description: 'Required when the role type is Director or Custodian.'
             mailingAddress:
               $ref: '#/components/schemas/Address'
             title:
@@ -6581,6 +6605,10 @@ components:
       title: Person Schema
       description: 'An individual that is currently or had previously occupied a role in relation to a business.'
       properties:
+        firstName:
+          type: string
+          maxLength: 30
+          description: 'First name of the individual. Used in corporations filings.'
         givenName:
           type: string
           maxLength: 30
@@ -6589,6 +6617,10 @@ components:
           type: string
           maxLength: 30
           description: Last name or surname of the individual.
+        lastName:
+          type: string
+          maxLength: 30
+          description: 'Last name or surname of the individual. Used in corporations filings.'
         additionalName:
           type: string
           title: 'An additional name for a Person, can be used for a middle name.'
@@ -6602,7 +6634,7 @@ components:
           type: string
           format: email
           example: abc.def@gov.bc.ca
-          description: email address of the individual for contact information.
+          description: email address of the individual for contact information. Required for corporation voluntary dissolution filings.
       x-examples:
         Example 1:
           givenName: John
