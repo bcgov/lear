@@ -13,8 +13,8 @@
 import json
 from http import HTTPStatus
 import requests
-
 from flask import current_app, jsonify
+
 from legal_api.models import Document, Business
 from legal_api.exceptions import BusinessException
 
