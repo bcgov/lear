@@ -1,17 +1,18 @@
 from config import get_named_config
 from prefect import task
+from prefect.cache_policies import NO_CACHE
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 import oracledb
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def get_config():
     config = get_named_config()
     return config
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def check_postgres_connection(db_engine: Engine):
     """Postgres DB Connection Check."""
     with db_engine.connect() as conn:
@@ -21,7 +22,7 @@ def check_postgres_connection(db_engine: Engine):
         print(f'✅ Connected to Postgres database: {res}')
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def colin_extract_init(config):
     try:
         engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
@@ -51,8 +52,7 @@ def colin_oracle_init(config):
     except Exception as e:
         raise Exception('Failed to create engine for COLIN Oracle DB') from e
 
-
-@task
+@task(cache_policy=NO_CACHE)
 def lear_init(config):
     try:
         engine = create_engine(
@@ -65,7 +65,7 @@ def lear_init(config):
         raise Exception('Failed to create engine for LEAR DB') from e
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def auth_init(config):
     try:
         engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)

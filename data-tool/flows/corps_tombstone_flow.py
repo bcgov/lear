@@ -11,6 +11,7 @@ from common.extract_tracking_service import \
 from common.init_utils import colin_extract_init, get_config, lear_init
 from common.query_utils import convert_result_set_to_dict
 from prefect import flow, serve, task
+from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect.futures import wait
 from prefect.states import Failed
@@ -29,7 +30,7 @@ from tombstone.tombstone_utils import (all_unsupported_types,
                                        update_data, update_versioning)
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps) -> list:
     """Reserve corps for a given flow run.
 
@@ -47,7 +48,7 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
     return reserved
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def get_unprocessed_count(config, colin_engine: Engine) -> int:
     query = get_total_unprocessed_count_query(
         'tombstone-flow',
@@ -63,7 +64,7 @@ def get_unprocessed_count(config, colin_engine: Engine) -> int:
         return total
 
 
-@task(name='1.1-Users-Collect-Task')
+@task(name='1.1-Users-Collect-Task', cache_policy=NO_CACHE)
 def get_corp_users(colin_engine: Engine, corp_nums: list) -> list[dict]:
     """Get user information."""
     query = get_corp_users_query(corp_nums)
@@ -75,7 +76,7 @@ def get_corp_users(colin_engine: Engine, corp_nums: list) -> list[dict]:
         return raw_data_dict
 
 
-@task(name='1.2-Users-Migrate-Task')
+@task(name='1.2-Users-Migrate-Task', cache_policy=NO_CACHE)
 def load_corp_users(lear_engine: Engine, users_data: list) -> dict:
     """Migrate user information."""
     users_mapper = {}
@@ -94,7 +95,7 @@ def load_corp_users(lear_engine: Engine, users_data: list) -> dict:
     return users_mapper
 
 
-@task(name='2.1-Corp-Snapshot-Placeholder-Filings-Collect-Task')
+@task(name='2.1-Corp-Snapshot-Placeholder-Filings-Collect-Task', cache_policy=NO_CACHE)
 def get_snapshot_filings_data(config, colin_engine: Engine, corp_num: str) -> dict:
     """Get corp snapshot and placeholder filings data."""
     raw_data = {}
@@ -109,7 +110,7 @@ def get_snapshot_filings_data(config, colin_engine: Engine, corp_num: str) -> di
         return raw_data
 
 
-@task(name='2.2-Corp-Snapshot-Placeholder-Filings-Cleanup-Task')
+@task(name='2.2-Corp-Snapshot-Placeholder-Filings-Cleanup-Task', cache_policy=NO_CACHE)
 def clean_snapshot_filings_data(data: dict) -> dict:
     """Clean corp snapshot and placeholder filings data."""
     # TODO: raise error for none
@@ -123,7 +124,7 @@ def clean_snapshot_filings_data(data: dict) -> dict:
     return tombstone
 
 
-@task(name='3.1-Corp-Snapshot-Migrate-Task')
+@task(name='3.1-Corp-Snapshot-Migrate-Task', cache_policy=NO_CACHE)
 def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dict, versioning_mapper: dict) -> int:
     """Migrate corp snapshot."""
     # Note: The business info is partially loaded for businesses table now. And it will be fully
@@ -226,7 +227,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
     return business_id
 
 
-@task(name='3.2.1-Placeholder-Historical-Filings-Migrate-Task')
+@task(name='3.2.1-Placeholder-Historical-Filings-Migrate-Task', cache_policy=NO_CACHE)
 def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id: int, users_mapper: dict, versioning_mapper: dict):
     """Migrate placeholder historical filings."""
     filings_data = tombstone_data['filings']
@@ -292,7 +293,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     return transaction_id
 
 
-@task(name='3.2.2-Amalgamation-Snapshot-Migrate-Task')
+@task(name='3.2.2-Amalgamation-Snapshot-Migrate-Task', cache_policy=NO_CACHE)
 def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, business_id: int, filing_id: int, versioning_mapper: dict):
     """Migrate amalgamation snapshot."""
     amalgamation = amalgamation_data['amalgamations']
@@ -320,7 +321,7 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
         versioning_mapper['amalgamating_businesses_version'].append(amalgamating_business_id)
 
 
-@task(name='3.3-Update-Auth-Task')
+@task(name='3.3-Update-Auth-Task', cache_policy=NO_CACHE)
 def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
     """Create auth entity and affiliate as required."""
     # Note: affiliation to an account does not need to happen.  only entity creation in auth is req'd.
@@ -374,7 +375,7 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
             raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
 
 
-@task(name='1-Migrate-Corp-Users-Task')
+@task(name='1-Migrate-Corp-Users-Task', cache_policy=NO_CACHE)
 def migrate_corp_users(colin_engine: Engine, lear_engine: Engine, corp_nums: list) -> dict:
     try:
         print(f'👷 Start collecting and migrating users for {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
@@ -389,7 +390,7 @@ def migrate_corp_users(colin_engine: Engine, lear_engine: Engine, corp_nums: lis
     return users_mapper
 
 
-@task(name='2-Get-Corp-Tombstone-Data-Task-Async')
+@task(name='2-Get-Corp-Tombstone-Data-Task-Async', cache_policy=NO_CACHE)
 def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str, dict]:
     """Get tombstone data - corp snapshot and placeholder filings."""
     try:
@@ -405,7 +406,7 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
         return corp_num, e
 
 
-@task(name='3-Corp-Tombstone-Migrate-Task-Async')
+@task(name='3-Corp-Tombstone-Migrate-Task-Async', cache_policy=NO_CACHE)
 def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: dict, users_mapper: dict) -> str:
     """Migrate tombstone data - corp snapshot and placeholder filings."""
     # TODO: update corp_processing status (succeeded & failed)
