@@ -309,6 +309,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_continuation_in_data(filing)
         elif self._report_key == 'certificateOfContinuation':
             self._format_certificate_of_continuation_in_data(filing)
+        elif self._report_key == 'intentToLiquidate':
+            self._format_intent_to_liquidate_data(filing)
         elif self._report_key == 'noticeOfWithdrawal':
             self._format_notice_of_withdrawal_data(filing)
         elif self._report_key == 'appointReceiver':
@@ -797,6 +799,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_amalgamation_data(self, filing):
         self._set_amalgamating_businesses(filing)
+
+    def _format_intent_to_liquidate_data(self, filing):
+        return
 
     def _format_notice_of_withdrawal_data(self, filing):
         withdrawn_filing_id = filing['noticeOfWithdrawal']['filingId']
@@ -1541,6 +1546,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfContinuation': {
             'filingDescription': 'Certificate of Continuation',
             'fileName': 'certificateOfContinuation'
+        },
+        'intentToLiquidate': {
+            'filingDescription': 'Intent to Liquidate',
+            'fileName': 'intentToLiquidate'
         },
         'noticeOfWithdrawal': {
             'filingDescription': 'Notice of Withdrawal',
