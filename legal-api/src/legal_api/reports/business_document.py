@@ -48,9 +48,6 @@ class BusinessDocument:
 
     def get_pdf(self):
         """Render the business document pdf response."""
-        # document = self._document_service.get_document(self._business.identifier, self._document_key, self._report_date_time)
-        # if document is not None:
-        #     return document, HTTPStatus.OK
         headers = {
             'Authorization': 'Bearer {}'.format(jwt.get_token_auth_header()),
             'Content-Type': 'application/json'
@@ -63,7 +60,6 @@ class BusinessDocument:
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
-        # self._document_service.create_document(self._business.identifier, self._document_key, self._report_date_time, jwt.get_account_id(), response.content)
         return response.content, response.status_code
 
     def get_json(self):
