@@ -45,6 +45,7 @@ from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.reports.document_service import DocumentService
 
+
 OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 
 
@@ -80,7 +81,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_report(self):
         account_id = request.headers.get('Account-Id', None)
         if account_id is not None:
-            document, status = self._document_service.get_document(self._business.identifier, self._filing.id, self._report_key, account_id)
+            document, status = self._document_service.get_document(
+              self._business.identifier,
+              self._filing.id,
+              self._report_key,
+              account_id
+            )
             if status == HTTPStatus.OK:
                 return current_app.response_class(
                     response=document,
@@ -109,7 +115,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return jsonify(message=str(response.content)), response.status_code
 
         if account_id is not None:
-            self._document_service.create_document(self._business.identifier, self._filing.identifier, self._report_key, account_id, response.content)
+            self._document_service.create_document(
+              self._business.identifier,
+              self._filing.identifier,
+              self._report_key,
+              account_id,
+              response.content
+            )
 
         return current_app.response_class(
             response=response.content,
