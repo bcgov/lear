@@ -104,7 +104,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         current_app.logger.error(f"No filing found for: {filing_message}")
         raise DefaultError(error_text=f"filing not found for {filing_message.filing_identifier}")
 
-
     if filing_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
         current_app.logger.warning("QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s",
                                     filing_submission.business_id, filing_submission.id, filing_message)
