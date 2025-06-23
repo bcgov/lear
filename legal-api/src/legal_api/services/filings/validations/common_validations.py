@@ -358,8 +358,8 @@ def validate_parties_addresses(filing_json: dict, filing_type: str, key: str = '
     msg = []
     parties_array = filing_json['filing'][filing_type][key]
     parties_path = f'/filing/{filing_type}/{key}'
-    for item in parties_array:
-        msg.extend(validate_addresses(item, parties_path))
+    for idx, party in enumerate(parties_array):
+        msg.extend(validate_addresses(party, f'{parties_path}/{idx}'))
     return msg
 
 
@@ -384,9 +384,15 @@ def _validate_postal_code(
     """Validate that postal code is optional for specified country."""
     country = address['addressCountry']
     postal_code = address['postalCode']
-    country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-    if country not in NO_POSTAL_CODE_COUNTRY_CODES and\
-            not postal_code:
-        return {'error': 'Postal code is required.',
-                'path': f'{address_path}/postalCode'}
+    try:
+        country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+        if country not in NO_POSTAL_CODE_COUNTRY_CODES and\
+                not postal_code:
+            return {'error': _('Postal code is required.'),
+                    'path': f'{address_path}/postalCode'}
+    except LookupError:
+        # Different ISO-2 country validations are done at filing level,
+        # this can be refactored into a common validator in the future
+        return None
+
     return None
