@@ -1,38 +1,88 @@
-# platform=linux/amd64
-FROM python:3.8.6-buster
+FROM python:3.9.22-bullseye AS development_build
+
+USER root
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
 
 ENV VCS_REF=${VCS_REF}
 ENV BUILD_DATE=${BUILD_DATE}
+ENV PORT=8080
 
 LABEL org.label-schema.vcs-ref=${VCS_REF} \
     org.label-schema.build-date=${BUILD_DATE}
 
-USER root
+LABEL maintainer="thorwolpert"
+LABEL vendor="BCROS"
 
-# Create working directory
-RUN mkdir /opt/app-root && chmod 755 /opt/app-root
-WORKDIR /opt/app-root
+ARG APP_ENV="production" \
+  # Needed for fixing permissions of files created by Docker:
+  UID=1000 \
+  GID=1000
 
-# Install the requirements
-COPY ./requirements.txt .
-COPY ./requirements-nats.txt .
+ENV APP_ENV=${APP_ENV} \
+  # python:
+  PYTHONFAULTHANDLER=1 \
+  PYTHONUNBUFFERED=1 \
+  PYTHONHASHSEED=random \
+  PYTHONDONTWRITEBYTECODE=1 \
+  # pip:
+  PIP_NO_CACHE_DIR=1 \
+  PIP_DISABLE_PIP_VERSION_CHECK=1 \
+  PIP_DEFAULT_TIMEOUT=100 \
+  PIP_ROOT_USER_ACTION=ignore \
+  # poetry:
+  POETRY_VERSION=2.1.1 \
+  POETRY_NO_INTERACTION=1 \
+  POETRY_VIRTUALENVS_CREATE=false \
+  POETRY_CACHE_DIR='/var/cache/pypoetry' \
+  POETRY_HOME='/usr/local'
 
-RUN pip install --upgrade pip
-RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install --no-cache-dir -r requirements-nats.txt
+SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-COPY . .
+RUN apt-get update && apt-get upgrade -y \
+  && apt-get install --no-install-recommends -y \
+    bash \
+    brotli \
+    build-essential \
+    curl \
+    gettext \
+    git \
+    libpq-dev \
+    wait-for-it \
+  && curl -sSL 'https://install.python-poetry.org' | python - \
+  && poetry --version \
+  # Cleaning cache:
+  && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+  && apt-get clean -y && rm -rf /var/lib/apt/lists/*
 
-RUN pip install .
+WORKDIR /code
 
-USER 1001
+RUN groupadd -g "${GID}" -r web \
+  && useradd -d '/code' -g web -l -r -u "${UID}" web \
+  && chown web:web -R '/code'
 
-# Set Python path
-ENV PYTHONPATH=/opt/app-root/src
+# Copy only requirements, to cache them in docker layer
+COPY --chown=web:web ./poetry.lock ./pyproject.toml /code/
 
-EXPOSE 8080
+COPY --chown=web:web ./src /code/src
+COPY --chown=web:web ./README.md /code
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--config", "/opt/app-root/gunicorn_config.py", "wsgi:application"]
+# Project initialization:
+RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
+  echo "$APP_ENV" \
+  && poetry version \
+  # Install deps:
+  && poetry run pip install -U pip \
+  && poetry install --only main --no-interaction --no-ansi
+
+# Running as non-root user:
+USER web
+
+# The following stage is only for production:
+FROM development_build AS production_build
+COPY --chown=web:web . /code
+
+# ENV PYTHONPATH=/opt/app-root/src
+
+CMD gunicorn --bind 0.0.0.0:${PORT} --preload --config /code/gunicorn_config.py wsgi:app
