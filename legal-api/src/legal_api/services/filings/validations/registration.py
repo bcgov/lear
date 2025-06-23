@@ -23,11 +23,16 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
+)
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from ...utils import get_date, get_str
-from .common_validations import validate_court_order, validate_name_request
 
 
 def validate(registration_json: Dict) -> Optional[Error]:
@@ -43,14 +48,17 @@ def validate(registration_json: Dict) -> Optional[Error]:
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
         )
 
+    filing_type = 'registration'
     msg = []
-    msg.extend(validate_name_request(registration_json, legal_type, 'registration'))
+    msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
     msg.extend(validate_naics(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
+    msg.extend(validate_parties_addresses(registration_json, filing_type))
     msg.extend(validate_start_date(registration_json))
     msg.extend(validate_offices(registration_json))
+    msg.extend(validate_offices_addresses(registration_json, filing_type))
     msg.extend(validate_registration_court_order(registration_json))
 
     if msg:

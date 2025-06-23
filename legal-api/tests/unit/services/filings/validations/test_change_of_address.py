@@ -26,7 +26,6 @@ from legal_api.services.filings.validations.validation import validate
 from tests.unit.models import factory_business
 
 
-
 def test_valid_address_change(session):
     """Test that a valid address change passes validation."""
     business = factory_business('CP1234567')

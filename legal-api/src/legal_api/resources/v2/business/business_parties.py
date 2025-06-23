@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, PartyRole, PartyClass
+from legal_api.models import Business, PartyClass, PartyRole
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -29,7 +29,7 @@ from .bp import bp
 @bp.route('/<string:identifier>/parties/<int:party_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
 @jwt.requires_auth
-def get_parties(identifier, party_id=None):
+def get_parties(identifier, party_id=None):  # pylint: disable=too-many-locals disable=too-many-branches
     """Return a JSON of the parties."""
     business = Business.find_by_identifier(identifier)
 
@@ -58,7 +58,9 @@ def get_parties(identifier, party_id=None):
                 class_type_enum = PartyClass.PartyClassType[class_type_str.upper()]
             except KeyError:
                 valid_types = [e.name for e in PartyClass.PartyClassType]
-                return jsonify({"message": f"Invalid classType '{class_type_str}'. Valid types: {valid_types}"}), HTTPStatus.BAD_REQUEST
+                return jsonify(
+                    {'message': f"Invalid classType '{class_type_str}'. Valid types: {valid_types}"}
+                ), HTTPStatus.BAD_REQUEST
 
             party_roles = PartyRole.get_party_roles_by_class_type(
                 business.id,

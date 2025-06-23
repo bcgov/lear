@@ -35,9 +35,12 @@
 from typing import Optional
 
 from legal_api.errors import Error
+from legal_api.services.filings.validations.common_validations import validate_parties_addresses
 
 
-def validate(_: dict) -> Optional[Error]:
+def validate(filing_json: dict) -> Optional[Error]:
     """Validate the Appoint Receiver filing."""
-    # NOTE: There isn't anything to validate outside what is already validated via the schema yet
-    return None
+    filing_type = 'appointReceiver'
+    msg = []
+    msg.extend(validate_parties_addresses(filing_json, filing_type))
+    return msg

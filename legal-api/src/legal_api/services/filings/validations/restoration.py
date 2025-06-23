@@ -20,7 +20,12 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing, PartyRole
-from legal_api.services.filings.validations.common_validations import validate_court_order, validate_name_request
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
+)
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -62,7 +67,9 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
                     'path': '/filing/restoration/nameRequest'})
 
     msg.extend(validate_party(restoration))
+    msg.extend(validate_parties_addresses(restoration, filing_type))
     msg.extend(validate_offices(restoration, filing_type))
+    msg.extend(validate_offices_addresses(restoration, filing_type))
     msg.extend(validate_approval_type(restoration, restoration_type, limited_restoration))
     msg.extend(validate_restoration_court_order(restoration, restoration_type, limited_restoration))
     msg.extend(validate_restoration_registrar(restoration, restoration_type))

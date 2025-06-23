@@ -21,15 +21,20 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services.filings.validations.common_validations import validate_offices_addresses
 
 
 def validate(business: Business, cod: Dict) -> Error:
-    """Validate the Change ofAddress filing."""
+    """Validate the Change of Address filing."""
     if not business or not cod:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+
+    filing_type = 'changeOfAddress'
     msg = []
 
-    offices_array = json.dumps(cod['filing']['changeOfAddress']['offices'])
+    msg.extend(validate_offices_addresses(cod, filing_type))
+
+    offices_array = json.dumps(cod['filing'][filing_type]['offices'])
     addresses = json.loads(offices_array)
 
     for item in addresses.keys():

@@ -22,10 +22,20 @@ from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Address, Business
 from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
+
+
+NO_POSTAL_CODE_COUNTRY_CODES = {
+    'AO', 'AG', 'AW', 'BS', 'BZ', 'BJ', 'BM', 'BO', 'BQ', 'BW', 'BF', 'BI',
+    'CM', 'CF', 'TD', 'KM', 'CG', 'CD', 'CK', 'CI', 'CW', 'DJ', 'DM', 'GQ',
+    'ER', 'FJ', 'TF', 'GA', 'GM', 'GH', 'GD', 'GY', 'HM', 'HK',
+    'KI', 'KP', 'LY', 'MO', 'MW', 'ML', 'MR', 'NR',
+    'AN', 'NU', 'QA', 'RW', 'KN', 'ST', 'SC', 'SL', 'SX', 'SB', 'SO', 'SR', 'SY',
+    'TL', 'TG', 'TK', 'TO', 'TT', 'TV', 'UG', 'AE', 'VU', 'YE', 'ZW'
+}
 
 
 def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
@@ -331,3 +341,52 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
         msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
 
     return msg
+
+
+def validate_offices_addresses(filing_json: dict, filing_type: str) -> list:
+    """Validate optional fields in office addresses."""
+    msg = []
+    offices_dict = filing_json['filing'][filing_type]['offices']
+    offices_path = f'/filing/{filing_type}/offices'
+    for key, value in offices_dict.items():
+        msg.extend(validate_addresses(value, f'{offices_path}/{key}'))
+    return msg
+
+
+def validate_parties_addresses(filing_json: dict, filing_type: str, key: str = 'parties') -> list:
+    """Validate optional fields in party addresses."""
+    msg = []
+    parties_array = filing_json['filing'][filing_type][key]
+    parties_path = f'/filing/{filing_type}/{key}'
+    for item in parties_array:
+        msg.extend(validate_addresses(item, parties_path))
+    return msg
+
+
+def validate_addresses(
+    addresses: dict,
+    addresses_path: str
+) -> list:
+    """Validate optional fields in addresses."""
+    msg = []
+    for address_type in Address.JSON_ADDRESS_TYPES:
+        if address := addresses.get(address_type):
+            err = _validate_postal_code(address, f'{addresses_path}/{address_type}')
+            if err:
+                msg.append(err)
+    return msg
+
+
+def _validate_postal_code(
+    address: dict,
+    address_path: str
+) -> dict:
+    """Validate that postal code is optional for specified country."""
+    country = address['addressCountry']
+    postal_code = address['postalCode']
+    country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+    if country not in NO_POSTAL_CODE_COUNTRY_CODES and\
+            not postal_code:
+        return {'error': 'Postal code is required.',
+                'path': f'{address_path}/postalCode'}
+    return None

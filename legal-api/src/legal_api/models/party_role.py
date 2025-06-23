@@ -131,7 +131,12 @@ class PartyRole(db.Model, Versioned):
         return members
 
     @classmethod
-    def get_party_roles_by_class_type(cls, business_id: int, class_type: PartyClass.PartyClassType, end_date: datetime) -> list[PartyRole]:
+    def get_party_roles_by_class_type(
+        cls,
+        business_id: int,
+        class_type: PartyClass.PartyClassType,
+        end_date: datetime
+    ) -> list[PartyRole]:
         """Return a list of party roles by the class type."""
         party_roles = db.session.query(PartyRole). \
             filter(PartyRole.business_id == business_id). \
