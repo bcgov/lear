@@ -46,13 +46,14 @@ class ExtractTrackingService:
         init_query = f"""
         WITH candidate_corps AS ({base_query}),
         available_corps AS (
-            SELECT corp_num, corp_type_cd
+            SELECT corp_num, corp_type_cd, mig_batch_id
             FROM candidate_corps
             FOR UPDATE SKIP LOCKED
         )
         INSERT INTO {self.table_name} (
             corp_num,
             corp_type_cd,
+            mig_batch_id,
             flow_name,
             processed_status,
             environment,
@@ -64,6 +65,7 @@ class ExtractTrackingService:
         SELECT 
             corp_num,
             corp_type_cd,
+            mig_batch_id,
             :flow_name,
             :status,
             :environment,

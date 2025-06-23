@@ -39,7 +39,7 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
     """
     base_query = get_unprocessed_corps_query(
         'tombstone-flow',
-        config.DATA_LOAD_ENV,
+        config,
         num_corps  # Pass the total number we want to process
     )
 

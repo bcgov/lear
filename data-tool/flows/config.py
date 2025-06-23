@@ -171,6 +171,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     FREEZE_COLIN_CORPS = os.getenv('FREEZE_COLIN_CORPS', 'False') == 'True'
     FREEZE_ADD_EARLY_ADOPTER = os.getenv('FREEZE_ADD_EARLY_ADOPTER', 'False') == 'True'
 
+    USE_MIGRATION_FILTER = os.getenv('USE_MIGRATION_FILTER', 'False') == 'True'
+    MIG_GROUP_IDS = os.getenv('MIG_GROUP_IDS')
+    MIG_BATCH_IDS = os.getenv('MIG_BATCH_IDS')
+
     TESTING = False
     DEBUG = False
 
