@@ -56,6 +56,7 @@ from business_filer.filing_processors import (
     change_of_address,
     change_of_directors,
     change_of_name,
+    change_of_officers,
     change_of_registration,
     consent_amalgamation_out,
     consent_continuation_out,
@@ -102,6 +103,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
     if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
         current_app.logger.error(f"No filing found for: {filing_message}")
         raise DefaultError(error_text=f"filing not found for {filing_message.filing_identifier}")
+
 
     if filing_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
         current_app.logger.warning("QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s",
@@ -179,6 +181,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
                 case "changeOfName":
                     change_of_name.process(business, filing, filing_meta)
+
+                case "changeOfOfficers":
+                    change_of_officers.process(business, filing_submission, filing_meta)
 
                 case "changeOfRegistration":
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
