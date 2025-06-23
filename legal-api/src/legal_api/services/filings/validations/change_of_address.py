@@ -24,18 +24,17 @@ from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import validate_offices_addresses
 
 
-def validate(business: Business, cod: Dict) -> Error:
+def validate(business: Business, coa: Dict) -> Error:
     """Validate the Change of Address filing."""
-    if not business or not cod:
+    if not business or not coa:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     filing_type = 'changeOfAddress'
     msg = []
 
-    msg.extend(validate_offices_addresses(cod, filing_type))
+    msg.extend(validate_offices_addresses(coa, filing_type))
 
-    offices_array = json.dumps(cod['filing'][filing_type]['offices'])
-    addresses = json.loads(offices_array)
+    addresses = coa['filing'][filing_type]['offices']
 
     for item in addresses.keys():
         for k, v in addresses[item].items():
