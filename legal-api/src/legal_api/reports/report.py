@@ -1548,7 +1548,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'fileName': 'certificateOfContinuation'
         },
         'intentToLiquidate': {
-            'filingDescription': 'Intent to Liquidate',
+            'filingDescription': 'Statement of Intent to Liquidate',
             'fileName': 'intentToLiquidate'
         },
         'noticeOfWithdrawal': {
