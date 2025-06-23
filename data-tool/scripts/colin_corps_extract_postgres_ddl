@@ -10,6 +10,18 @@ create sequence colin_tracking_id_seq;
 
 alter sequence colin_tracking_id_seq owner to postgres;
 
+create sequence mig_group_id_seq;
+
+alter sequence mig_group_id_seq owner to postgres;
+
+create sequence mig_batch_id_seq;
+
+alter sequence mig_batch_id_seq owner to postgres;
+
+create sequence mig_corp_batch_id_seq;
+
+alter sequence mig_corp_batch_id_seq owner to postgres;
+
 create table if not exists address
 (
     addr_id                numeric(10)
@@ -636,6 +648,9 @@ create table if not exists corp_processing
     last_error              varchar(1000),
     claimed_at              timestamp with time zone,
     flow_run_id             uuid,
+    mig_batch_id            integer
+        constraint fk_corp_processing_batch
+            references mig_batch,
     constraint unq_corp_processing
         unique (corp_num, flow_name, environment)
 );
@@ -813,6 +828,56 @@ create table if not exists colin_tracking
 );
 
 alter table colin_tracking
+    owner to postgres;
+
+
+create table if not exists mig_group
+(
+    id          integer default nextval('mig_group_id_seq'::regclass) not null
+        constraint pk_mig_group primary key,
+    name        varchar(100)                                       not null,
+    display_name       varchar(100) not null,
+    source_db          varchar(25),
+    target_environment varchar(25)
+    create_date timestamp with time zone default CURRENT_TIMESTAMP not null,
+    notes       varchar(600)
+);
+
+alter table mig_group
+    owner to postgres;
+
+
+create table if not exists mig_batch
+(
+    id                 integer default nextval('mig_batch_id_seq'::regclass) not null
+        constraint pk_mig_batch primary key,
+    name               varchar(100) not null,
+    display_name       varchar(100) not null,
+    created_date       timestamp with time zone default CURRENT_TIMESTAMP,
+    migrated_date      date,
+    notes              varchar(600),
+    mig_group_id           integer
+        constraint fk_mig_batch_mig_group
+            references mig_group,
+    source_db          varchar(25),
+    target_environment varchar(25)
+);
+
+alter table mig_batch
+    owner to postgres;
+
+
+create table if not exists mig_corp_batch
+(
+    id           integer default nextval('mig_corp_batch_id_seq'::regclass) not null
+        constraint pk_mig_corp_batch primary key,
+    mig_batch_id integer     not null
+        constraint fk_mig_corp_batch_mig_batch
+            references mig_batch,
+    corp_num     varchar(10) not null
+);
+
+alter table mig_corp_batch
     owner to postgres;
 
 CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
