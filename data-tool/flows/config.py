@@ -161,7 +161,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME_COLIN_ORACLE = os.getenv('DATABASE_NAME_COLIN_ORACLE', '')
     DB_HOST_COLIN_ORACLE = os.getenv('DATABASE_HOST_COLIN_ORACLE', '')
     DB_PORT_COLIN_ORACLE = os.getenv('DATABASE_PORT_COLIN_ORACLE', '1521')
-    SQLALCHEMY_DATABASE_URI_COLIN_ORACLE = 'oracle+oracledb://{user}:{password}@{host}:{port}/{name}'.format(
+    SQLALCHEMY_DATABASE_URI_COLIN_ORACLE = 'oracle+oracledb://{user}:{password}@{host}:{port}/?service_name={name}'.format(
         user=DB_USER_COLIN_ORACLE,
         password=DB_PASSWORD_COLIN_ORACLE,
         host=DB_HOST_COLIN_ORACLE,

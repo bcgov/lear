@@ -822,8 +822,9 @@ create table if not exists colin_tracking
     flow_run_id             uuid,
     processed_status        varchar(25)                                                 not null,
     last_error              varchar(1000),
-    batch_id                integer,                                                    -- placeholder FK
-
+    mig_batch_id            integer
+        constraint fk_colin_tracking_batch
+            references mig_batch,
     constraint unq_colin_tracking unique (corp_num, flow_name, environment)
 );
 

@@ -32,7 +32,7 @@ def colin_extract_init(config):
         raise Exception('Failed to create engine for COLIN Extract DB') from e
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def colin_oracle_init(config):
     try:
         # Make sure instant client is installed and thick mode is enabled
