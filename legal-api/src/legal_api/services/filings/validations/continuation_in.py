@@ -24,6 +24,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
     validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
     validate_share_structure,
@@ -57,8 +59,10 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
 
     if get_bool(filing_json, '/filing/continuationIn/isApproved'):
         msg.extend(validate_offices(filing_json, filing_type))
+        msg.extend(validate_offices_addresses(filing_json, filing_type))
         msg.extend(validate_roles(filing_json, legal_type, filing_type))
         msg.extend(validate_parties_names(filing_json, filing_type))
+        msg.extend(validate_parties_addresses(filing_json, filing_type))
 
         if err := validate_parties_mailing_address(filing_json, legal_type, filing_type):
             msg.extend(err)

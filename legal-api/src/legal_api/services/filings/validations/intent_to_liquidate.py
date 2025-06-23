@@ -19,10 +19,13 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_offices_addresses,
+    validate_parties_addresses,
+)
 from legal_api.services.utils import get_date
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
-from .common_validations import validate_court_order
 
 
 def validate(business: Business, filing_json: Dict) -> Optional[Error]:
@@ -31,6 +34,7 @@ def validate(business: Business, filing_json: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
     msg = []
+    filing_type = 'intentToLiquidate'
 
     err = validate_liquidation_date(filing_json, business)
     if err:
@@ -39,10 +43,12 @@ def validate(business: Business, filing_json: Dict) -> Optional[Error]:
     err = validate_parties(filing_json)
     if err:
         msg.extend(err)
+    msg.extend(validate_parties_addresses(filing_json, filing_type))
 
     err = validate_offices(filing_json)
     if err:
         msg.extend(err)
+    msg.extend(validate_offices_addresses(filing_json, filing_type))
 
     err = validate_intent_court_order(filing_json)
     if err:

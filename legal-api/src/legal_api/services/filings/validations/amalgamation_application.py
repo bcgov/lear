@@ -24,6 +24,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
     validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
     validate_parties_names,
     validate_share_structure,
 )
@@ -54,9 +56,11 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
 
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
     msg.extend(validate_parties_names(amalgamation_json, filing_type))
+    msg.extend(validate_parties_addresses(amalgamation_json, filing_type))
 
     if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
         msg.extend(validate_offices(amalgamation_json, filing_type))
+        msg.extend(validate_offices_addresses(amalgamation_json, filing_type))
         err = validate_share_structure(amalgamation_json, filing_type)
         if err:
             msg.extend(err)

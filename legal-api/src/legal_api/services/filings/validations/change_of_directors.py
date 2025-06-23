@@ -20,6 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, Filing
+from legal_api.services.filings.validations.common_validations import validate_parties_addresses
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -53,7 +54,10 @@ def validate_directors_addresses(cod: Dict) -> List:
     """
     msg = []
 
-    directors = cod['filing']['changeOfDirectors']['directors']
+    filing_type = 'changeOfDirectors'
+    msg.extend(validate_parties_addresses(cod, filing_type, 'directors'))
+
+    directors = cod['filing'][filing_type]['directors']
 
     for idx, director in enumerate(directors):  # pylint: disable=too-many-nested-blocks;  # noqa: E501 review this when implementing corrections
         for address_type in Address.JSON_ADDRESS_TYPES:

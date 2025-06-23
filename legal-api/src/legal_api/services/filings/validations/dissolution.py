@@ -22,7 +22,9 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 
-from .common_validations import validate_court_order, validate_pdf
+from .common_validations import validate_court_order, validate_parties_addresses, validate_pdf
+
+
 from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
@@ -60,6 +62,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
+    filing_type = 'dissolution'
     dissolution_type = get_str(dissolution, '/filing/dissolution/dissolutionType')
     msg = []
 
@@ -75,9 +78,12 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    err = validate_parties_address(dissolution, business.legal_type, dissolution_type)
+    # Specific validation for addresses in dissolution
+    err = validate_dissolution_parties_address(dissolution, business.legal_type, dissolution_type)
     if err:
         msg.extend(err)
+    # Common validation for addresses
+    msg.extend(validate_parties_addresses(dissolution, filing_type))
 
     err = validate_affidavit(dissolution, business.legal_type, dissolution_type)
     if err:
@@ -151,7 +157,7 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
     return None
 
 
-def validate_parties_address(filing_json, legal_type, dissolution_type) -> Optional[list]:
+def validate_dissolution_parties_address(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate the person data of the dissolution filing.
 
     Address must be in Canada for COOP and BC for CORP.

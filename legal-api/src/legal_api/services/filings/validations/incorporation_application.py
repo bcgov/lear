@@ -28,6 +28,8 @@ from legal_api.utils.datetime import datetime as dt
 from .common_validations import (  # noqa: I001
     validate_court_order,
     validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
     validate_share_structure,
@@ -48,12 +50,14 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         return msg  # Cannot continue validation without legal_type
 
     msg.extend(validate_offices(incorporation_json))
+    msg.extend(validate_offices_addresses(incorporation_json, filing_type))
 
     err = validate_roles(incorporation_json, legal_type)
     if err:
         msg.extend(err)
 
     msg.extend(validate_parties_names(incorporation_json, filing_type))
+    msg.extend(validate_parties_addresses(incorporation_json, filing_type))
 
     err = validate_parties_mailing_address(incorporation_json, legal_type)
     if err:

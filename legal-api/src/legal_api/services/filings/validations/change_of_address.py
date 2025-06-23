@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Change of Address filing."""
-import json
 from http import HTTPStatus
 from typing import Dict
 
@@ -21,16 +20,20 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services.filings.validations.common_validations import validate_offices_addresses
 
 
-def validate(business: Business, cod: Dict) -> Error:
-    """Validate the Change ofAddress filing."""
-    if not business or not cod:
+def validate(business: Business, coa: Dict) -> Error:
+    """Validate the Change of Address filing."""
+    if not business or not coa:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+
+    filing_type = 'changeOfAddress'
     msg = []
 
-    offices_array = json.dumps(cod['filing']['changeOfAddress']['offices'])
-    addresses = json.loads(offices_array)
+    msg.extend(validate_offices_addresses(coa, filing_type))
+
+    addresses = coa['filing'][filing_type]['offices']
 
     for item in addresses.keys():
         for k, v in addresses[item].items():

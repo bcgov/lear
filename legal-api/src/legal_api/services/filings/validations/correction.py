@@ -26,6 +26,8 @@ from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
     validate_share_structure,
@@ -51,6 +53,7 @@ def validate(business: Business, filing: Dict) -> Error:
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
+    filing_type = 'correction'
 
     is_comment_only_correction = get_bool(filing, '/filing/correction/commentOnly')
     is_staff_or_system_role = jwt.validate_roles([STAFF_ROLE]) or jwt.validate_roles([SYSTEM_ROLE])
@@ -74,6 +77,10 @@ def validate(business: Business, filing: Dict) -> Error:
 
     # skip all the other validation checks if comment only correction
     if not is_comment_only_correction:
+        if filing.get('filing', {}).get('correction', {}).get('parties', None):
+            msg.extend(validate_parties_addresses(filing, filing_type))
+        if filing.get('filing', {}).get('correction', {}).get('offices', None):
+            msg.extend(validate_offices_addresses(filing, filing_type))
         # validations for firms
         if legal_type := filing.get('filing', {}).get('business', {}).get('legalType'):
             if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
