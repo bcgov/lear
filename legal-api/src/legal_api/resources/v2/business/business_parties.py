@@ -29,7 +29,7 @@ from .bp import bp
 @bp.route('/<string:identifier>/parties/<int:party_id>', methods=['GET', 'OPTIONS'])
 @cross_origin(origin='*')
 @jwt.requires_auth
-def get_parties(identifier, party_id=None):  # pylint: disable=too-many-locals, too-many-branches
+def get_parties(identifier, party_id=None):
     """Return a JSON of the parties."""
     business = Business.find_by_identifier(identifier)
 
