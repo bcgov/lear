@@ -383,7 +383,7 @@ def _validate_postal_code(
 ) -> dict:
     """Validate that postal code is optional for specified country."""
     country = address['addressCountry']
-    postal_code = address['postalCode']
+    postal_code = address.get('postalCode')
     try:
         country = pycountry.countries.search_fuzzy(country)[0].alpha_2
         if country not in NO_POSTAL_CODE_COUNTRY_CODES and\
