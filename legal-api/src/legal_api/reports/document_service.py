@@ -39,13 +39,14 @@ class DocumentService:
             pass
         return c
 
+    # pylint: disable=too-many-arguments
     def create_document_record(
       self,
       business_id: int,
       filing_id: int,
       report_type: str,
       file_key: str,
-      file_name: str):  # pylint: disable=too-many-arguments
+      file_name: str):
         """Create a document record in the document table."""
         new_document = Document(
             business_id=business_id,
@@ -77,13 +78,14 @@ class DocumentService:
           report_type)
         return document if document else False
 
+    # pylint: disable=too-many-arguments
     def create_document(
       self,
       business_identifier: str,
       filing_identifier: int,
       report_type: str,
       account_id: str,
-      binary_or_url):  # pylint: disable=too-many-arguments
+      binary_or_url):
         """
         Create a document in the document service.
 
@@ -114,13 +116,14 @@ class DocumentService:
         )
         return content, response.status_code
 
+    # pylint: disable=too-many-arguments
     def get_document(
       self,
       business_identifier: str,
       filing_identifier: int,
       report_type: str,
       account_id: str,
-      file_key: str = None):  # pylint: disable=too-many-arguments
+      file_key: str = None):
         """
         Get a document from the document service.
 
