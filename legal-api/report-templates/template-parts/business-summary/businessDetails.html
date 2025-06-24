@@ -95,7 +95,7 @@
     {% endif %}
     <div class="mt-2">
         <span class="section-sub-title">In Liquidation: </span>
-        {% if business.state == 'LIQUIDATION' %}
+        {% if business.inLiquidation %}
         <span class="section-data">Yes</span>
         {% else %}
         <span class="section-data">No</span>
