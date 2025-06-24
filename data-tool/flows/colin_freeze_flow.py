@@ -3,6 +3,7 @@ from prefect import flow, task
 from common.init_utils import colin_extract_init, colin_oracle_init, get_config
 from sqlalchemy import Engine, text
 
+from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
 from prefect.states import Failed
 
@@ -38,7 +39,7 @@ def get_incomplete_count_query(flow_name, environment):
     return query
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def get_incomplete_count(config, colin_extract_engine: Engine) -> int:
     query = get_incomplete_count_query(
         FLOW_NAME,
@@ -51,22 +52,50 @@ def get_incomplete_count(config, colin_extract_engine: Engine) -> int:
 
 
 def get_onboarding_group_subquery():
-    # TODO: add subquey to select specific onboarding group e.g. 'AND batch_id=1'
+    # Note: we can typically use the migration filter + migration table entries to determine which groups + batches
+    # we want to filter on.  But there may still be one off scenarios where we want to freeze specific corps
+    # based off of a one off query.  This can be done here if required.
     return '', ''
 
 
-def get_unprocessed_corps_query(flow_name, environment, batch_size):
+def get_unprocessed_corps_query(flow_name, config, batch_size):
+    environment = config.DATA_LOAD_ENV
+    use_mig_filter = config.USE_MIGRATION_FILTER
+    mig_group_ids  = config.MIG_GROUP_IDS
+    mig_batch_ids  = config.MIG_BATCH_IDS
+
     cte_clause, where_clause = get_onboarding_group_subquery()
+
+    if use_mig_filter:
+        mig_select = "b.id AS mig_batch_id,"
+        mig_join   = """
+            JOIN mig_corp_batch mcb ON mcb.corp_num = c.corp_num
+            JOIN mig_batch            b  ON b.id        = mcb.mig_batch_id
+            JOIN mig_group            g  ON g.id        = b.mig_group_id
+            """
+        mig_extra = ""
+        if mig_batch_ids:
+            mig_extra += f" AND b.id IN ({mig_batch_ids})"
+        if mig_group_ids:
+            mig_extra += f" AND g.id IN ({mig_group_ids})"
+    else:
+        mig_select = "NULL::integer AS mig_batch_id,"
+        mig_join   = ""
+        mig_extra  = ""
 
     query = f"""
     {cte_clause}
-    SELECT c.corp_num, c.corp_type_cd FROM corporation c
+    SELECT c.corp_num,
+           {mig_select} 
+           c.corp_type_cd 
+    FROM corporation c
+    {mig_join}
     LEFT JOIN colin_tracking ct
     ON ct.corp_num = c.corp_num
     AND ct.flow_name = '{flow_name}'
     AND ct.environment = '{environment}'
     WHERE 1 = 1
-    {where_clause}
+    {where_clause} {mig_extra}
     AND ct.processed_status is null
     AND ct.flow_run_id is null
     LIMIT {batch_size}
@@ -77,7 +106,7 @@ def get_unprocessed_corps_query(flow_name, environment, batch_size):
 # TODO: Refactor after group & batch info is ready
 # It can be refactored into service method,
 # or can be just updated with more parameters for selection query
-@task
+@task(cache_policy=NO_CACHE)
 def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps) -> list:
     """Reserve corps for a given flow run.
 
@@ -86,7 +115,7 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
     """
     base_query = get_unprocessed_corps_query(
         FLOW_NAME,
-        config.DATA_LOAD_ENV,
+        config,
         num_corps  # Pass the total number we want to process
     )
 
@@ -101,7 +130,7 @@ def convert_to_colin_format(corp_num: str) -> str:
     return corp_num
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def update_colin_oracle(config, colin_oracle_engine: Engine, corp_num: str):
     with colin_oracle_engine.connect() as conn:
         transaction = conn.begin()
