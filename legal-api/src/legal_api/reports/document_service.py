@@ -18,6 +18,7 @@ from flask import current_app, jsonify
 
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Document
+from legal_api.services import AccountService
 
 
 class DocumentService:
@@ -97,10 +98,13 @@ class DocumentService:
         """
         if self.has_document(business_identifier, filing_identifier, report_type):
             raise BusinessException('Document already exists', HTTPStatus.CONFLICT)
+
+        token = AccountService.get_bearer_token()
         headers = {
             'Content-Type': 'application/json',
             'X-Api-Key': self.api_key,
-            'Account-Id': account_id
+            'Account-Id': account_id,
+            'Authorization': 'Bearer ' + token
         }
         post_url = (f'{self.url}/application-reports/'
                     f'{self.product_code}/{business_identifier}/'
@@ -133,10 +137,12 @@ class DocumentService:
         account_id: The account id.
         return: The document url (or binary).
         """
+        token = AccountService.get_bearer_token()
         headers = {
             'X-Api-Key': self.api_key,
             'Account-Id': account_id,
-            'Content-Type': 'application/pdf'
+            'Content-Type': 'application/pdf',
+            'Authorization': 'Bearer ' + token
         }
         get_url = ''
         if file_key is not None:
