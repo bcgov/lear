@@ -80,7 +80,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _get_report(self):
         account_id = request.headers.get('Account-Id', None)
-        if account_id is not None:
+        if account_id is not None and self._business is not None:
             document, status = self._document_service.get_document(
               self._business.identifier,
               self._filing.id,
@@ -122,10 +122,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
           'registration'
         ]
         if self._filing.filing_type in create_filing_types:
-            create_document = create_document and self._business.idenentifier
+            create_document = create_document and self._business is not None
+            create_document = create_document and self._business.identifier
             create_document = create_document and self._business.tax_id
         else:
-            create_document = create_document and self._filing.status == 'COMPLETED'
+            create_document = create_document and \
+              self._filing.status == 'COMPLETED'
 
         if create_document:
             self._document_service.create_document(
