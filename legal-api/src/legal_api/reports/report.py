@@ -114,7 +114,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
 
-        if account_id is not None:
+        create_document = account_id is not None
+        create_filing_types = [
+          'incorporationApplication',
+          'continuationIn',
+          'amalgamation',
+          'registration'
+        ]
+        if self._filing.filing_type in create_filing_types:
+            create_document = create_document and self._business.idenentifier
+            create_document = create_document and self._business.tax_id
+        else:
+            create_document = create_document and self._filing.status == 'COMPLETED'
+
+        if create_document:
             self._document_service.create_document(
               self._business.identifier,
               self._filing.identifier,
