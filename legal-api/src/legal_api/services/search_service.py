@@ -171,10 +171,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
         if not filters:
             return []
-
-        limit = search_filters.limit or 100
-        offset = ((search_filters.page or 1) - 1) * limit
-        bus_query = db.session.query(Business).filter(*filters).limit(limit).offset(offset)
+        bus_query = db.session.query(Business).filter(*filters)
         bus_results = []
         for business in bus_query.all():
             business_json = business.json(slim=True)
@@ -235,10 +232,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 ).ilike(f'%{name}%') if name else None
             ] if expr is not None
         ]
-
-        limit = search_filters.limit or 100
-        offset = ((search_filters.page or 1) - 1) * limit
-        draft_query = db.session.query(Filing).filter(*filters).limit(limit).offset(offset)
+        draft_query = db.session.query(Filing).filter(*filters)
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         if identifiers:
