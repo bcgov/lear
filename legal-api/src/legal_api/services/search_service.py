@@ -171,9 +171,12 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
         if not filters:
             return []
-        bus_query = db.session.query(Business).filter(*filters)
+
+        limit = search_filters.limit
+        offset = (search_filters.page - 1) * limit
+        bus_query = db.session.query(Business).filter(*filters).limit(limit+1).offset(offset).all()
         bus_results = []
-        for business in bus_query.all():
+        for business in bus_query[:limit]:
             business_json = business.json(slim=True)
 
             if business.legal_type in (
@@ -183,7 +186,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 business_json['alternateNames'] = business.get_alternate_names()
 
             bus_results.append(business_json)
-        return bus_results
+        has_more = len(bus_query) > limit
+        return bus_results , has_more
 
     # pylint: disable=too-many-locals
     @staticmethod
@@ -232,11 +236,14 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 ).ilike(f'%{name}%') if name else None
             ] if expr is not None
         ]
-        draft_query = db.session.query(Filing).filter(*filters)
+
+        limit = search_filters.limit
+        offset = (search_filters.page - 1) * limit
+        draft_query = db.session.query(Filing).filter(*filters).limit(limit+1).offset(offset).all()
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         if identifiers:
-            for draft_dao in draft_query.all():
+            for draft_dao in draft_query[:limit]:
                 draft = {
                     'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
                     'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
@@ -262,8 +269,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                           .get(draft_dao.json_legal_type, {})
                                           .get('numberedDescription'))
                 draft_results.append(draft)
-
-        return draft_results
+        has_more = len(draft_results) > limit
+        return draft_results, has_more
 
     @staticmethod
     def get_affiliation_mapping_results(identifiers):
