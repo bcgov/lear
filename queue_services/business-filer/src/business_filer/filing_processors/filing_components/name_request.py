@@ -69,7 +69,7 @@ def consume_nr(business: Business,
                 data = json.dumps({"consume": {"corpNum": business.identifier}})
 
             rv = requests.patch(
-                url="".join([namex_svc_url, nr_num]),
+                url="/".join([namex_svc_url.rstrip("/"), nr_num]),
                 headers={**AccountService.CONTENT_TYPE_JSON,
                          "Authorization": AccountService.BEARER + token},
                 data=data,
