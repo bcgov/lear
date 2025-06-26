@@ -884,7 +884,7 @@ paths:
                   summary: Consent Continuation Out - Unauthorized Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for BC1218840.
+                    rootCause: message:You are not authorized to submit a filing for BC1218840. 
         '422':
           description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
           content:
