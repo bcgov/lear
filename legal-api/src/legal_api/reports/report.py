@@ -695,7 +695,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if not has_ext_req_for_agm_year:
                 # First extension for first AGM - calculate from founding date
                 founding_date = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
-                original_date_time = founding_date  + relativedelta(months=18)
+                original_date_time = founding_date + relativedelta(months=18)
                 filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
             else:
                 # Subsequent extension for first AGM - use expireDateCurrExt
