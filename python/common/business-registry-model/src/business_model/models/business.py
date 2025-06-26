@@ -790,7 +790,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         businesses = (db.session.query(Business.identifier)
                       .filter(
                           ~Business.legal_type.in_(no_tax_id_types),
-                          Business.tax_id == None)  # pylint: disable=singleton-comparison # noqa: E711;
+                          Business.tax_id == None)  # pylint: disable=singleton-comparison
                       .all())
         return businesses
 
