@@ -208,6 +208,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     __mapper_args__ = {
         'include_properties': [
             'id',
+            'accession_number',
             'admin_freeze',
             'amalgamation_out_date',
             'association_type',
@@ -281,6 +282,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
     send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
     no_dissolution = db.Column('no_dissolution', db.Boolean, unique=False, default=False)
+    accession_number = db.Column('accession_number', db.String(10))
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
