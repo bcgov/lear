@@ -181,16 +181,21 @@ def search_businesses():
             else:
                 business_identifiers.append(identifier)
         search_filters = AffiliationSearchDetails.from_request_args(json_input)
-        bus_results = BusinessSearchService.get_search_filtered_businesses_results(
+
+        bus_results, bus_hasmore = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,
             identifiers=business_identifiers,
-            search_filters=search_filters)
-        draft_results = BusinessSearchService.get_search_filtered_filings_results(
+            search_filters=search_filters) or ([], False)
+        draft_results, draft_hasmore = BusinessSearchService.get_search_filtered_filings_results(
             business_json=json_input,
             identifiers=temp_identifiers,
-            search_filters=search_filters)
-
-        return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results}), HTTPStatus.OK
+            search_filters=search_filters) or ([], False)
+        has_more = bus_hasmore or draft_hasmore
+        return jsonify({
+            'businessEntities': bus_results,
+            'draftEntities': draft_results,
+            'hasMore': has_more
+            }), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)
