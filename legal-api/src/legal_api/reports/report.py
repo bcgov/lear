@@ -690,15 +690,36 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['duration_spelling'] = number_words[int(duration_numeric) - 1]
 
         if is_first_agm:
-            founding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
-            founding_date = founding_date_json[0:10]
-            original_date_time = LegislationDatetime.\
-                as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
-            filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+            # Check if this is first extension or subsequent extension for first AGM
+            has_ext_req_for_agm_year = meta_data.get('agmExtension', {}).get('extReqForAgmYear', False)
+
+            if not has_ext_req_for_agm_year:
+                # First extension for first AGM - calculate from founding date
+                founding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
+                founding_date = founding_date_json[0:10]
+                original_date_time = LegislationDatetime.\
+                    as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
+                filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+            else:
+                # Subsequent extension for first AGM - use expireDateCurrExt
+                expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+                date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
+                filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
         else:
-            expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
-            date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
-            filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
+            # Check if this is first extension or subsequent extension for subsequent AGM
+            has_ext_req_for_agm_year = meta_data.get('agmExtension', {}).get('extReqForAgmYear', False)
+
+            if not has_ext_req_for_agm_year:
+                # First extension for subsequent AGM - calculate from prev_agm_ref_date
+                prev_agm_ref_date_str = meta_data.get('agmExtension', {}).get('prevAgmRefDate', '')
+                prev_agm_ref_date = LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str)
+                original_date_time = prev_agm_ref_date + relativedelta(months=15)
+                filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+            else:
+                # Subsequent extension for subsequent AGM - use expireDateCurrExt
+                expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+                date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
+                filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
 
         if expire_date_approved_string := meta_data.get('agmExtension', {}).get('expireDateApprovedExt', ''):
             date_approved_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_approved_string)
