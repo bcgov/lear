@@ -185,13 +185,17 @@ def search_businesses():
         bus_results, bus_hasmore = BusinessSearchService.get_search_filtered_businesses_results(
             business_json=json_input,
             identifiers=business_identifiers,
-            search_filters=search_filters)or ([], False)
+            search_filters=search_filters) or ([], False)
         draft_results, draft_hasmore = BusinessSearchService.get_search_filtered_filings_results(
             business_json=json_input,
             identifiers=temp_identifiers,
-            search_filters=search_filters)or ([], False)
+            search_filters=search_filters) or ([], False)
         has_more = bus_hasmore or draft_hasmore
-        return jsonify({'businessEntities': bus_results, 'draftEntities': draft_results, 'hasMore':has_more}), HTTPStatus.OK
+        return jsonify({
+            'businessEntities': bus_results,
+            'draftEntities': draft_results,
+            'hasMore': has_more
+            }), HTTPStatus.OK
     except Exception as err:
         current_app.logger.info(err)
         current_app.logger.error('Error searching over business information for: %s', identifiers)

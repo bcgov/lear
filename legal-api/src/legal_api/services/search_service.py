@@ -187,7 +187,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
             bus_results.append(business_json)
         has_more = len(bus_query) > limit
-        return bus_results , has_more
+        return bus_results, has_more
 
     # pylint: disable=too-many-locals
     @staticmethod
