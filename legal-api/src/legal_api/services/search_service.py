@@ -269,7 +269,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                           .get(draft_dao.json_legal_type, {})
                                           .get('numberedDescription'))
                 draft_results.append(draft)
-        has_more = len(draft_results) > limit
+        has_more = len(draft_query) > limit
         return draft_results, has_more
 
     @staticmethod
