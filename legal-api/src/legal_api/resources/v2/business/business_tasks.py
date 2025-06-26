@@ -176,7 +176,7 @@ def construct_task_list(business: Business):  # pylint: disable=too-many-locals;
     tasks, order = add_tr_tasks(business, tasks, order, pending_tr_type)
 
     # Transition Application todo task appears below the Annual Report (and TR) tasks
-    # and it does not affect the 'enabled' status of above todo items. 
+    # and it does not affect the 'enabled' status of above todo items.
     if any(x['code'] == BusinessWarningCodes.TRANSITION_NOT_FILED for x in warnings):
         if not Filing.get_incomplete_filings_by_type(business.id, 'transition'):
             tasks.append(create_transition_todo(business, order, True))
