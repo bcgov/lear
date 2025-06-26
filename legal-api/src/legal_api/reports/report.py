@@ -679,8 +679,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_agm_extension_data(self, filing):
         meta_data = self._filing.meta_data or {}
-        is_first_agm = meta_data.get('agmExtension', {}).get('isFirstAgm', '')
-        filing['is_first_agm'] = is_first_agm
+        filing['is_first_agm'] = meta_data.get('agmExtension', {}).get('isFirstAgm', '')
         filing['agm_year'] = meta_data.get('agmExtension', {}).get('year', '')
         filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
 
@@ -689,16 +688,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['duration_numeric'] = duration_numeric
         filing['duration_spelling'] = number_words[int(duration_numeric) - 1]
 
-        if is_first_agm:
+        if filing['is_first_agm']:
             # Check if this is first extension or subsequent extension for first AGM
             has_ext_req_for_agm_year = meta_data.get('agmExtension', {}).get('extReqForAgmYear', False)
 
             if not has_ext_req_for_agm_year:
                 # First extension for first AGM - calculate from founding date
-                founding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
-                founding_date = founding_date_json[0:10]
-                original_date_time = LegislationDatetime.\
-                    as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
+                founding_date = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
+                original_date_time = founding_date  + relativedelta(months=18)
                 filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
             else:
                 # Subsequent extension for first AGM - use expireDateCurrExt
