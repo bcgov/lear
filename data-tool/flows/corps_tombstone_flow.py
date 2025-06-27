@@ -364,7 +364,10 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
             business_registration=business_data['identifier'],
             business_name=business_data['legal_name'],
             corp_type_code=business_data['legal_type'],
-            pass_code=pass_code
+            pass_code=pass_code,
+            details={
+                'identifier': business_data['identifier']
+            }
         )
         if affiliation_status != HTTPStatus.OK:
             with contextlib.suppress(Exception):
