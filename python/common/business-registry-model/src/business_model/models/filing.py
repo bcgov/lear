@@ -1236,10 +1236,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
-                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
-                Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
+                Filing.effective_date != None   # pylint: disable=singleton-comparison
             ).order_by(Filing.transaction_id).limit(limit).offset(offset).all()
 
         return filings
@@ -1256,7 +1256,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_all_filings_by_status(status):
         """Return all filings based on status."""
         filings = db.session.query(Filing). \
-            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
+            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison
         return filings
 
     @staticmethod
