@@ -72,7 +72,7 @@ def get_expiry_date_for_each_nr(nr_numbers):
     """Return list of NR numbers and respective Expiry date."""
     nr_response = namex.query_nr_numbers(nr_numbers)
     response_json = nr_response.json()
-    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']} for one in response_json]
+    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']} for one in response_json['requests']]
     return nr_expiry_dates
 
 
