@@ -31,6 +31,7 @@ from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from legal_api.services.warnings.business.business_checks import BusinessWarningCodes
 from .bp import bp
 
 
@@ -84,8 +85,10 @@ def construct_task_list(business: Business):  # pylint: disable=too-many-locals;
     Return all current pending tasks to do.
 
     First retrieves filings that are either drafts, or incomplete,
-    then populate AR filings that have not been started for
-    years that are due.
+    then populate AR filings that have not been started for years that are due.
+    Transparency Register tasks are added below the corresponding AR tasks
+
+    Transition Application todo task appears below the Annual Report (and TR) tasks
 
     Rules for AR filings:
         - Co-ops must file one AR per year. The next AR date must be AFTER the most recent
@@ -171,6 +174,13 @@ def construct_task_list(business: Business):  # pylint: disable=too-many-locals;
             order += 1
 
     tasks, order = add_tr_tasks(business, tasks, order, pending_tr_type)
+
+    # Transition Application todo task appears below the Annual Report (and TR) tasks
+    # and it does not affect the 'enabled' status of above todo items. 
+    if any(x['code'] == BusinessWarningCodes.TRANSITION_NOT_FILED for x in warnings):
+        if not Filing.get_incomplete_filings_by_type(business.id, 'transition'):
+            tasks.append(create_transition_todo(business, order, True))
+            order += 1
 
     return tasks
 
@@ -341,6 +351,23 @@ def create_conversion_filing_todo(business, order, enabled):
                 'business': business.json(),
                 'header': {
                     'name': 'conversion',
+                    'status': 'NEW'
+                }
+            }
+        },
+        'order': order,
+        'enabled': enabled
+    }
+    return todo
+
+def create_transition_todo(business, order, enabled):
+    """Return a to-do JSON object for transition application filing."""
+    todo = {
+        'task': {
+            'todo': {
+                'business': business.json(),
+                'header': {
+                    'name': 'transition',
                     'status': 'NEW'
                 }
             }

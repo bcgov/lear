@@ -490,7 +490,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             return True
         # When involuntary dissolution feature flag is on, check transition filing
         if flags.is_on('enable_involuntary_dissolution'):
-            if self._has_no_transition_filed_after_restoration():
+            if self._transition_needed_but_not_filed():
                 return False
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
@@ -504,10 +504,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
 
-    def _has_no_transition_filed_after_restoration(self) -> bool:
+    def _transition_needed_but_not_filed(self) -> bool:
         """Return True for no transition filed after restoration check. Otherwise, return False.
 
-        Check whether the business needs to file Transition but does not file it within 12 months after restoration.
+        Check whether the business needs to file Transition but has not done so
         """
         from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
@@ -515,7 +515,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         restoration_filing = aliased(Filing)
         transition_filing = aliased(Filing)
 
-        restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
         condition = exists().where(
             and_(
                 self.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
@@ -526,7 +525,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                     CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
                 ]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
                 not_(
                     exists().where(
                         and_(
@@ -535,10 +533,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                              CoreFiling.FilingTypes.TRANSITION.value),
                             (transition_filing._status ==  # pylint: disable=protected-access
                              Filing.Status.COMPLETED.value),
-                            transition_filing.effective_date.between(
-                                restoration_filing.effective_date,
-                                restoration_filing_effective_cutoff
-                            )
+                            transition_filing.effective_date >= restoration_filing.effective_date
                         )
                     )
                 )
