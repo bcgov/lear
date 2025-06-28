@@ -62,6 +62,10 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
         db.session.add(self)
         db.session.commit()
 
+    def save_to_session(self):
+        """Save to the session, do not commit immediately."""
+        db.session.add(self)
+
     @classmethod
     def find_by_id(cls, dc_definition_id: str) -> DCDefinition:
         """Return the digital credential definition matching the id."""
@@ -99,5 +103,5 @@ class DCDefinition(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def deactivate(cls, credential_type: CredentialType):
-        """Deactivate all definition for the specific credential type."""
-        db.session.execute(text(f"UPDATE dc_definitions SET is_deleted=true WHERE credential_type='{credential_type.name}'"))
+        """Deactivate all definitions for the specific credential type using ORM."""
+        cls.query.filter_by(credential_type=credential_type).update({"is_deleted": True})
