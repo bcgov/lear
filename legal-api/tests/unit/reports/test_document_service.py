@@ -55,7 +55,8 @@ def test_get_document(session, mock_doc_service):
     assert status == HTTPStatus.OK
     assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
 
-def test_get_document_with_file_key(session, mock_doc_service):
+
+def test_create_document(session, mock_doc_service):
     founding_date = datetime.utcnow()
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)

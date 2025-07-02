@@ -40,8 +40,10 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
+from legal_api.exceptions import BusinessException
 from legal_api.models import Business, db  # noqa:I001
 from legal_api.models.db import VersioningProxy
+from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -386,3 +388,22 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     assert formatted_now_json['withdrawnFilingType'] == formatted_filing_type
     assert formatted_now_json['withdrawnFilingEffectiveDate'] == expected_withdrawn_filing_effective_date
     assert formatted_now_json['noticeOfWithdrawal']['filingId'] == withdrawn_filing_id
+
+
+def test_document_service_not_create_document(session, mock_doc_service):
+    founding_date = datetime.utcnow()
+    business = factory_business('CP1234567', founding_date=founding_date)
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    report = create_report(filing)
+    assert report
+    document_service = DocumentService()
+    try:
+        document_service.get_document(business.identifier,
+                                      report._filing.id,
+                                      'incorporationApplication',
+                                      '3113',
+                                      '123')
+        # Expectation is that the above call SHOULD fail in this case as document was not created
+        assert False
+    except BusinessException as err:
+        assert err.status_code == HTTPStatus.NOT_FOUND
