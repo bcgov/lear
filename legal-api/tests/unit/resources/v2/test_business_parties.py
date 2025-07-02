@@ -244,7 +244,6 @@ def test_get_business_ceased_parties(session, client, jwt, test_name, params, ex
     # test
     rv = client.get(f'/api/v2/businesses/{identifier}/parties{params}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
-
     # check
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json['parties']) == expected
