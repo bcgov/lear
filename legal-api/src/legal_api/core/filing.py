@@ -452,7 +452,11 @@ class Filing:  # pylint: disable=too-many-public-methods
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
         no_output_filing_types = ['Involuntary Dissolution', 'conversion']
+
+        # This is a temporary fix so that filingLink, commentLink, and documentLink won't break
+        # Revert to the original base_url below once the Migration to GCP is complete
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        # base_url = current_app.config.get('LEGAL_API_URL')
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
