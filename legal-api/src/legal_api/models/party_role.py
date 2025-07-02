@@ -87,6 +87,9 @@ class PartyRole(db.Model, Versioned):
             'role': self.role
         }
 
+        if self.party_class_type:
+            party['roleClass'] = self.party_class_type.name
+
         return party
 
     @classmethod
