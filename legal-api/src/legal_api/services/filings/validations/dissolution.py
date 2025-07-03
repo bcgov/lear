@@ -82,8 +82,10 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     err = validate_dissolution_parties_address(dissolution, business.legal_type, dissolution_type)
     if err:
         msg.extend(err)
-    # Common validation for addresses
-    msg.extend(validate_parties_addresses(dissolution, filing_type))
+
+    if dissolution['filing']['dissolution'].get('parties'):
+        # Common validation for addresses
+        msg.extend(validate_parties_addresses(dissolution, filing_type))
 
     err = validate_affidavit(dissolution, business.legal_type, dissolution_type)
     if err:
