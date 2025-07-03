@@ -394,13 +394,14 @@ def test_document_service_not_create_document(session, mock_doc_service):
     founding_date = datetime.utcnow()
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    report = create_report(filing)
+    report = create_report(identifier='CP1234567', entity_type='CP', report_type='annualReport',
+                           filing_type='incorporationApplication', template=filing)
     assert report
     document_service = DocumentService()
     try:
         document_service.get_document(business.identifier,
                                       report._filing.id,
-                                      'incorporationApplication',
+                                      'annualReport',
                                       '3113',
                                       '123')
         # Expectation is that the above call SHOULD fail in this case as document was not created
