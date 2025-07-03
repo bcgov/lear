@@ -83,7 +83,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
 
     # This is to use reverse proxy to make filingLink, commentLink, and documentLink work
-    # This can be removed once the Migration to GCP is complete
+    # Change to use BUSINESS API GW URL once the Migration to GCP is complete
     LEGAL_API_URL = f'{LEGAL_API_URL + LEGAL_API_VERSION_2}/businesses'
 
     # Temporary while there is inconsistency between OCP / GCP versions of 1pass env

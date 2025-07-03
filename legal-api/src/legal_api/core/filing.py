@@ -454,9 +454,9 @@ class Filing:  # pylint: disable=too-many-public-methods
         no_output_filing_types = ['Involuntary Dissolution', 'conversion']
 
         # This is a temporary fix so that filingLink, commentLink, and documentLink won't break
-        # Revert to the original base_url below once the Migration to GCP is complete
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
-        # base_url = current_app.config.get('LEGAL_API_URL')
+        # Change to use BUSINESS API GW URL below once the Migration to GCP is complete
+        # base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        base_url = current_app.config.get('LEGAL_API_URL')
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
