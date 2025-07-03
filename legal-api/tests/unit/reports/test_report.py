@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 import pytest
 from flask import current_app
+from http import HTTPStatus
 from registry_schemas.example_data import (
     AGM_LOCATION_CHANGE,
     ALTERATION_FILING_TEMPLATE,
@@ -391,19 +392,16 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
 
 
 def test_document_service_not_create_document(session, mock_doc_service):
-    founding_date = datetime.utcnow()
-    business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    report = create_report(identifier='CP1234567', entity_type='CP', report_type='annualReport',
+    report = create_report(identifier='BC9999999', entity_type='BC', report_type='annualReport',
                            filing_type='incorporationApplication', template=filing)
     assert report
     document_service = DocumentService()
     try:
-        document_service.get_document(business.identifier,
+        document_service.get_document('BC9999999',
                                       report._filing.id,
                                       'annualReport',
-                                      '3113',
-                                      '123')
+                                      '3113')
         # Expectation is that the above call SHOULD fail in this case as document was not created
         assert False
     except BusinessException as err:

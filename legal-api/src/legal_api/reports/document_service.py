@@ -72,11 +72,14 @@ class DocumentService:
         account_id: The account id.
         return: True if the document exists, False otherwise.
         """
+        print('hi0', business_identifier)
         business_id = Business.find_by_identifier(business_identifier).id
+        print('hi01', business_id)
         document = Document.find_one_by(
           business_id,
           filing_identifier,
           report_type)
+        print('hi', document)
         return document if document else False
 
     # pylint: disable=too-many-arguments
@@ -146,9 +149,12 @@ class DocumentService:
         }
         get_url = ''
         if file_key is not None:
+            print('hi1', file_key)
             get_url = f'{self.url}/application-reports/{self.product_code}/{file_key}'
         else:
+            print('hi2', business_identifier)
             document = self.has_document(business_identifier, filing_identifier, report_type)
+            print('hi3', document)
             if document is False:
                 raise BusinessException('Document not found', HTTPStatus.NOT_FOUND)
             get_url = f'{self.url}/application-reports/{self.product_code}/{document.file_key}'
