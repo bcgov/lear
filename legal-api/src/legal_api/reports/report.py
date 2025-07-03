@@ -122,9 +122,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
           'registration'
         ]
         if self._filing.filing_type in create_filing_types:
-            create_document = create_document and self._business is not None
-            create_document = create_document and self._business.identifier
-            create_document = create_document and self._business.tax_id
+            create_document = create_document and self._business and self._business.tax_id
         else:
             create_document = create_document and \
               self._filing.status == 'COMPLETED'
