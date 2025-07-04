@@ -86,16 +86,16 @@ def test_valid_firms_correction(mocker, app, session, jwt, test_name, filing):
     # setup
     identifier = 'FM1234567'
     founding_date = datetime(2022, 1, 1)
-    business = factory_business(identifier, founding_date=founding_date)
-    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
-
     f = copy.deepcopy(filing)
+    legal_type = f['filing']['correction']['nameRequest']['legalType']
+    business = factory_business(identifier, founding_date=founding_date, entity_type=legal_type)
+    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)
@@ -120,17 +120,17 @@ def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, 
     
     # setup
     identifier = 'FM1234567'
-    business = factory_business(identifier)
-    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
-
     f = copy.deepcopy(filing)
+    legal_type = f['filing']['correction']['nameRequest']['legalType']
+    business = factory_business(identifier, entity_type=legal_type)
+    corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
     del f['filing']['correction']['parties'][0]['roles'][0]
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)
@@ -190,11 +190,12 @@ def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, ex
     # setup
     identifier = 'FM1234567'
     founding_date = datetime(2022, 1, 1)
-    business = factory_business(identifier=identifier, founding_date=founding_date, naics_code=existing_naics_code, naics_desc=existing_naics_desc)
+    f = copy.deepcopy(filing)
+    legal_type = f['filing']['correction']['nameRequest']['legalType']
+    business = factory_business(identifier=identifier, founding_date=founding_date, naics_code=existing_naics_code, naics_desc=existing_naics_desc, entity_type=legal_type)
 
     corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 
-    f = copy.deepcopy(filing)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     if correction_naics_code:
@@ -207,7 +208,7 @@ def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, ex
         del f['filing']['correction']['business']['naics']['naicsDescription']
 
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)
@@ -255,7 +256,9 @@ def test_firms_correction_start_date(mocker, app, session, jwt, test_name, filin
     
     identifier = 'FM1234567'
     founding_date = datetime.strptime(founding_date_str, '%Y-%m-%d')
-    business = factory_business(identifier=identifier, founding_date=founding_date)
+    f = copy.deepcopy(filing)
+    legal_type = f['filing']['correction']['nameRequest']['legalType']
+    business = factory_business(identifier=identifier, founding_date=founding_date, entity_type=legal_type)
 
     corrected_filing = factory_completed_filing(business, CHANGE_OF_REGISTRATION_APPLICATION)
 
@@ -263,14 +266,12 @@ def test_firms_correction_start_date(mocker, app, session, jwt, test_name, filin
     if delta_date:
         start_date = start_date + delta_date
 
-    f = copy.deepcopy(filing)
-
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     f['filing']['correction']['startDate'] = start_date.strftime('%Y-%m-%d')
 
     nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = f['filing']['correction']['nameRequest']['legalType']
+    nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             err = validate(business, f)

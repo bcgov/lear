@@ -29,10 +29,10 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
 )
+from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from ...utils import get_date, get_str
 
 
 def validate(registration_json: Dict) -> Optional[Error]:

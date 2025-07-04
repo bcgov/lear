@@ -159,7 +159,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
 
     if (Filing.FILINGS[filing.filing_type].get('staffApprovalRequired', False)
             and filing.status in [Filing.Status.DRAFT.value, Filing.Status.CHANGE_REQUESTED.value]):
-        ListFilingResource.submit_filing_for_review(filing)
+        ListFilingResource.submit_filing_for_review(business, filing)
         response = {'isPaymentActionRequired': False}
     else:
         # complete filing
@@ -1126,7 +1126,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                     filing.filing_json['filing'][filing_type]['foreignJurisdiction']
 
     @staticmethod
-    def submit_filing_for_review(filing: Filing):
+    def submit_filing_for_review(business: Business, filing: Filing):
         """Submit filing for review."""
         filing_data = filing.filing_json['filing'][filing.filing_type]
         submission_date = datetime.datetime.utcnow()
@@ -1152,10 +1152,11 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         filing.submit_filing_to_awaiting_review(submission_date)
 
         if flags.is_on('enable-sandbox'):
+            # sandbox continuation in application auto approval
+            if filing.filing_type == 'continuationIn' and filing.status == Filing.Status.AWAITING_REVIEW.value:
+                ListFilingResource._sandbox_auto_approval_continuation_in(filing)
             current_app.logger.info(f'Skipping email notification in sandbox for filing {filing.id}')
             return
-
-        business = Business.find_by_internal_id(filing.business_id)
 
         # emailer notification
         publish_to_queue(
@@ -1189,3 +1190,17 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
 
             return mailing_address, corp_type, legal_name
         return None, None, None
+
+    @staticmethod
+    def _sandbox_auto_approval_continuation_in(filing: Filing) -> None:
+        """Auto-approve continuation in filings in sandbox mode."""
+        current_app.logger.info(f'Auto-approving {filing.filing_type} filing, id: {filing.id} in sandbox environment')
+        review = Review.get_review(filing.id)
+        review.status = ReviewStatus.APPROVED
+        review_result = ReviewResult()
+        review_result.status = ReviewStatus.APPROVED
+        review_result.comments = 'Auto-approved in sandbox environment'
+        review_result.review_id = review.id
+        review.review_results.append(review_result)
+        review.save()
+        filing.set_review_decision(Filing.Status.APPROVED.value)

@@ -39,24 +39,23 @@ import traceback
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Optional
 
 from flask import Blueprint, current_app, request
-from simple_cloudevent import SimpleCloudEvent
-from simple_cloudevent import to_queue_message
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from structured_logging import StructuredLogging
 
 from business_pay.database import Filing
-from business_pay.services import create_email_msg
-from business_pay.services import create_filing_msg
-from business_pay.services import create_gcp_filing_msg
-from business_pay.services import flags
-from business_pay.services import gcp_queue
-from business_pay.services import queue
-from business_pay.services import verify_gcp_jwt
+from business_pay.services import (
+    create_email_msg, create_filing_msg,
+    create_gcp_filing_msg,
+    flags,
+    gcp_queue,
+    queue,
+    verify_gcp_jwt,
+)
 
 bp = Blueprint("worker", __name__)
 
