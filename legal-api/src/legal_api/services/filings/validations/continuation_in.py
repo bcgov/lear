@@ -28,11 +28,13 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
+    validate_phone_number,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
     validate_incorporation_effective_date,
     validate_offices,
+    validate_parties_delivery_address,
     validate_parties_mailing_address,
 )
 from legal_api.services.utils import get_bool, get_str
@@ -53,27 +55,34 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
-    msg.extend(validate_continuation_in_authorization(filing_json, filing_type))
+    msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
 
     if get_bool(filing_json, '/filing/continuationIn/isApproved'):
-        msg.extend(validate_offices(filing_json, filing_type))
+        msg.extend(validate_offices(filing_json, legal_type, filing_type))
         msg.extend(validate_offices_addresses(filing_json, filing_type))
         msg.extend(validate_roles(filing_json, legal_type, filing_type))
-        msg.extend(validate_parties_names(filing_json, filing_type))
+        msg.extend(validate_parties_names(filing_json, filing_type, legal_type))
         msg.extend(validate_parties_addresses(filing_json, filing_type))
 
         if err := validate_parties_mailing_address(filing_json, legal_type, filing_type):
             msg.extend(err)
 
-        if err := validate_share_structure(filing_json, filing_type):
+        if err := validate_parties_delivery_address(filing_json, legal_type, filing_type):
+            msg.extend(err)
+
+        if err := validate_share_structure(filing_json, filing_type, legal_type):
             msg.extend(err)
 
         if err := validate_incorporation_effective_date(filing_json):
             msg.extend(err)
 
         msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
+
+        err = validate_phone_number(filing_json, legal_type, filing_type)
+        if err:
+            msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -154,11 +163,17 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
     return msg
 
 
-def validate_continuation_in_authorization(filing_json: dict, filing_type: str) -> list:
+def validate_continuation_in_authorization(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate continuation in authorization."""
     msg = []
     authorization_path = f'/filing/{filing_type}/authorization'
-    for index, file in enumerate(filing_json['filing'][filing_type]['authorization']['files']):
+    file_list = filing_json['filing'][filing_type]['authorization']['files']
+
+    if legal_type in Business.CORPS and len(file_list) > 5:  # max 5 files
+        msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
+        return msg
+
+    for index, file in enumerate(file_list):
         file_key = file['fileKey']
         file_key_path = f'{authorization_path}/files/{index}/fileKey'
         if err := validate_pdf(file_key, file_key_path, False):

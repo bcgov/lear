@@ -21,11 +21,12 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
-
-from .common_validations import validate_court_order, validate_parties_addresses, validate_pdf
-
-
-from ...utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
+from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_parties_addresses,
+    validate_pdf,
+)
+from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
 class DissolutionTypes(str, Enum):
@@ -88,6 +89,10 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
         msg.extend(validate_parties_addresses(dissolution, filing_type))
 
     err = validate_affidavit(dissolution, business.legal_type, dissolution_type)
+    if err:
+        msg.extend(err)
+
+    err = validate_custodial_office(dissolution, business.legal_type, dissolution_type)
     if err:
         msg.extend(err)
 
@@ -173,6 +178,9 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
 
+    if 'parties' not in filing_json['filing']['dissolution']:
+        return [{'error': 'Parties are required.', 'path': '/filing/dissolution/parties'}]
+
     parties_json = filing_json['filing']['dissolution']['parties']
     parties = list(filter(lambda x: _is_dissolution_party_role(x.get('roles', [])), parties_json))
     msg = []
@@ -181,6 +189,8 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
     party_path = '/filing/dissolution/parties'
 
     if len(parties) > 0:
+        msg.extend(_validate_custodian_email(parties, dissolution_type, legal_type))
+
         err, address_in_bc, address_in_ca = _validate_address_location(parties)
         if err:
             msg.extend(err)
@@ -264,3 +274,31 @@ def _validate_court_order(filing):
         if err:
             return err
     return []
+
+
+def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
+    """Validate custodian email for voluntary dissolution."""
+    # Only validate for CORP voluntary dissolution
+    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
+        return []
+
+    msg = []
+    for idx, party in enumerate(parties):
+        email = get_str(party, '/officer/email')
+        if not email:
+            msg.append({'error': 'Custodian email is required for voluntary dissolution.',
+                        'path': f'/filing/dissolution/parties/{idx}/officer/email'})
+    return msg
+
+
+def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Optional[list]:
+    """Validate custodial office of the dissolution filing."""
+    # Only validate for CORP voluntary dissolution
+    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
+        return None
+
+    if 'custodialOffice' not in filing_json['filing']['dissolution']:
+        return [{'error': 'Custodial office is required for voluntary dissolution.',
+                'path': '/filing/dissolution/custodialOffice'}]
+
+    return None

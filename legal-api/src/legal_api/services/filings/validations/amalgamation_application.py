@@ -27,9 +27,13 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
+    validate_phone_number,
     validate_share_structure,
 )
-from legal_api.services.filings.validations.incorporation_application import validate_offices
+from legal_api.services.filings.validations.incorporation_application import (
+    validate_offices,
+    validate_parties_delivery_address,
+)
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 # noqa: I003
@@ -55,13 +59,17 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
         msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
 
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
-    msg.extend(validate_parties_names(amalgamation_json, filing_type))
+    msg.extend(validate_parties_names(amalgamation_json, filing_type, legal_type))
     msg.extend(validate_parties_addresses(amalgamation_json, filing_type))
 
     if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
-        msg.extend(validate_offices(amalgamation_json, filing_type))
+        msg.extend(validate_offices(amalgamation_json, legal_type, filing_type))
         msg.extend(validate_offices_addresses(amalgamation_json, filing_type))
-        err = validate_share_structure(amalgamation_json, filing_type)
+        err = validate_share_structure(amalgamation_json, filing_type, legal_type)
+        if err:
+            msg.extend(err)
+
+        err = validate_parties_delivery_address(amalgamation_json, legal_type, filing_type)
         if err:
             msg.extend(err)
 
@@ -71,6 +79,10 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
                                                 legal_type,
                                                 amalgamation_type,
                                                 account_id))
+
+    err = validate_phone_number(amalgamation_json, legal_type, filing_type)
+    if err:
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

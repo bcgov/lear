@@ -77,7 +77,6 @@ class Config:  # pylint: disable=too-few-public-methods
 
     Used as the base for all the other configurations.
     """
-
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SENTRY_DSN = os.getenv("SENTRY_DSN") or ""

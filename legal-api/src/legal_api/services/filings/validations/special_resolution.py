@@ -19,9 +19,8 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services.utils import get_date, get_str
 from legal_api.utils.datetime import datetime
-
-from ...utils import get_date, get_str
 
 
 def validate(business: Business, filing_json: Dict) -> Error:
