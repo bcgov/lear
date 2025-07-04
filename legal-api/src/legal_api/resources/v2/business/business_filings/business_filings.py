@@ -1126,7 +1126,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                     filing.filing_json['filing'][filing_type]['foreignJurisdiction']
 
     @staticmethod
-    def submit_filing_for_review(business: Business, filing: Filing):
+    def submit_filing_for_review(business: Business | RegistrationBootstrap, filing: Filing):
         """Submit filing for review."""
         filing_data = filing.filing_json['filing'][filing.filing_type]
         submission_date = datetime.datetime.utcnow()

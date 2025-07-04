@@ -34,7 +34,6 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-
 def validate(registration_json: Dict) -> Optional[Error]:
     """Validate the Registration filing."""
     if not registration_json:

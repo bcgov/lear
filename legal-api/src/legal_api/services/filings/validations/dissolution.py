@@ -26,7 +26,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override above.
+from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
 class DissolutionTypes(str, Enum):
