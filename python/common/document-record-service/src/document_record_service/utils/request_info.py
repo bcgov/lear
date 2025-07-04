@@ -91,11 +91,6 @@ class RequestInfo:
 
 def get_request_info(req: request, info: RequestInfo) -> RequestInfo:  # type: ignore
     """Extract header and query parameters from the request."""
-    # TODO: [DRS] Make sure account_id and key will be passed from request.
-    # info.from_ui = req.args.get(PARAM_FROM_UI, False)
-    # info.account_id = req.headers.get(PARAM_ACCOUNT_ID)
-    # info.accept = req.headers.get(PARAM_ACCEPT)
-    # info.content_type = req.headers.get(PARAM_CONTENT_TYPE)
     info.document_service_id = req.args.get(PARAM_DOC_SERVICE_ID)
     info.consumer_doc_id = req.args.get(PARAM_CONSUMER_DOC_ID)
     info.consumer_filename = req.args.get(PARAM_CONSUMER_FILENAME)
