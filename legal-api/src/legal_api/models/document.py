@@ -79,3 +79,12 @@ class Document(db.Model, Versioned):
     def find_by_file_key(cls, file_key: str):
         """Return the document matching the file key."""
         return cls.query.filter_by(file_key=file_key).one_or_none()
+
+    @classmethod
+    def find_one_by(cls, business_id: int, filing_id: int, document_type: str):
+        """Return the document matching the business id, filing id and document type."""
+        return cls.query.filter_by(
+            business_id=business_id,
+            filing_id=filing_id,
+            type=document_type
+        ).order_by(desc(Document.id)).first()

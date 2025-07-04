@@ -22,6 +22,7 @@ import requests
 from flask import current_app, jsonify
 
 from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
+from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
@@ -43,6 +44,7 @@ class BusinessDocument:
         self._report_date_time = LegislationDatetime.now()
         self._epoch_filing_date = None
         self._tombstone_filing_date = None
+        self._document_service = DocumentService()
 
     def get_pdf(self):
         """Render the business document pdf response."""
