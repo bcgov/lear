@@ -279,9 +279,10 @@ def test_valid_comment_only_correction(mocker, session, correction_type, err_msg
         ('BEN', True, False, True),
     ]
 )
-def test_correction_share_class_series_validation(session, legal_type, has_rights_or_restrictions,
+def test_correction_share_class_series_validation(mocker, session, legal_type, has_rights_or_restrictions,
                                                   has_series, should_pass):
     """Test share class/series validation in correction filing."""
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type=legal_type)
     corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
@@ -290,6 +291,7 @@ def test_correction_share_class_series_validation(session, legal_type, has_right
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     filing['filing']['business']['legalType'] = legal_type
+    del filing['filing']['correction']['commentOnly']
 
     if legal_type == 'CC':
         director = copy.deepcopy(filing['filing']['correction']['parties'][0])
@@ -297,12 +299,11 @@ def test_correction_share_class_series_validation(session, legal_type, has_right
         filing['filing']['correction']['parties'].append(director)
         filing['filing']['correction']['parties'].append(director)
 
-    if 'shareStructure' in filing['filing']['correction']:
-        for share_class in filing['filing']['correction']['shareStructure']['shareClasses']:
-            share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
-            if not has_rights_or_restrictions:
-                if not has_series:
-                    share_class.pop('series', None)
+    for share_class in filing['filing']['correction']['shareStructure']['shareClasses']:
+        share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+        if not has_rights_or_restrictions:
+            if not has_series:
+                share_class.pop('series', None)
 
     err = validate(business, filing)
 
