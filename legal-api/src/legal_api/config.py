@@ -221,7 +221,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     DOCUMENT_SVC_URL = ''
     if DOCUMENT_API_URL and DOCUMENT_API_VERSION:
         DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
-    DOCUMENT_PRODUCT_CODE = os.getenv('DOCUMENT_PRODUCT_CODE', 'LEGAL_API')
+    DOCUMENT_PRODUCT_CODE = 'BUSINESS'
     DOCUMENT_API_KEY = os.getenv('DOCUMENT_API_KEY')
 
     TESTING = False
