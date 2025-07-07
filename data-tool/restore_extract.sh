@@ -16,9 +16,11 @@ PGPORT="${PGPORT:-5432}"             # or ‑‑port
 PGUSER="${PGUSER:-postgres}"        # or ‑‑user
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
 # Supply the password *either* via a .pgpass file *or* one‑shot:
-#   PGPASSWORD=secret ./backup_extract_tables.sh
+#   PGPASSWORD=secret ./restore_extract.sh
 ##############################################################################
 
+# -- Tables to restore ------------------------------------------------------------
+RESTORE=(corp_processing colin_tracking mig_group mig_batch mig_corp_batch corps_with_third_party)
 
 # -- Runtime options -----------------------------------------------------------
 DUMP="${DUMP}"
@@ -52,7 +54,7 @@ printf "🔄  Re‑importing Postgres from Oracle …\n"
 printf "🚚  Copying preserved rows (constraints temporarily disabled) …\n"
 pg_restore $(pg_conn_opts) --section=data --data-only \
           --disable-triggers \
-          $(as_table_opts "${KEEP[@]}") "$DUMP"
+          $(as_table_opts "${RESTORE[@]}") "$DUMP"
 
 ##############################################################################
 # ── FIX ANY SEQUENCES                                                     #
