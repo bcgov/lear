@@ -58,5 +58,7 @@ def create_gcp_filing_msg(identifier):
 def create_email_msg(identifier, filing_type):
     """Create the email message payload."""
     # TODO change OPTION to use a common Enum
-    email_msg = {"email": {"filingId": identifier, "type": filing_type, "option": "PAID"}}
+    email_msg = {
+        "email": {"filingId": identifier, "type": filing_type, "option": "PAID"}
+    }
     return email_msg

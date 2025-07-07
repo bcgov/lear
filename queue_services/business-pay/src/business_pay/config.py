@@ -77,11 +77,12 @@ class Config:  # pylint: disable=too-few-public-methods
 
     Used as the base for all the other configurations.
     """
+
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     SENTRY_DSN = os.getenv("SENTRY_DSN") or ""
     SENTRY_DSN = "" if SENTRY_DSN.lower() == "null" else SENTRY_DSN
-    
+
     DEPLOYMENT_PLATFORM = os.getenv("DEPLOYMENT_PLATFORM", "OCP")
 
     LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)

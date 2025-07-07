@@ -48,14 +48,14 @@ class FileDataSource(UpdateProcessor):
     def factory(cls, **kwargs):
         """Provide a way to use local files as a source of feature flag state."""
         return lambda config, store, ready: Files.new_data_source(
-            paths=kwargs.get('paths'),
-            auto_update=kwargs.get('auto_update', False),
-            poll_interval=kwargs.get('poll_interval', 1),
-            force_polling=kwargs.get('force_polling', False)
+            paths=kwargs.get("paths"),
+            auto_update=kwargs.get("auto_update", False),
+            poll_interval=kwargs.get("poll_interval", 1),
+            force_polling=kwargs.get("force_polling", False),
         )(config, store, ready)
 
 
-class Flags():
+class Flags:
     """Wrapper around the feature flag system.
     calls FAIL to FALSE
     If the feature flag service is unavailable
@@ -75,38 +75,41 @@ class Flags():
     def init_app(self, app):
         """Initialize the Feature Flag environment."""
         self.app = app
-        self.sdk_key = app.config.get('LD_SDK_KEY')
+        self.sdk_key = app.config.get("LD_SDK_KEY")
 
-        environment = app.config.get('ENVIRONMENT')
+        environment = app.config.get("ENVIRONMENT")
 
-        if self.sdk_key or environment != 'production':
+        if self.sdk_key or environment != "production":
 
-            if environment == 'production':
+            if environment == "production":
                 config = Config(sdk_key=self.sdk_key)
             else:
-                factory = FileDataSource.factory(paths=['flags.json'],
-                                                 auto_update=True)
-                config = Config(sdk_key=self.sdk_key,
-                                update_processor_class=factory,
-                                send_events=False)
+                factory = FileDataSource.factory(paths=["flags.json"], auto_update=True)
+                config = Config(
+                    sdk_key=self.sdk_key,
+                    update_processor_class=factory,
+                    send_events=False,
+                )
 
             ldclient_set_config(config)
             client = ldclient_get()
 
-            app.extensions['featureflags'] = client
+            app.extensions["featureflags"] = client
 
-    def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
+    def teardown(
+        self, exception
+    ):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
-        client = current_app.extensions['featureflags']
+        client = current_app.extensions["featureflags"]
         client.close()
 
     def _get_client(self):
         try:
-            client = current_app.extensions['featureflags']
+            client = current_app.extensions["featureflags"]
         except KeyError:
             try:
                 self.init_app(current_app)
-                client = current_app.extensions['featureflags']
+                client = current_app.extensions["featureflags"]
             except KeyError:
                 client = None
 
@@ -114,13 +117,18 @@ class Flags():
 
     @staticmethod
     def _get_anonymous_user():
-        return Context.create('anonymous')
+        return Context.create("anonymous")
 
     @staticmethod
     def _user_as_key(user):
-        return Context.builder(user.sub).set('firstName', user.firstname).set('lastName', user.lastname).build()
+        return (
+            Context.builder(user.sub)
+            .set("firstName", user.firstname)
+            .set("lastName", user.lastname)
+            .build()
+        )
 
-    def is_on(self, flag: str, user = None) -> bool:
+    def is_on(self, flag: str, user=None) -> bool:
         """Assert that the flag is set for this user."""
         client = self._get_client()
 
@@ -132,10 +140,12 @@ class Flags():
         try:
             return bool(client.variation(flag, flag_user, None))
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            current_app.logger.error(
+                "Unable to read flags: %s" % repr(err), exc_info=True
+            )
             return False
 
-    def value(self, flag: str, user = None) -> bool:
+    def value(self, flag: str, user=None) -> bool:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
 
@@ -148,5 +158,7 @@ class Flags():
             user_context = Context.builder(flag_user).build()
             return client.variation(flag, user_context, None)
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            current_app.logger.error(
+                "Unable to read flags: %s" % repr(err), exc_info=True
+            )
             return False

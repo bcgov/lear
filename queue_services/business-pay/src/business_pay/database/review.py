@@ -45,8 +45,9 @@ class Review(db.Model):  # pylint: disable=too-many-instance-attributes
     creation_date = db.Column("creation_date", db.DateTime(timezone=True))
 
     # parent keys
-    filing_id = db.Column("filing_id", db.Integer,
-                          db.ForeignKey("filings.id"), nullable=False)
+    filing_id = db.Column(
+        "filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False
+    )
 
     def save(self):
         """Save the object to the database immediately."""
