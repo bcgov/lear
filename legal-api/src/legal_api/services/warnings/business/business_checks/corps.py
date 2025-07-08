@@ -23,9 +23,23 @@ def check_business(business: Business) -> list:
     result = []
 
     result.extend(check_amalgamating_business(business))
+    result.extend(check_transition_application(business))
 
     return result
 
+def check_transition_application(business: Business) -> list:
+    """Check if a business is currently pending a post restoration transition application."""
+    result = []
+
+    is_transition_needed_but_not_filed = business.transition_needed_but_not_filed()
+    if is_transition_needed_but_not_filed:
+        result.append({
+            'code': 'NO_REQUIRED_TRANSITION_APPLICATION_FILED',
+            'message': 'This Business requires a post restoration transition application to be filed.',
+            'warningType': WarningType.NOT_IN_GOOD_STANDING
+        })
+
+    return result
 
 def check_amalgamating_business(business: Business) -> list:
     """Check if business is currently pending amalgamation."""

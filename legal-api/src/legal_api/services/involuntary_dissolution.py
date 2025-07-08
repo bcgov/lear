@@ -194,7 +194,7 @@ def _has_specific_filing_overdue():
 def _has_no_transition_filed_after_restoration():
     """Return SQLAlchemy clause for no transition filed after restoration check.
 
-    Check if the business needs to file Transition but does not file it
+    Check if the business needs to file Transition but does not file it within 12 months after restoration.
     """
     from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
@@ -203,7 +203,9 @@ def _has_no_transition_filed_after_restoration():
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)
 
-    return select([func.max(func.coalesce(restoration_filing.effective_date, None))]).where(
+    restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
+
+    return select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))]).where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 Business.founding_date < new_act_date,
@@ -221,7 +223,10 @@ def _has_no_transition_filed_after_restoration():
                             == CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
                             transition_filing._status == \
                             Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                            transition_filing.effective_date >= restoration_filing.effective_date
+                            transition_filing.effective_date.between(
+                                restoration_filing.effective_date,
+                                restoration_filing_effective_cutoff
+                            )
                         )
                     )
                 )

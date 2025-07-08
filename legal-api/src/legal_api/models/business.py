@@ -490,7 +490,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             return True
         # When involuntary dissolution feature flag is on, check transition filing
         if flags.is_on('enable_involuntary_dissolution'):
-            if self._transition_needed_but_not_filed():
+            if self.transition_needed_but_not_filed():
                 return False
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
@@ -504,7 +504,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
 
-    def _transition_needed_but_not_filed(self) -> bool:
+    def transition_needed_but_not_filed(self) -> bool:
         """Return True for no transition filed after restoration check. Otherwise, return False.
 
         Check whether the business needs to file Transition but has not done so

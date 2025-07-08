@@ -274,7 +274,7 @@ RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
 @pytest.mark.parametrize('test_name, transition_needed_but_not_filed, good_standing', [
-    ('BUSINES_FOUNDED_AFTER_NEW_ACT', False, True),
+    ('BUSINESS_FOUNDED_AFTER_NEW_ACT', False, True),
     ('TRANSITION_NEEDED_BUT_NOT_FILED_RESTORATION_WITHIN_12_MONTH', True, False),
     ('TRANSITION_NEEDED_BUT_NOT_FILED', True, False),
     ('TRANSITION_NEEDED_AND_COMPLETED', False, True),
@@ -283,7 +283,7 @@ def test_good_standing_check_transition_filing(session, test_name, transition_ne
     "Assert that the business is in good standing with additional check for transition filing"
     business = factory_business_from_tests(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
     restoration_filing = factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
-    if test_name == 'BUSINES_FOUNDED_AFTER_NEW_ACT':
+    if test_name == 'BUSINESS_FOUNDED_AFTER_NEW_ACT':
         business.founding_date = datetime.utcnow()
         business.save()
     elif test_name == 'TRANSITION_NEEDED_BUT_NOT_FILED_RESTORATION_WITHIN_12_MONTH':
@@ -294,7 +294,7 @@ def test_good_standing_check_transition_filing(session, test_name, transition_ne
     elif test_name == 'TRANSITION_NEEDED_AND_COMPLETED':
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
 
-    check_result = business._transition_needed_but_not_filed()
+    check_result = business.transition_needed_but_not_filed()
 
     assert check_result == transition_needed_but_not_filed
     with patch.object(flags, 'is_on', return_value=True):
