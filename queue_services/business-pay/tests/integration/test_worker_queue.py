@@ -141,12 +141,12 @@ def test_complete_worker(app, session, stan_server, mocker):
     messages_expected = 2  # 1 - filer & 1 - email == 2 messages
 
     # Override the app.config for the NATS/STAN configuration
-    test_subject_name = 'test-subject'
+    test_subject_name = "test-subject"
     app.config["NATS_QUEUE"] = test_subject_name
     app.config["NATS_FILER_SUBJECT"] = test_subject_name
     app.config["NATS_EMAILER_SUBJECT"] = test_subject_name
-    app.config["FILER_PUBLISH_OPTIONS"] = {'subject': test_subject_name}
-    app.config["EMAIL_PUBLISH_OPTIONS"] = {'subject': test_subject_name}
+    app.config["FILER_PUBLISH_OPTIONS"] = {"subject": test_subject_name}
+    app.config["EMAIL_PUBLISH_OPTIONS"] = {"subject": test_subject_name}
 
     # setup loop
     this_loop = asyncio.get_event_loop()
@@ -164,10 +164,14 @@ def test_complete_worker(app, session, stan_server, mocker):
 
     # Subscribe to the Queue
     queue_name = app.config.get("NATS_QUEUE")
-    this_loop.run_until_complete(queue.stan.subscribe(subject=test_subject_name,
-                                                      queue=queue_name,
-                                                      durable_name=test_subject_name,
-                                                      cb=cb))
+    this_loop.run_until_complete(
+        queue.stan.subscribe(
+            subject=test_subject_name,
+            queue=queue_name,
+            durable_name=test_subject_name,
+            cb=cb,
+        )
+    )
 
     filing_id = 12
     filing_type = "annualReport"
@@ -213,7 +217,10 @@ def test_complete_worker(app, session, stan_server, mocker):
     for msg in msgs:
         if msg.data == b'{"filing": {"id": 12}}':
             found_filing_msg = True
-        elif msg.data == b'{"email": {"filingId": 12, "type": "annualReport", "option": "PAID"}}':
+        elif (
+            msg.data
+            == b'{"email": {"filingId": 12, "type": "annualReport", "option": "PAID"}}'
+        ):
             found_email_msg = True
 
     assert found_filing_msg

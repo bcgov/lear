@@ -25,8 +25,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
 )
 from legal_api.services.filings.validations.registration import validate_offices, validate_party
-
-from ...utils import get_str
+from legal_api.services.utils import get_str
 
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:

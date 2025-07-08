@@ -47,9 +47,7 @@ from sentry_sdk.integrations.flask import FlaskIntegration
 from .config import Config, ProdConfig
 from .database.db import db
 from .resources import register_endpoints
-from .services import flags
-from .services import gcp_queue
-from .services import queue
+from .services import flags, gcp_queue, queue
 
 
 def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:

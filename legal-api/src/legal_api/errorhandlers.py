@@ -69,6 +69,15 @@ def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
         app_name = 'invalid app name'
     logger.error('Uncaught exception from app: %s', app_name, exc_info=sys.exc_info())
 
+    if isinstance(error, KeyError):
+        return jsonify({'message': f'A required field {error.args[0]} was missing or invalid.'}), 400
+    if isinstance(error, AttributeError):
+        return jsonify({
+            'message': 'Invalid request format, one or more fields have an unexpected value or structure.'
+        }), 400
+    if isinstance(error, TypeError):
+        return jsonify({'message': f'Encountered an error processing the request, {str(error)}'}), 400
+
     response = jsonify({'message': 'Internal server error'})
     response.status_code = 500
     return response

@@ -82,5 +82,3 @@ UNION ALL
 SELECT
     'business_identifier_coop',
     last_value FROM business_identifier_coop;
-
-

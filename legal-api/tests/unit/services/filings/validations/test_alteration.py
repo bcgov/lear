@@ -479,3 +479,132 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'legal_type, new_legal_type, has_rights_or_restrictions, has_series, should_pass',
+    [
+        ('BC', 'BC', False, True, False),
+        ('BC', 'BC', False, False, True),
+        ('BC', 'BC', True, True, True),
+        ('BC', 'BC', True, False, True),
+        ('BC', 'BEN', False, True, False),
+        ('BC', 'BEN', False, False, True),
+        ('BC', 'BEN', True, True, True),
+        ('BC', 'BEN', True, False, True),
+        ('BC', 'ULC', False, True, False),
+        ('BC', 'ULC', False, False, True),
+        ('BC', 'ULC', True, True, True),
+        ('BC', 'ULC', True, False, True),
+        ('BC', 'CC', False, True, False),
+        ('BC', 'CC', False, False, True),
+        ('BC', 'CC', True, True, True),
+        ('BC', 'CC', True, False, True),
+
+        ('BEN', 'BEN', False, True, False),
+        ('BEN', 'BEN', False, False, True),
+        ('BEN', 'BEN', True, True, True),
+        ('BEN', 'BEN', True, False, True),
+        ('BEN', 'BC', False, True, False),
+        ('BEN', 'BC', False, False, True),
+        ('BEN', 'BC', True, True, True),
+        ('BEN', 'BC', True, False, True),
+        ('BEN', 'CC', False, True, False),
+        ('BEN', 'CC', False, False, True),
+        ('BEN', 'CC', True, True, True),
+        ('BEN', 'CC', True, False, True),
+
+        ('ULC', 'ULC', False, True, False),
+        ('ULC', 'ULC', False, False, True),
+        ('ULC', 'ULC', True, True, True),
+        ('ULC', 'ULC', True, False, True),
+        ('ULC', 'BC', False, True, False),
+        ('ULC', 'BC', False, False, True),
+        ('ULC', 'BC', True, True, True),
+        ('ULC', 'BC', True, False, True),
+        ('ULC', 'BEN', False, True, False),
+        ('ULC', 'BEN', False, False, True),
+        ('ULC', 'BEN', True, True, True),
+        ('ULC', 'BEN', True, False, True),
+
+        ('CC', 'CC', False, True, False),
+        ('CC', 'CC', False, False, True),
+        ('CC', 'CC', True, True, True),
+        ('CC', 'CC', True, False, True),
+
+        ('CBEN', 'CBEN', False, True, False),
+        ('CBEN', 'CBEN', False, False, True),
+        ('CBEN', 'CBEN', True, True, True),
+        ('CBEN', 'CBEN', True, False, True),
+        ('CBEN', 'C', False, True, False),
+        ('CBEN', 'C', False, False, True),
+        ('CBEN', 'C', True, True, True),
+        ('CBEN', 'C', True, False, True),
+        ('CBEN', 'CCC', False, True, False),
+        ('CBEN', 'CCC', False, False, True),
+        ('CBEN', 'CCC', True, True, True),
+        ('CBEN', 'CCC', True, False, True),
+
+        ('C', 'C', False, True, False),
+        ('C', 'C', False, False, True),
+        ('C', 'C', True, True, True),
+        ('C', 'C', True, False, True),
+        ('C', 'CBEN', False, True, False),
+        ('C', 'CBEN', False, False, True),
+        ('C', 'CBEN', True, True, True),
+        ('C', 'CBEN', True, False, True),
+        ('C', 'CUL', False, True, False),
+        ('C', 'CUL', False, False, True),
+        ('C', 'CUL', True, True, True),
+        ('C', 'CUL', True, False, True),
+
+        ('C', 'CCC', False, True, False),
+        ('C', 'CCC', False, False, True),
+        ('C', 'CCC', True, True, True),
+        ('C', 'CCC', True, False, True),
+
+        ('CUL', 'CUL', False, True, False),
+        ('CUL', 'CUL', False, False, True),
+        ('CUL', 'CUL', True, True, True),
+        ('CUL', 'CUL', True, False, True),
+        ('CUL', 'C', False, True, False),
+        ('CUL', 'C', False, False, True),
+        ('CUL', 'C', True, True, True),
+        ('CUL', 'C', True, False, True),
+        ('CUL', 'CBEN', False, True, False),
+        ('CUL', 'CBEN', False, False, True),
+        ('CUL', 'CBEN', True, True, True),
+        ('CUL', 'CBEN', True, False, True),
+
+        ('CCC', 'CCC', False, True, False),
+        ('CCC', 'CCC', False, False, True),
+        ('CCC', 'CCC', True, True, True),
+        ('CCC', 'CCC', True, False, True),
+    ]
+)
+def test_alteration_share_class_series_validation(session, legal_type, new_legal_type, has_rights_or_restrictions,
+                                                  has_series, should_pass):
+    """Test corps-type share class/series validation in alteration."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
+
+    filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['business']['legalType'] = legal_type
+    filing['filing']['alteration']['business']['legalType'] = new_legal_type
+    del filing['filing']['alteration']['nameRequest']
+
+    if 'shareStructure' in filing['filing']['alteration']:
+        for share_class in filing['filing']['alteration']['shareStructure']['shareClasses']:
+            share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+            if not has_rights_or_restrictions:
+                if not has_series:
+                    share_class.pop('series', None)
+
+    err = validate(business, filing)
+
+    if should_pass:
+        assert err is None
+    else:
+        assert err
+        assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)

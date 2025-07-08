@@ -85,7 +85,7 @@ def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
 
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
@@ -164,7 +164,7 @@ def test_parties_correction(mocker, session, test_name, legal_type, correction_t
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
-    business = factory_business(identifier)
+    business = factory_business(identifier, entity_type=legal_type)
 
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = identifier
     INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'Test'
@@ -256,3 +256,59 @@ def test_valid_comment_only_correction(mocker, session, correction_type, err_msg
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
         assert err.msg[0]['error'] == err_msg
+
+
+@pytest.mark.parametrize(
+    'legal_type, has_rights_or_restrictions, has_series, should_pass',
+    [
+        ('BC', False, True, False),
+        ('BC', False, False, True),
+        ('BC', True, True, True),
+        ('BC', True, False, True),
+        ('ULC', False, True, False),
+        ('ULC', False, False, True),
+        ('ULC', True, True, True),
+        ('ULC', True, False, True),
+        ('CC', False, True, False),
+        ('CC', False, False, True),
+        ('CC', True, True, True),
+        ('CC', True, False, True),
+        ('BEN', False, True, False),
+        ('BEN', False, False, True),
+        ('BEN', True, True, True),
+        ('BEN', True, False, True),
+    ]
+)
+def test_correction_share_class_series_validation(mocker, session, legal_type, has_rights_or_restrictions,
+                                                  has_series, should_pass):
+    """Test share class/series validation in correction filing."""
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['business']['legalType'] = legal_type
+    del filing['filing']['correction']['commentOnly']
+
+    if legal_type == 'CC':
+        director = copy.deepcopy(filing['filing']['correction']['parties'][0])
+        del director['roles'][0]
+        filing['filing']['correction']['parties'].append(director)
+        filing['filing']['correction']['parties'].append(director)
+
+    for share_class in filing['filing']['correction']['shareStructure']['shareClasses']:
+        share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+        if not has_rights_or_restrictions:
+            if not has_series:
+                share_class.pop('series', None)
+
+    err = validate(business, filing)
+
+    if should_pass:
+        assert err is None
+    else:
+        assert err
+        assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
