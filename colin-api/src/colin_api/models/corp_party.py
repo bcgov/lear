@@ -457,7 +457,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             raise err
 
     @classmethod
-    # pylint: disable=too-many-locals; one extra
+    # pylint: disable=too-many-locals, too-many-branches; one extra;
     def create_new_corp_party(cls, cursor, event_id: int, party: Dict, business: Dict):
         """Insert new party into the corp_party table."""
         query = \
