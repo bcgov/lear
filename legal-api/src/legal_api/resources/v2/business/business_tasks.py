@@ -21,17 +21,16 @@ from http import HTTPStatus
 
 import datedelta
 import requests
-from requests import exceptions  # noqa I001
 from flask import current_app, jsonify
 from flask_cors import cross_origin
+from requests import exceptions  # noqa I001
 
 from legal_api.models import Business, Filing
 from legal_api.services import check_warnings, namex
-from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from legal_api.services.warnings.business.business_checks import BusinessWarningCodes
 from .bp import bp
 
 
@@ -359,6 +358,7 @@ def create_conversion_filing_todo(business, order, enabled):
         'enabled': enabled
     }
     return todo
+
 
 def create_transition_todo(business, order, enabled):
     """Return a to-do JSON object for transition application filing."""

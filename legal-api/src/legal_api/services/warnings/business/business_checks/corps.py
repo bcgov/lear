@@ -27,6 +27,7 @@ def check_business(business: Business) -> list:
 
     return result
 
+
 def check_transition_application(business: Business) -> list:
     """Check if a business is currently pending a post restoration transition application."""
     result = []
@@ -40,6 +41,7 @@ def check_transition_application(business: Business) -> list:
         })
 
     return result
+
 
 def check_amalgamating_business(business: Business) -> list:
     """Check if business is currently pending amalgamation."""
