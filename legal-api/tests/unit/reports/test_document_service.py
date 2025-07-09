@@ -22,6 +22,7 @@ from legal_api.reports.document_service import DocumentService
 from tests.unit.models import factory_business, factory_completed_filing
 from registry_schemas.example_data import FILING_TEMPLATE
 
+
 def test_create_document(session, mock_doc_service, mocker):
     mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
     founding_date = datetime.utcnow()
@@ -55,16 +56,3 @@ def test_get_document(session, mock_doc_service, mocker):
     assert response
     assert status == HTTPStatus.OK
     assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
-
-
-def test_create_document(session, mock_doc_service):
-    founding_date = datetime.utcnow()
-    business = factory_business('CP1234567', founding_date=founding_date)
-    filing = copy.deepcopy(FILING_TEMPLATE)
-    filing['filing']['header']['name'] = 'Involuntary Dissolution'
-    completed_filing = \
-        factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
-    document_service = DocumentService()
-    response, status = document_service.get_document(business.identifier, completed_filing.id, 'annualReport', '3113', '123')
-    assert status == HTTPStatus.OK
-    assert response

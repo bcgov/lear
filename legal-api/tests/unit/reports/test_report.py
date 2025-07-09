@@ -391,7 +391,8 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     assert formatted_now_json['noticeOfWithdrawal']['filingId'] == withdrawn_filing_id
 
 
-def test_document_service_not_create_document(session, mock_doc_service):
+def test_document_service_not_create_document(session, mock_doc_service, mocker):
+    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     report = create_report(identifier='BC9999999', entity_type='BC', report_type='annualReport',
                            filing_type='incorporationApplication', template=filing)
