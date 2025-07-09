@@ -67,7 +67,9 @@ class _Config:  # pylint: disable=too-few-public-methods
     AUTH_API_URL = os.getenv('AUTH_API_URL', '')
     AUTH_API_VERSION = os.getenv('AUTH_API_VERSION', '')
     BUSINESS_API_URL = os.getenv('BUSINESS_API_URL', '')
-    BUSINESS_API_VERSION_2 = os.getenv('BUSINESS_API_VERSION2', '')
+    BUSINESS_API_VERSION_2 = os.getenv('BUSINESS_API_VERSION_2', '')
+    LEGAL_API_URL = os.getenv('LEGAL_API_URL', '')
+    LEGAL_API_VERSION_2 = os.getenv('LEGAL_API_VERSION_2', '')
     NAMEX_API_URL = os.getenv('NAMEX_API_URL', '')
     NAMEX_API_VERSION = os.getenv('NAMEX_API_VERSION', '')
     PAY_API_URL = os.getenv('PAY_API_URL', '')
@@ -78,7 +80,16 @@ class _Config:  # pylint: disable=too-few-public-methods
     REPORT_API_GOTENBERG_URL = os.getenv('REPORT_API_GOTENBERG_URL', 'https://')
 
     COLIN_URL = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
-    LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
+    # LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
+
+    # This is to use reverse proxy to make filingLink, commentLink, documentLink etc. work
+    # Change to use BUSINESS API GW URL once the Migration to GCP is complete
+    LEGAL_API_BASE_URL = f'{LEGAL_API_URL + LEGAL_API_VERSION_2}/businesses'
+
+    # Temporary while there is inconsistency between OCP / GCP versions of 1pass env
+    if NAMEX_API_VERSION and NAMEX_API_VERSION[-1] == '/':
+        # remove the slash
+        NAMEX_API_VERSION = NAMEX_API_VERSION[:-1]
     NAMEX_SVC_URL = f'{NAMEX_API_URL + NAMEX_API_VERSION}'
     PAYMENT_SVC_URL = f'{PAY_API_URL + PAY_API_VERSION}/payment-requests'
     AUTH_SVC_URL = f'{AUTH_API_URL + AUTH_API_VERSION}'

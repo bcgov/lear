@@ -87,6 +87,9 @@ class PartyRole(db.Model, Versioned):
             'role': self.role
         }
 
+        if self.party_class_type:
+            party['roleClass'] = self.party_class_type.name
+
         return party
 
     @classmethod
@@ -129,6 +132,22 @@ class PartyRole(db.Model, Versioned):
             filter(PartyRole.role == role). \
             all()
         return members
+
+    @classmethod
+    def get_party_roles_by_class_type(
+        cls,
+        business_id: int,
+        class_type: PartyClass.PartyClassType,
+        end_date: datetime
+    ) -> list[PartyRole]:
+        """Return a list of party roles by the class type."""
+        party_roles = db.session.query(PartyRole). \
+            filter(PartyRole.business_id == business_id). \
+            filter(PartyRole.party_class_type == class_type). \
+            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
+            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date)). \
+            all()
+        return party_roles
 
     @staticmethod
     def get_active_directors(business_id: int, end_date: datetime) -> list:

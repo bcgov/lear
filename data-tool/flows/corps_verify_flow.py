@@ -1,8 +1,9 @@
 import math
 
 import pandas as pd
-from common.init_utils import colin_init, get_config, lear_init
+from common.init_utils import colin_extract_init, get_config, lear_init
 from prefect import flow, task
+from prefect.cache_policies import NO_CACHE
 from sqlalchemy import Engine, text
 
 
@@ -26,7 +27,7 @@ lear_query = f"""
 """
 
 
-@task(name='1-Count')
+@task(name='1-Count', cache_policy=NO_CACHE)
 def get_verify_count(colin_engine: Engine) -> int:
     with colin_engine.connect() as colin_conn:
         rs = colin_conn.execute(text(colin_cnt_query))
@@ -34,7 +35,7 @@ def get_verify_count(colin_engine: Engine) -> int:
         return total
 
 
-@task(name='2-Verify')
+@task(name='2-Verify', cache_policy=NO_CACHE)
 def verify(colin_engine: Engine, lear_engine: Engine, limit: int, offset: int) -> list:
 
     identifiers = None
@@ -62,7 +63,7 @@ def verify(colin_engine: Engine, lear_engine: Engine, limit: int, offset: int) -
 def verify_flow():
     try:
         config = get_config()
-        colin_engine = colin_init(config)
+        colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
 
         total = get_verify_count(colin_engine)

@@ -20,10 +20,10 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, Filing
+from legal_api.services.filings.validations.common_validations import validate_parties_addresses
+from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
-from ...utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
@@ -33,7 +33,7 @@ def validate(business: Business, cod: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
 
-    msg_directors_addresses = validate_directors_addresses(cod)
+    msg_directors_addresses = validate_directors_addresses(business, cod)
     if msg_directors_addresses:
         msg += msg_directors_addresses
 
@@ -46,14 +46,17 @@ def validate(business: Business, cod: Dict) -> Error:
     return None
 
 
-def validate_directors_addresses(cod: Dict) -> List:
+def validate_directors_addresses(business: Business, cod: Dict) -> List:
     """Return an error message if the directors address are invalid.
 
     Address must contain a valid ISO-2 valid country.
     """
     msg = []
 
-    directors = cod['filing']['changeOfDirectors']['directors']
+    filing_type = 'changeOfDirectors'
+    msg.extend(validate_parties_addresses(cod, filing_type, 'directors'))
+
+    directors = cod['filing'][filing_type]['directors']
 
     for idx, director in enumerate(directors):  # pylint: disable=too-many-nested-blocks;  # noqa: E501 review this when implementing corrections
         for address_type in Address.JSON_ADDRESS_TYPES:
@@ -65,6 +68,12 @@ def validate_directors_addresses(cod: Dict) -> List:
                 except LookupError:
                     msg.append({'error': babel('Address Country must resolve to a valid ISO-2 country.'),
                                 'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry'})
+            else:
+                if business.legal_type in Business.CORPS:
+                    msg.append({
+                        'error': f'missing {address_type}',
+                        'path': f'/filing/changeOfDirectors/directors/{idx}/{address_type}'
+                    })
     return msg
 
 

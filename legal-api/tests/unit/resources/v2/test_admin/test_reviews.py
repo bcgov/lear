@@ -74,7 +74,7 @@ def create_review(identifier, nr, status=ReviewStatus.AWAITING_REVIEW):
 def create_nr_data(no_of_reviews):
     nrs = create_nrs(no_of_reviews)
     add_dates(nrs)
-    return nrs
+    return {'requests': nrs}
 
 
 def create_nrs(no_of_reviews):

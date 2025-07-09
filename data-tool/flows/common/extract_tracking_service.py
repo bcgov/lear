@@ -1,20 +1,36 @@
 from enum import Enum
 from typing import List
-from sqlalchemy import text
+from sqlalchemy import Engine, text
 import logging
+
 
 class ProcessingStatuses(str, Enum):
     PENDING = 'PENDING'
     PROCESSING = 'PROCESSING'
     COMPLETED = 'COMPLETED'
     FAILED = 'FAILED'
+
+    # Used in corp_processing only
     PARTIAL = 'PARTIAL'
 
-class CorpProcessingQueueService:
-    def __init__(self, environment: str, db_engine, flow_name: str):
+
+class ExtractTrackingService:
+    """Provides services to update tracking tables in Colin extract DB.
+
+    Currently it's used for corp_processing and colin_tracking tables.
+    """
+
+    def __init__(
+        self,
+        environment: str,
+        db_engine: Engine,
+        flow_name: str,
+        table_name: str = 'corp_processing'
+    ):
         self.data_load_env = environment
         self.db_engine = db_engine
         self.flow_name = flow_name
+        self.table_name = table_name
         self.logger = logging.getLogger(__name__)
 
     def reserve_for_flow(self, base_query: str, flow_run_id: str) -> int:
@@ -30,13 +46,14 @@ class CorpProcessingQueueService:
         init_query = f"""
         WITH candidate_corps AS ({base_query}),
         available_corps AS (
-            SELECT corp_num, corp_type_cd
+            SELECT corp_num, corp_type_cd, mig_batch_id
             FROM candidate_corps
             FOR UPDATE SKIP LOCKED
         )
-        INSERT INTO corp_processing (
+        INSERT INTO {self.table_name} (
             corp_num,
             corp_type_cd,
+            mig_batch_id,
             flow_name,
             processed_status,
             environment,
@@ -48,6 +65,7 @@ class CorpProcessingQueueService:
         SELECT 
             corp_num,
             corp_type_cd,
+            mig_batch_id,
             :flow_name,
             :status,
             :environment,
@@ -86,10 +104,10 @@ class CorpProcessingQueueService:
         Returns:
             List of corporation numbers that were successfully claimed for processing
         """
-        query = """
+        query = f"""
         WITH claimable AS (
             SELECT corp_num, id
-            FROM corp_processing
+            FROM {self.table_name}
             WHERE processed_status = :pending_status
             AND environment = :environment
             AND flow_name = :flow_name
@@ -98,14 +116,14 @@ class CorpProcessingQueueService:
             LIMIT :batch_size
             FOR UPDATE SKIP LOCKED
         )
-        UPDATE corp_processing
+        UPDATE {self.table_name} tbl
         SET processed_status = :processing_status,
             claimed_at = NOW(),
             last_modified = NOW()
         FROM claimable
-        WHERE corp_processing.corp_num = claimable.corp_num
-        AND  corp_processing.id = claimable.id
-        RETURNING corp_processing.corp_num, corp_processing.claimed_at
+        WHERE tbl.corp_num = claimable.corp_num
+        AND  tbl.id = claimable.id
+        RETURNING tbl.corp_num, tbl.claimed_at
         """
 
         with self.db_engine.connect() as conn:
@@ -135,17 +153,33 @@ class CorpProcessingQueueService:
         flow_run_id: str,
         corp_num: str,
         status: ProcessingStatuses,
-        error: str = None
+        error: str = None,
+        **extra_params
     ) -> bool:
         """Update status for a corp."""
-        query = """
-        UPDATE corp_processing
-        SET processed_status = :status,
-            last_modified = NOW(),
-            last_error = CASE 
-                WHEN :error IS NOT NULL THEN :error 
-                ELSE last_error 
-            END
+        set_clauses = [
+            'processed_status = :status',
+            'last_modified = NOW()',
+            'last_error = CASE WHEN :error IS NOT NULL THEN :error ELSE last_error END',
+        ]
+        params = {
+            'status': status,
+            'error': error,
+            'corp_num': corp_num,
+            'flow_run_id': flow_run_id,
+            'environment': self.data_load_env,
+            'flow_name': self.flow_name
+        }
+
+        if self.table_name == 'colin_tracking':
+            set_clauses.append('frozen = :frozen')
+            set_clauses.append('in_early_adopter = :in_early_adopter')
+            params['frozen'] = extra_params['frozen']
+            params['in_early_adopter'] = extra_params['in_early_adopter']
+ 
+        query = f"""
+        UPDATE {self.table_name}
+        SET {', '.join(set_clauses)}
         WHERE corp_num = :corp_num
         AND flow_run_id = :flow_run_id
         AND environment = :environment
@@ -157,14 +191,7 @@ class CorpProcessingQueueService:
             with conn.begin():
                 result = conn.execute(
                     text(query),
-                    {
-                        'status': status,
-                        'error': error,
-                        'corp_num': corp_num,
-                        'flow_run_id': flow_run_id,
-                        'environment': self.data_load_env,
-                        'flow_name': self.flow_name
-                    }
+                    params
                 )
                 success = result.rowcount > 0
                 if not success:

@@ -35,7 +35,7 @@ class DayOfWeek(BaseEnum):
     SUNDAY = 6
     
 
-class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
+class datetime(_datetime):  # pylint: disable=invalid-name; ha datetime is invalid??
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
 
     @classmethod

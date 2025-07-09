@@ -13,8 +13,9 @@
 # limitations under the License.
 """Common validations share through the different filings."""
 import io
+import re
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 
 import pycountry
 import PyPDF2
@@ -22,10 +23,20 @@ from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Address, Business
 from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
+
+
+NO_POSTAL_CODE_COUNTRY_CODES = {
+    'AO', 'AG', 'AW', 'BS', 'BZ', 'BJ', 'BM', 'BO', 'BQ', 'BW', 'BF', 'BI',
+    'CM', 'CF', 'TD', 'KM', 'CG', 'CD', 'CK', 'CI', 'CW', 'DJ', 'DM', 'GQ',
+    'ER', 'FJ', 'TF', 'GA', 'GM', 'GH', 'GD', 'GY', 'HM', 'HK',
+    'KI', 'KP', 'LY', 'MO', 'MW', 'ML', 'MR', 'NR',
+    'AN', 'NU', 'QA', 'RW', 'KN', 'ST', 'SC', 'SL', 'SX', 'SB', 'SO', 'SR', 'SY',
+    'TL', 'TG', 'TK', 'TO', 'TT', 'TV', 'UG', 'AE', 'VU', 'YE', 'ZW'
+}
 
 
 def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
@@ -60,7 +71,7 @@ def has_rights_or_restrictions_true_in_share_series(share_class) -> bool:
     return any(x.get('hasRightsOrRestrictions', False) for x in series)
 
 
-def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylint: disable=too-many-branches
+def validate_share_structure(incorporation_json, filing_type, legal_type) -> Error:  # pylint: disable=too-many-branches
     """Validate the share structure data of the incorporation filing."""
     share_classes = incorporation_json['filing'][filing_type] \
         .get('shareStructure', {}).get('shareClasses', [])
@@ -68,7 +79,7 @@ def validate_share_structure(incorporation_json, filing_type) -> Error:  # pylin
     memoize_names = []
 
     for index, item in enumerate(share_classes):
-        shares_msg = validate_shares(item, memoize_names, filing_type, index)
+        shares_msg = validate_shares(item, memoize_names, filing_type, index, legal_type)
         if shares_msg:
             msg.extend(shares_msg)
 
@@ -106,7 +117,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
     return msg
 
 
-def validate_shares(item, memoize_names, filing_type, index) -> Error:
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
     """Validate a wellformed share structure."""
     msg = []
     if item['name'] in memoize_names:
@@ -127,6 +138,21 @@ def validate_shares(item, memoize_names, filing_type, index) -> Error:
         if not item.get('currency', None):
             err_path = '/filing/{0}/shareClasses/{1}/currency/'.format(filing_type, index)
             msg.append({'error': 'Share class %s must specify currency' % item['name'], 'path': err_path})
+
+    # Validate that corps type companies cannot have series in share classes when hasRightsOrRestrictions is false
+    if legal_type in Business.CORPS:
+        series = item.get('series', [])
+        has_series = False
+        if len(series) > 0:
+            has_series = True
+
+        if not item.get('hasRightsOrRestrictions', False) and has_series:
+            err_path = '/filing/{0}/shareClasses/{1}/series/'.format(filing_type, index)
+            msg.append({
+                'error': 'Share class %s cannot have series when hasRightsOrRestrictions is false' % item['name'],
+                'path': err_path
+            })
+            return msg
 
     series_msg = validate_series(item, memoize_names, filing_type, index)
     if series_msg:
@@ -199,7 +225,7 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     return None
 
 
-def validate_parties_names(filing_json: dict, filing_type: str) -> list:
+def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate the parties name for COLIN sync."""
     # FUTURE: This validation should be removed when COLIN sync back is no longer required.
     # This is required to work around first and middle name length mismatches between LEAR and COLIN.
@@ -209,12 +235,12 @@ def validate_parties_names(filing_json: dict, filing_type: str) -> list:
     party_path = f'/filing/{filing_type}/parties'
 
     for item in parties_array:
-        msg.extend(validate_party_name(item, party_path))
+        msg.extend(validate_party_name(item, party_path, legal_type))
 
     return msg
 
 
-def validate_party_name(party: dict, party_path: str) -> list:
+def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
     msg = []
 
@@ -226,8 +252,10 @@ def validate_party_name(party: dict, party_path: str) -> list:
         party_roles = [x.get('roleType') for x in party['roles']]
         party_roles_str = ', '.join(party_roles)
 
-        first_name = officer['firstName']
-        if len(first_name) > custom_allowed_max_length:
+        first_name = officer.get('firstName', None)
+        if (legal_type in Business.CORPS) and (not first_name):
+            msg.append({'error': 'firstName is required', 'path': f'{party_path}/firstName'})
+        elif len(first_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})
 
@@ -329,5 +357,92 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
           is_region_for_us_required and
           not pycountry.subdivisions.get(code=f'{country_code}-{region}')):
         msg.append({'error': 'Invalid region.', 'path': f'{foreign_jurisdiction_path}/region'})
+
+    return msg
+
+
+def validate_offices_addresses(filing_json: dict, filing_type: str) -> list:
+    """Validate optional fields in office addresses."""
+    msg = []
+    offices_dict = filing_json['filing'][filing_type]['offices']
+    offices_path = f'/filing/{filing_type}/offices'
+    for key, value in offices_dict.items():
+        msg.extend(validate_addresses(value, f'{offices_path}/{key}'))
+    return msg
+
+
+def validate_parties_addresses(filing_json: dict, filing_type: str, key: str = 'parties') -> list:
+    """Validate optional fields in party addresses."""
+    msg = []
+    parties_array = filing_json['filing'][filing_type][key]
+    parties_path = f'/filing/{filing_type}/{key}'
+    for idx, party in enumerate(parties_array):
+        msg.extend(validate_addresses(party, f'{parties_path}/{idx}'))
+    return msg
+
+
+def validate_addresses(
+    addresses: dict,
+    addresses_path: str
+) -> list:
+    """Validate optional fields in addresses."""
+    msg = []
+    for address_type in Address.JSON_ADDRESS_TYPES:
+        if address := addresses.get(address_type):
+            err = _validate_postal_code(address, f'{addresses_path}/{address_type}')
+            if err:
+                msg.append(err)
+    return msg
+
+
+def _validate_postal_code(
+    address: dict,
+    address_path: str
+) -> dict:
+    """Validate that postal code is optional for specified country."""
+    country = address['addressCountry']
+    postal_code = address.get('postalCode')
+    try:
+        country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+        if country not in NO_POSTAL_CODE_COUNTRY_CODES and\
+                not postal_code:
+            return {'error': _('Postal code is required.'),
+                    'path': f'{address_path}/postalCode'}
+    except LookupError:
+        # Different ISO-2 country validations are done at filing level,
+        # this can be refactored into a common validator in the future
+        return None
+
+    return None
+
+
+def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) -> list:
+    """Validate phone number."""
+    if legal_type not in Business.CORPS:
+        return []
+
+    contact_point_path = f'/filing/{filing_type}/contactPoint'
+    contact_point_dict = filing_json['filing'][filing_type].get('contactPoint', {})
+
+    msg = []
+    if phone_num := contact_point_dict.get('phone', None):
+        # if pure digits (max 10)
+        if phone_num.isdigit():
+            if len(phone_num) != 10:
+                msg.append({
+                    'error': 'Invalid phone number, maximum 10 digits in phone number format',
+                    'path': f'{contact_point_path}/phone'})
+        else:
+            # Check various phone formats
+            # (123) 456-7890 / 123-456-7890 / 123.456.7890 / 123 456 7890
+            phone_pattern = r'^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$'
+            if not re.match(phone_pattern, phone_num):
+                msg.append({
+                    'error': 'Invalid phone number, maximum 10 digits in phone number format',
+                    'path': f'{contact_point_path}/phone'})
+
+    if extension := contact_point_dict.get('extension'):
+        if len(str(extension)) > 5:
+            msg.append({'error': 'Invalid extension, maximum 5 digits', 'path': f'{contact_point_path}/extension'})
 
     return msg

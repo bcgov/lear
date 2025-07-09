@@ -26,6 +26,8 @@ from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
     validate_share_structure,
@@ -41,9 +43,8 @@ from legal_api.services.filings.validations.special_resolution import (
     validate_signatory_name,
     validate_signing_date,
 )
+from legal_api.services.utils import get_bool, get_date, get_str
 from legal_api.utils.auth import jwt
-
-from ...utils import get_bool, get_date, get_str
 
 
 def validate(business: Business, filing: Dict) -> Error:
@@ -51,6 +52,7 @@ def validate(business: Business, filing: Dict) -> Error:
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
     msg = []
+    filing_type = 'correction'
 
     is_comment_only_correction = get_bool(filing, '/filing/correction/commentOnly')
     is_staff_or_system_role = jwt.validate_roles([STAFF_ROLE]) or jwt.validate_roles([SYSTEM_ROLE])
@@ -74,14 +76,17 @@ def validate(business: Business, filing: Dict) -> Error:
 
     # skip all the other validation checks if comment only correction
     if not is_comment_only_correction:
+        if filing.get('filing', {}).get('correction', {}).get('parties', None):
+            msg.extend(validate_parties_addresses(filing, filing_type))
+        if filing.get('filing', {}).get('correction', {}).get('offices', None):
+            msg.extend(validate_offices_addresses(filing, filing_type))
         # validations for firms
-        if legal_type := filing.get('filing', {}).get('business', {}).get('legalType'):
-            if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-                _validate_firms_correction(business, filing, legal_type, msg)
-            elif legal_type in Business.CORPS:
-                _validate_corps_correction(filing, legal_type, msg)
-            elif legal_type in [Business.LegalTypes.COOP.value]:
-                _validate_special_resolution_correction(filing, legal_type, msg)
+        if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+            _validate_firms_correction(business, filing, business.legal_type, msg)
+        elif business.legal_type in Business.CORPS:
+            _validate_corps_correction(filing, business.legal_type, msg)
+        elif business.legal_type == Business.LegalTypes.COOP.value:
+            _validate_special_resolution_correction(filing, business.legal_type, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -107,19 +112,19 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
     if filing_dict.get('filing', {}).get('correction', {}).get('nameRequest', {}).get('nrNumber', None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
     if filing_dict.get('filing', {}).get('correction', {}).get('offices', None):
-        msg.extend(validate_corp_offices(filing_dict, filing_type))
+        msg.extend(validate_corp_offices(filing_dict, legal_type, filing_type))
     if filing_dict.get('filing', {}).get('correction', {}).get('parties', None):
         err = validate_roles(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
-        msg.extend(validate_parties_names(filing_dict, filing_type))
+        msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
 
         err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:
             msg.extend(err)
     if filing_dict.get('filing', {}).get('correction', {}).get('shareStructure', None):
-        err = validate_share_structure(filing_dict, filing_type)
+        err = validate_share_structure(filing_dict, filing_type, legal_type)
         if err:
             msg.extend(err)
 
@@ -150,7 +155,7 @@ def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg
         if err:
             msg.extend(err)
 
-        msg.extend(validate_parties_names(filing_dict, filing_type))
+        msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
 
         err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
         if err:

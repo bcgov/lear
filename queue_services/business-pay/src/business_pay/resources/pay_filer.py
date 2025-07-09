@@ -39,24 +39,24 @@ import traceback
 import uuid
 from contextlib import suppress
 from dataclasses import dataclass
-from datetime import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Optional
 
 from flask import Blueprint, current_app, request
-from simple_cloudevent import SimpleCloudEvent
-from simple_cloudevent import to_queue_message
+from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from structured_logging import StructuredLogging
 
 from business_pay.database import Filing
-from business_pay.services import create_email_msg
-from business_pay.services import create_filing_msg
-from business_pay.services import create_gcp_filing_msg
-from business_pay.services import flags
-from business_pay.services import gcp_queue
-from business_pay.services import queue
-from business_pay.services import verify_gcp_jwt
+from business_pay.services import (
+    create_email_msg,
+    create_filing_msg,
+    create_gcp_filing_msg,
+    flags,
+    gcp_queue,
+    queue,
+    verify_gcp_jwt,
+)
 
 bp = Blueprint("worker", __name__)
 
@@ -94,9 +94,9 @@ async def worker():
 
     # 1. Get cloud event
     # ##
-    if not (ce := gcp_queue.get_simple_cloud_event(request,
-                                                   wrapped=True)) \
-            and not isinstance(ce, SimpleCloudEvent):
+    if not (
+        ce := gcp_queue.get_simple_cloud_event(request, wrapped=True)
+    ) and not isinstance(ce, SimpleCloudEvent):
         #
         # Decision here is to return a 200,
         # so the event is removed from the Queue
@@ -116,7 +116,8 @@ async def worker():
 
     if payment_token.corp_type_code in ["MHR", "BCR", "BTR", "BUS", "STRR"]:
         logger.debug(
-            f"ignoring message for corp_type_code:{payment_token.corp_type_code},  {str(ce)}")
+            f"ignoring message for corp_type_code:{payment_token.corp_type_code},  {str(ce)}"
+        )
         return {}, HTTPStatus.OK
 
     logger.debug(f"Payment Token: {payment_token} for : {str(ce)}")
@@ -126,14 +127,18 @@ async def worker():
     if not (
         filing := Filing.get_filing_by_payment_token(pay_token=str(payment_token.id))
     ):
-        if payment_token.filing_identifier is None and \
-           payment_token.corp_type_code == "BC":
+        if (
+            payment_token.filing_identifier is None
+            and payment_token.corp_type_code == "BC"
+        ):
             logger.debug(
-                f"Take Off Queue - BOGUS Filing Not Found: {payment_token} for : {str(ce)}")
+                f"Take Off Queue - BOGUS Filing Not Found: {payment_token} for : {str(ce)}"
+            )
             return {}, HTTPStatus.OK
 
         logger.debug(
-            f"Put Back on Queue - Filing Not Found: {payment_token} for : {str(ce)}")
+            f"Put Back on Queue - Filing Not Found: {payment_token} for : {str(ce)}"
+        )
         # The payment token might not be there yet, put back on Q
         return {}, HTTPStatus.NOT_FOUND
 
@@ -176,27 +181,24 @@ class PaymentToken:
 
 def publish_to_filer(filing: Filing, payment_token: PaymentToken):
     """Publish a queue message to entity-filer once the filing has been marked as PAID."""
-    logger.debug(
-        f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
+    logger.debug(f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
     try:
         if filing.effective_date <= filing.payment_completion_date:
             # use Pub/Sub if in GCP, otherwise NATS
-            if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
+            if current_app.config["DEPLOYMENT_PLATFORM"] == "GCP":
                 data = create_gcp_filing_msg(filing.id)
 
                 ce = SimpleCloudEvent(
                     id=str(uuid.uuid4()),
-                    source='business_pay',
-                    subject='filing',
+                    source="business_pay",
+                    subject="filing",
                     time=datetime.now(timezone.utc),
-                    type='filingMessage',
-                    data = data
+                    type="filingMessage",
+                    data=data,
                 )
-                topic = current_app.config.get('BUSINESS_FILER_TOPIC')
+                topic = current_app.config.get("BUSINESS_FILER_TOPIC")
                 gcp_queue.publish(topic, to_queue_message(ce))
-                logger.debug(
-                    f"Filer pub/sub message: {str(ce)}"
-                )
+                logger.debug(f"Filer pub/sub message: {str(ce)}")
             else:
                 filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
                 queue_message = create_filing_msg(filing.id)
@@ -206,8 +208,7 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
 
         logger.info(f"publish to filer for pay-id: {payment_token.id}")
     except Exception as err:
-        logger.debug(
-            f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
+        logger.debug(f"Publish to Filer error: {err}, for pay-id: {payment_token.id}")
         # debug
         logger.debug(traceback.format_exc())
 
@@ -222,23 +223,22 @@ def publish_to_emailer(filing: Filing):
 
         email_msg = create_email_msg(filing.id, filing.filing_type)
 
-        if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
+        if current_app.config["DEPLOYMENT_PLATFORM"] == "GCP":
             ce = SimpleCloudEvent(
                 id=str(uuid.uuid4()),
-                source='business_pay',
-                subject='filing',
+                source="business_pay",
+                subject="filing",
                 time=datetime.now(timezone.utc),
-                data=email_msg
+                data=email_msg,
             )
-            topic = current_app.config.get('BUSINESS_EMAILER_TOPIC')
+            topic = current_app.config.get("BUSINESS_EMAILER_TOPIC")
             gcp_queue.publish(topic, to_queue_message(ce))
             logger.debug(f"Emailer pub/sub message: {str(ce)}")
         else:
             mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
             # await queue.publish(subject=mail_topic, msg=email_msg)
             queue.publish_json(subject=mail_topic, payload=email_msg)
-            logger.info(
-                f"published to emailer for filing-id: {filing.id}")
+            logger.info(f"published to emailer for filing-id: {filing.id}")
 
 
 def get_payment_token(ce: SimpleCloudEvent):

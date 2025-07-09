@@ -83,21 +83,61 @@ def get_unprocessed_corps_subquery(flow_name, environment):
     subquery = subqueries[3]
     return subquery['cte'], subquery['where']
 
-def get_unprocessed_corps_query(flow_name, environment, batch_size):
+def get_unprocessed_corps_query(flow_name, config, batch_size):
+    """
+    Build SQL to get corps for migration, *optionally* filtering by migration batches/groups.
+
+    config:
+        USE_MIGRATION_FILTER        true|false  (default false)
+        MIG_BATCH_IDS               Comma-list of batch IDs
+        MIG_GROUP_IDS               Comma-list of group IDs
+    """
+
+    environment = config.DATA_LOAD_ENV
+    use_mig_filter = config.USE_MIGRATION_FILTER
+    mig_group_ids  = config.MIG_GROUP_IDS
+    mig_batch_ids  = config.MIG_BATCH_IDS
+
     cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
+
+    if use_mig_filter:
+        mig_select = "b.id AS mig_batch_id,"
+        mig_join   = """
+            JOIN mig_corp_batch mcb ON mcb.corp_num = c.corp_num
+            JOIN mig_batch            b  ON b.id        = mcb.mig_batch_id
+            JOIN mig_group            g  ON g.id        = b.mig_group_id
+            """
+        mig_extra = ""
+        if mig_batch_ids:
+            mig_extra += f" AND b.id IN ({mig_batch_ids})"
+        if mig_group_ids:
+            mig_extra += f" AND g.id IN ({mig_group_ids})"
+    else:
+        mig_select = "NULL::integer AS mig_batch_id,"
+        mig_join   = ""
+        mig_extra  = ""
 
     query = f"""
     {cte_clause}
-    select c.corp_num, c.corp_type_cd, cs.state_type_cd, cp.flow_name, cp.processed_status, cp.last_processed_event_id, cp.failed_event_id, cp.failed_event_file_type
+    select c.corp_num,
+           c.corp_type_cd,
+           {mig_select}
+           cs.state_type_cd,
+           cp.flow_name,
+           cp.processed_status,
+           cp.last_processed_event_id,
+           cp.failed_event_id,
+           cp.failed_event_file_type
     from corporation c
     left outer join corp_state cs
         on cs.corp_num = c.corp_num
+    {mig_join}
     left outer join corp_processing cp
-        on cp.corp_num = c.corp_num 
+        on cp.corp_num = c.corp_num
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
-    {where_clause}
+    {where_clause} {mig_extra}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -151,7 +191,7 @@ def get_total_unprocessed_count_query(flow_name, environment):
     left outer join corp_state cs
         on cs.corp_num = c.corp_num
     left outer join corp_processing cp
-        on cp.corp_num = c.corp_num 
+        on cp.corp_num = c.corp_num
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
@@ -228,9 +268,9 @@ def get_business_query(corp_num, suffix):
                 select corp_name
                 from corp_name
                 where 1 = 1
-        --		  and corp_num = 'BC0684912' 
-        --        and corp_num = 'BC0000621' 
-        --        and corp_num = 'BC0088913' 
+        --		  and corp_num = 'BC0684912'
+        --        and corp_num = 'BC0000621'
+        --        and corp_num = 'BC0088913'
         --        and corp_num = 'BC0008045'
         --        and corp_num = 'BC0006574'
         --        and corp_num = 'BC0049194'
@@ -251,7 +291,7 @@ def get_business_query(corp_num, suffix):
             select op_state_type_cd
             from corp_state
             where 1 = 1
-    --        and corp_num = 'BC0684912' 
+    --        and corp_num = 'BC0684912'
     --        and corp_num = 'BC0000621'
     --        and corp_num = 'BC0088913'
     --        and corp_num = 'BC0008045'
@@ -261,7 +301,7 @@ def get_business_query(corp_num, suffix):
             and end_event_id is null
         ) as state,
     -- tax_id
-        case 
+        case
             when (c.bn_15 is null or c.bn_15 = '')
                 THEN c.bn_9
             else c.bn_15
@@ -280,7 +320,7 @@ def get_business_query(corp_num, suffix):
         c.admin_email,
         c.corp_password as pass_code,
     -- restriction
-        exists(select 1 from corp_restriction cr 
+        exists(select 1 from corp_restriction cr
                 where cr.corp_num = '{corp_num}' and cr.end_event_id is null and restriction_ind = true
         ) as restriction_ind
     from corporation c
@@ -397,9 +437,9 @@ def get_parties_and_addresses_query(corp_num):
         concat_ws(' ', nullif(trim(cp.first_name),''), nullif(trim(cp.middle_name),''), nullif(trim(cp.last_name),'')) as cp_full_name,
         nullif(trim(cp.business_name), '')    as cp_business_name,
         -- TODO: need to figure it out, thougth according to the spreadsheet, it converts to identifier
---        case 
+--        case
 --                when cp.bus_company_num = '' then NULL
---               when cp.bus_company_num ~ '^[0-9]+$' and length(cp.bus_company_num) <= 7  
+--               when cp.bus_company_num ~ '^[0-9]+$' and length(cp.bus_company_num) <= 7
 --                    then concat('BC', cp.bus_company_num)
 --                else cp.bus_company_num
 --        end cp_bus_company_num,
@@ -429,7 +469,7 @@ def get_parties_and_addresses_query(corp_num):
         ma.installation_name      as ma_installation_name,
         ma.installation_qualifier as ma_installation_qualifier,
         ma.route_service_type     as ma_route_service_type,
-        ma.route_service_no       as ma_route_service_no,           
+        ma.route_service_no       as ma_route_service_no,
         -- delivery address
         da.addr_id                as da_addr_id,
         da.province               as da_province,
@@ -527,7 +567,7 @@ def get_aliases_query(corp_num):
         cn.corp_name_typ_cd as cn_corp_name_typ_cd,
         cn.corp_name        as cn_corp_name
     from corp_name cn
-    where 1 = 1 
+    where 1 = 1
     --		  and corp_num = 'BC0684912' -- name - CO
     --        and corp_num = 'BC0008045' -- name - CO, AN
     --    and corp_num = 'BC0043406' -- name - NB, SN, AN
@@ -595,7 +635,7 @@ def get_filings_query(corp_num):
             case
                 when f.withdrawn_event_id is null then null
                 else (
-                    select 
+                    select
                         to_char(we.event_timerstamp::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')
                     from event we
                     where we.event_id = f.withdrawn_event_id
@@ -628,7 +668,7 @@ def get_filings_query(corp_num):
             -- corp name change
             cn_old.corp_name        as old_corp_name,
             cn_new.corp_name        as new_corp_name,
-            
+
             -- continuation out
             co.can_jur_typ_cd as out_can_jur_typ_cd,
             to_char(co.cont_out_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as cont_out_dt,
@@ -693,7 +733,7 @@ def get_amalgamation_query(corp_num):
 
 def get_business_comments_query(corp_num):
     query = f"""
-    select 
+    select
         to_char(
             cc.comment_dts::timestamptz at time zone 'UTC',
             'YYYY-MM-DD HH24:MI:SSTZH:TZM'
@@ -766,7 +806,7 @@ def get_offices_held_query(corp_num):
     query = f"""
     SELECT cp.corp_party_id                                                                       AS cp_corp_party_id,
            concat_ws(' ', nullif(trim(cp.first_name), ''), nullif(trim(cp.middle_name), ''),
-                     nullif(trim(cp.last_name), ''))                                              as cp_full_name,    
+                     nullif(trim(cp.last_name), ''))                                              as cp_full_name,
            oh.officer_typ_cd                                                                      as oh_officer_typ_cd,
            e.event_id                                                                             AS transaction_id
     FROM event e

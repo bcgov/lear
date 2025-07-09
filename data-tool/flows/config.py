@@ -150,6 +150,31 @@ class _Config():  # pylint: disable=too-few-public-methods
     VERIFY_BATCH_SIZE = int(VERIFY_BATCH_SIZE) if VERIFY_BATCH_SIZE.isnumeric() else 0
     VERIFY_SUMMARY_PATH = os.getenv('VERIFY_SUMMARY_PATH')
 
+    # freeze flow
+    FREEZE_BATCHES = os.getenv('FREEZE_BATCHES')
+    FREEZE_BATCHES = int(FREEZE_BATCHES) if FREEZE_BATCHES.isnumeric() else 0
+    FREEZE_BATCH_SIZE = os.getenv('FREEZE_BATCH_SIZE')
+    FREEZE_BATCH_SIZE = int(FREEZE_BATCH_SIZE) if FREEZE_BATCH_SIZE.isnumeric() else 0
+    # ORACLE COLIN DB
+    DB_USER_COLIN_ORACLE = os.getenv('DATABASE_USERNAME_COLIN_ORACLE', '')
+    DB_PASSWORD_COLIN_ORACLE = os.getenv('DATABASE_PASSWORD_COLIN_ORACLE', '')
+    DB_NAME_COLIN_ORACLE = os.getenv('DATABASE_NAME_COLIN_ORACLE', '')
+    DB_HOST_COLIN_ORACLE = os.getenv('DATABASE_HOST_COLIN_ORACLE', '')
+    DB_PORT_COLIN_ORACLE = os.getenv('DATABASE_PORT_COLIN_ORACLE', '1521')
+    SQLALCHEMY_DATABASE_URI_COLIN_ORACLE = 'oracle+oracledb://{user}:{password}@{host}:{port}/{name}'.format(
+        user=DB_USER_COLIN_ORACLE,
+        password=DB_PASSWORD_COLIN_ORACLE,
+        host=DB_HOST_COLIN_ORACLE,
+        port=int(DB_PORT_COLIN_ORACLE),
+        name=DB_NAME_COLIN_ORACLE,
+    )
+    FREEZE_COLIN_CORPS = os.getenv('FREEZE_COLIN_CORPS', 'False') == 'True'
+    FREEZE_ADD_EARLY_ADOPTER = os.getenv('FREEZE_ADD_EARLY_ADOPTER', 'False') == 'True'
+
+    USE_MIGRATION_FILTER = os.getenv('USE_MIGRATION_FILTER', 'False') == 'True'
+    MIG_GROUP_IDS = os.getenv('MIG_GROUP_IDS')
+    MIG_BATCH_IDS = os.getenv('MIG_BATCH_IDS')
+
     TESTING = False
     DEBUG = False
 

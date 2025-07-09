@@ -19,7 +19,10 @@ Test-Suite to ensure that the PartyRole Model is working as expected.
 import datetime
 import json
 
+import pytest
+
 from business_model.models import Filing, Party, PartyRole
+from business_model.models.types.party_class_type import PartyClassType
 from tests.models import factory_business
 
 
@@ -35,8 +38,8 @@ def test_party_member_save(session):
     assert party_role.id
 
 
-def test_party_role_json(session):
-    """Assert the json format of party role."""
+def test_party_role_json_without_class_type(session):
+    """Assert the json format of party role without a class type."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
     member = Party(
@@ -61,6 +64,47 @@ def test_party_role_json(session):
         'appointmentDate': party_role.appointment_date.date().isoformat(),
         'cessationDate': party_role.cessation_date,
         'role': party_role.role,
+        'officer': {
+            'id': member.id,
+            'firstName': member.first_name,
+            'lastName': member.last_name,
+            'middleInitial': member.middle_initial,
+            'partyType': 'person',
+            'email': None
+        },
+        'title': member.title
+    }
+
+    assert party_role.json == party_role_json
+
+def test_party_role_json_with_class_type(session):
+    """Assert the json format of party role with a class type."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Michael',
+        last_name='Crane',
+        middle_initial='Joe',
+        title='VP',
+    )
+    member.save()
+    # sanity check
+    assert member.id
+    party_role = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id,
+        party_class_type=PartyClassType.DIRECTOR
+    )
+    party_role.save()
+
+    party_role_json = {
+        'appointmentDate': party_role.appointment_date.date().isoformat(),
+        'cessationDate': party_role.cessation_date,
+        'role': party_role.role,
+        'roleClass': 'DIRECTOR',
         'officer': {
             'id': member.id,
             'firstName': member.first_name,
@@ -355,4 +399,71 @@ def test_get_party_roles_unsupported_list(session):
     # Find by party role
     for role in unsupported_list:
         party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), role)
-        assert len(party_roles) == 1
+        assert len(party_roles) == 1      
+
+
+get_by_party_class_scenarios = [
+    (PartyClassType.OFFICER, ['ceo', 'chair']),
+    (PartyClassType.DIRECTOR, ['treasurer']),
+    (PartyClassType.AGENT, ['assistant_secretary', 'secretary']),
+    (PartyClassType.ATTORNEY, [])
+]
+
+@pytest.mark.parametrize("class_type, expected_roles", get_by_party_class_scenarios)
+def test_get_party_roles_by_class_type(session, class_type, expected_roles):
+    """Assert that the get_party_roles_by_class_type works as expected."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    member = Party(
+        first_name='Connor',
+        last_name='Horton'
+    )
+    member.save()
+    # sanity check
+    assert member.id
+
+    def _factory_party_class_role(role: PartyRole.RoleTypes, class_type: PartyClassType, cessation_date: datetime.date | None = None):
+        party_role = PartyRole(
+            role=role.value,
+            appointment_date=datetime.datetime(2017, 5, 17),
+            cessation_date=cessation_date,
+            party_id=member.id,
+            business_id=business.id,
+            party_class_type=class_type
+        )
+        party_role.save()
+        return party_role 
+
+    _factory_party_class_role(
+        PartyRole.RoleTypes.CEO,
+        PartyClassType.OFFICER
+    )
+    _factory_party_class_role(
+        PartyRole.RoleTypes.CHAIR,
+        PartyClassType.OFFICER
+    )
+    _factory_party_class_role(
+        PartyRole.RoleTypes.CFO,
+        PartyClassType.OFFICER,
+        datetime.datetime(2020, 5, 17) # this officer should not be found
+    )
+    _factory_party_class_role(
+        PartyRole.RoleTypes.TREASURER,
+        PartyClassType.DIRECTOR
+    )
+    _factory_party_class_role(
+        PartyRole.RoleTypes.SECRETARY,
+        PartyClassType.AGENT
+    )
+    _factory_party_class_role(
+        PartyRole.RoleTypes.ASSISTANT_SECRETARY,
+        PartyClassType.AGENT
+    )
+    
+    # Find by party class type
+    result = PartyRole.get_party_roles_by_class_type(business.id, class_type, datetime.date(2023, 1, 31))
+    found_roles = {role.role for role in result}
+    expected_roles = {role for role in expected_roles}
+
+    assert len(result) == len(expected_roles)
+    assert found_roles == expected_roles

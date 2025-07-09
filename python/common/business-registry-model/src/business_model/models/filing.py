@@ -271,6 +271,21 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 'CP': 'OTCON',
             }
         },
+        'changeOfOfficers': {
+            'name': 'changeOfOfficers',
+            'title': 'Change of Officers Filing',
+            'codes': {
+                'CP': 'NOCOI',
+                'BEN': 'NOCOI',
+                'BC': 'NOCOI',
+                'ULC': 'NOCOI',
+                'CC': 'NOCOI',
+                'C': 'NOCOI',
+                'CBEN': 'NOCOI',
+                'CUL': 'NOCOI',
+                'CCC': 'NOCOI'
+            }
+        },
         'changeOfRegistration': {
             'name': 'changeOfRegistration',
             'title': 'Change of Registration',
@@ -535,14 +550,14 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'name': 'transition',
             'title': 'Transition',
             'codes': {
-                'BC': 'TRANS',
-                'BEN': 'TRANS',
-                'ULC': 'TRANS',
-                'CC': 'TRANS',
-                'C': 'TRANS',
-                'CBEN': 'TRANS',
-                'CUL': 'TRANS',
-                'CCC': 'TRANS'
+                'BC': 'TRANP',
+                'BEN': 'TRANP',
+                'ULC': 'TRANP',
+                'CC': 'TRANP',
+                'C': 'TRANP',
+                'CBEN': 'TRANP',
+                'CUL': 'TRANP',
+                'CCC': 'TRANP'
             }
         },
         'transparencyRegister': {
@@ -1221,10 +1236,10 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
-                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
+                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
-                Filing.effective_date != None   # pylint: disable=singleton-comparison # noqa: E711;
+                Filing.effective_date != None   # pylint: disable=singleton-comparison
             ).order_by(Filing.transaction_id).limit(limit).offset(offset).all()
 
         return filings
@@ -1241,7 +1256,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def get_all_filings_by_status(status):
         """Return all filings based on status."""
         filings = db.session.query(Filing). \
-            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison # noqa: E711;
+            filter(Filing._status == status).all()  # pylint: disable=singleton-comparison
         return filings
 
     @staticmethod

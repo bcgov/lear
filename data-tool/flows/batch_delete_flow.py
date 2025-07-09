@@ -4,8 +4,9 @@ from contextlib import contextmanager
 from http import HTTPStatus
 
 import requests
-from common.init_utils import colin_init, get_config, lear_init
+from common.init_utils import colin_extract_init, get_config, lear_init
 from prefect import flow, task
+from prefect.cache_policies import NO_CACHE
 from prefect.futures import wait
 from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
@@ -38,7 +39,7 @@ def replica_role(conn: Connection):
         raise e
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def get_selected_corps(db_engine: Engine, config):
     with db_engine.connect() as conn:
         results = conn.execute(text(identifiers_query), {
@@ -55,7 +56,7 @@ def get_selected_corps(db_engine: Engine, config):
             return list(ids), list(identifiers)
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def lear_delete_non_versioned(conn: Connection, business_ids: list):
     # first query
     query_plans_one = [
@@ -154,7 +155,7 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
     print(f'Lear delete (non-versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def lear_delete_versioned(conn: Connection, business_ids: list):
     # filing, transaction
             filings_transaction_future = execute_query.submit(conn, {
@@ -287,7 +288,7 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
             print(f'Lear delete (versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def lear_delete(db_engine: Engine, business_ids: list):
     with db_engine.connect() as conn:
         with replica_role(conn):
@@ -297,7 +298,7 @@ def lear_delete(db_engine: Engine, business_ids: list):
             wait([versioned, non_versioned])
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def auth_delete(db_engine: Engine, identifiers: list):
     with db_engine.connect() as conn:
         with replica_role(conn):
@@ -362,7 +363,7 @@ def auth_delete(db_engine: Engine, identifiers: list):
             print(f'Auth delete complete for this round. Succeeded: {succeeded}. Failed: {failed}')
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def colin_delete(config, db_engine: Engine, identifiers: list):
     with db_engine.connect() as conn:
         with replica_role(conn):
@@ -403,7 +404,7 @@ def auth_api_delete(config, identifiers: list):
         raise e
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def delete_affiliation(identifiers: list, url, account_id, headers, timeout=None):
     affiliate_url = f'{url}/orgs/{account_id}/affiliations'
 
@@ -425,7 +426,7 @@ def delete_affiliation(identifiers: list, url, account_id, headers, timeout=None
     print(f'👷 Auth affiliation delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def delete_entities(identifiers: list, auth_svc_url, headers, timeout=None):
     account_svc_entity_url = f'{auth_svc_url}/entities'
 
@@ -451,7 +452,7 @@ def filter_none(values: list) -> list:
     return [v for v in values if v is not None]
 
 
-@task(persist_result=False)
+@task(persist_result=False, cache_policy=NO_CACHE)
 def execute_query(conn: Connection, template: dict) -> dict:
     """Executes a query based on a structured template.
 
@@ -519,7 +520,7 @@ def execute_query(conn: Connection, template: dict) -> dict:
     return ret
 
 
-@task(persist_result=False)
+@task(persist_result=False, cache_policy=NO_CACHE)
 def execute_delete_plan(conn: Connection, table: str, ids: list):
     if table == 'colin_event_ids':
         delete_by_ids(conn, table, ids, 'colin_event_id')
@@ -527,7 +528,7 @@ def execute_delete_plan(conn: Connection, table: str, ids: list):
         delete_by_ids(conn, table, ids)
 
 
-@task(persist_result=False)
+@task(persist_result=False, cache_policy=NO_CACHE)
 def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = 'id'):
     ids = filter_none(ids)
     if ids:
@@ -541,7 +542,7 @@ def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = '
         print(f'Skip deleting {table_name} due to empty ID list')
 
 
-@task
+@task(cache_policy=NO_CACHE)
 def count_corp_num(engine: Engine, config):
     with engine.connect() as conn:
         res = conn.execute(text(businesses_cnt_query), {
@@ -556,7 +557,7 @@ def batch_delete_flow():
     try:
         # init
         config = get_config()
-        colin_engine = colin_init(config)
+        colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
         # use AUTH API for now
         # auth_engine = auth_init(config)

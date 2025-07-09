@@ -19,19 +19,20 @@ from typing import Final
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
-from legal_api.core.filing import Filing as coreFiling  # noqa: I001
 from legal_api.errors import Error
-from legal_api.models import Business
-from legal_api.services.utils import get_str
-from legal_api.utils.datetime import datetime as dt
-
-from .common_validations import (  # noqa: I001
+from legal_api.models import Business, PartyRole
+from legal_api.services.filings.validations.common_validations import (  # noqa: I001
     validate_court_order,
     validate_name_request,
+    validate_offices_addresses,
+    validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
+    validate_phone_number,
     validate_share_structure,
 )
+from legal_api.services.utils import get_str
+from legal_api.utils.datetime import datetime as dt
 
 
 def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
@@ -47,23 +48,28 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    msg.extend(validate_offices(incorporation_json))
+    msg.extend(validate_offices(incorporation_json, legal_type))
+    msg.extend(validate_offices_addresses(incorporation_json, filing_type))
 
     err = validate_roles(incorporation_json, legal_type)
     if err:
         msg.extend(err)
 
-    msg.extend(validate_parties_names(incorporation_json, filing_type))
+    msg.extend(validate_parties_names(incorporation_json, filing_type, legal_type))
+    msg.extend(validate_parties_addresses(incorporation_json, filing_type))
 
     err = validate_parties_mailing_address(incorporation_json, legal_type)
     if err:
         msg.extend(err)
 
+    err = validate_parties_delivery_address(incorporation_json, legal_type)
+    if err:
+        msg.extend(err)
+
     msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
 
-    if legal_type in [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
-                      Business.LegalTypes.COMP.value, Business.LegalTypes.BC_CCC.value]:
-        err = validate_share_structure(incorporation_json, coreFiling.FilingTypes.INCORPORATIONAPPLICATION.value)
+    if legal_type in Business.CORPS:
+        err = validate_share_structure(incorporation_json, filing_type, legal_type)
         if err:
             msg.extend(err)
 
@@ -76,12 +82,16 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     msg.extend(validate_ia_court_order(incorporation_json))
 
+    err = validate_phone_number(incorporation_json, legal_type, 'incorporationApplication')
+    if err:
+        msg.extend(err)
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
 
-def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplication') -> list:
+def validate_offices(filing_json: dict, legal_type: str, filing_type: str = 'incorporationApplication') -> list:
     """Validate the office addresses of the specified corp filing type."""
     offices_array = filing_json['filing'][filing_type]['offices']
     addresses = offices_array
@@ -92,6 +102,10 @@ def validate_offices(filing_json: dict, filing_type: str = 'incorporationApplica
             msg.extend(_validate_address(addresses, item, filing_type))
         else:
             msg.append({'error': f'Invalid office {item}. Only registeredOffice and recordsOffice are allowed.',
+                        'path': f'/filing/{filing_type}/offices'})
+
+        if legal_type in Business.CORPS and 'recordsOffice' not in addresses.keys():
+            msg.append({'error': 'recordsOffice is required',
                         'path': f'/filing/{filing_type}/offices'})
 
     return msg
@@ -233,6 +247,30 @@ def validate_parties_mailing_address(incorporation_json: dict, legal_type: str,
         if country_ca_percentage <= 50:
             err_path = f'/filing/{filing_type}/parties/mailingAddress'
             msg.append({'error': 'Must have majority of mailing addresses in Canada', 'path': err_path})
+
+    if msg:
+        return msg
+
+    return None
+
+
+def validate_parties_delivery_address(incorporation_json: dict, legal_type: str,
+                                      filing_type: str = 'incorporationApplication') -> Error:
+    """Validate the delivery addresses of directors in the incorporation filing."""
+    # Only validate for corps type companies
+    if legal_type not in Business.CORPS:
+        return None
+
+    parties_array = incorporation_json['filing'][filing_type]['parties']
+    msg = []
+
+    for idx, party in enumerate(parties_array):
+        is_director = any(role['roleType'].lower() == PartyRole.RoleTypes.DIRECTOR.value for role in party['roles'])
+        if is_director:
+            if 'deliveryAddress' not in party:
+                msg.append({'error': babel('deliveryAddress is required.'),
+                            'path': f'/filing/{filing_type}/parties/{idx}'})
+                continue
 
     if msg:
         return msg

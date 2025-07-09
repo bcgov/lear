@@ -89,6 +89,7 @@ from entity_filer.filing_processors import (
     court_order,
     dissolution,
     incorporation_filing,
+    intent_to_liquidate,
     notice_of_withdrawal,
     put_back_off,
     put_back_on,
@@ -378,6 +379,9 @@ async def process_filing(filing_msg: Dict,  # pylint: disable=too-many-branches,
 
                 elif filing.get('agmExtension'):
                     agm_extension.process(filing, filing_meta)
+
+                elif filing.get('intentToLiquidate'):
+                    intent_to_liquidate.process(business, filing, filing_submission, filing_meta)
 
                 elif filing.get('noticeOfWithdrawal'):
                     notice_of_withdrawal.process(filing_submission, filing, filing_meta)

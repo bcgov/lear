@@ -57,7 +57,7 @@ class NameXService():
         token = AccountService.get_bearer_token()
 
         # Perform proxy call using the inputted identifier (e.g. NR 1234567)
-        nr_response = requests.get(namex_url + 'requests/' + identifier, headers={
+        nr_response = requests.get(namex_url + '/requests/' + identifier, headers={
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
         })
@@ -72,7 +72,7 @@ class NameXService():
         token = AccountService.get_bearer_token()
 
         # Perform proxy call with identifiers (e.g. NR 1234567, NR 1234568)
-        nr_response = requests.post(namex_url + 'requests/search',
+        nr_response = requests.post(namex_url + '/requests/search',
                                     json={'identifiers': identifiers},
                                     headers={
                                         'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ class NameXService():
         token = dict(auth.json())['access_token']
 
         # Perform update proxy call using nr number (e.g. NR 1234567)
-        nr_response = requests.put(namex_url + 'requests/' + nr_json['nrNum'], headers={
+        nr_response = requests.put(namex_url + '/requests/' + nr_json['nrNum'], headers={
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token
         }, json=nr_json)

@@ -18,9 +18,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import List
-from urllib.parse import urljoin
 
-from flask import Response, current_app, request
+from flask import Response, current_app, g, request
 from flask_caching import Cache
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
@@ -38,7 +37,10 @@ from legal_api.services.warnings.business.business_checks import WarningType
 cache = Cache()
 
 SYSTEM_ROLE = 'system'
+SBC_STAFF_ROLE = 'sbc_staff'
 STAFF_ROLE = 'staff'
+CONTACT_CENTRE_STAFF_ROLE = 'contact_centre_staff'
+MAXIMUS_STAFF_ROLE = 'maximus_staff'
 BASIC_USER = 'basic'
 COLIN_SVC_ROLE = 'colin'
 PUBLIC_USER = 'public_user'
@@ -140,6 +142,26 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     return False
 
 
+def get_authorized_user_role() -> str:
+    """Return the first matching authorized role from the JWT, based on priority."""
+    role_priority = [
+        STAFF_ROLE,
+        SBC_STAFF_ROLE,
+        CONTACT_CENTRE_STAFF_ROLE,
+        MAXIMUS_STAFF_ROLE,
+        PUBLIC_USER,
+    ]
+
+    token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
+
+    roles_in_token = token_info.get('realm_access', {}).get('roles', [])
+
+    for role in role_priority:
+        if role in roles_in_token:
+            return role
+    return None
+
+
 def get_allowable_filings_dict():
     """Return dictionary containing rules for when filings are allowed."""
     # importing here to avoid circular dependencies
@@ -237,6 +259,12 @@ def get_allowable_filings_dict():
                     }
                 },
                 'changeOfDirectors': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
+                'changeOfOfficers': {
                     'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
                     'blockerChecks': {
                         'business': [BusinessBlocker.DEFAULT]
@@ -472,6 +500,12 @@ def get_allowable_filings_dict():
                         'business': [BusinessBlocker.DEFAULT]
                     }
                 },
+                'changeOfOfficers': {
+                    'legalTypes': ['CP', 'BEN', 'BC', 'ULC', 'CC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
+                },
                 'changeOfRegistration': {
                     'legalTypes': ['SP', 'GP'],
                     'blockerChecks': {
@@ -613,7 +647,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         allowed_filings = get_allowed_filings(business, business.state, business.legal_type, jwt)
 
     base_url = current_app.config.get('LEGAL_API_BASE_URL')
-    filing_submission_url = urljoin(base_url, f'{business.identifier}/filings')
+    filing_submission_url = f'{base_url}/{business.identifier}/filings'
 
     result = {
         'filing': {

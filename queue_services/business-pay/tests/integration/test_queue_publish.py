@@ -28,11 +28,11 @@ from business_pay.services.queue import QueueService
 
 def test_nats_stan_config(app):
     """Assert that all of the NATS & STAN configuration is set."""
-    assert app.config.get('NATS_SERVERS')
-    assert app.config.get('NATS_CLIENT_NAME')
-    assert app.config.get('NATS_CLUSTER_ID')
-    assert app.config.get('NATS_FILER_SUBJECT')
-    assert app.config.get('NATS_QUEUE')
+    assert app.config.get("NATS_SERVERS")
+    assert app.config.get("NATS_CLIENT_NAME")
+    assert app.config.get("NATS_CLUSTER_ID")
+    assert app.config.get("NATS_FILER_SUBJECT")
+    assert app.config.get("NATS_QUEUE")
 
 
 @pytest.mark.asyncio
@@ -66,7 +66,7 @@ async def test_queue_flask_teardown(app):
 @pytest.mark.asyncio
 async def test_error_callback(caplog):
     """Assert the on_error callback logs a warning."""
-    error_msg = 'test error'
+    error_msg = "test error"
     with caplog.at_level(logging.WARNING):
         queue = QueueService()
         await queue.on_error(e=Exception(error_msg))
@@ -77,7 +77,7 @@ async def test_error_callback(caplog):
 @pytest.mark.asyncio
 async def test_on_disconnect_callback(caplog):
     """Assert the on_disconnect callback logs a warning."""
-    error_msg = 'Disconnected from NATS'
+    error_msg = "Disconnected from NATS"
     with caplog.at_level(logging.WARNING):
         queue = QueueService()
         await queue.on_disconnect()
@@ -88,7 +88,7 @@ async def test_on_disconnect_callback(caplog):
 @pytest.mark.asyncio
 async def test_on_close_callback(caplog):
     """Assert the on_close callback logs a warning."""
-    error_msg = 'Closed connection to NATS'
+    error_msg = "Closed connection to NATS"
     with caplog.at_level(logging.WARNING):
         queue = QueueService()
         await queue.on_close()
@@ -99,7 +99,7 @@ async def test_on_close_callback(caplog):
 @pytest.mark.asyncio
 async def test_on_reconnect_callback(caplog, app, stan_server):
     """Assert the reconnect callback logs a warning."""
-    error_msg = 'Reconnected to NATS'
+    error_msg = "Reconnected to NATS"
     with caplog.at_level(logging.WARNING):
         queue = QueueService(app)
         await queue.connect()

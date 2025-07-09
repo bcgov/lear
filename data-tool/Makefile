@@ -109,6 +109,10 @@ run-tombstone-verify: ## Run corp tombstone verify flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/corps_verify_flow.py
 
+run-colin-freeze:  ## Run colin freeze flow
+	. $(VENV_DIR)/bin/activate && \
+	python flows/colin_freeze_flow.py
+
 
 #################################################################################
 # Self Documenting Commands                                                     #

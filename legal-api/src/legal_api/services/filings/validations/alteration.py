@@ -17,7 +17,6 @@ from typing import Dict, Final
 
 from flask_babel import _ as babel  # noqa: N81
 
-from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.utils import get_bool, get_str
@@ -26,6 +25,7 @@ from .common_validations import (
     validate_court_order,
     validate_name_request,
     validate_pdf,
+    validate_phone_number,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
 )
@@ -39,13 +39,19 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
 
     msg.extend(type_change_validation(filing, business))
     msg.extend(company_name_validation(filing, business))
-    msg.extend(share_structure_validation(filing))
+    msg.extend(share_structure_validation(filing, business))
     msg.extend(court_order_validation(filing))
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
 
     if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
         msg.append(err)
+
+    new_legal_type = filing['filing']['alteration'].get('business', {}).get('legalType', None)
+    err = validate_phone_number(filing, new_legal_type or business.legal_type, 'alteration')
+
+    if err:
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -63,11 +69,13 @@ def court_order_validation(filing):
     return []
 
 
-def share_structure_validation(filing):
+def share_structure_validation(filing, business: Business):
     """Validate share structure."""
     share_structure_path: Final = '/filing/alteration/shareStructure'
+    new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
+
     if get_str(filing, share_structure_path):
-        err = validate_share_structure(filing, Filing.FilingTypes.ALTERATION.value)
+        err = validate_share_structure(filing, 'alteration', new_legal_type or business.legal_type)
         if err:
             return err
     return []

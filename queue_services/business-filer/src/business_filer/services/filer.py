@@ -56,6 +56,7 @@ from business_filer.filing_processors import (
     change_of_address,
     change_of_directors,
     change_of_name,
+    change_of_officers,
     change_of_registration,
     consent_amalgamation_out,
     consent_continuation_out,
@@ -66,6 +67,7 @@ from business_filer.filing_processors import (
     court_order,
     dissolution,
     incorporation_filing,
+    intent_to_liquidate,
     notice_of_withdrawal,
     put_back_off,
     put_back_on,
@@ -179,6 +181,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                 case "changeOfName":
                     change_of_name.process(business, filing, filing_meta)
 
+                case "changeOfOfficers":
+                    change_of_officers.process(business, filing_submission, filing_meta)
+
                 case "changeOfRegistration":
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
 
@@ -222,6 +227,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                                                     filing_submission,
                                                     filing_meta,
                                                     flags)
+                
+                case "intentToLiquidate":
+                    intent_to_liquidate.process(business, filing, filing_submission, filing_meta)
 
                 case "noticeOfWithdrawal":
                     notice_of_withdrawal.process(filing_submission, filing, filing_meta)

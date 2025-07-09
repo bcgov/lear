@@ -16,7 +16,17 @@
 			"dockerDashComposeVersion": "v2"
 		}
 	},
-	"forwardPorts": [5432],
+    "runArgs": ["--add-host=host.docker.internal:host-gateway"],
+	// this seems to be needed on OSX, at times.
+	// I have not tested it on windows, but should also work fine on Ubuntu
+	"mounts": [
+        {
+            "source": "/var/run/docker.sock",
+            "target": "/var/run/docker.sock",
+            "type": "bind"
+        }
+    ],
+	// "forwardPorts": [5432],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},

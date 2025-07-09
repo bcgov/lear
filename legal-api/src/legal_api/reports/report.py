@@ -189,6 +189,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/certificateRegistrarSignature',
             'common/certificateSeal',
             'common/certificateStyle',
+            'common/certificateWatermark',
             'common/addresses',
             'common/shareStructure',
             'common/correctedOnCertificate',
@@ -197,6 +198,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             'common/businessDetails',
             'common/footerMOCS',
             'common/directors',
+            'common/watermark',
             'continuation/authorization',
             'continuation/effectiveDate',
             'continuation/exproRegistrationInBc',
@@ -302,6 +304,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_completing_party(filing)
 
         filing['enable_new_ben_statements'] = flags.is_on('enable-new-ben-statements')
+        filing['enable_sandbox'] = flags.is_on('enable-sandbox')
 
         return filing
 
@@ -348,6 +351,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_continuation_in_data(filing)
         elif self._report_key == 'certificateOfContinuation':
             self._format_certificate_of_continuation_in_data(filing)
+        elif self._report_key == 'intentToLiquidate':
+            self._format_intent_to_liquidate_data(filing)
         elif self._report_key == 'noticeOfWithdrawal':
             self._format_notice_of_withdrawal_data(filing)
         elif self._report_key == 'appointReceiver':
@@ -716,8 +721,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_agm_extension_data(self, filing):
         meta_data = self._filing.meta_data or {}
-        is_first_agm = meta_data.get('agmExtension', {}).get('isFirstAgm', '')
-        filing['is_first_agm'] = is_first_agm
+        filing['is_first_agm'] = meta_data.get('agmExtension', {}).get('isFirstAgm', '')
         filing['agm_year'] = meta_data.get('agmExtension', {}).get('year', '')
         filing['is_final_agm'] = meta_data.get('agmExtension', {}).get('isFinalExtension', '')
 
@@ -726,16 +730,35 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['duration_numeric'] = duration_numeric
         filing['duration_spelling'] = number_words[int(duration_numeric) - 1]
 
-        if is_first_agm:
-            founding_date_json = self._filing.filing_json['filing'].get('business', {}).get('foundingDate', '')
-            founding_date = founding_date_json[0:10]
-            original_date_time = LegislationDatetime.\
-                as_legislation_timezone_from_date_str(founding_date) + relativedelta(months=18)
-            filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+        if filing['is_first_agm']:
+            # Check if this is first extension or subsequent extension for first AGM
+            has_ext_req_for_agm_year = meta_data.get('agmExtension', {}).get('extReqForAgmYear', False)
+
+            if not has_ext_req_for_agm_year:
+                # First extension for first AGM - calculate from founding date
+                founding_date = LegislationDatetime.as_legislation_timezone(self._business.founding_date)
+                original_date_time = founding_date + relativedelta(months=18)
+                filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+            else:
+                # Subsequent extension for first AGM - use expireDateCurrExt
+                expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+                date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
+                filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
         else:
-            expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
-            date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
-            filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
+            # Check if this is first extension or subsequent extension for subsequent AGM
+            has_ext_req_for_agm_year = meta_data.get('agmExtension', {}).get('extReqForAgmYear', False)
+
+            if not has_ext_req_for_agm_year:
+                # First extension for subsequent AGM - calculate from prev_agm_ref_date
+                prev_agm_ref_date_str = meta_data.get('agmExtension', {}).get('prevAgmRefDate', '')
+                prev_agm_ref_date = LegislationDatetime.as_legislation_timezone_from_date_str(prev_agm_ref_date_str)
+                original_date_time = prev_agm_ref_date + relativedelta(months=15)
+                filing['original_agm_date'] = original_date_time.strftime(OUTPUT_DATE_FORMAT)
+            else:
+                # Subsequent extension for subsequent AGM - use expireDateCurrExt
+                expire_date_current_string = meta_data.get('agmExtension', {}).get('expireDateCurrExt', '')
+                date_current_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_current_string)
+                filing['original_agm_date'] = date_current_obj.strftime(OUTPUT_DATE_FORMAT)
 
         if expire_date_approved_string := meta_data.get('agmExtension', {}).get('expireDateApprovedExt', ''):
             date_approved_obj = LegislationDatetime.as_legislation_timezone_from_date_str(expire_date_approved_string)
@@ -836,6 +859,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_amalgamation_data(self, filing):
         self._set_amalgamating_businesses(filing)
+
+    def _format_intent_to_liquidate_data(self, filing):
+        return
 
     def _format_notice_of_withdrawal_data(self, filing):
         withdrawn_filing_id = filing['noticeOfWithdrawal']['filingId']
@@ -1110,17 +1136,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     @staticmethod
     def _has_party_name_change(prev_party_json, current_party_json):
         changed = False
-        middle_name = current_party_json['officer'].get('middleName', current_party_json['officer'].
-                                                        get('middleInitial', ''))
-        if current_party_json.get('officer').get('partyType') == 'person':
-            if prev_party_json['officer'].get('firstName').upper() != current_party_json['officer'].get('firstName').\
-                    upper() or prev_party_json['officer'].get('middleName', '').upper() != \
-                    middle_name.upper() or prev_party_json['officer'].get('lastName').upper() != \
-                    current_party_json['officer'].get('lastName').upper():
+        officer = current_party_json.get('officer')
+        prev_officer = prev_party_json.get('officer')
+
+        if officer.get('partyType') != prev_officer.get('partyType'):
+            # This is not a common scenario, adding it for migrated data
+            changed = True
+        elif officer.get('partyType') == 'person':
+            middle_name = officer.get('middleName', officer.get('middleInitial', ''))
+            if prev_officer.get('firstName').upper() != officer.get('firstName').upper() or \
+                    prev_officer.get('middleName', '').upper() != middle_name.upper() or \
+                    prev_officer.get('lastName').upper() != officer.get('lastName').upper():
                 changed = True
-        elif current_party_json.get('officer').get('partyType') == 'organization':
-            if prev_party_json['officer'].get('organizationName').upper() != \
-                    current_party_json['officer'].get('organizationName').upper():
+        elif officer.get('partyType') == 'organization':
+            if prev_officer.get('organizationName').upper() != officer.get('organizationName').upper():
                 changed = True
         return changed
 
@@ -1577,6 +1606,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         'certificateOfContinuation': {
             'filingDescription': 'Certificate of Continuation',
             'fileName': 'certificateOfContinuation'
+        },
+        'intentToLiquidate': {
+            'filingDescription': 'Statement of Intent to Liquidate',
+            'fileName': 'intentToLiquidate'
         },
         'noticeOfWithdrawal': {
             'filingDescription': 'Notice of Withdrawal',
