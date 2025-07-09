@@ -103,6 +103,7 @@ class DocumentService:
         headers = {
             'Content-Type': 'application/json',
             'X-ApiKey': self.api_key,
+            'X-Api-Key': self.api_key,
             'Account-Id': account_id,
             'Authorization': 'Bearer ' + token
         }
@@ -140,6 +141,7 @@ class DocumentService:
         token = AccountService.get_bearer_token()
         headers = {
             'X-ApiKey': self.api_key,
+            'X-Api-Key': self.api_key,
             'Account-Id': account_id,
             'Content-Type': 'application/pdf',
             'Authorization': 'Bearer ' + token
