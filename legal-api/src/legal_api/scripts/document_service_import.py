@@ -36,6 +36,8 @@ def import_documents():
     requestBaseUrl = f'{url}{version}/application-reports/events'
     token = AccountService.get_bearer_token()
     api_key = current_app.config.get('DOCUMENT_API_KEY')
+
+    # This value doesn't affect the results, and is used for auditing purposes on the DRS side
     account_id = "LEAR-API"
 
     colin_filings = db.session\
@@ -48,7 +50,6 @@ def import_documents():
     for filing in colin_filings:
         colin_event_id = ColinEventId.get_by_filing_id(filing.id)
         for event_id in colin_event_id:
-            event_id = 5775561
             req_url = f'{requestBaseUrl}/{event_id}'
             headers = {
                 'X-ApiKey': api_key,
