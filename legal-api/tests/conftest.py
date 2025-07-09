@@ -15,11 +15,17 @@
 import datetime
 import time
 from contextlib import contextmanager, suppress
-
+import re
 import pytest
+import json
+from http import HTTPStatus
+
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
 from sqlalchemy.schema import DropConstraint, MetaData
+from unittest import mock
+import requests_mock
+import os
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
@@ -207,3 +213,26 @@ def minio_server(docker_services):
     with suppress(Exception):
         docker_services.wait_for_service('minio', 9000)
     time.sleep(10)
+
+
+DOCUMENT_API_URL = 'http://document-api.com'
+DOCUMENT_API_VERSION = '/api/v1'
+DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+DOCUMENT_PRODUCT_CODE = 'BUSINESS'
+
+@pytest.fixture()
+def mock_doc_service():
+    mock_response = {
+        'identifier': 1,
+        'url': 'https://document-service.com/document/1'
+    }
+    with requests_mock.Mocker(real_http=True) as mock:
+        post_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+        mock.post(re.compile(f"{post_url}.*"),
+                  status_code=HTTPStatus.CREATED,
+                  text=json.dumps(mock_response))
+        get_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+        mock.get(re.compile(f"{get_url}.*"),
+                 status_code=HTTPStatus.OK,
+                 text=json.dumps(mock_response))
+        yield mock
