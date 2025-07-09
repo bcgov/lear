@@ -483,8 +483,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def good_standing(self):
         """Return true if in good standing, otherwise false."""
-        from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-
         # A firm is always in good standing
         if self.is_firm:
             return True
