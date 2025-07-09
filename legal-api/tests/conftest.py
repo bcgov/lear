@@ -214,6 +214,7 @@ def minio_server(docker_services):
         docker_services.wait_for_service('minio', 9000)
     time.sleep(10)
 
+
 DOCUMENT_API_URL = 'http://document-api.com'
 DOCUMENT_API_VERSION = '/api/v1'
 DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
@@ -221,13 +222,17 @@ DOCUMENT_PRODUCT_CODE = 'BUSINESS'
 
 @pytest.fixture()
 def mock_doc_service():
-  mock_response = {
-      'identifier': 1,
-      'url': 'https://document-service.com/document/1'
-  }
-  with requests_mock.Mocker(real_http=True) as mock:
-    post_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
-    mock.post(re.compile(f"{post_url}.*"), status_code=HTTPStatus.CREATED, text=json.dumps(mock_response))
-    get_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
-    mock.get(re.compile(f"{get_url}.*"), status_code=HTTPStatus.OK, text=json.dumps(mock_response))
-    yield mock
+    mock_response = {
+        'identifier': 1,
+        'url': 'https://document-service.com/document/1'
+    }
+    with requests_mock.Mocker(real_http=True) as mock:
+        post_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+        mock.post(re.compile(f"{post_url}.*"),
+                  status_code=HTTPStatus.CREATED,
+                  text=json.dumps(mock_response))
+        get_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+        mock.get(re.compile(f"{get_url}.*"),
+                 status_code=HTTPStatus.OK,
+                 text=json.dumps(mock_response))
+        yield mock
