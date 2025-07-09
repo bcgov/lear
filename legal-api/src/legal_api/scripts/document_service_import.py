@@ -53,7 +53,6 @@ def import_documents():
             req_url = f'{requestBaseUrl}/{event_id}'
             headers = {
                 'X-ApiKey': api_key,
-                'X-Api-Key': api_key,
                 'Account-Id': account_id,
                 'Authorization': 'Bearer ' + token
             }
