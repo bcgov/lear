@@ -13,11 +13,12 @@ Adds a blueprint for document_service import so that the documents from the docu
 specific to colin ids in the system can be imported and put into the table.
 """
 import requests
-
+import click
 from flask import Blueprint, current_app
 
 from legal_api.models import db, Filing
 from legal_api.models.db import init_db
+from legal_api.models.business import Business
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import Document
 from legal_api.services import AccountService
@@ -25,7 +26,8 @@ from legal_api.services import AccountService
 document_service_bp = Blueprint('document_service', __name__)
 
 @document_service_bp.cli.command('import')
-def import_documents():
+@click.option("business_identifier", default="", help="Business id to import documents for")
+def import_documents(business_identifier):
     """
     Import documents from document service api.
     """
@@ -40,10 +42,20 @@ def import_documents():
     # This value doesn't affect the results, and is used for auditing purposes on the DRS side
     account_id = "LEAR-API"
 
-    colin_filings = db.session\
+    query = db.session\
         .query(Filing)\
         .filter(Filing.source == 'COLIN')\
-        .all()
+    
+    if business_identifier != "":
+        business = Business.find_by_identifier(business_identifier)
+        if business is None:
+            current_app.logger.info(
+              f"Business {business_identifier} not found"
+            )
+            exit(1)
+        query = query.filter(Filing.business_id == business.id)
+    
+    colin_filings = query.all()
     count = 0
     num_filings = len(colin_filings)
     imported = 0
@@ -59,15 +71,23 @@ def import_documents():
             response = requests.get(url=req_url, headers=headers)
             if response.status_code == 200:
                 for report in response.json():
-                    imported += 1
-                    new_document = Document(
-                        business_id=filing.business_id,
-                        filing_id=filing.id,
-                        type=report['reportType'],
-                        file_key=report['identifier'],
-                        file_name=report['name'],
+                    document = Document.find_one_by(
+                        filing.business_id,
+                        filing.id,
+                        report['reportType']
                     )
-                    new_document.save()
+                    if document is None:
+                        imported += 1
+                        new_document = Document(
+                            business_id=filing.business_id,
+                            filing_id=filing.id,
+                            type=report['reportType'],
+                            file_key=report['identifier'],
+                            file_name=report['name'],
+                        )
+                        new_document.save()
+                    else:
+                        pass # Already imported
         count += 1
         if (count % 100 == 0):
             current_app.logger.info(f'Processed {count} of {num_filings}')
