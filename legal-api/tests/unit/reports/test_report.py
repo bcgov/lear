@@ -21,6 +21,7 @@ from unittest.mock import patch
 
 import pytest
 from flask import current_app
+from http import HTTPStatus
 from registry_schemas.example_data import (
     AGM_LOCATION_CHANGE,
     ALTERATION_FILING_TEMPLATE,
@@ -40,8 +41,10 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE,
 )
 
+from legal_api.exceptions import BusinessException
 from legal_api.models import Business, db  # noqa:I001
 from legal_api.models.db import VersioningProxy
+from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -386,3 +389,21 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     assert formatted_now_json['withdrawnFilingType'] == formatted_filing_type
     assert formatted_now_json['withdrawnFilingEffectiveDate'] == expected_withdrawn_filing_effective_date
     assert formatted_now_json['noticeOfWithdrawal']['filingId'] == withdrawn_filing_id
+
+
+def test_document_service_not_create_document(session, mock_doc_service, mocker):
+    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
+    filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    report = create_report(identifier='BC9999999', entity_type='BC', report_type='annualReport',
+                           filing_type='incorporationApplication', template=filing)
+    assert report
+    document_service = DocumentService()
+    try:
+        document_service.get_document('BC9999999',
+                                      report._filing.id,
+                                      'annualReport',
+                                      '3113')
+        # Expectation is that the above call SHOULD fail in this case as document was not created
+        assert False
+    except BusinessException as err:
+        assert err.status_code == HTTPStatus.NOT_FOUND

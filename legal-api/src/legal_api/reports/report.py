@@ -22,7 +22,7 @@ from typing import Final
 import pycountry
 import requests
 from dateutil.relativedelta import relativedelta
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 
 from legal_api.core.meta.filing import FILINGS, FilingMeta
 from legal_api.models import (
@@ -37,8 +37,9 @@ from legal_api.models import (
     PartyRole,
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
+from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService, flags
+from legal_api.services import MinioService, VersionedBusinessDetailsService, flags  # pylint: disable=line-too-long
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import timezone
 from legal_api.utils.formatting import float_to_str
@@ -58,6 +59,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._business = None
         self._report_key = None
         self._report_date_time = LegislationDatetime.now()
+        self._document_service = DocumentService()
 
     def get_pdf(self, report_type=None):
         """Render a pdf for the report."""
@@ -77,6 +79,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
+        account_id = request.headers.get('Account-Id', None)
+        if account_id is not None and self._business is not None:
+            document, status = self._document_service.get_document(
+              self._business.identifier,
+              self._filing.id,
+              self._report_key,
+              account_id
+            )
+            if status == HTTPStatus.OK:
+                return current_app.response_class(
+                    response=document,
+                    status=status,
+                    mimetype='application/pdf'
+                )
+
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)
@@ -96,6 +113,28 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
+
+        create_document = account_id is not None
+        create_filing_types = [
+          'incorporationApplication',
+          'continuationIn',
+          'amalgamation',
+          'registration'
+        ]
+        if self._filing.filing_type in create_filing_types:
+            create_document = create_document and self._business and self._business.tax_id
+        else:
+            create_document = create_document and \
+              self._filing.status == 'COMPLETED'
+
+        if create_document:
+            self._document_service.create_document(
+              self._business.identifier,
+              self._filing.identifier,
+              self._report_key,
+              account_id,
+              response.content
+            )
 
         return current_app.response_class(
             response=response.content,

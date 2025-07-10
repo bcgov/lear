@@ -226,6 +226,15 @@ class _Config:  # pylint: disable=too-few-public-methods
     NATS_EMAILER_SUBJECT = os.getenv('NATS_EMAILER_SUBJECT', 'entity.email')
     NATS_QUEUE = os.getenv('NATS_QUEUE', 'entity-filer-worker')
 
+    # Document Service
+    DOCUMENT_API_URL = os.getenv('DOCUMENT_API_URL')
+    DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION')
+    DOCUMENT_SVC_URL = ''
+    if DOCUMENT_API_URL and DOCUMENT_API_VERSION:
+        DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+    DOCUMENT_PRODUCT_CODE = 'BUSINESS'
+    DOCUMENT_API_KEY = os.getenv('DOCUMENT_API_KEY')
+
     TESTING = False
     DEBUG = False
 
@@ -342,6 +351,10 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     TRACTION_API_KEY = os.getenv('TRACTION_API_KEY', 'TRACTION_API_KEY')
     TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID', 'TRACTION_PUBLIC_SCHEMA_DID')
     TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID', 'TRACTION_PUBLIC_ISSUER_DID')
+
+    DOCUMENT_API_URL = 'http://document-api.com'
+    DOCUMENT_API_VERSION = os.getenv('DOCUMENT_API_VERSION', '/api/v1')
+    DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
