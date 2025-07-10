@@ -42,6 +42,7 @@ from legal_api.models import (
 )
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.db import VersioningProxy
+from legal_api.resources.v2.business import get_addresses
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -108,6 +109,13 @@ def get_completed_filings_for_colin():
                 current_app.logger.error(f'dissolution: filingId={filing.id}, missing batch processing info')
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json['filing']['header']['name'] = None
+        elif (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'voluntary'):
+            address_json = get_addresses(business.identifier).json
+            address_json.pop('recordsOffice', None)  # remove records office as it is not required in colin
+            address_json.pop('custodialOffice', None)  # remove custodial office, already included in the payload
+            for office_type in ['registeredOffice']:
+                if office_type in address_json:
+                    filing_json['filing']['dissolution'].update(address_json)
         filings.append(filing_json)
     return jsonify({'filings': filings}), HTTPStatus.OK
 

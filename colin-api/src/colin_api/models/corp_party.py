@@ -484,13 +484,6 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
               email_req_address=:email
             where event_id=:event_id
             """
-        submitting_party_query = \
-            """
-            insert into submitting_party (event_id, mailing_addr_id, notify_addr_id, last_nme,
-              middle_nme, first_nme, email_req_address)
-            values (:event_id, :mailing_addr_id, :notify_addr_id, :last_nme, :middle_nme, :first_nme,
-              :email)
-            """
 
         # create new corp party entry
         corp_num = business['business']['identifier']
@@ -505,18 +498,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             if 'mailingAddress' in party:
                 mailing_addr_id = Address.create_new_address(
                     cursor=cursor, address_info=party['mailingAddress'], corp_num=corp_num)
-            if role_type == 'RCC':
-                cursor.execute(
-                    submitting_party_query,
-                    event_id=event_id,
-                    mailing_addr_id=mailing_addr_id,
-                    notify_addr_id=mailing_addr_id,
-                    last_nme=party['officer'].get('lastName', ''),
-                    middle_nme=(party['officer'].get('middleInitial') or
-                                party['officer'].get('middleName')) or '',
-                    first_nme=party['officer'].get('firstName', ''),
-                    email=party['officer'].get('email', '')
-                )
+
             if role_type == 'CPRTY':
                 if party.get('prev_event_id'):
                     # update old completing party entry instead of creating a new one
