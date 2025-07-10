@@ -34,6 +34,7 @@ from colin_api.exceptions import (  # noqa: I001
     UnableToDetermineCorpTypeException,  # noqa: I001
 )  # noqa: I001
 from colin_api.models import (  # noqa: I001
+    Address,  # noqa: I001
     Business,  # noqa: I001
     ContOut,  # noqa: I001
     CorpInvolved,  # noqa: I001
@@ -901,6 +902,28 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 tmp_timestamp = event['date']
         return event_id if event_id else ar_filing_event_info['event_id']
 
+    @classmethod
+    def _create_submitting_party(cls, cursor, filing, corp_num):
+        """Create a submitting party for dissolution filing."""
+        mailing_address = filing.body.get('mailingAddress')
+        mailing_addr_id = None
+        if mailing_address:
+            mailing_addr_id = Address.create_new_address(
+                cursor=cursor, address_info=mailing_address, corp_num=corp_num)
+
+        submitting_party_query = \
+            """
+            insert into submitting_party (event_id, mailing_addr_id, last_nme)
+            values (:event_id, :mailing_addr_id, :last_nme)
+            """
+
+        cursor.execute(
+            submitting_party_query,
+            event_id=filing.event_id,
+            mailing_addr_id=mailing_addr_id,
+            last_nme=filing.get_certified_by()
+        )
+
     # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
     @classmethod
     def get_filing(cls, filing: Filing, con=None, year: int = None) -> Dict:
@@ -1382,6 +1405,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                             party=party,
                                             business=business,
                                             event_id=filing.event_id)
+
+            if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
+                cls._create_submitting_party(cursor=cursor, filing=filing, corp_num=corp_num)
+
             # add shares if not coop
             cls._process_share_structure(cursor, filing, corp_num)
             if filing.body.get('nameRequest'):

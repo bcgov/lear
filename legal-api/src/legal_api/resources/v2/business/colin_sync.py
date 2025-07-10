@@ -52,7 +52,7 @@ from .bp import bp
 @bp.route('/internal/filings', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.colin])
-def get_completed_filings_for_colin():
+def get_completed_filings_for_colin():  # pylint: disable=too-many-branches
     """Get filings by status formatted in json."""
     filings = []
 
@@ -108,6 +108,9 @@ def get_completed_filings_for_colin():
                 current_app.logger.error(f'dissolution: filingId={filing.id}, missing batch processing info')
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json['filing']['header']['name'] = None
+        elif (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'voluntary'):
+            mailing = business.mailing_address.one_or_none()
+            filing_json['filing']['dissolution']['mailingAddress'] = mailing.json
         filings.append(filing_json)
     return jsonify({'filings': filings}), HTTPStatus.OK
 
