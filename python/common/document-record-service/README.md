@@ -39,8 +39,7 @@ pytest
 
 ## 🛠️ TODO
 
-- Add unit tests for each DRS method.
 - Improve error handling with more granular exceptions.
-- Document the `RequestInfo` data structure in detail.
+- Consider simplifying the `document_service/DocumentRecordService/download_document` function.
 
 ---

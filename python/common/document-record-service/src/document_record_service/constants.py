@@ -6,15 +6,7 @@ class DocumentClasses(Enum):
 
     COOP = "COOP"
     CORP = "CORP"
-    DELETED = "DELETED"
-    FIRM = "FIRM"
-    LP_LLP = "LP_LLP"
-    MHR = "MHR"
-    NR = "NR"
-    OTHER = "OTHER"
-    PPR = "PPR"
     SOCIETY = "SOCIETY"
-    XP = "XP"
 
 
 class DocumentTypes(Enum):
@@ -57,3 +49,6 @@ DOCUMENT_TYPES = {
     "systemIsTheRecord": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.SYSR.value},
     "incorporationApplication": {"class": DocumentClasses.COOP.value},
 }
+
+# Matches IDs starting with 'DS' followed by at least 10 digits
+DRS_ID_PATTERN = r"^DS\d{10,}$"

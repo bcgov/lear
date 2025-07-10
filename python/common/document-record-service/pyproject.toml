@@ -3,15 +3,16 @@ name = "document-record-service"
 version = "0.1.0"
 description = ""
 authors = [
-    {name = "Brandon.Galli@gov.bc.ca"}
+    {name = "Brandon.Galli@gov.bc.ca"},
 ]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<4"
 dependencies = [
+    # "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
     "flask (>=1.1.2,<4.0.0)",
     "dotenv (>=0.9.9,<0.10.0)",
     "requests (>=2.32.4,<3.0.0)",
-    "pypdf2 (>=1.26.0,<4.0.0)"
+    "pypdf (>=5.7.0,<6.0.0)",
 ]
 
 [tool.poetry]

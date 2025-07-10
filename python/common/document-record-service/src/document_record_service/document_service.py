@@ -12,21 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module is a wrapper for Document Record Service."""
-
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
-import PyPDF2
+import pypdf
 import requests
 from flask import current_app
 
-from document_record_service.constants import DocumentTypes
+# from business_model.models import Document as LearDocument
+from document_record_service import DRS_ID_PATTERN, DocumentTypes
 from document_record_service.utils import RequestInfo
 
 
 class DocumentRecordService:
     """Service for interacting with the Document Record Service (DRS)."""
-
 
     def __init__(self):
         self.headers = {
@@ -39,7 +39,7 @@ class DocumentRecordService:
         dt = datetime.now(timezone.utc)
         return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-    def post_document(self, request_info: RequestInfo, file: bytes = None, has_file: bool = True) -> dict:
+    def post_class_document(self, request_info: RequestInfo, file: bytes = None, has_file: bool = True) -> dict:
         """Upload a document to the Document Record Service (DRS).
 
         Args:
@@ -52,7 +52,7 @@ class DocumentRecordService:
         """
         if has_file and file == None:
             current_app.logger.info("No file found in request.")
-            return {"data": "File not provided"}
+            return {"error": "File not provided"}
         request_info.consumer_filedate = self._now_iso_utc()
         url = f'{current_app.config.get("DOC_API_URL", "")}/documents/{request_info.document_class}/{request_info.document_type}'
         url += f"?{request_info.url_params}"
@@ -82,6 +82,10 @@ class DocumentRecordService:
         Returns:
             dict: JSON response or error details.
         """
+
+        if not bool(re.match(DRS_ID_PATTERN, request_info.document_service_id)):
+            return {"error": "Document service id is invalid."}
+
         url = f"{self.base_url}/documents/{request_info.document_service_id}"
 
         try:
@@ -92,7 +96,7 @@ class DocumentRecordService:
                 json=request_info.json,
                 headers=self.headers,
             )
-            
+
             response.raise_for_status()
 
             return response.json()
@@ -109,19 +113,21 @@ class DocumentRecordService:
         Returns:
             dict: JSON response from DRS or error message.
         """
+        if not bool(re.match(DRS_ID_PATTERN, document_service_id)):
+            return {"error": "Document service id is invalid."}
+
         url = f"{self.base_url}/documents/{document_service_id}"
 
         try:
-            response = requests.patch(
-                url,
-                json={"removed": True},
-                headers=self.headers,
-            ).json()
+            requests.patch(url, json={"removed": True}, headers=self.headers)
+
             current_app.logger.info(f"Delete document from document record service {document_service_id}")
-            return response
+
+            return {"data": "Document is deleted successfully!"}
+
         except Exception as e:
             current_app.logger.info(f"Error on deleting document {e}")
-            return {}
+            return {"error": "Error on deleting document"}
 
     def get_document(self, request_info: RequestInfo) -> dict:
         """Retrieve a document record from DRS based on search parameters.
@@ -132,8 +138,13 @@ class DocumentRecordService:
         Returns:
             dict: JSON response with document data or empty dict on error.
         """
+
+        if not request_info.document_class:
+            return {"error": "Document Class is required"}
+
         url = f"{self.base_url}/searches/{request_info.document_class}"
         url += f"?{request_info.url_params}"
+
         try:
             response = requests.get(
                 url,
@@ -144,7 +155,7 @@ class DocumentRecordService:
             return response
         except Exception as e:
             current_app.logger.info(f"Error on getting a document object {e}")
-            return {}
+            return []
 
     @staticmethod
     def download_document(document_class: str, document_service_id: str) -> bytes:
@@ -157,14 +168,20 @@ class DocumentRecordService:
         Returns:
             bytes: Byte content of the document if successful, None otherwise.
         """
+        if not bool(re.match(DRS_ID_PATTERN, document_service_id)):
+            return {"error": "Document service id is invalid."}
+
+        # if not LearDocument.find_by_file_key(document_service_id):
+        #     raise LookupError("No matching document found.")
+
         response = DocumentRecordService().get_document(RequestInfo(document_class, document_service_id))
         try:
             if not (isinstance(response, list) and response):
-                raise ValueError("Response is not a valid non-empty list.")
+                return {"error": "Input parameters are invalid."}
             document_url = response[0].get("documentURL", "")
 
             if not document_url:
-                raise ValueError("Missing 'documentURL' in scanningInformation.")
+                return {"error": "'documentURL' is missing."}
 
             download_response = requests.get(document_url)
             download_response.raise_for_status()  # Raise for HTTP errors
@@ -192,7 +209,7 @@ class DocumentRecordService:
         verify_paper_size = document_type in [DocumentTypes.CNTI.value]
 
         try:
-            pdf_reader = PyPDF2.PdfFileReader(file)
+            pdf_reader = pypdf.PdfReader(file)
             if verify_paper_size:
                 # Check that all pages in the pdf are letter size and able to be processed.
                 if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
