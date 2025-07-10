@@ -905,11 +905,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     @classmethod
     def _create_submitting_party(cls, cursor, filing, corp_num):
         """Create a submitting party for dissolution filing."""
-        registered_office = filing.body.get('registeredOffice')
-        registered_mailing_addr_id = None
-        if 'mailingAddress' in registered_office:
-            registered_mailing_addr_id = Address.create_new_address(
-                cursor=cursor, address_info=registered_office['mailingAddress'], corp_num=corp_num)
+        mailing_address = filing.body.get('mailingAddress')
+        mailing_addr_id = None
+        if mailing_address:
+            mailing_addr_id = Address.create_new_address(
+                cursor=cursor, address_info=mailing_address, corp_num=corp_num)
 
         submitting_party_query = \
             """
@@ -920,7 +920,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         cursor.execute(
             submitting_party_query,
             event_id=filing.event_id,
-            mailing_addr_id=registered_mailing_addr_id,
+            mailing_addr_id=mailing_addr_id,
             last_nme=filing.get_certified_by()
         )
 
