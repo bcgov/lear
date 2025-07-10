@@ -30,6 +30,8 @@ serialPipeline:
       deploy-project-id: "a083gt-dev"
       service-name: "business-filer-dev"
       container-name: "business-filer-dev"
+      resources-cpu: "8000m"
+      resources-memory: "4Gi"
       cloudsql-instances: "a083gt-dev:northamerica-northeast1:businesses-db-dev"
       service-account: "sa-api@a083gt-dev.iam.gserviceaccount.com"
  - targetId: a083gt-test
@@ -43,6 +45,8 @@ serialPipeline:
       deploy-project-id: "a083gt-test"
       service-name: "business-filer-test"
       container-name: "business-filer-test"
+      resources-cpu: "8000m"
+      resources-memory: "4Gi"
       cloudsql-instances: "a083gt-test:northamerica-northeast1:businesses-db-test"
       service-account: "sa-api@a083gt-test.iam.gserviceaccount.com"
  - targetId: a083gt-sandbox
@@ -56,6 +60,8 @@ serialPipeline:
       deploy-project-id: "a083gt-integration"
       service-name: "business-filer-sandbox"
       container-name: "business-filer-sandbox"
+      resources-cpu: "8000m"
+      resources-memory: "4Gi"
       cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
       service-account: "sa-api@a083gt-integration.iam.gserviceaccount.com"
  - targetId: a083gt-prod
