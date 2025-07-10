@@ -53,7 +53,7 @@ from .bp import bp
 @bp.route('/internal/filings', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.has_one_of_roles([UserRoles.colin])
-def get_completed_filings_for_colin():
+def get_completed_filings_for_colin():  # pylint: disable=too-many-branches
     """Get filings by status formatted in json."""
     filings = []
 
