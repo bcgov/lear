@@ -196,7 +196,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                             search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
         if not identifiers:
-            return [], False        
+            return [], False
         name = search_filters.name
         types = search_filters.type
         statuses = search_filters.status
