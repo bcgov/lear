@@ -195,6 +195,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                                             identifiers=None,
                                             search_filters: AffiliationSearchDetails = None):
         """Return contact point from business json."""
+        if not search_filters or not identifiers:
+            return [], False
+        
         name = search_filters.name
         types = search_filters.type
         statuses = search_filters.status
@@ -239,7 +242,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
         limit = search_filters.limit
         offset = (search_filters.page - 1) * limit
-        draft_query = db.session.query(Filing).filter(*filters).limit(limit+1).offset(offset).all()
+        results = db.session.query(Filing).filter(*filters).limit(limit+1).offset(offset)
+        draft_query = results.all()
+        
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         if identifiers:
