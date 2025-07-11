@@ -33,7 +33,7 @@ def check_business(business: Business) -> list:
         'warningType': WarningType.NOT_IN_GOOD_STANDING
     }
     transition_warning = {
-        'code': BusinessWarningCodes.TRANSITION_NOT_FILED,
+        'code': BusinessWarningCodes.TRANSITION_NOT_FILED_AFTER_12_MONTH_RESTORATION.value,
         'message': 'Transition filing not filed. Eligible for involuntary dissolution.',
         'warningType': WarningType.NOT_IN_GOOD_STANDING
     }

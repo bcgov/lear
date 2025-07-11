@@ -19,7 +19,7 @@ from datedelta import datedelta
 from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
 
 from legal_api.models import Batch, BatchProcessing, Business
-from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
 from legal_api.services.warnings.business.business_checks.involuntary_dissolution import (
     _get_modified_warning_data,
     check_business,
@@ -106,10 +106,10 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
                 assert res_meta_data['overdueARs'] == True
         else:
             assert len(result) == 1
-        
+
         warning = result[0]
         if 'TRANSITION_OVERDUE' in test_name:
-            assert warning['code'] == 'TRANSITION_NOT_FILED'
+            assert warning['code'] == BusinessWarningCodes.TRANSITION_NOT_FILED_AFTER_12_MONTH_RESTORATION.value
             assert warning['message'] == 'Transition filing not filed. Eligible for involuntary dissolution.'
             assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
         else:

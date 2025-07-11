@@ -273,29 +273,30 @@ RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
-@pytest.mark.parametrize('test_name, has_no_transition_filed, good_standing', [
-    ('NO_NEED_TRANSITION_NEW_ACT', False, True),
-    ('NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION', False, False),
-    ('TRANSITION_COMPLETED', False, True),
-    ('TRANSITION_NOT_FILED', True, False)
+@pytest.mark.parametrize('test_name, transition_needed_but_not_filed, good_standing', [
+    ('BUSINESS_FOUNDED_AFTER_NEW_ACT', False, True),
+    ('TRANSITION_NEEDED_BUT_NOT_FILED_RESTORATION_WITHIN_12_MONTH', True, False),
+    ('TRANSITION_NEEDED_BUT_NOT_FILED', True, False),
+    ('TRANSITION_NEEDED_AND_COMPLETED', False, True),
 ])
-def test_good_standing_check_transition_filing(session, test_name, has_no_transition_filed, good_standing):
+def test_good_standing_check_transition_filing(session, test_name, transition_needed_but_not_filed, good_standing):
     "Assert that the business is in good standing with additional check for transition filing"
     business = factory_business_from_tests(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
     restoration_filing = factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
-    if test_name == 'NO_NEED_TRANSITION_NEW_ACT':
+    if test_name == 'BUSINESS_FOUNDED_AFTER_NEW_ACT':
         business.founding_date = datetime.utcnow()
         business.save()
-    elif test_name == 'NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION':
+    elif test_name == 'TRANSITION_NEEDED_BUT_NOT_FILED_RESTORATION_WITHIN_12_MONTH':
         business.restoration_expiry_date = datetime.utcnow() + datedelta.datedelta(years=1)
         business.save()
         restoration_filing.effective_date = datetime.utcnow()
         restoration_filing.save()
-    elif test_name == 'TRANSITION_COMPLETED':
+    elif test_name == 'TRANSITION_NEEDED_AND_COMPLETED':
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
 
-    check_result = business._has_no_transition_filed_after_restoration()
-    assert check_result == has_no_transition_filed
+    check_result = business.transition_needed_but_not_filed()
+
+    assert check_result == transition_needed_but_not_filed
     with patch.object(flags, 'is_on', return_value=True):
         assert business.good_standing == good_standing
 

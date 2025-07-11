@@ -816,6 +816,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
+                        founding_date=datetime.datetime.utcfromtimestamp(0),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -927,6 +928,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
             return None
 
         return Business(identifier=identifier,
+                        founding_date=datetime.datetime.utcfromtimestamp(0),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -968,6 +970,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
+                        founding_date=datetime.datetime.utcfromtimestamp(0),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -1393,19 +1396,19 @@ def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_typ
 @pytest.mark.parametrize(
     'legal_type, mock_legal_type, amalgamation_type, expected_code',
     [
-        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value, 
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value,
          Amalgamation.AmalgamationTypes.vertical.name, HTTPStatus.BAD_REQUEST),
-        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value, 
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value,
          Amalgamation.AmalgamationTypes.horizontal.name, HTTPStatus.BAD_REQUEST),
-        (Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value, 
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value,
          Amalgamation.AmalgamationTypes.vertical.name, None),
-        (Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value, 
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value,
          Amalgamation.AmalgamationTypes.horizontal.name, None),
-        (Business.LegalTypes.COMP.value, Business.LegalTypes.CONTINUE_IN.value, 
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.CONTINUE_IN.value,
          Amalgamation.AmalgamationTypes.horizontal.name, None),
-        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP_CONTINUE_IN.value, 
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP_CONTINUE_IN.value,
          Amalgamation.AmalgamationTypes.horizontal.name, None),
-        (Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.ULC_CONTINUE_IN.value, 
+        (Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.ULC_CONTINUE_IN.value,
          Amalgamation.AmalgamationTypes.horizontal.name, None)
     ]
 )
