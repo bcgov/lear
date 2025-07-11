@@ -243,7 +243,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         limit = search_filters.limit
         offset = (search_filters.page - 1) * limit
         draft_query = db.session.query(Filing).filter(*filters).limit(limit+1).offset(offset).all()
-        
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         if identifiers:
