@@ -24,8 +24,7 @@ from unittest.mock import patch
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT
-
+from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from legal_api.models import Business
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -81,6 +80,8 @@ AR_FILING_PREVIOUS_YEAR = {
     }
 }
 
+RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
+RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 def test_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the year after incorporation is returned when there are no filings."""
@@ -430,3 +431,27 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
                                and x['task']['todo']['header']['status'] == 'NEW'
                                for x in rv_json['tasks'])
         assert not conversion_to_do
+
+@pytest.mark.parametrize('test_name, business_restored, transition_completed, transition_task_expected', [
+    ('Transition application needed but not completed', True, False, True),
+    ('Transition application needed and completed', True, True, False),
+    ('Transition application not needed', False, False, False)
+])
+def test_transition_application_task(session, client, jwt, test_name, business_restored, transition_completed, transition_task_expected):
+    identifier = 'BC1234567'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
+    if business_restored:
+        factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
+    if transition_completed:
+        factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
+    
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    rv_json = rv.json
+
+    has_transition_task = any(x['task']['todo']['header']['name'] == 'transition'
+                               and x['task']['todo']['header']['status'] == 'NEW'
+                               for x in rv_json['tasks'])
+
+    assert has_transition_task == transition_task_expected
