@@ -19,7 +19,6 @@ import click
 from flask import Blueprint, current_app
 
 from legal_api.models import db, Filing
-from legal_api.models.db import init_db
 from legal_api.models.business import Business
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import Document
