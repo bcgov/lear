@@ -12,9 +12,10 @@
 Adds a blueprint for document_service import so that the documents from the document service api
 specific to colin ids in the system can be imported and put into the table.
 """
+import sys
+
 import requests
 import click
-import sys
 from flask import Blueprint, current_app
 
 from legal_api.models import db, Filing
@@ -34,7 +35,6 @@ def import_documents(business_identifier):
     """
     # pylint: disable-msg=too-many-locals
     current_app.logger.info("Import documents started")
-    init_db(current_app)
     url = current_app.config.get('DOCUMENT_API_URL')
     version = current_app.config.get('DOCUMENT_API_VERSION')
     request_base_url = f'{url}{version}/application-reports/events'
