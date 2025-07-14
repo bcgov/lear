@@ -9,29 +9,33 @@
 # an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
 """
-Adds a blueprint for document_service import so that the documents from the document service api
+Adds a blueprint for document_service import so that the documents from the document service api.
 specific to colin ids in the system can be imported and put into the table.
 """
 import sys
 
-import requests
 import click
+import requests
 from flask import Blueprint, current_app
 
-from legal_api.models import db, Filing
+from legal_api.models import Filing, db
 from legal_api.models.business import Business
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.document import Document
 from legal_api.services import AccountService
 
+
 document_service_bp = Blueprint('document_service', __name__)
+
 
 @document_service_bp.cli.command('import')
 @click.option("--business_identifier", default="", help="Business id to import documents for")
 def import_documents(business_identifier):
+
     """
     Import documents from document service api.
     """
+
     # pylint: disable-msg=too-many-locals
     current_app.logger.info("Import documents started")
     url = current_app.config.get('DOCUMENT_API_URL')
