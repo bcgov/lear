@@ -15,7 +15,7 @@
 """Business checks for corps."""
 
 from legal_api.models import Business
-from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 
 
 def check_business(business: Business) -> list:
@@ -23,6 +23,22 @@ def check_business(business: Business) -> list:
     result = []
 
     result.extend(check_amalgamating_business(business))
+    result.extend(check_transition_application(business))
+
+    return result
+
+
+def check_transition_application(business: Business) -> list:
+    """Check if a business is currently pending a post restoration transition application."""
+    result = []
+
+    is_transition_needed_but_not_filed = business.transition_needed_but_not_filed()
+    if is_transition_needed_but_not_filed:
+        result.append({
+            'code': BusinessWarningCodes.TRANSITION_NOT_FILED.value,
+            'message': 'This Business requires a post restoration transition application to be filed.',
+            'warningType': WarningType.NOT_IN_GOOD_STANDING
+        })
 
     return result
 
