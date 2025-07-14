@@ -1232,6 +1232,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         excluded_filings = [
             'lear_epoch',
             'adminFreeze',
+            'appointReceiver',
+            'ceaseReceiver',
             'courtOrder',
             'noticeOfWithdrawal',
             'registrarsNotation',
