@@ -17,24 +17,27 @@ This module is the API for the Legal Entity system.
 """
 import os
 
-import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
-from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask, jsonify  # noqa: I001
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
+from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 
 from legal_api import config, models
 from legal_api.models import db
 from legal_api.models.db import init_db
 from legal_api.resources import endpoints
-from legal_api.scripts.document_service_import import document_service_bp
 from legal_api.schemas import rsbc_schemas
+from legal_api.scripts.document_service_import import document_service_bp
 from legal_api.services import digital_credentials, flags, gcp_queue, queue
 from legal_api.services.authz import cache
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
+
+
+import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
+
 # noqa: I003; the sentry import creates a bad line count in isort
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first

@@ -8,10 +8,12 @@
 # Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
 # an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
 # specific language governing permissions and limitations under the License.
+
 """
 Adds a blueprint for document_service import so that the documents from the document service api.
 specific to colin ids in the system can be imported and put into the table.
 """
+
 import sys
 
 import click
