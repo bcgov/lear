@@ -17,7 +17,7 @@ This module is the API for the Legal Entity system.
 """
 import os
 
-import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
+import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
 from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask, jsonify  # noqa: I001
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
@@ -27,7 +27,7 @@ from legal_api import config, models
 from legal_api.models import db
 from legal_api.models.db import init_db
 from legal_api.resources import endpoints
-from legal_api.scripts.document_service_import import document_service_bp
+from legal_api.scripts.document_service_import import document_service_bp # isort: skip
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import digital_credentials, flags, gcp_queue, queue
 from legal_api.services.authz import cache
