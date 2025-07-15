@@ -995,6 +995,9 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             'withdrawnDate': withdrawn_ts.isoformat()
         }
 
+    if accession_num := data.get('accession_num'):
+        meta_data['accessionNumber'] = accession_num
+
     # TODO: populate meta_data for correction to display correct filing name
 
     return filing_json, meta_data
