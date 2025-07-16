@@ -52,8 +52,11 @@ DOCUMENT_TYPES = {
 # For all other legal types not listed below, the document class defaults to CORP
 DOCUMENT_CLASSES = {
     "CP": DocumentClasses.COOP.value,
+    "XCP": DocumentClasses.COOP.value,
     "SP": DocumentClasses.FIRM.value,
     "GP": DocumentClasses.FIRM.value,
+    "FM": DocumentClasses.FIRM.value,
+    "MF": DocumentClasses.FIRM.value,
 }
 
 # Matches IDs starting with 'DS' followed by at least 10 digits
