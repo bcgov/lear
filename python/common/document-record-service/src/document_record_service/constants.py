@@ -6,7 +6,7 @@ class DocumentClasses(Enum):
 
     COOP = "COOP"
     CORP = "CORP"
-    SOCIETY = "SOCIETY"
+    FIRM = "FIRM"
 
 
 class DocumentTypes(Enum):
@@ -32,22 +32,28 @@ class DocumentTypes(Enum):
 # SYSR: alteration, appointReceiver, ceaseReceiver, changeOfDirectors,
 # incorporationApplication, restoration, noticeOfWithdrawal
 DOCUMENT_TYPES = {
-    "affidavit": {"class": DocumentClasses.SOCIETY.value, "type": DocumentTypes.AFDV.value},
-    "amalgamationApplication": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.AMLG.value},
-    "amalgamationOut": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.AMLO.value},
-    "annualReport": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.ANNR.value},
-    "changeOfAddress": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.FRMA.value},
-    "consentAmalgamationOut": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.AMLO.value},
-    "consentContinuationOut": {"class": DocumentClasses.CORP.value, "TYPE": DocumentTypes.CNTO.value},
-    "continuationIn": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.CNTI.value},
-    "continuationOut": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.CNTO.value},
-    "conversion": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.CNVS.value},
-    "correction": {"class": DocumentClasses.COOP.value, "type": DocumentTypes.CORR.value},
-    "courtOrder": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.CRT.value},
-    "registrarsNotation": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.REGN.value},
-    "registrarsOrder": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.REGO.value},
-    "systemIsTheRecord": {"class": DocumentClasses.CORP.value, "type": DocumentTypes.SYSR.value},
-    "incorporationApplication": {"class": DocumentClasses.COOP.value},
+    "amalgamationApplication": DocumentTypes.AMLG.value,
+    "amalgamationOut": DocumentTypes.AMLO.value,
+    "annualReport": DocumentTypes.ANNR.value,
+    "changeOfAddress": DocumentTypes.FRMA.value,
+    "consentAmalgamationOut": DocumentTypes.AMLO.value,
+    "consentContinuationOut": DocumentTypes.CNTO.value,
+    "continuationIn": DocumentTypes.CNTI.value,
+    "continuationOut": DocumentTypes.CNTO.value,
+    "conversion": DocumentTypes.CNVS.value,
+    "correction": DocumentTypes.CORR.value,
+    "courtOrder": DocumentTypes.CRT.value,
+    "registrarsNotation": DocumentTypes.REGN.value,
+    "registrarsOrder": DocumentTypes.REGO.value,
+    "systemIsTheRecord": DocumentTypes.SYSR.value,
+}
+
+# Map between legal type and DRS document class
+# For all other legal types not listed below, the document class defaults to CORP
+DOCUMENT_CLASSES = {
+    "CP": DocumentClasses.COOP.value,
+    "SP": DocumentClasses.FIRM.value,
+    "GP": DocumentClasses.FIRM.value,
 }
 
 # Matches IDs starting with 'DS' followed by at least 10 digits

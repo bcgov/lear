@@ -206,7 +206,7 @@ class DocumentRecordService:
             list | None: List of validation errors if any, otherwise None.
         """
         msg = []
-        verify_paper_size = document_type in [DocumentTypes.CNTI.value]
+        verify_paper_size = document_type not in [DocumentTypes.CNTI.value]
 
         try:
             pdf_reader = pypdf.PdfReader(file)
