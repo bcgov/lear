@@ -1007,6 +1007,7 @@ paths:
                       certifiedBy: First Last
                       date: '2025-03-21'
                       accountId: 1234
+                      effectiveDate: '2025-03-21T07:00:00+00:00'
                     business:
                       foundingDate: '2024-02-21T18:05:47.466120+00:00'
                       identifier: BC1234567
