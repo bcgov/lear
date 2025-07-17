@@ -18,7 +18,7 @@ from http import HTTPStatus
 
 import pytest
 from hypothesis import given
-from hypothesis.strategies import dates, just, text
+from hypothesis.strategies import dates, datetimes, just, text
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.models import Business
@@ -29,11 +29,22 @@ from legal_api.services.filings.validations.annual_report import validate_agm_ye
     'test_name, now, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg',
     [
         ('AGM_DATE_REQUIRED_IF_IN_FILING_YR',
-         date(2018, 8, 5), date(2018, 8, 5), None, date(2017, 7, 1), date(2018, 9, 17),
+         date(2018, 8, 5), date(2018, 8, 5), None, datetime(2017, 7, 1, 0, 0), date(2018, 9, 17),
          HTTPStatus.BAD_REQUEST,
          [{'error': 'Annual General Meeting Date must be a valid date when submitting '
            'an Annual Report in the current year.',
            'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
+
+        ('AGM_DATE_EARLIER_THAN_LAST_AGM',
+         date(2025, 7, 17), date(2025, 7, 17), date(2019, 1, 1), datetime(2019, 4, 11, 0, 0), date(2025, 7, 17),
+         HTTPStatus.BAD_REQUEST,
+         [{'error': 'Annual General Meeting Date cannot be before the last AGM date.',
+           'path': 'filing/annualReport/annualGeneralMeetingDate'}]),
+
+        ('AGM_DATE_EQUAL_TO_LAST_AGM',
+         date(2025, 7, 17), date(2025, 7, 17), date(2019, 4, 11), datetime(2019, 4, 11, 0, 0), date(2025, 7, 17),
+         None,
+         None),
     ])
 def test_valid_agm_date(app, test_name, now, ar_date, agm_date, last_agm_date, submission_date,
                         expected_code, expected_msg):
@@ -42,7 +53,7 @@ def test_valid_agm_date(app, test_name, now, ar_date, agm_date, last_agm_date, s
     check_valid_agm_date(app, test_name, ar_date, agm_date, last_agm_date, submission_date, expected_code, expected_msg)
 
 
-@given(test_name=text(), ar_date=dates(), agm_date=dates(), last_agm_date=dates(), submission_date=dates(),
+@given(test_name=text(), ar_date=dates(), agm_date=dates(), last_agm_date=datetimes(), submission_date=dates(),
        expected_code=just(400), expected_msg=just(None))
 def test_valid_agm_date_hypothesis(app, test_name, ar_date, agm_date, last_agm_date, submission_date,
                                    expected_code, expected_msg):
