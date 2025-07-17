@@ -1007,6 +1007,7 @@ paths:
                       certifiedBy: First Last
                       date: '2025-03-21'
                       accountId: 1234
+                      effectiveDate: '2025-03-21T07:00:00+00:00'
                     business:
                       foundingDate: '2024-02-21T18:05:47.466120+00:00'
                       identifier: BC1234567
@@ -5549,7 +5550,7 @@ components:
           type: string
           format: date-time
           title: The date and time a filing should become valid and applied.
-          description: Date and time the filing is taking effect. Required for Change of Directors filing.
+          description: Date and time the filing is taking effect. Required for Annual Report and Change of Directors filing. For Annual report, this is a required field and should be the Annual report date.
         paymentToken:
           type: string
           title: A valid payment token for this filing against this business.
