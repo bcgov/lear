@@ -43,4 +43,4 @@ def test_cors_preflight_post(methods):
 
     assert rv[2]['Access-Control-Allow-Origin'] == '*'
     assert rv[2]['Access-Control-Allow-Methods'] == methods
-    assert rv[2]['Access-Control-Allow-Headers'] == 'Authorization, Content-Type, App-Name'
+    assert rv[2]['Access-Control-Allow-Headers'] == 'Authorization, Content-Type, App-Name, Account-Id, X-Apikey'
