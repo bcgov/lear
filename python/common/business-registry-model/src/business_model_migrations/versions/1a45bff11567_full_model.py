@@ -496,6 +496,15 @@ def upgrade():
     sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('dc_business_users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=True),
+    sa.Column('business_id', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('business_id', 'user_id', name='dc_business_users_business_id_user_id_uq')
+    )
     op.create_index(op.f('ix_aliases_alias'), 'aliases', ['alias'], unique=False)
     op.create_table('dc_connections',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -504,15 +513,10 @@ def upgrade():
     sa.Column('is_active', sa.Boolean(), nullable=True),
     sa.Column('connection_state', sa.String(length=50), nullable=True),
     sa.Column('business_id', sa.Integer(), nullable=True),
+    sa.Column('is_attested', sa.Boolean(), default=False),
+    sa.Column('last_attested', sa.DateTime(), default=None),
+    sa.Column('business_user_id', sa.Integer(), sa.ForeignKey('dc_business_users.id')),
     sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_table('dc_issued_business_user_credentials',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=True),
-    sa.Column('business_id', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['business_id'], ['businesses.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('filings',
@@ -702,10 +706,10 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id')
     )
-    op.create_table('dc_issued_credentials',
+    op.create_table('dc_credentials',
     sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('dc_definition_id', sa.Integer(), nullable=True),
-    sa.Column('dc_connection_id', sa.Integer(), nullable=True),
+    sa.Column('definition_id', sa.Integer(), nullable=True),
+    sa.Column('connection_id', sa.Integer(), nullable=True),
     sa.Column('credential_exchange_id', sa.String(length=100), nullable=True),
     sa.Column('credential_id', sa.String(length=10), nullable=True),
     sa.Column('is_issued', sa.Boolean(), nullable=True),
@@ -713,8 +717,13 @@ def upgrade():
     sa.Column('is_revoked', sa.Boolean(), nullable=True),
     sa.Column('credential_revocation_id', sa.String(length=10), nullable=True),
     sa.Column('revocation_registry_id', sa.String(length=200), nullable=True),
-    sa.ForeignKeyConstraint(['dc_connection_id'], ['dc_connections.id'], ),
-    sa.ForeignKeyConstraint(['dc_definition_id'], ['dc_definitions.id'], ),
+    sa.Column('business_user_id', sa.Integer(), nullable=True),
+    sa.Column('date_of_revocation', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('raw_data', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('self_attested_roles', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.ForeignKeyConstraint(['connection_id'], ['dc_connections.id'], ),
+    sa.ForeignKeyConstraint(['definition_id'], ['dc_definitions.id'], ),
+    sa.ForeignKeyConstraint(['business_user_id'], ['dc_business_users.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('documents',
@@ -886,7 +895,7 @@ def downgrade():
     op.drop_index(op.f('ix_documents_filing_id'), table_name='documents')
     op.drop_index(op.f('ix_documents_business_id'), table_name='documents')
     op.drop_table('documents')
-    op.drop_table('dc_issued_credentials')
+    op.drop_table('dc_credentials')
     op.drop_table('consent_continuation_outs')
     op.drop_index(op.f('ix_comments_staff_id'), table_name='comments')
     op.drop_index(op.f('ix_comments_filing_id'), table_name='comments')
@@ -912,8 +921,8 @@ def downgrade():
     op.drop_index(op.f('ix_furnishings_batch_id'), table_name='furnishings')
     op.drop_table('furnishings')
     op.drop_table('filings')
-    op.drop_table('dc_issued_business_user_credentials')
     op.drop_table('dc_connections')
+    op.drop_table('dc_business_users')
     op.drop_index(op.f('ix_aliases_alias'), table_name='aliases')
     op.drop_table('aliases')
     op.drop_index(op.f('ix_naics_elements_year'), table_name='naics_elements')

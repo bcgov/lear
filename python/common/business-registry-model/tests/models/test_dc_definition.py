@@ -25,13 +25,13 @@ from business_model.models import DCDefinition
 
 def test_valid_dc_definition_save(session):
     """Assert that a valid dc_definition can be saved."""
-    definition = create_dc_definition()
+    definition = create_dc_definition(session)
     assert definition.id
 
 
 def test_find_by_id(session):
     """Assert that the method returns correct value."""
-    definition = create_dc_definition()
+    definition = create_dc_definition(session)
 
     res = DCDefinition.find_by_id(definition.id)
 
@@ -46,7 +46,7 @@ def test_find_by_credential_type(session):
     
     TODO: fix test to run in the full series.
     """
-    definition = create_dc_definition()
+    definition = create_dc_definition(session)
 
     res = DCDefinition.find_by_credential_type(DCDefinition.CredentialType.business)
 
@@ -56,7 +56,7 @@ def test_find_by_credential_type(session):
 
 def test_deactivate(session):
     """Assert that the deactivate set is_deleted value."""
-    definition = create_dc_definition()
+    definition = create_dc_definition(session)
 
     DCDefinition.deactivate(DCDefinition.CredentialType.business)
 
@@ -69,7 +69,7 @@ def test_deactivate(session):
 
 def test_find_by(session):
     """Assert that the method returns correct value."""
-    definition = create_dc_definition()
+    definition = create_dc_definition(session)
 
     res = DCDefinition.find_by(credential_type=DCDefinition.CredentialType.business,
                                schema_id=definition.schema_id,
@@ -79,7 +79,7 @@ def test_find_by(session):
     assert res.id == definition.id
 
 
-def create_dc_definition():
+def create_dc_definition(session):
     """Create new dc_definition object."""
     definition = DCDefinition(
         credential_type=DCDefinition.CredentialType.business,
@@ -88,5 +88,7 @@ def create_dc_definition():
         schema_id='test_schema_id',
         credential_definition_id=str(uuid.uuid4())
     )
-    definition.save()
+    definition.save_to_session()
+
+    session.flush()
     return definition

@@ -30,10 +30,10 @@ from .comment import Comment
 from .configuration import Configuration
 from .consent_continuation_out import ConsentContinuationOut
 from .corp_type import CorpType
+from .dc_business_user import DCBusinessUser
 from .dc_connection import DCConnection
+from .dc_credential import DCCredential
 from .dc_definition import DCDefinition
-from .dc_issued_business_user_credential import DCIssuedBusinessUserCredential
-from .dc_issued_credential import DCIssuedCredential
 from .dc_revocation_reason import DCRevocationReason
 from .document import Document, DocumentType
 from .filing import Filing
@@ -74,10 +74,10 @@ __all__ = (
     'Configuration',
     'ConsentContinuationOut',
     'CorpType',
+    'DCBusinessUser',
     'DCConnection',
+    'DCCredential',
     'DCDefinition',
-    'DCIssuedBusinessUserCredential',
-    'DCIssuedCredential',
     'DCRevocationReason',
     'Document',
     'DocumentType',
