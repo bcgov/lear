@@ -55,8 +55,6 @@ DOCUMENT_CLASSES = {
     "XCP": DocumentClasses.COOP.value,
     "SP": DocumentClasses.FIRM.value,
     "GP": DocumentClasses.FIRM.value,
-    "FM": DocumentClasses.FIRM.value,
-    "MF": DocumentClasses.FIRM.value,
 }
 
 # Matches IDs starting with 'DS' followed by at least 10 digits
