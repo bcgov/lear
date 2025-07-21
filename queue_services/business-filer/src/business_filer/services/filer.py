@@ -82,6 +82,7 @@ from business_filer.filing_processors import (
 from business_filer.filing_processors.filing_components import business_profile, name_request
 from business_filer.services import flags
 from business_filer.services.publish_event import PublishEvent
+from business_filer.services.utils import sync_drs
 
 
 def get_filing_types(legal_filings: dict):
@@ -277,6 +278,8 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
             json.dumps(filing_meta.asjson, default=json_serial)
         )
 
+        sync_drs(filing_submission)
+        
         db.session.add(filing_submission)
         db.session.commit()
 
