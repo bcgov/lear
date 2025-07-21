@@ -115,7 +115,7 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
                                   'submitting an Annual Report in the current year.'),
                        'path': 'filing/annualReport/annualGeneralMeetingDate'}])
 
-    if agm_date and agm_date < business.last_agm_date.date():
+    if agm_date and business.last_agm_date and agm_date < business.last_agm_date.date():
         return Error(
             HTTPStatus.BAD_REQUEST,
             [{'error': _('Annual General Meeting Date cannot be before the last AGM date.'),
