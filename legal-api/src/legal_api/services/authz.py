@@ -113,6 +113,12 @@ def authorized(  # pylint: disable=too-many-return-statements
             or jwt.validate_roles([COLIN_SVC_ROLE]):
         return True
 
+    # Temporary, until granular permission in authorized_role_permissions table is implemented
+    if (jwt.validate_roles([MAXIMUS_STAFF_ROLE]) or
+        jwt.validate_roles([SBC_STAFF_ROLE]) or
+            jwt.validate_roles([CONTACT_CENTRE_STAFF_ROLE])):
+        return True
+
     # allow IDIM and Competent Authorities view access on everything
     if len(action) == 1 and action[0] == 'view':
         if jwt.validate_roles([ACCOUNT_IDENTITY]) or has_product('CA_SEARCH', jwt.get_token_auth_header()):
