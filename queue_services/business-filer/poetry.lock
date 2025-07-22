@@ -547,7 +547,7 @@ name = "document-record-service"
 version = "0.1.0"
 description = ""
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.9,<4"
 groups = ["main"]
 files = []
 develop = true
@@ -555,12 +555,15 @@ develop = true
 [package.dependencies]
 dotenv = ">=0.9.9,<0.10.0"
 flask = ">=1.1.2,<4.0.0"
-pypdf2 = ">=1.26.0,<4.0.0"
+pypdf = ">=5.7.0,<6.0.0"
 requests = ">=2.32.4,<3.0.0"
 
 [package.source]
-type = "directory"
-url = "../../python/common/document-record-service"
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "4ef0840cf7a3b59f401f07a85e1b41cb766de981"
+subdirectory = "python/common/document-record-service"
 
 [[package]]
 name = "dotenv"
@@ -1871,26 +1874,24 @@ docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
 tests = ["coverage[toml] (==5.0.4)", "pytest (>=6.0.0,<7.0.0)"]
 
 [[package]]
-name = "pypdf2"
-version = "3.0.1"
+name = "pypdf"
+version = "5.8.0"
 description = "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "PyPDF2-3.0.1.tar.gz", hash = "sha256:a74408f69ba6271f71b9352ef4ed03dc53a31aa404d29b5d31f53bfecfee1440"},
-    {file = "pypdf2-3.0.1-py3-none-any.whl", hash = "sha256:d16e4205cfee272fbdc0568b68d82be796540b1537508cef59388f839c191928"},
+    {file = "pypdf-5.8.0-py3-none-any.whl", hash = "sha256:bfe861285cd2f79cceecefde2d46901e4ee992a9f4b42c56548c4a6e9236a0d1"},
+    {file = "pypdf-5.8.0.tar.gz", hash = "sha256:f8332f80606913e6f0ce65488a870833c9d99ccdb988c17bb6c166f7c8e140cb"},
 ]
 
-[package.dependencies]
-typing_extensions = {version = ">=3.10.0.0", markers = "python_version < \"3.10\""}
-
 [package.extras]
-crypto = ["PyCryptodome"]
-dev = ["black", "flit", "pip-tools", "pre-commit (<2.18.0)", "pytest-cov", "wheel"]
+crypto = ["cryptography"]
+cryptodome = ["PyCryptodome"]
+dev = ["black", "flit", "pip-tools", "pre-commit", "pytest-cov", "pytest-socket", "pytest-timeout", "pytest-xdist", "wheel"]
 docs = ["myst_parser", "sphinx", "sphinx_rtd_theme"]
-full = ["Pillow", "PyCryptodome"]
-image = ["Pillow"]
+full = ["Pillow (>=8.0.0)", "cryptography"]
+image = ["Pillow (>=8.0.0)"]
 
 [[package]]
 name = "pyrfc3339"
@@ -2869,4 +2870,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<4"
-content-hash = "bfee9d8b300fb00272007978ab9a3528cf5fffc4a6d1beb57cb658bf19d7d309"
+content-hash = "8cc7f421a0b49450ea18a5ea95c8d02e960d8320b895de0db4aa0a806729fbb3"

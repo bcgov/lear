@@ -37,6 +37,7 @@ from gcp_queue import GcpQueue
 from ..common.services.account_service import AccountService  # noqa: TID252
 from ..common.services.flag_manager import Flags  # noqa: TID252
 from .gcp_auth import verify_gcp_jwt
+from .document_service import sync_drs
 
 flags = Flags()
 gcp_queue = GcpQueue()
