@@ -1,7 +1,12 @@
 import copy
 
 from business_model.models import Filing
-from document_record_service import DocumentRecordService, RequestInfo as DrsRequestInfo, DOCUMENT_TYPES, get_document_class
+from document_record_service import (
+    DocumentRecordService, 
+    RequestInfo as DrsRequestInfo, 
+    get_document_class,
+    get_document_type
+)
 from flask import current_app
 
 from business_filer.services import Flags
@@ -18,7 +23,7 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
             # Get existing document on DRS
             doc_list = DocumentRecordService().get_document(
                 DrsRequestInfo(
-                    document_class=DOCUMENT_TYPES[filing_type]['class'],
+                    document_class=get_document_class(legal_type),
                     consumer_identifier=temp_reg
                 )
             )
@@ -48,10 +53,7 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
             if filing_type and document_id_state['valid']:
                 try:
                     document_class = get_document_class(legal_type)
-                    if DOCUMENT_TYPES.get(filing_type, ''):
-                        document_type = DOCUMENT_TYPES[filing_type]
-                    else:
-                        document_type = DOCUMENT_TYPES['systemIsTheRecord']
+                    document_type = get_document_type(filing_type, legal_type)
 
                     response_json = DocumentRecordService().post_class_document(
                         request_info=DrsRequestInfo(
