@@ -76,8 +76,6 @@ DOCUMENT_TYPES = {
     "amalgamationOut": DocumentTypes.AMLO.value,
     "annualReport": DocumentTypes.ANNR.value,
     "changeOfAddress": DocumentTypes.FRMA.value,
-    "consentAmalgamationOut": DocumentTypes.AMLO.value,
-    "consentContinuationOut": DocumentTypes.CNTO.value,
     "continuationIn": DocumentTypes.CNTI.value,
     "continuationOut": DocumentTypes.CNTO.value,
     "conversion": {
