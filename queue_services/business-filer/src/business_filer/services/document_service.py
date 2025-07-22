@@ -12,14 +12,14 @@ from flask import current_app
 from business_filer.services import Flags
 
 def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
-    document_id_state = filing_submission.filing_json['filing']['header'].get('documentIdState', {})
-    legal_type = filing_submission.filing_json['filing']['business'].get('legalType')
+    document_id_state = filing_submission.filing_json["filing"]["header"].get("documentIdState", {})
+    legal_type = filing_submission.filing_json["filing"]["business"].get("legalType")
 
-    if  document_id_state and flags.is_on('enable-document-records'):
-        filing_type = filing_submission.filing_json['filing']['header']['name']
+    if  document_id_state and flags.is_on("enable-document-records"):
+        filing_type = filing_submission.filing_json["filing"]["header"]["name"]
         temp_reg = filing_submission.temp_reg
 
-        if filing_type in ['incorporationApplication', 'continuationIn']:
+        if filing_type in ["incorporationApplication", "continuationIn"]:
             # Get existing document on DRS
             doc_list = DocumentRecordService().get_document(
                 DrsRequestInfo(
@@ -34,23 +34,23 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
                 )
             else:
                 # Update missing consumer document id
-                if document_id_state['valid'] and document_id_state['consumerDocumentId'] == '':
+                if document_id_state["valid"] and document_id_state["consumerDocumentId"] == "":
                     copied_json = copy.deepcopy(filing_submission.filing_json)
-                    copied_json['filing']['header']['documentIdState']['consumerDocumentId'] = doc_list[0]['consumerDocumentId']
+                    copied_json["filing"]["header"]["documentIdState"]["consumerDocumentId"] = doc_list[0]["consumerDocumentId"]
                     filing_submission._filing_json = copied_json
                 # Replace temp registration id with business identifier:
                 for associated_document in doc_list:
-                    doc_service_id = associated_document['documentServiceId']
+                    doc_service_id = associated_document["documentServiceId"]
                     DocumentRecordService().update_document(
                         DrsRequestInfo(
                             document_service_id=doc_service_id,
-                            consumer_identifier=filing_submission.filing_json['filing']['business']['identifier'],
+                            consumer_identifier=filing_submission.filing_json["filing"]["business"]["identifier"],
                             consumer_reference_id=str(filing_submission.id)
                         )
                     )
 
         else:
-            if filing_type and document_id_state['valid']:
+            if filing_type and document_id_state["valid"]:
                 try:
                     document_class = get_document_class(legal_type)
                     document_type = get_document_type(filing_type, legal_type)
@@ -60,19 +60,19 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
                             document_class=document_class,
                             document_type=document_type,
                             consumer_reference_id=filing_submission.id,
-                            consumer_doc_id=document_id_state['consumerDocumentId'],
-                            consumer_identifier=filing_submission.filing_json['filing']['business']['identifier']
+                            consumer_doc_id=document_id_state["consumerDocumentId"],
+                            consumer_identifier=filing_submission.filing_json["filing"]["business"]["identifier"]
                         ),
                         has_file=False
                     )
-                    if document_id_state['consumerDocumentId'] == '' and response_json:
+                    if document_id_state["consumerDocumentId"] == "" and response_json:
                         # Update consumerDocumentId
                         copied_json = copy.deepcopy(filing_submission.filing_json)
-                        copied_json['filing']['header']['documentIdState']['consumerDocumentId'] = response_json['consumerDocumentId']
+                        copied_json["filing"]["header"]["documentIdState"]["consumerDocumentId"] = response_json["consumerDocumentId"]
                         filing_submission._filing_json = copied_json
                     else:
                         current_app.logger.error(
-                            f"Document Record Creation Error: {filing_submission.id}, {response_json['rootCause']}", exc_info=True)
+                            f"Document Record Creation Error: {filing_submission.id}, {response_json["rootCause"]}", exc_info=True)
 
                 except Exception as error:
                     current_app.logger.error(f"Document Record Creation Error: {error}")                    
