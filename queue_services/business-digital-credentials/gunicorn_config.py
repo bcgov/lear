@@ -1,6 +1,6 @@
 # Copyright © 2025 Province of British Columbia
 #
-# Licensed under the BSD 3 Clause License, (the "License");
+# Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -28,7 +28,7 @@ secure_scheme_headers = {"X-Forwarded-Proto": "https"}  # pylint: disable=invali
 reload = os.environ.get("FLASK_ENV") == "development"  # pylint: disable=invalid-name
 
 if reload:
-    print(
+    print(  # noqa: T201
         f"FLASK_ENV: {os.environ.get("FLASK_ENV")}. Reload mode is enabled. Gunicorn will automatically reload on code changes.",
         file=sys.stderr,
     )
