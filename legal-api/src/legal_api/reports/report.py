@@ -130,7 +130,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if create_document:
             self._document_service.create_document(
               self._business.identifier,
-              self._filing.identifier,
+              self._filing.id,
               self._report_key,
               account_id,
               response.content
