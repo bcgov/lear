@@ -15,22 +15,35 @@
 
 This module is the service worker for handling events that deal with Digital Business Card credential tasks.
 """
+import os
+
 from business_registry_digital_credentials import digital_credentials
 from flask import Flask
 
 from business_model.models.db import db
 from structured_logging import StructuredLogging
 
-from .config import Config, ProdConfig
+from .config import DevConfig, ProdConfig, TestConfig
 from .resources import register_endpoints
 from .services import flags, gcp_queue
 
+CONFIGURATION = {
+    "development": DevConfig,
+    "testing": TestConfig,
+    "production": ProdConfig,
+    "sandbox": ProdConfig,
+}
 
-def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
+
+def create_app(
+    environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs
+) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.logger = StructuredLogging(app).get_logger()
-    app.config.from_object(environment)
+    app.config.from_object(CONFIGURATION[environment])
+
+    app.logger.debug(f"DEPLOYMENT_ENV: {environment}")
 
     # Configure LaunchDarkly
     if app.config.get("LD_SDK_KEY", None):
