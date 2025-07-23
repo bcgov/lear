@@ -63,8 +63,6 @@ class Config:  # pylint: disable=too-few-public-methods
 
     FLASK_ENV = os.getenv("FLASK_ENV", "production")  # used for setting up flags.py
 
-    # LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
-
     # GCP
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
@@ -81,17 +79,17 @@ class Config:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     # Traction ACA-Py tenant settings to issue credentials from
-    TRACTION_API_URL = os.getenv('TRACTION_API_URL')
-    TRACTION_TENANT_ID = os.getenv('TRACTION_TENANT_ID')
-    TRACTION_API_KEY = os.getenv('TRACTION_API_KEY')
-    TRACTION_PUBLIC_SCHEMA_DID = os.getenv('TRACTION_PUBLIC_SCHEMA_DID')
-    TRACTION_PUBLIC_ISSUER_DID = os.getenv('TRACTION_PUBLIC_ISSUER_DID')
+    TRACTION_API_URL = os.getenv("TRACTION_API_URL")
+    TRACTION_TENANT_ID = os.getenv("TRACTION_TENANT_ID")
+    TRACTION_API_KEY = os.getenv("TRACTION_API_KEY")
+    TRACTION_PUBLIC_SCHEMA_DID = os.getenv("TRACTION_PUBLIC_SCHEMA_DID")
+    TRACTION_PUBLIC_ISSUER_DID = os.getenv("TRACTION_PUBLIC_ISSUER_DID")
 
     # Digital Business Card configuration values (required to issue credentials)
-    BUSINESS_SCHEMA_NAME = os.getenv('BUSINESS_SCHEMA_NAME')
-    BUSINESS_SCHEMA_VERSION = os.getenv('BUSINESS_SCHEMA_VERSION')
-    BUSINESS_SCHEMA_ID = os.getenv('BUSINESS_SCHEMA_ID')
-    BUSINESS_CRED_DEF_ID = os.getenv('BUSINESS_CRED_DEF_ID')
+    BUSINESS_SCHEMA_NAME = os.getenv("BUSINESS_SCHEMA_NAME")
+    BUSINESS_SCHEMA_VERSION = os.getenv("BUSINESS_SCHEMA_VERSION")
+    BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID")
+    BUSINESS_CRED_DEF_ID = os.getenv("BUSINESS_CRED_DEF_ID")
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
     """Creates the Development Config object."""

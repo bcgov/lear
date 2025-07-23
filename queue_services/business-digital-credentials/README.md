@@ -1,6 +1,6 @@
 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![codecov](https://codecov.io/gh/bcgov/lear/branch/master/graph/badge.svg?flag=entityemailer)](https://codecov.io/gh/bcgov/lear/tree/master/queue_services/entity-emailer)
+[![codecov](https://codecov.io/gh/bcgov/lear/branch/master/graph/badge.svg?flag=business-digital-credentials)](https://codecov.io/gh/bcgov/lear/tree/master/queue_services/business-digital-credentials)
 
 # Application Name
 

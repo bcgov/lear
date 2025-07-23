@@ -15,10 +15,10 @@
 
 This module is the service worker for handling events that deal with Digital Business Card credential tasks.
 """
+from business_registry_digital_credentials import digital_credentials
 from flask import Flask
 
 from business_model.models.db import db
-from business_registry_digital_credentials import digital_credentials
 from structured_logging import StructuredLogging
 
 from .config import Config, ProdConfig

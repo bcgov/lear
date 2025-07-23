@@ -16,15 +16,10 @@
 from enum import Enum
 from http import HTTPStatus
 
+from business_registry_digital_credentials import digital_credentials_helpers
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 
-from business_model.models import Business, Filing
-from business_model.models.types.filings import FilingTypes
-from business_registry_digital_credentials import digital_credentials_helpers
-
-from business_digital_credentials.exceptions import QueueException
-from business_digital_credentials.services import gcp_queue
 from business_digital_credentials.digital_credential_processors import (
     admin_revoke,
     business_number,
@@ -32,22 +27,27 @@ from business_digital_credentials.digital_credential_processors import (
     dissolution,
     put_back_on,
 )
+from business_digital_credentials.exceptions import QueueException
+from business_digital_credentials.services import gcp_queue
+from business_digital_credentials.services.gcp_auth import verify_gcp_jwt
+from business_model.models import Business, Filing
+from business_model.models.types.filings import FilingTypes
 
 bp = Blueprint("worker", __name__)
 
 class AdminMessage(Enum):
     """Entity Digital Credential admin message type."""
 
-    REVOKE = 'bc.registry.admin.revoke'
+    REVOKE = "bc.registry.admin.revoke"
 
 
 class BusinessMessage(Enum):
     """Entity Digital Credential business message type."""
 
-    BN = 'bc.registry.business.bn'
-    CHANGE_OF_REGISTRATION = f'bc.registry.business.{FilingTypes.CHANGEOFREGISTRATION.value}'
-    DISSOLUTION = f'bc.registry.business.{FilingTypes.DISSOLUTION.value}'
-    PUT_BACK_ON = f'bc.registry.business.{FilingTypes.PUTBACKON.value}'
+    BN = "bc.registry.business.bn"
+    CHANGE_OF_REGISTRATION = f"bc.registry.business.{FilingTypes.CHANGEOFREGISTRATION.value}"
+    DISSOLUTION = f"bc.registry.business.{FilingTypes.DISSOLUTION.value}"
+    PUT_BACK_ON = f"bc.registry.business.{FilingTypes.PUTBACKON.value}"
 
 
 @bp.route("/", methods=("POST",))
@@ -56,15 +56,14 @@ def worker():
     try:
         current_app.logger.info("IN worker in DBC")
 
-        # TODO: uncomment and remove log tester
-        # if not request.data:
-        #     return {}, HTTPStatus.OK
+        if not request.data:
+            return {}, HTTPStatus.OK
         
         digital_credentials_helpers.log_something()
 
-        # if msg := verify_gcp_jwt(request):
-        #     current_app.logger.info(msg)
-        #     return {}, HTTPStatus.FORBIDDEN
+        if msg := verify_gcp_jwt(request):
+            current_app.logger.info(msg)
+            return {}, HTTPStatus.FORBIDDEN
 
         current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
@@ -89,7 +88,7 @@ def worker():
         current_app.logger.error("Queue Error: %s", ce, exc_info=True)
         return {}, HTTPStatus.BAD_REQUEST
 
-def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912, PLR0915
+def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912
     """Process the digital credential-related message subscribed to."""
     etype = ce.type
     if not etype or etype not in [
@@ -111,7 +110,7 @@ def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         # a data object. We queue the business information using the identifier and revoke/reissue the credential
         # immediately.
 
-        identifier = ce.data.get('identifier')
+        identifier = ce.data.get("identifier")
         if not identifier:
             raise QueueException("Digital credential message is missing identifier.")
 
@@ -127,7 +126,7 @@ def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == AdminMessage.REVOKE.value:
             admin_revoke.process(business)
     else:
-        filing_id = ce.data.get('filing', {}).get('header', {}).get('filingId')
+        filing_id = ce.data.get("filing", {}).get("header", {}).get("filingId")
         if not filing_id:
             raise QueueException("Digital credential message is missing filingId.")
 

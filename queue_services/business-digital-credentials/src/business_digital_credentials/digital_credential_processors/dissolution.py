@@ -16,11 +16,9 @@
 from flask import current_app
 
 from business_model.models import Business, DCDefinition, DCRevocationReason
-from .helpers import (
-    get_all_digital_credentials_for_business,
-)
 
 from .helpers import (
+    get_all_digital_credentials_for_business,
     replace_digital_credential,
     revoke_digital_credential,
 )

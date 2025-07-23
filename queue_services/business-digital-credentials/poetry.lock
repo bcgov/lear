@@ -138,9 +138,9 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdi
 
 [package.source]
 type = "git"
-url = "https://github.com/loneil/lear.git"
-reference = "feature/dbcModelUpdates"
-resolved_reference = "96d9e5615c8a7406774e62c61f1a96990df9b2d9"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "c43a7df59b21f62bb376a7cb8295dee06708a96c"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -200,7 +200,7 @@ files = []
 develop = false
 
 [package.dependencies]
-business-model = {git = "https://github.com/loneil/lear.git", branch = "feature/dbcModelUpdates", subdirectory = "python/common/business-registry-model"}
+business-model = {git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-model"}
 datedelta = "^1.4"
 flask-jwt-oidc = "^0.8.0"
 pyjwt = "^2.8.0"
@@ -209,9 +209,9 @@ requests = "^2.32.3"
 
 [package.source]
 type = "git"
-url = "https://github.com/loneil/lear.git"
-reference = "feature/dbcModules"
-resolved_reference = "900f33884929efe16c28fea2ed97ff78b324969d"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "c43a7df59b21f62bb376a7cb8295dee06708a96c"
 subdirectory = "python/common/business-registry-digital-credentials"
 
 [[package]]
@@ -2695,4 +2695,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "db54c79623672424db14cc38785edc80fccfd86347e4f6c435febad8a75a8461"
+content-hash = "1c257dbd43cc8522472011c880dd3bdc7e99b263dfe72f417b54416281a60627"

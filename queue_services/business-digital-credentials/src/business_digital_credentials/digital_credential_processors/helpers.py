@@ -13,7 +13,11 @@
 # limitations under the License.
 """Helper functions for digital credentials."""
 
-from typing import List, Union
+
+from business_registry_digital_credentials import digital_credentials
+from business_registry_digital_credentials.digital_credentials_helpers import (
+    get_digital_credential_data,
+)
 
 from business_model.models import (
     Business,
@@ -23,15 +27,11 @@ from business_model.models import (
     DCDefinition,
     DCRevocationReason,
 )
-from business_registry_digital_credentials import digital_credentials
-from business_registry_digital_credentials.digital_credentials_helpers import (
-    get_digital_credential_data,
-)
 
 
 def get_all_digital_credentials_for_business(
     business: Business,
-) -> Union[List[DCCredential], None]:
+) -> list[DCCredential] | None:
     """
     Get issued digital credentials for a business.
 
@@ -59,13 +59,13 @@ def get_all_digital_credentials_for_business(
 
         return credentials
     # pylint: disable=broad-exception-raised
-    except Exception as err:  # noqa: B902
+    except Exception as err:
         raise err
 
 
 def issue_digital_credential(
     business_user: DCBusinessUser, credential_type: DCDefinition.CredentialType
-) -> Union[DCCredential, None]:
+) -> DCCredential | None:
     """Issue a digital credential for a business to a user."""
     try:
         if not (
@@ -123,13 +123,13 @@ def issue_digital_credential(
 
         return issued_credential
     # pylint: disable=broad-exception-raised
-    except Exception as err:  # noqa: B902
+    except Exception as err:
         raise err
 
 
 def revoke_digital_credential(
     credential: DCCredential, reason: DCRevocationReason
-) -> Union[dict, None]:
+) -> dict | None:
     """Revoke an issued digital credential."""
     try:
         if not credential.is_issued or credential.is_revoked:
@@ -160,7 +160,7 @@ def revoke_digital_credential(
 
         return None
     # pylint: disable=broad-exception-raised
-    except Exception as err:  # noqa: B902
+    except Exception as err:
         raise err
 
 
@@ -169,7 +169,7 @@ def replace_digital_credential(
     credential: DCCredential,
     credential_type: DCDefinition.CredentialType,
     reason: DCRevocationReason,
-) -> Union[DCCredential, None]:
+) -> DCCredential | None:
     """Replace an issued digital credential for a business."""
     try:
         if credential.is_issued and not credential.is_revoked:
@@ -196,5 +196,5 @@ def replace_digital_credential(
 
         return None
     # pylint: disable=broad-exception-raised
-    except Exception as err:  # noqa: B902
+    except Exception as err:
         raise err
