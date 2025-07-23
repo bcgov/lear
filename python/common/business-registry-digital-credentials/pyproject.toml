@@ -13,9 +13,7 @@ flask-jwt-oidc = "^0.8.0"
 pytz = "^2025.1"
 pyjwt = "^2.8.0"
 requests = "^2.32.3"
-business-model = { git = "https://github.com/loneil/lear.git", subdirectory = "python/common/business-registry-model", branch = "feature/dbcModelUpdates" }
-# business-model = {path = "../business-registry-model", develop = true}
-
+business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "main" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
