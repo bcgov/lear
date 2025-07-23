@@ -186,9 +186,9 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdi
 
 [package.source]
 type = "git"
-url = "https://github.com/loneil/lear.git"
-reference = "feature/dbcModelUpdates"
-resolved_reference = "96d9e5615c8a7406774e62c61f1a96990df9b2d9"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "6aad13126a3c8c7e8f301a2c49aa7918607fce0e"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -2132,4 +2132,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "0fec56b728970151ea0861c56567ca908851445f08fdc368e59039bda9456f92"
+content-hash = "56bad40f11b7a6fe6ba513d24284ae00ff27dd57fa2adcc6984f08c67542554d"
