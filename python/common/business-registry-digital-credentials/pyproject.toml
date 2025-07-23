@@ -1,0 +1,74 @@
+[tool.poetry]
+name = "business-registry-digital-credentials"
+version = "0.1.0"
+description = ""
+authors = ["Lucas O'Neil <lucasoneil@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "business_registry_digital_credentials", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+datedelta = "^1.4"
+flask-jwt-oidc = "^0.8.0"
+pytz = "^2025.1"
+pyjwt = "^2.8.0"
+requests = "^2.32.3"
+business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "main" }
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
+pytest-mock = "^3.12.0"
+black = "^25.1.0"
+flake8 = "^7.1.2"
+isort = "^5.13.2"
+freezegun = "^1.5.1"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--verbose --strict -p no:warnings --cov=src/business_registry_digital_credentials --cov-report html:htmlcov --cov-report xml:coverage.xml --cov-report term-missing --cov-fail-under=20"
+
+[tool.coverage.run]
+source = ["src/business_registry_digital_credentials"]
+omit = ["*/tests/*", "*/test_*", "*/__pycache__/*", "*/venv/*", "*/.venv/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.flake8]
+ignore = ["F401","E402", "Q000", "E203", "W503"]
+exclude = [
+    ".venv",
+    ".git",
+    ".history",
+    "devops",
+    "tests",
+    "*migrations*",
+]
+max-line-length = 120
+docstring-min-length = 10
+count = true
+
+[tool.black]
+target-version = ["py39", "py310", "py311", "py312"]
+line-length = 120
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 120
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
