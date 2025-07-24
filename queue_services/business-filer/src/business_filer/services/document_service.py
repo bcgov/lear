@@ -1,6 +1,6 @@
 import copy
 
-from business_model.models import Filing
+from business_model.models import Filing, UserRoles
 from document_record_service import (
     DocumentRecordService, 
     RequestInfo as DrsRequestInfo, 
@@ -14,6 +14,7 @@ from business_filer.services import Flags
 def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
     document_id_state = filing_submission.filing_json["filing"]["header"].get("documentIdState", {})
     legal_type = filing_submission.filing_json["filing"]["business"].get("legalType")
+    submitter_roles = filing_submission.submitter_roles
 
     if  document_id_state and flags.is_on("enable-document-records"):
         filing_type = filing_submission.filing_json["filing"]["header"]["name"]
@@ -49,7 +50,7 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
                         )
                     )
 
-        else:
+        elif submitter_roles == UserRoles.staff:
             if filing_type and document_id_state["valid"]:
                 try:
                     document_class = get_document_class(legal_type)
