@@ -35,7 +35,7 @@
 from contextlib import suppress
 
 import dpath
-from business_model.models import BatchProcessing, Business, Filing, db
+from business_model.models import BatchProcessing, Business, Document, DocumentType, Filing, db
 from flask import current_app
 
 from business_filer.common.datetime import datetime, timezone
@@ -97,6 +97,9 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
         court_order_json = dpath.get(dissolution_filing, "/courtOrder")
         filings.update_filing_court_order(filing_rec, court_order_json)
 
+    if business.legal_type == Business.LegalTypes.COOP:
+        _update_cooperative(dissolution_filing, business, filing_rec, dissolution_type)
+
     with suppress(IndexError, KeyError, TypeError):
         filing_meta.dissolution = {
             **filing_meta.dissolution,
@@ -112,6 +115,22 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
                 batch_processing.last_modified = datetime.now(timezone.utc)
                 batch_processing.save()
+
+
+def _update_cooperative(dissolution_filing: dict, business: Business, filing: Filing, dissolution_type):
+    """Update COOP data.
+
+    This should not be updated for administrative dissolution
+    """
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        return
+
+    document = Document()
+    document.type = DocumentType.AFFIDAVIT.value
+    document.file_key = dissolution_filing.get("affidavitFileKey")
+    document.business_id = business.id
+    document.filing_id = filing.id
+    business.documents.append(document)
 
 
 def post_process(business: Business, filing: Filing, correction: bool = False):  # pylint: disable=W0613

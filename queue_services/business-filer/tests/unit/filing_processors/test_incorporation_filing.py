@@ -118,6 +118,15 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
         if legal_type == 'CP':
             assert len(filing_rec.filing_party_roles.all()) == 1
             assert len(business.offices.all()) == 1
+            documents = business.documents.all()
+            assert len(documents) == 2
+            for document in documents:
+                if document.type == DocumentType.COOP_RULES.value:
+                    assert document.file_key == \
+                        filing['filing']['incorporationApplication']['cooperative']['rulesFileKey']
+                elif document.type == DocumentType.COOP_MEMORANDUM.value:
+                    assert document.file_key == \
+                        filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
 
     mock_get_next_corp_num.assert_called_with(
         filing['filing']['incorporationApplication']['nameRequest']['legalType'], None)

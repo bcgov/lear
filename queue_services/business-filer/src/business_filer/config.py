@@ -111,13 +111,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-    # Minio variables
-    MINIO_ENDPOINT = "localhost:9000"
-    MINIO_ACCESS_KEY = "minio"
-    MINIO_ACCESS_SECRET = "minio123"
-    MINIO_BUCKET_BUSINESSES = "businesses"
-    MINIO_SECURE = False
-
     NAICS_API_URL = "https://NAICS_API_URL/api/v2/naics"
     COLIN_API = "https://COLIN_API/api/v2"
     ACCOUNT_SVC_AUTH_URL = "https://ACCOUNT_SVC_AUTH_URL"
