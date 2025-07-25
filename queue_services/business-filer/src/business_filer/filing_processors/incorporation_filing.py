@@ -34,7 +34,7 @@
 """File processing rules and actions for the incorporation of a business."""
 import copy
 
-from business_model.models import Business, Filing
+from business_model.models import Business, Document, DocumentType, Filing
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
@@ -75,6 +75,9 @@ def process(business: Business,  # noqa: PLR0912
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     business.state = Business.State.ACTIVE
 
+    if business_info_obj["legalType"] == Business.LegalTypes.COOP.value:
+        business = _update_cooperative(incorp_filing, business, filing_rec)
+
     if nr_number := business_info_obj.get("nrNumber", None):
         filing_meta.incorporation_application = {**filing_meta.incorporation_application,
                                                  "nrNumber": nr_number,
@@ -108,3 +111,23 @@ def process(business: Business,  # noqa: PLR0912
         ia_json["filing"]["business"]["foundingDate"] = business.founding_date.isoformat()
         filing_rec._filing_json = ia_json  # pylint: disable=protected-access; bypass to update filing data
     return business, filing_rec, filing_meta
+
+def _update_cooperative(incorp_filing: dict, business: Business, filing: Filing):
+    """Update the cooperative business with the cooperative specific information."""
+    if cooperative_obj := incorp_filing.get("cooperative"):
+        business.association_type = cooperative_obj.get("cooperativeAssociationType")
+        document = Document()
+        document.type = DocumentType.COOP_RULES.value
+        document.file_key = cooperative_obj.get("rulesFileKey")
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
+        document = Document()
+        document.type = DocumentType.COOP_MEMORANDUM.value
+        document.file_key = cooperative_obj.get("memorandumFileKey")
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
+    return business

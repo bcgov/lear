@@ -158,6 +158,13 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
         one_or_none()
     assert custodial_office
 
+    if business.legal_type == Business.LegalTypes.COOP.value:
+        documents = business.documents.all()
+        assert len(documents) == 1
+        assert documents[0].type == DocumentType.AFFIDAVIT.value
+        affidavit_key = filing_json['filing']['dissolution']['affidavitFileKey']
+        assert documents[0].file_key == affidavit_key
+
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
     if dissolution_type == 'involuntary':
         assert batch_processing
