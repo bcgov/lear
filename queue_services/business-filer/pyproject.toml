@@ -22,7 +22,8 @@ dependencies = [
     "pg8000 (>=1.31.2,<2.0.0)",
   #  "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
   "gunicorn (>=23.0.0,<24.0.0)",
-  "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account"
+  "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
+  "document-record-service @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/document-record-service",
 
 ]
 
@@ -45,6 +46,7 @@ requests-mock = "^1.12.1"
 
 [tool.poetry.dependencies]
 business-model = {develop = true}
+document-record-service = {develop = true}
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
