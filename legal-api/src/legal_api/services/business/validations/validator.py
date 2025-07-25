@@ -22,34 +22,35 @@ from legal_api.models import Business
 
 document_rule_set = {
     'cstat': {
-        'legal_types': ['CP', 'BC', 'BEN'],
+        'excluded_types': ['SP', 'GP'],
         'status': Business.State.ACTIVE
     },
     'cogs': {
-        'legal_types': ['CP', 'BC', 'BEN'],
+        'excluded_types': ['SP', 'GP'],
         'goodStanding': True
     },
     'lseal': {
         # NB: will be available for all business types once the outputs have been updated for them
-        'legal_types': ['CP', 'BEN', 'SP', 'GP']
+        'excluded_types': []
     }
 }
-
 
 def validate_document_request(document_type, business: Business):
     """Validate the business document request."""
     errors = []
     # basic checks
+
     if document_rules := document_rule_set.get(document_type, None):
-        allowed_legal_types = document_rules.get('legal_types', None)
-        if allowed_legal_types and business.legal_type not in allowed_legal_types:
+        excluded_legal_types = document_rules.get('excluded_types', None)
+        if excluded_legal_types and business.legal_type in excluded_legal_types:
             errors.append({'error': babel('Specified document type is not valid for the entity.')})
-        status = document_rules.get('status', None)
-        if status and business.state != status:
+
+        if (status := document_rules.get('status', None)) and business.state != status:
             errors.append({'error': babel('Specified document type is not valid for the current entity status.')})
-        good_standing = document_rules.get('goodStanding', None)
-        if good_standing and not business.good_standing:
+
+        if (good_standing := document_rules.get('goodStanding', None)) and not business.good_standing:
             errors.append({'error': babel('Specified document type is not valid for the current entity status.')})
+
     if errors:
         return Error(HTTPStatus.BAD_REQUEST, errors)
     return None
