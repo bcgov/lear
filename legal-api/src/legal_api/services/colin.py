@@ -26,7 +26,7 @@ class ColinService():
     def query_business(identifier: str):
         """Return a JSON object with business information."""
         # Perform proxy call with identifier
-        url = f'{current_app.config["COLIN_URL"]}/api/v1/businesses/{identifier}/public'
+        url = f'{current_app.config["COLIN_URL"]}/businesses/{identifier}/public'
         token = AccountService.get_bearer_token()
         headers = {
             'Content-Type': 'application/json',
