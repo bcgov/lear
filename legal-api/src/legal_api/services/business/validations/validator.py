@@ -35,6 +35,7 @@ document_rule_set = {
     }
 }
 
+
 def validate_document_request(document_type, business: Business):
     """Validate the business document request."""
     errors = []
