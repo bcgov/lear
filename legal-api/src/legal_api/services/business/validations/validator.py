@@ -35,6 +35,7 @@ document_rule_set = {
     }
 }
 
+
 def validate_document_request(document_type, business: Business):
     """Validate the business document request."""
     errors = []
@@ -48,7 +49,7 @@ def validate_document_request(document_type, business: Business):
         if (status := document_rules.get('status', None)) and business.state != status:
             errors.append({'error': babel('Specified document type is not valid for the current entity status.')})
 
-        if (good_standing := document_rules.get('goodStanding', None)) and not business.good_standing:
+        if document_rules.get('goodStanding', None) and not business.good_standing:
             errors.append({'error': babel('Specified document type is not valid for the current entity status.')})
 
     if errors:
