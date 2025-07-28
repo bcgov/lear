@@ -182,6 +182,74 @@ def test_get_coop_business_documents(session, client, jwt):
     assert docs_json['documentsInfo']['certifiedRules']['name']
     assert docs_json['documentsInfo']['certifiedMemorandum']['name']
 
+def test_get_coop_documents_with_correction_and_special_resolution(session, client, jwt):
+    """Test coop documents info with both specialResolution and correction filings affecting resolutions."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+
+    INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    INCORPORATION_APPLICATION['filing']['incorporationApplication']['nameRequest']['legalName'] = 'legal_name-CP1234567'
+    effective_date = INCORPORATION_APPLICATION['filing']['header']['effectiveDate']
+    filing = factory_incorporation_filing(business, INCORPORATION_APPLICATION, effective_date, effective_date)
+
+    document_rules = Document()
+    document_rules.type = DocumentType.COOP_RULES.value
+    document_rules.file_key = 'cooperative_rules.pdf'
+    document_rules.file_name = 'coops_rules.pdf'
+    document_rules.content_type = 'pdf'
+    document_rules.business_id = business.id
+    document_rules.filing_id = filing.id
+    document_rules.save()
+
+    document_memorandum = Document()
+    document_memorandum.type = DocumentType.COOP_MEMORANDUM.value
+    document_memorandum.file_key = 'cooperative_memorandum.pdf'
+    document_memorandum.file_name = 'coops_memorandum.pdf'
+    document_memorandum.content_type = 'pdf'
+    document_memorandum.business_id = business.id
+    document_memorandum.filing_id = filing.id
+    document_memorandum.save()
+
+    sr_date = '2020-01-01'
+    cr_date = '2021-01-01'
+
+    # Create a specialResolution filing with an earlier date
+    special_resolution_filing = copy.deepcopy(FILING_HEADER)
+    special_resolution_filing['filing']['header']['name'] = 'specialResolution'
+    special_resolution_filing['filing']['header']['date'] = sr_date
+    special_resolution_filing['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    special_resolution_filing['filing']['alteration']['memorandumInResolution'] = True
+    special_resolution_filing['filing']['alteration']['rulesInResolution'] = True
+    factory_completed_filing(business, special_resolution_filing, sr_date)
+
+    # Create a correction filing with a later date
+    correction_filing = copy.deepcopy(FILING_HEADER)
+    correction_filing['filing']['header']['name'] = 'correction'
+    correction_filing['filing']['header']['date'] = cr_date
+    correction_filing['filing']['correction'] = {
+        'rulesInResolution': True,
+        'memorandumInResolution': True
+    }
+    factory_completed_filing(business, correction_filing, cr_date)
+
+    # check that the includedInResolutionDate is from the correction filing (most recent date)
+    rv = client.get(f'/api/v2/businesses/{identifier}/documents',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    assert rv.status_code == HTTPStatus.OK
+    docs_json = rv.json
+
+    assert 'certifiedRules' in docs_json['documents']
+    assert 'certifiedMemorandum' in docs_json['documents']
+
+    info_rules = docs_json['documentsInfo']['certifiedRules']
+    info_mem = docs_json['documentsInfo']['certifiedMemorandum']
+
+    assert info_rules.get('includedInResolution') is True
+    assert info_mem.get('includedInResolution') is True
+    assert info_rules.get('includedInResolutionDate') == '2021-01-01T00:00:00+00:00'
+    assert info_mem.get('includedInResolutionDate') == '2021-01-01T00:00:00+00:00'
+
 
 def test_get_business_summary_involuntary_dissolution(requests_mock, session, client, jwt):
     """Assert that business summary returns correct information for Involuntary Dissolution."""

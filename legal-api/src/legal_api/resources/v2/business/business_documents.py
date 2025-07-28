@@ -118,43 +118,46 @@ def _get_coop_documents_and_info(business):
     info['certifiedRules'], info['certifiedMemorandum'] = {}, {}
 
     sr_filings = Filing.get_filings_by_types(business.id, ['specialResolution'])
-    sr_rules_resolution = [sr for sr in sr_filings
-                           if sr.filing_json['filing'].get('alteration', {}).get('rulesInResolution') is True]
-    sr_memorandum_resolution = [sr for sr in sr_filings
-                                if sr.filing_json['filing'].get('alteration', {}).get('memorandumInResolution') is True]
-    if rules_document := Document.find_by_business_id_and_type(business.id, DocumentType.COOP_RULES.value):
-        rules_filing = Filing.find_by_id(rules_document.filing_id)
-        rules_doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
-                                                         'filing_id': rules_filing.id,
-                                                         'legal_filing_name': None})
-        documents['certifiedRules'] = f'{base_url}{rules_doc_url}/certifiedRules'
-        filing_date_str = LegislationDatetime.format_as_legislation_date(rules_filing.filing_date)
-        file_name = f'{business.identifier} - Certified Rules - {filing_date_str}.pdf'
-        info['certifiedRules'] = {
-            'key': rules_document.file_key,
-            'name': file_name,
-            'uploaded': rules_filing.filing_date.isoformat()
-        }
-    if sr_rules_resolution:
-        info['certifiedRules']['includedInResolution'] = True
-        info['certifiedRules']['includedInResolutionDate'] = sr_rules_resolution[0].filing_date.isoformat()
+    cr_filings = Filing.get_filings_by_types(business.id, ['correction'])
 
-    if memorandum_document := Document.find_by_business_id_and_type(
-            business.id, DocumentType.COOP_MEMORANDUM.value):
-        memorandum_filing = Filing.find_by_id(memorandum_document.filing_id)
-        memorandum_doc_url = url_for('API2.get_documents', **{'identifier': business.identifier,
-                                                              'filing_id': memorandum_filing.id,
-                                                              'legal_filing_name': None})
-        documents['certifiedMemorandum'] = f'{base_url}{memorandum_doc_url}/certifiedMemorandum'
-        filing_date_str = LegislationDatetime.format_as_legislation_date(memorandum_filing.filing_date)
-        file_name = f'{business.identifier} - Certified Memorandum - {filing_date_str}.pdf'
-        info['certifiedMemorandum'] = {
-            'key': memorandum_document.file_key,
-            'name': file_name,
-            'uploaded': memorandum_filing.filing_date.isoformat()
-        }
-    if sr_memorandum_resolution:
-        info['certifiedMemorandum']['includedInResolution'] = True
-        info['certifiedMemorandum']['includedInResolutionDate'] = sr_memorandum_resolution[0].filing_date.isoformat()
+    def filter_resolutions(filings, filing_type, key):
+        return [
+            f for f in filings
+            if f.filing_json['filing'].get(filing_type, {}).get(key) is True
+        ]
+
+    rules_resolutions = (
+        filter_resolutions(sr_filings, 'alteration', 'rulesInResolution') +
+        filter_resolutions(cr_filings, 'correction', 'rulesInResolution')
+    )
+
+    memo_resolutions = (
+        filter_resolutions(sr_filings, 'alteration', 'memorandumInResolution') +
+        filter_resolutions(cr_filings, 'correction', 'memorandumInResolution')
+    )
+
+    def set_doc_info(doc_type, doc_label, resolutions):
+        if doc := Document.find_by_business_id_and_type(business.id, doc_type.value):
+            filing = Filing.find_by_id(doc.filing_id)
+            doc_url = url_for('API2.get_documents', identifier=business.identifier,
+                              filing_id=filing.id, legal_filing_name=None)
+            documents[doc_label] = f'{base_url}{doc_url}/{doc_label}'
+            filing_date_str = LegislationDatetime.format_as_legislation_date(filing.filing_date)
+            info[doc_label] = {
+                'key': doc.file_key,
+                'name': (
+                    f'{business.identifier} - '
+                    f'{doc_label.replace("certified", "Certified ")} - '
+                    f'{filing_date_str}.pdf'
+                ),
+                'uploaded': filing.filing_date.isoformat()
+            }
+            if resolutions:
+                latest = max(f.filing_date for f in resolutions)
+                info[doc_label]['includedInResolution'] = True
+                info[doc_label]['includedInResolutionDate'] = latest.isoformat()
+
+    set_doc_info(DocumentType.COOP_RULES, 'certifiedRules', rules_resolutions)
+    set_doc_info(DocumentType.COOP_MEMORANDUM, 'certifiedMemorandum', memo_resolutions)
 
     return documents, info
