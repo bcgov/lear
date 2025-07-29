@@ -136,7 +136,7 @@ def _get_coop_documents_and_info(business):
         filter_resolutions(cr_filings, 'correction', 'memorandumInResolution')
     )
 
-    def set_doc_info(doc_type, doc_label, resolutions):
+    def set_doc_info(doc_type, doc_label):
         if doc := Document.find_by_business_id_and_type(business.id, doc_type.value):
             filing = Filing.find_by_id(doc.filing_id)
             doc_url = url_for('API2.get_documents', identifier=business.identifier,
@@ -152,12 +152,18 @@ def _get_coop_documents_and_info(business):
                 ),
                 'uploaded': filing.filing_date.isoformat()
             }
-            if resolutions:
-                latest = max(f.filing_date for f in resolutions)
-                info[doc_label]['includedInResolution'] = True
-                info[doc_label]['includedInResolutionDate'] = latest.isoformat()
 
-    set_doc_info(DocumentType.COOP_RULES, 'certifiedRules', rules_resolutions)
-    set_doc_info(DocumentType.COOP_MEMORANDUM, 'certifiedMemorandum', memo_resolutions)
+    set_doc_info(DocumentType.COOP_RULES, 'certifiedRules')
+    set_doc_info(DocumentType.COOP_MEMORANDUM, 'certifiedMemorandum')
+
+    if rules_resolutions:
+        latest = max(f.filing_date for f in rules_resolutions)
+        info['certifiedRules']['includedInResolution'] = True
+        info['certifiedRules']['includedInResolutionDate'] = latest.isoformat()
+
+    if memo_resolutions:
+        latest = max(f.filing_date for f in memo_resolutions)
+        info['certifiedMemorandum']['includedInResolution'] = True
+        info['certifiedMemorandum']['includedInResolutionDate'] = latest.isoformat()
 
     return documents, info
