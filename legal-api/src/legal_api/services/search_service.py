@@ -81,7 +81,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         for filing_type in Filing.TempCorpFilingType
     }
 
-    #Excluded Statuses for Filing Search
+    # Excluded Statuses for Filing Search
     EXCLUDED_FILINGS_STATUS: Final = [
         Filing.Status.WITHDRAWN.value
     ]
@@ -243,9 +243,10 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 ).ilike(f'%{name}%') if name else None
             ] if expr is not None
         ]
-        if identifiers and not  name and not types and not statuses:
+        if identifiers and not name and not types and not statuses:
             # Exclude withdrawn filings from non filtered search results
-            filters.append(Filing._status.notin_(BusinessSearchService.EXCLUDED_FILINGS_STATUS))   # pylint: disable=protected-access
+            filters.append(Filing._status
+                           .notin_(BusinessSearchService.EXCLUDED_FILINGS_STATUS))   # pylint: disable=protected-access
 
         limit = search_filters.limit
         offset = (search_filters.page - 1) * limit
