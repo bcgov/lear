@@ -67,7 +67,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     PAYMENT_SVC_URL = os.getenv("PAY_API_URL", "") + os.getenv("PAY_API_VERSION", "")
     NAMEX_API = os.getenv("NAMEX_API_URL", "") + os.getenv("NAMEX_API_VERSION", "")
     LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
-    NAICS_API_URL = os.getenv("NAICS_API_URL", "") + os.getenv("NAICS_API_VERSION", "")
+    NAICS_API_URL = os.getenv("NAICS_API_URL", "") + os.getenv("NAICS_API_VERSION", "").rstrip('/') + '/naics'
 
     ACCOUNT_SVC_ENTITY_URL = os.getenv("ACCOUNT_SVC_ENTITY_URL")
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv("ACCOUNT_SVC_AFFILIATE_URL")
