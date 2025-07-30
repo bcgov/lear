@@ -245,8 +245,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         ]
         if identifiers and not name and not types and not statuses:
             # Exclude withdrawn filings from non filtered search results
-            filters.append(Filing._status
-                           .notin_(BusinessSearchService.EXCLUDED_FILINGS_STATUS))   # pylint: disable=protected-access
+            filters.append(Filing._status  # pylint: disable=protected-access
+                           .notin_(BusinessSearchService.EXCLUDED_FILINGS_STATUS))
 
         limit = search_filters.limit
         offset = (search_filters.page - 1) * limit
