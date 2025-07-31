@@ -86,6 +86,9 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
     PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
+    DOC_API_URL = os.getenv("DOC_API_URL", "")
+    DOC_API_ACCOUNT_ID = os.getenv("DOC_API_ACCOUNT_ID", "")
+    DOC_API_KEY = os.getenv("DOC_API_KEY", "")
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods
