@@ -277,7 +277,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
             json.dumps(filing_meta.asjson, default=json_serial)
         )
 
-        sync_drs(filing_submission, flags)
         
         db.session.add(filing_submission)
         db.session.commit()
@@ -292,6 +291,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         ]:
             # update business id for new business
             filing_submission.business_id = business.id
+            sync_drs(filing_submission, flags)
             db.session.add(filing_submission)
             db.session.commit()
 
