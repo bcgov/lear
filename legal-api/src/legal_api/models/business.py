@@ -486,9 +486,11 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         # A firm is always in good standing
         if self.is_firm:
             return True
-        # check transition filing
-        if self.transition_needed_but_not_filed():
+
+        # check transition filing for corps
+        if self.legal_type in self.CORPS and self.transition_needed_but_not_filed():
             return False
+
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
         # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
