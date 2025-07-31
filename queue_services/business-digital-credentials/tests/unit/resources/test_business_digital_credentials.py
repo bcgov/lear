@@ -19,7 +19,7 @@ import pytest
 from flask import Flask
 from simple_cloudevent import SimpleCloudEvent
 
-from business_digital_credentials.exceptions import QueueException
+from business_digital_credentials.exceptions import FilingStatusException, QueueException
 from business_digital_credentials.resources.business_digital_credentials import bp, process_event
 from business_model.models.types.filings import FilingTypes
 
@@ -89,6 +89,29 @@ def test_worker_queue_exception(mock_get_cloud_event, mock_process_event, mock_v
     response = test_client.post("/", data=b"test_data")
     
     assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.get_json() == {}
+    mock_verify_gcp_jwt.assert_called_once()
+    mock_get_cloud_event.assert_called_once()
+    mock_process_event.assert_called_once_with(mock_ce)
+
+
+@patch("business_digital_credentials.resources.business_digital_credentials.verify_gcp_jwt")
+@patch("business_digital_credentials.resources.business_digital_credentials.process_event")
+@patch("business_digital_credentials.services.gcp_queue.get_simple_cloud_event")
+def test_worker_filing_status_exception(mock_get_cloud_event, mock_process_event, mock_verify_gcp_jwt, test_client):
+    """Test worker when FilingStatusException is raised during processing."""
+    
+    # Mock successful authentication
+    mock_verify_gcp_jwt.return_value = ""
+    
+    # Mock cloud event and FilingStatusException being raised during processing
+    mock_ce = MagicMock()
+    mock_get_cloud_event.return_value = mock_ce
+    mock_process_event.side_effect = FilingStatusException("Filing not ready", 500)
+    
+    response = test_client.post("/", data=b"test_data")
+    
+    assert response.status_code == HTTPStatus.INTERNAL_SERVER_ERROR
     assert response.get_json() == {}
     mock_verify_gcp_jwt.assert_called_once()
     mock_get_cloud_event.assert_called_once()
@@ -350,11 +373,9 @@ def test_process_event_filing_not_completed(mock_find_filing, app, caplog):
         ce.type = "filingMessage"
         ce.data = {"filingMessage": {"filingIdentifier": 999}}
         
-        result = process_event(ce)
-        
-        # Assert - should log and return None, not raise exception
-        assert result is None
-        assert "Filing with id: 999 processing not complete yet" in caplog.text
+        # Act & Assert - should raise FilingStatusException for retry logic
+        with pytest.raises(FilingStatusException, match="Filing with id: 999 processing not complete PENDING yet - retry"):
+            process_event(ce)
 
 
 @patch("business_model.models.Business.find_by_identifier")

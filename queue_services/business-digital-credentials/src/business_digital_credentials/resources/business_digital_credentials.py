@@ -25,7 +25,10 @@ from business_digital_credentials.digital_credential_processors import (
     dissolution,
     put_back_on,
 )
-from business_digital_credentials.exceptions import QueueException
+from business_digital_credentials.exceptions import (
+    FilingStatusException,
+    QueueException,
+)
 from business_digital_credentials.services import gcp_queue
 from business_digital_credentials.services.gcp_auth import verify_gcp_jwt
 from business_model.models import Business, Filing
@@ -82,6 +85,12 @@ def worker():
         current_app.logger.error(f"Queue Error: {err}", exc_info=True)
         current_app.logger.error(f"Cloud event that caused error: {ce}")
         return {}, HTTPStatus.BAD_REQUEST
+    except FilingStatusException as err:
+        # Catch FilingStatusException to handle cases where the filing can't be processed
+        # and add to retry logic if needed
+        current_app.logger.error(f"Filing Status Error: {err}", exc_info=True)
+        current_app.logger.error(f"Cloud event that caused error: {ce}")
+        return {}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 def process_event(  # pylint: disable=too-many-branches, too-many-statements  # noqa: PLR0912
@@ -142,6 +151,11 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
                 f"Unsupported filing type: {filing_type} - message acknowledged"
             )
             return None
+
+        if filing.status != Filing.Status.COMPLETED.value:
+            raise FilingStatusException(
+                f"Filing with id: {filing_id} processing not complete {filing.status} yet - retry."
+            )
 
         if filing.status != Filing.Status.COMPLETED.value:
             current_app.logger.debug(
