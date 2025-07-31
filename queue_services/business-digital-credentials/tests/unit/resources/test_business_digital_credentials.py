@@ -247,20 +247,16 @@ def test_process_event_filing_message_unsupported_filing_type(app, caplog):
         mock_filing.status = "COMPLETED"
         mock_filing.business_id = 123
         
-        mock_business = MagicMock()
-        mock_business.identifier = "BC1234567"
-        mock_business.legal_name = "Test Business"
-        
-        with patch("business_model.models.Filing.find_by_id", return_value=mock_filing), \
-             patch("business_model.models.Business.find_by_internal_id", return_value=mock_business):
+        with patch("business_model.models.Filing.find_by_id", return_value=mock_filing):
             
             ce = MagicMock(spec=SimpleCloudEvent)
             ce.type = "filingMessage"
             ce.data = {"filingMessage": {"filingIdentifier": 999}}
             
-            process_event(ce)
+            result = process_event(ce)
             
-            # Assert - should log and not raise exception
+            # Assert - should log, return None, and not process further
+            assert result is None
             assert "Unsupported filing type: UNSUPPORTED_TYPE" in caplog.text
 
 
@@ -342,10 +338,11 @@ def test_process_event_filing_not_found(mock_find_filing, app):
 
 
 @patch("business_model.models.Filing.find_by_id")
-def test_process_event_filing_not_completed(mock_find_filing, app):
+def test_process_event_filing_not_completed(mock_find_filing, app, caplog):
     """Test process_event when filing is not completed."""
     with app.app_context():
         mock_filing = MagicMock()
+        mock_filing.filing_type = FilingTypes.DISSOLUTION.value  # Use a supported filing type
         mock_filing.status = "PENDING"
         mock_find_filing.return_value = mock_filing
         
@@ -353,9 +350,11 @@ def test_process_event_filing_not_completed(mock_find_filing, app):
         ce.type = "filingMessage"
         ce.data = {"filingMessage": {"filingIdentifier": 999}}
         
-        # Act & Assert
-        with pytest.raises(QueueException, match="Filing with id: 999 processing not complete"):
-            process_event(ce)
+        result = process_event(ce)
+        
+        # Assert - should log and return None, not raise exception
+        assert result is None
+        assert "Filing with id: 999 processing not complete yet" in caplog.text
 
 
 @patch("business_model.models.Business.find_by_identifier")
@@ -369,5 +368,27 @@ def test_process_event_business_not_found_by_identifier(mock_find_business, app)
         ce.data = {"identifier": "BC1234567"}
         
         # Act & Assert
-        with pytest.raises(Exception, match="Business with identifier: BC1234567 not found"):
+        with pytest.raises(QueueException, match="Business with identifier: BC1234567 not found"):
+            process_event(ce)
+
+
+@patch("business_model.models.Business.find_by_internal_id")
+@patch("business_model.models.Filing.find_by_id")
+def test_process_event_business_not_found_by_internal_id(mock_find_filing, mock_find_business, app):
+    """Test process_event when business is not found by internal ID."""
+    with app.app_context():
+        mock_filing = MagicMock()
+        mock_filing.filing_type = FilingTypes.DISSOLUTION.value
+        mock_filing.status = "COMPLETED"
+        mock_filing.business_id = 123
+        mock_find_filing.return_value = mock_filing
+        
+        mock_find_business.return_value = None
+        
+        ce = MagicMock(spec=SimpleCloudEvent)
+        ce.type = "filingMessage"
+        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        
+        # Act & Assert
+        with pytest.raises(QueueException, match="Business with internal id: 123 not found"):
             process_event(ce)

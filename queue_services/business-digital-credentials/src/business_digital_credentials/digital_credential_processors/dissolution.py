@@ -15,6 +15,7 @@
 
 from flask import current_app
 
+from business_digital_credentials.exceptions import QueueException
 from business_model.models import Business, DCDefinition, DCRevocationReason
 
 from .helpers import (
@@ -49,4 +50,4 @@ def process(business: Business, filing_sub_type: str) -> None:
             revoke_digital_credential(credential=credential, reason=reason)
         return None
     else:
-        raise Exception("Invalid filing sub type.")
+        raise QueueException("Invalid filing sub type.")
