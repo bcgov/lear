@@ -21,14 +21,6 @@ from business_model.models import Business, CorpType, DCDefinition, User, DCBusi
 from .digital_credentials_rules import DigitalCredentialsRulesService
 
 
-def log_something():
-    """This is a placeholder function to ensure the code is complete."""
-    current_app.logger.error("This is a placeholder function for digital credentials helpers1234.")
-    # log to standard output
-    # print("This is a placeholder function for digital credentials XXXXXXXXXXXXXXXXXXXXXXXXX.")
-    pass
-
-
 def get_digital_credential_data(
     business_user: DCBusinessUser,
     credential_type: DCDefinition.CredentialType,

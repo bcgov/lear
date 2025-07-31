@@ -19,6 +19,7 @@ import pytest
 from business_model.models import DCDefinition, DCRevocationReason
 
 from business_digital_credentials.digital_credential_processors import dissolution
+from business_digital_credentials.exceptions import QueueException
 from tests.unit import create_business
 
 
@@ -55,7 +56,7 @@ def test_processor_does_not_run_if_invalid_sub_type(mock_revoke_digital_credenti
     business = create_business(identifier='FM0000001')
 
     # Act
-    with pytest.raises(Exception) as excinfo:
+    with pytest.raises(QueueException) as excinfo:
         dissolution.process(business, 'test')
 
     # Assert

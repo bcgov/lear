@@ -15,7 +15,6 @@
 from enum import Enum
 from http import HTTPStatus
 
-from business_registry_digital_credentials import digital_credentials_helpers
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 
@@ -56,8 +55,6 @@ def worker():
 
         if not request.data:
             return {}, HTTPStatus.OK
-        
-        digital_credentials_helpers.log_something()
 
         if msg := verify_gcp_jwt(request):
             current_app.logger.info(msg)
@@ -86,7 +83,10 @@ def worker():
         current_app.logger.error(f"Cloud event that caused error: {ce}")
         return {}, HTTPStatus.BAD_REQUEST
 
-def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, too-many-statements # noqa: PLR0912
+
+def process_event(  # pylint: disable=too-many-branches, too-many-statements  # noqa: PLR0912
+    ce: SimpleCloudEvent,
+):
     """Process the digital credential-related message subscribed to."""
     etype = ce.type
 
@@ -105,7 +105,7 @@ def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             raise QueueException("Digital credential message is missing identifier.")
 
         if not (business := Business.find_by_identifier(identifier)):
-            raise Exception(f"Business with identifier: {identifier} not found.")
+            raise QueueException(f"Business with identifier: {identifier} not found.")
 
         current_app.logger.info(
             f"Business record found: {business.identifier} - {business.legal_name}"
@@ -131,31 +131,40 @@ def process_event(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         if not (filing := Filing.find_by_id(filing_id)):
             raise QueueException(f"Filing not found for id: {filing_id}.")
 
-        if filing.status != Filing.Status.COMPLETED.value:
-            raise QueueException(
-                f"Filing with id: {filing_id} processing not complete."
+        filing_type = filing.filing_type
+        current_app.logger.debug(f"Filing type: {filing_type}")
+        if filing_type not in (
+            FilingTypes.CHANGEOFREGISTRATION.value,
+            FilingTypes.DISSOLUTION.value,
+            FilingTypes.PUTBACKON.value,
+        ):
+            current_app.logger.debug(
+                f"Unsupported filing type: {filing_type} - message acknowledged"
             )
+            return None
 
+        if filing.status != Filing.Status.COMPLETED.value:
+            current_app.logger.debug(
+                f"Filing with id: {filing_id} processing not complete yet - message acknowledged."
+            )
+            return None
+
+        # If it's a type we care about, get the business associated with the filing
         business_id = filing.business_id
         if not (business := Business.find_by_internal_id(business_id)):
-            raise Exception(f"Business with internal id: {business_id} not found.")
+            raise QueueException(f"Business with internal id: {business_id} not found.")
 
         current_app.logger.info(
             f"Business record found: {business.identifier} - {business.legal_name}"
         )
-        current_app.logger.info(f"Filing type: {filing.filing_type}")
 
         # Process based on filing type
-        if filing.filing_type == FilingTypes.CHANGEOFREGISTRATION.value:
+        if filing_type == FilingTypes.CHANGEOFREGISTRATION.value:
             change_of_registration.process(business, filing)
-        elif filing.filing_type == FilingTypes.DISSOLUTION.value:
+        elif filing_type == FilingTypes.DISSOLUTION.value:
             dissolution.process(business, filing.filing_sub_type)
-        elif filing.filing_type == FilingTypes.PUTBACKON.value:
+        elif filing_type == FilingTypes.PUTBACKON.value:
             put_back_on.process(business, filing)
-        else:
-            current_app.logger.info(
-                f"Unsupported filing type: {filing.filing_type} - message acknowledged"
-            )
 
     else:
         # Log unsupported event types but don't throw exception - we want to ack the message
