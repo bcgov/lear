@@ -424,6 +424,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 'status': filing.status,
                 'submitter': submitter_displayname,
                 'submittedDate': filing._filing_date,  # pylint: disable=protected-access
+                'paymentDate': filing.payment_completion_date,
 
                 **Filing.common_ledger_items(business.identifier, filing),
             }
