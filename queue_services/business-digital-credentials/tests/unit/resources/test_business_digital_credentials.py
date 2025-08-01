@@ -181,7 +181,7 @@ def test_process_event_admin_revoke_message(mock_find_business, mock_admin_proce
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
 def test_process_event_filing_message_change_of_registration(mock_find_filing, mock_find_business, mock_cor_process, app):
-    """Test process_event with filingMessage for change of registration."""
+    """Test process_event with filing message for change of registration."""
     with app.app_context():
         mock_filing = MagicMock()
         mock_filing.filing_type = FilingTypes.CHANGEOFREGISTRATION.value
@@ -195,8 +195,8 @@ def test_process_event_filing_message_change_of_registration(mock_find_filing, m
         mock_find_business.return_value = mock_business
         
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        ce.type = "bc.registry.business.changeOfRegistration"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
         
         process_event(ce)
         
@@ -209,7 +209,7 @@ def test_process_event_filing_message_change_of_registration(mock_find_filing, m
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
 def test_process_event_filing_message_dissolution(mock_find_filing, mock_find_business, mock_dissolution_process, app):
-    """Test process_event with filingMessage for dissolution."""
+    """Test process_event with filing message for dissolution."""
     with app.app_context():
         mock_filing = MagicMock()
         mock_filing.filing_type = FilingTypes.DISSOLUTION.value
@@ -224,8 +224,8 @@ def test_process_event_filing_message_dissolution(mock_find_filing, mock_find_bu
         mock_find_business.return_value = mock_business
         
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        ce.type = "bc.registry.business.dissolution"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
         
         process_event(ce)
         
@@ -238,7 +238,7 @@ def test_process_event_filing_message_dissolution(mock_find_filing, mock_find_bu
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
 def test_process_event_filing_message_put_back_on(mock_find_filing, mock_find_business, mock_pbo_process, app):
-    """Test process_event with filingMessage for put back on."""
+    """Test process_event with filing message for put back on."""
     with app.app_context():
         mock_filing = MagicMock()
         mock_filing.filing_type = FilingTypes.PUTBACKON.value
@@ -252,8 +252,8 @@ def test_process_event_filing_message_put_back_on(mock_find_filing, mock_find_bu
         mock_find_business.return_value = mock_business
         
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        ce.type = "bc.registry.business.putBackOn"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
         
         process_event(ce)
         
@@ -263,7 +263,7 @@ def test_process_event_filing_message_put_back_on(mock_find_filing, mock_find_bu
 
 
 def test_process_event_filing_message_unsupported_filing_type(app, caplog):
-    """Test process_event with filingMessage for unsupported filing type."""
+    """Test process_event with filing message for unsupported filing type."""
     with app.app_context():
         mock_filing = MagicMock()
         mock_filing.filing_type = "UNSUPPORTED_TYPE"
@@ -273,8 +273,8 @@ def test_process_event_filing_message_unsupported_filing_type(app, caplog):
         with patch("business_model.models.Filing.find_by_id", return_value=mock_filing):
             
             ce = MagicMock(spec=SimpleCloudEvent)
-            ce.type = "filingMessage"
-            ce.data = {"filingMessage": {"filingIdentifier": 999}}
+            ce.type = "bc.registry.business.changeOfRegistration"
+            ce.data = {"filing": {"header": {"filingId": 999}}}
             
             result = process_event(ce)
             
@@ -309,27 +309,27 @@ def test_process_event_missing_data(app):
             process_event(ce)
 
 
-def test_process_event_filing_message_missing_filing_message(app):
-    """Test process_event with filingMessage missing filingMessage key."""
+def test_process_event_filing_message_missing_filing_data(app):
+    """Test process_event with filing message missing filing data."""
     with app.app_context():
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
+        ce.type = "bc.registry.business.changeOfRegistration"
         ce.data = {"wrongKey": "wrongValue"}
         
         # Act & Assert
-        with pytest.raises(QueueException, match="Digital credential message is missing filingMessage"):
+        with pytest.raises(QueueException, match="Digital credential message is missing filing data"):
             process_event(ce)
 
 
-def test_process_event_filing_message_missing_filing_identifier(app):
-    """Test process_event with filingMessage missing filingIdentifier."""
+def test_process_event_filing_message_missing_filing_id(app):
+    """Test process_event with filing message missing filingId."""
     with app.app_context():
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"wrongKey": "wrongValue"}}
+        ce.type = "bc.registry.business.changeOfRegistration"
+        ce.data = {"filing": {"header": {"filingId": None}}}
         
         # Act & Assert
-        with pytest.raises(QueueException, match="Digital credential message is missing filingIdentifier"):
+        with pytest.raises(QueueException, match="Digital credential message is missing filingId"):
             process_event(ce)
 
 
@@ -352,16 +352,16 @@ def test_process_event_filing_not_found(mock_find_filing, app):
         mock_find_filing.return_value = None
         
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        ce.type = "bc.registry.business.changeOfRegistration"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
         
-        # Act & Assert
-        with pytest.raises(QueueException, match="Filing not found for id: 999"):
+        # Act & Assert - Now expects FilingStatusException for retry logic
+        with pytest.raises(FilingStatusException, match="Filing not found for id: 999"):
             process_event(ce)
 
 
 @patch("business_model.models.Filing.find_by_id")
-def test_process_event_filing_not_completed(mock_find_filing, app, caplog):
+def test_process_event_filing_not_completed(mock_find_filing, app):
     """Test process_event when filing is not completed."""
     with app.app_context():
         mock_filing = MagicMock()
@@ -370,8 +370,8 @@ def test_process_event_filing_not_completed(mock_find_filing, app, caplog):
         mock_find_filing.return_value = mock_filing
         
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        ce.type = "bc.registry.business.dissolution"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
         
         # Act & Assert - should raise FilingStatusException for retry logic
         with pytest.raises(FilingStatusException, match="Filing with id: 999 processing not complete PENDING yet - retry"):
@@ -407,9 +407,9 @@ def test_process_event_business_not_found_by_internal_id(mock_find_filing, mock_
         mock_find_business.return_value = None
         
         ce = MagicMock(spec=SimpleCloudEvent)
-        ce.type = "filingMessage"
-        ce.data = {"filingMessage": {"filingIdentifier": 999}}
+        ce.type = "bc.registry.business.dissolution"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
         
-        # Act & Assert
-        with pytest.raises(QueueException, match="Business with internal id: 123 not found"):
+        # Act & Assert - Now expects FilingStatusException for retry logic
+        with pytest.raises(FilingStatusException, match="Business with id: 123 not found"):
             process_event(ce)
