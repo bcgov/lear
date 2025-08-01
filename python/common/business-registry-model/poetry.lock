@@ -1533,7 +1533,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.46"
+version = "2.18.50"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -1551,8 +1551,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.47"
-resolved_reference = "f7f6dc8506e391decb502434dbf06a4da716f5b1"
+reference = "2.18.50"
+resolved_reference = "c8b20809d24c155aec1958bc1f421c72ad2ee562"
 
 [[package]]
 name = "requests"
@@ -2210,4 +2210,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4"
-content-hash = "1a34efcf96fd77890fb8a0096f9bade862ba449792be812ec25b915fd06b4b68"
+content-hash = "045251f0bab30f3547214c1fc213258c298de63a76ba6bb4afbd922be6fdad1c"
