@@ -1003,6 +1003,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 json_submission['filing']['header']['submitter'] = self.filing_submitter.username
             if self.payment_account:
                 json_submission['filing']['header']['paymentAccount'] = self.payment_account
+            if self._payment_completion_date:
+                json_submission['filing']['header']['paymentDate'] = self._payment_completion_date.isoformat()
 
             # add colin_event_ids
             json_submission['filing']['header']['colinIds'] = ColinEventId.get_by_filing_id(self.id)
