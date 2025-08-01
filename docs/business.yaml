@@ -6304,6 +6304,10 @@ components:
         isFutureEffective:
           type: boolean
           description: Identify if filing was submitted with a future effective date (yes/no).
+        paymentDate:
+          type: string
+          minLength: 1
+          description: 'Date the payment was made for the filing.'
         paymentStatusCode:
           type: string
           minLength: 1
