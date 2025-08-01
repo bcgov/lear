@@ -6307,6 +6307,7 @@ components:
         paymentDate:
           type: string
           minLength: 1
+          format: date-time
           description: 'Date the payment was made for the filing.'
         paymentStatusCode:
           type: string
