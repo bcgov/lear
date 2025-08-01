@@ -14,6 +14,9 @@
 """Exceptions defined for the Queue Service."""
 
 
-class QueueException(Exception): # noqa: N818
+class QueueException(Exception):  # noqa: N818
     """Base exception for the Queue Services."""
-    
+
+
+class FilingStatusException(Exception):  # noqa: N818
+    """Filing not in shape for processing."""

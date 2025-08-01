@@ -25,7 +25,10 @@ from business_digital_credentials.digital_credential_processors import (
     dissolution,
     put_back_on,
 )
-from business_digital_credentials.exceptions import QueueException
+from business_digital_credentials.exceptions import (
+    FilingStatusException,
+    QueueException,
+)
 from business_digital_credentials.services import gcp_queue
 from business_digital_credentials.services.gcp_auth import verify_gcp_jwt
 from business_model.models import Business, Filing
@@ -34,17 +37,26 @@ from business_model.models.types.filings import FilingTypes
 bp = Blueprint("worker", __name__)
 
 
+# Prefix constants
+ADMIN_PREFIX = "bc.registry.admin"
+BUSINESS_PREFIX = "bc.registry.business"
+
+
 class AdminMessage(Enum):
     """Business Digital Credential admin message type."""
 
-    REVOKE = "bc.registry.admin.revoke"
+    REVOKE = f"{ADMIN_PREFIX}.revoke"
 
 
 class BusinessMessageType(Enum):
     """Business Digital Credential business message type."""
 
-    BN = "bc.registry.business.bn"
-    FILING_MESSAGE = "filingMessage"
+    BN = f"{BUSINESS_PREFIX}.bn"
+    CHANGE_OF_REGISTRATION = (
+        f"{BUSINESS_PREFIX}.{FilingTypes.CHANGEOFREGISTRATION.value}"
+    )
+    DISSOLUTION = f"{BUSINESS_PREFIX}.{FilingTypes.DISSOLUTION.value}"
+    PUT_BACK_ON = f"{BUSINESS_PREFIX}.{FilingTypes.PUTBACKON.value}"
 
 
 @bp.route("/", methods=("POST",))
@@ -65,13 +77,10 @@ def worker():
         # 1. Get cloud event
         ce = gcp_queue.get_simple_cloud_event(request, wrapped=True)
         if not ce and not isinstance(ce, SimpleCloudEvent):
-            # todo: verify this ? this is how it is done in other GCP pub sub consumers
-            # Decision here is to return a 200,
-            # so the event is removed from the Queue
             current_app.logger.debug(f"ignoring message, raw payload: {ce!s}")
             return {}, HTTPStatus.OK
 
-        current_app.logger.info(f"received ce: {ce!s}")
+        current_app.logger.debug(f"received ce: {ce!s}")
 
         # Process event
         process_event(ce)
@@ -82,6 +91,12 @@ def worker():
         current_app.logger.error(f"Queue Error: {err}", exc_info=True)
         current_app.logger.error(f"Cloud event that caused error: {ce}")
         return {}, HTTPStatus.BAD_REQUEST
+    except FilingStatusException as err:
+        # Catch FilingStatusException to handle cases where the filing can't be processed
+        # and add to retry logic if needed
+        current_app.logger.error(f"Filing Status Error: {err}", exc_info=True)
+        current_app.logger.error(f"Cloud event that caused error: {ce}")
+        return {}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 def process_event(  # pylint: disable=too-many-branches, too-many-statements  # noqa: PLR0912
@@ -94,6 +109,18 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
 
     if not ce.data or not isinstance(ce.data, dict):
         raise QueueException("Digital credential message is missing data.")
+
+    if not etype or etype not in [
+        BusinessMessageType.CHANGE_OF_REGISTRATION.value,
+        BusinessMessageType.DISSOLUTION.value,
+        BusinessMessageType.PUT_BACK_ON.value,
+        BusinessMessageType.BN.value,
+        AdminMessage.REVOKE.value,
+    ]:
+        current_app.logger.debug(
+            f"Unsupported event type: {etype} - message acknowledged"
+        )
+        return None
 
     if etype in (BusinessMessageType.BN.value, AdminMessage.REVOKE.value):
         # When a BN is added or changed or there is a manual administrative update the queue message does not have
@@ -117,19 +144,19 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         elif etype == AdminMessage.REVOKE.value:
             admin_revoke.process(business)
 
-    elif etype == BusinessMessageType.FILING_MESSAGE.value:
-        filing_message = ce.data.get("filingMessage")
-        if not filing_message:
-            raise QueueException("Digital credential message is missing filingMessage.")
-
-        filing_id = filing_message.get("filingIdentifier")
-        if not filing_id:
+    else:
+        try:
+            filing_id = ce.data["filing"]["header"]["filingId"]
+        except (KeyError, TypeError):
             raise QueueException(
-                "Digital credential message is missing filingIdentifier."
-            )
+                "Digital credential message is missing filing data."
+            ) from None
+
+        if not filing_id:
+            raise QueueException("Digital credential message is missing filingId.")
 
         if not (filing := Filing.find_by_id(filing_id)):
-            raise QueueException(f"Filing not found for id: {filing_id}.")
+            raise FilingStatusException(f"Filing not found for id: {filing_id}.")
 
         filing_type = filing.filing_type
         current_app.logger.debug(f"Filing type: {filing_type}")
@@ -144,15 +171,14 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
             return None
 
         if filing.status != Filing.Status.COMPLETED.value:
-            current_app.logger.debug(
-                f"Filing with id: {filing_id} processing not complete yet - message acknowledged."
+            raise FilingStatusException(
+                f"Filing with id: {filing_id} processing not complete {filing.status} yet - retry."
             )
-            return None
 
         # If it's a type we care about, get the business associated with the filing
         business_id = filing.business_id
         if not (business := Business.find_by_internal_id(business_id)):
-            raise QueueException(f"Business with internal id: {business_id} not found.")
+            raise FilingStatusException(f"Business with id: {business_id} not found.")
 
         current_app.logger.info(
             f"Business record found: {business.identifier} - {business.legal_name}"
@@ -165,10 +191,3 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
             dissolution.process(business, filing.filing_sub_type)
         elif filing_type == FilingTypes.PUTBACKON.value:
             put_back_on.process(business, filing)
-
-    else:
-        # Log unsupported event types but don't throw exception - we want to ack the message
-        current_app.logger.info(
-            f"Unsupported event type: {etype} - message acknowledged"
-        )
-        return None
