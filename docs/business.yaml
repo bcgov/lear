@@ -6308,7 +6308,7 @@ components:
           type: string
           minLength: 1
           format: date-time
-          description: 'Date the payment was made for the filing.'
+          description: 'Date the payment was made for the filing (legacy filings may not have a value).'
         paymentStatusCode:
           type: string
           minLength: 1
