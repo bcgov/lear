@@ -24,7 +24,7 @@ from flask import current_app
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from sqlalchemy import func
 
-from business_account import AccountService
+from business_account.AccountService import AccountService
 from business_bn.bn_processors import (
     build_input_xml,
     get_business_type_and_sub_type_code,
