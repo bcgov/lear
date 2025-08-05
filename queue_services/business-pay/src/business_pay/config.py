@@ -149,6 +149,7 @@ class Config:  # pylint: disable=too-few-public-methods
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
     SBC_CONNECT_GCP_QUEUE_DEBUG = os.getenv("SBC_CONNECT_GCP_QUEUE_DEBUG", "")
     BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "business-filer")
+    BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC", "business-emailer")
 
     NATS_CONNECT_ERROR_COUNT_MAX = os.getenv("NATS_CONNECT_ERROR_COUNT_MAX", 10)
 
