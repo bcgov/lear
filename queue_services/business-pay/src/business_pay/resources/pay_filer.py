@@ -215,7 +215,7 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
 
 def publish_to_emailer(filing: Filing):
     """Publish a queue message to entity-emailer once the filing has been marked as PAID."""
-    with suppress(Exception):
+    try:
         # skip publishing NATS message
         if flags.is_on("enable-sandbox"):
             logger.debug("Skip publishing to emailer.")
@@ -239,6 +239,8 @@ def publish_to_emailer(filing: Filing):
             # await queue.publish(subject=mail_topic, msg=email_msg)
             queue.publish_json(subject=mail_topic, payload=email_msg)
             logger.info(f"published to emailer for filing-id: {filing.id}")
+    except Exception as err:
+        logger.debug(f"Publish to emailer error: {err}, for filing-id: {filing.id}")
 
 
 def get_payment_token(ce: SimpleCloudEvent):
