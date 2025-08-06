@@ -11,9 +11,8 @@ from document_record_service import (
 from business_filer.services import Flags
 from business_filer.services.publish_event import PublishEvent
 
-def update_drs_with_busienss_id(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
+def update_drs_with_busienss_id(filing_submission: Filing, flags: Flags, legal_type: str): # noqa: PLR0915, PLR0912
     document_id_state = filing_submission.filing_json["filing"]["header"].get("documentIdState", {})
-    legal_type = filing_submission.filing_json["filing"]["business"].get("legalType")
     submitter_roles = filing_submission.submitter_roles
 
     if  document_id_state and flags.is_on("enable-document-records"):
