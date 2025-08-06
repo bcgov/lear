@@ -728,9 +728,6 @@ def is_allowed(business: Business,
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
         return False
-    if not get_permissions_for_action(filing_type):
-            return jsonify({'message': ('You are not authorized to submit this type of filing for:') + business.identifier}), \
-                HTTPStatus.FORBIDDEN
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:

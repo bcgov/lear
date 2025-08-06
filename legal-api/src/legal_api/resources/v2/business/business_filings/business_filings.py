@@ -541,15 +541,15 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         
         if not get_permissions_for_action(filing_type):
-            return jsonify({'message': _('FORBIDDEN - You are not authorized to submit this type of filing for:') + identifier}), \
+            return jsonify({'message': _('Permission Denied - You are not authorized to submit this type of filing for:') + identifier}), \
                 HTTPStatus.FORBIDDEN
         
         if not authorized(identifier, jwt, action=['edit']):
-            return jsonify({'message': f'You are not authorized to submit filings for {identifier}.'}), \
+            return jsonify({'message': f'Not Authorized - You are not authorized to submit filings for {identifier}.'}), \
                 HTTPStatus.FORBIDDEN
 
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
-            return jsonify({'message': f'You are not allowed to submit this type of filing for {identifier}.'}), \
+            return jsonify({'message': f'Not Allowed - You are not allowed to submit this type of filing for {identifier}.'}), \
                 HTTPStatus.FORBIDDEN
 
         return None, None
