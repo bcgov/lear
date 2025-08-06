@@ -89,6 +89,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     DOC_API_URL = os.getenv("DOC_API_URL", "")
     DOC_API_ACCOUNT_ID = os.getenv("DOC_API_ACCOUNT_ID", "")
     DOC_API_KEY = os.getenv("DOC_API_KEY", "")
+    DOC_API_APP_CREATE_RECORD_TOPIC = os.getenv("DOC_API_APP_CREATE_RECORD_TOPIC", "")
 
 
 class DevConfig(_Config):  # pylint: disable=too-few-public-methods

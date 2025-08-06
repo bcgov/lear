@@ -18,7 +18,7 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
     submitter_roles = filing_submission.submitter_roles
 
     if  document_id_state and flags.is_on("enable-document-records"):
-        filing_type = filing_submission.filing_json["filing"]["header"]["name"]
+        filing_type = filing_submission.filing_type
         temp_reg = filing_submission.temp_reg
         
         # Replace temp_reg with business_identifier for static documents(or staff filing)
@@ -38,7 +38,7 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
             )
 
             if not isinstance(doc_list, list):
-                current_app.logger.error(
+                current_app.logger.info(
                     f"No associated documents found for temporary registration ID: {temp_reg}"
                 )
             else:
