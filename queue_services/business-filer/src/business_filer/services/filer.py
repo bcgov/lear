@@ -291,7 +291,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         ]:
             # update business id for new business
             filing_submission.business_id = business.id
-            update_drs_with_busienss_id(filing_submission, flags, business.legal_type)
+            update_drs_with_busienss_id(filing_submission, flags, business)
             db.session.add(filing_submission)
             db.session.commit()
 
