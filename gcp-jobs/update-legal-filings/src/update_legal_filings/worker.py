@@ -86,59 +86,57 @@ def check_for_manual_filings(token: dict | None = None):
         last_event_id = (
             "earliest" if response.status_code == HTTPStatus.NOT_FOUND else str(response.json().get("maxId"))
         )
-
         current_app.logger.debug(f"last_event_id: {last_event_id}")
-        if last_event_id:
-            last_event_id = str(last_event_id)
-            # get all event_ids greater than above
-            try:
-                for corp_type in corp_types:
-                    current_app.logger.debug(f"corp_type: {corp_type}")
-                    url = f"{colin_url}/businesses/event/{corp_type}/{last_event_id}"
-                    current_app.logger.debug(f"url: {url}")
-                    # call colin api for ids + filing types list
-                    response = requests.get(url,
-                                            headers={**AccountService.CONTENT_TYPE_JSON,
-                                                     "Authorization": AccountService.BEARER + token},
-                                            timeout=current_app.config["COLIN_SVC_TIMEOUT"])
-                    event_info = dict(response.json())
-                    events = event_info.get("events")
-                    if colin_events:
-                        colin_events.get("events").extend(events)
-                    else:
-                        colin_events = event_info
 
-            except Exception as err:
-                current_app.logger.error("Error getting event_ids from colin: %s", repr(err), exc_info=True)
-                raise err
+        # get all event_ids greater than above
+        try:
+            for corp_type in corp_types:
+                current_app.logger.debug(f"corp_type: {corp_type}")
+                url = f"{colin_url}/businesses/event/{corp_type}/{last_event_id}"
+                current_app.logger.debug(f"url: {url}")
+                # call colin api for ids + filing types list
+                response = requests.get(url,
+                                        headers={**AccountService.CONTENT_TYPE_JSON,
+                                                    "Authorization": AccountService.BEARER + token},
+                                        timeout=current_app.config["COLIN_SVC_TIMEOUT"])
+                event_info = dict(response.json())
+                events = event_info.get("events")
+                if colin_events:
+                    colin_events.get("events").extend(events)
+                else:
+                    colin_events = event_info
 
-            exist_in_lear = set()
-            # for each event_id: if not in legal db table then add event_id to list
-            for info in colin_events["events"]:
-                # check that event is associated with one of the coops loaded into legal db
-                if info["corp_num"] not in exist_in_lear:
-                    response = requests.get(
-                        f'{legal_url}/{info["corp_num"]}',
-                        headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                        timeout=current_app.config["LEAR_SVC_TIMEOUT"]
-                    )
-                    if response.status_code == HTTPStatus.OK:
-                        exist_in_lear.add(info["corp_num"])
-                    else:
-                        current_app.logger.error(
-                            f"Error getting {info['corp_num']} from legal db"
-                        )
-                        continue
+        except Exception as err:
+            current_app.logger.error("Error getting event_ids from colin: %s", repr(err), exc_info=True)
+            raise err
 
-                # check legal table
+        exist_in_lear = set()
+        # for each event_id: if not in legal db table then add event_id to list
+        for info in colin_events["events"]:
+            # check that event is associated with one of the coops loaded into legal db
+            if info["corp_num"] not in exist_in_lear:
                 response = requests.get(
-                    f'{legal_url}/internal/filings/colin_id/{info["event_id"]}',
+                    f'{legal_url}/{info["corp_num"]}',
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                    timeout=current_app.config["LEAR_SVC_TIMEOUT"])
-                if response.status_code == HTTPStatus.NOT_FOUND:
-                    id_list.append(info)
-                elif response.status_code != HTTPStatus.OK:
-                    current_app.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
+                    timeout=current_app.config["LEAR_SVC_TIMEOUT"]
+                )
+                if response.status_code == HTTPStatus.OK:
+                    exist_in_lear.add(info["corp_num"])
+                else:
+                    current_app.logger.error(
+                        f"Error getting {info['corp_num']} from legal db"
+                    )
+                    continue
+
+            # check legal table
+            response = requests.get(
+                f'{legal_url}/internal/filings/colin_id/{info["event_id"]}',
+                headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
+                timeout=current_app.config["LEAR_SVC_TIMEOUT"])
+            if response.status_code == HTTPStatus.NOT_FOUND:
+                id_list.append(info)
+            elif response.status_code != HTTPStatus.OK:
+                current_app.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
 
     return id_list
 
