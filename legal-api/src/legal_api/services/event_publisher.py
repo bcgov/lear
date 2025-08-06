@@ -48,6 +48,7 @@ def _publish_to_nats_with_wrapper(data, subject, identifier, event_type, message
         'identifier': identifier,
         'data': data
     }
+    current_app.logger.debug('Publishing to NATS subject: %s, with payload: %s', subject, payload)
     queue.publish_json(
         subject=subject,
         payload=payload
@@ -56,6 +57,7 @@ def _publish_to_nats_with_wrapper(data, subject, identifier, event_type, message
 
 def _publish_to_nats(payload, subject):
     """Publish the event message onto the NATS subject."""
+    current_app.logger.debug('Publishing to NATS subject: %s, with payload: %s', subject, payload)
     queue.publish_json(
         subject=subject,
         payload=payload
@@ -87,6 +89,7 @@ def _publish_to_gcp(data, subject, identifier, event_type):
         data=payload
     )
 
+    current_app.logger.debug('Publishing to GCP topic: %s, with payload: %s', topic, payload)
     gcp_queue.publish(topic, to_queue_message(ce))
 
 
