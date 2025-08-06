@@ -29,9 +29,9 @@ class _Config:  # pylint: disable=too-few-public-methods
     ENABLE_BN_UPDATES = os.getenv("ENABLE_BN_UPDATES", "True") == "True"
 
     COLIN_SVC_URL = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
-    COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "20"))
+    COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "50"))
     LEAR_SVC_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
-    LEAR_SVC_TIMEOUT = int(os.getenv("LEGAL_SVC_TIMEOUT", "20"))
+    LEAR_SVC_TIMEOUT = int(os.getenv("BUSINESS_SVC_TIMEOUT", "50"))
 
     # Pub/Sub
     GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)

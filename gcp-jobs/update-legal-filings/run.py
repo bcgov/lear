@@ -40,10 +40,10 @@ if __name__ == "__main__":
     application = create_app()
     with application.app_context():
         try:
-            update_filings()
             if application.config["ENABLE_BN_UPDATES"]:
                 # NOTE: COLIN in DEV does not add these so we skip it
                 update_business_nos()
+            update_filings()
         except Exception as err:
             application.logger.error(err)
             raise err
