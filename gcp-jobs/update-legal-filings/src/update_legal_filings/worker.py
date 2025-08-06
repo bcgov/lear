@@ -78,7 +78,7 @@ def check_for_manual_filings(token: dict | None = None):
     # get max colin event_id from legal
     response = requests.get(f"{legal_url}/internal/filings/colin_id",
                             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                            timeout=AccountService.timeout)
+                            timeout=current_app.config["LEAR_SVC_TIMEOUT"])
     if response.status_code not in [HTTPStatus.OK, HTTPStatus.NOT_FOUND]:
         current_app.logger.error(f"Error getting last updated colin id from \
             legal: {response.status_code} {response.json()}")
@@ -100,7 +100,7 @@ def check_for_manual_filings(token: dict | None = None):
                     response = requests.get(url,
                                             headers={**AccountService.CONTENT_TYPE_JSON,
                                                      "Authorization": AccountService.BEARER + token},
-                                            timeout=AccountService.timeout)
+                                            timeout=current_app.config["COLIN_SVC_TIMEOUT"])
                     event_info = dict(response.json())
                     events = event_info.get("events")
                     if colin_events:
@@ -112,26 +112,33 @@ def check_for_manual_filings(token: dict | None = None):
                 current_app.logger.error("Error getting event_ids from colin: %s", repr(err), exc_info=True)
                 raise err
 
+            exist_in_lear = set()
             # for each event_id: if not in legal db table then add event_id to list
             for info in colin_events["events"]:
                 # check that event is associated with one of the coops loaded into legal db
-                response = requests.get(
-                    f'{legal_url}/{info["corp_num"]}',
-                    headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                    timeout=AccountService.timeout
-                )
-                if response.status_code == HTTPStatus.OK:
-                    # check legal table
+                if info["corp_num"] not in exist_in_lear:
                     response = requests.get(
-                        f'{legal_url}/internal/filings/colin_id/{info["event_id"]}',
+                        f'{legal_url}/{info["corp_num"]}',
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                        timeout=AccountService.timeout)
-                    if response.status_code == HTTPStatus.NOT_FOUND:
-                        id_list.append(info)
-                    elif response.status_code != HTTPStatus.OK:
-                        current_app.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
-                else:
-                    current_app.logger.error("No ids returned from colin_last_update table in legal db.")
+                        timeout=current_app.config["LEAR_SVC_TIMEOUT"]
+                    )
+                    if response.status_code == HTTPStatus.OK:
+                        exist_in_lear.add(info["corp_num"])
+                    else:
+                        current_app.logger.error(
+                            f"Error getting {info['corp_num']} from legal db"
+                        )
+                        continue
+
+                # check legal table
+                response = requests.get(
+                    f'{legal_url}/internal/filings/colin_id/{info["event_id"]}',
+                    headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
+                    timeout=current_app.config["LEAR_SVC_TIMEOUT"])
+                if response.status_code == HTTPStatus.NOT_FOUND:
+                    id_list.append(info)
+                elif response.status_code != HTTPStatus.OK:
+                    current_app.logger.error(f'Error checking for colin id {info["event_id"]} in legal')
 
     return id_list
 
@@ -156,7 +163,7 @@ def get_filing(event_info: dict, token: str) -> dict:
         f'{current_app.config["COLIN_SVC_URL"]}/businesses/{legal_type}/{identifier}/filings/{filing_type}?eventId={event_id}',
         headers={**AccountService.CONTENT_TYPE_JSON,
                  "Authorization": AccountService.BEARER + token},
-        timeout=AccountService.timeout
+        timeout=current_app.config["COLIN_SVC_TIMEOUT"]
     )
     filing = dict(response.json())
     return filing
@@ -190,7 +197,7 @@ def update_filings():  # noqa: PLR0912
                         f'{current_app.config["LEAR_SVC_URL"]}/businesses/{event_info["corp_num"]}/filings',
                         json=filing,
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                        timeout=AccountService.timeout
+                        timeout=current_app.config["LEAR_SVC_TIMEOUT"]
                     )
                     if response.status_code != HTTPStatus.CREATED:
                         if not first_failed_id:
@@ -226,7 +233,7 @@ def update_filings():  # noqa: PLR0912
             response = requests.post(
                 f'{current_app.config["LEAR_SVC_URL"]}/businesses/internal/filings/colin_id/{max_event_id}',
                 headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                timeout=AccountService.timeout
+                timeout=current_app.config["LEAR_SVC_TIMEOUT"]
             )
             if response.status_code != HTTPStatus.CREATED:
                 current_app.logger.error(
@@ -287,7 +294,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
         response = requests.get(
             current_app.config["LEAR_SVC_URL"] + "/businesses/internal/tax_ids",
             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-            timeout=AccountService.timeout
+            timeout=current_app.config["LEAR_SVC_TIMEOUT"]
         )
         if response.status_code != HTTPStatus.OK:
             current_app.logger.error("legal-updater failed to get identifiers from legal-api.")
@@ -307,7 +314,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                     current_app.config["COLIN_SVC_URL"] + "/businesses/internal/tax_ids",
                     json={"identifiers": identifiers},
                     headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                    timeout=AccountService.timeout
+                    timeout=current_app.config["COLIN_SVC_TIMEOUT"]
                 )
                 if response.status_code != HTTPStatus.OK:
                     current_app.logger.error("legal-updater failed to get tax_ids from colin-api.")
@@ -320,7 +327,7 @@ def update_business_nos():  # pylint: disable=redefined-outer-name
                         current_app.config["LEAR_SVC_URL"] + "/businesses/internal/tax_ids",
                         json=tax_ids,
                         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-                        timeout=AccountService.timeout
+                        timeout=current_app.config["LEAR_SVC_TIMEOUT"]
                     )
                     if response.status_code != HTTPStatus.CREATED:
                         current_app.logger.error("legal-updater failed to update tax_ids in lear.")
@@ -342,7 +349,7 @@ def _get_correction_filing(token, event_info):
     response = requests.get(
         current_app.config["LEGAL_API_URL"] + f"/businesses/{event_info['corp_num']}/filings",
         headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-        timeout=AccountService.timeout
+        timeout=current_app.config["LEAR_SVC_TIMEOUT"]
     )
     if response.status_code != HTTPStatus.OK:
         current_app.logger.error("legal-updater failed to get filings from legal-api.")
@@ -428,7 +435,7 @@ def check_ben_to_bc_filings(token: str) -> list[dict]:
         response = requests.get(
             f"{legal_url}/internal/last-event-id/{identifier}",
             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-            timeout=AccountService.timeout)
+            timeout=current_app.config["LEAR_SVC_TIMEOUT"])
         last_event_id = response.json()["maxId"]
 
         # check if there are filings to send to legal
@@ -436,7 +443,7 @@ def check_ben_to_bc_filings(token: str) -> list[dict]:
         response = requests.get(
             f"{colin_url}/event/corp_num/{colin_identifier}/{last_event_id}",
             headers={"Content-Type": CONTENT_TYPE_JSON, "Authorization": f"Bearer {token}"},
-            timeout=AccountService.timeout
+            timeout=current_app.config["COLIN_SVC_TIMEOUT"]
         )
         if response.status_code != HTTPStatus.OK:
             current_app.logger.error("legal-updater failed to get filings from colin-api.")
@@ -482,7 +489,7 @@ def update_ben_to_bc():  # pylint: disable=redefined-outer-name, too-many-branch
                         json=filing,
                         headers={"Content-Type": CONTENT_TYPE_JSON,
                                  "Authorization": f"Bearer {token}"},
-                        timeout=AccountService.timeout
+                        timeout=current_app.config["LEAR_SVC_TIMEOUT"]
                     )
                     if response.status_code != HTTPStatus.CREATED:
                         failed_filing_events.append(event_info)
