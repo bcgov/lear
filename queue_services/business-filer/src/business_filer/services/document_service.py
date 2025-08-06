@@ -47,6 +47,9 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
                     copied_json = copy.deepcopy(filing_submission.filing_json)
                     copied_json["filing"]["header"]["documentIdState"]["consumerDocumentId"] = doc_list[0]["consumerDocumentId"]
                     filing_submission._filing_json = copied_json
+                    current_app.logger.info(
+                        f"Updated missing document id {doc_list[0]["consumerDocumentId"]}"
+                    )
                 # Replace temp registration id with business identifier:
                 for associated_document in doc_list:
                     doc_service_id = associated_document["documentServiceId"]
