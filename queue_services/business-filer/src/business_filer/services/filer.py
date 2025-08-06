@@ -82,7 +82,7 @@ from business_filer.filing_processors import (
 from business_filer.filing_processors.filing_components import business_profile, name_request
 from business_filer.services import flags
 from business_filer.services.publish_event import PublishEvent
-from business_filer.services.document_service import sync_drs
+from business_filer.services.document_service import update_drs_with_busienss_id
 
 
 def get_filing_types(legal_filings: dict):
@@ -291,7 +291,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         ]:
             # update business id for new business
             filing_submission.business_id = business.id
-            sync_drs(filing_submission, flags)
+            update_drs_with_busienss_id(filing_submission, flags)
             db.session.add(filing_submission)
             db.session.commit()
 

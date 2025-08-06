@@ -5,14 +5,13 @@ from business_model.models import Filing, UserRoles
 from document_record_service import (
     DocumentRecordService, 
     RequestInfo as DrsRequestInfo, 
-    get_document_class,
-    get_document_type
+    get_document_class
 )
 
 from business_filer.services import Flags
 from business_filer.services.publish_event import PublishEvent
 
-def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
+def update_drs_with_busienss_id(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
     document_id_state = filing_submission.filing_json["filing"]["header"].get("documentIdState", {})
     legal_type = filing_submission.filing_json["filing"]["business"].get("legalType")
     submitter_roles = filing_submission.submitter_roles
@@ -24,8 +23,9 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
         # Replace temp_reg with business_identifier for static documents(or staff filing)
         if (filing_type in ["incorporationApplication", "continuationIn"]
             or (
+                # If a filing is created by staff on the UI with a temp ID, 
+                # replace it with the business identifier
                 submitter_roles == UserRoles.staff
-                and filing_type
                 and document_id_state["valid"]
                 and temp_reg
         )):
@@ -56,7 +56,7 @@ def sync_drs(filing_submission: Filing, flags: Flags): # noqa: PLR0915, PLR0912
                     PublishEvent.publish_drs_creation_event(current_app, 
                         DrsRequestInfo(
                             document_service_id=doc_service_id,
-                            consumer_identifier=filing_submission.filing_json["filing"]["business"]["identifier"],
+                            consumer_identifier=filing_submission.business_id,
                             consumer_reference_id=str(filing_submission.id)
                         ).json
                     )
