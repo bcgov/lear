@@ -101,9 +101,9 @@ class PublishEvent:
         """Publishes a DRS creation event as a SimpleCloudEvent."""
         try:
             print(data, 'from publish drs creation')
-            subject = app.config.get("DOC_API_APP_CREATE_RECORD_TOPIC")
+            subject = app.config.get("DOC_CREATE_REC_TOPIC")
             if not subject:
-                raise PublishException("Missing DOC_API_APP_CREATE_RECORD_TOPIC in config.")
+                raise PublishException("Missing DOC_CREATE_REC_TOPIC in config.")
 
             ce = SimpleCloudEvent(
                 id=str(uuid.uuid4()),
