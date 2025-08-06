@@ -17,9 +17,10 @@
 from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
+import json
 from typing import List
 
-from flask import Response, current_app, g, request
+from flask import Response, current_app, g, request, jsonify
 from flask_caching import Cache
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
@@ -62,6 +63,35 @@ class BusinessBlocker(str, Enum):
     IN_LIQUIDATION = 'IN_LIQUIDATION'
     FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
 
+class PermissionsAllowed(str, Enum):
+    """Define an enum for permissions checks."""
+
+    # permissions allowed for business filings
+    STAFF_FILINGS = 'STAFF_FILINGS'
+    TRANSITION_FILING='TRANSITION_FILING'
+    VOLUNTARY_DISSOLUTION_FILING='VOLUNTARY_DISSOLUTION_FILING'
+    ADMIN_DISSOLUTION_FILING='ADMIN_DISSOLUTION_FILING'
+    AGM_CHG_LOCATION_FILING='AGM_CHG_LOCATION_FILING'
+    AGM_EXTENSION_FILING='AGM_EXTENSION_FILING'
+    ALTERATION_FILING='ALTERATION_FILING'
+    AMALGAMATION_FILING='AMALGAMATION_FILING'
+    ANNUAL_REPORT_FILING='ANNUAL_REPORT_FILING'
+    CONSENT_AMALGAMATION_OUT_FILING='CONSENT_AMALGAMATION_OUT_FILING'
+    CONSENT_CONTINUATION_OUT_FILING='CONSENT_CONTINUATION_OUT_FILING'
+    CONTINUATION_IN_FILING='CONTINUATION_IN_FILING'
+    CORRECTION_FILING='CORRECTION_FILING'
+    COURT_ORDER_FILING='COURT_ORDER_FILING'
+    DELAY_DISSOLUTION_FILING='DELAY_DISSOLUTION_FILING'
+    DIRECTOR_CHANGE_FILING='DIRECTOR_CHANGE_FILING'
+    FIRM_CHANGE_FILING='FIRM_CHANGE_FILING'
+    FIRM_CONVERSION_FILING='FIRM_CONVERSION_FILING'
+    FIRM_DISSOLUTION_FILING='FIRM_DISSOLUTION_FILING'
+    INCORPORATION_APPLICATION_FILING='INCORPORATION_APPLICATION_FILING'
+    NOTICE_WITHDRAWAL_FILING='NOTICE_WITHDRAWAL_FILING'
+    RESTORATION_REINSTATEMENT_FILING='RESTORATION_REINSTATEMENT_FILING'
+    REGISTRATION_FILING='REGISTRATION_FILING'
+    SPECIAL_RESOLUTION_FILING='SPECIAL_RESOLUTION_FILING'
+    ADDRESS_CHANGE_FILING='ADDRESS_CHANGE_FILING'
 
 class BusinessRequirement(str, Enum):
     """Define an enum for business requirement scenarios."""
@@ -149,6 +179,8 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
 
 
 def get_authorized_user_role() -> str:
+    from legal_api.resources.v2 import permissions
+
     """Return the first matching authorized role from the JWT, based on priority."""
     role_priority = [
         STAFF_ROLE,
@@ -161,7 +193,6 @@ def get_authorized_user_role() -> str:
     token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
 
     roles_in_token = token_info.get('realm_access', {}).get('roles', [])
-
     for role in role_priority:
         if role in roles_in_token:
             return role
@@ -595,6 +626,84 @@ def get_allowable_filings_dict():
         }
     }
 
+def get_allowable_permissions():
+    """Return dictionary containing rules for filings are allowed for different roles."""
+    # pylint: disable=import-outside-toplevel
+    from legal_api.core.filing import Filing as CoreFiling
+
+    return {
+            CoreFiling.FilingTypes.TRANSITION.value: 
+                PermissionsAllowed.TRANSITION_FILING.value
+            ,
+            CoreFiling.FilingTypesCompact.DISSOLUTION_VOLUNTARY.value: PermissionsAllowed.VOLUNTARY_DISSOLUTION_FILING.value
+            ,
+            CoreFiling.FilingTypesCompact.DISSOLUTION_ADMINISTRATIVE.value: 
+                PermissionsAllowed.ADMIN_DISSOLUTION_FILING.value
+            ,
+            CoreFiling.FilingTypes.AGMLOCATIONCHANGE.value: 
+                PermissionsAllowed.AGM_CHG_LOCATION_FILING.value
+            ,
+            CoreFiling.FilingTypes.AGMEXTENSION.value: 
+                PermissionsAllowed.AGM_EXTENSION_FILING.value
+            ,
+            CoreFiling.FilingTypes.ALTERATION.value: 
+                PermissionsAllowed.ALTERATION_FILING.value
+            ,
+            CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value: 
+                PermissionsAllowed.AMALGAMATION_FILING.value
+            ,
+            CoreFiling.FilingTypes.ANNUALREPORT.value: 
+                PermissionsAllowed.ANNUAL_REPORT_FILING.value
+            ,
+            CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value: 
+                PermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value
+            ,
+            CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value: 
+                PermissionsAllowed.CONSENT_CONTINUATION_OUT_FILING.value
+            ,
+            CoreFiling.FilingTypes.CONTINUATIONIN.value: 
+                PermissionsAllowed.CONTINUATION_IN_FILING.value
+            ,
+            CoreFiling.FilingTypes.CORRECTION.value: 
+                PermissionsAllowed.CORRECTION_FILING.value
+            ,
+            CoreFiling.FilingTypes.COURTORDER.value: 
+                PermissionsAllowed.COURT_ORDER_FILING.value
+            ,
+            CoreFiling.FilingTypes.DISSOLUTION.value: 
+                PermissionsAllowed.DELAY_DISSOLUTION_FILING.value
+            ,
+            CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value: 
+                PermissionsAllowed.DIRECTOR_CHANGE_FILING.value
+            ,
+            CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value: 
+                PermissionsAllowed.FIRM_CHANGE_FILING.value
+            ,
+            CoreFiling.FilingTypes.CONVERSION.value: 
+                PermissionsAllowed.FIRM_CONVERSION_FILING.value
+            ,
+            CoreFiling.FilingTypes.DISSOLUTION.value: 
+                PermissionsAllowed.FIRM_DISSOLUTION_FILING.value
+            ,
+            CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value: 
+                PermissionsAllowed.INCORPORATION_APPLICATION_FILING.value
+            ,
+            CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value: 
+                PermissionsAllowed.NOTICE_WITHDRAWAL_FILING.value
+            ,
+            CoreFiling.FilingTypes.RESTORATION.value: 
+                PermissionsAllowed.RESTORATION_REINSTATEMENT_FILING.value
+            ,
+            CoreFiling.FilingTypes.REGISTRATION.value: 
+                PermissionsAllowed.REGISTRATION_FILING.value
+            ,
+            CoreFiling.FilingTypes.SPECIALRESOLUTION.value: 
+                PermissionsAllowed.SPECIAL_RESOLUTION_FILING.value
+            ,
+            CoreFiling.FilingTypes.CHANGEOFADDRESS.value: 
+                PermissionsAllowed.ADDRESS_CHANGE_FILING.value
+            
+        }   
 
 # pylint: disable=(too-many-arguments,too-many-locals
 def is_allowed(business: Business,
@@ -619,7 +728,9 @@ def is_allowed(business: Business,
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
         return False
-
+    if not get_permissions_for_action(filing_type):
+            return jsonify({'message': ('You are not authorized to submit this type of filing for:') + business.identifier}), \
+                HTTPStatus.FORBIDDEN
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
@@ -1065,3 +1176,32 @@ def has_product(code: str, token: str) -> bool:
 def is_competent_authority(jwt: JwtManager) -> bool:
     """Return if the user has the active ca_search subscription."""
     return has_product('CA_SEARCH', jwt.get_token_auth_header())
+
+def find_roles_for_filing_type(filing_type_value: str):
+    allowable_permissions = get_allowable_permissions()
+    roles_with_filing = ''
+
+    for allowed_filings, role in allowable_permissions.items():
+        if filing_type_value in allowed_filings:
+            roles_with_filing = role
+            break
+
+    return roles_with_filing
+
+
+def get_permissions_for_action(filing_type: str) -> bool:
+    """Check if the user has permissions for the action per permissions table."""
+    from legal_api.resources.v2 import permissions
+
+    response = permissions.get_permissions()
+    if not response or response.status_code != HTTPStatus.OK:
+        return False
+    user_permissions = response.get_data(as_text=True)
+    authorized_permissions = json.loads(user_permissions)['authorizedPermissions']
+    roles_in_filings = find_roles_for_filing_type(filing_type)
+    if roles_in_filings in authorized_permissions:
+        return True
+    else:
+        current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
+    
+    return False
