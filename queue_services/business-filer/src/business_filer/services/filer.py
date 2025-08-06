@@ -81,8 +81,8 @@ from business_filer.filing_processors import (
 )
 from business_filer.filing_processors.filing_components import business_profile, name_request
 from business_filer.services import flags
-from business_filer.services.publish_event import PublishEvent
 from business_filer.services.document_service import update_drs_with_busienss_id
+from business_filer.services.publish_event import PublishEvent
 
 
 def get_filing_types(legal_filings: dict):

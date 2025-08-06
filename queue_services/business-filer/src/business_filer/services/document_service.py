@@ -1,17 +1,15 @@
 import copy
-from flask import current_app
 
-from business_model.models import Filing, UserRoles, Business
-from document_record_service import (
-    DocumentRecordService, 
-    RequestInfo as DrsRequestInfo, 
-    get_document_class
-)
+from business_model.models import Business, Filing, UserRoles
+from document_record_service import DocumentRecordService, get_document_class
+from document_record_service import RequestInfo as DrsRequestInfo
+from flask import current_app
 
 from business_filer.services import Flags
 from business_filer.services.publish_event import PublishEvent
 
-def update_drs_with_busienss_id(filing_submission: Filing, flags: Flags, business: Business): # noqa: PLR0915, PLR0912
+
+def update_drs_with_busienss_id(filing_submission: Filing, flags: Flags, business: Business):
     document_id_state = filing_submission.filing_json["filing"]["header"].get("documentIdState", {})
     submitter_roles = filing_submission.submitter_roles
 
