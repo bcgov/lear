@@ -100,7 +100,6 @@ class PublishEvent:
     def publish_drs_creation_event(app: Flask, data: dict):
         """Publishes a DRS creation event as a SimpleCloudEvent."""
         try:
-            print(data, 'from publish drs creation')
             subject = app.config.get("DOC_CREATE_REC_TOPIC")
             if not subject:
                 raise PublishException("Missing DOC_CREATE_REC_TOPIC in config.")
