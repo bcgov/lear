@@ -136,6 +136,14 @@ def send_email(email: dict, token: str):
         current_app.logger.debug("Send email: email object(s) is missing")
         raise QueueException("Unsuccessful sending email - required email object(s) is missing. ")
 
+    recipients = email["recipients"]
+    if isinstance(recipients, str):
+        # dedup recipients before returning them
+        stripped_recipients = (recipient.strip() for recipient in recipients.split(","))
+        recipients = list(set(stripped_recipients))
+        recipients = ", ".join(filter(None, recipients)).strip()
+        email["recipients"] = recipients
+
     try:
         resp = requests.post(
             f"{current_app.config.get('NOTIFY_API_URL')}",
