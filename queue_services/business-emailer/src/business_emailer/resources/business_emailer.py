@@ -145,6 +145,17 @@ def send_email(email: dict, token: str):
         email["recipients"] = recipients
 
     try:
+        content = email.get("content", {})
+        subject = content.get("subject", "-empty-")
+        attachment_count = len(content.get("attachments", []))
+        recipients = email.get("recipients", "-empty-")
+        subject_display = subject[:50] + "..." if len(subject) > 50 else subject
+        recipients_display = recipients[:100] + "..." if len(recipients) > 100 else recipients
+        log_message = \
+            (f"Sending email with subject '{subject_display}' and {attachment_count} attachments"
+             f" to: {recipients_display}")
+        current_app.logger.debug(log_message)
+
         resp = requests.post(
             f"{current_app.config.get('NOTIFY_API_URL')}",
             json=email,
@@ -153,6 +164,7 @@ def send_email(email: dict, token: str):
                 "Authorization": f"Bearer {token}"
             }
         )
+        current_app.logger.debug("NOTIFY API response: %s", resp.status_code)
         if resp.status_code != HTTPStatus.OK:
             raise EmailException
     except Exception:
