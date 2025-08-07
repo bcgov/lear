@@ -79,20 +79,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
-        account_id = request.headers.get('Account-Id', None)
-        if account_id is not None and self._business is not None:
-            document, status = self._document_service.get_document(
-              self._business.identifier,
-              self._filing.id,
-              self._report_key,
-              account_id
-            )
-            if status == HTTPStatus.OK:
-                return current_app.response_class(
-                    response=document,
-                    status=status,
-                    mimetype='application/pdf'
+        if flags.is_on('enable-document-records'):
+            account_id = request.headers.get('Account-Id', None)
+            if account_id is not None and self._business is not None:
+                document, status = self._document_service.get_document(
+                  self._business.identifier,
+                  self._filing.id,
+                  self._report_key,
+                  account_id
                 )
+                if status == HTTPStatus.OK:
+                    return current_app.response_class(
+                        response=document,
+                        status=status,
+                        mimetype='application/pdf'
+                    )
 
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
@@ -114,27 +115,28 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
 
-        create_document = account_id is not None
-        create_filing_types = [
-          'incorporationApplication',
-          'continuationIn',
-          'amalgamation',
-          'registration'
-        ]
-        if self._filing.filing_type in create_filing_types:
-            create_document = create_document and self._business and self._business.tax_id
-        else:
-            create_document = create_document and \
-              self._filing.status == 'COMPLETED'
+        if flags.is_on('enable-document-records'):
+            create_document = account_id is not None
+            create_filing_types = [
+              'incorporationApplication',
+              'continuationIn',
+              'amalgamation',
+              'registration'
+            ]
+            if self._filing.filing_type in create_filing_types:
+                create_document = create_document and self._business and self._business.tax_id
+            else:
+                create_document = create_document and \
+                  self._filing.status == 'COMPLETED'
 
-        if create_document:
-            self._document_service.create_document(
-              self._business.identifier,
-              self._filing.id,
-              self._report_key,
-              account_id,
-              response.content
-            )
+            if create_document:
+                self._document_service.create_document(
+                  self._business.identifier,
+                  self._filing.id,
+                  self._report_key,
+                  account_id,
+                  response.content
+                )
 
         return current_app.response_class(
             response=response.content,

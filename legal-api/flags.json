@@ -6,6 +6,7 @@
     "enable-legal-name-fix": true,
     "enable-sandbox": false,
     "enable-business-summary-for-migrated-corps": true,
+    "enable-document-records": false,
     "enable-involuntary-dissolution-filter": false,
     "enable-new-ben-statements": false,
     "enable-auth-v2-business": true,
