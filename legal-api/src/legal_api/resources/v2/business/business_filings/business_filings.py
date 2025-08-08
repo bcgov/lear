@@ -62,7 +62,7 @@ from legal_api.services import (
     flags,
     namex,
 )
-from legal_api.services.authz import get_permissions_for_action, is_allowed
+from legal_api.services.authz import has_permissions_for_action, is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
@@ -540,7 +540,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         
-        if not get_permissions_for_action(filing_type):
+        if not has_permissions_for_action(filing_type):
             return jsonify({'message': f'Permission Denied - You are not authorized to submit this type of filing for:' + identifier}), \
                 HTTPStatus.FORBIDDEN
         

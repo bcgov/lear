@@ -1182,7 +1182,7 @@ def find_roles_for_filing_type(filing_type_value: str):
     return roles_with_filing
 
 
-def get_permissions_for_action(filing_type: str) -> bool:
+def has_permissions_for_action(filing_type: str) -> bool:
     """Check if the user has permissions for the action per permissions table."""
     authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if not authorized_permissions or not isinstance(authorized_permissions, list):
