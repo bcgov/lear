@@ -19,7 +19,10 @@ from http import HTTPStatus
 from flask import jsonify
 
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-
+from legal_api.services import cache
+from legal_api.services.authz import (
+    STAFF_ROLE, SBC_STAFF_ROLE, CONTACT_CENTRE_STAFF_ROLE, MAXIMUS_STAFF_ROLE, PUBLIC_USER
+    )
 class PermissionService:
     """Service to manage permissions for user roles."""
 
@@ -28,8 +31,7 @@ class PermissionService:
         """
         Returns a JSON response containing the authorized permissions for the current user.
         """
-        from legal_api.services.authz import cache, get_authorized_user_role  # pylint: disable=import-outside-toplevel
-        authorized_role = get_authorized_user_role()
+        authorized_role = PermissionService.get_authorized_user_role()
         if not authorized_role:
             return jsonify({
                 'message': 'No authorized role found.',
@@ -47,3 +49,21 @@ class PermissionService:
 
         return authorized_permissions
     
+    @staticmethod
+    def get_authorized_user_role() -> str:
+        """Return the first matching authorized role from the JWT, based on priority."""
+        role_priority = [
+            STAFF_ROLE,
+            SBC_STAFF_ROLE,
+            CONTACT_CENTRE_STAFF_ROLE,
+            MAXIMUS_STAFF_ROLE,
+            PUBLIC_USER,
+        ]
+
+        token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
+
+        roles_in_token = token_info.get('realm_access', {}).get('roles', [])
+        for role in role_priority:
+            if role in roles_in_token:
+                return role
+        return None

@@ -20,7 +20,6 @@ from http import HTTPStatus
 from typing import List
 
 from flask import Response, current_app, g, request
-from flask_caching import Cache
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
@@ -31,11 +30,9 @@ from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
+from legal_api.services import cache
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.permissions import PermissionService
-
-
-cache = Cache()
 
 SYSTEM_ROLE = 'system'
 SBC_STAFF_ROLE = 'sbc_staff'
@@ -175,25 +172,6 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     if jwt.validate_roles(roles):
         return True
     return False
-
-
-def get_authorized_user_role() -> str:
-    """Return the first matching authorized role from the JWT, based on priority."""
-    role_priority = [
-        STAFF_ROLE,
-        SBC_STAFF_ROLE,
-        CONTACT_CENTRE_STAFF_ROLE,
-        MAXIMUS_STAFF_ROLE,
-        PUBLIC_USER,
-    ]
-
-    token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
-
-    roles_in_token = token_info.get('realm_access', {}).get('roles', [])
-    for role in role_priority:
-        if role in roles_in_token:
-            return role
-    return None
 
 
 def get_allowable_filings_dict():
