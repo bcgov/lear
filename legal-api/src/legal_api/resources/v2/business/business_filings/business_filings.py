@@ -24,13 +24,13 @@ from typing import Generic, Optional, Tuple, TypeVar, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
+
 from flask import current_app, g, jsonify, request
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
 from html_sanitizer import Sanitizer  # noqa: I001;
-from legal_api.services.permissions import PermissionService
 from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
 from pydantic.generics import GenericModel
 from werkzeug.local import LocalProxy
@@ -67,6 +67,7 @@ from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
+from legal_api.services.permissions import PermissionService
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -540,17 +541,14 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         # for incorporationApplication and registration, get legalType from nameRequest
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
-        
         if filing_sub_type:
             filing_type = f'{filing_type}.{filing_sub_type}'
         if flags.is_on('enable-permissions-for-action') and not PermissionService.has_permissions_for_action(filing_type):
-            return jsonify({'message': f'Permission Denied - You are not authorized to submit this type of filing for:' + identifier}), \
+            return jsonify({'message': f'Permission Denied - You do not have permissions to submit this type of filing for:' + identifier}), \
                 HTTPStatus.FORBIDDEN
-        
         if not authorized(identifier, jwt, action=['edit']):
-            return jsonify({'message': f'Not Authorized - You are not authorized to submit filings for {identifier}.'}), \
+            return jsonify({'message': f'Not Authorized - You are not permitted to submit filings for {identifier}.'}), \
                 HTTPStatus.UNAUTHORIZED 
-
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
             return jsonify({'message': f'Not Allowed - You are not allowed to submit this type of filing for {identifier}.'}), \
                 HTTPStatus.FORBIDDEN
