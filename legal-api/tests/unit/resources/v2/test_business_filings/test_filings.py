@@ -361,7 +361,7 @@ def test_post_not_allowed_historical(session, client, jwt):
                      headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
                      )
 
-    assert rv.status_code == HTTPStatus.FORBIDDEN
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
 def test_post_allowed_historical(session, client, jwt):
