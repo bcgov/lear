@@ -623,7 +623,7 @@ def get_allowable_filings_dict():
         }
     }
 
-def get_allowable_permissions():
+def get_filing_permission_mapping():
     """Return dictionary containing rules for filings are allowed for different roles."""
     # pylint: disable=import-outside-toplevel
     from legal_api.core.filing import Filing as CoreFiling
@@ -1170,7 +1170,7 @@ def is_competent_authority(jwt: JwtManager) -> bool:
 
 def find_roles_for_filing_type(filing_type_value: str):
     """Find roles that are allowed to perform the given filing type."""
-    allowable_permissions = get_allowable_permissions()
+    allowable_permissions = get_filing_permission_mapping()
     roles_with_filing = ''
 
     for allowed_filings, role in allowable_permissions.items():
