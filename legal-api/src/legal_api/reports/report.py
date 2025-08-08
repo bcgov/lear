@@ -127,7 +127,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 create_document = create_document and self._business and self._business.tax_id
             else:
                 create_document = create_document and \
-                  self._filing.status == 'COMPLETED'
+                  self._filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED)
 
             if create_document:
                 self._document_service.create_document(
@@ -803,7 +803,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['resolutions'] = formatted_dates
 
         to_legal_name = None
-        if self._filing.status == 'COMPLETED':
+        if self._filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED):
             meta_data = self._filing.meta_data or {}
             prev_legal_type = meta_data.get('alteration', {}).get('fromLegalType')
             new_legal_type = meta_data.get('alteration', {}).get('toLegalType')
