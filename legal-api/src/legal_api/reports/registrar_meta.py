@@ -52,7 +52,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'endDate': '2025-04-17T23:59:59'
         },
         {
-            'name': "S. O\'CALLAGHAN",
+            'name': "S. O'CALLAGHAN",
             'title': 'Registrar of Companies',
             'signatureImage': 'registrar_signature_5.png',
             'signatureImageAndText': 'registrar_signature_and_text_5.png',
