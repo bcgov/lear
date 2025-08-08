@@ -17,12 +17,14 @@
 from http import HTTPStatus
 
 from flask import jsonify
+from flask import Response, current_app, g, request
+from flask_jwt_oidc import JwtManager
+from requests import Session, exceptions
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-from legal_api.services import cache
-from legal_api.services.authz import (
-    STAFF_ROLE, SBC_STAFF_ROLE, CONTACT_CENTRE_STAFF_ROLE, MAXIMUS_STAFF_ROLE, PUBLIC_USER
-    )
+from legal_api.services.cache import cache
 class PermissionService:
     """Service to manage permissions for user roles."""
 
@@ -52,6 +54,9 @@ class PermissionService:
     @staticmethod
     def get_authorized_user_role() -> str:
         """Return the first matching authorized role from the JWT, based on priority."""
+        from legal_api.services.authz import (
+    STAFF_ROLE, SBC_STAFF_ROLE, CONTACT_CENTRE_STAFF_ROLE, MAXIMUS_STAFF_ROLE, PUBLIC_USER
+    )
         role_priority = [
             STAFF_ROLE,
             SBC_STAFF_ROLE,

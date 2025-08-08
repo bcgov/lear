@@ -30,7 +30,7 @@ from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
-from legal_api.services import cache
+from legal_api.services.cache import cache
 from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.services.permissions import PermissionService
 

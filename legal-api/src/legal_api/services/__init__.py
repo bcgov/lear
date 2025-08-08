@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module wraps the calls to external services used by the API."""
-from flask_caching import Cache
 import uuid
 
 from gcp_queue import GcpQueue
@@ -53,4 +52,3 @@ queue = QueueService()  # pylint: disable=invalid-name; shared variables are low
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
-cache = Cache()
