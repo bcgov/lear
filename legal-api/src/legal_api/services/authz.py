@@ -63,10 +63,9 @@ class BusinessBlocker(str, Enum):
     IN_LIQUIDATION = 'IN_LIQUIDATION'
     FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
 
-class PermissionsAllowed(str, Enum):
+class ListFilingsPermissionsAllowed(str, Enum):
     """Define an enum for permissions checks."""
 
-    # permissions allowed for business filings
     STAFF_FILINGS = 'STAFF_FILINGS'
     TRANSITION_FILING = 'TRANSITION_FILING'
     VOLUNTARY_DISSOLUTION_FILING = 'VOLUNTARY_DISSOLUTION_FILING'
@@ -631,73 +630,73 @@ def get_allowable_permissions():
 
     return {
             CoreFiling.FilingTypes.TRANSITION.value:
-                PermissionsAllowed.TRANSITION_FILING.value
+               ListFilingsPermissionsAllowed.TRANSITION_FILING.value
             ,
             CoreFiling.FilingTypesCompact.DISSOLUTION_VOLUNTARY.value:
-            PermissionsAllowed.VOLUNTARY_DISSOLUTION_FILING.value
+           ListFilingsPermissionsAllowed.VOLUNTARY_DISSOLUTION_FILING.value
             ,
             CoreFiling.FilingTypesCompact.DISSOLUTION_ADMINISTRATIVE.value:
-                PermissionsAllowed.ADMIN_DISSOLUTION_FILING.value
+               ListFilingsPermissionsAllowed.ADMIN_DISSOLUTION_FILING.value
             ,
             CoreFiling.FilingTypes.AGMLOCATIONCHANGE.value:
-                PermissionsAllowed.AGM_CHG_LOCATION_FILING.value
+               ListFilingsPermissionsAllowed.AGM_CHG_LOCATION_FILING.value
             ,
             CoreFiling.FilingTypes.AGMEXTENSION.value:
-                PermissionsAllowed.AGM_EXTENSION_FILING.value
+               ListFilingsPermissionsAllowed.AGM_EXTENSION_FILING.value
             ,
             CoreFiling.FilingTypes.ALTERATION.value:
-                PermissionsAllowed.ALTERATION_FILING.value
+               ListFilingsPermissionsAllowed.ALTERATION_FILING.value
             ,
             CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value:
-                PermissionsAllowed.AMALGAMATION_FILING.value
+               ListFilingsPermissionsAllowed.AMALGAMATION_FILING.value
             ,
             CoreFiling.FilingTypes.ANNUALREPORT.value:
-                PermissionsAllowed.ANNUAL_REPORT_FILING.value
+               ListFilingsPermissionsAllowed.ANNUAL_REPORT_FILING.value
             ,
             CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
-                PermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value
+               ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value
             ,
             CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:
-                PermissionsAllowed.CONSENT_CONTINUATION_OUT_FILING.value
+               ListFilingsPermissionsAllowed.CONSENT_CONTINUATION_OUT_FILING.value
             ,
             CoreFiling.FilingTypes.CONTINUATIONIN.value:
-                PermissionsAllowed.CONTINUATION_IN_FILING.value
+               ListFilingsPermissionsAllowed.CONTINUATION_IN_FILING.value
             ,
             CoreFiling.FilingTypes.CORRECTION.value:
-                PermissionsAllowed.CORRECTION_FILING.value
+               ListFilingsPermissionsAllowed.CORRECTION_FILING.value
             ,
             CoreFiling.FilingTypes.COURTORDER.value:
-                PermissionsAllowed.COURT_ORDER_FILING.value
+               ListFilingsPermissionsAllowed.COURT_ORDER_FILING.value
             ,
             CoreFiling.FilingTypes.DISSOLUTION.value:
-                PermissionsAllowed.DELAY_DISSOLUTION_FILING.value
+               ListFilingsPermissionsAllowed.DELAY_DISSOLUTION_FILING.value
             ,
             CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
-                PermissionsAllowed.DIRECTOR_CHANGE_FILING.value
+               ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value
             ,
             CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value:
-                PermissionsAllowed.FIRM_CHANGE_FILING.value
+               ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value
             ,
             CoreFiling.FilingTypes.CONVERSION.value:
-                PermissionsAllowed.FIRM_CONVERSION_FILING.value
+               ListFilingsPermissionsAllowed.FIRM_CONVERSION_FILING.value
             ,
             CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value:
-                PermissionsAllowed.INCORPORATION_APPLICATION_FILING.value
+               ListFilingsPermissionsAllowed.INCORPORATION_APPLICATION_FILING.value
             ,
             CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value:
-                PermissionsAllowed.NOTICE_WITHDRAWAL_FILING.value
+               ListFilingsPermissionsAllowed.NOTICE_WITHDRAWAL_FILING.value
             ,
             CoreFiling.FilingTypes.RESTORATION.value:
-                PermissionsAllowed.RESTORATION_REINSTATEMENT_FILING.value
+               ListFilingsPermissionsAllowed.RESTORATION_REINSTATEMENT_FILING.value
             ,
             CoreFiling.FilingTypes.REGISTRATION.value:
-                PermissionsAllowed.REGISTRATION_FILING.value
+               ListFilingsPermissionsAllowed.REGISTRATION_FILING.value
             ,
             CoreFiling.FilingTypes.SPECIALRESOLUTION.value:
-                PermissionsAllowed.SPECIAL_RESOLUTION_FILING.value
+               ListFilingsPermissionsAllowed.SPECIAL_RESOLUTION_FILING.value
             ,
             CoreFiling.FilingTypes.CHANGEOFADDRESS.value:
-                PermissionsAllowed.ADDRESS_CHANGE_FILING.value
+               ListFilingsPermissionsAllowed.ADDRESS_CHANGE_FILING.value
                 }
 
 # pylint: disable=(too-many-arguments,too-many-locals

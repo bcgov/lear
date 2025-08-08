@@ -546,7 +546,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         
         if not authorized(identifier, jwt, action=['edit']):
             return jsonify({'message': f'Not Authorized - You are not authorized to submit filings for {identifier}.'}), \
-                HTTPStatus.FORBIDDEN
+                HTTPStatus.UNAUTHORIZED 
 
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
             return jsonify({'message': f'Not Allowed - You are not allowed to submit this type of filing for {identifier}.'}), \
