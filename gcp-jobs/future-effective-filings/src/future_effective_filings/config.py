@@ -57,7 +57,7 @@ def get_named_config(config_name: str = "production"):
 class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults for all the other configurations."""
 
-    CLIENT_NAME = os.getenv("CLIENT_NAME", "entity.filing.worker")
+    CLIENT_NAME = os.getenv("CLIENT_NAME", "future_effective_filings")
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
@@ -94,7 +94,7 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
     BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC_TEST", "")
-    CLIENT_NAME = os.getenv("CLIENT_NAME_TEST", "entity.filing.worker.test")
+    CLIENT_NAME = os.getenv("CLIENT_NAME_TEST", "future_effective_filings_test")
 
     LEAR_SVC_URL = os.getenv("LEGAL_API_URL_TEST", "")
     ACCOUNT_SVC_AUTH_URL = os.getenv("KEYCLOAK_AUTH_TOKEN_TEST", "")

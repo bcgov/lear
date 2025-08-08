@@ -17,7 +17,7 @@ import copy
 import datedelta
 from freezegun import freeze_time
 import pytest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from unittest.mock import patch
 from registry_schemas.example_data import (
@@ -55,7 +55,7 @@ def test_get_future_effective_filing_ids(session, client, jwt):
     filing.save()
     assert filing.status == Filing.Status.PENDING.value
 
-    filing.payment_completion_date = datetime.now(timezone.utc)
+    filing.payment_completion_date = filing.effective_date - timedelta(hours=1)
     filing.save()
 
     assert filing.status == Filing.Status.PAID.value
