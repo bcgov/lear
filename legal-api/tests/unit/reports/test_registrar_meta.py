@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the Registrar Meta Utility is working as expected.
 """
-
+import pytest
 import datetime
 
 from registry_schemas.example_data import ANNUAL_REPORT
@@ -26,36 +26,34 @@ from legal_api.reports.registrar_meta import RegistrarInfo
 from tests.unit.models import factory_business
 
 
-def test_get_current_registrar(session):
-    """Assert that the current registrar is returned."""
-    b = factory_business('CP1234567')
-    filing = Filing()
-    filing.business_id = b.id
-    filing.filing_date = datetime.datetime.utcnow()
-    filing.filing_data = ANNUAL_REPORT
-    filing.save()
-
-    registrar_info = RegistrarInfo.get_registrar_info(filing.effective_date)
-    assert registrar_info['startDate']
-    # assert registrar_info['endDate'] is None
-    assert registrar_info['signature']
-    assert registrar_info['name']
-    assert registrar_info['title']
-
-
-def test_get_registrar_for_a_filing(session):
+@pytest.mark.parametrize(
+    'date, name, title',
+    [
+        (datetime.datetime(1970, 1, 1), "RON TOWNSHEND", "Registrar of Companies"),
+        (datetime.datetime(2012, 5, 31), "RON TOWNSHEND", "Registrar of Companies"),
+        (datetime.datetime(2012, 6, 1), "ANGELO COCCO", "A/Registrar of Companies"),
+        (datetime.datetime(2012, 7, 12), "ANGELO COCCO", "A/Registrar of Companies"),
+        (datetime.datetime(2012, 7, 13), "CAROL PREST", "Registrar of Companies"),
+        (datetime.datetime(2022, 5, 31), "CAROL PREST", "Registrar of Companies"),
+        (datetime.datetime(2022, 6, 1), "T.K. SPARKS", "Registrar of Companies"),
+        (datetime.datetime(2025, 4, 17), "T.K. SPARKS", "Registrar of Companies"),
+        (datetime.datetime(2025, 4, 18), "S. O'CALLAGHAN", "Registrar of Companies"),
+        (datetime.datetime(2025, 8, 12), "S. O'CALLAGHAN", "Registrar of Companies")
+    ]
+)
+def test_get_registrar_by_date(session, date, name, title):
     """Assert that the registrar effective on that date is returned."""
     b = factory_business('CP1234567')
     filing = Filing()
     filing.business_id = b.id
-    filing.filing_date = datetime.datetime(2012, 6, 6)
-    filing.effective_date = datetime.datetime(2012, 6, 6)
+    filing.filing_date = date
+    filing.effective_date = date
     filing.filing_data = ANNUAL_REPORT
     filing.save()
 
     registrar_info = RegistrarInfo.get_registrar_info(filing.effective_date)
     assert registrar_info['startDate']
-    assert registrar_info['endDate']
+    # assert registrar_info['endDate'] # last registrar has endDate=None
     assert registrar_info['signature']
-    assert registrar_info['name'] == 'ANGELO COCCO'
-    assert registrar_info['title'] == 'A/Registrar of Companies'
+    assert registrar_info['name'] == name
+    assert registrar_info['title'] == title

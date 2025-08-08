@@ -52,19 +52,11 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'endDate': '2025-04-17T23:59:59'
         },
         {
-            'name': "S. O\'CALLAGHAN",
+            'name': "S. O'CALLAGHAN",
             'title': 'Registrar of Companies',
             'signatureImage': 'registrar_signature_5.png',
             'signatureImageAndText': 'registrar_signature_and_text_5.png',
             'startDate': '2025-04-18T00:00:00',
-            'endDate': '2025-08-11T23:59:59'
-        },
-        {
-            'name': 'KERRY TAYLOR',
-            'title': 'Registrar of Companies',
-            'signatureImage': 'registrar_signature_6.png',
-            'signatureImageAndText': 'registrar_signature_and_text_6.png',
-            'startDate': '2025-08-12T00:00:00',
             'endDate': None
         }
     ]
