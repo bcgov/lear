@@ -30,6 +30,7 @@ from flask_cors import cross_origin
 from flask_jwt_oidc import JwtManager
 from flask_pydantic import validate as pydantic_validate
 from html_sanitizer import Sanitizer  # noqa: I001;
+from legal_api.services.permissions import PermissionService
 from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
 from pydantic.generics import GenericModel
 from werkzeug.local import LocalProxy
@@ -62,7 +63,7 @@ from legal_api.services import (
     flags,
     namex,
 )
-from legal_api.services.authz import has_permissions_for_action, is_allowed
+from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.utils import get_str
@@ -540,7 +541,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
         
-        if not has_permissions_for_action(filing_type):
+        if flags.is_on('enable-permissions-for-action') and not PermissionService.has_permissions_for_action(filing_type):
             return jsonify({'message': f'Permission Denied - You are not authorized to submit this type of filing for:' + identifier}), \
                 HTTPStatus.FORBIDDEN
         
