@@ -1149,15 +1149,8 @@ def is_competent_authority(jwt: JwtManager) -> bool:
 def find_roles_for_filing_type(filing_type_value: str):
     """Find roles that are allowed to perform the given filing type."""
     allowable_permissions = get_filing_permission_mapping()
-    roles_with_filing = ''
-
-    for allowed_filings, role in allowable_permissions.items():
-        if filing_type_value == allowed_filings:
-            roles_with_filing = role
-            break
-
+    roles_with_filing = allowable_permissions.get(filing_type_value, '')
     return roles_with_filing
-
 
 def has_permissions_for_action(filing_type: str) -> bool:
     """Check if the user has permissions for the action per permissions table."""
