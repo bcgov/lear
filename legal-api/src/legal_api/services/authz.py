@@ -1175,7 +1175,7 @@ def find_roles_for_filing_type(filing_type_value: str):
     roles_with_filing = ''
 
     for allowed_filings, role in allowable_permissions.items():
-        if filing_type_value in allowed_filings:
+        if filing_type_value == allowed_filings:
             roles_with_filing = role
             break
 
