@@ -19,7 +19,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from flask import Response, current_app, g, request
+from flask import Response, current_app, request
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
@@ -32,7 +32,6 @@ from legal_api.services.digital_credentials_auth import (
 )
 from legal_api.services.cache import cache
 from legal_api.services.warnings.business.business_checks import WarningType
-from legal_api.services.permissions import PermissionService
 
 SYSTEM_ROLE = 'system'
 SBC_STAFF_ROLE = 'sbc_staff'

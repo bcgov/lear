@@ -20,11 +20,12 @@ from http import HTTPStatus
 from flask import jsonify
 from flask import current_app, g
 
-from urllib3.util.retry import Retry
 
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services.cache import cache
-
+from legal_api.services.authz import (
+    STAFF_ROLE, SBC_STAFF_ROLE, CONTACT_CENTRE_STAFF_ROLE, MAXIMUS_STAFF_ROLE, PUBLIC_USER
+    )
 class ListFilingsPermissionsAllowed(str, Enum):
     """Define an enum for permissions checks."""
 
@@ -53,7 +54,7 @@ class ListFilingsPermissionsAllowed(str, Enum):
     REGISTRATION_FILING = 'REGISTRATION_FILING'
     SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
     ADDRESS_CHANGE_FILING = 'ADDRESS_CHANGE_FILING'
-    
+
 class PermissionService:
     """Service to manage permissions for user roles."""
 
@@ -79,13 +80,10 @@ class PermissionService:
             cache.set(cache_key, authorized_permissions)
 
         return authorized_permissions
-    
+
     @staticmethod
     def get_authorized_user_role() -> str:
         """Return the first matching authorized role from the JWT, based on priority."""
-        from legal_api.services.authz import (
-    STAFF_ROLE, SBC_STAFF_ROLE, CONTACT_CENTRE_STAFF_ROLE, MAXIMUS_STAFF_ROLE, PUBLIC_USER
-    )
         role_priority = [
             STAFF_ROLE,
             SBC_STAFF_ROLE,
@@ -101,7 +99,7 @@ class PermissionService:
             if role in roles_in_token:
                 return role
         return None
-    
+
     @staticmethod
     def get_filing_permission_mapping():
         """Return dictionary containing rules for filings are allowed for different roles."""
@@ -178,7 +176,7 @@ class PermissionService:
                 CoreFiling.FilingTypes.CHANGEOFADDRESS.value:
                 ListFilingsPermissionsAllowed.ADDRESS_CHANGE_FILING.value
                     }
-    
+
     @staticmethod
     def find_roles_for_filing_type(filing_type_value: str):
         """Find roles that are allowed to perform the given filing type."""
