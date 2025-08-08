@@ -68,9 +68,9 @@ def test_publish_to_nats_with_wrapper(app):
         assert args['payload']['id'] == test_message_id
         assert args['payload']['data'] == test_data
 
-def test_publish_to_nats():
+def test_publish_to_nats(app):
     """Test publishing direct message to NATS."""
-    with patch('legal_api.services.queue.publish_json') as mock_queue_publish:
+    with app.app_context(), patch('legal_api.services.queue.publish_json') as mock_queue_publish:
         test_payload = {'test': 'data'}
         test_subject = 'test.subject'
 

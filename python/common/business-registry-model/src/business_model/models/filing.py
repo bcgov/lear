@@ -1251,6 +1251,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return filing ids which should be effective now."""
         filings = db.session.query(Filing.id). \
             filter(Filing._status == Filing.Status.PAID.value). \
+            filter(Filing.effective_date > Filing._payment_completion_date). \
             filter(Filing.effective_date <= datetime.now(timezone.utc)).all()
         return [filing.id for filing in filings]
 
