@@ -48,7 +48,8 @@ from registry_schemas.example_data import (
 from legal_api.models import Business, Filing
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
     PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
-    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_authorized_user_role
+    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
+from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
@@ -572,7 +573,7 @@ def test_get_authorized_user_role(app, test_name, roles_in_token, expected_role)
 
     with app.test_request_context():
         setattr(g, 'jwt_oidc_token_info', {'realm_access': {'roles': roles_in_token}})
-        assert get_authorized_user_role() == expected_role
+        assert PermissionService.get_authorized_user_role() == expected_role
 
 def test_authorized_invalid_roles(monkeypatch, app, jwt):
     """Assert that an invalid role returns False."""
