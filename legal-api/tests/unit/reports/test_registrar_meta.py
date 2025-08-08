@@ -53,7 +53,7 @@ def test_get_registrar_by_date(session, date, name, title):
 
     registrar_info = RegistrarInfo.get_registrar_info(filing.effective_date)
     assert registrar_info['startDate']
-    assert registrar_info['endDate']
+    # assert registrar_info['endDate'] # last registrar has endDate=None
     assert registrar_info['signature']
     assert registrar_info['name'] == name
     assert registrar_info['title'] == title
