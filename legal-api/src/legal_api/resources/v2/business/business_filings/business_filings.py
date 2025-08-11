@@ -540,11 +540,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         # for incorporationApplication and registration, get legalType from nameRequest
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
-        if filing_sub_type:
-            filing_type = f'{filing_type}.{filing_sub_type}'
         if (
             flags.is_on('enable-permissions-for-action')
-            and not PermissionService.has_permissions_for_action(filing_type)
+            and
+            not PermissionService.has_permissions_for_action(filing_type, legal_type, filing_sub_type)
         ):
             return (
                 jsonify({
@@ -557,7 +556,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             )
         if not authorized(identifier, jwt, action=['edit']):
             return jsonify({
-                'message': f'Not Authorized - You are not permitted to submit filings for {identifier}.'
+                'message': f'Not Authorized - You are not authorized to submit filings for {identifier}.'
                 }), \
                 HTTPStatus.UNAUTHORIZED
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):

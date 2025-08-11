@@ -36,7 +36,8 @@ def test_has_permission_with_incorrect_permission(mock_token_info, app):
     mock_token_info.jwt_oidc_token_info = {'realm_access': {'roles': [PUBLIC_USER]}}
     with app.app_context():
         with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=['ADDRESS_CHANGE_FILING']):
-            result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value)
+            result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value, 
+                                                                 legal_type='BC', filing_sub_type='amalgamation')
             assert result is False
 
 
@@ -45,7 +46,7 @@ def test_has_permission_with_correct_permission(mock_token_info):
     mock_token_info.jwt_oidc_token_info = {'realm_access': {'roles': [STAFF_ROLE]}}
 
     with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=['AMALGAMATION_FILING']):
-        result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value)
+        result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value, legal_type='BC', filing_sub_type='amalgamation')
         assert result is True
 
 
@@ -54,17 +55,17 @@ def test_permission_fallback_on_role_priority(mock_token_info):
     mock_token_info.jwt_oidc_token_info = {'realm_access': {'roles': [PUBLIC_USER, STAFF_ROLE]}}
 
     with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=['ALTERATION_FILING']):
-        result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.ALTERATION.value)
+        result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.ALTERATION.value, legal_type='BC', filing_sub_type='alteration')
         assert result is True
 
 
 def test_find_roles_for_filing_type_existing():
     """Should return the mapped permission name for a known filing type."""
-    permission = PermissionService.find_roles_for_filing_type(CoreFiling.FilingTypes.AGMEXTENSION.value)
+    permission = PermissionService.find_roles_for_filing_type(CoreFiling.FilingTypes.AGMEXTENSION.value, legal_type='BC', filing_sub_type='extension')
     assert permission == 'AGM_EXTENSION_FILING'
 
 
 def test_find_roles_for_filing_type_unknown():
     """Should return empty string for unknown filing type."""
-    permission = PermissionService.find_roles_for_filing_type('UNKNOWN_FILING')
+    permission = PermissionService.find_roles_for_filing_type('UNKNOWN_FILING', legal_type='BC', filing_sub_type='unknown')
     assert permission == ''
