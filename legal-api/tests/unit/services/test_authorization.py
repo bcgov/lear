@@ -572,8 +572,8 @@ def test_get_authorized_user_role(app, test_name, roles_in_token, expected_role)
     """Assert that the correct authorized role is returned or None."""
 
     with app.test_request_context():
-        setattr(g, 'jwt_oidc_token_info', {'realm_access': {'roles': roles_in_token}})
-        assert PermissionService.get_authorized_user_role() == expected_role
+        token_info = {'realm_access': {'roles': roles_in_token}}
+        assert PermissionService.get_authorized_user_role(token_info=token_info) == expected_role
 
 def test_authorized_invalid_roles(monkeypatch, app, jwt):
     """Assert that an invalid role returns False."""

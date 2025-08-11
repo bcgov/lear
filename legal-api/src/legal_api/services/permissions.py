@@ -18,9 +18,9 @@ from enum import Enum
 
 from flask import current_app, g
 
-from legal_api.services import authz as AuthService
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
+from legal_api.services import authz
 from legal_api.services.cache import cache
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 
@@ -78,17 +78,18 @@ class PermissionService:
         return authorized_permissions
 
     @staticmethod
-    def get_authorized_user_role() -> str:
+    def get_authorized_user_role(token_info: dict = None) -> str:
         """Return the first matching authorized role from the JWT, based on priority."""
         role_priority = [
-            AuthService.STAFF_ROLE,
-            AuthService.SBC_STAFF_ROLE,
-            AuthService.CONTACT_CENTRE_STAFF_ROLE,
-            AuthService.MAXIMUS_STAFF_ROLE,
-            AuthService.PUBLIC_USER,
+            authz.STAFF_ROLE,
+            authz.SBC_STAFF_ROLE,
+            authz.CONTACT_CENTRE_STAFF_ROLE,
+            authz.MAXIMUS_STAFF_ROLE,
+            authz.PUBLIC_USER,
         ]
 
-        token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
+        if token_info is None:
+            token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
 
         roles_in_token = token_info.get('realm_access', {}).get('roles', [])
         for role in role_priority:
