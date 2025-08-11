@@ -26,12 +26,13 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from legal_api.models import Business, Filing
+from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
-from legal_api.services.cache import cache
 from legal_api.services.warnings.business.business_checks import WarningType
+
 
 SYSTEM_ROLE = 'system'
 SBC_STAFF_ROLE = 'sbc_staff'
@@ -58,6 +59,7 @@ class BusinessBlocker(str, Enum):
     IN_DISSOLUTION = 'IN_DISSOLUTION'
     IN_LIQUIDATION = 'IN_LIQUIDATION'
     FILING_WITHDRAWAL = 'FILING_WITHDRAWAL'
+
 
 class BusinessRequirement(str, Enum):
     """Define an enum for business requirement scenarios."""

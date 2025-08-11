@@ -23,6 +23,7 @@ from legal_api.utils.auth import jwt
 
 bp = Blueprint('PERMISSIONS2', __name__, url_prefix='/api/v2/permissions')
 
+
 @bp.route('', methods=['GET'])
 @cross_origin(origin='*')
 @jwt.requires_auth

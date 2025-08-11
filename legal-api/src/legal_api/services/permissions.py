@@ -15,17 +15,20 @@
 # pylint: disable=too-many-lines
 """This manages all of the authentication and authorization service."""
 from enum import Enum
-from http import HTTPStatus
 
-from flask import jsonify
 from flask import current_app, g
 
-
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-from legal_api.services.cache import cache
 from legal_api.services.authz import (
-    STAFF_ROLE, SBC_STAFF_ROLE, CONTACT_CENTRE_STAFF_ROLE, MAXIMUS_STAFF_ROLE, PUBLIC_USER
-    )
+    CONTACT_CENTRE_STAFF_ROLE,
+    MAXIMUS_STAFF_ROLE,
+    PUBLIC_USER,
+    SBC_STAFF_ROLE,
+    STAFF_ROLE,
+)
+from legal_api.services.cache import cache
+
+
 class ListFilingsPermissionsAllowed(str, Enum):
     """Define an enum for permissions checks."""
 
@@ -55,14 +58,13 @@ class ListFilingsPermissionsAllowed(str, Enum):
     SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
     ADDRESS_CHANGE_FILING = 'ADDRESS_CHANGE_FILING'
 
+
 class PermissionService:
     """Service to manage permissions for user roles."""
 
     @staticmethod
     def get_authorized_permissions_for_user():
-        """
-        Returns a JSON response containing the authorized permissions for the current user.
-        """
+        """Return a JSON response containing the authorized permissions for the current user."""
         authorized_role = PermissionService.get_authorized_user_role()
         if not authorized_role:
             return []
@@ -105,74 +107,52 @@ class PermissionService:
 
         return {
                 CoreFiling.FilingTypes.TRANSITION.value:
-                ListFilingsPermissionsAllowed.TRANSITION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.TRANSITION_FILING.value,
                 CoreFiling.FilingTypesCompact.DISSOLUTION_VOLUNTARY.value:
-            ListFilingsPermissionsAllowed.VOLUNTARY_DISSOLUTION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.VOLUNTARY_DISSOLUTION_FILING.value,
                 CoreFiling.FilingTypesCompact.DISSOLUTION_ADMINISTRATIVE.value:
-                ListFilingsPermissionsAllowed.ADMIN_DISSOLUTION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.ADMIN_DISSOLUTION_FILING.value,
                 CoreFiling.FilingTypes.AGMLOCATIONCHANGE.value:
-                ListFilingsPermissionsAllowed.AGM_CHG_LOCATION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.AGM_CHG_LOCATION_FILING.value,
                 CoreFiling.FilingTypes.AGMEXTENSION.value:
-                ListFilingsPermissionsAllowed.AGM_EXTENSION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.AGM_EXTENSION_FILING.value,
                 CoreFiling.FilingTypes.ALTERATION.value:
-                ListFilingsPermissionsAllowed.ALTERATION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.ALTERATION_FILING.value,
                 CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value:
-                ListFilingsPermissionsAllowed.AMALGAMATION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.AMALGAMATION_FILING.value,
                 CoreFiling.FilingTypes.ANNUALREPORT.value:
-                ListFilingsPermissionsAllowed.ANNUAL_REPORT_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.ANNUAL_REPORT_FILING.value,
                 CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
-                ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value,
                 CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:
-                ListFilingsPermissionsAllowed.CONSENT_CONTINUATION_OUT_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.CONSENT_CONTINUATION_OUT_FILING.value,
                 CoreFiling.FilingTypes.CONTINUATIONIN.value:
-                ListFilingsPermissionsAllowed.CONTINUATION_IN_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.CONTINUATION_IN_FILING.value,
                 CoreFiling.FilingTypes.CORRECTION.value:
-                ListFilingsPermissionsAllowed.CORRECTION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.CORRECTION_FILING.value,
                 CoreFiling.FilingTypes.COURTORDER.value:
-                ListFilingsPermissionsAllowed.COURT_ORDER_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.COURT_ORDER_FILING.value,
                 CoreFiling.FilingTypes.DISSOLUTION.value:
-                ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value,
                 CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
-                ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value,
                 CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value:
-                ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value,
                 CoreFiling.FilingTypes.CONVERSION.value:
-                ListFilingsPermissionsAllowed.FIRM_CONVERSION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.FIRM_CONVERSION_FILING.value,
                 CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value:
-                ListFilingsPermissionsAllowed.INCORPORATION_APPLICATION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.INCORPORATION_APPLICATION_FILING.value,
                 CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL.value:
-                ListFilingsPermissionsAllowed.NOTICE_WITHDRAWAL_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.NOTICE_WITHDRAWAL_FILING.value,
                 CoreFiling.FilingTypes.RESTORATION.value:
-                ListFilingsPermissionsAllowed.RESTORATION_REINSTATEMENT_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.RESTORATION_REINSTATEMENT_FILING.value,
                 CoreFiling.FilingTypes.REGISTRATION.value:
-                ListFilingsPermissionsAllowed.REGISTRATION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.REGISTRATION_FILING.value,
                 CoreFiling.FilingTypes.SPECIALRESOLUTION.value:
-                ListFilingsPermissionsAllowed.SPECIAL_RESOLUTION_FILING.value
-                ,
+                ListFilingsPermissionsAllowed.SPECIAL_RESOLUTION_FILING.value,
                 CoreFiling.FilingTypes.CHANGEOFADDRESS.value:
                 ListFilingsPermissionsAllowed.ADDRESS_CHANGE_FILING.value
-                    }
+                }
 
     @staticmethod
     def find_roles_for_filing_type(filing_type_value: str):
