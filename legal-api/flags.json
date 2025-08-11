@@ -9,6 +9,7 @@
     "enable-involuntary-dissolution-filter": false,
     "enable-new-ben-statements": false,
     "enable-auth-v2-business": true,
+    "enable-permissions-for-action": false,
     "involuntary-dissolution-filter": {
       "include-accounts": [],
       "exclude-accounts": []
