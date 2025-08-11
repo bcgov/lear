@@ -34,7 +34,10 @@ class PublishEvent:
         try:
             subject = app.config.get("BUSINESS_EVENTS_TOPIC")
 
-            identifier = business.identifier if business else filing.temp_reg
+            identifier = business.identifier if business else (
+                filing.temp_reg or 
+                (filing.json or {}).get("filing", {}).get("business", {}).get("identifier")
+            )
             data = {
                 "filing": {
                     "header": {
@@ -79,7 +82,10 @@ class PublishEvent:
     @staticmethod
     def _create_cloud_event(app: Flask, business: Business, filing: Filing, subject: str, data: dict):
         """Create the cloud event."""
-        identifier = business.identifier if business else filing.temp_reg
+        identifier = business.identifier if business else (
+            filing.temp_reg or 
+            (filing.json or {}).get("filing", {}).get("business", {}).get("identifier")
+        )
 
         ce = SimpleCloudEvent(
                 id=str(uuid.uuid4()),
