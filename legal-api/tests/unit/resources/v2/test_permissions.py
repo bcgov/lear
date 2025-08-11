@@ -49,8 +49,9 @@ def test_get_permissions_with_unknown_role(client, jwt, setup_permissions):
         headers=create_header(jwt, ['unknown_role'], 'user')
     )
     assert rv.status_code == HTTPStatus.OK
-    assert rv.json['authorizedPermissions'] == []
-    assert 'message' in rv.json     
+    assert rv.json == {
+        'authorizedPermissions': []
+    }     
 
 def test_get_permissions_with_staff_role(client, jwt, setup_permissions):
     """Should return newly added permission in the authorizedPermissions for a staff user."""

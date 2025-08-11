@@ -65,10 +65,7 @@ class PermissionService:
         """
         authorized_role = PermissionService.get_authorized_user_role()
         if not authorized_role:
-            return jsonify({
-                'message': 'No authorized role found.',
-                'authorizedPermissions': []
-            }), HTTPStatus.OK
+            return []
 
         cache_key = f'authorized_permissions_{authorized_role}'
         cached_permissions = cache.get(cache_key)
