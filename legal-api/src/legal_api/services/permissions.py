@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # pylint: disable=too-many-lines
-"""This manages all of the authorization service."""
+"""This manages all of the permissions service."""
 from enum import Enum
 
 from flask import current_app, g
