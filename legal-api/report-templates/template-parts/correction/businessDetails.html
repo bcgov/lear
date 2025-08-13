@@ -12,7 +12,6 @@
                 {% if correction.resolutionDate is defined %}
                     <div class="bold pt-2">Resolution Date:</div>
                 {% endif %}
-                <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                 <div>{{business.identifier}}</div>
@@ -21,7 +20,6 @@
                 {% if correction.resolutionDate is defined %}
                     <div class="pt-2">{{correction.resolutionDate}}</div>
                 {% endif %}
-                <div class="pt-2">{{report_date_time}}</div>
             </td>
             <td class="business-details-registar-td">
                 <div class="registar-certify-section">
@@ -38,6 +36,10 @@
         </tr>
     </table>
 </div>
+
+<!-- Retrieved Date and Time: -->
+<div class="retrievd-date-time mt-2">Document retrieved on {{report_date_time}}</div>
+
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
     Filing #{{header.filingId}}

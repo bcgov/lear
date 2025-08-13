@@ -41,6 +41,7 @@
 
       {% if business.legalType == 'CP' %}
          <div class="container">
+            <div class="separator"></div>
             [[incorporation-application/nameRequest.html]]
             [[incorporation-application/cooperativeAssociationType.html]]
             [[incorporation-application/effectiveDate.html]]
@@ -49,7 +50,7 @@
             [[common/directors.html]]
          </div>
       {% else %}
-         <div class="section-header mt-5 pt-4">INCORPORATION APPLICATION</div>
+         <div class="section-header pt-4">INCORPORATION APPLICATION</div>
          <div class="container pt-4">
             [[incorporation-application/nameRequest.html]]
             [[incorporation-application/effectiveDate.html]]

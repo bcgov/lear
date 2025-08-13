@@ -30,23 +30,25 @@
          </div>
       </div>
       [[common/businessDetails.html]]
-      [[common/courtOrder.html]]
-      [[business-summary/businessDetails.html]]
-      [[common/nameTranslation.html]]
-      [[business-summary/foreignJurisdiction.html]]
-      [[business-summary/alterations.html]]
-      [[business-summary/nameChanges.html]]
-      [[business-summary/stateTransition.html]]
-      [[business-summary/amalgamationOut.html]]
-      [[business-summary/recordKeeper.html]]
-      [[business-summary/amalgamations.html]]
-      [[common/addresses.html]]
-      {% if business.legalType in ['GP', 'SP'] %}
-         [[business-summary/parties.html]]
-      {% else %}
-         [[notice-of-articles/directors.html]]
-      {% endif %}
-      [[business-summary/receiverInformation.html]]
-      <div class="container"></div>
+      <div class="container">
+         <div class="separator"></div>
+         [[common/courtOrder.html]]
+         [[business-summary/businessDetails.html]]
+         [[common/nameTranslation.html]]
+         [[business-summary/foreignJurisdiction.html]]
+         [[business-summary/alterations.html]]
+         [[business-summary/nameChanges.html]]
+         [[business-summary/stateTransition.html]]
+         [[business-summary/amalgamationOut.html]]
+         [[business-summary/recordKeeper.html]]
+         [[business-summary/amalgamations.html]]
+         [[common/addresses.html]]
+         {% if business.legalType in ['GP', 'SP'] %}
+            [[business-summary/parties.html]]
+         {% else %}
+            [[notice-of-articles/directors.html]]
+         {% endif %}
+         [[business-summary/receiverInformation.html]]
+      </div>
    </body>
 </html>
