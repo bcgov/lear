@@ -149,8 +149,10 @@ def send_email(email: dict, token: str):
         subject = content.get("subject", "-empty-")
         attachment_count = len(content.get("attachments", []))
         recipients = email.get("recipients", "-empty-")
-        subject_display = subject[:50] + "..." if len(subject) > 50 else subject
-        recipients_display = recipients[:100] + "..." if len(recipients) > 100 else recipients
+        subject_limit = 50
+        recipients_limit = 100
+        subject_display = subject[:subject_limit] + "..." if len(subject) > subject_limit else subject
+        recipients_display = recipients[:recipients_limit] + "..." if len(recipients) > recipients_limit else recipients
         log_message = \
             (f"Sending email with subject '{subject_display}' and {attachment_count} attachments"
              f" to: {recipients_display}")
