@@ -29,7 +29,6 @@ business-registry-account = { git = "https://github.com/bcgov/lear.git", branch 
 business-model = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-model" }
 business-registry-common = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-common" }
 gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/gcp-queue", branch = "main" }
-registry_schemas = { git = "https://github.com/bcgov/business-schemas.git", tag = "2.18.39" }
 sql-versioning = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/sql-versioning-alt" }
 structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/structured-logging", branch = "main" }
 gunicorn = "^23.0.0"
