@@ -101,3 +101,23 @@ class PublishEvent:
                 data=data
             )
         return ce
+
+    @staticmethod
+    def publish_drs_creation_event(app: Flask, data: dict):
+        """Publishes a DRS creation event as a SimpleCloudEvent."""
+        try:
+            subject = app.config.get("DOC_CREATE_REC_TOPIC")
+            if not subject:
+                raise PublishException("Missing DOC_CREATE_REC_TOPIC in config.")
+
+            ce = SimpleCloudEvent(
+                id=str(uuid.uuid4()),
+                source="business-filer",
+                subject=subject,
+                time=datetime.now(UTC),
+                data=data
+            )
+
+            gcp_queue.publish(subject, to_queue_message(ce))
+        except Exception as err:  # pylint: disable=broad-except;
+            raise PublishException(err) from err
