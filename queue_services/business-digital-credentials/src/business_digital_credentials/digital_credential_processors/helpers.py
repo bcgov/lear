@@ -58,7 +58,6 @@ def get_all_digital_credentials_for_business(
                     credentials.append(credential)
 
         return credentials
-    # pylint: disable=broad-exception-raised
     except Exception as err:
         raise err
 
@@ -75,18 +74,15 @@ def issue_digital_credential(
                 digital_credentials.business_cred_def_id,
             )
         ):
-            # pylint: disable=broad-exception-raised
             raise Exception(
                 f"Definition not found for credential type: {credential_type}."
             )
 
-        # pylint: disable=superfluous-parens
         if not (
             connection := DCConnection.find_active_by_business_user_id(
                 business_user_id=business_user.id
             )
         ):
-            # pylint: disable=broad-exception-raised
             raise Exception(
                 f"Active connection not found for business user with ID: {business_user.id}."
             )
@@ -110,7 +106,6 @@ def issue_digital_credential(
                 data=credential_data,
             )
         ):
-            # pylint: disable=broad-exception-raised
             raise Exception("Failed to issue credential.")
 
         issued_credential = DCCredential(
@@ -122,7 +117,6 @@ def issue_digital_credential(
         issued_credential.save()
 
         return issued_credential
-    # pylint: disable=broad-exception-raised
     except Exception as err:
         raise err
 
@@ -133,12 +127,9 @@ def revoke_digital_credential(
     """Revoke an issued digital credential."""
     try:
         if not credential.is_issued or credential.is_revoked:
-            # pylint: disable=broad-exception-raised
             raise Exception("Credential is not issued yet or is revoked already.")
 
-        # pylint: disable=superfluous-parens
         if not (connection := credential.connection) or not connection.is_active:
-            # pylint: disable=broad-exception-raised
             raise Exception(
                 f"Active connection not found for credential with ID: {credential.credential_id}."
             )
@@ -152,19 +143,16 @@ def revoke_digital_credential(
             )
             is None
         ):
-            # pylint: disable=broad-exception-raised
             raise Exception("Failed to revoke credential.")
 
         credential.is_revoked = True
         credential.save()
 
         return None
-    # pylint: disable=broad-exception-raised
     except Exception as err:
         raise err
 
 
-# pylint: disable=too-many-arguments
 def replace_digital_credential(
     credential: DCCredential,
     credential_type: DCDefinition.CredentialType,
@@ -185,16 +173,12 @@ def replace_digital_credential(
             )
             is None
         ):
-            # pylint: disable=broad-exception-raised
             raise Exception("Failed to remove credential exchange record.")
 
-        issue_digital_credential(
-            credential.connection.business_user, credential_type
-        )  # pylint: disable=too-many-function-args
+        issue_digital_credential(credential.connection.business_user, credential_type)
         # We delete the old credential after issuing the new one so that the connection is not lost
         credential.delete()
 
         return None
-    # pylint: disable=broad-exception-raised
     except Exception as err:
         raise err

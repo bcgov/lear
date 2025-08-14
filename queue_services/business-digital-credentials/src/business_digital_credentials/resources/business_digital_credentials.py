@@ -86,17 +86,17 @@ def worker():
         process_event(ce)
         return {}, HTTPStatus.OK
 
-    except QueueException as err:
-        # Catch Exception so that any error is still caught and the message is removed from the queue
-        current_app.logger.error(f"Queue Error: {err}", exc_info=True)
-        current_app.logger.error(f"Cloud event that caused error: {ce}")
-        return {}, HTTPStatus.BAD_REQUEST
     except FilingStatusException as err:
         # Catch FilingStatusException to handle cases where the filing can't be processed
         # and add to retry logic if needed
         current_app.logger.error(f"Filing Status Error: {err}", exc_info=True)
         current_app.logger.error(f"Cloud event that caused error: {ce}")
         return {}, HTTPStatus.INTERNAL_SERVER_ERROR
+    except (QueueException, Exception) as err:
+        # Catch Exception so that any error is still caught and the message is removed from the queue
+        current_app.logger.error(f"Queue Error or unhandled: {err}", exc_info=True)
+        current_app.logger.error(f"Cloud event that caused error: {ce}")
+        return {}, HTTPStatus.BAD_REQUEST
 
 
 def process_event(  # pylint: disable=too-many-branches, too-many-statements  # noqa: PLR0912
@@ -132,12 +132,13 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
             raise QueueException("Digital credential message is missing identifier.")
 
         if not (business := Business.find_by_identifier(identifier)):
-            raise QueueException(f"Business with identifier: {identifier} not found.")
+            raise FilingStatusException(
+                f"Business with identifier: {identifier} not found."
+            )
 
         current_app.logger.info(
-            f"Business record found: {business.identifier} - {business.legal_name}"
+            f"Business record found: {business.identifier} - {business.legal_type} - {business.legal_name}"
         )
-        current_app.logger.info(f"record: {vars(business)}")
 
         if etype == BusinessMessageType.BN.value:
             business_number.process(business)
@@ -190,4 +191,4 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         elif filing_type == FilingTypes.DISSOLUTION.value:
             dissolution.process(business, filing.filing_sub_type)
         elif filing_type == FilingTypes.PUTBACKON.value:
-            put_back_on.process(business, filing)
+            put_back_on.process(business)

@@ -52,6 +52,13 @@ def test_worker_success(mock_get_cloud_event, mock_process_event, mock_verify_gc
     mock_process_event.assert_called_once_with(mock_ce)
 
 
+def test_worker_no_data( test_client):
+    """Test worker just returns if no data."""
+    response = test_client.post("/", data=None)
+
+    assert response.status_code == HTTPStatus.OK
+
+
 @patch("business_digital_credentials.resources.business_digital_credentials.verify_gcp_jwt")
 @patch("business_digital_credentials.resources.business_digital_credentials.process_event")
 @patch("business_digital_credentials.services.gcp_queue.get_simple_cloud_event")
@@ -135,9 +142,32 @@ def test_worker_authentication_failure(mock_get_cloud_event, mock_process_event,
     mock_process_event.assert_not_called()
 
 
+@patch("business_digital_credentials.resources.business_digital_credentials.verify_gcp_jwt")
+@patch("business_digital_credentials.resources.business_digital_credentials.process_event")
+@patch("business_digital_credentials.services.gcp_queue.get_simple_cloud_event")
+def test_worker_general_exception(mock_get_cloud_event, mock_process_event, mock_verify_gcp_jwt, test_client):
+    """Test worker when general Exception is raised during processing."""
+    
+    # Mock successful authentication
+    mock_verify_gcp_jwt.return_value = ""
+    
+    # Mock cloud event and general Exception being raised during processing
+    mock_ce = MagicMock()
+    mock_get_cloud_event.return_value = mock_ce
+    mock_process_event.side_effect = ValueError("Unexpected error")
+    
+    response = test_client.post("/", data=b"test_data")
+    
+    assert response.status_code == HTTPStatus.BAD_REQUEST
+    assert response.get_json() == {}
+    mock_verify_gcp_jwt.assert_called_once()
+    mock_get_cloud_event.assert_called_once()
+    mock_process_event.assert_called_once_with(mock_ce)
+
+
 # Tests for process_event function
 
-@patch("business_digital_credentials.digital_credential_processors.business_number.process")
+@patch("business_digital_credentials.digital_credential_processors.business_number.process", spec=True)
 @patch("business_model.models.Business.find_by_identifier")
 def test_process_event_business_number_message(mock_find_business, mock_bn_process, app):
     """Test process_event with business number message."""
@@ -157,7 +187,7 @@ def test_process_event_business_number_message(mock_find_business, mock_bn_proce
         mock_bn_process.assert_called_once_with(mock_business)
 
 
-@patch("business_digital_credentials.digital_credential_processors.admin_revoke.process")
+@patch("business_digital_credentials.digital_credential_processors.admin_revoke.process", spec=True)
 @patch("business_model.models.Business.find_by_identifier")
 def test_process_event_admin_revoke_message(mock_find_business, mock_admin_process, app):
     """Test process_event with admin revoke message."""
@@ -177,7 +207,7 @@ def test_process_event_admin_revoke_message(mock_find_business, mock_admin_proce
         mock_admin_process.assert_called_once_with(mock_business)
 
 
-@patch("business_digital_credentials.digital_credential_processors.change_of_registration.process")
+@patch("business_digital_credentials.digital_credential_processors.change_of_registration.process", spec=True)
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
 def test_process_event_filing_message_change_of_registration(mock_find_filing, mock_find_business, mock_cor_process, app):
@@ -205,7 +235,7 @@ def test_process_event_filing_message_change_of_registration(mock_find_filing, m
         mock_cor_process.assert_called_once_with(mock_business, mock_filing)
 
 
-@patch("business_digital_credentials.digital_credential_processors.dissolution.process")
+@patch("business_digital_credentials.digital_credential_processors.dissolution.process", spec=True)
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
 def test_process_event_filing_message_dissolution(mock_find_filing, mock_find_business, mock_dissolution_process, app):
@@ -234,7 +264,7 @@ def test_process_event_filing_message_dissolution(mock_find_filing, mock_find_bu
         mock_dissolution_process.assert_called_once_with(mock_business, "voluntary")
 
 
-@patch("business_digital_credentials.digital_credential_processors.put_back_on.process")
+@patch("business_digital_credentials.digital_credential_processors.put_back_on.process", spec=True)
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
 def test_process_event_filing_message_put_back_on(mock_find_filing, mock_find_business, mock_pbo_process, app):
@@ -257,9 +287,8 @@ def test_process_event_filing_message_put_back_on(mock_find_filing, mock_find_bu
         
         process_event(ce)
         
-        mock_find_filing.assert_called_once_with(999)
         mock_find_business.assert_called_once_with(123)
-        mock_pbo_process.assert_called_once_with(mock_business, mock_filing)
+        mock_pbo_process.assert_called_once_with(mock_business)
 
 
 def test_process_event_filing_message_unsupported_filing_type(app, caplog):
@@ -389,7 +418,7 @@ def test_process_event_business_not_found_by_identifier(mock_find_business, app)
         ce.data = {"identifier": "BC1234567"}
         
         # Act & Assert
-        with pytest.raises(QueueException, match="Business with identifier: BC1234567 not found"):
+        with pytest.raises(FilingStatusException, match="Business with identifier: BC1234567 not found"):
             process_event(ce)
 
 

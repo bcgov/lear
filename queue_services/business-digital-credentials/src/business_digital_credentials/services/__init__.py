@@ -16,15 +16,3 @@ from .flags import Flags
 
 flags = Flags()
 gcp_queue = GcpQueue()
-
-
-def create_filing_msg(identifier):
-    """Create the filing payload."""
-    filing_msg = {"filing": {"id": identifier}}
-    return filing_msg
-
-
-def create_gcp_filing_msg(identifier):
-    """Create the GCP filing payload."""
-    filing_msg = {"filingMessage": {"filingIdentifier": identifier}}
-    return filing_msg
