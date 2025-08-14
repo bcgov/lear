@@ -41,14 +41,12 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import aliases, business_info, filings, shares
 from business_filer.filing_processors.filing_components.offices import update_offices
 from business_filer.filing_processors.filing_components.parties import update_parties
-from business_filer.services import Flags
 
 
 def process(business: Business,  # noqa: PLR0912
             filing: dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta,
-            flags: Flags):  # pylint: disable=too-many-branches
+            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
     """Process the incoming incorporation filing."""
     # Extract the filing information for incorporation
     incorp_filing = filing.get("filing", {}).get("incorporationApplication")
@@ -65,7 +63,7 @@ def process(business: Business,  # noqa: PLR0912
         corp_num = filing["filing"]["business"]["identifier"]
     else:
         # Reserve the Corp Number for this entity
-        corp_num = business_info.get_next_corp_num(business_info_obj["legalType"], flags)
+        corp_num = business_info.get_next_corp_num(business_info_obj["legalType"])
         if not corp_num:
             raise QueueException(
                 f"incorporationApplication {filing_rec.id} unable to get a business registration number.")

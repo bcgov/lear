@@ -99,6 +99,7 @@ class Flags:
             client = current_app.extensions[Flags.COMPONENT_NAME]
             return client
         try:
+            current_app.logger.warning("No LDClient found, using default client.")
             return ldclient.get()
         except Exception:
             return None
@@ -128,5 +129,3 @@ class Flags:
         except Exception as err:
             current_app.logger.error("Unable to read flags: %s", repr(err), exc_info=True)
             return None
-
-flags = Flags()

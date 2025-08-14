@@ -42,14 +42,12 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import business_info, filings
 from business_filer.filing_processors.filing_components.offices import update_offices
 from business_filer.filing_processors.filing_components.parties import update_parties
-from business_filer.services import Flags
 
 
 def process(business: Business,  # pylint: disable=too-many-branches
             filing: dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta,
-            flags: Flags):  # pylint: disable=too-many-branches
+            filing_meta: FilingMeta):  # pylint: disable=too-many-branches
     """Process the incoming registration filing."""
     # Extract the filing information for registration
     registration_filing = filing.get("filing", {}).get("registration")
@@ -63,7 +61,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
     business_info_obj = registration_filing.get("nameRequest")
 
     # Reserve the Corp Number for this entity
-    corp_num = business_info.get_next_corp_num("FM", flags)
+    corp_num = business_info.get_next_corp_num("FM")
     if not corp_num:
         raise QueueException(
             f"registration {filing_rec.id} unable to get a business registration number.")

@@ -6,9 +6,8 @@ from business_model.models import Business, Filing
 from flask import Flask
 
 from business_filer.common.filing import FilingTypes
-from business_filer.common.services.flag_manager import flags
 from business_filer.exceptions import PublishException
-from business_filer.services import gcp_queue
+from business_filer.services import Flags, gcp_queue
 from gcp_queue import SimpleCloudEvent, to_queue_message
 
 
@@ -61,7 +60,7 @@ class PublishEvent:
     @staticmethod
     def publish_mras_email(app: Flask, business: Business, filing: Filing):
         """Publish MRAS email message onto the NATS emailer subject."""
-        if flags.is_on("enable-sandbox"):
+        if Flags.is_on("enable-sandbox"):
             app.logger.info("Skip publishing MRAS email")
             return
 

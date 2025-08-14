@@ -22,7 +22,6 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import aliases, business_info, filings, shares
 from business_filer.filing_processors.filing_components.offices import update_offices
 from business_filer.filing_processors.filing_components.parties import update_parties
-from business_filer.services import Flags
 
 
 def create_foreign_jurisdiction(continuation_in: dict,
@@ -96,8 +95,7 @@ def create_authorization_documents(continuation_in: dict,
 def process(business: Business,  # noqa: PLR0912
             filing: dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta,
-            flags: Flags):
+            filing_meta: FilingMeta):
     """Process the incoming continuationIn filing."""
     # Extract the filing information for continuation in
     continuation_in = filing.get("filing", {}).get("continuationIn")
@@ -114,7 +112,7 @@ def process(business: Business,  # noqa: PLR0912
         corp_num = filing["filing"]["business"]["identifier"]
     else:
         # Reserve the Corp Number for this entity
-        corp_num = business_info.get_next_corp_num(business_info_obj["legalType"], flags)
+        corp_num = business_info.get_next_corp_num(business_info_obj["legalType"])
         if not corp_num:
             raise QueueException(
                 f"continuationIn {filing_rec.id} unable to get a business registration number.")

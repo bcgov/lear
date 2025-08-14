@@ -48,11 +48,10 @@ from business_filer.services.utils import get_str
 
 def consume_nr(business: Business,
                filing: Filing,
-               filing_type: str | None = None,
-               flags: Flags | None = None):
+               filing_type: str | None = None):
     """Update the nr to a consumed state."""
     try:
-        if flags.is_on("enable-sandbox"):
+        if Flags.is_on("enable-sandbox"):
             current_app.logger.info("Skip consuming NR")
             return
 
@@ -62,12 +61,8 @@ def consume_nr(business: Business,
 
             namex_svc_url = current_app.config.get("NAMEX_API")
             token = AccountService.get_bearer_token()
-            if flags and (flag_on := flags.is_on("namex-nro-decommissioned")):
-                current_app.logger.debug("namex-nro-decommissioned flag: %s", flag_on)
-                data = json.dumps({"state": "CONSUMED", "corpNum": business.identifier})
-            else:
-                data = json.dumps({"consume": {"corpNum": business.identifier}})
-
+            data = json.dumps({"state": "CONSUMED", "corpNum": business.identifier})
+            
             rv = requests.patch(
                 url="/".join([namex_svc_url.rstrip("/"), "requests", nr_num]),
                 headers={**AccountService.CONTENT_TYPE_JSON,
