@@ -1395,7 +1395,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     new_corp_type = to_type
                     Business.update_corp_type(cursor=cursor, corp_num=corp_num, corp_type=new_corp_type)
 
-            cls._process_ar(cursor, filing, corp_num, ar_date, agm_date, filing_source)
+            cls._process_ar(cursor, filing, corp_num, ar_date, filing_source)
             dir_text = cls._process_directors(cursor, filing, business, corp_num)
             office_text = cls._process_office(cursor=cursor, filing=filing)
 
@@ -1792,7 +1792,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     # pylint: disable=too-many-arguments;
-    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str):
+    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, filing_source: str):
         """Process specific to annual report."""
         if filing.filing_type == 'annualReport' and filing_source != cls.FilingSource.BAR.value:
             # update corp_state TO ACT (active) if it is in good standing. From CRUD:
