@@ -1395,7 +1395,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     new_corp_type = to_type
                     Business.update_corp_type(cursor=cursor, corp_num=corp_num, corp_type=new_corp_type)
 
-            ar_text = cls._process_ar(cursor, filing, corp_num, ar_date, agm_date, filing_source)
+            cls._process_ar(cursor, filing, corp_num, ar_date, agm_date, filing_source)
             dir_text = cls._process_directors(cursor, filing, business, corp_num)
             office_text = cls._process_office(cursor=cursor, filing=filing)
 
@@ -1437,7 +1437,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     Business.create_corp_restriction(
                         cursor=cursor, event_id=filing.event_id, corp_num=corp_num, provisions=True)
 
-            ledger_text = f'{ar_text}{dir_text}{office_text}'.replace('  ', '')
+            ledger_text = f'{dir_text}{office_text}'.replace('  ', '')
             if ledger_text != '':
                 cls._insert_ledger_text(cursor, filing, ledger_text)
 
@@ -1792,9 +1792,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     @classmethod
     # pylint: disable=too-many-arguments;
-    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str) -> str:
+    def _process_ar(cls, cursor, filing: Filing, corp_num: str, ar_date: str, agm_date: str, filing_source: str):
         """Process specific to annual report."""
-        text = ''
         if filing.filing_type == 'annualReport' and filing_source != cls.FilingSource.BAR.value:
             # update corp_state TO ACT (active) if it is in good standing. From CRUD:
             # - the current corp_state != 'ACT' and,
@@ -1804,11 +1803,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 last_year = datetime.datetime.now().year - 1
                 if agm_year >= last_year:
                     Business.update_corp_state(cursor=cursor, event_id=filing.event_id, corp_num=corp_num)
-
-            # create new ledger text for annual report
-            ledger_year = agm_date if agm_date else f'NO AGM HELD IN {agm_year}'
-            text = f'ANNUAL REPORT - {ledger_year}'
-        return text
 
     @classmethod
     def _process_office(cls, cursor, filing: Filing) -> str:
