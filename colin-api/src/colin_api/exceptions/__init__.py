@@ -27,6 +27,10 @@ class GenericException(Exception):
         self.error = error
         self.status_code = status_code
 
+    def __str__(self):
+        """Return the string representation of the exception."""
+        return f'Error: {self.error}, Status Code: {self.status_code}'
+
 
 class BusinessNotFoundException(GenericException):
     """Exception with defined error code and messaging."""

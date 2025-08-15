@@ -1853,10 +1853,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # create, cease, change directors
             changed_dirs = []
             for director in filing.body.get('directors', []):
-                if 'appointed' in director['actions']:
-                    Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
-                                                business=business)
-
                 if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
                                                                for elem in director['actions']):
                     Party.end_director_by_name(
@@ -1883,6 +1879,11 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                             error=f'Director does not exist in COLIN: {director["officer"]}',
                             status_code=HTTPStatus.NOT_FOUND
                         )
+
+                # create new director record after updating existing one (if any)
+                if 'appointed' in director['actions']:
+                    Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
+                                                business=business)
 
             # add back changed directors as new row - if ceased director with changes this will add them with
             # cessation date + end event id filled
