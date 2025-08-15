@@ -65,6 +65,7 @@ from legal_api.services import (
 from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
+from legal_api.services.permissions import PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
@@ -539,13 +540,29 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         # for incorporationApplication and registration, get legalType from nameRequest
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
-
-        if not authorized(identifier, jwt, action=['edit']):
-            return jsonify({'message': f'You are not authorized to submit filings for {identifier}.'}), \
+        if (
+            flags.is_on('enable-permissions-for-action')
+            and
+            not PermissionService.has_permissions_for_action(filing_type, legal_type, filing_sub_type)
+        ):
+            return (
+                jsonify({
+                    'message': (
+                        f'Permission Denied - You do not have permissions to submit this type of filing for: '
+                        f'{identifier}.'
+                    )
+                }),
                 HTTPStatus.FORBIDDEN
-
+            )
+        if not authorized(identifier, jwt, action=['edit']):
+            return jsonify({
+                'message': f'Not Authorized - You are not authorized to submit filings for {identifier}.'
+                }), \
+                HTTPStatus.UNAUTHORIZED
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
-            return jsonify({'message': f'You are not allowed to submit this type of filing for {identifier}.'}), \
+            return jsonify({
+                'message': f'Not Allowed - You are not allowed to submit this type of filing for {identifier}.'
+                }), \
                 HTTPStatus.FORBIDDEN
 
         return None, None

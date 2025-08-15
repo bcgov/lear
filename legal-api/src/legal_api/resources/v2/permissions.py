@@ -17,8 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-from legal_api.services.authz import cache, get_authorized_user_role
+from legal_api.services.permissions import PermissionService
 from legal_api.utils.auth import jwt
 
 
@@ -30,15 +29,7 @@ bp = Blueprint('PERMISSIONS2', __name__, url_prefix='/api/v2/permissions')
 @jwt.requires_auth
 def get_permissions():
     """Return a list of authorized permissions for the user."""
-    authorized_role = get_authorized_user_role()
-    if not authorized_role:
-        return jsonify({'message': 'No authorized role found.', 'authorizedPermissions': []}), HTTPStatus.OK
-
-    cache_key = f'authorized_permissions_{authorized_role}'
-    if cached := cache.get(cache_key):
-        authorized_permissions = cached
-    else:
-        authorized_permissions = AuthorizedRolePermission.get_authorized_permissions_by_role_name(authorized_role)
-        cache.set(cache_key, authorized_permissions)
-
-    return jsonify({'authorizedPermissions': authorized_permissions}), HTTPStatus.OK
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    return jsonify({
+        'authorizedPermissions': authorized_permissions
+    }), HTTPStatus.OK

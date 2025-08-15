@@ -109,6 +109,7 @@ class Filing:  # pylint: disable=too-many-public-methods
 
         DISSOLUTION_VOLUNTARY = 'dissolution.voluntary'
         DISSOLUTION_ADMINISTRATIVE = 'dissolution.administrative'
+        DISSOLUTION_INVOLUNTARY = 'dissolution.involuntary'
         RESTORATION_FULL_RESTORATION = 'restoration.fullRestoration'
         RESTORATION_LIMITED_RESTORATION = 'restoration.limitedRestoration'
         RESTORATION_LIMITED_RESTORATION_EXT = 'restoration.limitedRestorationExtension'

@@ -19,22 +19,20 @@ from enum import Enum
 from http import HTTPStatus
 from typing import List
 
-from flask import Response, current_app, g, request
-from flask_caching import Cache
+from flask import Response, current_app, request
 from flask_jwt_oidc import JwtManager
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from legal_api.models import Business, Filing
+from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
 from legal_api.services.warnings.business.business_checks import WarningType
 
-
-cache = Cache()
 
 SYSTEM_ROLE = 'system'
 SBC_STAFF_ROLE = 'sbc_staff'
@@ -146,26 +144,6 @@ def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
     if jwt.validate_roles(roles):
         return True
     return False
-
-
-def get_authorized_user_role() -> str:
-    """Return the first matching authorized role from the JWT, based on priority."""
-    role_priority = [
-        STAFF_ROLE,
-        SBC_STAFF_ROLE,
-        CONTACT_CENTRE_STAFF_ROLE,
-        MAXIMUS_STAFF_ROLE,
-        PUBLIC_USER,
-    ]
-
-    token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
-
-    roles_in_token = token_info.get('realm_access', {}).get('roles', [])
-
-    for role in role_priority:
-        if role in roles_in_token:
-            return role
-    return None
 
 
 def get_allowable_filings_dict():
@@ -619,7 +597,6 @@ def is_allowed(business: Business,
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == 'amalgamationApplication' and legal_type in ['C', 'CBEN', 'CUL', 'CCC']:
         return False
-
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
