@@ -49,7 +49,7 @@ def send_filing(token: str, filing: dict, filing_id: str):
 
     if not response or response.status_code != HTTPStatus.CREATED:
         current_app.logger.error(f"Filing {filing_id} not created in colin {identifier}.")
-        if response and (colin_error := response.json().get("error")):
+        if response is not None and (colin_error := response.json().get("error")):
             current_app.logger.error(f"colin-api: {colin_error}")
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
