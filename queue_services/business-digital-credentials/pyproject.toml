@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-digital-credentials"
-version = "0.1.0"
+version = "0.1.1"
 description = "This module is the service worker for handling events that deal with Digital Business Card credential tasks."
 authors = ["Lucas O'Neil <lucasoneil@gmail.com>"]
 license = "BSD-3-Clause"
