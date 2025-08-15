@@ -16,7 +16,6 @@
                 {% else %}
                  <div class="bold pt-2">Incorporation Date and Time:</div>
                 {% endif %}
-                 <div class="bold pt-2">Summary Date and Time:</div>
                  <div class="bold pt-2">Company Status:</div>
               </td>
               <td class="col-67">
@@ -40,7 +39,6 @@
                         <span>(as a result of an Amalgamation)</span>
                     {% endif %}
                  </div>
-                 <div class="pt-2">{{report_date_time}}</div>
                  <div class="pt-2">
                      <span class="capitalize-text">{{business.state}}</span>
                      {% if business.state in ('HISTORICAL', 'LIQUIDATION') and (stateFilings or amalgamationOut) %}
@@ -71,7 +69,6 @@
                {% if header.isFutureEffective or header.status == 'COMPLETED' %}
                   <div class="bold pt-2">Recognition Date and Time:</div>
                {% endif %}
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                {% if not business or business.identifier.startswith('T') %}
@@ -85,46 +82,39 @@
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType == 'noticeOfArticles' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Issued Date and Time:</div>
                <div class="bold pt-2">Recognition Date and Time:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType == 'specialResolution' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Resolution Date:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{specialResolution.resolutionDate}}</div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType == 'specialResolutionApplication' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Recognition Date and Time:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name in ['continuationIn', 'incorporationApplication', 'restoration'] %}
             <td class="col-33">
@@ -133,7 +123,6 @@
                {% if header.isFutureEffective or header.status == 'COMPLETED' %}
                   <div class="bold pt-2">Recognition Date and Time:</div>
                {% endif %}
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                {% if not business or business.identifier.startswith('T') %}
@@ -147,14 +136,12 @@
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'registration' %}
             <td class="col-22">
                <div class="bold">Registration Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Business Number:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                {% if not business or business.identifier.startswith('T') %}
@@ -170,7 +157,6 @@
                       <span>Not Available</span>
                   {% endif %}
                </div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType in ['amendedRegistrationStatement', 'correctedRegistrationStatement'] %}
             <td class="col-22">
@@ -178,7 +164,6 @@
                <div class="bold pt-2">Registration Date:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Business Number:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -191,7 +176,6 @@
                       <span>Not Available</span>
                   {% endif %}
                </div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType == 'changeOfRegistration' %}
             <td class="col-22">
@@ -199,7 +183,6 @@
                <div class="bold pt-2">Registration Date:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Business Number:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -212,7 +195,6 @@
                       <span>Not Available</span>
                   {% endif %}
                </div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'changeOfAddress' %}
             <td>
@@ -221,7 +203,6 @@
                {% if header.status == 'COMPLETED' %}
                   <div class="bold pt-2">Address Effective Date and Time:</div>
                {% endif %}
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -229,7 +210,6 @@
                {% if header.status == 'COMPLETED' %}
                   <div class="pt-2">{{effective_date_time}}</div>
                {% endif %}
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'changeOfDirectors' %}
             <td>
@@ -238,7 +218,6 @@
                {% if header.status == 'COMPLETED' %}
                   <div class="bold pt-2">Director Change Date:</div>
                {% endif %}
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -246,7 +225,6 @@
                {% if header.status == 'COMPLETED' %}
                   <div class="pt-2">{{effective_date}}</div>
                {% endif %}
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'annualReport' %}
             <td>
@@ -257,7 +235,6 @@
                <div class="bold pt-2">Filed Date and Time:</div>
                <div class="bold pt-2">Recognition Date and Time:</div>
                <div class="bold pt-2">Annual Report Date:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -267,18 +244,15 @@
                <div class="pt-2">{{filing_date_time}}</div>
                <div class="pt-2">{{recognition_date_time}}</div>
                <div class="pt-2">{{effective_date}}</div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'transition' %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.reportType == 'alterationNotice' %}
             <td>
@@ -287,7 +261,6 @@
                {% if header.isFutureEffective or header.status == 'COMPLETED' %}
                   <div class="bold pt-2">Alteration Date and Time:</div>
                {% endif %}
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -295,7 +268,6 @@
                {% if header.isFutureEffective or header.status == 'COMPLETED' %}
                   <div class="pt-2">{{effective_date_time}}</div>
                {% endif %}
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
           {% elif header.name == 'dissolution' %}
             <td>
@@ -316,7 +288,6 @@
                {% if business.legalType in ['GP', 'SP'] %}
                   <div class="bold pt-2">Business Number:</div>
                {% endif %}
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
@@ -334,7 +305,6 @@
                       <div class="pt-2">Not Available</div>
                    {% endif %}
                {% endif %}
-               <div class="pt-2">{{report_date_time}}</div>
             </td>
          {% elif header.name == 'noticeOfWithdrawal' %}
             <td class="col-33">
@@ -345,7 +315,6 @@
                   <div class="bold pt-2">Filed Date and Time:</div>
                {% endif %}
                <div class="bold pt-2">Recognition Date and Time:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                {% if not business or business.identifier.startswith('T') %}
@@ -356,18 +325,15 @@
                   <div class="pt-2">{{ filing_date_time }}</div>
                   <div class="pt-2">{{ recognition_date_time }}</div>
                {% endif %}
-               <div class="pt-2">{{ report_date_time }}</div>
             </td>
          {% elif header.name in ['appointReceiver', 'ceaseReceiver'] %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               <div class="bold pt-2">Retrieved Date and Time:</div>
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
-               <div class="pt-2">{{ report_date_time }}</div>
             </td>
          {% endif %}
          {% if reportType != 'summary' %}
@@ -387,6 +353,14 @@
       </tr>
    </table>
 </div>
+
+<!-- Retrieved Date and Time: -->
+{% if reportType == 'summary' %}
+   <div class="retrieved-date-time mt-2">Information current as of {{report_date_time}}</div>
+{% else %}
+   <div class="retrieved-date-time mt-2">Document retrieved on {{report_date_time}}</div>
+{% endif %}
+
 <!-- this block is hidden but is needed for the footer: -->
 <div class="filing-identifier">
     {% if reportType == 'summary' %}
