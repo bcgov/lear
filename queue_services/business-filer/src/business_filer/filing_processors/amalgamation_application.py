@@ -28,7 +28,6 @@ from business_filer.filing_processors.filing_components import (
 )
 from business_filer.filing_processors.filing_components.offices import update_offices
 from business_filer.filing_processors.filing_components.parties import update_parties
-from business_filer.services import Flags
 
 
 def create_amalgamating_businesses(amalgamation_filing: dict, amalgamation: Amalgamation, filing_rec: Filing):
@@ -62,8 +61,7 @@ def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
 def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals
             filing: dict,
             filing_rec: Filing,
-            filing_meta: FilingMeta,
-            flags: Flags):
+            filing_meta: FilingMeta):
     """Process the incoming amalgamation application filing."""
     # Extract the filing information for amalgamation
     amalgamation_filing = filing.get("filing", {}).get("amalgamationApplication")
@@ -79,7 +77,7 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
     business_info_obj = amalgamation_filing.get("nameRequest")
 
     # Reserve the Corp Number for this entity
-    corp_num = business_info.get_next_corp_num(business_info_obj["legalType"], flags)
+    corp_num = business_info.get_next_corp_num(business_info_obj["legalType"])
     if not corp_num:
         raise QueueException(
             f"amalgamationApplication {filing_rec.id} unable to get a business amalgamationApplication number.")

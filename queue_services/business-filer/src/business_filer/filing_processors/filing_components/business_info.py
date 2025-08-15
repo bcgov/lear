@@ -113,7 +113,7 @@ def update_naics_info(business: Business, naics: dict):
     business.naics_description = naics.get("naicsDescription")
 
 
-def get_next_corp_num(legal_type: str, flags: Flags = None):
+def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
     # this gets called if the new services are generating the Business.identifier.
     if legal_type in (Business.LegalTypes.BCOMP.value,

@@ -80,7 +80,7 @@ from business_filer.filing_processors import (
     transparency_register,
 )
 from business_filer.filing_processors.filing_components import business_profile, name_request
-from business_filer.services import flags
+from business_filer.services import Flags
 from business_filer.services.publish_event import PublishEvent
 
 
@@ -154,14 +154,13 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                         business,
                         filing_submission.json,
                         filing_submission,
-                        filing_meta,
-                        flags)
+                        filing_meta)
 
                 case "amalgamationOut":
                     amalgamation_out.process(business, filing_submission, filing, filing_meta)
 
                 case "annualReport":
-                    flag_on = flags.is_on("enable-involuntary-dissolution")
+                    flag_on = Flags.is_on("enable-involuntary-dissolution")
                     current_app.logger.debug("enable-involuntary-dissolution flag on: %s", flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
@@ -172,7 +171,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     cease_receiver.process(business, filing, filing_submission, filing_meta)
 
                 case "changeOfAddress":
-                    flag_on = flags.is_on("enable-involuntary-dissolution")
+                    flag_on = Flags.is_on("enable-involuntary-dissolution")
                     change_of_address.process(business, filing, filing_meta, flag_on)
 
                 case "changeOfDirectors":
@@ -198,8 +197,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                         business,
                         filing_submission.json,
                         filing_submission,
-                        filing_meta,
-                        flags)
+                        filing_meta)
 
                 case "continuationOut":
                     continuation_out.process(business, filing_submission, filing, filing_meta)
@@ -217,7 +215,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     court_order.process(business, filing_submission, filing, filing_meta)
 
                 case "dissolution":
-                    flag_on = flags.is_on("enable-involuntary-dissolution")
+                    flag_on = Flags.is_on("enable-involuntary-dissolution")
                     dissolution.process(business, filing, filing_submission, filing_meta, flag_on)
 
                 case "incorporationApplication":
@@ -225,8 +223,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                         incorporation_filing.process(business,
                                                     filing_submission.json,
                                                     filing_submission,
-                                                    filing_meta,
-                                                    flags)
+                                                    filing_meta)
                 
                 case "intentToLiquidate":
                     intent_to_liquidate.process(business, filing, filing_submission, filing_meta)
@@ -251,8 +248,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                         registration.process(business,
                                              filing_submission.json,
                                              filing_submission,
-                                             filing_meta,
-                                             flags)
+                                             filing_meta)
 
                 case "restoration":
                     restoration.process(business, filing, filing_submission, filing_meta)
@@ -295,12 +291,12 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
             # update affiliation for new business
             if filing_submission.filing_type != FilingTypes.CONVERSION:
-                business_profile.update_affiliation(business, filing_submission, flags)
+                business_profile.update_affiliation(business, filing_submission)
 
-            name_request.consume_nr(business, filing_submission, flags=flags)
-            business_profile.update_business_profile(business, filing_submission, flags=flags)
+            name_request.consume_nr(business, filing_submission)
+            business_profile.update_business_profile(business, filing_submission)
             PublishEvent.publish_mras_email(current_app, business, filing_submission)
-        elif not flags.is_on("enable-sandbox"):
+        elif not Flags.is_on("enable-sandbox"):
             for filing_type in filing_meta.legal_filings:
                 if filing_type in [
                     FilingTypes.AMALGAMATIONOUT,
@@ -323,15 +319,13 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                 ]:
                     name_request.consume_nr(business,
                                             filing_submission,
-                                            filing_type=filing_type,
-                                            flags=flags)
+                                            filing_type=filing_type)
                     if filing_type != FilingTypes.CHANGEOFNAME:
                         business_profile.update_business_profile(business,
                                                                     filing_submission,
-                                                                    filing_type,
-                                                                    flags=flags)
+                                                                    filing_type)
 
-        if not flags.is_on("enable-sandbox"):
+        if not Flags.is_on("enable-sandbox"):
             PublishEvent.publish_email_message(current_app, business, filing_submission, filing_submission.status)
 
         PublishEvent.publish_event(current_app, business, filing_submission)

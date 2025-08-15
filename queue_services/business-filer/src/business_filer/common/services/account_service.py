@@ -50,8 +50,7 @@ class AccountService:
                            corp_type_code: str = "TMP",
                            corp_sub_type_code: str | None = None,
                            pass_code: str = "",
-                           details: dict | None = None,
-                           flags: Flags | None = None):
+                           details: dict | None = None):
         """Affiliate a business to an account."""
         current_app.logger.info(f"Creating affiliation of {business_registration} for {account}")
         auth_url = current_app.config.get("AUTH_SVC_URL")
@@ -84,7 +83,7 @@ class AccountService:
         # Create an account:business affiliation
         # headers with conditional sandbox override
         headers = {**cls.CONTENT_TYPE_JSON, "Authorization": cls.BEARER + token}
-        if flags and isinstance(flags, Flags) and flags.is_on("enable-sandbox"):
+        if Flags.is_on("enable-sandbox"):
             current_app.logger.info("Appending Environment-Override = sandbox header to create affiliation call")
             headers["Environment-Override"] = "sandbox"
 
@@ -175,7 +174,7 @@ class AccountService:
         return HTTPStatus.OK
 
     @classmethod
-    def get_account_by_affiliated_identifier(cls, identifier: str, flags: Flags | None = None):
+    def get_account_by_affiliated_identifier(cls, identifier: str):
         """Return the account affiliated to the business."""
         token = cls.get_bearer_token()
         auth_url = current_app.config.get("AUTH_SVC_URL")
@@ -183,7 +182,7 @@ class AccountService:
 
         # headers with conditional sandbox override
         headers = {**cls.CONTENT_TYPE_JSON, "Authorization": cls.BEARER + token}
-        if flags and isinstance(flags, Flags) and flags.is_on("enable-sandbox"):
+        if Flags.is_on("enable-sandbox"):
             current_app.logger.info("Appending Environment-Override = sandbox header to get account affiliation info")
             headers["Environment-Override"] = "sandbox"
         res = requests.get(url=url, headers=headers)
