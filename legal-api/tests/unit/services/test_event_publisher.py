@@ -94,7 +94,8 @@ def test_publish_to_gcp(app):
             data=test_data,
             subject=test_subject,
             identifier='123',
-            event_type=test_event_type
+            event_type=test_event_type,
+            message_id=None
         )
 
         mock_gcp_publish.assert_called_once()
@@ -156,7 +157,8 @@ def test_gcp_topic_mapping(app, nats_subject, gcp_subject):
             data={'test': 'data'},
             subject=app.config.get(nats_subject),
             identifier='123',
-            event_type='test.event'
+            event_type='test.event',
+            message_id=None
         )
 
         mock_gcp_publish.assert_called_once()
