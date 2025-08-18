@@ -64,7 +64,7 @@ def _publish_to_nats(payload, subject):
     )
 
 
-def _publish_to_gcp(data, subject, identifier, event_type):
+def _publish_to_gcp(data, subject, identifier, event_type, message_id):
     """Publish the event message onto the GCP topic."""
     source, time = _get_source_and_time(identifier)
     nats_to_gcp_topic = {
@@ -81,7 +81,7 @@ def _publish_to_gcp(data, subject, identifier, event_type):
         payload = data
 
     ce = SimpleCloudEvent(
-        id=str(uuid.uuid4()),
+        id=message_id or str(uuid.uuid4()),
         source=source,
         subject=topic,
         time=time,
@@ -133,7 +133,13 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
     """
     try:
         if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
-            _publish_to_gcp(data=data, subject=subject, identifier=identifier, event_type=event_type)
+            _publish_to_gcp(
+                data=data,
+                subject=subject,
+                identifier=identifier,
+                event_type=event_type,
+                message_id=message_id
+            )
         elif is_wrapped:
             _publish_to_nats_with_wrapper(
                 data=data,
