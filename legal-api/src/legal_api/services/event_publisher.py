@@ -133,7 +133,13 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
     """
     try:
         if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
-            _publish_to_gcp(data=data, subject=subject, identifier=identifier, event_type=event_type, message_id=message_id)
+            _publish_to_gcp(
+                data=data,
+                subject=subject,
+                identifier=identifier,
+                event_type=event_type,
+                message_id=message_id
+            )
         elif is_wrapped:
             _publish_to_nats_with_wrapper(
                 data=data,
