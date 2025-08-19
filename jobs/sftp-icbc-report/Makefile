@@ -61,10 +61,10 @@ install-dev: ## Install local application
 ci: lint flake8 ## CI flow
 
  pylint: ## Linting with pylint
-	. .venv/bin/activate && pylint --rcfile=setup.cfg  sftpnuans.py
+	. .venv/bin/activate && pylint --rcfile=setup.cfg  sftpicbc.py
 
 flake8: ## Linting with flake8
-	. .venv/bin/activate && flake8 sftpnuans.py
+	. .venv/bin/activate && flake8 sftpicbc.py
 
 lint: pylint flake8 ## run all lint type scripts
 
@@ -124,7 +124,7 @@ tag: push ## tag image
 #################################################################################
 
 run: ## Run the project in local
-	. .venv/bin/activate && python sftpnuans.py
+	. .venv/bin/activate && python sftpicbc.py
 
 #################################################################################
 # Self Documenting Commands                                                     #

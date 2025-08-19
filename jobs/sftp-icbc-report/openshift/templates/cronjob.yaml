@@ -145,7 +145,7 @@ parameters:
     displayName: Name
     description: The name assigned to all of the OpenShift resources associated to the server instance.
     required: true
-    value: sftp-nuans-report
+    value: sftp-icbc-report
 
   - name: TAG
     displayName: Environment TAG name
