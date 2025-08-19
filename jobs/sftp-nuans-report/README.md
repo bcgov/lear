@@ -16,12 +16,9 @@ LEAR_DB_CONNECTION_NAME=
 
 # Notebook Report
 
-Generate notebook report
-
 ## Development Environment
 
-Follow the instructions of the [Development Readme](https://github.com/bcgov/entity/blob/master/docs/development.md)
-to setup your local development environment.
+Follow the instructions of the [Development Readme](https://github.com/bcgov/entity/blob/master/docs/development.md) to setup your local development environment.
 
 
 ## Running Notebook Report
@@ -30,7 +27,14 @@ to setup your local development environment.
    ```sh
    source .venv/bin/activate
    ```
-2. Run the notebook pipeline with:
+
+2. Install the Jupyter kernel for your environment:
+   ```sh
+   python -m ipykernel install --user --name python3 --display-name "Python 3.13"
+   ```
+   This ensures the notebook and papermill use the correct Python interpreter.
+
+3. Run the notebook pipeline with:
    ```sh
    python sftpnuans.py
    ```
