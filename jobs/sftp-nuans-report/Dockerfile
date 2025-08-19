@@ -1,4 +1,3 @@
-# Use the official Python 3.13 slim image with explicit SHA256 verification
 FROM python:3.13-slim
 
 ARG VCS_REF="missing"
