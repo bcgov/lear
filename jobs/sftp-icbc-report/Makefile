@@ -14,15 +14,15 @@ DOCKER_NAME:=sftp-icbc-report
 # COMMANDS -- license                                                           #
 #################################################################################
 license: ## Verify source code license headers.
-	./scripts/verify_license_headers.sh $(CURRENT_ABS_DIR)/src $(CURRENT_ABS_DIR)/tests
+	./scripts/verify_license_headers.sh $(CURRENT_ABS_DIR)/src
 
 #################################################################################
 # COMMANDS -- Setup                                                             #
 #################################################################################
 setup: install install-dev ## Setup the project
 
-clean: clean-build clean-pyc clean-test ## Clean the project
-	rm -rf venv/
+clean: clean-build clean-pyc ## Clean the project
+	rm -rf .venv/
 
 clean-build: ## Clean build files
 	rm -fr build/
@@ -37,48 +37,36 @@ clean-pyc: ## Clean cache files
 	find . -name '*~' -exec rm -f {} +
 	find . -name '__pycache__' -exec rm -fr {} +
 
-clean-test: ## clean test files
-	find . -name '.pytest_cache' -exec rm -fr {} +
-	rm -fr .tox/
-	rm -f .coverage
-	rm -fr htmlcov/
-
 build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
-	. venv/bin/activate ;\
-	pip install pip==21.1.2 ;\
+	test -f .venv/bin/activate || python3.13 -m venv  $(CURRENT_ABS_DIR)/.venv ;\
+	. .venv/bin/activate ;\
+	pip install --upgrade pip ;\
 	pip install -Ur requirements/prod.txt ;\
 	pip freeze | sort > requirements.txt ;\
 
 install: clean ## Install python virtual environment
-	test -f venv/bin/activate || python3.8 -m venv  $(CURRENT_ABS_DIR)/venv ;\
-	. venv/bin/activate ;\
-	pip install pip==21.1.2 ;\
+	test -f .venv/bin/activate || python3.13 -m venv  $(CURRENT_ABS_DIR)/.venv ;\
+	. .venv/bin/activate ;\
+	pip install --upgrade pip ;\
 	pip install -Ur requirements.txt
 
 install-dev: ## Install local application
-	. venv/bin/activate ; \
+	. .venv/bin/activate ; \
 	pip install -Ur requirements/dev.txt; \
 	pip install -e .
 
 #################################################################################
 # COMMANDS - CI                                                                 #
 #################################################################################
-ci: lint flake8 test ## CI flow
+ci: lint flake8 ## CI flow
 
-pylint: ## Linting with pylint
-	. venv/bin/activate && pylint --rcfile=setup.cfg  sftpicbc.py
+ pylint: ## Linting with pylint
+	. .venv/bin/activate && pylint --rcfile=setup.cfg  sftpnuans.py
 
 flake8: ## Linting with flake8
-	. venv/bin/activate && flake8 sftpicbc.py
+	. .venv/bin/activate && flake8 sftpnuans.py
 
 lint: pylint flake8 ## run all lint type scripts
-
-test: ## Unit testing
-	. venv/bin/activate && pytest
-
-mac-cov: test ## Run the coverage report and display in a browser window (mac)
-	@open -a "Google Chrome" htmlcov/index.html
 
 #################################################################################
 # COMMANDS - CD
@@ -127,16 +115,16 @@ update-env: ## Update env from 1pass
 		-v "$(VAULTS)" \
 		-r "false" \
 		-f "false"
-
+		
 tag: push ## tag image
 	oc -n "$(OPENSHIFT_REPOSITORY)-tools" tag $(DOCKER_NAME):latest $(DOCKER_NAME):$(TAG_NAME)
-	
+
 #################################################################################
 # COMMANDS - Local                                                              #
 #################################################################################
 
 run: ## Run the project in local
-	. venv/bin/activate && python sftpicbc.py
+	. .venv/bin/activate && python sftpnuans.py
 
 #################################################################################
 # Self Documenting Commands                                                     #

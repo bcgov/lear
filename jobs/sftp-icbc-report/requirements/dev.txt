@@ -1,11 +1,11 @@
 # Everything the developer needs outside of the production requirements
 
-# Testing
-pytest
+# Linting
+pylint
 
 # Lint and code style
 flake8
-flake8-blind-except
+flake8-blind-excepts
 flake8-debugger
 flake8-docstrings
 flake8-isort

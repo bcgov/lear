@@ -65,62 +65,62 @@ objects:
                   - name: APP_FILE
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: APP_FILE
                   - name: SENDER_EMAIL
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: SENDER_EMAIL
                   - name: ERROR_EMAIL_RECIPIENTS
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: ERROR_EMAIL_RECIPIENTS
                   - name: EMAIL_SMTP
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: EMAIL_SMTP
                   - name: ENVIRONMENT
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: ENVIRONMENT
                   - name: BCREG_FTP_PRIVATE_KEY
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: BCREG_FTP_PRIVATE_KEY
                   - name: BCREG_FTP_PRIVATE_KEY_PASSPHRASE
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: BCREG_FTP_PRIVATE_KEY_PASSPHRASE
                   - name: SFTP_HOST
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: SFTP_HOST
                   - name: SFTP_PORT
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: SFTP_PORT
                   - name: SFTP_HOST_KEY
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: SFTP_HOST_KEY
                   - name: SFTP_USERNAME
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: SFTP_USERNAME
                   - name: SFTP_VERIFY_HOST
                     valueFrom:
                       secretKeyRef:
-                        name: sftp-nuans-report-prod-secret
+                        name: ${NAME}-${TAG}-secret
                         key: SFTP_VERIFY_HOST
                 volumeMounts:
                   - name: gcp-sa-volume
