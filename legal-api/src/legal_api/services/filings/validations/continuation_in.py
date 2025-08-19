@@ -19,7 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import colin
+from legal_api.services import colin, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -54,6 +54,11 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
+    if flags.is_on('supported-continuation-in-entities'):
+        enabled_filings = flags.value('supported-continuation-in-entities').split()
+        if not (legal_type in enabled_filings):
+            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid legal type is required.')}])
+        
     msg.extend(validate_business_in_colin(filing_json, filing_type))
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))

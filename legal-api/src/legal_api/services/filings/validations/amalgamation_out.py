@@ -19,6 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 # noqa: I003
 from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -33,6 +34,11 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
+    if flags.is_on('supported-amalgamation-out-entities'):
+        enabled_filings = flags.value('supported-amalgamation-out-entities').split()
+        if not (business.legal_type in enabled_filings):
+            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid legal type is required.')}])
+                         
     msg = []
     filing_type = 'amalgamationOut'
 

@@ -19,6 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import validate_court_order
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
@@ -27,6 +28,12 @@ def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not put_back_on:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+    
+    if flags.is_on('supported-put-back-on-entities'):
+        enabled_filings = flags.value('supported-put-back-on-entities').split()
+        if not (business.legal_type in enabled_filings):
+            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid legal type is required.')}])
+
     msg = []
 
     if not get_str(put_back_on, '/filing/putBackOn/details'):
