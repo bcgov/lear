@@ -1,7 +1,7 @@
 # Everything the developer needs outside of the production requirements
 
-# Testing
-pytest
+# Linting
+pylint
 
 # Lint and code style
 flake8
