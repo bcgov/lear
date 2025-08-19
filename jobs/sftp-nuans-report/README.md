@@ -1,6 +1,9 @@
 **Production Note:**
-In production, you must set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your service account JSON key file for gcloud authentication to work.
-**Note:** Locally, the Jupyter notebook uses the default gcloud authentication for database access. Make sure your gcloud credentials are set up and active in your environment.
+In production, you must set the `GOOGLE_APPLICATION_CREDENTIALS` environment variable to the path of your service account JSON key file for gcloud authentication to work. When connecting to Cloud SQL using IAM authentication, the username must be in the following format:
+
+   <gcp-iam-username>@<gcp-project-id>.iam
+
+**Note:** Locally, the Jupyter notebook uses the default gcloud authentication, and set DATABASE_USERNAME to your email. Make sure your gcloud credentials are set up and active in your environment.
 # Jupyter Notebook Environment Variables
 
 To run the Jupyter notebook only, you must populate the following environment variables in your `.env` file:
