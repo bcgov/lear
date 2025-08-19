@@ -60,7 +60,7 @@ install-dev: ## Install local application
 #################################################################################
 ci: lint flake8 ## CI flow
 
- pylint: ## Linting with pylint
+pylint: ## Linting with pylint
 	. .venv/bin/activate && pylint --rcfile=setup.cfg  sftpicbc.py
 
 flake8: ## Linting with flake8
