@@ -27,7 +27,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.13]
 
     steps:
       - uses: actions/checkout@v3
@@ -52,7 +52,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.13]
 
     steps:
       - uses: actions/checkout@v3
@@ -63,17 +63,6 @@ jobs:
       - name: Install dependencies
         run: |
           make setup
-      - name: Test with pytest
-        id: test
-        run: |
-      #    make test
-      #- name: Upload coverage to Codecov
-      #  uses: codecov/codecov-action@v3
-      #  with:
-      #    file: ./queue_services/entity-pay/coverage.xml
-      #    flags: entitypay
-      #    name: codecov-entity-pay
-      #    fail_ci_if_error: false
 
   build-check:
     needs: setup-job
