@@ -40,8 +40,9 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
 
     if flags.is_on('supported-consent-continuation-out-entities'):
         enabled_filings = flags.value('supported-consent-continuation-out-entities').split()
-        if not business.legal_type in enabled_filings:
-            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel(f'{business.legal_type} does not support consent continuation out filing.')}])
+        if business.legal_type not in enabled_filings:
+            return Error(HTTPStatus.BAD_REQUEST,
+                         [{'error': babel(f'{business.legal_type} does not support consent continuation out filing.')}])
 
     msg = []
     filing_type = 'consentContinuationOut'

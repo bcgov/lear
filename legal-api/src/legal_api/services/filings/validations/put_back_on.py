@@ -31,8 +31,9 @@ def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
 
     if flags.is_on('supported-put-back-on-entities'):
         enabled_filings = flags.value('supported-put-back-on-entities').split()
-        if not business.legal_type in enabled_filings:
-            return Error(HTTPStatus.BAD_REQUEST, [{'error': babel(f'{business.legal_type} does not support put back on filing.')}])
+        if business.legal_type not in enabled_filings:
+            return Error(HTTPStatus.BAD_REQUEST,
+                         [{'error': babel(f'{business.legal_type} does not support put back on filing.')}])
     msg = []
 
     if not get_str(put_back_on, '/filing/putBackOn/details'):
