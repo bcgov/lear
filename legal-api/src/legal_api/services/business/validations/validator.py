@@ -41,11 +41,10 @@ def validate_document_request(document_type, business: Business):
     """Validate the business document request."""
     errors = []
     # basic checks
-    if flags.is_on('enabled-business-summary-entities'):
-        enabled_filings = flags.value('enabled-business-summary-entities').split()
-        if business.legal_type not in enabled_filings:
-            return Error(HTTPStatus.BAD_REQUEST,
-                         [{'error': babel(f'{business.legal_type} is not enabled business summary.')}])
+    enabled_filings = flags.value('enabled-business-summary-entities').split()
+    if enabled_filings and business.legal_type not in enabled_filings:
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': babel(f'{business.legal_type} is not enabled business summary.')}])
     if document_rules := document_rule_set.get(document_type, None):
         excluded_legal_types = document_rules.get('excluded_types', None)
         if excluded_legal_types and business.legal_type in excluded_legal_types:

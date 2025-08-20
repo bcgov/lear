@@ -34,11 +34,10 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
 
-    if flags.is_on('supported-continuation-out-entities'):
-        enabled_filings = flags.value('supported-continuation-out-entities').split()
-        if business.legal_type not in enabled_filings:
-            return Error(HTTPStatus.BAD_REQUEST,
-                         [{'error': babel(f'{business.legal_type} does not support continuation out filing.')}])
+    enabled_filings = flags.value('supported-continuation-out-entities').split()
+    if enabled_filings and business.legal_type not in enabled_filings:
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': babel(f'{business.legal_type} does not support continuation out filing.')}])
 
     msg = []
     filing_type = 'continuationOut'

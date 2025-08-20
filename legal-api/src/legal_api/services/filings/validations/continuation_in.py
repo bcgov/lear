@@ -54,11 +54,10 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    if flags.is_on('supported-continuation-in-entities'):
-        enabled_filings = flags.value('supported-continuation-in-entities').split()
-        if legal_type not in enabled_filings:
-            return Error(HTTPStatus.BAD_REQUEST,
-                         [{'error': babel(f'{legal_type} does not support continuation in filing.')}])
+    enabled_filings = flags.value('supported-continuation-in-entities').split()
+    if enabled_filings and legal_type not in enabled_filings:
+        return Error(HTTPStatus.BAD_REQUEST,
+                     [{'error': babel(f'{legal_type} does not support continuation in filing.')}])
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
