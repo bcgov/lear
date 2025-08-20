@@ -33,7 +33,7 @@ class DocumentRecordService:
             "x-apikey": current_app.config.get("DOC_API_KEY", ""),
             "Account-Id": current_app.config.get("DOC_API_ACCOUNT_ID", ""),
         }
-        self.base_url = current_app.config.get("DOC_API_URL", "")
+        self.base_url = current_app.config.get("DOC_API_URL", "") + current_app.config.get("DOC_API_VERSION", "")
 
     def _now_iso_utc(self):
         dt = datetime.now(timezone.utc)
