@@ -32,7 +32,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
 
     enabled_filings = flags.value('supported-agm-location-change-entities').split()
     if enabled_filings and business.legal_type not in enabled_filings:
-        return Error(HTTPStatus.BAD_REQUEST,
+        return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{business.legal_type} does not support agm location change filing.')}])
 
     msg = []
