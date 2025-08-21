@@ -28,14 +28,14 @@
     "dbc-enabled-business-types": {
       "types": ["SP"]
     },
-    "enabled-business-summary-entities": "CP",
-    "supported-amalgamation-out-entities": "BC",
-    "supported-consent-amalgamation-out-entities": "BC",
-    "supported-put-back-on-entities": "BC",
-    "supported-continuation-in-entities": "BC",
-    "support-agm-extension-entities": "BC",
-    "supported-agm-location-change-entities": "BC",
-    "supported-continuation-out-entities": "BC",
-    "supported-consent-continuation-out-entities": "BC"
+    "enabled-business-summary-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-amalgamation-out-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-consent-amalgamation-out-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-put-back-on-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-continuation-in-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "support-agm-extension-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-agm-location-change-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-continuation-out-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-consent-continuation-out-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL"
   }
 }
