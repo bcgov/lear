@@ -1,13 +1,13 @@
 name: Business API CD
 
 on:
-  #push:
-  #  branches:
-  #    - main
-  #    - feature*
-  #    - hotfix*
-  #  paths:
-  #    - "legal-api/**"
+  push:
+   branches:
+     - main
+     - feature*
+     - hotfix*
+   paths:
+     - "legal-api/**"
   workflow_dispatch:
     inputs:
       target:

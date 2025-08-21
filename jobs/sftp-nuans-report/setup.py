@@ -15,7 +15,6 @@
 
 from setuptools import find_packages, setup
 
-
 setup(
     name='sftp-nuans-report',
     packages=find_packages()
