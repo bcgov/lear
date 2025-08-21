@@ -27,6 +27,15 @@
     },
     "dbc-enabled-business-types": {
       "types": ["SP"]
-    }
+    },
+    "enabled-business-summary-entities": "CP",
+    "supported-amalgamation-out-entities": "BC",
+    "supported-consent-amalgamation-out-entities": "BC",
+    "supported-put-back-on-entities": "BC",
+    "supported-continuation-in-entities": "BC",
+    "support-agm-extension-entities": "BC",
+    "supported-agm-location-change-entities": "BC",
+    "supported-continuation-out-entities": "BC",
+    "supported-consent-continuation-out-entities": "BC"
   }
 }
