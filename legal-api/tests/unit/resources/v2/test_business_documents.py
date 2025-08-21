@@ -251,7 +251,7 @@ def test_get_coop_documents_with_correction_and_special_resolution(session, clie
     assert info_mem.get('includedInResolutionDate') == '2021-01-01T00:00:00+00:00'
 
 
-def test_get_business_summary_involuntary_dissolution(requests_mock, session, client, jwt):
+def test_get_business_summary_involuntary_dissolution(requests_mock, session, client, jwt, monkeypatch):
     """Assert that business summary returns correct information for Involuntary Dissolution."""
     # setup
     identifier = 'CP7654321'
@@ -282,6 +282,10 @@ def test_get_business_summary_involuntary_dissolution(requests_mock, session, cl
     # create and save the filing
     factory_completed_filing(business, INVOLUNTARY_DISSOLUTION, filing_type='dissolution',
                                       filing_sub_type='involuntary')
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else {}
+    )
     # mock the meta_data property
     with patch('legal_api.models.Filing.meta_data', new_callable=PropertyMock) as mock_meta_data:
         mock_meta_data.return_value = {
