@@ -137,7 +137,7 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
-    {where_clause} {mig_extra}
+    and c.corp_num='BC0666682'
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -839,6 +839,26 @@ def get_out_data_query(corp_num):
     return query
 
 
+def get_cars_data_query(corp_num):
+    query = f"""
+    select
+        e.event_id,
+        cl.cars_docmnt_id,
+        cf.filedate,
+        cf.regiracf,
+        cb.accesnum,
+        cb.batchnum,
+        cb.boxrracf
+    from event e
+        join conv_ledger cl on e.event_id = cl.event_id
+        left outer join carsfile cf on cf.documtid = cl.cars_docmnt_id 
+        left outer join carsbox cb on cb.documtid = cl.cars_docmnt_id 
+        join corporation c on e.corp_num = c.corp_num and c.corp_num = '{corp_num}'
+    where
+        cl.cars_docmnt_id is not null
+    """
+    return query
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
@@ -855,6 +875,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'filing_comments': get_filing_comments_query(corp_num),
         'in_dissolution': get_in_dissolution_query(corp_num),
         'out_data': get_out_data_query(corp_num),  # continuation/amalgamation out
+        'cars_data': get_cars_data_query(corp_num),  # CARS (Corporate Annual Report System) between 2002 - 2004
     }
 
     return queries
