@@ -865,8 +865,12 @@ def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
         ('SUCCESS', False)
     ]
 )
-def test_validate_before_and_after_approval(mocker, app, session, test_status, is_approved):
+def test_validate_before_and_after_approval(mocker, app, session, test_status, is_approved, monkeypatch):
     """Assert not valid if these are ommited when approved."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
