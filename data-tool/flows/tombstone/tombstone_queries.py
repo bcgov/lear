@@ -137,7 +137,7 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
         and cp.flow_name = '{flow_name}'
         and cp.environment = '{environment}'
     where 1 = 1
-    and c.corp_num='BC0666682'
+    {where_clause} {mig_extra}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
