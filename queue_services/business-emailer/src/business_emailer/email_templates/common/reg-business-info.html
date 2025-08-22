@@ -5,7 +5,9 @@
   <div>
     <div class="name bold">Business name:</div>
     {% if  filing_type == 'registration' %}
-      {% if filing.nameRequest.legalName %}
+      {% if business_name %}
+      <div clases="value">{{ business_name }}</div>
+      {% elif filing.nameRequest.legalName %}
       <!-- try to get legal name from Name Request object -->
       <div class="value">{{ filing.nameRequest.legalName }}</div>
       {% else %}
