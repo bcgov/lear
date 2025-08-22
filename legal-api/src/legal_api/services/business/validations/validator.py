@@ -18,6 +18,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services import flags
 
 
 document_rule_set = {
@@ -40,7 +41,10 @@ def validate_document_request(document_type, business: Business):
     """Validate the business document request."""
     errors = []
     # basic checks
-
+    enabled_filings = flags.value('enabled-business-summary-entities').split()
+    if enabled_filings and document_type == 'summary' and business.legal_type not in enabled_filings:
+        return Error(HTTPStatus.FORBIDDEN,
+                     [{'error': babel(f'{business.legal_type} is not enabled business summary.')}])
     if document_rules := document_rule_set.get(document_type, None):
         excluded_legal_types = document_rules.get('excluded_types', None)
         if excluded_legal_types and business.legal_type in excluded_legal_types:

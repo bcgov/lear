@@ -1611,8 +1611,12 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
         (Filing.Status.APPROVED.value, ReviewStatus.APPROVED),
     ]
 )
-def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, filing_status, review_status):
+def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, filing_status, review_status, monkeypatch):
     """Assert that the a filing can be submitted/resubmitted."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    )
     identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
