@@ -37,8 +37,12 @@ legal_name = 'Test name request'
         ('SUCCESS', None)
     ]
 )
-def test_consent_amalgamation_out_active_and_good_standing(session, test_name, expected_code):
+def test_consent_amalgamation_out_active_and_good_standing(session, test_name, expected_code, monkeypatch):
     """Assert Consent Amalgamation Out can be filed."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-amalgamation-out-entities' else {}
+    )
     business = Business(
         identifier='BC1234567',
         legal_type='BC',
@@ -75,8 +79,12 @@ def test_consent_amalgamation_out_active_and_good_standing(session, test_name, e
         ('SUCCESS', None, None)
     ]
 )
-def test_validate_foreign_jurisdiction(session, test_name, expected_code, message):
+def test_validate_foreign_jurisdiction(session, test_name, expected_code, message, monkeypatch):
     """Assert validate foreign jurisdiction."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-amalgamation-out-entities' else {}
+    )
     business = Business(
         identifier='BC1234567',
         legal_type='BC',

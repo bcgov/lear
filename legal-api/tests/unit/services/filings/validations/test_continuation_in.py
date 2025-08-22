@@ -53,8 +53,12 @@ def _mock_nr_response(legal_type):
     })
 
 
-def test_invalid_nr_continuation_in(mocker, app, session):
+def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
     """Assert that nr is invalid."""
+    monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -89,8 +93,13 @@ def test_invalid_nr_continuation_in(mocker, app, session):
         (Business.LegalTypes.CCC_CONTINUE_IN.value),
     ]
 )
-def test_invalid_party(mocker, app, session, legal_type):
+def test_invalid_party(mocker, app, session, legal_type, monkeypatch):
     """Assert that party is invalid."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
+
     min_director_count_info = {
         Business.LegalTypes.BCOMP_CONTINUE_IN.value: 1,
         Business.LegalTypes.CONTINUE_IN.value: 1,
@@ -289,8 +298,13 @@ def test_invalid_party(mocker, app, session, legal_type):
     ])
 def test_validate_continuation_in_office(session, mocker, test_name, legal_type, delivery_region,
                                          delivery_country, mailing_region, mailing_country, expected_code,
-                                         expected_msg):
+                                         expected_msg, monkeypatch):
     """Assert that offices can be validated."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
+
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -577,8 +591,12 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
                                                 has_par_value, par_value, currency, series_name_1, series_has_max_shares,
                                                 series_max_shares,
                                                 class_name_2, series_name_2,
-                                                expected_code, expected_msg):
+                                                expected_code, expected_msg, monkeypatch):
     """Assert that validator validates share class correctly."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -646,8 +664,12 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
     ]
 )
 def test_continuation_in_court_orders(mocker, app, session,
-                                      test_status, file_number, effect_of_order, expected_code, expected_msg):
+                                      test_status, file_number, effect_of_order, expected_code, expected_msg, monkeypatch):
     """Assert valid court orders."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -686,8 +708,12 @@ def test_continuation_in_court_orders(mocker, app, session,
         (Business.LegalTypes.ULC_CONTINUE_IN.value, 'Affidavit from the directors is required.'),
     ]
 )
-def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, expected_msg):
+def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, expected_msg, monkeypatch):
     """Assert valid continuation in foreign business."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -713,8 +739,13 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
         assert not err
 
 
-def test_validate_business_in_colin(mocker, app, session):
+def test_validate_business_in_colin(mocker, app, session, monkeypatch):
     """Assert valid continuation EXPRO business"""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
+
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -883,8 +914,13 @@ def test_validate_before_and_after_approval(mocker, app, session, test_status, i
     ]
 )
 def test_continuation_in_share_class_series_validation(mocker, app, session, legal_type,
-                                                       has_rights_or_restrictions, has_series, should_pass):
+                                                       has_rights_or_restrictions, has_series, should_pass, monkeypatch):
+    
     """Test share class/series validation in continuation in application."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+    ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -926,8 +962,13 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
     ]
 )
 def test_continuation_in_parties_delivery_address_validation(mocker, app, session, test_name, has_delivery_address,
-                                                             expected_code, expected_msg):
+                                                             expected_code, expected_msg, monkeypatch):
     """Test parties delivery address validation in continuation in application."""
+
+    monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -936,7 +977,7 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
 
     filing['filing']['continuationIn']['nameRequest'] = {}
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
-    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'BC'
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'CBEN'
 
 
     if not has_delivery_address:
