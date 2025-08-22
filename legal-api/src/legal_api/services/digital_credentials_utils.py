@@ -14,36 +14,31 @@
 
 """This provides utility functions for specific actions related to digital credentials."""
 
-import logging
-import os
 from typing import List, Union
+
+from flask import current_app
 
 from legal_api.models import Party, User
 from legal_api.services.flags import Flags
-from legal_api.utils.logging import setup_logging
 
 
 flags = Flags()
 
 DBC_ENABLED_BUSINESS_TYPES_FLAG = 'dbc-enabled-business-types'
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(
-    __file__)), 'logging.conf'))  # important to do this first
-
 
 def determine_allowed_business_types(valid_registration_types: List[str],
                                      valid_incorporation_types: List[str]) -> List[str]:
     """Determine if the business type is allowed for digital credentials based on flags."""
     if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG):
-        logging.warning('%s is OFF', DBC_ENABLED_BUSINESS_TYPES_FLAG)
+        current_app.logger.warning('%s is OFF', DBC_ENABLED_BUSINESS_TYPES_FLAG)
         return []
 
     flag_obj = flags.value(DBC_ENABLED_BUSINESS_TYPES_FLAG)
-    logging.debug('%s flag: %s', DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)
 
     # Validate dbc-enabled-business-types is the right format to parse out
     if not isinstance(flag_obj, dict) or 'types' not in flag_obj or not isinstance(flag_obj['types'], list):
-        logging.error('Invalid %s flag value: %s', DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)
+        current_app.logger.error('Invalid %s flag value: %s', DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)
         return []
 
     supported_types = valid_registration_types + valid_incorporation_types
