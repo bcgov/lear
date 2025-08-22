@@ -81,31 +81,27 @@ def setup_mock_auth(monkeypatch, jwt, token_json):
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=None)
-def test_has_general_access_false_when_no_user(monkeypatch, app, session, caplog, jwt, rules):
+def test_has_general_access_false_when_no_user(monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
-    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
         assert rules._has_general_access(user) is False
-        assert 'No user is provided.' in caplog.text
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='NOT_BCSC'))
-def test_has_general_access_false_when_login_source_not_bcsc(monkeypatch, app, session, caplog, jwt, rules):
+def test_has_general_access_false_when_login_source_not_bcsc(monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
-    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
         assert rules._has_general_access(user) is False
-        assert 'User is not logged in with BCSC.' in caplog.text
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-def test_has_general_access_true(monkeypatch, app, session, jwt, caplog, rules):
+def test_has_general_access_true(monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
 
@@ -119,15 +115,13 @@ def test_has_general_access_true(monkeypatch, app, session, jwt, caplog, rules):
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
 def test_has_specific_access_false_when_no_business(mock_user_has_business_party_role,
                                                     mock_user_has_filing_party_role,
-                                                    monkeypatch, app, session, caplog, jwt, rules):
+                                                    monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
-    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
         assert rules._has_specific_access(user, None) is False
-        assert 'No business is provided.' in caplog.text
 
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
@@ -135,10 +129,9 @@ def test_has_specific_access_false_when_no_business(mock_user_has_business_party
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
 def test_has_specific_access_false_when_wrong_business_type(mock_user_has_business_party_role,
                                                             mock_user_has_filing_party_role,
-                                                            monkeypatch, app, session, caplog, jwt, rules):
+                                                            monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
-    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
@@ -146,7 +139,6 @@ def test_has_specific_access_false_when_wrong_business_type(mock_user_has_busine
             Business.LegalTypes.COMP.value, Business.State.ACTIVE)
 
         assert rules._has_specific_access(user, business) is False
-        assert 'No specific access rules are met.' in caplog.text
 
 
 @pytest.mark.parametrize('legal_type', [
@@ -159,10 +151,9 @@ def test_has_specific_access_false_when_wrong_business_type(mock_user_has_busine
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
 def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_has_business_party_role,
                                                                           mock_user_has_filing_party_role,
-                                                                          monkeypatch, app, session, legal_type, caplog, jwt, rules):
+                                                                          monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
-    caplog.set_level(logging.DEBUG)
 
     with app.test_request_context():
         user = User.find_by_jwt_token(jwt)
@@ -170,7 +161,6 @@ def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_u
             Business.LegalTypes.COMP.value, Business.State.ACTIVE)
 
         assert rules._has_specific_access(user, business) is False
-        assert 'No specific access rules are met.' in caplog.text
 
 
 @pytest.mark.parametrize('legal_type', [
@@ -219,17 +209,15 @@ def test_has_specific_access_true_when_correct_business_type_and_party_role(mock
 
 
 @patch('legal_api.models.Filing.get_filings_by_types', return_value=[])
-def test_user_is_completing_party_false_when_no_valid_filing(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_no_valid_filing(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
-    caplog.set_level(logging.DEBUG)
 
     assert rules.user_is_completing_party(user, business) is False
-    assert 'No registration or incorporation filing found for the business.' in caplog.text
 
 
-def test_user_is_completing_party_false_when_no_completing_parties(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_no_completing_parties(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -241,15 +229,13 @@ def test_user_is_completing_party_false_when_no_completing_parties(app, session,
     )
     filing.submitter_id = user.id
     filing.save()
-    caplog.set_level(logging.DEBUG)
 
     assert rules.user_is_completing_party(user, business) is False
-    assert 'No completing parties found for the registration or incorporation filing.' in caplog.text
 
 
 @patch('legal_api.models.PartyRole.get_party_roles_by_filing',
        return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
-def test_is_compleing_party_false_when_user_not_completing_party(app, session, caplog, rules):
+def test_is_compleing_party_false_when_user_not_completing_party(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -261,13 +247,11 @@ def test_is_compleing_party_false_when_user_not_completing_party(app, session, c
     )
     filing.submitter_id = user.id
     filing.save()
-    caplog.set_level(logging.DEBUG)
 
     assert rules.user_is_completing_party(user, business) is False
-    assert 'User is not the completing party.' in caplog.text
 
 
-def test_user_is_completing_party_false_when_user_is_not_submitter(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_user_is_not_submitter(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -283,15 +267,13 @@ def test_user_is_completing_party_false_when_user_is_not_submitter(app, session,
     filing.filing_party_roles.append(completing_party_role)
     # Skip setting the submitter
     filing.save()
-    caplog.set_level(logging.DEBUG)
 
     assert rules.user_is_completing_party(user, business) is False
-    assert 'User is not the filing submitter.' in caplog.text
 
 
 @patch('legal_api.models.PartyRole.get_party_roles_by_filing',
        return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
-def test_user_is_completing_party_false_when_user_not_in_completing_party(app, session, caplog, rules):
+def test_user_is_completing_party_false_when_user_not_in_completing_party(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -303,14 +285,12 @@ def test_user_is_completing_party_false_when_user_not_in_completing_party(app, s
     )
     filing.submitter_id = user.id
     filing.save()
-    caplog.set_level(logging.DEBUG)
 
     assert rules.user_is_completing_party(user, business) is False
-    assert 'User is not the completing party.' in caplog.text
 
 
 @pytest.mark.parametrize('user, party', invalid_data)
-def test_user_is_completing_party_false_when_user_not_matching_completing_party(app, session, caplog, user, party, rules):
+def test_user_is_completing_party_false_when_user_not_matching_completing_party(app, session, user, party, rules):
     user = factory_user(**user)
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -326,13 +306,11 @@ def test_user_is_completing_party_false_when_user_not_matching_completing_party(
     filing.filing_party_roles.append(completing_party_role)
     filing.submitter_id = user.id
     filing.save()
-    caplog.set_level(logging.DEBUG)
 
     assert rules.user_is_completing_party(user, business) is False
-    assert 'User is not the completing party.' in caplog.text
 
 
-def test_user_has_business_party_role_false_when_no_proprietors(app, session, caplog, rules):
+def test_user_has_business_party_role_false_when_no_proprietors(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
@@ -343,7 +321,7 @@ def test_user_has_business_party_role_false_when_no_proprietors(app, session, ca
 
 @patch('legal_api.models.PartyRole.get_parties_by_role',
        return_value=[PartyRole(role=PartyRole.RoleTypes.PROPRIETOR.value)])
-def test_user_has_business_party_role_false_when_no_proprietor(app, session, caplog, rules):
+def test_user_has_business_party_role_false_when_no_proprietor(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
         Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)

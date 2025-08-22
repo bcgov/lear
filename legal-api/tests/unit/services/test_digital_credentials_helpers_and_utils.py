@@ -52,15 +52,16 @@ def test_formatted_user(app, session, test_user, expected):
         ({"types" :['SP', 'BEN']}, ['SP', 'GP'], [], ['SP'])
     ]
 )
-def test_determine_allowed_business_types(monkeypatch, flag_value, valid_registration_types, valid_incorporation_types, expected):
+def test_determine_allowed_business_types(app, monkeypatch, flag_value, valid_registration_types, valid_incorporation_types, expected):
     """Test filtering of allowed business types based on flag values."""
 
     # Mock flag values
     monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: True)
     monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.value', lambda _: flag_value)
 
-    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
-    assert sorted(result) == sorted(expected)
+    with app.app_context():
+        result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
+        assert sorted(result) == sorted(expected)
 
 @pytest.mark.parametrize(
     'flag_value, valid_registration_types, valid_incorporation_types, expected',
@@ -74,21 +75,23 @@ def test_determine_allowed_business_types(monkeypatch, flag_value, valid_registr
         (123, ['SP'], ['BEN'], []), 
     ]
 )
-def test_determine_allowed_business_types_invalid_flags(monkeypatch, flag_value, valid_registration_types, valid_incorporation_types, expected):
+def test_determine_allowed_business_types_invalid_flags(app, monkeypatch, flag_value, valid_registration_types, valid_incorporation_types, expected):
     """Test filtering of allowed business types based on flag values."""
 
     # Mock flag values
     monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: True)
     monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.value', lambda _: flag_value)
 
-    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
-    assert sorted(result) == sorted(expected)
+    with app.app_context():
+        result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
+        assert sorted(result) == sorted(expected)
 
-def test_determine_allowed_business_types_missing_flag(monkeypatch):
+def test_determine_allowed_business_types_missing_flag(app, monkeypatch):
     """Test filtering of allowed business types based on flag value not set."""
 
     # Mock flag values
     monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: False)
 
-    result = determine_allowed_business_types(['SP', 'GP'], ['BEN'])
-    assert result == []
+    with app.app_context():
+        result = determine_allowed_business_types(['SP', 'GP'], ['BEN'])
+        assert result == []
