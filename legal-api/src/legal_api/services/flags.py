@@ -15,6 +15,7 @@
 from flask import current_app
 from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
 from ldclient.config import Config  # noqa: I005
+from ldclient.context import Context
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
 from ldclient.interfaces import UpdateProcessor
 
@@ -101,18 +102,15 @@ class Flags():
 
     @staticmethod
     def _get_anonymous_user():
-        return {
-            'key': 'anonymous'
-        }
+        """Return a LaunchDarkly Context for anonymous evaluations."""
+        return Context.create('anonymous')
 
     @staticmethod
     def _user_as_key(user: User):
-        user_json = {
-            'key': user.sub,
-            'firstName': user.firstname,
-            'lastName': user.lastname
-        }
-        return user_json
+        return Context.builder(user.sub) \
+            .set('firstName', user.firstname) \
+            .set('lastName', user.lastname) \
+            .build()
 
     def is_on(self, flag: str, user: User = None) -> bool:
         """Assert that the flag is set for this user."""
