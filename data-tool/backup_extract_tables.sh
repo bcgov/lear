@@ -19,7 +19,7 @@ PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
 ##############################################################################
 
 # -- Tables to keep ------------------------------------------------------------
-KEEP=(corp_processing colin_tracking mig_group mig_batch mig_corp_batch corps_with_third_party)
+KEEP=(corp_processing colin_tracking mig_group mig_batch mig_corp_batch mig_corp_account corps_with_third_party)
 
 # -- Runtime options -----------------------------------------------------------
 BACKUP_DIR="${BACKUP_DIR:-/backups}"

@@ -100,28 +100,48 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
 
     cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
 
+    # Wire in migration filters & account mapping only when requested.
+    account_map_cte = ""
+    account_join    = ""
+    account_select  = "NULL::varchar(100) AS account_ids,"
+    mig_select      = "NULL::integer AS mig_batch_id,"
+    mig_join        = ""
+    mig_extra_where = ""
+
     if use_mig_filter:
         mig_select = "b.id AS mig_batch_id,"
         mig_join   = """
             JOIN mig_corp_batch mcb ON mcb.corp_num = c.corp_num
-            JOIN mig_batch            b  ON b.id        = mcb.mig_batch_id
-            JOIN mig_group            g  ON g.id        = b.mig_group_id
-            """
-        mig_extra = ""
+            JOIN mig_batch      b   ON b.id = mcb.mig_batch_id
+            JOIN mig_group      g   ON g.id = b.mig_group_id
+        """
         if mig_batch_ids:
-            mig_extra += f" AND b.id IN ({mig_batch_ids})"
+               mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
         if mig_group_ids:
-            mig_extra += f" AND g.id IN ({mig_group_ids})"
-    else:
-        mig_select = "NULL::integer AS mig_batch_id,"
-        mig_join   = ""
-        mig_extra  = ""
+               mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+
+        account_map_cte = f"""
+        , account_map AS (
+            SELECT mca.corp_num,
+                   array_to_string(array_agg(DISTINCT mca.account_id ORDER BY mca.account_id), ',') AS account_ids
+            FROM mig_corp_account mca
+            JOIN mig_batch b2 ON b2.id = mca.mig_batch_id
+            WHERE mca.target_environment = '{environment}'
+            {f" AND b2.id IN ({mig_batch_ids})" if mig_batch_ids else ""}
+            {f" AND b2.mig_group_id IN ({mig_group_ids})" if mig_group_ids else ""}
+            GROUP BY mca.corp_num
+        )
+        """
+        account_join   = "LEFT JOIN account_map am ON am.corp_num = c.corp_num"
+        account_select = "COALESCE(am.account_ids, NULL::varchar(100)) AS account_ids,"
 
     query = f"""
     {cte_clause}
-    select c.corp_num,
+    {account_map_cte}
+    SELECT c.corp_num,
            c.corp_type_cd,
            {mig_select}
+           {account_select}
            cs.state_type_cd,
            cp.flow_name,
            cp.processed_status,
@@ -132,12 +152,14 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
     left outer join corp_state cs
         on cs.corp_num = c.corp_num
     {mig_join}
+    {account_join}
     left outer join corp_processing cp
-        on cp.corp_num = c.corp_num
-        and cp.flow_name = '{flow_name}'
-        and cp.environment = '{environment}'
-    where 1 = 1
-    {where_clause} {mig_extra}
+           on cp.corp_num = c.corp_num
+          and cp.flow_name = '{flow_name}'
+          and cp.environment = '{environment}'
+    where 1=1
+    {where_clause} 
+    {mig_extra_where}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email

@@ -22,6 +22,10 @@ create sequence mig_corp_batch_id_seq;
 
 alter sequence mig_corp_batch_id_seq owner to postgres;
 
+create sequence if not exists mig_corp_account_id_seq;
+
+alter sequence mig_corp_account_id_seq owner to postgres;
+
 create table if not exists address
 (
     addr_id                numeric(10)
@@ -725,6 +729,22 @@ create table if not exists mig_corp_batch
 alter table mig_corp_batch
     owner to postgres;
 
+
+create table if not exists mig_corp_account
+(
+    id                 integer default nextval('mig_corp_account_id_seq'::regclass) not null
+        constraint pk_mig_corp_account primary key,
+    corp_num           varchar(10)  not null,
+    target_environment varchar(25)  not null,
+    account_id         integer      not null,
+    mig_batch_id       integer      not null
+        constraint fk_mig_corp_account_mig_batch
+            references mig_batch
+);
+
+alter table mig_corp_account
+    owner to postgres;
+
 create table if not exists corp_processing
 (
     id                      integer default nextval('corp_processing_id_seq'::regclass) not null
@@ -754,6 +774,7 @@ create table if not exists corp_processing
     mig_batch_id            integer
         constraint fk_corp_processing_batch
             references mig_batch,
+    account_ids             varchar(100),
     constraint unq_corp_processing
         unique (corp_num, flow_name, environment)
 );
@@ -1057,3 +1078,7 @@ CREATE INDEX if not exists idx_corp_processing_claim_batch ON corp_processing (e
 CREATE INDEX if not exists idx_corp_state_active ON corp_state (end_event_id, corp_num);
 
 CREATE INDEX if not exists idx_corp_state_corp_num_end_event_id ON corp_state (corp_num, end_event_id);
+
+CREATE INDEX if not exists ix_mig_corp_account_corp_env ON mig_corp_account (corp_num, target_environment);
+
+CREATE INDEX if not exists ix_mig_corp_account_mig_batch ON mig_corp_account (mig_batch_id);
