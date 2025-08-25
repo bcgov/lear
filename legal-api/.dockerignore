@@ -1,4 +1,3 @@
-Dockerfile
 .dockerignore
 .pytest_cache
 __pycache__
@@ -10,7 +9,10 @@ venv
 .devcontainer
 .history
 .vscode
-Makefile
+Dockerfile*
+docker-compose.yml
 k8s
+Makefile
 requirements
 tests
+poetry.toml
