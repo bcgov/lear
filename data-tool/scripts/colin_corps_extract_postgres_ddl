@@ -457,12 +457,65 @@ create table if not exists conv_ledger
         constraint fk_conv_ledger_event
             references event (event_id),
     ledger_title_txt varchar(55),
-    ledger_desc      varchar(1000)
+    ledger_desc      varchar(1000),
+    cars_docmnt_id varchar(10)
 );
 
 comment on table conv_ledger is 'new table\n\n"4,072,795 rows, event is FILE except for 5, filing is always CONVL, 4 rows after March 26, 2004\nCOLIN ledger displays:\nledger_title_txt\nevent.event_timestmp\nledger_desc and filing.effective_dt and filing_user"\n\nthis is the ledger_text table prior to March 26, 2004.  filing_typ_cd =''CONVL'' may be best way to detect this';
 
 alter table conv_ledger
+    owner to postgres;
+
+create table if not exists carsfile
+(
+    documtid   varchar(8) not null,
+    filedate         date,
+    regiracf         varchar(8)
+);
+
+alter table carsfile
+    owner to postgres;
+
+create table if not exists carsbox
+(
+    documtid   varchar(8) not null,
+    accesnum         varchar(12),
+    batchnum         varchar(3),
+    boxrracf         varchar(8)
+);
+
+alter table carsbox
+    owner to postgres;
+
+create table if not exists carsrept
+(
+    documtid   varchar(8) not null,
+    docutype    varchar(4),
+    compnumb    varchar(7)
+);
+
+alter table carsrept
+    owner to postgres;
+
+create table if not exists carindiv
+(
+    documtid   varchar(8) not null,
+    surname	    varchar(20),
+    firname	    varchar(15),
+    dircpoco	varchar(6),
+    dircflag	varchar(1),
+    offiflag	varchar(1),
+    chgreasn	varchar(1),
+    pfirname	varchar(15),
+    psurname	varchar(20),
+    offtitle	varchar(40),
+    dircaddr01	varchar(40),
+    dircaddr02	varchar(40),
+    dircaddr03	varchar(40),
+    dircaddr04	varchar(40)
+);
+
+alter table carindiv
     owner to postgres;
 
 create table if not exists corp_comments
