@@ -43,8 +43,22 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
         num_corps  # Pass the total number we want to process
     )
 
+    # Decide if we should persist account_ids on corp_processing and what fallback to use.
+    # Fallback CSV is used when candidate corps do not have mig_corp_account mapping.
+    fallback_csv = (
+        config.AFFILIATE_ENTITY_ACCOUNT_IDS_CSV
+        if (config.AFFILIATE_ENTITY and getattr(config, 'AFFILIATE_ENTITY_ACCOUNT_IDS', None))
+        else None
+    )
+    extra_cols = ['account_ids'] if (config.USE_MIGRATION_FILTER or fallback_csv) else None
+
     # reserve corps
-    reserved = processing_service.reserve_for_flow(base_query, flow_run_id)
+    reserved = processing_service.reserve_for_flow(
+        base_query=base_query,
+        flow_run_id=flow_run_id,
+        extra_insert_cols=extra_cols,
+        fallback_account_ids=fallback_csv
+    )
     return reserved
 
 
@@ -322,7 +336,7 @@ def load_amalgamation_snapshot(conn: Connection, amalgamation_data: dict, busine
 
 
 @task(name='3.3-Update-Auth-Task', cache_policy=NO_CACHE)
-def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
+def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, account_ids: str | None = None):
     """Create auth entity and affiliate as required."""
     # Note: affiliation to an account does not need to happen.  only entity creation in auth is req'd.
     #  used for testing purposes to see how things look in entity dashboard
@@ -357,25 +371,35 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict):
 
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
-        account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
-        affiliation_status = AuthService.create_affiliation(
-            config=config,
-            account=account_id,
-            business_registration=business_data['identifier'],
-            business_name=business_data['legal_name'],
-            corp_type_code=business_data['legal_type'],
-            pass_code=pass_code,
-            details={
-                'identifier': business_data['identifier']
-            }
-        )
-        if affiliation_status != HTTPStatus.OK:
-            with contextlib.suppress(Exception):
-                AuthService.delete_affiliation(
+        # Determine which accounts to affiliate to
+        acct_list: list[int] = []
+        if account_ids:
+            acct_list = [int(x.strip()) for x in account_ids.split(',') if x and x.strip().isdigit()]
+        elif getattr(config, 'AFFILIATE_ENTITY_ACCOUNT_IDS', None):
+            acct_list = config.AFFILIATE_ENTITY_ACCOUNT_IDS
+
+        created = []
+        try:
+            for acct in acct_list:
+                affiliation_status = AuthService.create_affiliation(
                     config=config,
-                    account=account_id,
-                    business_registration=business_data['identifier'])
-            raise Exception(f"""Failed to affiliate business {business_data['identifier']}""")
+                    account=acct,
+                    business_registration=business_data['identifier'],
+                    business_name=business_data['legal_name'],
+                    corp_type_code=business_data['legal_type'],
+                    pass_code=pass_code,
+                    details={'identifier': business_data['identifier']}
+                )
+                if affiliation_status != HTTPStatus.OK:
+                    raise Exception(f"Failed to affiliate {business_data['identifier']} to account {acct}")
+                created.append(acct)
+        except Exception:
+            # best-effort rollback of created affiliations this call
+            for acct in created:
+                    with contextlib.suppress(Exception):
+                        AuthService.delete_affiliation(config=config, account=acct,
+                                                       business_registration=business_data['identifier'])
+            raise
 
 
 @task(name='1-Migrate-Corp-Users-Task', cache_policy=NO_CACHE)
@@ -410,7 +434,8 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
 
 
 @task(name='3-Corp-Tombstone-Migrate-Task-Async', cache_policy=NO_CACHE)
-def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: dict, users_mapper: dict) -> str:
+def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: dict, users_mapper: dict,
+                      account_ids: str | None = None) -> str:
     """Migrate tombstone data - corp snapshot and placeholder filings."""
     # TODO: update corp_processing status (succeeded & failed)
     # TODO: determine the time to update some business values based off filing info
@@ -429,7 +454,7 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
                 versioning_mapper)
             update_versioning(
                 lear_conn, tombstone_transaction_id, versioning_mapper)
-            update_auth(lear_conn, config, corp_num, clean_data)
+            update_auth(lear_conn, config, corp_num, clean_data, account_ids)
             transaction.commit()
         except Exception as e:
             transaction.rollback()
@@ -482,8 +507,24 @@ def tombstone_flow():
         total_corp_failed = 0
         is_user_failed = False
         while cnt < batches:
-            # Claim next batch of reserved corps for current flow
-            corp_nums = processing_service.claim_batch(flow_run_id, batch_size)
+            # Claim next batch of reserved corps for current flow (also fetch account_ids when filtering is on)
+            want_accounts = bool(config.AFFILIATE_ENTITY)
+            extra_return_cols = ['account_ids'] if want_accounts else None
+
+            claimed = processing_service.claim_batch(
+                flow_run_id,
+                batch_size,
+                extra_return_cols=extra_return_cols,
+                as_dict=bool(extra_return_cols)
+            )
+
+            if extra_return_cols:
+                corp_nums = [r['corp_num'] for r in claimed]
+                corp_accounts = {r['corp_num']: (r.get('account_ids') or None) for r in claimed}
+            else:
+                corp_nums = claimed
+                corp_accounts = {}
+
             if not corp_nums:
                 print("No more corps available to claim")
                 break
@@ -516,8 +557,9 @@ def tombstone_flow():
             for f in data_futures:
                 corp_num, clean_data = f.result()
                 if clean_data and not isinstance(clean_data, Exception):
+                    account_ids = corp_accounts.get(corp_num)
                     corp_futures.append(
-                        migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper)
+                        migrate_tombstone.submit(config, lear_engine, corp_num, clean_data, users_mapper, account_ids)
                     )
                 else:
                     failed += 1

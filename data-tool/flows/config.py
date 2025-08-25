@@ -55,11 +55,17 @@ class _Config():  # pylint: disable=too-few-public-methods
     CORP_NAME_SUFFIX = os.getenv('CORP_NAME_SUFFIX', '')
     UPDATE_ENTITY = os.getenv('UPDATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY = os.getenv('AFFILIATE_ENTITY', 'False') == 'True'
-    AFFILIATE_ENTITY_ACCOUNT_ID = os.getenv('AFFILIATE_ENTITY_ACCOUNT_ID')
-    if AFFILIATE_ENTITY_ACCOUNT_ID.isnumeric():
-        AFFILIATE_ENTITY_ACCOUNT_ID = int(AFFILIATE_ENTITY_ACCOUNT_ID)
-    else:
-        AFFILIATE_ENTITY_ACCOUNT_ID = None
+    AFFILIATE_ENTITY_ACCOUNT_ID = os.getenv('AFFILIATE_ENTITY_ACCOUNT_ID', '')
+    # Normalized parsed list of ints (preferred for program logic)
+    AFFILIATE_ENTITY_ACCOUNT_IDS = [
+        int(x.strip()) for x in AFFILIATE_ENTITY_ACCOUNT_ID.split(',')
+        if x and x.strip().isdigit()
+    ]
+    # Normalized CSV string (useful when passing into SQL as a single value)
+    AFFILIATE_ENTITY_ACCOUNT_IDS_CSV = (
+        ','.join(str(x) for x in AFFILIATE_ENTITY_ACCOUNT_IDS)
+        if AFFILIATE_ENTITY_ACCOUNT_IDS else None
+    )
 
     USE_CUSTOM_CONTACT_EMAIL = os.getenv('USE_CUSTOM_CONTACT_EMAIL', 'False') == 'True'
     CUSTOM_CONTACT_EMAIL = os.getenv('CUSTOM_CONTACT_EMAIL', '')
