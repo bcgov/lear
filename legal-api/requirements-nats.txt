@@ -1,4 +1,0 @@
-nest_asyncio
-asyncio-nats-client==0.11.4
-asyncio-nats-streaming==0.4.0
-requests==2.25.1
