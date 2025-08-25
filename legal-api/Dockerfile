@@ -70,8 +70,10 @@ COPY --chown=web:web ./README.md /code
 COPY --chown=web:web ./LICENSE /code
 
 # Project initialization:
-RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
-  echo "$APP_ENV" \
+# RUN --mount=type=cache,target="$POETRY_CACHE_DIR" \
+# Current docker build is deprecated and doesn't support the cache
+# un-comment when updated.
+RUN echo "$APP_ENV" \
   && poetry version \
   # Install deps:
   && poetry run pip install -U pip \
