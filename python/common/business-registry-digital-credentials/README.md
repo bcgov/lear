@@ -16,17 +16,17 @@ poetry install
 ### Linting
 Check code style with flake8
 ```shell
-poetry run flake8 src/business_registry_digital_credentials`
+poetry run flake8 src/business_registry_digital_credentials
 ```
 
 Check code formatting with black (without changing files)
 ```shell
-poetry run black --check src/business_registry_digital_credentials tests`
+poetry run black --check src/business_registry_digital_credentials tests
 ```
 
 # Check import sorting with isort (without changing files)
 ```shell
-poetry run isort --check-only src/business_registry_digital_credentials tests`
+poetry run isort --check-only src/business_registry_digital_credentials tests
 ```
 
 Can remove the --check or --check-only flags to auto-fix
