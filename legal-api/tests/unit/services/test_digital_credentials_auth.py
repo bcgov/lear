@@ -115,6 +115,7 @@ def test_get_digital_credentials_preconditions(mock_preconditions, mock_user, ap
             "attestRoles": ["proprietor", "director"],
         }
 
+
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['proprietor', 'director'])
 def test_get_digital_credentials_preconditions_business_no_name(mock_preconditions, mock_user, app):
@@ -127,6 +128,7 @@ def test_get_digital_credentials_preconditions_business_no_name(mock_preconditio
             "attestName": "testuser",
             "attestRoles": ["proprietor", "director"],
         }
+
 
 @patch('legal_api.models.User.find_by_jwt_token', return_value=None)
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=[])
@@ -142,6 +144,7 @@ def test_get_digital_credentials_preconditions_no_user(mock_preconditions, mock_
             "attestRoles": [],
         }
 
+
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=[])
 def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_user, app):
@@ -155,6 +158,8 @@ def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_use
             "attestName": "testuser",
             "attestRoles": [],
         }
+
+
 @patch('legal_api.models.User.find_by_jwt_token', return_value=None)
 def test_get_digital_credentials_preconditions_no_user(mock_user, app):
     with app.test_request_context():
