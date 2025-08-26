@@ -531,9 +531,9 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and (
-            (cp.party_typ_cd = 'OFF'
-                and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null)))
-            or
+--             (cp.party_typ_cd = 'OFF'
+--                 and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null)))
+--             or
             (cp.party_typ_cd in ('DIR', 'LIQ', 'RCC', 'RCM'))
         )
     --order by e.event_id
@@ -886,7 +886,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
         'offices': get_offices_and_addresses_query(corp_num),
         'parties': get_parties_and_addresses_query(corp_num),
-        'offices_held': get_offices_held_query(corp_num),
+        # 'offices_held': get_offices_held_query(corp_num),
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
         'resolutions': get_resolutions_query(corp_num),

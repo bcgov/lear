@@ -42,7 +42,7 @@ def format_business_data(data: dict) -> dict:
     last_ar_reminder_year = business_data['last_ar_reminder_year']
 
     # last_ar_reminder_year can be None if send_ar_ind is false or the business is in the 1st financial year
-    if (business_data['send_ar_ind'] and 
+    if (business_data['send_ar_ind'] and
             (last_ar_reminder_year is None or (last_ar_year and last_ar_reminder_year < last_ar_year))):
         last_ar_reminder_year = last_ar_year
 
@@ -188,7 +188,7 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles.append(party_role)
 
-        # Prepare to format party addresses 
+        # Prepare to format party addresses
         # Note: can be index 0
         if party_info['cp_mailing_addr_id'] is not None:
             mailing_addr_data = party_info
@@ -208,7 +208,7 @@ def format_parties_data(data: dict) -> list[dict]:
             )
         ), None)
         if (
-            any(party_role['role'] == 'custodian' for party_role in formatted_party_roles) and 
+            any(party_role['role'] == 'custodian' for party_role in formatted_party_roles) and
             not mailing_addr_data and
             not delivery_addr_data and
             custodian_office
@@ -830,7 +830,7 @@ def get_data_formatters() -> dict:
         'businesses': format_business_data,
         'offices': format_offices_data,
         'parties': format_parties_data,
-        'offices_held': format_offices_held_data,
+        # 'offices_held': format_offices_held_data,
         'share_classes': format_share_classes_data,
         'aliases': format_aliases_data,
         'resolutions': format_resolutions_data,
@@ -926,7 +926,7 @@ def build_filing_json_meta_data(raw_filing_type: str,
             'stateChange': state_change,
             'nameChange': name_change,
         }
-        
+
         if accession_num := filing_data.get('accession_num'):
             meta_data['conversion']['accessionNumber'] = accession_num
 
