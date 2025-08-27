@@ -82,18 +82,6 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
 
             filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update filing json
 
-        if "appointed" in new_director["actions"]:
-
-            # add new diretor party role to the business
-            party = create_party(business_id=business.id, party_info=new_director)
-            role = {
-                "roleType": "Director",
-                "appointmentDate": new_director.get("appointmentDate"),
-                "cessationDate": new_director.get("cessationDate")
-            }
-            new_director_role = create_role(party=party, role_info=role)
-            business.party_roles.append(new_director_role)
-
         if any([action != "appointed" for action in new_director["actions"]]):  # noqa: C419
             # get name of director in json for comparison *
             new_director_name = \
@@ -113,6 +101,17 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
                 if director_name.upper() == new_director_name.upper() and director.cessation_date is None:
                     update_director(director=director, new_info=new_director)
                     break
+
+        if "appointed" in new_director["actions"]:
+            # add new diretor party role to the business
+            party = create_party(business_id=business.id, party_info=new_director)
+            role = {
+                "roleType": "Director",
+                "appointmentDate": new_director.get("appointmentDate"),
+                "cessationDate": new_director.get("cessationDate")
+            }
+            new_director_role = create_role(party=party, role_info=role)
+            business.party_roles.append(new_director_role)
 
     if filing_rec.colin_event_ids:
         for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
