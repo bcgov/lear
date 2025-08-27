@@ -152,7 +152,7 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['BC', 'BEN', 'CC', 'ULC'],
-                'outputs': ['noticeOfArticles', 'certificate']
+                'outputs': ['noticeOfArticles', 'certificateOfAmalgamation']
             },
         ],
         'regular': {
@@ -409,7 +409,7 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['C', 'CBEN', 'CCC', 'CUL'],
-                'outputs': ['noticeOfArticles', 'certificate']
+                'outputs': ['noticeOfArticles', 'certificateOfContinuation']
             },
         ]
     },
@@ -578,11 +578,11 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['CP'],
-                'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']
+                'outputs': ['certificateOfIncorporation', 'certifiedRules', 'certifiedMemorandum']
             },
             {
                 'types': ['BC', 'BEN', 'CC', 'ULC'],
-                'outputs': ['noticeOfArticles', 'certificate']
+                'outputs': ['noticeOfArticles', 'certificateOfIncorporation']
             },
         ]
     },
@@ -899,8 +899,6 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             if corrected_filing_type == 'continuationIn':
                 outputs.add('certificateOfContinuation')
             if corrected_filing_type == 'incorporationApplication':
-                if 'certificate' in outputs:
-                    outputs.remove('certificate')
                 outputs.add('certificateOfIncorporation')
 
             correction = filing.meta_data.get('correction', {})
