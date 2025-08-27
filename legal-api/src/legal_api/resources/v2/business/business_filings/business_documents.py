@@ -121,6 +121,9 @@ def _is_document_available(business, filing, file_name):
             documents = {**documents, **{file['url'].split('/')[-1]: file['url']}}
     if docs := document_list.get('documents'):
         documents = {**documents, **docs}
+    # Check the certificate specially: match the end of the URL
+    if file_name.startswith('certificateOf') and documents.get('certificate', ''):
+        return documents.get('certificate', '').endswith(file_name)
 
     return file_name in documents
 

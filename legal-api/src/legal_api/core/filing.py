@@ -605,8 +605,18 @@ class Filing:  # pylint: disable=too-many-public-methods
                 additional = set([item for sublist in adds for item in sublist])
 
                 FilingMeta.alter_outputs(filing.storage, business, additional)
+                certificate_legal_filings = {
+                    Filing.FilingTypes.AMALGAMATIONAPPLICATION.value: "certificateOfAmalgamation",
+                    Filing.FilingTypes.CONTINUATIONIN.value: "certificateOfContinuation",
+                    Filing.FilingTypes.INCORPORATIONAPPLICATION.value: "certificateOfIncorporation",
+                }
                 for doc in additional:
-                    documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
+                    # Default to the original doc name
+                    doc_name = doc
+                    # Special case: "certificate" maps to filing-type specific certificate
+                    if doc == "certificate":
+                        doc_name = certificate_legal_filings.get(filing.filing_type, doc)
+                    documents['documents'][doc] = f'{base_url}{doc_url}/{doc_name}'
 
                 if has_roles(jwt, [UserRoles.staff]):
                     if static_docs := FilingMeta.get_static_documents(filing.storage, f'{base_url}{doc_url}/static'):

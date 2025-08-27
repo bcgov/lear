@@ -224,7 +224,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfIncorporation',
                     'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'legalFilings': [
@@ -237,7 +237,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
@@ -248,7 +248,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
@@ -668,7 +668,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('ulc_ia_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication':
@@ -692,7 +692,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('cc_ia_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication':
@@ -716,7 +716,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication':
@@ -890,7 +890,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION,
      None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'certificateOfAmalgamation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfAmalgamation',
+         'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfAmalgamation',
          'legalFilings': [
              {
                  'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
@@ -1121,7 +1121,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
@@ -1132,7 +1132,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
     ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
@@ -1144,7 +1144,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
@@ -1155,7 +1155,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
     ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
@@ -1167,7 +1167,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
@@ -1178,7 +1178,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
     ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
@@ -1190,7 +1190,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
+                    'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
@@ -1201,7 +1201,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
     ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
      'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
+     {'documents': {'certificate': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},

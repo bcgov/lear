@@ -152,7 +152,7 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['BC', 'BEN', 'CC', 'ULC'],
-                'outputs': ['noticeOfArticles', 'certificateOfAmalgamation']
+                'outputs': ['noticeOfArticles', 'certificate']
             },
         ],
         'regular': {
@@ -409,7 +409,7 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['C', 'CBEN', 'CCC', 'CUL'],
-                'outputs': ['noticeOfArticles', 'certificateOfContinuation']
+                'outputs': ['noticeOfArticles', 'certificate']
             },
         ]
     },
@@ -893,8 +893,18 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def alter_outputs_correction(filing, business, outputs):
         """Handle output file list modification for corrections."""
         if filing.filing_type == 'correction':
+            corrected_filing_type = filing.filing_json['filing'].get('correction', {}).get('correctedFilingType')
+            if corrected_filing_type == 'amalgamationApplication':
+                outputs.add('certificateOfAmalgamation')
+            if corrected_filing_type == 'continuationIn':
+                outputs.add('certificateOfContinuation')
+            if corrected_filing_type == 'incorporationApplication':
+                if 'certificate' in outputs:
+                    outputs.remove('certificate')
+                outputs.add('certificateOfIncorporation')
+
             correction = filing.meta_data.get('correction', {})
-            if correction.get('toLegalName'):
+            if correction.get('toLegalName') and corrected_filing_type not in {'amalgamationApplication', 'continuationIn', 'incorporationApplication'}:
                 outputs.add('certificateOfNameCorrection')
             if correction.get('uploadNewRules'):
                 outputs.add('certifiedRules')
