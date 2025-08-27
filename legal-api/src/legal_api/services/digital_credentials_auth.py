@@ -41,10 +41,14 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool
     return rules.are_digital_credentials_allowed(user, business)
 
 
-def get_digital_credentials_preconditions(business: Business, jwt: JwtManager) -> Dict[str, List[str]]:
+def get_digital_credentials_preconditions(business: Business) -> Dict[str, List[str]]:
     """Return the preconditions for digital credentials."""
     if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
         return {}
 
     rules = DigitalCredentialsRulesService()
-    return {'attestRoles': rules.get_preconditions(user, business)}
+    return {
+        "attestBusiness": business.legal_name if business else None,
+        "attestName": user.display_name if user else None,
+        "attestRoles": rules.get_preconditions(user, business) if user and business else [],
+    }

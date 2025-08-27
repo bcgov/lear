@@ -638,7 +638,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
             'filingTypes': allowed_filings
         },
         'digitalBusinessCard': are_digital_credentials_allowed(business, jwt),
-        'digitalBusinessCardPreconditions': get_digital_credentials_preconditions(business, jwt),
+        'digitalBusinessCardPreconditions': get_digital_credentials_preconditions(business),
         'viewAll': is_competent_authority(jwt)
     }
     return result
