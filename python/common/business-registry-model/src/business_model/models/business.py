@@ -664,7 +664,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
         return d
 
-    def _extend_json(self, d):
+    def _extend_json(self, d):  # noqa: PLR0912
         """Include conditional fields to json."""
         base_url = current_app.config.get('LEGAL_API_BASE_URL')
 
