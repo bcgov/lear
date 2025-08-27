@@ -1,5 +1,0 @@
-id,address_type,street,street_additional,city,region,country,postal_code,delivery_instructions,business_id,office_id
-24240,mailing,4314 Douglas Rd,"",Victoria,BC,CA,V8X 2N3,"",,3126
-24241,delivery,4314 Douglas Rd,"",Victoria,BC,CA,V8X 2N3,"",,3126
-24243,delivery,4314 Douglas Rd,"",Victoria,BC,CA,V8X 2N3,"",,3127
-24242,mailing,4314 Douglas Rd,"",Victoria,BC,CA,V8X 2N3,"",,3127

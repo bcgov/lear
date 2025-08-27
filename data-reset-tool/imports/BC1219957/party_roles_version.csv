@@ -1,5 +1,0 @@
-id,role,appointment_date,cessation_date,business_id,party_id,transaction_id,end_transaction_id,operation_type
-6872,completing_party,2020-07-21 00:00:00+00,,2818,6639,107822,,0
-6873,incorporator,2020-07-21 00:00:00+00,,2818,6639,107822,,0
-6874,director,2020-07-21 00:00:00+00,,2818,6639,107822,,0
-6937,director,2020-07-22 00:00:00+00,,2818,6672,107860,,0

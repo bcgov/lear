@@ -1,3 +1,0 @@
-id,address_type,street,street_additional,city,region,country,postal_code,delivery_instructions,business_id,transaction_id,end_transaction_id,operation_type,office_id
-22405,mailing,4-1900 Av De l'Église,"",Montréal,QC,CA,H4E 1G8,,,107822,,0,
-22535,mailing,3-1900 Av De l'Église,"",Montréal,QC,CA,H4E 1G8,,,107860,,0,
