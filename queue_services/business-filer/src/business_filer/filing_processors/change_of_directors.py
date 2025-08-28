@@ -46,76 +46,87 @@ from business_filer.filing_processors.filing_components import create_party, cre
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0912
     """Render the change_of_directors onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
-    if not (new_directors := filing_json["filing"]["changeOfDirectors"].get("directors")):
+    if not (directors := filing_json["filing"]["changeOfDirectors"].get("directors")):
         return
 
     business.last_cod_date = filing_meta.application_date
-    new_director_names = []
+    colin_director_names = []
+    new_directors = []
 
-    for new_director in new_directors:  # pylint: disable=too-many-nested-blocks;
+    for director in directors:  # pylint: disable=too-many-nested-blocks;
         # Applies only for filings coming from colin.
         if filing_rec.colin_event_ids:
             director_found = False
-            current_new_director_name = \
-                new_director["officer"].get("firstName") + new_director["officer"].get("middleInitial", "") + \
-                new_director["officer"].get("lastName")
-            new_director_names.append(current_new_director_name.upper())
+            director_name = (director["officer"].get("firstName") +
+                             director["officer"].get("middleInitial", "") +
+                             director["officer"].get("lastName"))
+            colin_director_names.append(director_name.upper())
 
-            for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
-                existing_director_name = \
-                    director.party.first_name + director.party.middle_initial + director.party.last_name
-                if existing_director_name.upper() == current_new_director_name.upper():
+            for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
+                current_director_name = (current_director.party.first_name +
+                                         current_director.party.middle_initial +
+                                         current_director.party.last_name)
+                if current_director_name.upper() == director_name.upper():
                     # Creates a new director record in Lear if a matching ceased director exists in Lear
                     # and the colin json contains the same director record with cessation date null.
-                    if director.cessation_date is not None and new_director.get("cessationDate") is None:
+                    if current_director.cessation_date is not None and director.get("cessationDate") is None:
                         director_found = False
                     else:
                         director_found = True
-                        if new_director.get("cessationDate"):
-                            new_director["actions"] = ["ceased"]
+                        if director.get("cessationDate"):
+                            director["actions"] = ["ceased"]
                         else:
                             # For force updating address always as of now.
-                            new_director["actions"] = ["addressChanged"]
+                            director["actions"] = ["addressChanged"]
                     break
             if not director_found:
-                new_director["actions"] = ["appointed"]
+                director["actions"] = ["appointed"]
 
             filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update filing json
 
-        if any([action != "appointed" for action in new_director["actions"]]):  # noqa: C419
+        if "appointed" in director["actions"]:
+            new_directors.append(director)
+
+        elif any([action != "appointed" for action in director["actions"]]):  # noqa: C419
             # get name of director in json for comparison *
-            new_director_name = \
-                new_director["officer"].get("firstName") + new_director["officer"].get("middleInitial", "") + \
-                new_director["officer"].get("lastName") \
-                if "nameChanged" not in new_director["actions"] \
-                else new_director["officer"].get("prevFirstName") + \
-                new_director["officer"].get("prevMiddleInitial") + new_director["officer"].get("prevLastName")
-            if not new_director_name:
-                current_app.logger.error("Could not resolve director name from json %s.", new_director)
+            if "nameChanged" in director["actions"]:
+                director_name = (director["officer"].get("prevFirstName") +
+                                 director["officer"].get("prevMiddleInitial", "") +
+                                 director["officer"].get("prevLastName"))
+            else:
+                director_name = (director["officer"].get("firstName") +
+                                 director["officer"].get("middleInitial", "") +
+                                 director["officer"].get("lastName"))
+            if not director_name:
+                current_app.logger.error("Could not resolve director name from json %s.", director)
                 raise QueueException
 
-            for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
+            for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
                 # get name of director in database for comparison *
-                director_name = director.party.first_name + director.party.middle_initial + director.party.last_name
+                current_director_name = (current_director.party.first_name +
+                                         current_director.party.middle_initial +
+                                         current_director.party.last_name)
                 # Update only an active director
-                if director_name.upper() == new_director_name.upper() and director.cessation_date is None:
-                    update_director(director=director, new_info=new_director)
+                if current_director_name.upper() == director_name.upper() and current_director.cessation_date is None:
+                    update_director(director=current_director, new_info=director)
                     break
 
-        if "appointed" in new_director["actions"]:
-            # add new diretor party role to the business
-            party = create_party(business_id=business.id, party_info=new_director)
-            role = {
-                "roleType": "Director",
-                "appointmentDate": new_director.get("appointmentDate"),
-                "cessationDate": new_director.get("cessationDate")
-            }
-            new_director_role = create_role(party=party, role_info=role)
-            business.party_roles.append(new_director_role)
+    for director in new_directors:        
+        # add new diretor party role to the business
+        party = create_party(business_id=business.id, party_info=director)
+        role = {
+            "roleType": "Director",
+            "appointmentDate": director.get("appointmentDate"),
+            "cessationDate": director.get("cessationDate")
+        }
+        new_director_role = create_role(party=party, role_info=role)
+        business.party_roles.append(new_director_role)
 
     if filing_rec.colin_event_ids:
-        for director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
+        for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
             # get name of director in database for comparison *
-            director_name = director.party.first_name + director.party.middle_initial + director.party.last_name
-            if director_name.upper() not in new_director_names and director.cessation_date is None:
-                director.cessation_date = datetime.now(UTC)
+            current_director_name = (current_director.party.first_name +
+                                     current_director.party.middle_initial +
+                                     current_director.party.last_name)
+            if current_director_name.upper() not in colin_director_names and current_director.cessation_date is None:
+                current_director.cessation_date = datetime.now(UTC)
