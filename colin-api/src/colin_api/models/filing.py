@@ -735,16 +735,33 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def _insert_filing_user(cls, cursor, filing):
         """Add to the FILING_USER table."""
         try:
+            role_typ_cd = None
+            if filing.header.get('isStaff'):
+                role_typ_cd = 'staff'
+
+            first_name = None
+            last_name = filing.get_certified_by()
+            email = filing.get_email()
+
+            if filed_by := filing.header.get('filedBy'):
+                last_name = filed_by.get('lastName')
+                first_name = filed_by.get('firstName')
+                if not first_name and not last_name:
+                    last_name = filed_by.get('userName')  # if no names, use userName for last name
+                email = filed_by.get('email')
+
             cursor.execute(
                 """
                 INSERT INTO filing_user (event_id, user_id, last_nme, first_nme, middle_nme, email_addr, party_typ_cd,
                     role_typ_cd)
-                VALUES (:event_id, :user_id, :last_name, NULL, NULL, :email_address, NULL, NULL)
+                VALUES (:event_id, :user_id, :last_name, :first_name, NULL, :email, NULL, :role_typ_cd)
                 """,
                 event_id=filing.event_id,
                 user_id=filing.user_id,
-                last_name=filing.get_certified_by(),
-                email_address=filing.get_email()
+                last_name=last_name,
+                first_name=first_name,
+                email=email,
+                role_typ_cd=role_typ_cd
             )
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
