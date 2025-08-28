@@ -1,2 +1,0 @@
-id,party_type,first_name,middle_initial,last_name,title,organization_name,delivery_address_id,mailing_address_id,transaction_id,end_transaction_id,operation_type
-6694,person,TEST,"",TEST,"","",24244,24245,109409,,0
