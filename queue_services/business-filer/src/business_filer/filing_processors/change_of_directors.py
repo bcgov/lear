@@ -111,7 +111,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
                     update_director(director=current_director, new_info=director)
                     break
 
-    for director in new_directors:        
+    for director in new_directors:
         # add new diretor party role to the business
         party = create_party(business_id=business.id, party_info=director)
         role = {

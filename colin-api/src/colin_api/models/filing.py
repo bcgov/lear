@@ -1912,7 +1912,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
                                             business=business)
 
-
             # create new ledger text for address change
             text = 'Director change.'
         return text
