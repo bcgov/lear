@@ -327,7 +327,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_registration_data(filing)
         elif self._report_key == 'changeOfRegistration':
             self._format_change_of_registration_data(filing, 'changeOfRegistration')
-        elif self._report_key in ['certificateOfNameChange', 'certificateOfNameCorrection', 'certificateOfIncorporation']:
+        elif self._report_key in ['certificateOfNameChange', 'certificateOfNameCorrection']:
             self._format_name_change_data(filing)
         elif self._report_key == 'certificateOfRestoration':
             self._format_certificate_of_restoration_data(filing)
@@ -349,12 +349,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_amalgamation_data(filing)
         elif self._report_key == 'certificateOfAmalgamation':
             self._format_certificate_of_amalgamation_data(filing)
-            self._format_name_change_data(filing)
         elif self._report_key == 'continuationIn':
             self._format_continuation_in_data(filing)
         elif self._report_key == 'certificateOfContinuation':
             self._format_certificate_of_continuation_in_data(filing)
-            self._format_name_change_data(filing)
         elif self._report_key == 'intentToLiquidate':
             self._format_intent_to_liquidate_data(filing)
         elif self._report_key == 'noticeOfWithdrawal':
@@ -880,31 +878,32 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
 
     def _set_amalgamating_businesses(self, filing):
-        amalgamating_businesses = []
+        result = []
         business_legal_name = None
         # Determine the source filing for amalgamating businesses
-        if correction := filing.get("correction"):
-            original_filing = Filing.find_by_id(correction.get("correctedFilingId"))
-            raw_businesses = (
-                original_filing.filing_json["filing"]["amalgamationApplication"]["amalgamatingBusinesses"]
-                if original_filing
-                else []
+        if correction := filing.get('correction'):
+            original_filing = Filing.find_by_id(correction.get('correctedFilingId'))
+            amalgamating_businesses = (
+                original_filing.filing_json["filing"]
+                .get("amalgamationApplication", {})
+                .get("amalgamatingBusinesses", [])
+                if original_filing else []
             )
         else:
-            raw_businesses = filing.get("amalgamationApplication", {}).get("amalgamatingBusinesses", [])
+            amalgamating_businesses = filing.get("amalgamationApplication", {}).get("amalgamatingBusinesses", [])
 
-        for raw in raw_businesses:
-            identifier = raw.get('identifier')
-            if foreign_legal_name := raw.get('legalName'):
+        for amalgamating_business in amalgamating_businesses:
+            identifier = amalgamating_business.get('identifier')
+            if foreign_legal_name := amalgamating_business.get('legalName'):
                 business_legal_name = foreign_legal_name
             elif ting_business := self._get_versioned_amalgamating_business(identifier):
                 business_legal_name = ting_business.legal_name
 
-            amalgamating_businesses.append({
+            result.append({
                 'legalName': business_legal_name,
                 'identifier': identifier
             })
-        filing['amalgamatingBusinesses'] = amalgamating_businesses
+        filing['amalgamatingBusinesses'] = result
 
     def _get_versioned_amalgamating_business(self, identifier):
         # until TED business is created, get it from business table

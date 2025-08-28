@@ -902,7 +902,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certificateOfIncorporation')
 
             correction = filing.meta_data.get('correction', {})
-            if correction.get('toLegalName') and corrected_filing_type not in {'amalgamationApplication', 'continuationIn', 'incorporationApplication'}:
+            if correction.get('toLegalName') and business.legal_type == Business.LegalTypes.COOP.value:
                 outputs.add('certificateOfNameCorrection')
             if correction.get('uploadNewRules'):
                 outputs.add('certifiedRules')

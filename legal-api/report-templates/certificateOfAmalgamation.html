@@ -29,7 +29,7 @@
 
                 <div class="certify-clause-container">
                     <div>I hereby certify that the following businesses were amalgamated under the name</div>
-                    <div class="company-name-header">{{ toLegalName or business.legalName }}</div>
+                    <div class="company-name-header">{{ business.legalName }}</div>
                     <div>on {{ effective_date_time }}</div>
                     <div class="mt-2">
                     {% for entity in amalgamatingBusinesses %}
