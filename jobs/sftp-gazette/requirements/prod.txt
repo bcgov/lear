@@ -44,7 +44,7 @@ pylint-flask==0.6
 pylint-plugin-utils==0.8.2
 pep8==1.7.1
 autopep8==2.0.4
-paramiko==3.3.1
+paramiko==3.4.0
 pysftp==0.2.9
 cloud-sql-python-connector==1.12.1
 google-auth==2.39.0
