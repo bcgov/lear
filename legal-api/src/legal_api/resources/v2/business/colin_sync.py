@@ -70,6 +70,17 @@ def get_completed_filings_for_colin():  # pylint: disable=too-many-branches
         filing_json['filing']['header']['isFutureEffective'] = filing.is_future_effective
         filing_json['filing']['header']['hideInLedger'] = filing.hide_in_ledger
 
+        filing_json['filing']['header']['isStaff'] = (
+            UserRoles.staff in filing.submitter_roles or UserRoles.system in filing.submitter_roles
+        )
+        if filing.filing_submitter:
+            filing_json['filing']['header']['filedBy'] = {
+                'userName': filing.filing_submitter.username,
+                'firstName': filing.filing_submitter.firstname,
+                'lastName': filing.filing_submitter.lastname,
+                'email': filing.filing_submitter.email
+            }
+
         if not filing_json['filing'].get('business'):
             if filing.transaction_id:
                 business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
