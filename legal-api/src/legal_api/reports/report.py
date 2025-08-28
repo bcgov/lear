@@ -878,7 +878,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
 
     def _set_amalgamating_businesses(self, filing):
-        result = []
+        ting_businesses = []
         business_legal_name = None
         # Determine the source filing for amalgamating businesses
         if correction := filing.get('correction'):
@@ -899,11 +899,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             elif ting_business := self._get_versioned_amalgamating_business(identifier):
                 business_legal_name = ting_business.legal_name
 
-            result.append({
+            ting_businesses.append({
                 'legalName': business_legal_name,
                 'identifier': identifier
             })
-        filing['amalgamatingBusinesses'] = result
+        filing['amalgamatingBusinesses'] = ting_businesses
 
     def _get_versioned_amalgamating_business(self, identifier):
         # until TED business is created, get it from business table
