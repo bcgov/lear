@@ -463,7 +463,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     def get_certified_by(self) -> str:
         """Get last name; currently is whole name."""
-        return self.header['certifiedBy']
+        return self.header.get('certifiedBy')
 
     def get_email(self) -> str:
         """Get email address."""
@@ -1869,6 +1869,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         if filing.filing_type != 'annualReport' and filing.body.get('directors', []):
             # create, cease, change directors
             changed_dirs = []
+            new_directors = []
             for director in filing.body.get('directors', []):
                 if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
                                                                for elem in director['actions']):
@@ -1897,14 +1898,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                             status_code=HTTPStatus.NOT_FOUND
                         )
 
-                # create new director record after updating existing one (if any)
                 if 'appointed' in director['actions']:
-                    Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
-                                                business=business)
+                    new_directors.append(director)
 
             # add back changed directors as new row - if ceased director with changes this will add them with
             # cessation date + end event id filled
             for director in changed_dirs:
+                Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
+                                            business=business)
+
+            # create new director record after updating existing one (if any)
+            for director in new_directors:
                 Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
                                             business=business)
 
