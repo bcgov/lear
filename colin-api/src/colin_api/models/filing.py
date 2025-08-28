@@ -740,7 +740,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 role_typ_cd = 'staff'
 
             first_name = None
-            last_name = filing.get_certified_by(),
+            last_name = filing.get_certified_by()
             email = filing.get_email()
 
             if filed_by := filing.header.get('filedBy'):
