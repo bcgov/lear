@@ -21,6 +21,7 @@ import pytest
 from business_model.models import Business, Filing
 from registry_schemas.example_data import INTENT_TO_LIQUIDATE, FILING_TEMPLATE
 
+from business_filer.common.filing_message import FilingMessage
 from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing
 
@@ -38,7 +39,7 @@ from tests.unit import create_business, create_filing
         ('ccc_company', 'CCC'),
     ]
 )
-async def test_intent_to_liquidate_filing_process(app, session, mocker, test_name, legal_type):
+def test_intent_to_liquidate_filing_process(app, session, mocker, test_name, legal_type):
     """Assert that the intent to liquidate object is correctly populated to model objects."""
     # Setup
     identifier = 'BC1234567'
@@ -57,18 +58,18 @@ async def test_intent_to_liquidate_filing_process(app, session, mocker, test_nam
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = create_filing(payment_id, filing_json, business_id=business.id)
-    filing_msg = {'filing': {'id': filing.id}}
+    filing_msg = FilingMessage(filing_identifier=filing.id)
 
     # mock out the email sender and event publishing
-    mocker.patch('entity_filer.worker.publish_email_message', return_value=None)
-    mocker.patch('entity_filer.worker.publish_event', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('entity_filer.filing_processors.filing_components.business_profile.update_business_profile',
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
                  return_value=None)
-    mocker.patch('legal_api.services.bootstrap.AccountService.update_entity', return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     # Test
-    await process_filing(filing_msg, app)
+    process_filing(filing_msg)
 
     # Assertions
     filing = Filing.find_by_id(filing.id)
