@@ -59,6 +59,11 @@ DISSOLUTION_MAPPING = {
 
 
 def validate(business: Business, dissolution: Dict) -> Optional[Error]:
+    from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_parties_addresses,
+    validate_pdf,
+)
     """Validate the dissolution filing."""
     if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
@@ -245,6 +250,11 @@ def _validate_address_location(parties):
 
 
 def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
+    from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_parties_addresses,
+    validate_pdf,
+)
     """Validate affidavit document of the filing.
 
     This needs not to be validated for administrative dissolution
@@ -267,6 +277,11 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[li
 
 
 def _validate_court_order(filing):
+    from legal_api.services.filings.validations.common_validations import (
+    validate_court_order,
+    validate_parties_addresses,
+    validate_pdf,
+)
     """Validate court order."""
     if court_order := filing.get('filing', {}).get('dissolution', {}).get('courtOrder', None):
         court_order_path: Final = '/filing/dissolution/courtOrder'
