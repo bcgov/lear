@@ -108,9 +108,8 @@ def tests_filer_put_back_on(app, session):
     assert business.state_filing_id == filing_id
     assert business.dissolution_date is None
 
-    custodial_office = session.query(Business, Office). \
-        filter(Business.id == Office.business_id). \
-        filter(Business.id == business.id). \
+    custodial_office = session.query(Office). \
+        filter(Office.business_id == business.id). \
         filter(Office.office_type == OfficeType.CUSTODIAL). \
         one_or_none()
     assert not custodial_office

@@ -848,10 +848,11 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
 
     if 'update_existing_share_class' in test_name:
         assert len(business.share_classes.all()) == 3
-        assert business.share_classes.all()[0].name == updated_share_class['name']
-        assert business.share_classes.all()[0].special_rights_flag == updated_share_class['hasRightsOrRestrictions']
-        assert business.share_classes.all()[1].name == share_class_json1['name']
-        assert business.share_classes.all()[2].name == share_class_json2['name']
+        share_classes = sorted(business.share_classes.all(), key=lambda x: x.id)
+        assert share_classes[0].name == updated_share_class['name']
+        assert share_classes[0].special_rights_flag == updated_share_class['hasRightsOrRestrictions']
+        assert share_classes[1].name == share_class_json1['name']
+        assert share_classes[2].name == share_class_json2['name']
 
     if 'update_with_new_share_class' in test_name:
         assert len(business.share_classes.all()) == 1

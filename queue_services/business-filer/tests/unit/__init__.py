@@ -424,8 +424,7 @@ def create_business(identifier, legal_type=None, legal_name=None):
     business.identifier = identifier
     business.legal_type = legal_type
     business.legal_name = legal_name
-    business = create_business_address(business, Address.DELIVERY)
-    # business = create_business_address(business, Address.MAILING)
+    create_business_address(business, Address.DELIVERY)
     business.save()
     return business
 
@@ -448,8 +447,6 @@ def create_business_address(business, type):
     office = Office(office_type='registeredOffice')
     office.addresses.append(address)
     business.offices.append(office)
-    business.save()
-    return business
 
 
 def create_user(username='temp_user', firstname='firstname', lastname='lastname', sub='sub', iss='iss'):
@@ -512,6 +509,7 @@ def create_office_address(business, office, address_type):
     else:
         address.address_type = Address.DELIVERY
     office.addresses.append(address)
+    business.offices.append(office)
     business.save()
     return address
 

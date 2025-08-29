@@ -98,7 +98,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
         filing_meta = FilingMeta(application_date=effective_date)
 
         # test
-        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -128,7 +128,7 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
                         filing['filing']['incorporationApplication']['cooperative']['memorandumFileKey']
 
     mock_get_next_corp_num.assert_called_with(
-        filing['filing']['incorporationApplication']['nameRequest']['legalType'], None)
+        filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
 @pytest.mark.parametrize('legal_type, filing, legal_name_suffix', [
@@ -150,7 +150,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
         # test
-        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
+        business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
         # Assertions
         assert business.identifier == next_corp_num
@@ -174,7 +174,7 @@ def test_incorporation_filing_process_no_nr(app, session, legal_type, filing, le
         assert parties[1]['officer']['organizationName'] == 'Xyz Inc.'
 
     mock_get_next_corp_num.assert_called_with(
-        filing['filing']['incorporationApplication']['nameRequest']['legalType'], None)
+        filing['filing']['incorporationApplication']['nameRequest']['legalType'])
 
 
 @pytest.mark.parametrize('registry,business_type,prefix,num_length', [
@@ -196,7 +196,7 @@ def test_get_next_corp_num(requests_mock, mocker, app,
         colin_api = current_app.config.get("COLIN_API", "http://test.test")
 
         with app.app_context():
-            requests_mock.post(f'{colin_api}/BC', json={'corpNum': '1234567'})
+            requests_mock.post(f'{colin_api}/businesses/BC', json={'corpNum': '1234567'})
 
             corp_num = business_info.get_next_corp_num(business_type)
     
@@ -236,7 +236,7 @@ def test_incorporation_filing_coop_from_colin(app, session):
     filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == corp_num
@@ -276,7 +276,7 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type, le
     filing_meta = FilingMeta(application_date=filing_rec.effective_date)
 
     # test
-    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta, None)
+    business, filing_rec, filing_meta = incorporation_filing.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
     assert business.identifier == corp_num

@@ -399,7 +399,8 @@ def tests_filer_partner_name_and_address_change(app, session, mocker, test_name)
     business = Business.find_by_internal_id(business_id)
 
     if test_name == 'gp_edit_partner_name_and_address':
-        party = business.party_roles.all()[0].party
+        party = next((party_role for party_role in business.party_roles.all()
+                      if party_role.party_id == party_id_1), None).party
         assert party.first_name == \
             filing['filing']['correction']['parties'][0]['officer']['firstName'].upper()
         assert party.delivery_address.street == \
