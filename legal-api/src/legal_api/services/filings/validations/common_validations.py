@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validations share through the different filings."""
+from http import HTTPStatus
 import io
 import re
 from datetime import datetime
 from typing import Dict, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
 from flask import current_app
@@ -164,6 +166,14 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
 def validate_court_order(court_order_path, court_order):
     """Validate the courtOrder data of the filing."""
     msg = []
+
+    allowed_role_court_order_poa = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if allowed_role_court_order_poa not in authorized_permissions:
+        return Error(
+            HTTPStatus.FORBIDDEN,
+            [{ 'message': f'Permission Denied - You do not have permissions to submit court order for this filing.'}]
+        )
 
     # TODO remove it when the issue with schema validation is fixed
     if 'fileNumber' not in court_order:

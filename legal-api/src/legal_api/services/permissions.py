@@ -17,9 +17,12 @@
 from enum import Enum
 
 from flask import current_app, g
+from flask_jwt_oidc import JwtManager
 
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
+from legal_api.models.business import Business
+from legal_api.models.filing import Filing
 from legal_api.services import authz
 from legal_api.services.cache import cache
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
@@ -55,6 +58,15 @@ class ListFilingsPermissionsAllowed(str, Enum):
     STAFF_FILINGS = 'STAFF_FILINGS'
     TRANSITION_FILING = 'TRANSITION_FILING'
 
+class ListActionsPermissionsAllowed(str, Enum):
+    """Define an enum for permissions checks."""
+
+    DETAIL_COMMENTS = 'DETAIL_COMMENTS'
+    STAFF_COMMENTS = 'STAFF_COMMENTS'
+    COURT_ORDER_POA = 'COURT_ORDER_POA'
+    EDITABLE_COMPLETING_PARTY = 'EDITABLE_COMPLETING_PARTY'
+    EDITABLE_CERTIFY_NAME = 'EDITABLE_CERTIFY_NAME'
+    AML_OVERRIDES = 'AML_OVERRIDES'
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -177,3 +189,66 @@ class PermissionService:
         else:
             current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
         return False
+    
+    @staticmethod
+    def has_permissions_for_patch_action(business: Business,
+               state: Business.State,
+               filing_type: str,
+               legal_type: str,
+               jwt: JwtManager,
+               sub_filing_type: str,
+               filing_json: dict) -> bool:
+        """Check if the user has permissions for the action per permissions table."""
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        if not authorized_permissions or not isinstance(authorized_permissions, list):
+            current_app.logger.error('No authorized permissions found for user.')
+            return False
+        
+        certifyBy = filing_json['filing']['header'].get('certifiedBy')
+        if legal_type in [Business.LegalTypes.COOP.value]:
+            # if filing type is coop is incorporation filing for user, agm extension and filing json has certifiedBy other than jwt
+            if filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value or filing_type == CoreFiling.FilingTypes.DISSOLUTION.value or filing_type == CoreFiling.FilingTypes.REGISTRATION.value:
+                if certifyBy and certifyBy != g.jwt_oidc_token_info.get('name'):
+                # if filing type  coop is incorporation filing for user, agm extension and filing json has certifiedBy other than jwt
+                    roles_in_filings = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+                    if roles_in_filings in authorized_permissions:
+                        current_app.logger.info(f'User has permission to edit the certify name for filing: {filing_type}')
+                        return True
+                    else:
+                        current_app.logger.warning(f'User does not have permission to edit the certify name for filing: {filing_type}')
+                        return False
+        if filing_type == CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value:
+            foreign_business = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('amalgamatingBusinesses')
+            business_addresses = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('addresses')
+            limited_restoration = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('isLimitedRestoration')
+            business_in_good_standing = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('isNotInGoodStanding')
+
+            exists_foreign = any('foreign' in d.values() for d in foreign_business if isinstance(d, dict))
+            exists_lear = any('lear' in d.values() for d in foreign_business if isinstance(d, dict))
+            if exists_foreign:
+                roles_in_filings = ListActionsPermissionsAllowed.AML_OVERRIDES.value
+                if roles_in_filings in authorized_permissions:
+                    current_app.logger.info(f'User has AML override permission for foreign type filing: {filing_type}')
+                    return True
+                else:
+                    current_app.logger.warning(f'User does not have AML override permission for foreign type filing: {filing_type}')
+                    return False
+                
+            if exists_lear :
+                roles_in_filings = ListActionsPermissionsAllowed.AML_OVERRIDES.value
+                flag = False
+                if roles_in_filings in authorized_permissions:
+                    current_app.logger.info(f'User has AML override permission for lear type filing: {filing_type}')
+                    if business_addresses:
+                        flag = True
+                    if limited_restoration == True:
+                        flag = True
+                    if business_in_good_standing == False:
+                        flag = True
+                    return flag
+                else:
+                    current_app.logger.warning(f'User does not have AML override permission for lear type filing: {filing_type}')
+                    return False
+
+        return False
+        
