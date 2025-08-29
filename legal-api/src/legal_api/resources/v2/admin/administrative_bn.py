@@ -16,7 +16,6 @@ from http import HTTPStatus
 
 from flask import current_app
 from flask_cors import cross_origin
-from sentry_sdk import capture_message
 
 from legal_api.models import Business, UserRoles
 from legal_api.services.event_publisher import publish_to_queue
@@ -61,6 +60,5 @@ def publish_entity_event(business: Business,
             message_id=message_id
         )
     except Exception as err:  # pylint: disable=broad-except; we don't want to fail out the filing, so ignore all.
-        capture_message('Queue Publish Admin Event Error: business.id=' + str(business.id) + str(err), level='error')
         current_app.logger.error('Queue Publish Event Error: business.id=%s', business.id, exc_info=True)
         raise err
