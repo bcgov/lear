@@ -878,20 +878,32 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['withdrawnFilingEffectiveDate'] = LegislationDatetime.format_as_report_string(withdrawn_filing_date)
 
     def _set_amalgamating_businesses(self, filing):
-        amalgamating_businesses = []
+        ting_businesses = []
         business_legal_name = None
-        for amalgamating_business in filing['amalgamationApplication']['amalgamatingBusinesses']:
+        # Determine the source filing for amalgamating businesses
+        if correction := filing.get('correction'):
+            original_filing = Filing.find_by_id(correction.get('correctedFilingId'))
+            amalgamating_businesses = (
+                original_filing.filing_json["filing"]
+                .get("amalgamationApplication", {})
+                .get("amalgamatingBusinesses", [])
+                if original_filing else []
+            )
+        else:
+            amalgamating_businesses = filing.get("amalgamationApplication", {}).get("amalgamatingBusinesses", [])
+
+        for amalgamating_business in amalgamating_businesses:
             identifier = amalgamating_business.get('identifier')
             if foreign_legal_name := amalgamating_business.get('legalName'):
                 business_legal_name = foreign_legal_name
             elif ting_business := self._get_versioned_amalgamating_business(identifier):
                 business_legal_name = ting_business.legal_name
 
-            amalgamating_businesses.append({
+            ting_businesses.append({
                 'legalName': business_legal_name,
                 'identifier': identifier
             })
-        filing['amalgamatingBusinesses'] = amalgamating_businesses
+        filing['amalgamatingBusinesses'] = ting_businesses
 
     def _get_versioned_amalgamating_business(self, identifier):
         # until TED business is created, get it from business table
@@ -1063,7 +1075,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['ceasedParties'] = parties_deleted
 
     def _format_certificate_of_continuation_in_data(self, filing):
-        continuation_in = self._filing.meta_data.get('continuationIn')
+        if filing.get('correction'):
+            original_filing = Filing.find_by_id(filing.get('correction').get('correctedFilingId'))
+            continuation_in = original_filing.meta_data.get('continuationIn')
+        else:
+            continuation_in = self._filing.meta_data.get('continuationIn')
         country_code = continuation_in['country']
         region_code = continuation_in['region']
 
@@ -1466,7 +1482,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             'filingDescription': 'Certificate Of Amalgamation',
             'fileName': 'certificateOfAmalgamation'
         },
-        'certificate': {
+        'certificateOfIncorporation': {
             'filingDescription': 'Certificate of Incorporation',
             'fileName': 'certificateOfIncorporation'
         },

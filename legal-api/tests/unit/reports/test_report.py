@@ -180,7 +180,7 @@ def set_meta_info(report):
         ('BEN COD', 'BC1234567', 'BEN', 'changeOfDirectors', 'changeOfDirectors', CHANGE_OF_DIRECTORS_MAILING),
         ('BEN INC', 'BC1234567', 'BEN', 'incorporationApplication', 'incorporationApplication',
          INCORPORATION_FILING_TEMPLATE),
-        ('BEN CER', 'BC1234567', 'BEN', 'certificate', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
+        ('BEN CER', 'BC1234567', 'BEN', 'certificateOfIncorporation', 'incorporationApplication', INCORPORATION_FILING_TEMPLATE),
         ('BEN TRANP', 'BC1234567', 'BEN', 'transition', 'transition', TRANSITION_FILING_TEMPLATE),
     ]
 )
