@@ -1,27 +1,46 @@
-# Copyright © 2019 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# Redistribution and use in source and binary forms,
+# with or without modification, are permitted provided that the
+# following conditions are met:
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 """The Legal API service.
 
 This module is the API for the Legal Entity system.
 """
 import os
 
-import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
-from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 from flask import Flask, jsonify  # noqa: I001
 from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
 from registry_schemas.flask import SchemaServices  # noqa: I001
+from structured_logging import StructuredLogging
 
 from legal_api import config, models
 from legal_api.models import db
@@ -35,7 +54,6 @@ from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
-# noqa: I003; the sentry import creates a bad line count in isort
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
 
@@ -46,17 +64,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     app.register_blueprint(document_service_bp)
     app.config.from_object(config.CONFIGURATION[run_mode])
 
-    # Configure Sentry
-    if dsn := app.config.get('SENTRY_DSN', None):
-        # pylint==2.7.4 errors out on the syntatic sugar for sentry_sdk
-        # the error is skipped by disable=abstract-class-instantiated
-        sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            release=f'legal-api@{get_run_version()}',
-            send_default_pii=False
-        )
-
+    app.logger = StructuredLogging(app).get_logger()
     init_db(app)
     rsbc_schemas.init_app(app)
     flags.init_app(app)

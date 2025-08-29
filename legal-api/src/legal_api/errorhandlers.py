@@ -63,7 +63,7 @@ def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
     """Handle any uncaught exceptions.
 
     Since the handler suppresses the actual exception, log it explicitly to
-    ensure it's logged and recorded in Sentry.
+    ensure it's logged.
     """
     app_name = request.headers.get('App-Name', 'unknown').strip()
     # Allow spaces as well as letters, numbers, underscores and hyphens
