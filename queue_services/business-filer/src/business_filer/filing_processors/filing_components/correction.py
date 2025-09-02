@@ -44,6 +44,7 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import (
     aliases,
     business_info,
+    create_address,
     create_party,
     create_role,
     filings,
@@ -241,11 +242,15 @@ def _update_party(party_info):
         party.email = party_info["officer"].get("email", "").lower()
         party.identifier = party_info["officer"].get("identifier", "").upper()
         # add addresses to party
-        if party_info.get("deliveryAddress", None):
-            update_address(party.delivery_address, party_info.get("deliveryAddress"))
-        if party_info.get("mailingAddress", None):
-            update_address(party.mailing_address, party_info.get("mailingAddress"))
+        if party.delivery_address:
+            party.delivery_address = update_address(party.delivery_address, party_info.get("deliveryAddress"))
+        else:
+            party.delivery_address = create_address(party_info.get("deliveryAddress"), Address.DELIVERY)
 
+        if party.mailing_address:
+            party.mailing_address = update_address(party.mailing_address, party_info.get("mailingAddress"))
+        else:
+            party.mailing_address = create_address(party_info.get("mailingAddress"), Address.MAILING)
 
 def _create_party_info(business, correction_filing_rec, party_info):
     party = create_party(business_id=business.id, party_info=party_info, create=False)
