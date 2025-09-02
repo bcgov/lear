@@ -42,7 +42,7 @@ CLOUD_EVENT_ENVELOPE = {
 }
 
 
-def create_app(queue: GcpQueue):
+def create_app(queue: Queue):
     app = Flask(__name__)
     default_config = {}
     app.config.from_object(default_config)
@@ -60,6 +60,18 @@ def setup_pubsub(pubsub: PubSubContainer, endpoint: str):
     push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint)
     subscriber = pubsub.get_subscriber_client()
     subscription_path = subscriber.subscription_path(pubsub.project, "my-subscription")
+    subscriber.create_subscription(
+        request={
+            "name": subscription_path,
+            "topic": topic_path,
+            "push_config": push_config,
+        },
+    )
+
+    
+    # Create a subscription - localhost version
+    push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint.replace("host.docker.internal", "localhost"))
+    subscription_path = subscriber.subscription_path(pubsub.project, "my-subscription-localhost")
     subscriber.create_subscription(
         request={
             "name": subscription_path,
