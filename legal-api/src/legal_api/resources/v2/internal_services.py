@@ -68,7 +68,7 @@ def update_bn_move():
             current_app.logger.error('%s, %s', response, response_code)
         publish_to_queue(
             data={'oldBn': old_bn, 'newBn': new_bn},
-            subject=current_app.config.get('NATS_EMAILER_SUBJECT'),
+            subject=current_app.config.get('BUSINESS_EMAILER_TOPIC'),
             event_type='bc.registry.bnmove',
             identifier=business.identifier if business else None,
             message_id=None,
@@ -76,7 +76,7 @@ def update_bn_move():
         )
         publish_to_queue(
             data={},
-            subject=current_app.config.get('NATS_ENTITY_EVENT_SUBJECT'),
+            subject=current_app.config.get('BUSINESS_EVENTS_TOPIC'),
             event_type='bc.registry.business.bn',
             identifier=business.identifier if business else None,
             message_id=None,

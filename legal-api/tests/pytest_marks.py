@@ -40,9 +40,6 @@ integration_authorization = pytest.mark.skipif(
 integration_colin = pytest.mark.skipif((os.getenv('RUN_COLIN_TESTS', False) is False),
                                        reason='COLIN tests are only run when requested.')
 
-integration_nats = pytest.mark.skipif((os.getenv('RUN_NATS_TESTS', False) is False),
-                                      reason='NATS tests are only run when requested.')
-
 integration_payment = pytest.mark.skipif((os.getenv('RUN_PAYMENT_TESTS', False) is False),
                                          reason='Test requiring payment service run when RUN_PAYMENT_TESTS is set.')
 
