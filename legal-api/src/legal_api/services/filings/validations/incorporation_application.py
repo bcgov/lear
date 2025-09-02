@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Incorporation filing."""
-from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final
 
@@ -23,6 +22,7 @@ from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (  # noqa: I001
     validate_court_order,
+    validate_effective_date,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -32,7 +32,6 @@ from legal_api.services.filings.validations.common_validations import (  # noqa:
     validate_share_structure,
 )
 from legal_api.services.utils import get_str
-from legal_api.utils.datetime import datetime as dt
 
 
 def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
@@ -76,9 +75,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     elif legal_type == Business.LegalTypes.COOP.value:
         msg.extend(validate_cooperative_documents(incorporation_json))
 
-    err = validate_incorporation_effective_date(incorporation_json)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_effective_date(incorporation_json))
 
     msg.extend(validate_ia_court_order(incorporation_json))
 
@@ -276,44 +273,6 @@ def validate_parties_delivery_address(incorporation_json: dict, legal_type: str,
         return msg
 
     return None
-
-
-def validate_incorporation_effective_date(incorporation_json: dict) -> Error:
-    """Return an error or warning message based on the effective date validation rules.
-
-    Rules:
-        - The effective date must be the correct format.
-        - The effective date must be a minimum of 2 minutes in the future.
-        - The effective date must be a maximum of 10 days in the future.
-    """
-    # Setup
-    msg = []
-    now = dt.utcnow()
-    now_plus_2_minutes = now + timedelta(minutes=2)
-    now_plus_10_days = now + timedelta(days=10)
-
-    try:
-        filing_effective_date = incorporation_json['filing']['header']['effectiveDate']
-    except KeyError:
-        return msg
-
-    try:
-        effective_date = dt.fromisoformat(filing_effective_date)
-    except ValueError:
-        msg.append({'error': babel('%s is an invalid ISO format for effective_date.') % filing_effective_date})
-        return msg
-
-    if effective_date < now_plus_2_minutes:
-        msg.append({'error': babel('Invalid Datetime, effective date must be a minimum of 2 minutes ahead.')})
-
-    if effective_date > now_plus_10_days:
-        msg.append({'error': babel('Invalid Datetime, effective date must be a maximum of 10 days ahead.')})
-
-    if msg:
-        return msg
-
-    return None
-
 
 def validate_cooperative_documents(incorporation_json: dict):
     """Return an error or warning message based on the cooperative documents validation rules.

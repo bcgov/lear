@@ -16,8 +16,10 @@ import copy
 from datetime import datetime, timedelta
 from http import HTTPStatus
 from unittest.mock import patch
+from datetime import date
 
 import pytest
+from freezegun import freeze_time
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter
 
@@ -407,5 +409,54 @@ def test_dissolution_custodial_office(session, test_status, legal_type, dissolut
     if test_status == 'FAIL':
         assert err.code == expected_code
         assert any(expected_msg in msg['error'] for msg in err.msg)
+    else:
+        assert err is None
+
+#setup
+now = date(2020, 9, 17)
+
+@pytest.mark.parametrize(
+    'test_name, effective_date , expected_code, expected_msg',
+    [
+        ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
+        ('SUCCESS', None, None, None),
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                'path': '/filing/header/effectiveDate'
+            }])
+    ])
+def test_dissolution_effective_date(session, test_name,
+                                               effective_date, expected_code, expected_msg):
+    """Test effective date validation in voluntary dissolution."""
+    business = Business(identifier='BC1234567', legal_type='BC')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+
+    if effective_date is not None:
+        filing['filing']['header']['effectiveDate'] = effective_date
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None

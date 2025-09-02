@@ -15,8 +15,10 @@
 import copy
 from http import HTTPStatus
 from unittest.mock import patch
+from datetime import date
 
 import pytest
+from freezegun import freeze_time
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 
@@ -608,3 +610,55 @@ def test_alteration_share_class_series_validation(session, legal_type, new_legal
     else:
         assert err
         assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
+
+#setup
+now = date(2020, 9, 17)
+
+@pytest.mark.parametrize(
+    'test_name, effective_date , expected_code, expected_msg',
+    [
+        ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
+        ('SUCCESS', None, None, None),
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                'path': '/filing/header/effectiveDate'
+            }])
+    ])
+def test_validate_alteration_effective_date(session, test_name,
+                                               effective_date, expected_code, expected_msg):
+    """Test effective date validation in alteration."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['alteration']['business']['legalType'] = 'BEN'
+    del filing['filing']['alteration']['nameRequest']
+
+    if effective_date is not None:
+        filing['filing']['header']['effectiveDate'] = effective_date
+
+    if 'courtOrder' in filing['filing']['alteration']:
+        del filing['filing']['alteration']['courtOrder']
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
