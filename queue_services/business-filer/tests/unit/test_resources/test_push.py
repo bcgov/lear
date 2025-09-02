@@ -16,7 +16,7 @@ def test_queue_cloud_event(get_free_port, pubsub):
     test_message = to_queue_message(CLOUD_EVENT)
     publisher.publish(topic_path, test_message)
 
-    msg = queue.get(block=False)
+    msg = queue.get(timeout=1)
     ce = gcp_queue.get_simple_cloud_event(msg, wrapped=True)
 
     assert ce.data == CLOUD_EVENT.data
