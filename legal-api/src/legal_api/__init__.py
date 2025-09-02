@@ -48,7 +48,7 @@ from legal_api.models.db import init_db
 from legal_api.resources import endpoints
 from legal_api.scripts.document_service_import import document_service_bp  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
 from legal_api.schemas import rsbc_schemas
-from legal_api.services import digital_credentials, flags, gcp_queue, queue
+from legal_api.services import digital_credentials, flags, gcp_queue
 from legal_api.services.authz import cache
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
@@ -69,7 +69,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     rsbc_schemas.init_app(app)
     flags.init_app(app)
     gcp_queue.init_app(app)
-    queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)
 

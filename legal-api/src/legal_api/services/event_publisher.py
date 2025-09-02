@@ -20,7 +20,7 @@ from typing import Optional
 from flask import current_app
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from legal_api.services import gcp_queue, queue
+from legal_api.services import gcp_queue
 from legal_api.utils.datetime import datetime
 
 
@@ -33,64 +33,6 @@ def _get_source_and_time(identifier: str):
         source = ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/'])
 
     return source, time
-
-
-def _publish_to_nats_with_wrapper(data, subject, identifier, event_type, message_id):
-    """Publish the wrapped message onto the NATS subject."""
-    source, time = _get_source_and_time(identifier)
-    payload = {
-        'specversion': '1.x-wip',
-        'type': event_type,
-        'source': source,
-        'id': message_id or str(uuid.uuid4()),
-        'time': time,
-        'datacontenttype': 'application/json',
-        'identifier': identifier,
-        'data': data
-    }
-    current_app.logger.debug('Publishing to NATS subject: %s, with payload: %s', subject, payload)
-    queue.publish_json(
-        subject=subject,
-        payload=payload
-    )
-
-
-def _publish_to_nats(payload, subject):
-    """Publish the event message onto the NATS subject."""
-    current_app.logger.debug('Publishing to NATS subject: %s, with payload: %s', subject, payload)
-    queue.publish_json(
-        subject=subject,
-        payload=payload
-    )
-
-
-def _publish_to_gcp(data, subject, identifier, event_type, message_id):
-    """Publish the event message onto the GCP topic."""
-    source, time = _get_source_and_time(identifier)
-    nats_to_gcp_topic = {
-        current_app.config['NATS_FILER_SUBJECT']: current_app.config['BUSINESS_FILER_TOPIC'],
-        current_app.config['NATS_ENTITY_EVENT_SUBJECT']: current_app.config['BUSINESS_EVENTS_TOPIC'],
-        current_app.config['NATS_EMAILER_SUBJECT']: current_app.config['BUSINESS_EMAILER_TOPIC'],
-    }
-
-    topic = nats_to_gcp_topic[subject]
-
-    if identifier is not None:  # Fixed E271
-        payload = {'identifier': identifier, **data}
-    else:
-        payload = data
-
-    ce = SimpleCloudEvent(
-        id=message_id or str(uuid.uuid4()),
-        source=source,
-        subject=topic,
-        time=time,
-        type=event_type,
-        data=payload
-    )
-
-    current_app.logger.debug('Publishing to GCP topic: %s, with payload: %s', topic, payload)
-    gcp_queue.publish(topic, to_queue_message(ce))
 
 
 # pylint: disable is temporary until NATS is removed, then the is_wrapped param will go away  # Fixed E261
@@ -132,24 +74,24 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
         Logs errors that occur during the publishing process. Specific details are logged for debugging.
     """
     try:
-        if current_app.config['DEPLOYMENT_PLATFORM'] == 'GCP':
-            _publish_to_gcp(
-                data=data,
-                subject=subject,
-                identifier=identifier,
-                event_type=event_type,
-                message_id=message_id
-            )
-        elif is_wrapped:
-            _publish_to_nats_with_wrapper(
-                data=data,
-                subject=subject,
-                identifier=identifier,
-                event_type=event_type,
-                message_id=message_id
-            )
+        source, time = _get_source_and_time(identifier)
+
+        if identifier is not None:  # Fixed E271
+            payload = {'identifier': identifier, **data}
         else:
-            _publish_to_nats(payload=data, subject=subject)
+            payload = data
+
+        ce = SimpleCloudEvent(
+            id=message_id or str(uuid.uuid4()),
+            source=source,
+            subject=subject,
+            time=time,
+            type=event_type,
+            data=payload
+        )
+
+        current_app.logger.debug('Publishing to GCP topic: %s, with payload: %s', subject, payload)
+        gcp_queue.publish(subject, to_queue_message(ce))
 
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
         current_app.logger.error(

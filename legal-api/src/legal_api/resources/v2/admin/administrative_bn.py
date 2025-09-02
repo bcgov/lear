@@ -51,7 +51,7 @@ def publish_entity_event(business: Business,
             },
             'business': {'identifier': business.identifier}
         }
-        subject = current_app.config.get('NATS_ENTITY_EVENT_SUBJECT')
+        subject = current_app.config.get('BUSINESS_EVENTS_TOPIC')
         publish_to_queue(
             data=payload_data,
             identifier=business.identifier if business else None,

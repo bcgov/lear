@@ -213,9 +213,7 @@ def test_save_review(app, session, client, jwt, mocker, status, comment):
         pass
 
     mock_publish = mocker.patch('legal_api.resources.v2.admin.reviews.publish_to_queue')
-    mock_publish_json = mocker.patch('legal_api.services.queue', side_effect=publish_json)
     mock_publish.return_value = None
-    mock_publish_json.return_value = None
 
     rv = client.post(f'/api/v2/admin/reviews/{review.id}',
                      json=data,
@@ -238,7 +236,7 @@ def test_save_review(app, session, client, jwt, mocker, status, comment):
 
     mock_publish.assert_called_with(
         data=mocker.ANY, # for the payload parameter
-        subject=current_app.config.get('NATS_EMAILER_SUBJECT'),  # for the subject parameter,
+        subject=current_app.config.get('BUSINESS_EMAILER_TOPIC'),  # for the subject parameter,
         identifier=None,
         event_type=None,
         message_id=None,

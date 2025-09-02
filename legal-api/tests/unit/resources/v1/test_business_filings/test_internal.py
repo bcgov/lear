@@ -35,9 +35,8 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import Business, Filing
-from legal_api.services import QueueService
 from legal_api.services.authz import COLIN_SVC_ROLE, STAFF_ROLE
-from tests import integration_nats, integration_payment
+from tests import integration_payment
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_business_mailing_address, factory_business, factory_completed_filing, factory_filing, factory_epoch_filing  # noqa:E501,I001
 
@@ -73,140 +72,6 @@ def test_post_pre_load_colin_filing(session, client, jwt):
     filing = Filing.find_by_id(rv.json['filing']['id'])
     assert filing.source == Filing.Source.COLIN.value
     assert filing.status == Filing.Status.COMPLETED.value
-
-
-@integration_nats
-@pytest.mark.asyncio
-def test_post_colin_filing(session, client, jwt):
-    """Assert that colin filing can be posted to legal api."""
-    # SETUP
-    # Create business
-    identifier = 'CP7654321'
-    business = factory_business(identifier, founding_date=(datetime.utcnow() - datedelta.YEAR))
-    factory_business_mailing_address(business)
-
-    # Create an AR filing for the business
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['colinIds'] = [1230]
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['source'] = Filing.Source.COLIN.value
-    ar['filing']['business']['identifier'] = identifier
-
-    # POST the AR
-    rv = client.post(
-        f'/api/v1/businesses/{identifier}/filings',
-        json=ar,
-        headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
-    )
-    # Assure that the filing was accepted
-    assert rv.status_code == HTTPStatus.CREATED
-
-    # Check filing
-    filing = Filing.find_by_id(rv.json['filing']['id'])
-    assert filing.source == Filing.Source.COLIN.value
-    assert filing.status in [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
-
-
-@integration_nats
-@pytest.mark.asyncio
-async def test_colin_filing_failed_to_queue(app_ctx, session, client, jwt, stan_server, event_loop):
-    """Assert that payment tokens can be retrieved and decoded from the Queue."""
-    # SETUP
-    this_loop = asyncio.get_event_loop()
-    this_loop = event_loop
-    queue = QueueService(app_ctx, this_loop)
-    await queue.connect()
-
-    # TEST - add some COLIN filings to the system, check that they got placed on the Queue
-    # Create business
-    identifier = 'CP7654321'
-    business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                )
-    factory_epoch_filing(business)
-    factory_business_mailing_address(business)
-    ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
-
-    # POST the AR
-    rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-                     json=ar,
-                     headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
-                     )
-
-    # Assure that the filing was rejected
-    assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert 'missing filing/header values' in rv.json['errors'][0]['message']
-
-
-@integration_nats
-# @pytest.mark.asyncio
-def test_colin_filing_to_queue(app_ctx, session, client, jwt, stan_server):
-    """Assert that colin filing is added to the queue."""
-    # SETUP
-    msgs = []
-    filing_ids = []
-    this_loop = asyncio.get_event_loop()
-    # this_loop = event_loop
-    future = asyncio.Future(loop=this_loop)
-    queue = QueueService(app_ctx, this_loop)
-    this_loop.run_until_complete(queue.connect())
-
-    async def cb(msg):
-        nonlocal msgs
-        nonlocal future
-        msgs.append(msg)
-        if len(msgs) == 5:
-            future.set_result(True)
-
-    this_loop.run_until_complete(queue.stan.subscribe(subject=queue.subject,
-                                                      queue='colin_queue',
-                                                      durable_name='colin_queue',
-                                                      cb=cb))
-
-    # TEST - add some COLIN filings to the system, check that they got placed on the Queue
-    for i in range(0, 5):
-        # Create business
-        identifier = f'CP765432{i}'
-        business = factory_business(identifier,
-                                    founding_date=(datetime.utcnow() - datedelta.YEAR)
-                                    )
-        factory_business_mailing_address(business)
-        # Create anm AR filing for the business
-        ar = copy.deepcopy(ANNUAL_REPORT)
-        ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-        ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
-        ar['filing']['header']['colinIds'] = [1230 + i]
-        ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
-        ar['filing']['business']['identifier'] = identifier
-
-        # POST the AR
-        rv = client.post(f'/api/v1/businesses/{identifier}/filings',
-                         json=ar,
-                         headers=create_header(jwt, [COLIN_SVC_ROLE], 'coops-updater-job')
-                         )
-
-        # Assure that the filing was accepted
-        assert rv.status_code == HTTPStatus.CREATED
-
-        filing_ids.append(rv.json['filing']['id'])
-
-    # Await all the messages were received
-    try:
-        this_loop.run_until_complete(asyncio.wait_for(future, 2, loop=this_loop))
-    except Exception as err:
-        print(err)
-
-    # CHECK the colinFilings were retrieved from the queue
-    assert len(msgs) == 5
-    for i in range(0, 5):
-        m = msgs[i]
-        assert 'filing' in m.data.decode('utf-8')
-        assert dpath.util.get(json.loads(m.data.decode('utf-8')), 'filing/id') in filing_ids
 
 
 @integration_payment
