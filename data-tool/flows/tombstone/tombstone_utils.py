@@ -938,7 +938,7 @@ def build_filing_json_meta_data(raw_filing_type: str,
             meta_data['conversion'] = {
                 'documtid': filing_cars_data.get('cars_docmnt_id')
             }
-            if accession_num := filing_cars_data.get('accession_num'):
+            if accession_num := filing_cars_data.get('accesnum'):
                 meta_data['conversion']['accessionNumber'] = accession_num
             if batchnum := filing_cars_data.get('batchnum'):
                 meta_data['conversion']['batchNumber'] = batchnum
