@@ -35,7 +35,6 @@ def _get_source_and_time(identifier: str):
     return source, time
 
 
-# pylint: disable is temporary until NATS is removed, then the is_wrapped param will go away  # Fixed E261
 def publish_to_queue(  # pylint: disable=too-many-arguments
     data: dict,  # Fixed E231
     subject: str,  # Fixed E231
@@ -46,7 +45,7 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
 ) -> None:
     """Publish data to a message queue.
 
-    This function handles publishing messages to different platforms (e.g., GCP or NATS) based on the application's
+    This function handles publishing messages to different platforms based on the application's
     configuration. It supports optional message wrapping and identification, and provides a fallback mechanism in
     case of missing business context. Logs are generated in case of errors during the publishing process.
 

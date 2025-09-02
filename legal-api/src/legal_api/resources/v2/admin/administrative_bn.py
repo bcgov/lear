@@ -42,7 +42,7 @@ def publish_entity_event(business: Business,
                          request_name: str = None,
                          message_id: str = None,
                          business_number: str = None):
-    """Publish the admin message on to the NATS events subject."""
+    """Publish the admin message on to the queue events topic."""
     try:
         payload_data = {
             'header': {

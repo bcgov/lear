@@ -16,6 +16,7 @@ setup: install  ## Setup the project
 
 clean: clean-build clean-pyc clean-test ## Clean the project
 	rm -rf venv/
+	rm -rf .venv/
 
 clean-build: ## Clean build files
 	rm -fr build/

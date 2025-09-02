@@ -57,35 +57,6 @@ doc = ["doc8", "sphinx (>=7.0.0)", "sphinx-autobuild", "sphinx-autodoc-typehints
 test = ["dateparser (==1.*)", "pre-commit", "pytest", "pytest-cov", "pytest-mock", "pytz (==2021.1)", "simplejson (==3.*)"]
 
 [[package]]
-name = "asyncio-nats-client"
-version = "0.11.4"
-description = "NATS client for Python Asyncio"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "asyncio-nats-client-0.11.4.tar.gz", hash = "sha256:ede58bda6560cf4206059799597be9be7ba28a479c4d118cf00bda6e4471bf2e"},
-]
-
-[package.extras]
-nkeys = ["nkeys"]
-
-[[package]]
-name = "asyncio-nats-streaming"
-version = "0.4.0"
-description = "NATS Streaming client for Python Asyncio"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "asyncio-nats-streaming-0.4.0.tar.gz", hash = "sha256:1fecb125917b438028e6eb753cdc1689dd1c7c86df8a9808534d9fc1711b0aa6"},
-]
-
-[package.dependencies]
-asyncio-nats-client = ">=0.7.0"
-protobuf = ">=3.7"
-
-[[package]]
 name = "attrs"
 version = "23.1.0"
 description = "Classes Without Boilerplate"
@@ -1548,18 +1519,6 @@ files = [
 [package.dependencies]
 certifi = "*"
 urllib3 = "*"
-
-[[package]]
-name = "nest-asyncio"
-version = "1.6.0"
-description = "Patch asyncio to allow nested event loops"
-optional = false
-python-versions = ">=3.5"
-groups = ["main"]
-files = [
-    {file = "nest_asyncio-1.6.0-py3-none-any.whl", hash = "sha256:87af6efd6b5e897c81050477ef65c62e2b2f35d51703cae01aff2905b1852e1c"},
-    {file = "nest_asyncio-1.6.0.tar.gz", hash = "sha256:6f172d5449aca15afd6c646851f4e31e02c598d553a667e38cafa997cfec55fe"},
-]
 
 [[package]]
 name = "opentelemetry-api"
@@ -3087,4 +3046,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9.22,<4"
-content-hash = "def4e2f700e8f6aaa0353bda196a95b45c244834d8f86f69bbbbda63d3f7f921"
+content-hash = "3cf0f4a34a423c0c29384b46904f8ec94b114538dec1d2c06304f73f01c05611"

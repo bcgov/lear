@@ -52,9 +52,6 @@ dependencies = [
     "blinker (==1.4)",
     "flask-restx (==0.3.0)",
     "pyjwt (==2.8.0)",
-    "nest-asyncio (>=1.6.0,<2.0.0)",
-    "asyncio-nats-client (==0.11.4)",
-    "asyncio-nats-streaming (==0.4.0)",
     
     "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.46#egg=registry_schemas",
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
