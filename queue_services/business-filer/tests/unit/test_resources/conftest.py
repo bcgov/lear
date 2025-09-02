@@ -69,9 +69,9 @@ def setup_pubsub(pubsub: PubSubContainer, endpoint: str):
     )
 
     
-    # Create a subscription - localhost version
-    push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint.replace("host.docker.internal", "localhost"))
-    subscription_path = subscriber.subscription_path(pubsub.project, "my-subscription-localhost")
+    # Create a subscription - github (linux) version
+    push_config = pubsub_v1.types.PushConfig(push_endpoint=endpoint.replace("host.docker.internal", "172.17.0.1"))
+    subscription_path = subscriber.subscription_path(pubsub.project, "my-subscription-github")
     subscriber.create_subscription(
         request={
             "name": subscription_path,
