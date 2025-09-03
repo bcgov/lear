@@ -67,6 +67,10 @@ class ListActionsPermissionsAllowed(str, Enum):
     EDITABLE_COMPLETING_PARTY = 'EDITABLE_COMPLETING_PARTY'
     EDITABLE_CERTIFY_NAME = 'EDITABLE_CERTIFY_NAME'
     AML_OVERRIDES = 'AML_OVERRIDES'
+    FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
+    FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
+    FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
+    FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -249,6 +253,49 @@ class PermissionService:
                 else:
                     current_app.logger.warning(f'User does not have AML override permission for lear type filing: {filing_type}')
                     return False
+                
+            dba_business = filing_json['filing'][CoreFiling.FilingTypes.REGISTRATION.value].get('businessType')
+            start_date = filing_json['filing'][CoreFiling.FilingTypes.REGISTRATION.value].get('startDate')
+            if filing_type == CoreFiling.FilingTypes.REGISTRATION.value and dba_business == 'DBA':
+                if start_date:
+                    current_app.logger.info(f'User does not have permission for adding dba with start date: {filing_type}')
+                    return False
+                roles_in_filings = ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value
+                if roles_in_filings in authorized_permissions:
+                    current_app.logger.info(f'User has permission for adding dba : {filing_type}')
+                    return True
+                else:
+                    current_app.logger.warning(f'User does not have permission for adding dba: {filing_type}')
+                    return False
+            
+            if filing_type == CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value:
+                parties = filing_json['filing'][CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value].get('parties')
+                if parties:
+                    if parties.get('action') == 'NAME CHANGED':
+                        roles_in_filings = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
+                        if roles_in_filings in authorized_permissions:
+                            current_app.logger.info(f'User has permission to edit completing party for filing: {filing_type}')
+                            return True
+                        else:
+                            current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
+                            return False
+                    if parties.get('action') == 'EMAIL CHANGED':
+                        roles_in_filings = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
+                        if roles_in_filings in authorized_permissions:
+                            current_app.logger.info(f'User has permission to edit completing party for filing: {filing_type}')
+                            return True
+                        else:
+                            current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
+                            return False
+                    
+                    if parties.get('action') == 'REPLACED' or parties.get('action') == 'ADDED':
+                        roles_in_filings = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value
+                        if roles_in_filings in authorized_permissions:
+                            current_app.logger.info(f'User has permission to edit completing party for filing: {filing_type}')
+                            return True
+                        else:
+                            current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
+                            return False
 
         return False
         
