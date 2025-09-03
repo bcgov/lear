@@ -29,6 +29,7 @@
       "types": ["SP"]
     },
     "enabled-business-summary-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
+    "supported-amalgamation-entities": "BC BEN CC ULC C CBEN CCC CUL",
     "supported-amalgamation-out-entities": "BC BEN CC ULC C CBEN CCC CUL",
     "supported-consent-amalgamation-out-entities": "BC BEN CC ULC C CBEN CCC CUL",
     "supported-put-back-on-entities": "BC BEN CC ULC C CBEN CCC CUL CP",
