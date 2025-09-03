@@ -18,7 +18,7 @@ from typing import Dict, Final, Optional
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 from legal_api.errors import Error
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
-from legal_api.services import STAFF_ROLE
+from legal_api.services import STAFF_ROLE, flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
@@ -100,6 +100,10 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
         account_id) -> list:
     """Validate amalgamating businesses."""
     is_staff = jwt.validate_roles([STAFF_ROLE])
+    enabled_filings = flags.value('supported-amalgamation-entities').split()
+    if legal_type not in enabled_filings:
+        return Error(HTTPStatus.FORBIDDEN,
+                     [{'error': babel(f'{legal_type} is not enabled for amalgamation entities.')}])
     msg = []
     amalgamating_businesses_json = amalgamation_json.get('filing', {}) \
                                                     .get(filing_type, {})\
