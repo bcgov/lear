@@ -42,7 +42,7 @@ def validate_document_request(document_type, business: Business):
     errors = []
     # basic checks
     enabled_filings = flags.value('enabled-business-summary-entities').split()
-    if enabled_filings and document_type == 'summary' and business.legal_type not in enabled_filings:
+    if document_type == 'summary' and business.legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{business.legal_type} is not enabled business summary.')}])
     if document_rules := document_rule_set.get(document_type, None):
