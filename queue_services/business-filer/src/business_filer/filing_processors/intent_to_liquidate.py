@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """File processing rules and actions for the Intent to Liquidate filing."""
-from contextlib import suppress
-
-import dpath
 from business_model.models import Business, Comment, Filing
 from flask import current_app
 
@@ -54,6 +51,5 @@ def process(business: Business,
     business.in_liquidation = True
 
     # update court order, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.util.get(filing, "/intentToLiquidate/courtOrder")
-        filings.update_filing_court_order(filing_rec, court_order_json)
+    if court_order := intent_to_liquidate.get("courtOrder"):
+        filings.update_filing_court_order(filing_rec, court_order)

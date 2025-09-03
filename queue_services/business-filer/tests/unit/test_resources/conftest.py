@@ -42,7 +42,7 @@ CLOUD_EVENT_ENVELOPE = {
 }
 
 
-def create_app(queue: Queue):
+def create_app(queue: GcpQueue):
     app = Flask(__name__)
     default_config = {}
     app.config.from_object(default_config)

@@ -42,7 +42,7 @@ def format_business_data(data: dict) -> dict:
     last_ar_reminder_year = business_data['last_ar_reminder_year']
 
     # last_ar_reminder_year can be None if send_ar_ind is false or the business is in the 1st financial year
-    if (business_data['send_ar_ind'] and 
+    if (business_data['send_ar_ind'] and
             (last_ar_reminder_year is None or (last_ar_year and last_ar_reminder_year < last_ar_year))):
         last_ar_reminder_year = last_ar_year
 
@@ -188,7 +188,7 @@ def format_parties_data(data: dict) -> list[dict]:
 
         formatted_party_roles.append(party_role)
 
-        # Prepare to format party addresses 
+        # Prepare to format party addresses
         # Note: can be index 0
         if party_info['cp_mailing_addr_id'] is not None:
             mailing_addr_data = party_info
@@ -208,7 +208,7 @@ def format_parties_data(data: dict) -> list[dict]:
             )
         ), None)
         if (
-            any(party_role['role'] == 'custodian' for party_role in formatted_party_roles) and 
+            any(party_role['role'] == 'custodian' for party_role in formatted_party_roles) and
             not mailing_addr_data and
             not delivery_addr_data and
             custodian_office
@@ -455,7 +455,7 @@ def format_filings_data(data: dict) -> dict:
         trigger_date = x['e_trigger_dt_str']
 
         filing_json, meta_data = build_filing_json_meta_data(raw_filing_type, filing_type, filing_subtype,
-                                                             effective_date, x)
+                                                             effective_date, x, data)
 
         filing_body = copy.deepcopy(FILING['filings'])
         jurisdiction = None
@@ -830,7 +830,7 @@ def get_data_formatters() -> dict:
         'businesses': format_business_data,
         'offices': format_offices_data,
         'parties': format_parties_data,
-        'offices_held': format_offices_held_data,
+        # 'offices_held': format_offices_held_data,
         'share_classes': format_share_classes_data,
         'aliases': format_aliases_data,
         'resolutions': format_resolutions_data,
@@ -873,7 +873,12 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
     return value
 
 
-def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_subtype: str, effective_date: str, data: dict) -> tuple[dict, dict]:
+def build_filing_json_meta_data(raw_filing_type: str,
+                                filing_type: str,
+                                filing_subtype: str,
+                                effective_date: str,
+                                filing_data: dict,
+                                data: dict) -> tuple[dict, dict]:
     filing_json = copy.deepcopy(FILING_JSON)
     filing_json['filing'][raw_filing_type] = {}
     # if conversion has conv filing type, set filing_json
@@ -882,12 +887,12 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
 
     meta_data = {
         'colinFilingInfo': {
-            'eventType': data['e_event_type_cd'],
-            'filingType': data['f_filing_type_cd'],
-            'eventId': int(data['e_event_id'])
+            'eventType': filing_data['e_event_type_cd'],
+            'filingType': filing_data['f_filing_type_cd'],
+            'eventId': int(filing_data['e_event_id'])
         },
         'isLedgerPlaceholder': True,
-        'colinDisplayName': get_colin_display_name(data)
+        'colinDisplayName': get_colin_display_name(filing_data)
     }
 
     if raw_filing_type == 'conversion':
@@ -900,12 +905,12 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
         if filing_type == 'changeOfName':
             name_change = True
             filing_json['filing']['changeOfName'] = {
-                'fromLegalName': data['old_corp_name'],
-                'toLegalName': data['new_corp_name'],
+                'fromLegalName': filing_data['old_corp_name'],
+                'toLegalName': filing_data['new_corp_name'],
             }
             meta_data['changeOfName'] = {
-                'fromLegalName': data['old_corp_name'],
-                'toLegalName': data['new_corp_name'],
+                'fromLegalName': filing_data['old_corp_name'],
+                'toLegalName': filing_data['new_corp_name'],
             }
         else:
             name_change = False
@@ -922,7 +927,29 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
             'nameChange': name_change,
         }
 
-    if filing_type == 'annualReport':
+        if accession_num := filing_data.get('accession_num'):
+            meta_data['conversion']['accessionNumber'] = accession_num
+
+    if filing_type == 'conversionLedger':
+        filing_cars_data = next(
+            (item for item in data['cars_data'] if item.get('event_id') == filing_data['e_event_id']), None
+        )
+        if filing_cars_data:
+            meta_data['conversion'] = {
+                'documtid': filing_cars_data.get('cars_docmnt_id')
+            }
+            if accession_num := filing_cars_data.get('accesnum'):
+                meta_data['conversion']['accessionNumber'] = accession_num
+            if batchnum := filing_cars_data.get('batchnum'):
+                meta_data['conversion']['batchNumber'] = batchnum
+            if filedate := filing_cars_data.get('filedate'):
+                meta_data['conversion']['effectiveDate'] = filedate.isoformat()
+            if regiracf := filing_cars_data.get('regiracf'):
+                meta_data['conversion']['filedBy'] = regiracf
+            if boxrracf := filing_cars_data.get('boxrracf'):
+                meta_data['conversion']['boxFiledBy'] = boxrracf
+
+    elif filing_type == 'annualReport':
         meta_data['annualReport'] = {
             'annualReportFilingYear': int(effective_date[:4]),
         }
@@ -938,7 +965,7 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
         }
     elif filing_type == 'restoration':
         if filing_subtype in ['limitedRestoration', 'limitedRestorationExtension']:
-            expiry_date = data['e_trigger_dt_str'][:10]
+            expiry_date = filing_data['e_trigger_dt_str'][:10]
             meta_data['restoration'] = {
                 'expiry': expiry_date,
             }
@@ -951,25 +978,25 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
         }
     elif filing_type == 'alteration':
         meta_data['alteration'] = {}
-        if (event_file_type := data['event_file_type']) in LEGAL_TYPE_CHANGE_FILINGS.keys():
+        if (event_file_type := filing_data['event_file_type']) in LEGAL_TYPE_CHANGE_FILINGS.keys():
             meta_data['alteration'] = {
                 **meta_data['alteration'],
                 'fromLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][0],
                 'toLegalType': LEGAL_TYPE_CHANGE_FILINGS[event_file_type][1],
             }
-        if (old_corp_name := data['old_corp_name']) and (new_corp_name := data['new_corp_name']):
+        if (old_corp_name := filing_data['old_corp_name']) and (new_corp_name := filing_data['new_corp_name']):
             meta_data['alteration'] = {
                 **meta_data['alteration'],
                 'fromLegalName': old_corp_name,
                 'toLegalName': new_corp_name,
             }
     elif filing_type == 'correction':
-        if (event_file_type := data['event_file_type']) == 'FILE_CO_LI':
+        if (event_file_type := filing_data['event_file_type']) == 'FILE_CO_LI':
             meta_data['correction'] = {
                 'commentOnly': True
             }
     elif filing_type == 'putBackOff':
-        if (event_file_type := data['event_file_type']) == 'SYSDL_NULL':
+        if (event_file_type := filing_data['event_file_type']) == 'SYSDL_NULL':
             filing_json['filing']['putBackOff'] = {
                 'details': 'Put back off filing due to expired limited restoration.'
             }
@@ -978,25 +1005,22 @@ def build_filing_json_meta_data(raw_filing_type: str, filing_type: str, filing_s
                 'expiryDate': effective_date[:10]
             }
     elif filing_type in ('amalgamationOut', 'continuationOut'):
-        country, region = map_country_region(data['out_can_jur_typ_cd'])
+        country, region = map_country_region(filing_data['out_can_jur_typ_cd'])
         meta_data[filing_type] = {
                 'country': country,
                 'region': region,
-                'legalName': data['out_home_company_nme'],
-                f'{filing_type}Date': data['cont_out_dt'][:10]
+                'legalName': filing_data['out_home_company_nme'],
+                f'{filing_type}Date': filing_data['cont_out_dt'][:10]
             }
-        if data['out_othr_juri_desc']:
-            meta_data[filing_type]['otherJurisdictionDesc'] = data['out_othr_juri_desc']
+        if filing_data['out_othr_juri_desc']:
+            meta_data[filing_type]['otherJurisdictionDesc'] = filing_data['out_othr_juri_desc']
 
-    if withdrawn_ts_str := data['f_withdrawn_event_ts_str']:
+    if withdrawn_ts_str := filing_data['f_withdrawn_event_ts_str']:
         withdrawn_ts = datetime.strptime(withdrawn_ts_str, date_format_with_tz)
         meta_data = {
             **meta_data,
             'withdrawnDate': withdrawn_ts.isoformat()
         }
-
-    if accession_num := data.get('accession_num'):
-        meta_data['accessionNumber'] = accession_num
 
     # TODO: populate meta_data for correction to display correct filing name
 

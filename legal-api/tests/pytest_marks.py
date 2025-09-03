@@ -40,17 +40,11 @@ integration_authorization = pytest.mark.skipif(
 integration_colin = pytest.mark.skipif((os.getenv('RUN_COLIN_TESTS', False) is False),
                                        reason='COLIN tests are only run when requested.')
 
-integration_nats = pytest.mark.skipif((os.getenv('RUN_NATS_TESTS', False) is False),
-                                      reason='NATS tests are only run when requested.')
-
 integration_payment = pytest.mark.skipif((os.getenv('RUN_PAYMENT_TESTS', False) is False),
                                          reason='Test requiring payment service run when RUN_PAYMENT_TESTS is set.')
 
 integration_reports = pytest.mark.skipif((os.getenv('RUN_REPORT_TESTS', False) is False),
                                          reason='Report tests are only run when requested.')
-
-integration_sentry = pytest.mark.skipif((os.getenv('SENTRY_DSN', False) is False),
-                                        reason='SENTRY tests run when SENTRY_DSN is set.')
 
 integration_namerequests = pytest.mark.skipif((os.getenv('RUN_NAMEREQUESTS_TESTS', False) is False),
                                               reason='Name request tests are only run when requested.')

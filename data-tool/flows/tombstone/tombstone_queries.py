@@ -100,28 +100,48 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
 
     cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
 
+    # Wire in migration filters & account mapping only when requested.
+    account_map_cte = ""
+    account_join    = ""
+    account_select  = "NULL::varchar(100) AS account_ids,"
+    mig_select      = "NULL::integer AS mig_batch_id,"
+    mig_join        = ""
+    mig_extra_where = ""
+
     if use_mig_filter:
         mig_select = "b.id AS mig_batch_id,"
         mig_join   = """
             JOIN mig_corp_batch mcb ON mcb.corp_num = c.corp_num
-            JOIN mig_batch            b  ON b.id        = mcb.mig_batch_id
-            JOIN mig_group            g  ON g.id        = b.mig_group_id
-            """
-        mig_extra = ""
+            JOIN mig_batch      b   ON b.id = mcb.mig_batch_id
+            JOIN mig_group      g   ON g.id = b.mig_group_id
+        """
         if mig_batch_ids:
-            mig_extra += f" AND b.id IN ({mig_batch_ids})"
+               mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
         if mig_group_ids:
-            mig_extra += f" AND g.id IN ({mig_group_ids})"
-    else:
-        mig_select = "NULL::integer AS mig_batch_id,"
-        mig_join   = ""
-        mig_extra  = ""
+               mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+
+        account_map_cte = f"""
+        , account_map AS (
+            SELECT mca.corp_num,
+                   array_to_string(array_agg(DISTINCT mca.account_id ORDER BY mca.account_id), ',') AS account_ids
+            FROM mig_corp_account mca
+            JOIN mig_batch b2 ON b2.id = mca.mig_batch_id
+            WHERE mca.target_environment = '{environment}'
+            {f" AND b2.id IN ({mig_batch_ids})" if mig_batch_ids else ""}
+            {f" AND b2.mig_group_id IN ({mig_group_ids})" if mig_group_ids else ""}
+            GROUP BY mca.corp_num
+        )
+        """
+        account_join   = "LEFT JOIN account_map am ON am.corp_num = c.corp_num"
+        account_select = "COALESCE(am.account_ids, NULL::varchar(100)) AS account_ids,"
 
     query = f"""
     {cte_clause}
-    select c.corp_num,
+    {account_map_cte}
+    SELECT c.corp_num,
            c.corp_type_cd,
            {mig_select}
+           {account_select}
            cs.state_type_cd,
            cp.flow_name,
            cp.processed_status,
@@ -132,12 +152,14 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
     left outer join corp_state cs
         on cs.corp_num = c.corp_num
     {mig_join}
+    {account_join}
     left outer join corp_processing cp
-        on cp.corp_num = c.corp_num
-        and cp.flow_name = '{flow_name}'
-        and cp.environment = '{environment}'
-    where 1 = 1
-    {where_clause} {mig_extra}
+           on cp.corp_num = c.corp_num
+          and cp.flow_name = '{flow_name}'
+          and cp.environment = '{environment}'
+    where 1=1
+    {where_clause} 
+    {mig_extra_where}
 --    and c.corp_type_cd like 'BC%' -- some are 'Q%'
 --    and c.corp_num = 'BC0000621' -- state changes a lot
 --    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
@@ -509,9 +531,9 @@ def get_parties_and_addresses_query(corp_num):
     --    and e.corp_num = 'BC0883637' -- INC, DIR
         and e.corp_num = '{corp_num}'
         and (
-            (cp.party_typ_cd = 'OFF'
-                and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null)))
-            or
+--             (cp.party_typ_cd = 'OFF'
+--                 and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null)))
+--             or
             (cp.party_typ_cd in ('DIR', 'LIQ', 'RCC', 'RCM'))
         )
     --order by e.event_id
@@ -839,12 +861,32 @@ def get_out_data_query(corp_num):
     return query
 
 
+def get_cars_data_query(corp_num):
+    query = f"""
+    select
+        e.event_id,
+        cl.cars_docmnt_id,
+        cf.filedate,
+        cf.regiracf,
+        cb.accesnum,
+        cb.batchnum,
+        cb.boxrracf
+    from event e
+        join conv_ledger cl on e.event_id = cl.event_id
+        left outer join carsfile cf on cf.documtid = cl.cars_docmnt_id 
+        left outer join carsbox cb on cb.documtid = cl.cars_docmnt_id 
+        join corporation c on e.corp_num = c.corp_num and c.corp_num = '{corp_num}'
+    where
+        cl.cars_docmnt_id is not null
+    """
+    return query
+
 def get_corp_snapshot_filings_queries(config, corp_num):
     queries = {
         'businesses': get_business_query(corp_num, config.CORP_NAME_SUFFIX),
         'offices': get_offices_and_addresses_query(corp_num),
         'parties': get_parties_and_addresses_query(corp_num),
-        'offices_held': get_offices_held_query(corp_num),
+        # 'offices_held': get_offices_held_query(corp_num),
         'share_classes': get_share_classes_share_series_query(corp_num),
         'aliases': get_aliases_query(corp_num),
         'resolutions': get_resolutions_query(corp_num),
@@ -855,6 +897,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'filing_comments': get_filing_comments_query(corp_num),
         'in_dissolution': get_in_dissolution_query(corp_num),
         'out_data': get_out_data_query(corp_num),  # continuation/amalgamation out
+        'cars_data': get_cars_data_query(corp_num),  # CARS (Corporate Annual Report System) between 2002 - 2004
     }
 
     return queries

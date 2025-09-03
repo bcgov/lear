@@ -19,6 +19,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 # noqa: I003
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services import flags
 from legal_api.services.utils import get_int
 from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003
@@ -28,6 +29,11 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     """Validate the Agm Location Change filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+
+    enabled_filings = flags.value('supported-agm-location-change-entities').split()
+    if business.legal_type not in enabled_filings:
+        return Error(HTTPStatus.FORBIDDEN,
+                     [{'error': babel(f'{business.legal_type} does not support agm location change filing.')}])
 
     msg = []
 

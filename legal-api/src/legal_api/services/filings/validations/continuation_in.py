@@ -19,9 +19,10 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import colin
+from legal_api.services import colin, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
     validate_offices_addresses,
@@ -32,7 +33,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
-    validate_incorporation_effective_date,
     validate_offices,
     validate_parties_delivery_address,
     validate_parties_mailing_address,
@@ -53,6 +53,11 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     if not legal_type:
         msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
         return msg  # Cannot continue validation without legal_type
+
+    enabled_filings = flags.value('supported-continuation-in-entities').split()
+    if legal_type not in enabled_filings:
+        return Error(HTTPStatus.FORBIDDEN,
+                     [{'error': babel(f'{legal_type} does not support continuation in filing.')}])
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
@@ -75,8 +80,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         if err := validate_share_structure(filing_json, filing_type, legal_type):
             msg.extend(err)
 
-        if err := validate_incorporation_effective_date(filing_json):
-            msg.extend(err)
+        msg.extend(validate_effective_date(filing_json))
 
         msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
 

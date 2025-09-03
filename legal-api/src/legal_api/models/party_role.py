@@ -104,7 +104,10 @@ class PartyRole(db.Model, Versioned):
     def find_party_by_name(cls, business_id: int, first_name: str,  # pylint: disable=too-many-arguments; one too many
                            last_name: str, middle_initial: str, org_name: str) -> Party:
         """Return a Party connected to the given business_id by the given name."""
-        party_roles = cls.query.filter_by(business_id=business_id).all()
+        party_roles = (db.session.query(PartyRole).
+                       filter(PartyRole.business_id == business_id).
+                       filter(PartyRole.cessation_date.is_(None)).
+                       all())
         party = None
         # the given name to find
         search_name = ''

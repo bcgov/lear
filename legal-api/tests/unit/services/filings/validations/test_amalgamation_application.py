@@ -15,8 +15,10 @@
 import copy
 from unittest.mock import patch
 from http import HTTPStatus
+from datetime import date
 
 import pytest
+from freezegun import freeze_time
 import datetime
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
@@ -1543,3 +1545,78 @@ def test_amalgamation_share_class_series_validation(mocker, app, session, jwt, a
     else:
         assert err
         assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
+
+# setup
+now = date(2020, 9, 17)
+
+@pytest.mark.parametrize(
+    'amalgamation_type',
+    [
+        Amalgamation.AmalgamationTypes.regular.name,
+        Amalgamation.AmalgamationTypes.horizontal.name,
+        Amalgamation.AmalgamationTypes.vertical.name,
+    ]
+)
+@pytest.mark.parametrize(
+    'test_name, effective_date, expected_code, expected_msg',
+    [
+        ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
+        ('SUCCESS', None, None, None),
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                'path': '/filing/header/effectiveDate'
+            }])
+    ]
+)
+def test_validate_amalgamation_effective_date(
+        mocker, session, amalgamation_type, test_name,
+        effective_date, expected_code, expected_msg):
+    """Test effective date validation in amalgamation application with different amalgamation types."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'date': '2019-04-08',
+        'certifiedBy': 'full name',
+        'email': 'no_one@never.get',
+        'filingId': 1
+    }
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+
+    if effective_date is not None:
+        filing['filing']['header']['effectiveDate'] = effective_date
+
+    if 'courtOrder' in filing['filing']['amalgamationApplication']:
+        del filing['filing']['amalgamationApplication']['courtOrder']    
+
+    # mock validations
+    mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+        return_value=[]
+    )
+    mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+        return_value=[]
+    )
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None

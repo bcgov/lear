@@ -1,2 +1,0 @@
-id,name,priority,max_share_flag,max_shares,par_value_flag,par_value,currency,special_rights_flag,business_id,transaction_id,end_transaction_id,operation_type
-444,class A Shares,1,t,1000,t,10,CAD,t,3057,108765,,0

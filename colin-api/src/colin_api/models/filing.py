@@ -463,7 +463,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     def get_certified_by(self) -> str:
         """Get last name; currently is whole name."""
-        return self.header['certifiedBy']
+        return self.header.get('certifiedBy')
 
     def get_email(self) -> str:
         """Get email address."""
@@ -735,16 +735,33 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def _insert_filing_user(cls, cursor, filing):
         """Add to the FILING_USER table."""
         try:
+            role_typ_cd = None
+            if filing.header.get('isStaff'):
+                role_typ_cd = 'staff'
+
+            first_name = None
+            last_name = filing.get_certified_by()
+            email = filing.get_email()
+
+            if filed_by := filing.header.get('filedBy'):
+                last_name = filed_by.get('lastName')
+                first_name = filed_by.get('firstName')
+                if not first_name and not last_name:
+                    last_name = filed_by.get('userName')  # if no names, use userName for last name
+                email = filed_by.get('email')
+
             cursor.execute(
                 """
                 INSERT INTO filing_user (event_id, user_id, last_nme, first_nme, middle_nme, email_addr, party_typ_cd,
                     role_typ_cd)
-                VALUES (:event_id, :user_id, :last_name, NULL, NULL, :email_address, NULL, NULL)
+                VALUES (:event_id, :user_id, :last_name, :first_name, NULL, :email, NULL, :role_typ_cd)
                 """,
                 event_id=filing.event_id,
                 user_id=filing.user_id,
-                last_name=filing.get_certified_by(),
-                email_address=filing.get_email()
+                last_name=last_name,
+                first_name=first_name,
+                email=email,
+                role_typ_cd=role_typ_cd
             )
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
@@ -1852,6 +1869,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         if filing.filing_type != 'annualReport' and filing.body.get('directors', []):
             # create, cease, change directors
             changed_dirs = []
+            new_directors = []
             for director in filing.body.get('directors', []):
                 if 'ceased' in director['actions'] and not any(elem in ['nameChanged', 'addressChanged']
                                                                for elem in director['actions']):
@@ -1880,14 +1898,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                             status_code=HTTPStatus.NOT_FOUND
                         )
 
-                # create new director record after updating existing one (if any)
                 if 'appointed' in director['actions']:
-                    Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
-                                                business=business)
+                    new_directors.append(director)
 
             # add back changed directors as new row - if ceased director with changes this will add them with
             # cessation date + end event id filled
             for director in changed_dirs:
+                Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
+                                            business=business)
+
+            # create new director record after updating existing one (if any)
+            for director in new_directors:
                 Party.create_new_corp_party(cursor=cursor, event_id=filing.event_id, party=director,
                                             business=business)
 

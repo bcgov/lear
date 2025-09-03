@@ -191,6 +191,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'admin_freeze',
             'amalgamation_out_date',
             'association_type',
+            'backfill_cutoff_filing_id',
             'continuation_out_date',
             'dissolution_date',
             'fiscal_year_end_date',
@@ -262,6 +263,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
     no_dissolution = db.Column('no_dissolution', db.Boolean, unique=False, default=False)
     accession_number = db.Column('accession_number', db.String(10))
+    backfill_cutoff_filing_id = db.Column('backfill_cutoff_filing_id', db.Integer)
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
@@ -671,6 +673,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             d['jurisdiction'] = self.jurisdiction
             d['jurisdictionRegion'] = self.foreign_jurisdiction_region
             d['foreignLegalName'] = self.foreign_legal_name
+
+        if self.accession_number:
+            d['accessionNumber'] = self.accession_number
 
         d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
         d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')

@@ -12,10 +12,11 @@ DOCKER_NAME:=legal-api
 #################################################################################
 # COMMANDS -- Setup                                                             #
 #################################################################################
-setup: install install-dev ## Setup the project
+setup: install  ## Setup the project
 
 clean: clean-build clean-pyc clean-test ## Clean the project
 	rm -rf venv/
+	rm -rf .venv/
 
 clean-build: ## Clean build files
 	rm -fr build/
@@ -36,27 +37,8 @@ clean-test: ## clean test files
 	rm -f .coverage
 	rm -fr htmlcov/
 
-build-req: clean ## Upgrade requirements
-	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
-	. venv/bin/activate ;\
-	pip install --upgrade pip ;\
-	pip install -Ur requirements/prod.txt ;\
-	pip freeze | sort > requirements.txt ;\
-	cat requirements/bcregistry-libraries.txt >> requirements.txt ;\
-	pip install -Ur requirements/bcregistry-libraries.txt
-
 install: clean ## Install python virtual environment
-	test -f venv/bin/activate || python3 -m venv  $(CURRENT_ABS_DIR)/venv ;\
-	. venv/bin/activate ;\
-	pip install --upgrade pip ;\
-	pip install -Ur $(CURRENT_ABS_DIR)/requirements.txt ;\
-	pip install -Ur $(CURRENT_ABS_DIR)/requirements-nats.txt
-
-
-install-dev: ## Install local application
-	. venv/bin/activate ; \
-	pip install -Ur $(CURRENT_ABS_DIR)/requirements/dev.txt; \
-	pip install -e .
+	poetry install --all-extras
 
 #################################################################################
 # COMMANDS - CI                                                                 #
@@ -113,19 +95,13 @@ endif
 
 build: ## Build the docker container
 	docker build . -t $(DOCKER_NAME) \
-		-f Dockerfile-ocp \
+		-f Dockerfile \
 		--platform linux/amd64 \
 		--build-arg VCS_REF=$(shell git rev-parse --short HEAD) \
 		--build-arg BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 build-nc: ## Build the docker container without caching
 	docker build --no-cache -t $(DOCKER_NAME) -f Dockerfile-ocp .
-
-REGISTRY_IMAGE=$(OPENSHIFT_DOCKER_REGISTRY)/$(OPENSHIFT_REPOSITORY)-tools/$(DOCKER_NAME)
-push: #build ## Push the docker container to the registry & tag latest
-	@echo "$(OPENSHIFT_SA_TOKEN)" | docker login $(OPENSHIFT_DOCKER_REGISTRY) -u $(OPENSHIFT_SA_NAME) --password-stdin ;\
-    docker tag $(DOCKER_NAME) $(REGISTRY_IMAGE):latest ;\
-    docker push $(REGISTRY_IMAGE):latest
 
 # 1Password CLI1 will be deprecated on Oct 1, 2024
 # VAULTS=`cat devops/vaults.json`
@@ -139,14 +115,11 @@ push: #build ## Push the docker container to the registry & tag latest
 # 		-r "true" \
 # 		-f "false"
 
-tag: push ## tag image
-	oc -n "$(OPENSHIFT_REPOSITORY)-tools" tag $(DOCKER_NAME):latest $(DOCKER_NAME):$(TAG_NAME)
-
 #################################################################################
 # COMMANDS - Local                                                              #
 #################################################################################
 run: ## Run the project in local
-	. venv/bin/activate && python -m flask run -p 5000
+	. .venv/bin/activate && python -m flask run -p 5000
 
 #################################################################################
 # Self Documenting Commands                                                     #

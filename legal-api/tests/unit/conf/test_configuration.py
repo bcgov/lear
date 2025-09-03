@@ -20,7 +20,6 @@ from importlib import reload
 import pytest
 
 from legal_api import config
-from tests import integration_sentry
 
 
 # testdata pattern is ({str: environment}, {expected return value})
@@ -65,26 +64,6 @@ def test_prod_config_secret_key(monkeypatch):  # pylint: disable=missing-docstri
     monkeypatch.setenv(key, 'SECRET_KEY')
     reload(config)
     assert config.ProdConfig().SECRET_KEY == 'SECRET_KEY'
-
-
-@integration_sentry
-def test_config_dsn_key():
-    """Assert that the ProductionConfig is correct.
-
-    The object either uses the SENTRY_DSN from the environment
-    and initializes Sentry, or it doesn't.
-    """
-    from legal_api import create_app
-    config._Config.SENTRY_DSN = None
-    app = create_app()
-    assert app.config.get('SENTRY_DSN') is None
-
-    # Assert that the SENTRY_DSN is set to the assigned environment value
-    dsn = 'http://secret_key@localhost:9000/project_id'
-    config._Config.SENTRY_DSN = dsn
-    reload(config)
-    app = create_app()
-    assert app.config.get('SENTRY_DSN') is not None
 
 
 def test_prod_config_jwks_cache(monkeypatch):  # pylint: disable=missing-docstring

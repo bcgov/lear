@@ -21,8 +21,13 @@ from legal_api.services.filings.validations.put_back_off import validate
 from tests.unit.models import factory_business
 
 
-def test_put_back_off(session):
+def test_put_back_off(session, monkeypatch):
     """Assert valid put back off."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "BC BEN CC ULC C CBEN CCC CUL CP"  if flag == 'supported-put-back-on-entities' else {}
+    ) 
+
     identifier = 'CP1234567'
     business = factory_business(identifier)
 

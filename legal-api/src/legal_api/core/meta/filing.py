@@ -578,11 +578,11 @@ FILINGS: Final = {
         'additional': [
             {
                 'types': ['CP'],
-                'outputs': ['certificate', 'certifiedRules', 'certifiedMemorandum']
+                'outputs': ['certificateOfIncorporation', 'certifiedRules', 'certifiedMemorandum']
             },
             {
                 'types': ['BC', 'BEN', 'CC', 'ULC'],
-                'outputs': ['noticeOfArticles', 'certificate']
+                'outputs': ['noticeOfArticles', 'certificateOfIncorporation']
             },
         ]
     },
@@ -893,8 +893,16 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def alter_outputs_correction(filing, business, outputs):
         """Handle output file list modification for corrections."""
         if filing.filing_type == 'correction':
+            corrected_filing_type = filing.filing_json['filing'].get('correction', {}).get('correctedFilingType')
+            if corrected_filing_type == 'amalgamationApplication':
+                outputs.add('certificateOfAmalgamation')
+            if corrected_filing_type == 'continuationIn':
+                outputs.add('certificateOfContinuation')
+            if corrected_filing_type == 'incorporationApplication' and business.legal_type != Business.LegalTypes.COOP.value:
+                outputs.add('certificateOfIncorporation')
+
             correction = filing.meta_data.get('correction', {})
-            if correction.get('toLegalName'):
+            if correction.get('toLegalName') and business.legal_type == Business.LegalTypes.COOP.value:
                 outputs.add('certificateOfNameCorrection')
             if correction.get('uploadNewRules'):
                 outputs.add('certifiedRules')
@@ -902,7 +910,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 outputs.add('certifiedMemorandum')
             if correction.get('hasResolution'):
                 outputs.add('specialResolution')
-            if correction.get('commentOnly'):
+            if correction.get('commentOnly') and business.legal_type in Business.CORPS:
                 outputs.remove('noticeOfArticles')
         return outputs
 

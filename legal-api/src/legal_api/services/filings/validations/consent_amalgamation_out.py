@@ -20,6 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -36,6 +37,11 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{
             'error': babel('Business should be Active and in Good Standing to file Consent Amalgamation Out.')
         }])
+
+    enabled_filings = flags.value('supported-consent-amalgamation-out-entities').split()
+    if business.legal_type not in enabled_filings:
+        return Error(HTTPStatus.FORBIDDEN,
+                     [{'error': babel(f'{business.legal_type} does not support consent amalgamation out filing.')}])
 
     msg = []
     filing_type = 'consentAmalgamationOut'

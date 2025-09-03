@@ -14,7 +14,7 @@
 """Common utilities used by the services."""
 from datetime import date
 
-import dpath.util
+import dpath
 
 
 def get_date(filing: dict, path: str) -> date:
@@ -32,7 +32,7 @@ def get_date(filing: dict, path: str) -> date:
 
     """
     try:
-        raw = dpath.util.get(filing, path)
+        raw = dpath.get(filing, path)
         return date.fromisoformat(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
@@ -53,7 +53,7 @@ def get_str(filing: dict, path: str) -> str:
 
     """
     try:
-        raw = dpath.util.get(filing, path)
+        raw = dpath.get(filing, path)
         return str(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
@@ -67,7 +67,7 @@ def get_bool(filing: dict, path: str) -> str:
         path (str): The path to the property.
     """
     try:
-        raw = dpath.util.get(filing, path)
+        raw = dpath.get(filing, path)
         return bool(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
@@ -81,7 +81,7 @@ def get_int(filing: dict, path: str) -> str:
         path (str): The path to the property.
     """
     try:
-        raw = dpath.util.get(filing, path)
+        raw = dpath.get(filing, path)
         return int(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None

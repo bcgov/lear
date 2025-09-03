@@ -224,7 +224,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificate',
+                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfIncorporation',
                     'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
                     'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
                     'legalFilings': [
@@ -237,7 +237,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
@@ -248,7 +248,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+     {'documents': {'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
@@ -668,7 +668,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('ulc_ia_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication':
@@ -692,7 +692,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('cc_ia_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication':
@@ -716,7 +716,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
      'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
      {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificate': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificate',
+                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
                     'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
                     'legalFilings': [
                         {'incorporationApplication':

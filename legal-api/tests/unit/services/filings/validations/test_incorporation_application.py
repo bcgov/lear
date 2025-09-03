@@ -1273,20 +1273,23 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
         ('SUCCESS', None, None, None),
         ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
             HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effective_date.'
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'path': '/filing/header/effectiveDate'
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
-                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.'
+                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                'path': '/filing/header/effectiveDate'
             }]),
         ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
-                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.'
+                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                'path': '/filing/header/effectiveDate'
             }])
     ])
 @not_github_ci
 def test_validate_incorporation_effective_date(session, mocker, test_name, effective_date, expected_code, expected_msg):
-    """Assert that validator validates share class correctly."""
+    """Assert that validator validates effective date correctly."""
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',

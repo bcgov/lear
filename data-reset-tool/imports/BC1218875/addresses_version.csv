@@ -1,5 +1,0 @@
-id,address_type,street,street_additional,city,region,country,postal_code,delivery_instructions,business_id,transaction_id,end_transaction_id,operation_type,office_id
-23714,mailing,3950 Helen Rd,"",Victoria,BC,CA,V8Z 5C5,"",,108765,,0,3122
-23715,delivery,3950 Helen Rd,"",Victoria,BC,CA,V8Z 5C5,"",,108765,,0,3122
-23716,mailing,3950 Helen Rd,"",Victoria,BC,CA,V8Z 5C5,"",,108765,,0,3123
-23717,delivery,3950 Helen Rd,"",Victoria,BC,CA,V8Z 5C5,"",,108765,,0,3123

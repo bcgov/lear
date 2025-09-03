@@ -30,7 +30,6 @@ from .mras_service import MrasService
 from .naics import NaicsService
 from .namex import NameXService
 from .pdf_service import PdfService
-from .queue import QueueService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
@@ -48,7 +47,6 @@ from .authz import (  # noqa: I001; noqa: I001;
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 gcp_queue = GcpQueue()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-queue = QueueService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()

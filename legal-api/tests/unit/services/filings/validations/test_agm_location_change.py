@@ -36,8 +36,12 @@ from tests.unit.models import factory_business
         ('SUCCESS', None, None)
     ]
 )
-def test_validate_agm_year(session, mocker, test_name, expected_code, message):
+def test_validate_agm_year(session, mocker, test_name, expected_code, message, monkeypatch):
     """Assert validate agm year."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-agm-location-change-entities' else {}
+    )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)

@@ -24,10 +24,8 @@ from .pytest_marks import (
     integration_authorization,
     integration_colin,
     integration_namerequests,
-    integration_nats,
     integration_payment,
     integration_reports,
-    integration_sentry,
     todo_tech_debt,
     not_github_ci,
 )

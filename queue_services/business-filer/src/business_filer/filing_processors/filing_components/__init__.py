@@ -81,6 +81,9 @@ def create_address(address_info: dict, address_type: str) -> Address:
 
 def update_address(address: Address, new_info: dict) -> Address:
     """Update address with new info."""
+    if not new_info:
+        return address
+
     address.street = new_info.get("streetAddress") or ""
     address.street_additional = new_info.get("streetAddressAdditional") or ""
     address.city = new_info.get("addressCity") or ""
@@ -162,17 +165,16 @@ def update_director(director: PartyRole, new_info: dict) -> PartyRole:
 
     if director.party.delivery_address:
         director.party.delivery_address = update_address(
-            director.party.delivery_address, new_info["deliveryAddress"])
+            director.party.delivery_address, new_info.get("deliveryAddress"))
     else:
-        director.party.delivery_address = create_address(new_info["deliveryAddress"], Address.DELIVERY)
+        director.party.delivery_address = create_address(new_info.get("deliveryAddress"), Address.DELIVERY)
 
-    if new_info.get("mailingAddress"):
-        if director.party.mailing_address is None:
-            director.party.mailing_address = create_address(new_info["mailingAddress"], Address.MAILING)
-        else:
-            director.party.mailing_address = update_address(
-                director.party.mailing_address, new_info["mailingAddress"]
-            )
+    if director.party.mailing_address:
+        director.party.mailing_address = update_address(
+            director.party.mailing_address, new_info.get("mailingAddress"))
+    else:
+        director.party.mailing_address = create_address(new_info.get("mailingAddress"), Address.MAILING)
+
     director.cessation_date = new_info.get("cessationDate")
 
     return director

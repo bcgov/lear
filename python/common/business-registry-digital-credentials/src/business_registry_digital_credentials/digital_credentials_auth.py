@@ -47,4 +47,8 @@ def get_digital_credentials_preconditions(business: Business) -> Dict[str, List[
         return {}
 
     rules = DigitalCredentialsRulesService()
-    return {"attestRoles": rules.get_preconditions(user, business)}
+    return {
+        "attestBusiness": business.legal_name if business else None,
+        "attestName": user.display_name if user else None,
+        "attestRoles": rules.get_preconditions(user, business) if user and business else [],
+    }

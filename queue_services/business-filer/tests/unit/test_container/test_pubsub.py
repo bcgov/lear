@@ -38,7 +38,7 @@ def test_basic_pubsub():
         message.ack()
 
 
-def create_app(queue: Queue):
+def create_app(queue: GcpQueue):
     app = Flask(__name__)
     default_config = {}
     app.config.from_object(default_config)

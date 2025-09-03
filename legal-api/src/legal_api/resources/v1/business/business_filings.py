@@ -481,14 +481,12 @@ class ListFilingResource(Resource):
                 filing.set_processed()
                 filing.save()
             else:
-                # todo: when removing nats, leave only filingMessage, and remove 'filing' as this part is used by OCP
                 payload = {
-                    'filing': {'id': filing.id},
                     'filingMessage': {'filingIdentifier': filing.id}
                 }
                 publish_to_queue(
                     data=payload,
-                    subject=current_app.config.get('NATS_FILER_SUBJECT'),
+                    subject=current_app.config.get('BUSINESS_FILER_TOPIC'),
                     identifier=business.identifier if business else None,
                     event_type=None,
                     message_id=None,

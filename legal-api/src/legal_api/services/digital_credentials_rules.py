@@ -14,19 +14,14 @@
 
 """This provides the service for determining access rules to digital credentials."""
 
-import logging
-import os
 from datetime import datetime, timezone
 from enum import Enum
 from typing import List
 
+from flask import current_app
+
 from legal_api.models import Business, Filing, Party, PartyRole, User
 from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
-from legal_api.utils.logging import setup_logging
-
-
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(
-    __file__)), 'logging.conf'))  # important to do this first
 
 
 class DigitalCredentialsRulesService:
@@ -74,12 +69,12 @@ class DigitalCredentialsRulesService:
     def _has_general_access(self, user: User) -> bool:
         """Return True if general access rules are met."""
         if not user:
-            logging.debug('No user is provided.')
+            current_app.logger.debug('No user is provided.')
             return False
 
         is_login_source_bcsc = user.login_source == 'BCSC'
         if not is_login_source_bcsc:
-            logging.debug('User is not logged in with BCSC.')
+            current_app.logger.debug('User is not logged in with BCSC.')
             return False
 
         return True
@@ -87,24 +82,24 @@ class DigitalCredentialsRulesService:
     def _has_specific_access(self, user: User, business: Business) -> bool:
         """Return True if business rules are met."""
         if not business:
-            logging.debug('No business is provided.')
+            current_app.logger.debug('No business is provided.')
             return False
 
         allowed_business_types = determine_allowed_business_types(
             self.valid_registration_types, self.valid_incorporation_types)
-        logging.debug('Allowed business types: %s', allowed_business_types)
+        current_app.logger.debug('Allowed business types: %s', allowed_business_types)
 
         if business.legal_type in allowed_business_types:
             return (self.user_has_filing_party_role(user, business)
                     or self.user_has_business_party_role(user, business))
 
-        logging.debug('No specific access rules are met.')
+        current_app.logger.debug('No specific access rules are met.')
         return False
 
     def user_is_completing_party(self, user: User, business: Business) -> bool:
         """Return True if the user is the completing party."""
         if len(filings := self.valid_filings(business)) <= 0:
-            logging.debug(
+            current_app.logger.debug(
                 'No registration or incorporation filing found for the business.')
             return False
 
@@ -130,7 +125,7 @@ class DigitalCredentialsRulesService:
     def user_filing_party_roles(self, user: User, business: Business) -> List[PartyRole]:
         """Return the filing roles of the user for the business, if any."""
         if len(filings := self.valid_filings(business)) <= 0:
-            logging.debug(
+            current_app.logger.debug(
                 'No registration or incorporation filing found for the business.')
             return []
 
@@ -151,20 +146,20 @@ class DigitalCredentialsRulesService:
         """Return True if the user submitted the filing."""
         did_user_submit_filing = user.id == filing.submitter_id
         if not did_user_submit_filing:
-            logging.debug('User is not the filing submitter.')
+            current_app.logger.debug('User is not the filing submitter.')
         return did_user_submit_filing
 
     def user_matches_completing_party(self, user: User, filing: Filing) -> bool:
         """Return the True if the user matches a completing party."""
         if len(roles := self.completing_party_roles(filing)) <= 0:
-            logging.debug(
+            current_app.logger.debug(
                 'No completing parties found for the registration or incorporation filing.')
             return False
 
         is_user_completing_party = len(
             list(filter(lambda role: self.user_matches_party(user, role.party), roles))) > 0
         if not is_user_completing_party:
-            logging.debug('User is not the completing party.')
+            current_app.logger.debug('User is not the completing party.')
         return is_user_completing_party
 
     def user_matches_party(self, user: User, party: Party) -> bool:

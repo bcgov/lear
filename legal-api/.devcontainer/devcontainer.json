@@ -26,6 +26,12 @@
             "type": "bind"
         }
     ],
+	"containerEnv": {
+        "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": "python"
+	},
+	"remoteEnv": {
+        "PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION": "python"
+	},
 	// "forwardPorts": [5432],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.

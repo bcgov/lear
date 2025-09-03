@@ -15,7 +15,7 @@
 from http import HTTPStatus
 import io
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
@@ -456,3 +456,35 @@ def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) 
             msg.append({'error': 'Invalid extension, maximum 5 digits', 'path': f'{contact_point_path}/extension'})
 
     return msg
+
+def validate_effective_date(filing_json: dict) -> list:
+    """Validate effective date like incorporation filing, with debug prints."""
+    msg = []
+
+    now = dt.utcnow() 
+    min_allowed = now + timedelta(minutes=2)
+    max_allowed = now + timedelta(days=10)
+
+    filing_effective_date = filing_json.get('filing', {}).get('header', {}).get('effectiveDate')
+    if not filing_effective_date:
+        return msg
+
+    try:
+        effective_date = datetime.fromisoformat(filing_effective_date)
+    except ValueError:
+        msg.append({'error': f'{filing_effective_date} is an invalid ISO format for effectiveDate.',
+                    'path': '/filing/header/effectiveDate'})
+        return msg
+
+    if effective_date < min_allowed:
+        msg.append({'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                    'path': '/filing/header/effectiveDate'})
+        return msg            
+
+    if effective_date > max_allowed:
+        msg.append({'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                    'path': '/filing/header/effectiveDate'})
+        return msg            
+
+    return msg
+

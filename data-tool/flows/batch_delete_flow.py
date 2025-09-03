@@ -1,3 +1,5 @@
+from typing import List, Dict, Optional
+
 import math
 from collections import defaultdict
 from contextlib import contextmanager
@@ -8,12 +10,12 @@ from common.init_utils import colin_extract_init, get_config, lear_init
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.futures import wait
-from sqlalchemy import Connection, text
+from sqlalchemy import Connection, text, bindparam
 from sqlalchemy.engine import Engine
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
-WHERE 1 = 1
+WHERE 1 = 1 
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN')
 AND legal_name LIKE '%' || :corp_name_suffix
 """
@@ -26,6 +28,28 @@ AND legal_name LIKE '%' || :corp_name_suffix
 LIMIT :batch_size
 """
 
+# MIG account map (aggregated per corp_num); dynamic MIG filters appended by code.
+MIG_ACCOUNT_MAP_BASE = """
+    SELECT mca.corp_num,
+           array_to_string(array_agg(DISTINCT mca.account_id ORDER BY mca.account_id), ',') AS account_ids
+    FROM mig_corp_account mca
+    JOIN mig_batch b ON b.id = mca.mig_batch_id
+    WHERE mca.target_environment = :environment
+        AND mca.corp_num IN :corp_nums
+        {batch_filter}
+        {group_filter}
+    GROUP BY mca.corp_num
+"""
+
+# corp_processing written by migration (fallback when MIG map/config is empty)
+CORP_PROCESSING_ACCOUNTS_BASE = """
+    SELECT corp_num, account_ids
+    FROM corp_processing
+    WHERE flow_name = 'tombstone-flow'
+        AND environment = :environment
+        AND corp_num IN :corp_nums
+        AND COALESCE(NULLIF(account_ids, ''), NULL) IS NOT NULL
+"""
 
 @contextmanager
 def replica_role(conn: Connection):
@@ -54,6 +78,142 @@ def get_selected_corps(db_engine: Engine, config):
         else:
             ids, identifiers = zip(*rows)
             return list(ids), list(identifiers)
+
+
+# --- MIG corp selection (from COLIN) used when USE_MIGRATION_FILTER = True ---
+MIG_CORP_FILTER_BASE = """
+    SELECT DISTINCT mcb.corp_num
+    FROM mig_corp_batch mcb
+    JOIN mig_batch b  ON b.id = mcb.mig_batch_id
+    JOIN mig_group g  ON g.id = b.mig_group_id
+    WHERE 1 = 1 
+    {batch_filter}
+    {group_filter}
+"""
+
+
+def _parse_accounts_csv(csv_val: str) -> List[int]:
+    if not csv_val:
+        return []
+    out: List[int] = []
+    for tok in csv_val.split(','):
+        tok = tok.strip()
+        if tok.isdigit():
+                out.append(int(tok))
+    return out
+
+
+@task(cache_policy=NO_CACHE)
+def get_mig_corp_candidates(config, colin_engine: Engine) -> List[str]:
+    """
+    Build the candidate corp list purely from MIG metadata (COLIN).
+    This is used to *replace* suffix-based selection when USE_MIGRATION_FILTER is True.
+    """
+    if not config.USE_MIGRATION_FILTER:
+        return []
+
+    # Parse CSV env strings into integer lists for expanding binds
+    batch_ids = _parse_accounts_csv(config.MIG_BATCH_IDS) if config.MIG_BATCH_IDS else []
+    group_ids = _parse_accounts_csv(config.MIG_GROUP_IDS) if config.MIG_GROUP_IDS else []
+
+    batch_filter = "AND b.id IN :batch_ids" if batch_ids else ""
+    group_filter = "AND g.id IN :group_ids" if group_ids else ""
+    sql = MIG_CORP_FILTER_BASE.format(batch_filter=batch_filter, group_filter=group_filter)
+
+    # Conditionally bind lists with expanding (environment not used by this query)
+    stmt = text(sql)
+    params = {}
+
+    if batch_ids:
+        stmt = stmt.bindparams(bindparam('batch_ids', expanding=True))
+        params['batch_ids'] = batch_ids
+    if group_ids:
+        stmt = stmt.bindparams(bindparam('group_ids', expanding=True))
+        params['group_ids'] = group_ids
+
+    with colin_engine.connect() as conn:
+        rows = conn.execute(stmt, params).fetchall()
+        candidates = [r[0] for r in rows]
+        print(f'👷 MIG corp candidates found: {len(candidates)}')
+        return candidates
+
+
+@task(cache_policy=NO_CACHE)
+def get_affiliation_targets(config, colin_engine: Engine, identifiers: List[str]) -> Dict[str, List[int]]:
+    """
+    Resolve account IDs per identifier for AUTH affiliation deletion.
+    Precedence:
+      1) If USE_MIGRATION_FILTER: MIG account map (optional MIG filters)
+         If none for a corp, fallback to AFFILIATE_ENTITY_ACCOUNT_IDS.
+      2) If not USE_MIGRATION_FILTER: use AFFILIATE_ENTITY_ACCOUNT_IDS (if provided).
+      3) Fallback in either case: corp_processing.account_ids (set by migration).
+    """
+    targets: Dict[str, List[int]] = {i: [] for i in identifiers}
+    if not identifiers:
+            return targets
+
+    ids_sql_list = ', '.join([f"'{x}'" for x in identifiers])
+    env = config.DATA_LOAD_ENV
+
+    # 1) MIG mapping (only when filter is on)
+    if config.USE_MIGRATION_FILTER:
+        # Parse CSV env strings to lists for safe expanding binds
+        batch_ids = _parse_accounts_csv(config.MIG_BATCH_IDS) if config.MIG_BATCH_IDS else []
+        group_ids = _parse_accounts_csv(config.MIG_GROUP_IDS) if config.MIG_GROUP_IDS else []
+
+        batch_filter = "AND b.id IN :batch_ids" if batch_ids else ""
+        group_filter = "AND b.mig_group_id IN :group_ids" if group_ids else ""
+        mig_sql = MIG_ACCOUNT_MAP_BASE.format(
+           batch_filter=batch_filter,
+           group_filter=group_filter
+        )
+        stmt = text(mig_sql).bindparams(
+        bindparam('environment'),
+               bindparam('corp_nums', expanding=True)
+        )
+        params = {'environment': env, 'corp_nums': identifiers}
+        if batch_ids:
+           stmt = stmt.bindparams(bindparam('batch_ids', expanding=True))
+           params['batch_ids'] = batch_ids
+        if group_ids:
+           stmt = stmt.bindparams(bindparam('group_ids', expanding=True))
+           params['group_ids'] = group_ids
+
+        with colin_engine.connect() as conn:
+           rows = conn.execute(stmt, params).fetchall()
+           for corp_num, account_ids_csv in rows:
+               targets[corp_num] = _parse_accounts_csv(account_ids_csv)
+
+        # Fallback to config accounts for any corp without a MIG map row
+        if config.AFFILIATE_ENTITY_ACCOUNT_IDS:
+            for i in identifiers:
+                if not targets[i]:
+                    targets[i] = list(config.AFFILIATE_ENTITY_ACCOUNT_IDS)
+    else:
+        # No MIG filter → straight to config accounts (if any)
+        if config.AFFILIATE_ENTITY_ACCOUNT_IDS:
+            for i in identifiers:
+                targets[i] = list(config.AFFILIATE_ENTITY_ACCOUNT_IDS)
+
+    # 2) Final fallback: corp_processing (migration cached account_ids CSV)
+    remaining = [i for i in identifiers if not targets[i]]
+    if remaining:
+        cp_sql = CORP_PROCESSING_ACCOUNTS_BASE
+        stmt = text(cp_sql).bindparams(bindparam('corp_nums', expanding=True))
+        with colin_engine.connect() as conn:
+            rows = conn.execute(stmt, {
+                'environment': env,
+                'corp_nums': remaining
+            }).fetchall()
+            for corp_num, account_ids_csv in rows:
+                if not targets[corp_num]:
+                    targets[corp_num] = _parse_accounts_csv(account_ids_csv)
+
+    # Normalize: dedupe/sort
+    for i in identifiers:
+        if targets[i]:
+            targets[i] = sorted(set(targets[i]))
+    return targets
 
 
 @task(cache_policy=NO_CACHE)
@@ -376,9 +536,8 @@ def colin_delete(config, db_engine: Engine, identifiers: list):
 
 
 @task
-def auth_api_delete(config, identifiers: list):
+def auth_api_delete(config, identifiers: List[str], id_to_accounts: Dict[str, List[int]]):
     auth_svc_url = config.AUTH_SVC_URL
-    account_id = config.AFFILIATE_ENTITY_ACCOUNT_ID
     token_url = config.ACCOUNT_SVC_AUTH_URL
     client_id = config.ACCOUNT_SVC_CLIENT_ID
     client_secret = config.ACCOUNT_SVC_CLIENT_SECRET
@@ -390,6 +549,7 @@ def auth_api_delete(config, identifiers: list):
                         headers={'content-type': 'application/x-www-form-urlencoded'},
                         auth=(client_id, client_secret),
                         timeout=timeout)
+
     try:
         token = res.json().get('access_token')
         headers = {
@@ -397,56 +557,43 @@ def auth_api_delete(config, identifiers: list):
             'Authorization': 'Bearer ' + token
         }
 
-        delete_affiliation(identifiers, auth_svc_url, account_id, headers, timeout)
-        delete_entities(identifiers, auth_svc_url, headers, timeout)
+        # 1) Delete affiliations (only if AFFILIATE_ENTITY is enabled)
+        aff_succeeded = 0
+        aff_failed = 0
+        aff_skipped = 0
+        if config.AFFILIATE_ENTITY and id_to_accounts:
+            for identifier, accounts in id_to_accounts.items():
+               if not accounts:
+                   aff_skipped += 1
+                   continue
+               for account_id in accounts:
+                   affiliate_url = f'{auth_svc_url}/orgs/{account_id}/affiliations/{identifier}'
+                   resp = requests.delete(url=affiliate_url, headers=headers, timeout=timeout)
+                   if resp.status_code == HTTPStatus.OK:
+                       aff_succeeded += 1
+                   elif resp.status_code == HTTPStatus.NOT_FOUND:
+                       aff_skipped += 1
+                   else:
+                       aff_failed += 1
+        print(f'👷 Auth affiliation delete complete. Succeeded: {aff_succeeded}. Failed: {aff_failed}. Skipped: {aff_skipped}')
+
+        # 2) Delete entities (always when DELETE_AUTH_RECORDS is set by caller)
+        ent_succeeded = 0
+        ent_failed = 0
+        ent_skipped = 0
+        entity_base = f'{auth_svc_url}/entities'
+        for identifier in identifiers:
+            resp = requests.delete(url=f'{entity_base}/{identifier}', headers=headers, timeout=timeout)
+            if resp.status_code == HTTPStatus.NO_CONTENT:
+                ent_succeeded += 1
+            elif resp.status_code == HTTPStatus.NOT_FOUND:
+                ent_skipped += 1
+            else:
+                ent_failed += 1
+        print(f'👷 Auth entity delete complete. Succeeded: {ent_succeeded}. Failed: {ent_failed}. Skipped: {ent_skipped}')
     except Exception as e:
         print(f'❌ Error deleting affiliations/entities via AUTH API: {repr(e)}')
         raise e
-
-
-@task(cache_policy=NO_CACHE)
-def delete_affiliation(identifiers: list, url, account_id, headers, timeout=None):
-    affiliate_url = f'{url}/orgs/{account_id}/affiliations'
-
-    succeeded, failed, skipped = 0, 0, 0
-    for id in identifiers:
-        res = requests.delete(
-            url=f'{affiliate_url}/{id}',
-            headers=headers,
-            timeout=timeout
-        )
-
-        if res.status_code == HTTPStatus.OK:
-            succeeded += 1
-        elif res.status_code == HTTPStatus.NOT_FOUND:
-            skipped += 1
-        else:
-            failed += 1
-
-    print(f'👷 Auth affiliation delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')
-
-
-@task(cache_policy=NO_CACHE)
-def delete_entities(identifiers: list, auth_svc_url, headers, timeout=None):
-    account_svc_entity_url = f'{auth_svc_url}/entities'
-
-    succeeded, failed, skipped = 0, 0, 0
-    for id in identifiers:
-        res = requests.delete(
-            url=f'{account_svc_entity_url}/{id}',
-            headers=headers,
-            timeout=timeout
-        )
-
-        if res.status_code == HTTPStatus.NO_CONTENT:
-            succeeded += 1
-        elif res.status_code == HTTPStatus.NOT_FOUND:
-            skipped += 1
-        else:
-            failed += 1
-
-    print(f'👷 Auth entity delete complete for this round. Succeeded: {succeeded}. Failed: {failed}. Skipped: {skipped}')
-
 
 def filter_none(values: list) -> list:
     return [v for v in values if v is not None]
@@ -543,14 +690,46 @@ def delete_by_ids(conn: Connection, table_name: str, ids: list, id_name: str = '
 
 
 @task(cache_policy=NO_CACHE)
-def count_corp_num(engine: Engine, config):
+def count_corp_num(engine: Engine, config, mig_candidates: Optional[List[str]] = None):
+    """
+    Returns the total to process.
+      - MIG mode (USE_MIGRATION_FILTER=True): return len(mig_candidates) and do NOT query LEAR.
+      - Non-MIG mode: use the existing suffix-based LEAR count query.
+    """
+    if config.USE_MIGRATION_FILTER and mig_candidates is not None:
+        return len(mig_candidates)
     with engine.connect() as conn:
-        res = conn.execute(text(businesses_cnt_query), {
-            'batch_size': config.DELETE_BATCH_SIZE,
-            'corp_name_suffix': config.CORP_NAME_SUFFIX
-            }).scalar()
+        res = conn.execute(
+            text(businesses_cnt_query),
+            {'corp_name_suffix': config.CORP_NAME_SUFFIX}
+        ).scalar()
         return res
 
+
+@task(cache_policy=NO_CACHE)
+def get_selected_corps_mig(db_engine: Engine, config, candidates: List[str], offset: int):
+    """
+    MIG mode selection: page the MIG candidate list in memory and map to LEAR IDs.
+    Skips empty slices (where none of the identifiers exist in this LEAR env).
+    Does NOT use identifiers_query.
+    """
+    batch_size = config.DELETE_BATCH_SIZE
+    n = len(candidates)
+    sql = text("SELECT id, identifier FROM businesses WHERE identifier IN :ids") \
+               .bindparams(bindparam('ids', expanding=True))
+    curr = offset
+    with db_engine.connect() as conn:
+        while curr < n:
+            slice_ids = candidates[curr: curr + batch_size]
+            if not slice_ids:
+                break
+            rows = conn.execute(sql, {'ids': slice_ids}).fetchall()
+            curr += batch_size  # advance by one page
+            if rows:
+                ids, identifiers = zip(*rows)
+                return list(ids), list(identifiers), curr
+    # nothing found in remaining pages
+    return None, None, curr
 
 @flow(log_prints=True)
 def batch_delete_flow():
@@ -562,8 +741,14 @@ def batch_delete_flow():
         # use AUTH API for now
         # auth_engine = auth_init(config)
 
-        # get total number of businesses
-        total = count_corp_num(lear_engine, config)
+        # Determine mode and build MIG candidates when requested.
+        mig_mode = bool(config.USE_MIGRATION_FILTER)
+        mig_corp_candidates: List[str] = []
+        if mig_mode:
+            mig_corp_candidates = get_mig_corp_candidates(config, colin_engine)
+
+        # Total to process:
+        total = count_corp_num(lear_engine, config, mig_candidates=mig_corp_candidates if mig_mode else None)
 
         # validate batch config
         if config.DELETE_BATCHES <= 0:
@@ -577,35 +762,45 @@ def batch_delete_flow():
         print(f"👷 Auth delete {'enabled' if config.DELETE_AUTH_RECORDS else 'disabled'}.")
 
         cnt = 0
+        mig_offset = 0
         while cnt < batches:
-            business_ids, identifiers = get_selected_corps(lear_engine, config)
+            if mig_mode:
+                    business_ids, identifiers, mig_offset = get_selected_corps_mig(lear_engine, config, mig_corp_candidates, mig_offset)
+            else:
+                business_ids, identifiers = get_selected_corps(lear_engine, config)
 
             if not business_ids:
                 break
             print(f'🚀 Running round {cnt} to delete {len(business_ids)} busiesses...')
 
             futures = []
-            futures.append(
-                lear_delete.submit(lear_engine, business_ids)
-            )
+            futures.append(lear_delete.submit(lear_engine, business_ids))
+
             if config.DELETE_AUTH_RECORDS:
-                futures.append(
-                    auth_api_delete.submit(config, identifiers)
+                id_to_accounts: Dict[str, List[int]] = (
+                    get_affiliation_targets(config, colin_engine, identifiers)
+                    if config.AFFILIATE_ENTITY else {}
                 )
+                futures.append(auth_api_delete.submit(config, identifiers, id_to_accounts))
+
             if config.DELETE_CORP_PROCESSING_RECORDS:
-                futures.append(
-                    colin_delete.submit(config, colin_engine, identifiers)
-                )
+                futures.append(colin_delete.submit(config, colin_engine, identifiers))
 
             wait(futures)
 
             print(f'🌟 Complete round {cnt}')
-            rest = count_corp_num(lear_engine, config)
+            if mig_mode:
+                rest = max(len(mig_corp_candidates) - mig_offset, 0)
+            else:
+                rest = count_corp_num(lear_engine, config)
             print(f'👷 Having {rest} businesses left...')
             cnt += 1
 
-        total_left = count_corp_num(lear_engine, config)
-        print(f'🌰 Complete {cnt} rounds, delete {total-total_left} businesses.')
+            if mig_mode:
+                    total_left = max(len(mig_corp_candidates) - mig_offset, 0)
+            else:
+                total_left = count_corp_num(lear_engine, config)
+            print(f'🌰 Complete {cnt} rounds, delete {total - total_left} businesses.')
     except Exception as e:
         raise e
 
