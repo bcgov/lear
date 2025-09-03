@@ -55,7 +55,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     enabled_filings = flags.value('supported-continuation-in-entities').split()
-    if enabled_filings and legal_type not in enabled_filings:
+    if legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{legal_type} does not support continuation in filing.')}])
 
