@@ -347,10 +347,6 @@ class BusinessDocument:
                     party["deliveryAddress"] = BusinessDocument._format_address(party["deliveryAddress"])
                 officer_json.append(party)
 
-        print('*' * 80)
-        print(officer_json)
-        print('*' * 80)
-
         business["officers"] = officer_json
 
     def _set_receivers(self, business: dict):

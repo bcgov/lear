@@ -3,10 +3,9 @@
   <div class="section-title mt-4">Officer Information</div>
   <table class="section-data section-data-table mt-4" role="presentation">
     {% for party in officers | sort(attribute='officer.lastName') %}
-      <template class="no-page-break">
       <tr class="no-page-break">
-        <td colspan="3">
-          <div>
+        <td colspan="3" style="border: none">
+          <div class="pb-2">
             <span class="capitalize-text">{{ party.officer.lastName }}</span>,
             <span class="capitalize-text">{{ party.officer.firstName }}</span>
             {% if party.officer.middleInitial %}
@@ -18,53 +17,52 @@
               <span class="italic">Preferred name:</span> {{ party.officer.alternateName }}
             </div>
           {% endif %}
+          <div class="d-flex" style="margin-top: 0.2em">
+            <div class="d-flex-item">
+              <div class="section-sub-title pb-2">Role(s)</div>
+              {% for role in party.roles %}
+                <div>{{ role.roleType }}</div>
+              {% endfor %}
+            </div>
+            <div class="d-flex-item">
+              <div class="section-sub-title pb-2">Mailing Address</div>
+              {% if party.mailingAddress %}
+                <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
+                <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
+                <div>
+                  {{ party.mailingAddress.addressCity }}
+                  {{ party.mailingAddress.addressRegion }}
+                  &nbsp;{{ party.mailingAddress.postalCode }}
+                </div>
+                <div>{{ party.mailingAddress.addressCountryDescription }}</div>
+                {% if party.mailingAddress.deliveryInstructions %}
+                  <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
+                {% endif %}
+              {% else %}
+                Not Available
+              {% endif %}
+            </div>
+            <div class="d-flex-item">
+              <div class="section-sub-title pb-2">Delivery Address</div>
+              {% if party.deliveryAddress %}
+                <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
+                <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
+                <div>
+                  {{ party.deliveryAddress.addressCity }}
+                  {{ party.deliveryAddress.addressRegion }}
+                  &nbsp;{{ party.deliveryAddress.postalCode }}
+                </div>
+                <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
+                {% if party.deliveryAddress.deliveryInstructions %}
+                  <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
+                {% endif %}
+              {% else %}
+                Not Available
+              {% endif %}
+            </div>
+          </div>
         </td>
       </tr>
-      <tr class="no-page-break" style="border: none">
-        <td class="col-33" style="border: none">
-          <div class="section-sub-title">Role(s)</div>
-          {% for role in party.roles %}
-            <div>{{ role.roleType }}</div>
-          {% endfor %}
-        </td>
-        <td class="col-33">
-          <div class="section-sub-title">Mailing Address</div>
-          {% if party.mailingAddress %}
-            <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
-            <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
-            <div>
-              {{ party.mailingAddress.addressCity }}
-              {{ party.mailingAddress.addressRegion }}
-              &nbsp;{{ party.mailingAddress.postalCode }}
-            </div>
-            <div>{{ party.mailingAddress.addressCountryDescription }}</div>
-            {% if party.mailingAddress.deliveryInstructions %}
-              <div class="delivery-instructions pt-1">{{ party.mailingAddress.deliveryInstructions }}</div>
-            {% endif %}
-          {% else %}
-            Not Available
-          {% endif %}
-        </td>
-        <td class="col-33">
-          <div class="section-sub-title">Delivery Address</div>
-          {% if party.deliveryAddress %}
-            <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
-            <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
-            <div>
-              {{ party.deliveryAddress.addressCity }}
-              {{ party.deliveryAddress.addressRegion }}
-              &nbsp;{{ party.deliveryAddress.postalCode }}
-            </div>
-            <div>{{ party.deliveryAddress.addressCountryDescription }}</div>
-            {% if party.deliveryAddress.deliveryInstructions %}
-              <div class="delivery-instructions pt-1">{{ party.deliveryAddress.deliveryInstructions }}</div>
-            {% endif %}
-          {% else %}
-            Not Available
-          {% endif %}
-        </td>
-      </tr>
-      </template>
     {% endfor %}
   </table>
 </div>
