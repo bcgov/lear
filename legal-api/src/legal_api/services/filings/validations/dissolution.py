@@ -23,6 +23,7 @@ from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
 )
@@ -97,6 +98,8 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
         msg.extend(err)
 
     msg.extend(_validate_court_order(dissolution))
+
+    msg.extend(validate_effective_date(dissolution))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

@@ -22,6 +22,7 @@ from legal_api.services import STAFF_ROLE
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
     validate_offices_addresses,
@@ -83,6 +84,8 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     err = validate_phone_number(amalgamation_json, legal_type, filing_type)
     if err:
         msg.extend(err)
+
+    msg.extend(validate_effective_date(amalgamation_json))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
