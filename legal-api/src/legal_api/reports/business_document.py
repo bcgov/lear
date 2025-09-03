@@ -31,7 +31,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
+OUTPUT_DATE_FORMAT: Final = '%B %d, %Y'
 
 
 class BusinessDocument:
@@ -57,6 +57,7 @@ class BusinessDocument:
             'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
             'templateVars': self._get_template_data()
         }
+
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
@@ -115,6 +116,7 @@ class BusinessDocument:
             'footer',
             'logo',
             'macros',
+            'notice-of-articles/officers',
             'notice-of-articles/directors'
         ]
         # substitute template parts - marked up by [[filename]]
@@ -184,6 +186,7 @@ class BusinessDocument:
             if self._document_key == 'summary':
                 # set party groups
                 self._set_directors(business_json)
+                self._set_officers(business_json)
                 self._set_record_keepers(business_json)
                 self._set_receivers(business_json)
 
@@ -324,6 +327,31 @@ class BusinessDocument:
             if party.get('deliveryAddress'):
                 party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
         business['parties'] = party_json
+
+    def _set_officers(self, business: dict):
+        """Set the officers of the business (parties with officer role)."""
+        parties_json = get_parties(self._business.identifier).json["parties"]
+        officer_json = []
+        # Extract officers - parties that have at least one role marked as OFFICER
+        for party in parties_json:
+            is_officer = False
+            # check any role has attribute roleClass set to "officer"
+            for role in party.get("roles", []):
+                if role.get("roleClass") == "OFFICER":
+                    is_officer = True
+                    break
+            if is_officer:
+                if party.get("mailingAddress"):
+                    party["mailingAddress"] = BusinessDocument._format_address(party["mailingAddress"])
+                if party.get("deliveryAddress"):
+                    party["deliveryAddress"] = BusinessDocument._format_address(party["deliveryAddress"])
+                officer_json.append(party)
+
+        print('*' * 80)
+        print(officer_json)
+        print('*' * 80)
+
+        business["officers"] = officer_json
 
     def _set_receivers(self, business: dict):
         """Set the receivers of the business (all parties)."""

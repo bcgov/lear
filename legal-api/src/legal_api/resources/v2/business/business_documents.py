@@ -14,7 +14,7 @@
 """Retrieve the specified report for the entity."""
 from http import HTTPStatus
 
-from flask import current_app, jsonify, request, url_for
+from flask import current_app, jsonify, request, url_for, Response
 from flask_cors import cross_origin
 
 from legal_api.exceptions import ErrorCode, get_error_message
@@ -67,7 +67,16 @@ def get_business_documents(identifier: str, document_name: str = None):
 
     if document_name:
         if 'application/pdf' in request.accept_mimetypes:
-            return BusinessDocument(business, document_name).get_pdf()
+            pdf_content, status_code = BusinessDocument(business, document_name).get_pdf()
+            if status_code == HTTPStatus.OK:
+                return Response(
+                    pdf_content,
+                    mimetype='application/pdf',
+                    headers={
+                        'Content-Type': 'application/pdf',
+                    }
+                )
+            return pdf_content, status_code
         elif 'application/json' in request.accept_mimetypes:
             return BusinessDocument(business, document_name).get_json()
     return {}, HTTPStatus.NOT_FOUND

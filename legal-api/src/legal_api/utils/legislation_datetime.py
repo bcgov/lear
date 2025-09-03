@@ -97,7 +97,11 @@ class LegislationDatetime():
         hour = date_time.strftime('%I').lstrip('0')
         # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
         am_pm = date_time.strftime('%p').lower()
-        date_time_str = date_time.strftime(f'%B %-d, %Y at {hour}:%M {am_pm} Pacific time')
+
+        # Cross-platform way to remove leading zero from day; it removes leading zeros
+        # %-d works on unix/linux but not on windows
+        day = str(date_time.day)
+        date_time_str = date_time.strftime(f'%B {day}, %Y at {hour}:%M {am_pm} Pacific time')
         return date_time_str
 
     @staticmethod
@@ -120,7 +124,10 @@ class LegislationDatetime():
         hour = date_time.strftime('%I').lstrip('0')
         # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
         am_pm = date_time.strftime('%p').lower()
-        date_time_str = date_time.strftime(f'%B %-d, %Y at {hour}:%M {am_pm} Pacific time')
+        # Cross-platform way to remove leading zero from day; it removes leading zeros
+        # %-d works on unix/linux but not on windows
+        day = str(date_time.day)
+        date_time_str = date_time.strftime(f'%B {day}, %Y at {hour}:%M {am_pm} Pacific time')
         return date_time_str
 
     @staticmethod
