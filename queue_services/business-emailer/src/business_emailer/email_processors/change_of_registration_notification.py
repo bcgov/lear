@@ -120,11 +120,21 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         f'{current_app.config.get("TEMPLATE_PATH")}/CHGREG-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
+        # Firms can have proprietors or partners, so we may need to pass in a different value for name.
+    business_name = None
+    if business.get('legalType') in ["SP", "GP"]:
+        alt_names = business.get('alternateNames')
+        if alt_names is not None:
+            for alt_name in alt_names:
+                if alt_name.get('identifier') == business.get('identifier') and alt_name.get('name'):
+                    business_name = alt_name.get('name')
+                    break
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
+        business_name=business_name,
         filing=filing_data,
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
