@@ -513,7 +513,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if not filing_type:
             return ({'message': 'filing/header/name is a required property'}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] + [CoreFiling] \
+        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
            and business is None:
             return ({'message': 'A valid business is required.'}, HTTPStatus.BAD_REQUEST)
 
