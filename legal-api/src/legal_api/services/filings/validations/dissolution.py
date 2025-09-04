@@ -21,12 +21,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
-from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-    validate_effective_date,
-    validate_parties_addresses,
-    validate_pdf,
-)
+from legal_api.services.filings.validations import common_validations
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
@@ -60,11 +55,7 @@ DISSOLUTION_MAPPING = {
 
 
 def validate(business: Business, dissolution: Dict) -> Optional[Error]:
-    from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-    validate_parties_addresses,
-    validate_pdf,
-)
+
     """Validate the dissolution filing."""
     if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
@@ -92,7 +83,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
 
     if dissolution['filing']['dissolution'].get('parties'):
         # Common validation for addresses
-        msg.extend(validate_parties_addresses(dissolution, filing_type))
+        msg.extend(common_validations.validate_parties_addresses(dissolution, filing_type))
 
     err = validate_affidavit(dissolution, business.legal_type, dissolution_type)
     if err:
@@ -104,7 +95,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
 
     msg.extend(_validate_court_order(dissolution))
 
-    msg.extend(validate_effective_date(dissolution))
+    msg.extend(common_validations.validate_effective_date(dissolution))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -253,11 +244,7 @@ def _validate_address_location(parties):
 
 
 def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
-    from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-    validate_parties_addresses,
-    validate_pdf,
-)
+
     """Validate affidavit document of the filing.
 
     This needs not to be validated for administrative dissolution
@@ -274,21 +261,17 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[li
             return [{'error': _('A valid affidavit key is required.'),
                      'path': affidavit_file_key_path}]
 
-        return validate_pdf(affidavit_file_key, affidavit_file_key_path)
+        return common_validations.validate_pdf(affidavit_file_key, affidavit_file_key_path)
 
     return None
 
 
 def _validate_court_order(filing):
-    from legal_api.services.filings.validations.common_validations import (
-    validate_court_order,
-    validate_parties_addresses,
-    validate_pdf,
-)
+
     """Validate court order."""
     if court_order := filing.get('filing', {}).get('dissolution', {}).get('courtOrder', None):
         court_order_path: Final = '/filing/dissolution/courtOrder'
-        err = validate_court_order(court_order_path, court_order)
+        err = common_validations.validate_court_order(court_order_path, court_order)
         if err:
             return err
     return []

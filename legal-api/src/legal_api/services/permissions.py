@@ -71,6 +71,8 @@ class ListActionsPermissionsAllowed(str, Enum):
     FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
     FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
     FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
+    STAFF_PAYMENT='STAFF_PAYMENT'
+    OVERRIDE_NIGS='OVERRIDE_NIGS'
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -207,9 +209,8 @@ class PermissionService:
         if not authorized_permissions or not isinstance(authorized_permissions, list):
             current_app.logger.error('No authorized permissions found for user.')
             return False
-        
-        certifyBy = filing_json['filing']['header'].get('certifiedBy')
-        if legal_type in [Business.LegalTypes.COOP.value]:
+        if legal_type in [Business.AssociationTypes.CP_COOPERATIVE.value]:
+            certifyBy = filing_json['filing']['header'].get('certifiedBy')
             # if filing type is coop is incorporation filing for user, agm extension and filing json has certifiedBy other than jwt
             if filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value or filing_type == CoreFiling.FilingTypes.DISSOLUTION.value or filing_type == CoreFiling.FilingTypes.REGISTRATION.value:
                 if certifyBy and certifyBy != g.jwt_oidc_token_info.get('name'):
@@ -223,10 +224,9 @@ class PermissionService:
                         return False
         if filing_type == CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value:
             foreign_business = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('amalgamatingBusinesses')
-            business_addresses = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('addresses')
+            business_addresses = False
             limited_restoration = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('isLimitedRestoration')
-            business_in_good_standing = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('isNotInGoodStanding')
-
+            business_not_good_standing = filing_json['filing'][CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value].get('isNotInGoodStanding')
             exists_foreign = any('foreign' in d.values() for d in foreign_business if isinstance(d, dict))
             exists_lear = any('lear' in d.values() for d in foreign_business if isinstance(d, dict))
             if exists_foreign:
@@ -240,62 +240,78 @@ class PermissionService:
                 
             if exists_lear :
                 roles_in_filings = ListActionsPermissionsAllowed.AML_OVERRIDES.value
-                flag = False
-                if roles_in_filings in authorized_permissions:
-                    current_app.logger.info(f'User has AML override permission for lear type filing: {filing_type}')
-                    if business_addresses:
-                        flag = True
-                    if limited_restoration == True:
-                        flag = True
-                    if business_in_good_standing == False:
-                        flag = True
-                    return flag
-                else:
-                    current_app.logger.warning(f'User does not have AML override permission for lear type filing: {filing_type}')
-                    return False
+                amal_flag = True
+                for item in foreign_business:
+                    if 'addresses' in item:
+                        business_addresses = True
+                if not business_addresses and roles_in_filings not in authorized_permissions:
+                        current_app.logger.info(f'User does not have AML override permission, Declined submission request without address for: {filing_type}')
+                        amal_flag = False
+                if limited_restoration == True and roles_in_filings not in authorized_permissions:
+                        current_app.logger.info(f'User does not have AML override permission, Declined limited restoration submission request without for: {filing_type}')
+                        amal_flag = False
+                if business_not_good_standing == True and roles_in_filings not in authorized_permissions:
+                        current_app.logger.info(f'User does not have AML override permission, Declined filing submission for not good standing business for: {filing_type}')
+                        amal_flag = False
+                return amal_flag
                 
+        if filing_type == CoreFiling.FilingTypes.REGISTRATION.value:
             dba_business = filing_json['filing'][CoreFiling.FilingTypes.REGISTRATION.value].get('businessType')
             start_date = filing_json['filing'][CoreFiling.FilingTypes.REGISTRATION.value].get('startDate')
-            if filing_type == CoreFiling.FilingTypes.REGISTRATION.value and dba_business == 'DBA':
+            if dba_business == 'DBA':
                 if start_date:
                     current_app.logger.info(f'User does not have permission for adding dba with start date: {filing_type}')
                     return False
                 roles_in_filings = ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value
-                if roles_in_filings in authorized_permissions:
-                    current_app.logger.info(f'User has permission for adding dba : {filing_type}')
-                    return True
-                else:
+                if roles_in_filings not in authorized_permissions:
                     current_app.logger.warning(f'User does not have permission for adding dba: {filing_type}')
                     return False
+        
+        if filing_type == CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value:
+            parties = filing_json['filing'][CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value]['parties']
+            actions_list = []
+            for party in parties:
+                actions= party.get('actions',[])
+                if any(actions):
+                    actions_list.extend(actions)
             
-            if filing_type == CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value:
-                parties = filing_json['filing'][CoreFiling.FilingTypes.CHANGEOFREGISTRATION.value].get('parties')
-                if parties:
-                    if parties.get('action') == 'NAME CHANGED':
-                        roles_in_filings = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
-                        if roles_in_filings in authorized_permissions:
-                            current_app.logger.info(f'User has permission to edit completing party for filing: {filing_type}')
-                            return True
-                        else:
-                            current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
-                            return False
-                    if parties.get('action') == 'EMAIL CHANGED':
-                        roles_in_filings = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
-                        if roles_in_filings in authorized_permissions:
-                            current_app.logger.info(f'User has permission to edit completing party for filing: {filing_type}')
-                            return True
-                        else:
-                            current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
-                            return False
-                    
-                    if parties.get('action') == 'REPLACED' or parties.get('action') == 'ADDED':
-                        roles_in_filings = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value
-                        if roles_in_filings in authorized_permissions:
-                            current_app.logger.info(f'User has permission to edit completing party for filing: {filing_type}')
-                            return True
-                        else:
-                            current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
-                            return False
+            if parties:
+                if 'NAME CHANGED' in actions_list:
+                    roles_in_filings = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
+                    if roles_in_filings not in authorized_permissions:
+                        current_app.logger.warning(f'User does not have permission to edit name  for filing: {filing_type}')
+                        return False
+                if 'EMAIL CHANGED' in actions_list:
+                    roles_in_filings = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
+                    if roles_in_filings not in authorized_permissions:
+                        current_app.logger.warning(f'User does not have permission to edit email for filing: {filing_type}')
+                        return False
+                
+                if 'REPLACED' in actions_list or 'ADDED' in actions_list:
+                    roles_in_filings = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value
+                    if roles_in_filings not in authorized_permissions:
+                        current_app.logger.warning(f'User does not have permission to replace propeiter for filing: {filing_type}')
+                        return False
+        
+        if filing_type == CoreFiling.FilingTypes.DISSOLUTION:
+            completing_party = filing_json['filing']['header'].get('documentOptionalEmail')
+            if completing_party:
+                roles_in_filings = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+                if roles_in_filings not in authorized_permissions:
+                    current_app.logger.warning(f'User does not have permission to edit completing party for filing: {filing_type}')
+                    return False
+        
+        if filing_json['filing']['header'].get('waiveFees'):
+            roles_in_filings = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
+            if roles_in_filings not in authorized_permissions:
+                current_app.logger.warning(f'User does not have permission to waive fee for filing: {filing_type}')
+                return False
+        
+        if filing_json['filing'][filing_type].get('isNotInGoodStanding'):
+            roles_in_filings = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+            if roles_in_filings not in authorized_permissions:
+                current_app.logger.warning(f'User does not have permission to skip NIGS standard for filing: {filing_type}')
+                return False
 
-        return False
+        return True
         

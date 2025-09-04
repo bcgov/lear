@@ -554,6 +554,20 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
                 }),
                 HTTPStatus.FORBIDDEN
             )
+        if (
+            flags.is_on('enable-permissions-for-action')
+            and
+            not PermissionService.has_permissions_for_patch_action(business, state, filing_type, legal_type, jwt, filing_sub_type, filing_json)
+        ):
+            return (
+                jsonify({
+                    'message': (
+                        f'Permission Action Denied - You do not have permissions to submit this type of filing for: '
+                        f'{filing_type}.'
+                    )
+                }),
+                HTTPStatus.FORBIDDEN
+            )
         if not authorized(identifier, jwt, action=['edit']):
             return jsonify({
                 'message': f'Not Authorized - You are not authorized to submit filings for {identifier}.'
