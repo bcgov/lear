@@ -42,9 +42,9 @@ def validate_with_contact_info(identifier):
         nr_json = nr_response.json()
 
         # Check if the user has ADD_ENTITY_NO_AUTHENTICATION permission. If so, do not need to validate email and phone
-        authorized_role = PermissionService.get_authorized_permissions_for_user()
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         
-        if 'ADD_ENTITY_NO_AUTHENTICATION' in authorized_role:
+        if authorized_permissions and 'ADD_ENTITY_NO_AUTHENTICATION' in authorized_permissions:
             return jsonify(nr_json)
 
         # Check the NR is affiliated with this account
