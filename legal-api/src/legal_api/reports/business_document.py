@@ -31,7 +31,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-OUTPUT_DATE_FORMAT: Final = '%B %d, %Y'
+OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 
 
 class BusinessDocument:
