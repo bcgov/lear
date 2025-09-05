@@ -249,6 +249,24 @@ def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str)
 
     return msg
 
+def validate_parties_actions(filing_json: dict, filing_type: str) -> list:
+    """Validate the parties actions."""
+    parties = filing_json['filing'][filing_type]['parties']
+    actions_list = []
+    roles_in_filings = []
+    for party in parties:
+        actions= party.get('actions',[])
+        if any(actions):
+            actions_list.extend(actions)
+    if 'NAME CHANGED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value)
+    if 'EMAIL CHANGED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value)
+    if 'REPLACED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value)
+    if 'ADDED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value)
+    return roles_in_filings
 
 def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
@@ -499,5 +517,11 @@ def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-
     """Ensure certify name is being edited."""
     cerify_name = filing_json['filing']['header'].get('certifiedBy')
     if cerify_name and cerify_name != g.jwt_oidc_token_info.get('name'):
+        return True
+    return False
+
+def validate_staff_payment(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    if filing_json['filing']['header'].get('waiveFees'):
         return True
     return False

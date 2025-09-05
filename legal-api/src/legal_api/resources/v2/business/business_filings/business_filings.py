@@ -22,6 +22,7 @@ from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, Optional, Tuple, TypeVar, Union
 
+from legal_api.services.filings.validations.common_validations import validate_staff_payment
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
@@ -65,7 +66,7 @@ from legal_api.services import (
 from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
-from legal_api.services.permissions import PermissionService
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
@@ -520,6 +521,11 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if client_request.method == 'PUT' and not filing:
             return {'message': f'{identifier} no filings found'}, HTTPStatus.NOT_FOUND
 
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        if validate_staff_payment(filing):
+            allowed_role_comments = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
+            if allowed_role_comments not in authorized_permissions:
+                return { 'message': f'Permission Denied - You do not have permissions to waive fees in this filing.'}, HTTPStatus.FORBIDDEN
         return None, None
 
     @staticmethod

@@ -29,6 +29,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
+    validate_parties_actions,
     validate_parties_addresses,
 )
 from legal_api.services.utils import get_date, get_str
@@ -43,6 +44,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
 
     legal_type_path = '/filing/registration/nameRequest/legalType'
     legal_type = get_str(registration_json, legal_type_path)
+    filing_type = 'registration'
     if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return Error(
             HTTPStatus.BAD_REQUEST,
@@ -56,7 +58,13 @@ def validate(registration_json: Dict) -> Optional[Error]:
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
             )
-    filing_type = 'registration'
+    actions = validate_parties_actions(registration_json, filing_type )
+    if any(actions) not in authorized_permissions:
+        return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
+
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
