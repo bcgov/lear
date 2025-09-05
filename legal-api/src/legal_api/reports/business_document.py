@@ -116,6 +116,7 @@ class BusinessDocument:
             'footer',
             'logo',
             'macros',
+            'common/warning-bar',
             'notice-of-articles/officers',
             'notice-of-articles/directors'
         ]
@@ -185,6 +186,7 @@ class BusinessDocument:
 
             if self._document_key == 'summary':
                 # set party groups
+                self._set_warning(business_json)
                 self._set_directors(business_json)
                 self._set_officers(business_json)
                 self._set_record_keepers(business_json)
@@ -328,26 +330,35 @@ class BusinessDocument:
                 party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
         business['parties'] = party_json
 
+    def _set_warning(self, business: dict):
+        """Set the warning."""
+        if self._business.backfill_cutoff_filing_id:
+            filing = Filing.find_by_id(self._business.backfill_cutoff_filing_id)
+
+            business['warning_text'] = 'Warning, data older than {} may not appear in the Business Summary'.format(
+                filing.filing_date.strftime(OUTPUT_DATE_FORMAT)
+            )
+
     def _set_officers(self, business: dict):
         """Set the officers of the business (parties with officer role)."""
-        parties_json = get_parties(self._business.identifier).json["parties"]
+        parties_json = get_parties(self._business.identifier).json['parties']
         officer_json = []
         # Extract officers - parties that have at least one role marked as OFFICER
         for party in parties_json:
             is_officer = False
-            # check any role has attribute roleClass set to "officer"
-            for role in party.get("roles", []):
-                if role.get("roleClass") == "OFFICER":
+            # check any role has attribute roleClass set to 'officer'
+            for role in party.get('roles', []):
+                if role.get('roleClass') == 'OFFICER':
                     is_officer = True
                     break
             if is_officer:
-                if party.get("mailingAddress"):
-                    party["mailingAddress"] = BusinessDocument._format_address(party["mailingAddress"])
-                if party.get("deliveryAddress"):
-                    party["deliveryAddress"] = BusinessDocument._format_address(party["deliveryAddress"])
+                if party.get('mailingAddress'):
+                    party['mailingAddress'] = BusinessDocument._format_address(party['mailingAddress'])
+                if party.get('deliveryAddress'):
+                    party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
                 officer_json.append(party)
 
-        business["officers"] = officer_json
+        business['officers'] = officer_json
 
     def _set_receivers(self, business: dict):
         """Set the receivers of the business (all parties)."""
@@ -556,6 +567,8 @@ class BusinessDocument:
         if filings:
             amalgamation_application = filings[0]
             business['business']['amalgamatedEntity'] = True
+            if amalgamation_application.effective_date:
+                business['business']['amalgamatedEffectiveDate'] = amalgamation_application.effective_date.isoformat()
             if (self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date) or\
                     (self._tombstone_filing_date and
                      amalgamation_application.effective_date < self._tombstone_filing_date):

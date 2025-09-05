@@ -6,18 +6,19 @@
       <tr class="no-page-break">
         <td colspan="3" style="border: none">
           <div class="pb-2">
-            <span class="capitalize-text">{{ party.officer.lastName }}</span>,
-            <span class="capitalize-text">{{ party.officer.firstName }}</span>
+            <span class="capitalize-text bold">{{ party.officer.lastName }}</span>,
+            <span class="capitalize-text bold">{{ party.officer.firstName }}</span>
             {% if party.officer.middleInitial %}
-              <span class="capitalize-text">{{ party.officer.middleInitial }}</span>
+              <span class="capitalize-text bold">{{ party.officer.middleInitial }}</span>
+            {% endif %}
+            {% if party.officer.alternateName %}
+              <div>
+                <span class="italic">Preferred name:</span>
+                <span class="bold">{{ party.officer.alternateName }}</span>
+              </div>
             {% endif %}
           </div>
-          {% if party.officer.alternateName %}
-            <div>
-              <span class="italic">Preferred name:</span> {{ party.officer.alternateName }}
-            </div>
-          {% endif %}
-          <div class="d-flex" style="margin-top: 0.2em">
+          <div class="d-flex">
             <div class="d-flex-item">
               <div class="section-sub-title pb-2">Role(s)</div>
               {% for role in party.roles %}
