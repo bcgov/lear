@@ -21,7 +21,7 @@ from typing import Dict, Optional
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
-from flask import current_app
+from flask import current_app, g
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -352,6 +352,13 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
                                   is_region_for_us_required=True) -> list:
     """Validate foreign jurisdiction."""
     msg = []
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    allowed_role_foriegn = ListActionsPermissionsAllowed.AML_OVERRIDES.value
+    if allowed_role_foriegn not in authorized_permissions:
+        return Error(
+            HTTPStatus.FORBIDDEN,
+            [{ 'message': f'Permission Denied - You do not have permissions to add foreign type filing.'}]
+        )
     country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
     region = (foreign_jurisdiction.get('region') or '').upper()
 
@@ -488,3 +495,9 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
+def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    cerify_name = filing_json['filing']['header'].get('certifiedBy')
+    if cerify_name and cerify_name != g.jwt_oidc_token_info.get('name'):
+        return True
+    return False

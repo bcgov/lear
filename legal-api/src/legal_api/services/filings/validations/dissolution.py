@@ -16,6 +16,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from flask_babel import _
 
@@ -62,6 +63,14 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
 
     filing_type = 'dissolution'
     dissolution_type = get_str(dissolution, '/filing/dissolution/dissolutionType')
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if common_validations.validate_certify_name(dissolution):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
     msg = []
 
     err = validate_dissolution_type(dissolution, business.legal_type)

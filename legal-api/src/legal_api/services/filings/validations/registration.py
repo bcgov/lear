@@ -16,6 +16,7 @@ from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, Final, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
@@ -24,6 +25,7 @@ from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
+    validate_certify_name,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
@@ -46,7 +48,14 @@ def validate(registration_json: Dict) -> Optional[Error]:
             HTTPStatus.BAD_REQUEST,
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
         )
-
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if validate_certify_name(registration_json):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
     filing_type = 'registration'
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
