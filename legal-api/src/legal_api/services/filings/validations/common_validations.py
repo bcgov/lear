@@ -12,14 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validations share through the different filings."""
+from http import HTTPStatus
 import io
 import re
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
-from flask import current_app
+from flask import current_app, g
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -165,6 +167,14 @@ def validate_court_order(court_order_path, court_order):
     """Validate the courtOrder data of the filing."""
     msg = []
 
+    allowed_role_court_order_poa = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if allowed_role_court_order_poa not in authorized_permissions:
+        return Error(
+            HTTPStatus.FORBIDDEN,
+            [{ 'message': f'Permission Denied - You do not have permissions to submit court order for this filing.'}]
+        )
+
     # TODO remove it when the issue with schema validation is fixed
     if 'fileNumber' not in court_order:
         err_path = court_order_path + '/fileNumber'
@@ -239,6 +249,24 @@ def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str)
 
     return msg
 
+def validate_parties_actions(filing_json: dict, filing_type: str) -> list:
+    """Validate the parties actions."""
+    parties = filing_json['filing'][filing_type]['parties']
+    actions_list = []
+    roles_in_filings = []
+    for party in parties:
+        actions= party.get('actions',[])
+        if any(actions):
+            actions_list.extend(actions)
+    if 'NAME CHANGED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value)
+    if 'EMAIL CHANGED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value)
+    if 'REPLACED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value)
+    if 'ADDED' in actions_list:
+        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value)
+    return roles_in_filings
 
 def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
@@ -342,6 +370,13 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
                                   is_region_for_us_required=True) -> list:
     """Validate foreign jurisdiction."""
     msg = []
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    allowed_role_foriegn = ListActionsPermissionsAllowed.AML_OVERRIDES.value
+    if allowed_role_foriegn not in authorized_permissions:
+        return Error(
+            HTTPStatus.FORBIDDEN,
+            [{ 'message': f'Permission Denied - You do not have permissions to add foreign type filing.'}]
+        )
     country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
     region = (foreign_jurisdiction.get('region') or '').upper()
 
@@ -478,3 +513,15 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
+def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    cerify_name = filing_json['filing']['header'].get('certifiedBy')
+    if cerify_name and cerify_name != g.jwt_oidc_token_info.get('name'):
+        return True
+    return False
+
+def validate_staff_payment(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    if filing_json['filing']['header'].get('waiveFees'):
+        return True
+    return False

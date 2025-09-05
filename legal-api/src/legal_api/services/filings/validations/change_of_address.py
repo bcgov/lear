@@ -15,6 +15,8 @@
 from http import HTTPStatus
 from typing import Dict
 
+from legal_api.services.filings.validations import common_validations
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from flask_babel import _
 
@@ -29,6 +31,15 @@ def validate(business: Business, coa: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     filing_type = 'changeOfAddress'
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if common_validations.validate_certify_name(coa):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
+    
     msg = []
 
     msg.extend(validate_offices_addresses(coa, filing_type))

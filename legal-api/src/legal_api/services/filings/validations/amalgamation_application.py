@@ -30,11 +30,13 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_names,
     validate_phone_number,
     validate_share_structure,
+    validate_certify_name
 )
 from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
     validate_parties_delivery_address,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 # noqa: I003
@@ -46,7 +48,14 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     if not amalgamation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if validate_certify_name(amalgamation_json):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
     legal_type_path = f'/filing/{filing_type}/nameRequest/legalType'
     legal_type = get_str(amalgamation_json, legal_type_path)
     if not legal_type:

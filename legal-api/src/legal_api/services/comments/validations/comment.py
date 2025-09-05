@@ -18,12 +18,14 @@ from typing import Dict
 from flask_babel import _
 
 from legal_api.errors import Error
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 
 from ...utils import get_str
 
 
 def validate(comment: Dict, is_filing: bool) -> Error:
     """Validate a standalone comment."""
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if not comment:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid comment is required.')}])
     msg = []
@@ -33,13 +35,25 @@ def validate(comment: Dict, is_filing: bool) -> Error:
     if not comment_text:
         msg.append({'error': _('Comment text must be provided.'),
                     'path': comment_text_path})
-
     if is_filing:
+        allowed_role_comments = ListActionsPermissionsAllowed.DETAIL_COMMENTS.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to add details comments to this filing.'}]
+            )
         filing_id_path = '/comment/filingId'
         filing_id = get_str(comment, filing_id_path)
         if not filing_id:
             msg.append({'error': _('Filing ID must be provided.'),
                         'path': filing_id_path})
+    else:
+        allowed_role_comments = ListActionsPermissionsAllowed.STAFF_COMMENTS.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{'message': f'Permission Denied - You do not have permissions to add comments to this business.'}]
+            )
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

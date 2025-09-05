@@ -20,6 +20,8 @@ from flask_babel import _ as babel  # noqa: N81
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services import flags, namex
+from legal_api.services.filings.validations import common_validations
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 
 
@@ -27,6 +29,14 @@ def validate(business: Business, filing: Dict) -> Error:
     """Validate the Change of Name filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if common_validations.validate_certify_name(filing):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
     msg = []
     legal_name_path = '/filing/changeOfName/legalName'
     legal_name = get_str(filing, legal_name_path)

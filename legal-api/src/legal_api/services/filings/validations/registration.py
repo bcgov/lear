@@ -16,6 +16,7 @@ from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, Final, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
@@ -24,9 +25,11 @@ from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
+    validate_certify_name,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
+    validate_parties_actions,
     validate_parties_addresses,
 )
 from legal_api.services.utils import get_date, get_str
@@ -41,13 +44,27 @@ def validate(registration_json: Dict) -> Optional[Error]:
 
     legal_type_path = '/filing/registration/nameRequest/legalType'
     legal_type = get_str(registration_json, legal_type_path)
+    filing_type = 'registration'
     if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return Error(
             HTTPStatus.BAD_REQUEST,
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
         )
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if validate_certify_name(registration_json):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
+    actions = validate_parties_actions(registration_json, filing_type )
+    if any(actions) not in authorized_permissions:
+        return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
 
-    filing_type = 'registration'
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))

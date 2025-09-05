@@ -22,9 +22,11 @@ from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    validate_certify_name,
     validate_court_order,
     validate_foreign_jurisdiction,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 # noqa: I003;
 
 
@@ -42,6 +44,15 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if business.legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{business.legal_type} does not support consent amalgamation out filing.')}])
+    
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if validate_certify_name(filing):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
 
     msg = []
     filing_type = 'consentAmalgamationOut'
