@@ -28,6 +28,7 @@ from legal_api.services.filings.validations.dissolution import DissolutionTypes
 class ListFilingsPermissionsAllowed(str, Enum):
     """Define an enum for permissions checks."""
 
+    ADD_ENTITY_NO_AUTHENTICATION = 'ADD_ENTITY_NO_AUTHENTICATION'
     ADDRESS_CHANGE_FILING = 'ADDRESS_CHANGE_FILING'
     AGM_CHG_LOCATION_FILING = 'AGM_CHG_LOCATION_FILING'
     AGM_EXTENSION_FILING = 'AGM_EXTENSION_FILING'
