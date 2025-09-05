@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/update-colin-filings/**"
+      - "gcp-jobs/update-colin-filings/**"
   workflow_dispatch:
     inputs:
       target:

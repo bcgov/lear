@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/entity-bn/**"
+      - "gcp-jobs/entity-bn/**"
   workflow_dispatch:
     inputs:
       target:

@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/future-effective-filings/**"
+      - "gcp-jobs/future-effective-filings/**"
   workflow_dispatch:
     inputs:
       target:

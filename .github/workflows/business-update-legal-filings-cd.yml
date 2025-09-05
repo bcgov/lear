@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/update-legal-filings/**"
+      - "gcp-jobs/update-legal-filings/**"
   workflow_dispatch:
     inputs:
       target:
