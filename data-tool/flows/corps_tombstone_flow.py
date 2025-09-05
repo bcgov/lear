@@ -249,6 +249,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     state_filing_index = update_info['state_filing_index']
     update_business_data = update_info['businesses']
     filing_ids_mapper = {}
+    last_historical_filing_id = None
     # load placeholder filings
     for i, data in enumerate(filings_data):
         f = data['filings']
@@ -263,6 +264,8 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
         filing_id = load_data(conn, 'filings', f, versioned=False)
         filing_ids_mapper[i] = filing_id
+        # Track the last historical filing ID (before lear_tombstone)
+        last_historical_filing_id = filing_id
 
         data['colin_event_ids']['filing_id'] = filing_id
         load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False, versioned=False)
@@ -302,6 +305,9 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
     # load updates for business
     if update_business_data:
+        # Set backfill_cutoff_filing_id to the last historical filing (before lear_tombstone)
+        if last_historical_filing_id:
+            update_business_data['backfill_cutoff_filing_id'] = last_historical_filing_id
         update_data(conn, 'businesses', update_business_data, 'id', business_id)
 
     return transaction_id
