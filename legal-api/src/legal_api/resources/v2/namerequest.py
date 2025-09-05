@@ -21,7 +21,7 @@ from flask_cors import cross_origin
 from legal_api.utils.auth import jwt
 from legal_api.services import namex
 from legal_api.services.bootstrap import AccountService
-from legal_api.services.permissions import ListFilingsPermissionsAllowed, PermissionService
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 
 
 bp = Blueprint('NAMEREQUEST2', __name__, url_prefix='/api/v2/nameRequests')
@@ -44,7 +44,7 @@ def validate_with_contact_info(identifier):
         # Check if the user has ADD_ENTITY_NO_AUTHENTICATION permission. If so, do not need to validate email and phone
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
 
-        allowed_permission = ListFilingsPermissionsAllowed.ADD_ENTITY_NO_AUTHENTICATION.value
+        allowed_permission = ListActionsPermissionsAllowed.ADD_ENTITY_NO_AUTHENTICATION.value
 
         if allowed_permission in authorized_permissions:
             return jsonify(nr_json)
