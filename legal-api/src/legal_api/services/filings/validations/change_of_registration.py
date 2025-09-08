@@ -20,6 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import (
+    find_parties_actions,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -30,6 +31,7 @@ from legal_api.services.filings.validations.registration import (
     validate_party,
     validate_registration_court_order,
 )
+from legal_api.services.permissions import PermissionService
 
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
@@ -37,7 +39,15 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     filing_type = 'changeOfRegistration'
     if not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+    allowed_changing_actions = find_parties_actions(filing)
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    missing_permissions = [item for item in allowed_changing_actions if item not in authorized_permissions]
 
+    if missing_permissions:
+        return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions for: {missing_permissions}'}]
+            )
     msg = []
     if filing.get('filing', {}).get('changeOfRegistration', {}).get('nameRequest', None):
         msg.extend(validate_name_request(filing, business.legal_type, filing_type))

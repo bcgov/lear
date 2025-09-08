@@ -292,6 +292,8 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
         account_id,
         is_staff,
         amalgamating_business_path) -> list:
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    allowed_role_comments = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
     msg = []
     if amalgamating_business:
         if amalgamating_business.state == Business.State.HISTORICAL:
@@ -312,17 +314,19 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
 
         if not is_staff:
             if not _is_business_affliated(identifier, account_id):
-                msg.append({
-                    'error': (f'{identifier} is not affiliated with the currently '
-                              'selected BC Registries account.'),
-                    'path': amalgamating_business_path
-                })
+                if allowed_role_comments not in authorized_permissions:
+                    msg.append({
+                        'error': (f'{identifier} is not affiliated with the currently '
+                                'selected BC Registries account.'),
+                        'path': amalgamating_business_path
+                    })
 
             if not amalgamating_business.good_standing:
-                msg.append({
-                    'error': f'{identifier} is not in good standing.',
-                    'path': amalgamating_business_path
-                })
+                if allowed_role_comments not in authorized_permissions:
+                    msg.append({
+                        'error': f'{identifier} is not in good standing.',
+                        'path': amalgamating_business_path
+                    })
     else:
         msg.append({
             'error': f'A business with identifier:{identifier} not found.',
