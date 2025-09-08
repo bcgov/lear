@@ -21,12 +21,12 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
+from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction, User
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services import VersionedBusinessDetailsService, flags, RequestContext
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -37,7 +37,7 @@ OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 class BusinessDocument:
     """Service to create business document outputs."""
 
-    def __init__(self, business, document_key):
+    def __init__(self, business, document_key, request_context: RequestContext = None):
         """Create the Report instance."""
         self._business = business
         self._document_key = document_key
@@ -45,6 +45,7 @@ class BusinessDocument:
         self._epoch_filing_date = None
         self._tombstone_filing_date = None
         self._document_service = DocumentService()
+        self._request_context = request_context
 
     def get_pdf(self):
         """Render the business document pdf response."""
@@ -341,8 +342,17 @@ class BusinessDocument:
 
     def _set_officers(self, business: dict):
         """Set the officers of the business (parties with officer role)."""
+        if not flags.is_on(
+            'enable-officers-business-summary',
+            user=self._request_context.user,
+            account_id=self._request_context.account_id,
+        ):
+            # if flag is not enabled return from the function
+            return
+
         parties_json = get_parties(self._business.identifier).json['parties']
         officer_json = []
+
         # Extract officers - parties that have at least one role marked as OFFICER
         for party in parties_json:
             is_officer = False

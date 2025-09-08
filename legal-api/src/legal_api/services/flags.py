@@ -13,6 +13,7 @@
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
 from flask import current_app
+from typing import Optional, Any
 from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
 from ldclient.config import Config  # noqa: I005
 from ldclient.context import Context
@@ -107,37 +108,58 @@ class Flags():
 
     @staticmethod
     def _user_as_key(user: User):
+        """Return a single-kind 'user' LD context with the user's key and attributes."""
         return Context.builder(user.sub) \
             .set('firstName', user.firstname) \
             .set('lastName', user.lastname) \
             .build()
 
-    def is_on(self, flag: str, user: User = None) -> bool:
+    @staticmethod
+    def _account_context(account_id: str) -> Context:
+        """Return a single-kind 'account' LD context, keyed by the account id."""
+        # Use Context.create(key, kind) to explicitly set non-default kind 'account'
+        return Context.create(account_id, 'account')
+
+    @staticmethod
+    def _build_context(user: Optional[User], account_id: Optional[str]) -> Context:
+        """Compose the appropriate LD context (single or multi) from user/account inputs.
+
+        - user and account_id -> multi-context ('user' + 'account')
+        - user only           -> single 'user' context
+        - account_id only     -> single 'account' context
+        - neither             -> anonymous 'user' context
+        """
+        if user and account_id:
+                return Context.create_multi(
+                    Flags._user_as_key(user),
+                    Flags._account_context(account_id),
+                )
+        if user:
+                return Flags._user_as_key(user)
+        if account_id:
+                return Flags._account_context(account_id)
+        return Flags._get_anonymous_user()
+
+
+    def is_on(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> bool:
         """Assert that the flag is set for this user."""
         client = self._get_client()
 
-        if user:
-            flag_user = self._user_as_key(user)
-        else:
-            flag_user = self._get_anonymous_user()
+        ctx = self._build_context(user, account_id)
 
         try:
-            return bool(client.variation(flag, flag_user, None))
+            return bool(client.variation(flag, ctx, None))
         except Exception as err:
             current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
             return False
 
-    def value(self, flag: str, user: User = None) -> bool:
+    def value(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> Any:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
-
-        if user:
-            flag_user = self._user_as_key(user)
-        else:
-            flag_user = self._get_anonymous_user()
+        ctx = self._build_context(user, account_id)
 
         try:
-            return client.variation(flag, flag_user, None)
+            return client.variation(flag, ctx, None)
         except Exception as err:
             current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
             return False

@@ -26,7 +26,7 @@
               {% endfor %}
             </div>
             <div class="d-flex-item">
-              <div class="section-sub-title pb-2">Mailing Address</div>
+              <div class="section-sub-title">Mailing Address</div>
               {% if party.mailingAddress %}
                 <div class="pt-2">{{ party.mailingAddress.streetAddress }}</div>
                 <div>{{ party.mailingAddress.streetAddressAdditional }}</div>
@@ -44,7 +44,7 @@
               {% endif %}
             </div>
             <div class="d-flex-item">
-              <div class="section-sub-title pb-2">Delivery Address</div>
+              <div class="section-sub-title">Delivery Address</div>
               {% if party.deliveryAddress %}
                 <div class="pt-2">{{ party.deliveryAddress.streetAddress }}</div>
                 <div>{{ party.deliveryAddress.streetAddressAdditional }}</div>
