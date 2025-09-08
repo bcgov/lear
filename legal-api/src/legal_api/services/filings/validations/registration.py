@@ -29,7 +29,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
-    validate_parties_actions,
+    find_parties_actions,
     validate_parties_addresses,
 )
 from legal_api.services.utils import get_date, get_str
@@ -58,7 +58,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
             )
-    actions = validate_parties_actions(registration_json, filing_type )
+    actions = find_parties_actions(registration_json, filing_type )
     if any(actions) not in authorized_permissions:
         return Error(
                 HTTPStatus.FORBIDDEN,

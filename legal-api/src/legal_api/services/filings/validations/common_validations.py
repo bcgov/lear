@@ -249,7 +249,7 @@ def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str)
 
     return msg
 
-def validate_parties_actions(filing_json: dict, filing_type: str) -> list:
+def find_parties_actions(filing_json: dict, filing_type: str) -> list:
     """Validate the parties actions."""
     parties = filing_json['filing'][filing_type]['parties']
     actions_list = []
@@ -522,6 +522,6 @@ def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-
 
 def validate_staff_payment(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
-    if filing_json['filing']['header'].get('waiveFees'):
+    if filing_json['filing']['header'].get('waiveFees') == True:
         return True
     return False
