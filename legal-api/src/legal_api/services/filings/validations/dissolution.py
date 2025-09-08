@@ -9,14 +9,13 @@
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
+# See the License for the specific language gove rning permissions and
 # limitations under the License.
 """Validation for the Voluntary Dissolution filing."""
 from enum import Enum
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
-from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from flask_babel import _
 
@@ -56,8 +55,8 @@ DISSOLUTION_MAPPING = {
 
 
 def validate(business: Business, dissolution: Dict) -> Optional[Error]:
-
     """Validate the dissolution filing."""
+    from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
     if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
