@@ -43,7 +43,6 @@ from .authz import (  # noqa: I001; noqa: I001;
     authorized,
     has_roles,
 )
-from ..models import User
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 gcp_queue = GcpQueue()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
