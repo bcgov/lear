@@ -32,8 +32,7 @@ def build_from_flask() -> RequestContext:
         return RequestContext()
 
     # Account header (configurable)
-    header_name = current_app.config.get('ACCOUNT_ID_HEADER', 'Account-Id')
-    account_id = request.headers.get(header_name)
+    account_id = request.headers.get('Account-Id', None)
 
     # Token info and user
     token_info = getattr(g, 'jwt_oidc_token_info', None)
