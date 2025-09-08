@@ -53,7 +53,8 @@ def format_business_data(data: dict) -> dict:
         'last_ar_reminder_year': last_ar_reminder_year,
         'fiscal_year_end_date': business_data['founding_date'],
         'last_ledger_timestamp': business_data['founding_date'],
-        'last_modified': datetime.now(tz=timezone.utc).isoformat()
+        'last_modified': datetime.now(tz=timezone.utc).isoformat(),
+        'backfill_cutoff_filing_id': None  # Will be set dynamically during filing processing
     }
 
     return formatted_business
