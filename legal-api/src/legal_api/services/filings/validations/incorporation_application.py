@@ -198,7 +198,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
             err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': 'Cannot correct Incorporator role', 'path': err_path})
 
-        if director_count < min_director_count:
+        if director_count < min_director_count and filing_type != 'correction':
             err_path = f'/filing/{filing_type}/parties/roles'
             msg.append({'error': f'Must have a minimum of {min_director_count} Director', 'path': err_path})
 
