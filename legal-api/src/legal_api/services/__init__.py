@@ -13,8 +13,6 @@
 # limitations under the License.
 """This module wraps the calls to external services used by the API."""
 import uuid
-from dataclasses import dataclass
-from typing import Optional
 
 from gcp_queue import GcpQueue
 
@@ -52,8 +50,3 @@ gcp_queue = GcpQueue()  # pylint: disable=invalid-name; shared variables are low
 namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 digital_credentials = DigitalCredentialsService()
-
-@dataclass(frozen=True)
-class RequestContext:
-    account_id: Optional[str] = None
-    user: Optional[User] = None

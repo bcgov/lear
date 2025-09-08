@@ -21,12 +21,13 @@ import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction, User
+from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService, flags, RequestContext
+from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services.request_context import get_request_context, RequestContext
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -45,7 +46,8 @@ class BusinessDocument:
         self._epoch_filing_date = None
         self._tombstone_filing_date = None
         self._document_service = DocumentService()
-        self._request_context = request_context
+        # Default to current request context if not explicitly provided
+        self._request_context = request_context or get_request_context()
 
     def get_pdf(self):
         """Render the business document pdf response."""

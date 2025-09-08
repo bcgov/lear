@@ -21,8 +21,9 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Filing, User
 from legal_api.models.document import Document, DocumentType
 from legal_api.reports.business_document import BusinessDocument
-from legal_api.services import authorized, flags, RequestContext
+from legal_api.services import authorized, flags
 from legal_api.services.business import validate_document_request
+from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -56,12 +57,11 @@ def get_business_documents(identifier: str, document_name: str = None):
         response_message = {'errors': err.msg}
         return jsonify(response_message), err.code
 
-    account_id = request.headers.get("Account-Id", None)
-    user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
+    rc = get_request_context()
 
     # Hide business summary for tombstone corps
     if (
-        not flags.is_on('enable-business-summary-for-migrated-corps', user=user, account_id=account_id) and
+        not flags.is_on('enable-business-summary-for-migrated-corps', user=rc.user, account_id=rc.account_id) and
         business.is_tombstone and
         business.legal_type in Business.CORPS and
         document_name == 'summary'
@@ -69,13 +69,11 @@ def get_business_documents(identifier: str, document_name: str = None):
         return {}, HTTPStatus.NOT_FOUND
 
     if document_name:
-        rc = RequestContext(account_id=account_id, user=user)
         current_app.logger.info(
-            f'Getting document {document_name} for business {identifier} with account_id {account_id}'
+            f'Getting document {document_name} for business {identifier} with account_id {rc.account_id}'
         )
         if 'application/pdf' in request.accept_mimetypes:
-            pdf_content, status_code = (BusinessDocument(business, document_name, request_context=rc)
-                                        .get_pdf())
+            pdf_content, status_code = BusinessDocument(business, document_name).get_pdf()
             if status_code == HTTPStatus.OK:
                 return Response(
                     pdf_content,
@@ -86,7 +84,7 @@ def get_business_documents(identifier: str, document_name: str = None):
                 )
             return pdf_content, status_code
         elif 'application/json' in request.accept_mimetypes:
-            return BusinessDocument(business, document_name, request_context=rc).get_json()
+            return BusinessDocument(business, document_name).get_json()
     return {}, HTTPStatus.NOT_FOUND
 
 
@@ -98,12 +96,11 @@ def _get_document_list(business):
                                                         'document_name': None})
     documents = {'documents': {}}
 
-    account_id = request.headers.get("Account-Id", None)
-    user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
+    rc = get_request_context()
 
     # Hide business summary for tombstone corps
     if (
-        not flags.is_on('enable-business-summary-for-migrated-corps', user=user, account_id=account_id) and
+        not flags.is_on('enable-business-summary-for-migrated-corps', user=rc.user, account_id=rc.account_id) and
         business.is_tombstone and
         business.legal_type in Business.CORPS
     ):
