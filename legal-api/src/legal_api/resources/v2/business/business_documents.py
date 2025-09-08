@@ -98,9 +98,12 @@ def _get_document_list(business):
                                                         'document_name': None})
     documents = {'documents': {}}
 
+    account_id = request.headers.get("Account-Id", None)
+    user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
+
     # Hide business summary for tombstone corps
     if (
-        not flags.is_on('enable-business-summary-for-migrated-corps') and
+        not flags.is_on('enable-business-summary-for-migrated-corps', user=user, account_id=account_id) and
         business.is_tombstone and
         business.legal_type in Business.CORPS
     ):
