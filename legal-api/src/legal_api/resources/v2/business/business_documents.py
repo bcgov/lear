@@ -56,9 +56,12 @@ def get_business_documents(identifier: str, document_name: str = None):
         response_message = {'errors': err.msg}
         return jsonify(response_message), err.code
 
+    account_id = request.headers.get("Account-Id", None)
+    user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
+
     # Hide business summary for tombstone corps
     if (
-        not flags.is_on('enable-business-summary-for-migrated-corps') and
+        not flags.is_on('enable-business-summary-for-migrated-corps', user=user, account_id=account_id) and
         business.is_tombstone and
         business.legal_type in Business.CORPS and
         document_name == 'summary'
@@ -66,8 +69,6 @@ def get_business_documents(identifier: str, document_name: str = None):
         return {}, HTTPStatus.NOT_FOUND
 
     if document_name:
-        account_id = request.headers.get("Account-Id", None)
-        user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
         rc = RequestContext(account_id=account_id, user=user)
         current_app.logger.info(
             f'Getting document {document_name} for business {identifier} with account_id {account_id}'
