@@ -516,7 +516,26 @@ def validate_effective_date(filing_json: dict) -> list:
 def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
     cerify_name = filing_json['filing']['header'].get('certifiedBy')
-    if cerify_name and cerify_name != g.jwt_oidc_token_info.get('name'):
+    if cerify_name and cerify_name.matches(g.jwt_oidc_token_info.get('name')):
+        return True
+    return False
+
+def validate_editable_completing_party(filing_json: dict, filing_type: str) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure completing party is being edited."""
+    party = filing_json['filing'][filing_type]['parties']
+    officer = party['officer']
+    party_type = officer['partyType']
+    if party_type == 'person':
+        first_name = officer.get('firstName', None)
+        full_name = first_name + officer.get('lastName', None)
+        if full_name and full_name.matches(g.jwt_oidc_token_info.get('name')):
+            return True
+    return False
+
+def validate_document_delivery_completing_party(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure document delivery completing party is being edited."""
+    document_Optional_Email = filing_json['filing']['header']['documentOptionalEmail']
+    if document_Optional_Email:
         return True
     return False
 

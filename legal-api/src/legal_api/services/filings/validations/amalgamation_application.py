@@ -22,6 +22,7 @@ from legal_api.services import STAFF_ROLE, flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_document_delivery_completing_party,
     validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
@@ -55,6 +56,13 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
             return Error(
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
+    if validate_document_delivery_completing_party(amalgamation_json, filing_type):
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
             )
     legal_type_path = f'/filing/{filing_type}/nameRequest/legalType'
     legal_type = get_str(amalgamation_json, legal_type_path)

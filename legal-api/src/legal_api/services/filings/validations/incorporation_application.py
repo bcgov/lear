@@ -15,13 +15,17 @@
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final
 
+from legal_api.services.filings.validations import common_validations
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (  # noqa: I001
+    validate_certify_name,
     validate_court_order,
+    validate_document_delivery_completing_party,
     validate_effective_date,
     validate_name_request,
     validate_offices_addresses,
@@ -40,7 +44,22 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-
+    if validate_certify_name(incorporation_json):
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
+            )
+    if validate_document_delivery_completing_party(incorporation_json, filing_type):
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
+            )
     legal_type_path = '/filing/incorporationApplication/nameRequest/legalType'
     legal_type = get_str(incorporation_json, legal_type_path)
     if not legal_type:

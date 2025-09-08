@@ -22,6 +22,7 @@ from legal_api.models import Business, PartyRole
 from legal_api.services import colin, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_document_delivery_completing_party,
     validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
@@ -37,6 +38,7 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_delivery_address,
     validate_parties_mailing_address,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -47,7 +49,14 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     if not filing_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-
+    if validate_document_delivery_completing_party(filing_json, filing_type):
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
+            )
     legal_type_path = '/filing/continuationIn/nameRequest/legalType'
     legal_type = get_str(filing_json, legal_type_path)
     if not legal_type:

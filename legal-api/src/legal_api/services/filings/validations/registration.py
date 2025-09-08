@@ -27,6 +27,8 @@ from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_certify_name,
     validate_court_order,
+    validate_document_delivery_completing_party,
+    validate_editable_completing_party,
     validate_name_request,
     validate_offices_addresses,
     find_parties_actions,
@@ -53,6 +55,14 @@ def validate(registration_json: Dict) -> Optional[Error]:
     authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if validate_certify_name(registration_json):
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
+            )
+    if validate_document_delivery_completing_party(registration_json, filing_type) or validate_editable_completing_party(registration_json):
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         if allowed_role_comments not in authorized_permissions:
             return Error(
                 HTTPStatus.FORBIDDEN,
