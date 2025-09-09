@@ -57,14 +57,6 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
             'signatureImage': 'registrar_signature_5.png',
             'signatureImageAndText': 'registrar_signature_and_text_5.png',
             'startDate': '2025-04-18T00:00:00',
-            'endDate': '2025-09-10T23:59:59'
-        },
-        {
-            'name': "KERRY TAYLOR",
-            'title': 'Registrar of Companies',
-            'signatureImage': 'registrar_signature_6.png',
-            'signatureImageAndText': 'registrar_signature_and_text_6.png',
-            'startDate': '2025-09-11T00:00:00',
             'endDate': None
         }
     ]
