@@ -19,9 +19,11 @@ from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_bool, get_str
 
 from .common_validations import (
+    validate_nigs,
     validate_court_order,
     validate_effective_date,
     validate_name_request,
@@ -37,7 +39,14 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
-
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if not validate_nigs(filing, 'alteration'):
+        allowed_role_comments = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to override good standing in filing.'}]
+            )
     msg.extend(type_change_validation(filing, business))
     msg.extend(company_name_validation(filing, business))
     msg.extend(share_structure_validation(filing, business))

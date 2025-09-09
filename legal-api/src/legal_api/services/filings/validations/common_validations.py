@@ -520,6 +520,17 @@ def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-
         return True
     return False
 
+def validate_nigs(filing_json: Dict, filing_type: str ) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    if filing_type == 'dissolution':
+        business_identifier = filing_json['filing']['business'].get('identifier')
+    if filing_type == 'alteration':
+        business_identifier = filing_json['filing'][filing_type]['business'].get('identifier')
+    business = Business.find_by_identifier(business_identifier)
+    if business.good_standing:
+        return True
+    return False
+
 def validate_editable_completing_party(filing_json: dict, filing_type: str) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure completing party is being edited."""
     party = filing_json['filing'][filing_type]['parties']
@@ -534,13 +545,15 @@ def validate_editable_completing_party(filing_json: dict, filing_type: str) -> O
 
 def validate_document_delivery_completing_party(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure document delivery completing party is being edited."""
-    document_Optional_Email = filing_json['filing']['header']['documentOptionalEmail']
-    if document_Optional_Email:
+    document_Optional_Email = filing_json['filing']['header'].get('documentOptionalEmail')
+    if document_Optional_Email is not None:
         return True
     return False
 
-def validate_staff_payment(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
-    # if filing_json['filing']['header'].get('waiveFees'):
-    #     return True
+    print(filing_json)
+    header = filing_json['filing']['header']
+    if header.get('waiveFees') is not None and header.get('waiveFees') is True :
+        return True
     return False

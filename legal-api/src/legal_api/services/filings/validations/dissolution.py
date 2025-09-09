@@ -70,13 +70,20 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
             )
-    if common_validations.validate_document_delivery_completing_party(dissolution, filing_type) or common_validations.validate_editable_completing_party(dissolution):
+    if common_validations.validate_document_delivery_completing_party(dissolution) or common_validations.validate_editable_completing_party(dissolution):
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         if allowed_role_comments not in authorized_permissions:
             return Error(
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
+            )
+    if not common_validations.validate_nigs(dissolution, 'dissolution'):
+        allowed_role_comments = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions to override good standing in filing.'}]
             )
     msg = []
 
