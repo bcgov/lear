@@ -53,7 +53,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
         )
     authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-    if validate_certify_name(registration_json):
+    if not validate_certify_name(registration_json):
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
         if allowed_role_comments not in authorized_permissions:
             return Error(

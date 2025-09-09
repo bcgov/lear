@@ -38,7 +38,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
                      [{'error': babel(f'{business.legal_type} does not support agm location change filing.')}])
 
     authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-    if validate_certify_name(filing):
+    if not validate_certify_name(filing):
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
         if allowed_role_comments not in authorized_permissions:
             return Error(

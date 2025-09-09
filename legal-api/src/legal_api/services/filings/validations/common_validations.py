@@ -515,8 +515,8 @@ def validate_effective_date(filing_json: dict) -> list:
 
 def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
-    cerify_name = filing_json['filing']['header'].get('certifiedBy')
-    if cerify_name and cerify_name.matches(g.jwt_oidc_token_info.get('name')):
+    certify_name = filing_json['filing']['header'].get('certifiedBy')
+    if certify_name and certify_name == g.jwt_oidc_token_info.get('name'):
         return True
     return False
 
@@ -541,6 +541,6 @@ def validate_document_delivery_completing_party(filing_json: dict) -> Optional[s
 
 def validate_staff_payment(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
-    if filing_json['filing']['header'].get('waiveFees') == True:
-        return True
+    # if filing_json['filing']['header'].get('waiveFees'):
+    #     return True
     return False

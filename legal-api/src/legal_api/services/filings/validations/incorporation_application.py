@@ -44,7 +44,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-    if validate_certify_name(incorporation_json):
+    if not validate_certify_name(incorporation_json):
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
         if allowed_role_comments not in authorized_permissions:

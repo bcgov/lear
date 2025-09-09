@@ -50,7 +50,7 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
     authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-    if validate_certify_name(amalgamation_json):
+    if not validate_certify_name(amalgamation_json):
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
         if allowed_role_comments not in authorized_permissions:
             return Error(
