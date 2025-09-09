@@ -15,7 +15,11 @@
       <div class="value">Unknown</div>
       {% endif %}
     {% else %}
+      {% if business_name %}
+      <div clases="value">{{ business_name }}</div>
+      {% else %}
       <div class="value">{{ business.legalName }}</div>
+      {%endif %}
     {% endif %}
   </div>
 
