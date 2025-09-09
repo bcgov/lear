@@ -19,6 +19,8 @@ from flask_babel import _ as babel  # noqa: N813
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
+from legal_api.services.filings.validations.common_validations import validate_staff_payment
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 
 from .admin_freeze import validate as admin_freeze_validate
@@ -67,7 +69,14 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
         return err
 
     err = None
-
+    if not validate_staff_payment(filing_json):
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        allowed_role_comments = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
+        if allowed_role_comments not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{ 'message': f'Permission Denied - You do not have permissions for staff payment in this filing.'}]
+            )
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
     if 'correction' in filing_json['filing'].keys():

@@ -31,7 +31,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_editable_completing_party,
     validate_name_request,
     validate_offices_addresses,
-    find_parties_actions,
     validate_parties_addresses,
 )
 from legal_api.services.utils import get_date, get_str
@@ -60,7 +59,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
             )
-    if validate_document_delivery_completing_party(registration_json, filing_type) or validate_editable_completing_party(registration_json):
+    if validate_document_delivery_completing_party(registration_json) or validate_editable_completing_party(registration_json, filing_type):
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         if allowed_role_comments not in authorized_permissions:
@@ -68,12 +67,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
             )
-    actions = find_parties_actions(registration_json, filing_type )
-    if any(actions) not in authorized_permissions:
-        return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
-            )
+
 
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))

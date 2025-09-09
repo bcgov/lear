@@ -49,7 +49,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     if not filing_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-    if validate_document_delivery_completing_party(filing_json, filing_type):
+    if validate_document_delivery_completing_party(filing_json):
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         if allowed_role_comments not in authorized_permissions:

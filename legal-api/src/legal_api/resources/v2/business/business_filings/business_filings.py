@@ -521,11 +521,6 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if client_request.method == 'PUT' and not filing:
             return {'message': f'{identifier} no filings found'}, HTTPStatus.NOT_FOUND
 
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        if validate_staff_payment(filing):
-            allowed_role_comments = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
-            if allowed_role_comments not in authorized_permissions:
-                return { 'message': f'Permission Denied - You do not have permissions to waive fees in this filing.'}, HTTPStatus.FORBIDDEN
         return None, None
 
     @staticmethod

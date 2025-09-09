@@ -52,7 +52,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
                 HTTPStatus.FORBIDDEN,
                 [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
             )
-    if validate_document_delivery_completing_party(incorporation_json, filing_type):
+    if validate_document_delivery_completing_party(incorporation_json):
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         if allowed_role_comments not in authorized_permissions:
