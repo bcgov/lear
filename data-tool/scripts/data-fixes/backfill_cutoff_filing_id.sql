@@ -37,7 +37,8 @@ WHERE businesses.id = lhf.business_id
 -- The following queries are for verification purposes only
 
 -- Show businesses that will be affected
-SELECT 
+SELECT
+    b.id,
     b.identifier,
     b.legal_name,
     b.backfill_cutoff_filing_id as current_cutoff_id,
@@ -93,6 +94,7 @@ WHERE EXISTS (
 
 -- Show 10 updated records
 SELECT 
+    b.id,
     b.identifier,
     b.legal_name,
     b.backfill_cutoff_filing_id,
@@ -110,6 +112,7 @@ LIMIT 10;
 -- Edge case check: Businesses with lear_tombstone but no historical filings
 -- These should have backfill_cutoff_filing_id remain NULL
 SELECT 
+    b.id,
     b.identifier,
     b.legal_name,
     b.backfill_cutoff_filing_id,
