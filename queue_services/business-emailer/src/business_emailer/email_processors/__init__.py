@@ -35,6 +35,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     business_json = None
     if filing.business_id:
         business = Business.find_by_internal_id(filing.business_id)
+        alternate_names = Business.get_alternate_names(business)
         business_json = business.json()
 
     # payment date if available otherwise filing date
@@ -43,7 +44,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
 
     leg_tmz_effective_date = LegislationDatetime.format_as_report_string(filing.effective_date)
 
-    return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
+    return filing, alternate_names, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
 def get_recipients(option: str, filing_json: dict, token: str | None = None, filing_type: str | None = None) -> str:
