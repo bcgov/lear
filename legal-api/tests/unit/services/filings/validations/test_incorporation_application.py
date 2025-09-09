@@ -25,7 +25,7 @@ from reportlab.lib.pagesizes import letter
 
 from legal_api.models import Business
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names
+from legal_api.services.filings.validations.incorporation_application import validate_coop_parties_mailing_address, validate_parties_names
 
 from tests.unit.services.filings.test_utils import _upload_file
 
@@ -538,53 +538,6 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
 @pytest.mark.parametrize(
     'test_name, legal_type, parties, expected_msg',
     [
-        ('SUCCESS', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}}
-         ], None
-         ),
-        ('FAIL_INVALID_STREET', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': None, 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address streetAddress None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/streetAddress/None/'}]
-         ),
-        ('FAIL_INVALID_CITY', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': None, 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address addressCity None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCity/None/'}]
-         ),
-        ('FAIL_INVALID_COUNTRY', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': None,
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address addressCountry None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCountry/None/'}]
-         ),
-        ('FAIL_INVALID_POSTAL_CODE', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': None, 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address postalCode None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/postalCode/None/'}]
-         ),
-        ('FAIL_INVALID_REGION', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': None}},
-         ], [{'error': 'Person 1: Mailing address addressRegion None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressRegion/None/'}]
-         ),
         ('SUCCESS', 'CP',
          [
              {
@@ -727,13 +680,13 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_mailing_address(filing_json, legal_type)
+        err = validate_coop_parties_mailing_address(filing_json)
 
     # validate outcomes
     if expected_msg:
         assert lists_are_equal(err, expected_msg)
     else:
-        assert err is None
+        assert not err
 
 
 @pytest.mark.parametrize(

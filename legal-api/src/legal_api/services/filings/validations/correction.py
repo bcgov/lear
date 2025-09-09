@@ -34,7 +34,7 @@ from legal_api.services.filings.validations.common_validations import (
 )
 from legal_api.services.filings.validations.incorporation_application import validate_offices as validate_corp_offices
 from legal_api.services.filings.validations.incorporation_application import (
-    validate_parties_mailing_address,
+    validate_coop_parties_mailing_address,
     validate_roles,
 )
 from legal_api.services.filings.validations.registration import validate_offices
@@ -119,10 +119,6 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
         msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
-
-        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
-        if err:
-            msg.extend(err)
     if filing_dict.get('filing', {}).get('correction', {}).get('shareStructure', None):
         err = validate_share_structure(filing_dict, filing_type, legal_type)
         if err:
@@ -156,10 +152,7 @@ def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg
             msg.extend(err)
 
         msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
-
-        err = validate_parties_mailing_address(filing_dict, legal_type, filing_type)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_coop_parties_mailing_address(filing_dict, filing_type))
     else:
         err_path = f'/filing/{filing_type}/parties/roles'
         msg.append({'error': 'Parties list cannot be empty or null', 'path': err_path})

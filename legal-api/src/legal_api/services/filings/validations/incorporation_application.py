@@ -57,9 +57,8 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     msg.extend(validate_parties_names(incorporation_json, filing_type, legal_type))
     msg.extend(validate_parties_addresses(incorporation_json, filing_type))
 
-    err = validate_parties_mailing_address(incorporation_json, legal_type)
-    if err:
-        msg.extend(err)
+    if legal_type == Business.LegalTypes.COOP.value:
+        msg.extend(validate_coop_parties_mailing_address(incorporation_json))
 
     err = validate_parties_delivery_address(incorporation_json, legal_type)
     if err:
@@ -208,47 +207,34 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
     return None
 
 
-def validate_parties_mailing_address(incorporation_json: dict, legal_type: str,
-                                     filing_type: str = 'incorporationApplication') -> Error:
-    """Validate the person data of the incorporation filing."""
+def validate_coop_parties_mailing_address(incorporation_json: dict,
+                                     filing_type: str = 'incorporationApplication') -> list:
+    """Validate the party mailing address of a COOP filing."""
     parties_array = incorporation_json['filing'][filing_type]['parties']
     msg = []
     bc_party_ma_count = 0
     country_ca_party_ma_count = 0
     country_total_ma_count = 0
 
-    for item in parties_array:
-        for k, v in item['mailingAddress'].items():
-            if v is None:
-                err_path = f'/filing/{filing_type}/parties/%s/mailingAddress/%s/%s/' % (
-                    item['officer']['id'], k, v
-                )
-                msg.append({'error': 'Person %s: Mailing address %s %s is invalid' % (
-                    item['officer']['id'], k, v
-                ), 'path': err_path})
+    for party in parties_array:
+        if (ma_region := party.get('mailingAddress', {}).get('addressRegion', None)) and ma_region == 'BC':
+            bc_party_ma_count += 1
 
-            if (ma_region := item.get('mailingAddress', {}).get('addressRegion', None)) and ma_region == 'BC':
-                bc_party_ma_count += 1
+        if (ma_country := party.get('mailingAddress', {}).get('addressCountry', None)):
+            country_total_ma_count += 1
+            if ma_country == 'CA':
+                country_ca_party_ma_count += 1
 
-            if (ma_country := item.get('mailingAddress', {}).get('addressCountry', None)):
-                country_total_ma_count += 1
-                if ma_country == 'CA':
-                    country_ca_party_ma_count += 1
+    if bc_party_ma_count < 1:
+        err_path = f'/filing/{filing_type}/parties/mailingAddress'
+        msg.append({'error': 'Must have minimum of one BC mailing address', 'path': err_path})
 
-    if legal_type == Business.LegalTypes.COOP.value:
-        if bc_party_ma_count < 1:
-            err_path = f'/filing/{filing_type}/parties/mailingAddress'
-            msg.append({'error': 'Must have minimum of one BC mailing address', 'path': err_path})
+    country_ca_percentage = country_ca_party_ma_count / country_total_ma_count * 100
+    if country_ca_percentage <= 50:
+        err_path = f'/filing/{filing_type}/parties/mailingAddress'
+        msg.append({'error': 'Must have majority of mailing addresses in Canada', 'path': err_path})
 
-        country_ca_percentage = country_ca_party_ma_count / country_total_ma_count * 100
-        if country_ca_percentage <= 50:
-            err_path = f'/filing/{filing_type}/parties/mailingAddress'
-            msg.append({'error': 'Must have majority of mailing addresses in Canada', 'path': err_path})
-
-    if msg:
-        return msg
-
-    return None
+    return msg
 
 
 def validate_parties_delivery_address(incorporation_json: dict, legal_type: str,
