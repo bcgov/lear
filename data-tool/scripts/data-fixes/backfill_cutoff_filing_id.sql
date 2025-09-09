@@ -34,6 +34,32 @@ FROM last_historical_filings lhf
 WHERE businesses.id = lhf.business_id
     AND lhf.last_historical_filing_id IS NOT NULL;
 
+-- Update businesses_version table for current version records <-- 2nd Main Query
+WITH last_historical_filings AS (
+    SELECT 
+        b.id as business_id,
+        f_tombstone.id as tombstone_filing_id,
+        (
+            SELECT MAX(f_inner.id) 
+            FROM filings f_inner 
+            WHERE f_inner.business_id = b.id 
+                AND f_inner.id < f_tombstone.id
+                AND f_inner.filing_type != 'lear_tombstone'
+        ) as last_historical_filing_id
+    FROM businesses b
+        JOIN filings f_tombstone ON b.id = f_tombstone.business_id 
+            AND f_tombstone.filing_type = 'lear_tombstone'
+    WHERE 
+        b.backfill_cutoff_filing_id IS NOT NULL
+)
+UPDATE businesses_version 
+SET backfill_cutoff_filing_id = lhf.last_historical_filing_id,
+    last_modified = NOW()
+FROM last_historical_filings lhf
+WHERE businesses_version.id = lhf.business_id
+    AND businesses_version.end_transaction_id IS NULL
+    AND lhf.last_historical_filing_id IS NOT NULL;
+
 -- The following queries are for verification purposes only
 
 -- Show businesses that will be affected
