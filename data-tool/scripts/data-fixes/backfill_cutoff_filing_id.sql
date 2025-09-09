@@ -111,6 +111,7 @@ LIMIT 10;
 
 -- Edge case check: Businesses with lear_tombstone but no historical filings
 -- These should have backfill_cutoff_filing_id remain NULL
+-- This doesn't happen, but just in case
 SELECT 
     b.id,
     b.identifier,
