@@ -121,11 +121,11 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     ).read_text()
     filled_template = substitute_template_parts(template)
     # Firms can have proprietors or partners, so we may need to pass in a different value for name. 
-    business_name = ''
-    if business.get('legalType') in ["SP", "GP"] and alternate_names:
+    business_name = ""
+    if business.get("legalType") in ["SP", "GP"] and alternate_names:
         for alt_name in alternate_names:
-            if alt_name.get('identifier') == business.get('identifier') and alt_name.get('name'):
-                business_name = alt_name.get('name')
+            if alt_name.get("identifier") == business.get("identifier") and alt_name.get("name"):
+                business_name = alt_name.get("name")
                 break
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
