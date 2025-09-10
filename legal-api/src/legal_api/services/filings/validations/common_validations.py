@@ -480,27 +480,132 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
-def find_updated_keys(filing_json: dict, filing_type: str) -> list:
-    """Find updated keys in the  firm filing. (replace, add, edit email )"""
-    
-    business_identifier = filing_json['filing']['business'].get('identifier')
+def find_updated_keys(business: Business ,filing_json: dict, filing_type) -> list:
+    """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
+    updated_keys = []
     parties = filing_json['filing'][filing_type].get('parties')
-    newemail = None
+    
+    # Get business and existing parties from DB
+    db_party_roles = PartyRole.get_parties_by_role(business.id, 'proprietor')
+    parties = filing_json['filing'][filing_type].get('parties', [])
     for item in parties:
-        email = item.get("officer", {}).get("email")
-        if email:
-            newemail = email.lower()
-            break
+        roles = item.get("roles", [])
+        role_type = roles[0].get("roleType") if roles else None
+        if role_type != 'Proprietor':
+            continue
+        officer = item.get("officer", {})
+        email = officer.get("email")
+        mailing_address = item.get("mailingAddress", {})
+        delivery_address = item.get("deliveryAddress", {})
 
-    business = Business.find_by_identifier(business_identifier)
-    db_party = PartyRole.get_parties_by_role(business.id, 'proprietor')
-    oldemail = None
-    for person in db_party:
-        email = Party.find_by_id(person.party_id).email
-        
-        if email:
-            oldemail = email.lower()
-            if oldemail != newemail:
-                break
+        # Match with existing DB party
+        for role in db_party_roles:
+            db_party = Party.find_by_id(role.party_id)
+            if not db_party:
+                continue
+            changes = {}
+            # Email comparison
+            if not isEmailSame(email, db_party.email):
+                changes['email'] = {
+                    'old': normalize_str(db_party.email),
+                    'new': normalize_str(email)
+                }
+            # Name comparison
+            old_name = {
+                'firstName': db_party.first_name or '',
+                'middleName': db_party.middle_initial or '',
+                'lastName': db_party.last_name or '',
+                'organizationName': db_party.organization_name or ''
+            }
+            new_name = {
+                'firstName': officer.get('firstName', ''),
+                'middleName': officer.get('middleName', ''),
+                'lastName': officer.get('lastName', ''),
+                'organizationName': officer.get('organizationName', '')
+            }
+            name_changed = isNameChanged(old_name, new_name)
+            changes['name'] = {
+                'old': old_name,
+                'new': new_name,
+                'changed': name_changed
+            }
+            # Mailing address comparison
+            db_mailing_address = Address.find_by_id(db_party.mailing_address_id) if db_party.mailing_address_id else None
+            old_mailing = {
+                'streetAddress': db_mailing_address.street or '',
+                'addressCity': db_mailing_address.city or '',
+                'addressRegion': db_mailing_address.region or '',
+                'postalCode': db_mailing_address.postal_code or '',
+                'addressCountry': db_mailing_address.country or '',
+                'deliveryInstructions': db_mailing_address.delivery_instructions or '',
+                'streetAddressAdditional': db_mailing_address.street_additional or ''
+            } if db_mailing_address else {}
+            new_mailing = {
+                'streetAddress': mailing_address.get('streetAddress', ''),
+                'addressCity': mailing_address.get('addressCity', ''),
+                'addressRegion': mailing_address.get('addressRegion', ''),
+                'postalCode': mailing_address.get('postalCode', ''),
+                'addressCountry': mailing_address.get('addressCountry', ''),
+                'deliveryInstructions': mailing_address.get('deliveryInstructions', ''),
+                'streetAddressAdditional': mailing_address.get('streetAddressAdditional', '')
+            }
+            if not isAddressSame(old_mailing, new_mailing):
+                changes['address'] = {'old': old_mailing, 'new': new_mailing}
+            # Delivery address comparison
+            db_delivery_address = Address.find_by_id(mailing_address.get('id')) if mailing_address.get('id') else None
+            old_delivery = {
+                'streetAddress': db_delivery_address.street or '',
+                'addressCity': db_delivery_address.city or '',
+                'addressRegion': db_delivery_address.region or '',
+                'postalCode': db_delivery_address.postal_code or '',
+                'addressCountry': db_delivery_address.country or '',
+                'deliveryInstructions': db_delivery_address.delivery_instructions or '',
+                'streetAddressAdditional': db_delivery_address.street_additional or ''
+            } if db_delivery_address else {}
+            new_delivery = {
+                'streetAddress': delivery_address.get('streetAddress', ''),
+                'addressCity': delivery_address.get('addressCity', ''),
+                'addressRegion': delivery_address.get('addressRegion', ''),
+                'postalCode': delivery_address.get('postalCode', ''),
+                'addressCountry': delivery_address.get('addressCountry', ''),
+                'deliveryInstructions': delivery_address.get('deliveryInstructions', ''),
+                'streetAddressAdditional': delivery_address.get('streetAddressAdditional', '')
+            }
+            if not isAddressSame(old_delivery, new_delivery):
+                changes['deliveryAddress'] = {'old': old_delivery, 'new': new_delivery}
+            if changes:
+                updated_keys.append({'name_changed':changes.get('name', {}).get('changed', False), 'email_changed': 'email' in changes,
+            'address_changed': 'address' in changes, 'delivery_address_changed': 'deliveryAddress' in changes})
+            break 
+    return updated_keys
 
-    return oldemail != newemail
+
+def normalize_str(value: str) -> str:
+   """Convert None or empty values to a stripped uppercase string."""
+   return (value or '').strip().upper()
+
+def isEmailSame(email1: str, email2: str) -> bool:
+   """Check if two emails are the same."""
+   return normalize_str(email1) == normalize_str(email2)
+
+def isNameChanged(name1: dict, name2: dict) -> bool:
+   """Check if two names are different."""
+   name_keys = ['firstName', 'middleName', 'lastName', 'organizationName']
+   print("Comparing names:", name1, name2)
+   for key in name_keys:
+       if normalize_str(name1.get(key)) != normalize_str(name2.get(key)):
+           return True
+   return False
+
+def isAddressSame(addr1: dict, addr2: dict) -> bool:
+   """Check if two addresses are the same."""
+   keys = [
+       'streetAddress', 'addressCity', 'addressRegion',
+       'postalCode', 'addressCountry',
+       'deliveryInstructions', 'streetAddressAdditional'
+   ]
+   for key in keys:
+       if normalize_str(addr1.get(key)) != normalize_str(addr2.get(key)):
+           print(f"Address difference found in key '{key}': '{addr1.get(key)}' vs '{addr2.get(key)}'")
+           return False
+   return True
