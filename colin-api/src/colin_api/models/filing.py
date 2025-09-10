@@ -1853,7 +1853,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             )
             # create new ledger text for address change
             if filing.filing_type not in ['amalgamationApplication', 'continuationIn', 'incorporationApplication',
-                                          'transition']:
+                                          'restoration', 'transition']:
                 office_desc = (office_type.replace('O', ' O')).title()
                 if text:
                     text = f'{text} Change to the {office_desc}.'
