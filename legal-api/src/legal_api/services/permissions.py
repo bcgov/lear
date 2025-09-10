@@ -102,6 +102,7 @@ class PermissionService:
     def get_authorized_user_role(token_info: dict = None) -> str:
         """Return the first matching authorized role from the JWT, based on priority."""
         role_priority = [
+            authz.SYSTEM_ROLE,
             authz.STAFF_ROLE,
             authz.SBC_STAFF_ROLE,
             authz.CONTACT_CENTRE_STAFF_ROLE,
@@ -115,6 +116,8 @@ class PermissionService:
         roles_in_token = token_info.get('realm_access', {}).get('roles', [])
         for role in role_priority:
             if role in roles_in_token:
+                if role == authz.SYSTEM_ROLE:
+                    role = authz.STAFF_ROLE
                 return role
         return None
 
