@@ -389,6 +389,71 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
     else:
         assert err is None
 
+@pytest.mark.parametrize(
+    'test_status, legal_type, dissolution_type, party_type, org_name, expected_code, expected_msg',
+    [
+        # Required organization name cases (missing or None)
+        ('FAIL', 'BC', 'voluntary', 'organization', None, HTTPStatus.BAD_REQUEST,
+         'Corporation or firm name is required'),
+        ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
+         'Corporation or firm name is required'),
+        ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
+         'Corporation or firm name is required'),
+
+        # Leading/trailing whitespace
+        ('SUCCESS', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, None),
+        ('SUCCESS', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', None, None),
+        ('SUCCESS', 'BC', 'voluntary', 'organization', '  BothSides  ', None, None),
+
+        # Valid name
+        ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None),
+
+        # Non-organization party types should skip validation
+        ('SUCCESS', 'BC', 'voluntary', 'person', None, None, None),
+
+        # Legal types other than CORP should skip validation
+        ('SUCCESS', 'CP', 'voluntary', 'organization', None, None, None),
+        ('SUCCESS', 'BC', 'administrative', 'organization', None, None, None),
+    ]
+)
+def test_dissolution_custodian_org_name(session, test_status, legal_type, dissolution_type,
+                                        party_type, org_name, expected_code, expected_msg):
+    """Test custodian organization name validation and trimming."""
+
+    business = Business(identifier='BC1234567', legal_type=legal_type)
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = legal_type
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionType'] = dissolution_type
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+
+    if dissolution_type == 'administrative':
+        filing['filing']['dissolution']['details'] = "Some Details"
+        del filing['filing']['dissolution']['affidavitFileKey']
+
+    officer = filing['filing']['dissolution']['parties'][1]['officer']
+    officer['partyType'] = party_type
+    if org_name is not None:
+        officer['organizationName'] = org_name
+    elif 'organizationName' in officer:
+        del officer['organizationName']
+
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        err = validate(business, filing)
+
+    if test_status == 'FAIL':
+        assert err.code == expected_code
+        assert any(expected_msg in msg['error'] for msg in err.msg)
+    else:
+        assert err is None
+
+    # Check that the organizationName is trimmed for successful payloads
+    if org_name and party_type == 'organization' and test_status == 'SUCCESS' and legal_type in Business.CORPS:
+        trimmed = filing['filing']['dissolution']['parties'][1]['officer'].get('organizationName')
+        assert trimmed == org_name.strip()
+
 
 
 @pytest.mark.parametrize(

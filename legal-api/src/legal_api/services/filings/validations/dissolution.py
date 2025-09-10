@@ -193,6 +193,7 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
 
     if len(parties) > 0:
         msg.extend(_validate_custodian_email(parties, dissolution_type, legal_type))
+        msg.extend(validate_custodian_org_name(parties, dissolution_type, legal_type))
 
         err, address_in_bc, address_in_ca = _validate_address_location(parties)
         if err:
@@ -298,6 +299,32 @@ def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
             })    
     return msg
 
+def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
+    """Validate custodian organization name of the dissolution filing and trim it."""
+    # Only validate for CORP voluntary dissolution
+    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
+        return []
+
+    msg = []
+    for idx, party in enumerate(parties):
+        party_type = get_str(party, '/officer/partyType')
+        # Only validate if parytyType is organization
+        if party_type == 'organization':
+            org_name = get_str(party, '/officer/organizationName')
+
+            # Trim spaces before validation and update payload
+            if org_name:
+                trimmed_name = org_name.strip()
+                party['officer']['organizationName'] = trimmed_name
+            else:
+                trimmed_name = ''
+
+            if not trimmed_name:
+                msg.append({
+                    'error': 'Corporation or firm name is required',
+                    'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
+                })
+    return msg
 
 def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate custodial office of the dissolution filing."""
