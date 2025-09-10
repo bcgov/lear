@@ -62,12 +62,6 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
 
     filing_type = 'dissolution'
     dissolution_type = get_str(dissolution, '/filing/dissolution/dissolutionType')
-    if common_validations.validate_certify_name(dissolution):
-        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
-        error = PermissionService.check_user_permission(required_permission, message)
-        if error:
-            return error
     if common_validations.validate_document_delivery_completing_party(dissolution) or common_validations.validate_editable_completing_party(dissolution):
         required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         message = f'Permission Denied - You do not have permissions to change completing party in this filing.'

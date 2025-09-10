@@ -23,7 +23,6 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (  # noqa: I001
-    validate_certify_name,
     validate_court_order,
     validate_document_delivery_completing_party,
     validate_effective_date,
@@ -44,12 +43,6 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if not incorporation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-    if not validate_certify_name(incorporation_json):
-        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
-        error = PermissionService.check_user_permission(required_permission, message)
-        if error:
-            return error
     if validate_document_delivery_completing_party(incorporation_json):
         required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         message = f'Permission Denied - You do not have permissions to change completing party in this filing.'

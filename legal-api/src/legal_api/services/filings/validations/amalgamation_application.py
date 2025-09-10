@@ -30,8 +30,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_phone_number,
-    validate_share_structure,
-    validate_certify_name
+    validate_share_structure
 )
 from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
@@ -49,12 +48,6 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     if not amalgamation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-    if not validate_certify_name(amalgamation_json):
-        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
-        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
-        error = PermissionService.check_user_permission(required_permission, message=message)
-        if error:
-            return error
     if validate_document_delivery_completing_party(amalgamation_json):
         required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
         message = f'Permission Denied - You do not have permissions to change completing party in this filing.'

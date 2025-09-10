@@ -20,8 +20,6 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services import flags
-from legal_api.services.filings.validations.common_validations import validate_certify_name
-from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_int
 from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003
@@ -36,13 +34,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if business.legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{business.legal_type} does not support agm location change filing.')}])
-
-    if not validate_certify_name(filing):
-        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        message = f'Permission Denied - You do not have permissions to change completing party in this filing.'
-        error = PermissionService.check_user_permission(required_permission, message=message)
-        if error:
-            return error
     msg = []
 
     agm_year_path: Final = '/filing/agmLocationChange/year'

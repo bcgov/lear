@@ -21,7 +21,6 @@ from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
-    validate_certify_name,
     validate_court_order,
     validate_foreign_jurisdiction,
 )
@@ -42,12 +41,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
                      [{'error': babel(f'{business.legal_type} does not support amalgamation out filing.')}])
 
     msg = []
-    if not validate_certify_name(filing):
-        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
-        error = PermissionService.check_user_permission(required_permission, message=message)
-        if error:
-            return error
     filing_type = 'amalgamationOut'
 
     is_valid_co_date = True

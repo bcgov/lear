@@ -15,8 +15,6 @@
 from http import HTTPStatus
 from typing import Dict, List
 
-from legal_api.services.filings.validations import common_validations
-from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
@@ -32,15 +30,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 def validate(business: Business, cod: Dict) -> Error:
     """Validate the Change of Directors filing."""
     if not business or not cod:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
-    
-    if common_validations.validate_certify_name(cod):
-        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
-        error = PermissionService.check_user_permission(required_permission, message=message)
-        if error:
-            return error
-        
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])        
     msg = []
 
     msg_directors_addresses = validate_directors_addresses(business, cod)
