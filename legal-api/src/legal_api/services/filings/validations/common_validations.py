@@ -17,6 +17,8 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
+from legal_api.models.party import Party
+from legal_api.models.party_role import PartyRole
 import pycountry
 import PyPDF2
 from flask import current_app
@@ -478,3 +480,27 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
+def find_updated_keys(filing_json: dict, filing_type: str) -> list:
+    """Find updated keys in the  firm filing. (replace, add, edit email )"""
+    
+    business_identifier = filing_json['filing']['business'].get('identifier')
+    parties = filing_json['filing'][filing_type].get('parties')
+    newemail = None
+    for item in parties:
+        email = item.get("officer", {}).get("email")
+        if email:
+            newemail = email.lower()
+            break
+
+    business = Business.find_by_identifier(business_identifier)
+    db_party = PartyRole.get_parties_by_role(business.id, 'proprietor')
+    oldemail = None
+    for person in db_party:
+        email = Party.find_by_id(person.party_id).email
+        
+        if email:
+            oldemail = email.lower()
+            if oldemail != newemail:
+                break
+
+    return oldemail != newemail
