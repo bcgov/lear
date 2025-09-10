@@ -493,17 +493,6 @@ def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-
         return True
     return False
 
-def validate_nigs(filing_json: Dict, filing_type: str ) -> Optional[str]:  # pylint: disable=too-many-branches
-    """Ensure business not in good standing."""
-    if filing_type == 'dissolution':
-        business_identifier = filing_json['filing']['business'].get('identifier')
-    if filing_type == 'alteration':
-        business_identifier = filing_json['filing'][filing_type]['business'].get('identifier')
-    business = Business.find_by_identifier(business_identifier)
-    if business.good_standing:
-        return True
-    return False
-
 def validate_editable_completing_party(filing_json: dict, filing_type: str) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure completing party is being edited."""
     officer = filing_json['filing'][filing_type]['parties']['officer']

@@ -68,7 +68,7 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
         error = PermissionService.check_user_permission(required_permission, message)
         if error:
             return error
-    if not common_validations.validate_nigs(dissolution, 'dissolution'):
+    if not business.good_standing:
         required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
         message = f'Permission Denied - You do not have permissions to override good standing in filing.'
         error = PermissionService.check_user_permission(required_permission, message)
