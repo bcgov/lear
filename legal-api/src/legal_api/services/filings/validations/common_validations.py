@@ -448,7 +448,7 @@ def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) 
     return msg
 
 def validate_effective_date(filing_json: dict) -> list:
-    """Validate effective date like incorporation filing, with debug prints."""
+    """Validate effective date"""
     msg = []
 
     now = dt.utcnow() 

@@ -291,6 +291,11 @@ def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
         if not email:
             msg.append({'error': 'Custodian email is required for voluntary dissolution.',
                         'path': f'/filing/dissolution/parties/{idx}/officer/email'})
+        elif any(char.isspace() for char in email):
+            msg.append({
+                'error': 'Custodian email cannot contain any whitespaces.',
+                'path': f'/filing/dissolution/parties/{idx}/officer/email'
+            })    
     return msg
 
 
