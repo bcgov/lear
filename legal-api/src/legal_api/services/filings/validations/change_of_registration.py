@@ -30,6 +30,7 @@ from legal_api.services.filings.validations.registration import (
     validate_party,
     validate_registration_court_order,
 )
+from legal_api.services.permissions import PermissionService
 
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
@@ -37,7 +38,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     filing_type = 'changeOfRegistration'
     if not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
-
     msg = []
     if filing.get('filing', {}).get('changeOfRegistration', {}).get('nameRequest', None):
         msg.extend(validate_name_request(filing, business.legal_type, filing_type))

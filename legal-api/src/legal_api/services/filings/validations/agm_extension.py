@@ -53,7 +53,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
 
     return None
 
-
 def first_agm_validation(business: Business, filing: Dict) -> list:
     """Validate filing for first AGM Extension."""
     msg = []

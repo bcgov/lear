@@ -25,6 +25,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 # noqa: I003;
 
 
@@ -42,7 +43,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if business.legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{business.legal_type} does not support consent continuation out filing.')}])
-
     msg = []
     filing_type = 'consentContinuationOut'
 

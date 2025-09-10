@@ -43,6 +43,7 @@ from legal_api.services.filings.validations.special_resolution import (
     validate_signatory_name,
     validate_signing_date,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_bool, get_date, get_str
 from legal_api.utils.auth import jwt
 
@@ -89,6 +90,8 @@ def validate(business: Business, filing: Dict) -> Error:
             _validate_special_resolution_correction(filing, business.legal_type, msg)
 
     if msg:
+        if any(err.get('code') == 'FORBIDDEN' for err in msg):
+            return Error(HTTPStatus.FORBIDDEN, msg)
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
     return None
@@ -219,9 +222,13 @@ def validate_start_date(business: Business, filing: Dict) -> list:
     lesser = registration_date + relativedelta(years=-10)
 
     if not jwt.validate_roles([STAFF_ROLE]):
-        if start_date < lesser:
-            msg.append({'error': 'Start date must be less than or equal to 10 years.',
-                        'path': start_date_path})
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        required_permission = ListActionsPermissionsAllowed.FIRM_NO_MIN_START_DATE.value
+        if required_permission not in authorized_permissions:
+            if start_date < lesser:
+                msg.append({'error': 'Start date must be less than or equal to 10 years.',
+                            'code': 'FORBIDDEN',
+                            'path': start_date_path})
     if start_date > greater:
         msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.',
                     'path': start_date_path})

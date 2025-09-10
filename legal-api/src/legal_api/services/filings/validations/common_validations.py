@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validations share through the different filings."""
+from http import HTTPStatus
 import io
 import re
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
+from legal_api.core.filing import Filing
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
-from flask import current_app
+from flask import current_app, g
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -165,6 +168,12 @@ def validate_court_order(court_order_path, court_order):
     """Validate the courtOrder data of the filing."""
     msg = []
 
+    required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
+    message = f'Permission Denied - You do not have permissions to add or change a court order in this filing.'
+    error = PermissionService.check_user_permission(required_permission, message)
+    if error:
+        return error
+
     # TODO remove it when the issue with schema validation is fixed
     if 'fileNumber' not in court_order:
         err_path = court_order_path + '/fileNumber'
@@ -238,7 +247,6 @@ def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str)
         msg.extend(validate_party_name(item, party_path, legal_type))
 
     return msg
-
 
 def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
@@ -478,3 +486,28 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
+def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    certify_name = filing_json['filing']['header'].get('certifiedBy')
+    if certify_name and certify_name == g.jwt_oidc_token_info.get('name'):
+        return True
+    return False
+
+def validate_editable_completing_party(filing_json: dict, filing_type: str) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure completing party is being edited."""
+    officer = filing_json['filing'][filing_type]['parties']['officer']
+    party_type = officer['partyType']
+    if party_type == 'person':
+        first_name = officer.get('firstName', None)
+        full_name = first_name + officer.get('lastName', None)
+        if full_name and full_name==g.jwt_oidc_token_info.get('name'):
+            return True
+    return False
+
+def validate_document_delivery_completing_party(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure document delivery completing party is being edited."""
+    return 'documentOptionalEmail' in filing_json['filing']['header']
+
+def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure Staff Filing is Allowed"""
+    return filing_json['filing']['header'].get('waiveFees') is True

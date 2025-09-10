@@ -34,7 +34,6 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     if business.legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{business.legal_type} does not support agm location change filing.')}])
-
     msg = []
 
     agm_year_path: Final = '/filing/agmLocationChange/year'

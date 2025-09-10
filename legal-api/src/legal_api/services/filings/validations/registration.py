@@ -16,6 +16,7 @@ from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, Final, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
@@ -25,6 +26,8 @@ from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_document_delivery_completing_party,
+    validate_editable_completing_party,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -41,13 +44,20 @@ def validate(registration_json: Dict) -> Optional[Error]:
 
     legal_type_path = '/filing/registration/nameRequest/legalType'
     legal_type = get_str(registration_json, legal_type_path)
+    filing_type = 'registration'
     if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return Error(
             HTTPStatus.BAD_REQUEST,
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
         )
 
-    filing_type = 'registration'
+    if validate_document_delivery_completing_party(registration_json) or validate_editable_completing_party(registration_json, filing_type):
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to completing party in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
+
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))

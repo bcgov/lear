@@ -15,11 +15,16 @@
 # pylint: disable=too-many-lines
 """This manages all of the permissions service."""
 from enum import Enum
+from http import HTTPStatus
 
 from flask import current_app, g
+from flask_jwt_oidc import JwtManager
 
+from legal_api.errors import Error
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
+from legal_api.models.business import Business
+from legal_api.models.filing import Filing
 from legal_api.services import authz
 from legal_api.services.cache import cache
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
@@ -72,6 +77,22 @@ class ListActionsPermissionsAllowed(str, Enum):
     STAFF_COMMENTS = 'STAFF_COMMENTS'
     STAFF_PAYMENT='STAFF_PAYMENT'
 
+class ListActionsPermissionsAllowed(str, Enum):
+    """Define an enum for permissions checks."""
+
+    DETAIL_COMMENTS = 'DETAIL_COMMENTS'
+    STAFF_COMMENTS = 'STAFF_COMMENTS'
+    COURT_ORDER_POA = 'COURT_ORDER_POA'
+    EDITABLE_COMPLETING_PARTY = 'EDITABLE_COMPLETING_PARTY'
+    EDITABLE_CERTIFY_NAME = 'EDITABLE_CERTIFY_NAME'
+    AML_OVERRIDES = 'AML_OVERRIDES'
+    FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
+    FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
+    FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
+    FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
+    STAFF_PAYMENT='STAFF_PAYMENT'
+    OVERRIDE_NIGS='OVERRIDE_NIGS'
+    FIRM_NO_MIN_START_DATE='FIRM_NO_MIN_START_DATE'
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -98,6 +119,7 @@ class PermissionService:
     def get_authorized_user_role(token_info: dict = None) -> str:
         """Return the first matching authorized role from the JWT, based on priority."""
         role_priority = [
+            authz.SYSTEM_ROLE,
             authz.STAFF_ROLE,
             authz.SBC_STAFF_ROLE,
             authz.CONTACT_CENTRE_STAFF_ROLE,
@@ -111,6 +133,8 @@ class PermissionService:
         roles_in_token = token_info.get('realm_access', {}).get('roles', [])
         for role in role_priority:
             if role in roles_in_token:
+                if role == authz.SYSTEM_ROLE:
+                    role = authz.STAFF_ROLE
                 return role
         return None
 
@@ -194,3 +218,17 @@ class PermissionService:
         else:
             current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
         return False
+    
+    @staticmethod
+    def check_user_permission(required_permission, message: str = None) -> Error:
+        """Check if the user has the required permission."""
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        
+        if required_permission not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{
+                    'message': message or 'Permission Denied - You do not have permissions to perform this action in filing.'
+                }]
+            )
+        return None

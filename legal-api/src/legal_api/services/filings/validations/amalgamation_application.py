@@ -22,6 +22,7 @@ from legal_api.services import STAFF_ROLE, flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_document_delivery_completing_party,
     validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
@@ -29,12 +30,13 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_phone_number,
-    validate_share_structure,
+    validate_share_structure
 )
 from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
     validate_parties_delivery_address,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 # noqa: I003
@@ -46,7 +48,12 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     if not amalgamation_json:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
-
+    if validate_document_delivery_completing_party(amalgamation_json):
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to change completing party in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message=message)
+        if error:
+            return error
     legal_type_path = f'/filing/{filing_type}/nameRequest/legalType'
     legal_type = get_str(amalgamation_json, legal_type_path)
     if not legal_type:
@@ -88,6 +95,8 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     msg.extend(validate_effective_date(amalgamation_json))
 
     if msg:
+        if any(err.get('code') == 'FORBIDDEN' for err in msg):
+            return Error(HTTPStatus.FORBIDDEN, msg)
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
@@ -241,6 +250,16 @@ def _validate_foreign_businesses(  # pylint: disable=too-many-arguments
         amalgamating_business,
         amalgamating_business_path) -> list:
     msg = []
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    allowed_role_foriegn = ListActionsPermissionsAllowed.AML_OVERRIDES.value
+    if allowed_role_foriegn not in authorized_permissions:
+       msg.append({
+            'error': (
+                f'Permission Denied - You do not have permissions to add foreign type filing.'
+            ),
+            'code': 'FORBIDDEN'
+        }
+        )
     if is_staff:
         msg.extend(validate_foreign_jurisdiction(amalgamating_business['foreignJurisdiction'],
                                                  f'{amalgamating_business_path}/foreignJurisdiction',
@@ -283,6 +302,8 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
         account_id,
         is_staff,
         amalgamating_business_path) -> list:
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    required_permission = ListActionsPermissionsAllowed.AML_OVERRIDES.value
     msg = []
     if amalgamating_business:
         if amalgamating_business.state == Business.State.HISTORICAL:
@@ -303,17 +324,19 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
 
         if not is_staff:
             if not _is_business_affliated(identifier, account_id):
-                msg.append({
-                    'error': (f'{identifier} is not affiliated with the currently '
-                              'selected BC Registries account.'),
-                    'path': amalgamating_business_path
-                })
+                if required_permission not in authorized_permissions:
+                    msg.append({
+                        'error': (f'{identifier} is not affiliated with the currently '
+                                'selected BC Registries account.'),
+                        'code': 'FORBIDDEN'
+                    })
 
             if not amalgamating_business.good_standing:
-                msg.append({
-                    'error': f'{identifier} is not in good standing.',
-                    'path': amalgamating_business_path
-                })
+                if required_permission not in authorized_permissions:
+                    msg.append({
+                        'error': f'{identifier} is not in good standing.',
+                        'code': 'FORBIDDEN'
+                    })
     else:
         msg.append({
             'error': f'A business with identifier:{identifier} not found.',

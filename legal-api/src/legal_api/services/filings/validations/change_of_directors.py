@@ -30,7 +30,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 def validate(business: Business, cod: Dict) -> Error:
     """Validate the Change of Directors filing."""
     if not business or not cod:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])        
     msg = []
 
     msg_directors_addresses = validate_directors_addresses(business, cod)
