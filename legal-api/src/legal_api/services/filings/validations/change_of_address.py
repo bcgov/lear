@@ -31,14 +31,12 @@ def validate(business: Business, coa: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
 
     filing_type = 'changeOfAddress'
-    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if common_validations.validate_certify_name(coa):
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message=message)
+        if error:
+            return error
     
     msg = []
 

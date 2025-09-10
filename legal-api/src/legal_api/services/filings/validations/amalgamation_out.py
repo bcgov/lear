@@ -42,14 +42,12 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
                      [{'error': babel(f'{business.legal_type} does not support amalgamation out filing.')}])
 
     msg = []
-    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if not validate_certify_name(filing):
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message=message)
+        if error:
+            return error
     filing_type = 'amalgamationOut'
 
     is_valid_co_date = True

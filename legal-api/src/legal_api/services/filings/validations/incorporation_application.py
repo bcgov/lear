@@ -45,21 +45,17 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
     if not validate_certify_name(incorporation_json):
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     if validate_document_delivery_completing_party(incorporation_json):
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to change completing party in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     legal_type_path = '/filing/incorporationApplication/nameRequest/legalType'
     legal_type = get_str(incorporation_json, legal_type_path)
     if not legal_type:

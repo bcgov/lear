@@ -62,29 +62,24 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
 
     filing_type = 'dissolution'
     dissolution_type = get_str(dissolution, '/filing/dissolution/dissolutionType')
-    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if common_validations.validate_certify_name(dissolution):
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
+        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     if common_validations.validate_document_delivery_completing_party(dissolution) or common_validations.validate_editable_completing_party(dissolution):
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to change completing party in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     if not common_validations.validate_nigs(dissolution, 'dissolution'):
-        allowed_role_comments = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to override good standing in filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+        message = f'Permission Denied - You do not have permissions to override good standing in filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     msg = []
 
     err = validate_dissolution_type(dissolution, business.legal_type)

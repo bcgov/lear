@@ -50,13 +50,11 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
     msg = []
     if validate_document_delivery_completing_party(filing_json):
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to change completing party in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     legal_type_path = '/filing/continuationIn/nameRequest/legalType'
     legal_type = get_str(filing_json, legal_type_path)
     if not legal_type:

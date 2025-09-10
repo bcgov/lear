@@ -18,6 +18,7 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
+from legal_api.core.filing import Filing
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
@@ -167,13 +168,11 @@ def validate_court_order(court_order_path, court_order):
     """Validate the courtOrder data of the filing."""
     msg = []
 
-    allowed_role_court_order_poa = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
-    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-    if allowed_role_court_order_poa not in authorized_permissions:
-        return Error(
-            HTTPStatus.FORBIDDEN,
-            [{ 'message': f'Permission Denied - You do not have permissions to submit court order for this filing.'}]
-        )
+    required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
+    message = f'Permission Denied - You do not have permissions to add or change a court order in this filing.'
+    error = PermissionService.check_user_permission(required_permission, message)
+    if error:
+        return error
 
     # TODO remove it when the issue with schema validation is fixed
     if 'fileNumber' not in court_order:
@@ -248,25 +247,6 @@ def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str)
         msg.extend(validate_party_name(item, party_path, legal_type))
 
     return msg
-
-def find_parties_actions(filing_json: dict, filing_type: str) -> list:
-    """Validate the parties actions."""
-    parties = filing_json['filing'][filing_type]['parties']
-    actions_list = []
-    roles_in_filings = []
-    for party in parties:
-        actions= party.get('actions',[])
-        if any(actions):
-            actions_list.extend(actions)
-    if 'NAME CHANGED' in actions_list:
-        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value)
-    if 'EMAIL CHANGED' in actions_list:
-        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value)
-    if 'REPLACED' in actions_list:
-        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value)
-    if 'ADDED' in actions_list:
-        roles_in_filings.extend(ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value)
-    return roles_in_filings
 
 def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     """Validate party name."""
@@ -370,13 +350,6 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
                                   is_region_for_us_required=True) -> list:
     """Validate foreign jurisdiction."""
     msg = []
-    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-    allowed_role_foriegn = ListActionsPermissionsAllowed.AML_OVERRIDES.value
-    if allowed_role_foriegn not in authorized_permissions:
-        return Error(
-            HTTPStatus.FORBIDDEN,
-            [{ 'message': f'Permission Denied - You do not have permissions to add foreign type filing.'}]
-        )
     country_code = foreign_jurisdiction.get('country').upper()  # country is a required field in schema
     region = (foreign_jurisdiction.get('region') or '').upper()
 
@@ -521,7 +494,7 @@ def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-
     return False
 
 def validate_nigs(filing_json: Dict, filing_type: str ) -> Optional[str]:  # pylint: disable=too-many-branches
-    """Ensure certify name is being edited."""
+    """Ensure business not in good standing."""
     if filing_type == 'dissolution':
         business_identifier = filing_json['filing']['business'].get('identifier')
     if filing_type == 'alteration':
@@ -533,27 +506,19 @@ def validate_nigs(filing_json: Dict, filing_type: str ) -> Optional[str]:  # pyl
 
 def validate_editable_completing_party(filing_json: dict, filing_type: str) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure completing party is being edited."""
-    party = filing_json['filing'][filing_type]['parties']
-    officer = party['officer']
+    officer = filing_json['filing'][filing_type]['parties']['officer']
     party_type = officer['partyType']
     if party_type == 'person':
         first_name = officer.get('firstName', None)
         full_name = first_name + officer.get('lastName', None)
-        if full_name and full_name.matches(g.jwt_oidc_token_info.get('name')):
+        if full_name and full_name==g.jwt_oidc_token_info.get('name'):
             return True
     return False
 
 def validate_document_delivery_completing_party(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure document delivery completing party is being edited."""
-    document_Optional_Email = filing_json['filing']['header'].get('documentOptionalEmail')
-    if document_Optional_Email is not None:
-        return True
-    return False
+    return 'documentOptionalEmail' in filing_json['filing']['header']
 
 def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
-    """Ensure certify name is being edited."""
-    print(filing_json)
-    header = filing_json['filing']['header']
-    if header.get('waiveFees') is not None and header.get('waiveFees') is True :
-        return True
-    return False
+    """Ensure Staff Filing is Allowed"""
+    return filing_json['filing']['header'].get('waiveFees') is True

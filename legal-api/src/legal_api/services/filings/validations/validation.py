@@ -70,13 +70,12 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
     err = None
     if not validate_staff_payment(filing_json):
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        allowed_role_comments = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions for staff payment in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
+        message = f'Permission Denied - You do not have permissions to add a staff payment in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
+
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
     if 'correction' in filing_json['filing'].keys():

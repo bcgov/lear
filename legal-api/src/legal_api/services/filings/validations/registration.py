@@ -51,23 +51,18 @@ def validate(registration_json: Dict) -> Optional[Error]:
             HTTPStatus.BAD_REQUEST,
             [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
         )
-    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
     if not validate_certify_name(registration_json):
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions edit completing party in this filing.'}]
-            )
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to change completing party in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
     if validate_document_delivery_completing_party(registration_json) or validate_editable_completing_party(registration_json, filing_type):
-        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-        allowed_role_comments = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
-        if allowed_role_comments not in authorized_permissions:
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{ 'message': f'Permission Denied - You do not have permissions to change certified by in this filing.'}]
-            )
-
+        required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+        message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message)
+        if error:
+            return error
 
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
