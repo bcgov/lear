@@ -31,7 +31,7 @@ from legal_api.services.filings.validations.dissolution import DissolutionTypes
 
 
 class ListFilingsPermissionsAllowed(str, Enum):
-    """Define an enum for permissions checks."""
+    """Define an enum for filing permissions checks."""
 
     ADDRESS_CHANGE_FILING = 'ADDRESS_CHANGE_FILING'
     AGM_CHG_LOCATION_FILING = 'AGM_CHG_LOCATION_FILING'
@@ -59,6 +59,23 @@ class ListFilingsPermissionsAllowed(str, Enum):
     SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
     STAFF_FILINGS = 'STAFF_FILINGS'
     TRANSITION_FILING = 'TRANSITION_FILING'
+    
+class ListActionsPermissionsAllowed(str, Enum):
+    """Define an enum for action permissions checks."""
+
+    ADD_ENTITY_NO_AUTHENTICATION = 'ADD_ENTITY_NO_AUTHENTICATION'
+    AML_OVERRIDES = 'AML_OVERRIDES'
+    COURT_ORDER_POA = 'COURT_ORDER_POA'
+    DETAIL_COMMENTS = 'DETAIL_COMMENTS'
+    EDITABLE_CERTIFY_NAME = 'EDITABLE_CERTIFY_NAME'
+    EDITABLE_COMPLETING_PARTY = 'EDITABLE_COMPLETING_PARTY'
+    FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
+    FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
+    FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
+    FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
+    OVERRIDE_NIGS='OVERRIDE_NIGS'
+    STAFF_COMMENTS = 'STAFF_COMMENTS'
+    STAFF_PAYMENT='STAFF_PAYMENT'
 
 class ListActionsPermissionsAllowed(str, Enum):
     """Define an enum for permissions checks."""
