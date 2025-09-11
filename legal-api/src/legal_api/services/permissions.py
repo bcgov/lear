@@ -206,10 +206,7 @@ class PermissionService:
             return Error(
                 HTTPStatus.FORBIDDEN,
                 [{
-                    'message': message or 'Permission Denied - You do not have permissions to perform this action in filing.'
-
                     'message': message or f'Permission Denied - You do not have permissions to perform {required_permission} in filing.'
-
                 }]
             )
         return None
