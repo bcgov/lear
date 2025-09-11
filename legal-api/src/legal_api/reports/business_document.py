@@ -579,8 +579,6 @@ class BusinessDocument:
         if filings:
             amalgamation_application = filings[0]
             business['business']['amalgamatedEntity'] = True
-            if amalgamation_application.effective_date:
-                business['business']['amalgamatedEffectiveDate'] = amalgamation_application.effective_date.isoformat()
             if (self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date) or\
                     (self._tombstone_filing_date and
                      amalgamation_application.effective_date < self._tombstone_filing_date):
