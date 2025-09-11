@@ -605,7 +605,7 @@ def isAddressSame(addr1: dict, addr2: dict) -> bool:
        'deliveryInstructions', 'streetAddressAdditional'
    ]
    for key in keys:
-       if normalize_str(addr1.get(key)) != normalize_str(addr2.get(key)):
+       if not is_same_str(addr1.get(key), addr2.get(key)):
            print(f"Address difference found in key '{key}': '{addr1.get(key)}' vs '{addr2.get(key)}'")
            return False
    return True
