@@ -201,8 +201,6 @@ class PermissionService:
     def check_user_permission(required_permission, message: str = None) -> Error:
         """Check if the user has the required permission."""
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-
-
         if required_permission not in authorized_permissions:
             return Error(
                 HTTPStatus.FORBIDDEN,
