@@ -68,7 +68,10 @@ class Flags():
         self.app = app
         self.sdk_key = app.config.get('LD_SDK_KEY')
 
+        current_app.logger.info('starting feature flags init; has sdk key: %s, env: %s', bool(self.sdk_key), app.env)
+
         if self.sdk_key or app.env != 'production':
+            current_app.logger.debug("skd key used: ", self.sdk_key)
 
             if app.env == 'production':
                 config = Config(sdk_key=self.sdk_key)
@@ -130,19 +133,27 @@ class Flags():
         - neither             -> anonymous 'user' context
         """
         if user and account_id:
-                return Context.create_multi(
-                    Flags._user_as_key(user),
-                    Flags._account_context(account_id),
-                )
+            current_app.logger.debug('creating LD context with user and account_id')
+            return Context.create_multi(
+                Flags._user_as_key(user),
+                Flags._account_context(account_id),
+            )
         if user:
-                return Flags._user_as_key(user)
+            current_app.logger.debug("creating LD context with user")
+            return Flags._user_as_key(user)
         if account_id:
-                return Flags._account_context(account_id)
+            current_app.logger.debug("creating LD context with account_id")
+            return Flags._account_context(account_id)
+
+        current_app.logger.debug("creating LD context with anonymous user")
         return Flags._get_anonymous_user()
 
 
     def is_on(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> bool:
         """Assert that the flag is set for this user."""
+        current_app.logger.debug('check if flag %s is on for user %s, account %s',
+                                 flag, user.sub if user else '-', account_id)
+
         client = self._get_client()
 
         ctx = self._build_context(user, account_id)
