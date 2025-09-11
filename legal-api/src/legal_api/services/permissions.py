@@ -15,10 +15,12 @@
 # pylint: disable=too-many-lines
 """This manages all of the permissions service."""
 from enum import Enum
+from http import HTTPStatus
 
 from flask import current_app, g
 
 from legal_api.core.filing import Filing as CoreFiling
+from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services import authz
 from legal_api.services.cache import cache
@@ -71,7 +73,7 @@ class ListActionsPermissionsAllowed(str, Enum):
     OVERRIDE_NIGS='OVERRIDE_NIGS'
     STAFF_COMMENTS = 'STAFF_COMMENTS'
     STAFF_PAYMENT='STAFF_PAYMENT'
-
+    FIRM_NO_MIN_START_DATE='FIRM_NO_MIN_START_DATE'
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -194,3 +196,18 @@ class PermissionService:
         else:
             current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
         return False
+
+    @staticmethod
+    def check_user_permission(required_permission, message: str = None) -> Error:
+        """Check if the user has the required permission."""
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+
+
+        if required_permission not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{
+                    'message': message or 'Permission Denied - You do not have permissions to perform this action in filing.'
+                }]
+            )
+        return None
