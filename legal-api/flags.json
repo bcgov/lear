@@ -28,6 +28,7 @@
     "dbc-enabled-business-types": {
       "types": ["SP"]
     },
+    "enable-officers-business-summary": false,
     "enabled-business-summary-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",
     "supported-amalgamation-entities": "BC BEN CC ULC C CBEN CCC CUL",
     "supported-amalgamation-out-entities": "BC BEN CC ULC C CBEN CCC CUL",

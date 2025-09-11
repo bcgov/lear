@@ -1,0 +1,43 @@
+<div class="warning-bar">
+  <div class="warning-content">
+    <div class="info-icon">i</div>
+    <div class="warning-text">
+      {{ warning_text }}
+    </div>
+  </div>
+</div>
+
+<style>
+  .warning-bar {
+    width: 100%;
+    background-color: #FCBA19;
+    height: 24px;
+  }
+
+  .warning-content {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 4px 13px 4px 9px;
+  }
+
+  .info-icon {
+    width: 16px;
+    height: 16px;
+    background-color: black;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-style: italic;
+    font-size: 12px;
+  }
+
+  .warning-text {
+    font-family: 'BCSans', sans-serif !important;
+    margin-left: 12px;
+    font-size: 8px;
+  }
+</style>
