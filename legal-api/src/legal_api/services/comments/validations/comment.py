@@ -37,7 +37,7 @@ def validate(comment: Dict, is_filing: bool) -> Error:
                     'path': comment_text_path})
 
     if is_filing:
-        message = f'Permission Denied - You do not have permissions to add detail comments in this filing.'
+        message = 'Permission Denied - You do not have permissions to add detail comments in this filing.'
         error = PermissionService.check_user_permission(ListActionsPermissionsAllowed.DETAIL_COMMENTS.value, message=message)
         if error:
             current_app.logger.debug('detail comment permission denied.')
@@ -48,7 +48,7 @@ def validate(comment: Dict, is_filing: bool) -> Error:
             msg.append({'error': _('Filing ID must be provided.'),
                         'path': filing_id_path})
     else:
-        message = f'Permission Denied - You do not have permissions to add staff comments.'
+        message = 'Permission Denied - You do not have permissions to add staff comments.'
         error = PermissionService.check_user_permission(ListActionsPermissionsAllowed.STAFF_COMMENTS.value, message=message)
         if error:
             current_app.logger.debug('Staff comment permission denied.')
