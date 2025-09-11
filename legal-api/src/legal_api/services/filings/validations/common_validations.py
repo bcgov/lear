@@ -593,7 +593,7 @@ def isNameChanged(name1: dict, name2: dict) -> bool:
    name_keys = ['firstName', 'middleName', 'lastName', 'organizationName']
    print("Comparing names:", name1, name2)
    for key in name_keys:
-       if normalize_str(name1.get(key)) != normalize_str(name2.get(key)):
+       if not is_same_str(name1.get(key), name2.get(key)):
            return True
    return False
 
