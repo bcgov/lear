@@ -491,7 +491,7 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
     for item in parties:
         roles = item.get("roles", [])
         role_type = roles[0].get("roleType") if roles else None
-        if role_type != 'Proprietor':
+        if role_type.lower() != PartyRole.RoleTypes.PROPRIETOR.value:
             continue
         officer = item.get("officer", {})
         email = officer.get("email")
