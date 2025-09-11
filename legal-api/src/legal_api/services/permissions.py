@@ -69,11 +69,12 @@ class ListActionsPermissionsAllowed(str, Enum):
     FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
     FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
     FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
+    FIRM_NO_MIN_START_DATE = 'FIRM_NO_MIN_START_DATE'
     FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
     OVERRIDE_NIGS='OVERRIDE_NIGS'
     STAFF_COMMENTS = 'STAFF_COMMENTS'
     STAFF_PAYMENT='STAFF_PAYMENT'
-    FIRM_NO_MIN_START_DATE='FIRM_NO_MIN_START_DATE'
+
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -206,6 +207,9 @@ class PermissionService:
                 HTTPStatus.FORBIDDEN,
                 [{
                     'message': message or 'Permission Denied - You do not have permissions to perform this action in filing.'
+
+                    'message': message or f'Permission Denied - You do not have permissions to perform {required_permission} in filing.'
+
                 }]
             )
         return None

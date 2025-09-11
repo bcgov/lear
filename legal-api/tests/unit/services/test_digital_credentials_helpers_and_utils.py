@@ -11,13 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Tests for digital credentials helpers and utily functions.
+"""Tests for digital credentials helpers and utility functions.
 
 Test suite to ensure that helpers and utility functions for digital credentials are working as expected
 """
 
+from datetime import datetime, timezone
+
 import pytest
-from legal_api.models import Party, User
+from legal_api.models import Business, Party, User
+from legal_api.services.digital_credentials_helpers import get_registered_on_dateint
 from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
 
 
@@ -95,3 +98,24 @@ def test_determine_allowed_business_types_missing_flag(app, monkeypatch):
     with app.app_context():
         result = determine_allowed_business_types(['SP', 'GP'], ['BEN'])
         assert result == []
+
+
+@pytest.mark.parametrize(
+    'founding_date, expected_dateint',
+    [
+        (datetime(2023, 1, 15), '20230115'),
+        (datetime(2020, 2, 29), '20200229'),
+        (datetime(2026, 1, 1, 4, 16, 35, 986357, tzinfo=timezone.utc), '20251231'),
+        (datetime(2025, 9, 4, 4, 16, 35, 986357, tzinfo=timezone.utc), '20250903'),
+        (datetime(2025, 9, 4, 14, 16, 35, 986357, tzinfo=timezone.utc), '20250904'),
+        (None, ''),
+    ]
+)
+def test_get_registered_on_dateint(app, founding_date, expected_dateint):
+    """Test get_registered_on_dateint function with various dates."""
+    business = Business()
+    business.founding_date = founding_date
+    
+    with app.app_context():
+        result = get_registered_on_dateint(business)
+        assert result == expected_dateint
