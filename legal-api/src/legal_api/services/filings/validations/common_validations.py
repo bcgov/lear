@@ -480,7 +480,7 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
-def find_updated_keys(business: Business ,filing_json: dict, filing_type) -> list:
+def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_type) -> list:
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
     parties = filing_json['filing'][filing_type].get('parties')
