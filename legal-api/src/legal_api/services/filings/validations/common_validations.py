@@ -658,3 +658,22 @@ def validate_certify_name(filing_json) -> bool:
         current_app.logger.error(err)
         return True
     return True
+def validate_certified_by(filing_json: dict, filing_type: str) -> list:
+    """Validate and normalize certifiedBy field."""
+    msg = []
+
+    certified_by = filing_json.get('filing', {}).get('header', {}).get('certifiedBy')
+
+    # empty string is passed for some staff filings that have no ceritifiedBy component
+    if certified_by not in (None, ""):
+
+        normalized = re.sub(r'\s+', ' ', certified_by).strip()
+        filing_json['filing']['header']['certifiedBy'] = normalized
+
+        if not normalized:
+            msg.append({
+                'error': 'Certified By field cannot be only whitespace.',
+                'path': '/filing/header/certifiedBy'
+            })
+
+    return msg

@@ -68,3 +68,34 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message, m
             assert message == err.msg[0]['error']
     else:
         assert not err
+
+@pytest.mark.parametrize(
+    'test_name, reason, expected_code, message',
+    [
+        ('ONLY_WHITESPACE', '     ', HTTPStatus.BAD_REQUEST, 'Reason cannot be only whitespace.'),
+        ('VALID_REASON', 'Test Reason', None, None),
+        ('VALID_REASON_WITH_SPACES', '   Valid Reason   ', None, None),
+    ]
+)
+def test_validate_agm_reason(session, mocker, test_name, reason, expected_code, message, monkeypatch):
+    """Assert validate agm reason"""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag: "BC BEN CC ULC C CBEN CCC CUL" if flag == 'supported-agm-location-change-entities' else {}
+    )
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
+    filing['filing']['header']['name'] = 'agmLocationChange'
+    filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year)
+
+    filing['filing']['agmLocationChange']['reason'] = reason
+
+    err = validate(business, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert expected_code == err.code
+        assert message == err.msg[0]['error']
+    else:
+        assert not err
