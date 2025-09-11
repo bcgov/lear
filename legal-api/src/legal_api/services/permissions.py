@@ -75,7 +75,6 @@ class ListActionsPermissionsAllowed(str, Enum):
     STAFF_COMMENTS = 'STAFF_COMMENTS'
     STAFF_PAYMENT='STAFF_PAYMENT'
 
-
 class PermissionService:
     """Service to manage permissions for user roles."""
 
