@@ -78,13 +78,7 @@ def test_find_alias_by_business_and_type(session):
         type='TRANSLATION',
         business_id=business.id
     )
-    alias2 = Alias(
-        alias='DEF Ltd.',
-        type='DBA',
-        business_id=business.id
-    )
     alias1.save()
-    alias2.save()
 
     res = Alias.find_by_type(business.id, 'TRANSLATION')
 

@@ -637,8 +637,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions,
-            # TODO: fix alternate names
-            # 'alternateNames': self.get_alternate_names()
+            'alternateNames': self.get_alternate_names()
         }
         self._extend_json(d)
 
@@ -826,27 +825,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         - Return empty list if there are no alternate name entries
         """
         alternate_names = []
-
-        # Fetch aliases and related filings in a single query
-        alias_version = VersioningProxy.version_class(db.session(), Alias)
-        filing_alias = aliased(Filing)
-        aliases_query = db.session.query(
-            alias_version.alias,
-            alias_version.type,
-            filing_alias.effective_date
-        ).outerjoin(
-            filing_alias, filing_alias.transaction_id == alias_version.transaction_id
-        ).filter(
-            alias_version.id.in_([a.id for a in self.aliases]),
-            alias_version.end_transaction_id is None
-        )
-
-        for alias, alias_type, effective_date in aliases_query:
-            alternate_names.append({
-                'name': alias,
-                'startDate': LegislationDatetime.format_as_legislation_date(effective_date),
-                'type': alias_type
-            })
 
         # Get SP DBA entries if not SP
         if self.legal_type != Business.LegalTypes.SOLE_PROP:
