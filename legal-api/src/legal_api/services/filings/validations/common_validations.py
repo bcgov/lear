@@ -484,19 +484,26 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
     parties = filing_json['filing'][filing_type].get('parties')
-    
+
+    if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
+        role_type = PartyRole.RoleTypes.PROPRIETOR.value
+    elif business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
+        role_type = PartyRole.RoleTypes.PARTNER.value
+    else:
+        return updated_keys
+
     # Get business and existing parties from DB
-    db_party_roles = PartyRole.get_parties_by_role(business.id, 'proprietor')
+    db_party_roles = PartyRole.get_parties_by_role(business.id, role_type)
     parties = filing_json['filing'][filing_type].get('parties', [])
-    for item in parties:
-        roles = item.get("roles", [])
-        role_type = roles[0].get("roleType") if roles else None
-        if role_type.lower() != PartyRole.RoleTypes.PROPRIETOR.value:
+    for party in parties:
+        roles = party.get("roles", [])
+        party_role_type = roles[0].get("roleType") if roles else None
+        if party_role_type.lower() != role_type.lower():
             continue
-        officer = item.get("officer", {})
+        officer = party.get("officer", {})
         email = officer.get("email")
-        mailing_address = item.get("mailingAddress", {})
-        delivery_address = item.get("deliveryAddress", {})
+        mailing_address = party.get("mailingAddress", {})
+        delivery_address = party.get("deliveryAddress", {})
 
         # Match with existing DB party
         for role in db_party_roles:
@@ -505,7 +512,7 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 continue
             changes = {}
             # Email comparison
-            if not isEmailSame(email, db_party.email):
+            if not is_email_changed(email, db_party.email):
                 changes['email'] = {
                     'old': normalize_str(db_party.email),
                     'new': normalize_str(email)
@@ -523,7 +530,7 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 'lastName': officer.get('lastName', ''),
                 'organizationName': officer.get('organizationName', '')
             }
-            name_changed = isNameChanged(old_name, new_name)
+            name_changed = is_name_changed(old_name, new_name)
             changes['name'] = {
                 'old': old_name,
                 'new': new_name,
@@ -549,7 +556,7 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 'deliveryInstructions': mailing_address.get('deliveryInstructions', ''),
                 'streetAddressAdditional': mailing_address.get('streetAddressAdditional', '')
             }
-            if not isAddressSame(old_mailing, new_mailing):
+            if not is_address_changed(old_mailing, new_mailing):
                 changes['address'] = {'old': old_mailing, 'new': new_mailing}
             # Delivery address comparison
             db_delivery_address = Address.find_by_id(mailing_address.get('id')) if mailing_address.get('id') else None
@@ -571,7 +578,7 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 'deliveryInstructions': delivery_address.get('deliveryInstructions', ''),
                 'streetAddressAdditional': delivery_address.get('streetAddressAdditional', '')
             }
-            if not isAddressSame(old_delivery, new_delivery):
+            if not is_address_changed(old_delivery, new_delivery):
                 changes['deliveryAddress'] = {'old': old_delivery, 'new': new_delivery}
             if changes:
                 updated_keys.append({'name_changed':changes.get('name', {}).get('changed', False), 'email_changed': 'email' in changes,
@@ -583,21 +590,24 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
 def normalize_str(value: str) -> str:
    """Convert None or empty values to a stripped uppercase string."""
    return (value or '').strip().upper()
+   
+def is_same_str(str1: str, str2: str) -> bool:
+   """Check if two strings are the same after normalization."""
+   return normalize_str(str1) == normalize_str(str2)
 
-def isEmailSame(email1: str, email2: str) -> bool:
+def is_email_changed(email1: str, email2: str) -> bool:
    """Check if two emails are the same."""
    return normalize_str(email1) == normalize_str(email2)
 
-def isNameChanged(name1: dict, name2: dict) -> bool:
+def is_name_changed(name1: dict, name2: dict) -> bool:
    """Check if two names are different."""
    name_keys = ['firstName', 'middleName', 'lastName', 'organizationName']
-   print("Comparing names:", name1, name2)
    for key in name_keys:
        if not is_same_str(name1.get(key), name2.get(key)):
            return True
    return False
 
-def isAddressSame(addr1: dict, addr2: dict) -> bool:
+def is_address_changed(addr1: dict, addr2: dict) -> bool:
    """Check if two addresses are the same."""
    keys = [
        'streetAddress', 'addressCity', 'addressRegion',
