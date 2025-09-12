@@ -498,6 +498,8 @@ def validate_certify_name(filing_json) -> bool:
         name = g.jwt_oidc_token_info.get('name')
         if certify_name and certify_name == name:
             return False
-    except (AttributeError, RuntimeError):
-        pass
+    except (AttributeError, RuntimeError) as err:
+        current_app.logger.error('No JWT present to validate certify name against.')
+        current_app.logger.error(err)
+        return True
     return True
