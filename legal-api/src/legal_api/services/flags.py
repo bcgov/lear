@@ -71,7 +71,7 @@ class Flags():
         current_app.logger.info('starting feature flags init; has sdk key: %s, env: %s', bool(self.sdk_key), app.env)
 
         if self.sdk_key or app.env != 'production':
-            current_app.logger.debug("skd key used: ", self.sdk_key)
+            current_app.logger.debug("sdk key used: %s", self.sdk_key)
 
             if app.env == 'production':
                 config = Config(sdk_key=self.sdk_key)
