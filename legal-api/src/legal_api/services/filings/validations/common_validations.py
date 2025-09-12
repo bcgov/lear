@@ -478,7 +478,7 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
-def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
+def validate_staff_payment(filing_json: dict) -> bool:
     """Ensure Staff Filing is Allowed"""
     header = filing_json['filing']['header']
     if (
