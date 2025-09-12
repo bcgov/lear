@@ -483,12 +483,12 @@ def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disab
     header = filing_json['filing']['header']
     # FAS
     if header.get('routingSlipNumber'):
-        if (not header.get('routingSlipNumber')) and (header.get('datNumber')) and header.get('folioNumber') and 'priority' in header:
+        if (not header.get('bcolAccountNumber')) and (header.get('datNumber')) and header.get('folioNumber') and 'priority' in header:
             return True
         return False
     # BCOL
     elif header.get('bcolAccountNumber'):
-        if (not header.get('priority')) and (not header.get('datNumber'))and not header.get('folioNumber') and 'priority' in header:
+        if (not header.get('routingSlipNumber')) and (header.get('datNumber'))and header.get('folioNumber') and 'priority' in header:
             return True
         return False
     # Waive Fees
