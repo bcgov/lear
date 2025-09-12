@@ -19,6 +19,8 @@ from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services import flags
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_bool, get_str
 
 from .common_validations import (
@@ -37,7 +39,12 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
     msg = []
-
+    if not business.good_standing and flags.is_on('enabled-deeper-permission-action'):
+        required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+        message = 'Permission Denied - You do not have permissions send not in good standing business in this filing.'
+        error = PermissionService.check_user_permission(required_permission, message=message)
+        if error:
+           return error
     msg.extend(type_change_validation(filing, business))
     msg.extend(company_name_validation(filing, business))
     msg.extend(share_structure_validation(filing, business))
