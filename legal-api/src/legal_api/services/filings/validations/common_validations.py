@@ -486,7 +486,7 @@ def validate_staff_payment(filing_json: dict) -> bool:
         'bcolAccountNumber' in header or
         'datNumber' in header or
         'waiveFees' in header or
-        'priority' in header
+    """Check certify_by is modified."""
     ):
         return True
     return False
