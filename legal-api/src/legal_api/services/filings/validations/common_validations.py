@@ -486,13 +486,13 @@ def validate_staff_payment(filing_json: dict) -> bool:
         'bcolAccountNumber' in header or
         'datNumber' in header or
         'waiveFees' in header or
-    """Check certify_by is modified."""
+        'priority' in header
     ):
         return True
     return False
 
 def validate_certify_name(filing_json) -> bool:
-    """Ensure certify name is being edited."""
+    """Check certify_by is modified."""
     certify_name = filing_json['filing']['header'].get('certifiedBy')
     try:
         name = g.jwt_oidc_token_info.get('name')

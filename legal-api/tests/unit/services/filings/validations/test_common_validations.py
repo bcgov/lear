@@ -38,6 +38,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_certify_name,
     validate_offices_addresses,
     validate_parties_addresses,
+    validate_staff_payment,
 )
 
 
@@ -123,11 +124,19 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
 
+def test_validate_staff_payment(session):
+    """Test staff payment validation."""
+    filing = copy.deepcopy(FILING_HEADER)
+    assert not validate_staff_payment(filing)
+
+    filing['filing']['header']['waiveFees'] = True
+    assert validate_staff_payment(filing)
+
 @pytest.mark.parametrize(('certified_value', 'expected'), [
-    ('First Last', True),
-    ('Forst Last', False),
-    ('NOT_SET', False),
-    ('First  Last', False)
+    ('First Last', False),
+    ('Forst Last', True),
+    ('NOT_SET', True),
+    ('First  Last', True)
 ])
 def test_validate_certify(session, monkeypatch, certified_value, expected):
     """Test certify name validation when no JWT is present."""
