@@ -686,13 +686,11 @@ def test_alteration_good_standing(session, good_standing, has_permission, should
     # setup
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type=entity_type)
-
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     f['filing']['business']['legalType'] = entity_type
     f['filing']['alteration']['business']['legalType'] = 'BEN'
     del f['filing']['alteration']['nameRequest']
-
     if has_permission:
         mock_check_user_permission = MagicMock(return_value=None)
     else:
@@ -700,11 +698,9 @@ def test_alteration_good_standing(session, good_standing, has_permission, should
             HTTPStatus.FORBIDDEN,
             [{'error': 'Permission Denied - You do not have permissions send not in gpod standing businesss in this filing.'}],
         ))
-    with patch.object(Business, 'good_standing', return_value=good_standing):
+    with patch.object(Business, 'good_standing', new_callable =lambda: good_standing):
         with patch.object(PermissionService, 'check_user_permission', mock_check_user_permission):
             err = validate(business, f)
-    print(err.msg if err else 'No errors')
-    print(f'good_standing={good_standing}, has_permission={has_permission}, should_pass={should_pass}')
     if should_pass:
         # check that validation passed
         assert None is err
