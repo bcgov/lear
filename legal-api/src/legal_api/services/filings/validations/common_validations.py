@@ -17,15 +17,14 @@ import re
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
-from legal_api.models.party import Party
-from legal_api.models.party_role import PartyRole
+
 import pycountry
 import PyPDF2
 from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business
+from legal_api.models import Address, Business, Party, PartyRole
 from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -480,7 +479,7 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
-def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_type) -> list:
+def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list:
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
     if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
@@ -493,6 +492,9 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
     # Get business and existing parties from DB
     db_party_roles = PartyRole.get_parties_by_role(business.id, role_type)
     parties = filing_json['filing'][filing_type].get('parties', [])
+
+    matched_db_party_ids = set()
+
     for party in parties:
         roles = party.get("roles", [])
         party_role_type = roles[0].get("roleType") if roles else None
@@ -504,10 +506,50 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
         delivery_address = party.get("deliveryAddress", {})
 
         # Match with existing DB party
-        for role in db_party_roles:
-            db_party = Party.find_by_id(role.party_id)
-            if not db_party:
-                continue
+        matched_db_party = None
+        party_id = party.get("officer", {}).get("id")
+        if party_id:
+            for role in db_party_roles:
+                if role.party_id == party_id and role.party_id not in matched_db_party_ids:
+                    matched_db_party = Party.find_by_id(role.party_id)
+                    if matched_db_party:
+                        matched_db_party_ids.add(role.party_id)
+                        break
+        else:
+            for role in db_party_roles:
+                if role.party_id in matched_db_party_ids:
+                    continue
+                db_party = Party.find_by_id(role.party_id)
+                if not db_party:
+                    continue
+
+                # Name comparison
+                old_name = {
+                    'firstName': db_party.first_name or '',
+                    'middleName': db_party.middle_initial or '',
+                    'lastName': db_party.last_name or '',
+                    'organizationName': db_party.organization_name or ''
+                }
+                new_name = {
+                    'firstName': officer.get('firstName', ''),
+                    'middleName': officer.get('middleName', ''),
+                    'lastName': officer.get('lastName', ''),
+                    'organizationName': officer.get('organizationName', '')
+                }
+
+                name_matches = all(
+                    normalize_str(old_name.get(key)) == normalize_str(new_name.get(key))
+                    for key in ['firstName', 'middleName', 'lastName', 'organizationName']
+                )
+
+                email_matches = normalize_str(db_party.email) == normalize_str(email)
+
+                if name_matches and email_matches:
+                    matched_db_party = db_party
+                    matched_db_party_ids.add(role.party_id)
+                    break
+
+        if matched_db_party:
             changes = {}
             # Email comparison
             if not is_email_changed(email, db_party.email):
@@ -515,19 +557,20 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                     'old': normalize_str(db_party.email),
                     'new': normalize_str(email)
                 }
-            # Name comparison
+            
             old_name = {
-                'firstName': db_party.first_name or '',
-                'middleName': db_party.middle_initial or '',
-                'lastName': db_party.last_name or '',
-                'organizationName': db_party.organization_name or ''
-            }
+                    'firstName': matched_db_party.first_name or '',
+                    'middleName': matched_db_party.middle_initial or '',
+                    'lastName': matched_db_party.last_name or '',
+                    'organizationName': matched_db_party.organization_name or ''
+                }
             new_name = {
                 'firstName': officer.get('firstName', ''),
                 'middleName': officer.get('middleName', ''),
                 'lastName': officer.get('lastName', ''),
                 'organizationName': officer.get('organizationName', '')
             }
+          
             name_changed = is_name_changed(old_name, new_name)
             changes['name'] = {
                 'old': old_name,
@@ -535,7 +578,8 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 'changed': name_changed
             }
             # Mailing address comparison
-            db_mailing_address = Address.find_by_id(db_party.mailing_address_id) if db_party.mailing_address_id else None
+            db_mailing_address = (Address.find_by_id(db_party.mailing_address_id)
+                                  if db_party.mailing_address_id else None)
             old_mailing = {
                 'streetAddress': db_mailing_address.street or '',
                 'addressCity': db_mailing_address.city or '',
@@ -554,10 +598,14 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 'deliveryInstructions': mailing_address.get('deliveryInstructions', ''),
                 'streetAddressAdditional': mailing_address.get('streetAddressAdditional', '')
             }
+
             if not is_address_changed(old_mailing, new_mailing):
                 changes['address'] = {'old': old_mailing, 'new': new_mailing}
+
             # Delivery address comparison
-            db_delivery_address = Address.find_by_id(mailing_address.get('id')) if mailing_address.get('id') else None
+            db_delivery_address = (Address.find_by_id(mailing_address.get('id'))
+                                   if mailing_address.get('id') else None)
+            
             old_delivery = {
                 'streetAddress': db_delivery_address.street or '',
                 'addressCity': db_delivery_address.city or '',
@@ -576,12 +624,18 @@ def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_ty
                 'deliveryInstructions': delivery_address.get('deliveryInstructions', ''),
                 'streetAddressAdditional': delivery_address.get('streetAddressAdditional', '')
             }
+
             if not is_address_changed(old_delivery, new_delivery):
                 changes['deliveryAddress'] = {'old': old_delivery, 'new': new_delivery}
+
             if changes:
-                updated_keys.append({'name_changed':changes.get('name', {}).get('changed', False), 'email_changed': 'email' in changes,
-            'address_changed': 'address' in changes, 'delivery_address_changed': 'deliveryAddress' in changes})
-            break 
+                updated_keys.append({
+                    'name_changed':changes.get('name', {}).get('changed', False),
+                    'email_changed': 'email' in changes,
+                    'address_changed': 'address' in changes,
+                    'delivery_address_changed': 'deliveryAddress' in changes
+                })
+
     return updated_keys
 
 
@@ -614,6 +668,5 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
    ]
    for key in keys:
        if not is_same_str(addr1.get(key), addr2.get(key)):
-           print(f"Address difference found in key '{key}': '{addr1.get(key)}' vs '{addr2.get(key)}'")
            return False
    return True
