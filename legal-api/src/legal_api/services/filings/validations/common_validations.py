@@ -507,6 +507,10 @@ def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disab
 def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
     certify_name = filing_json['filing']['header'].get('certifiedBy')
-    if certify_name and certify_name == g.jwt_oidc_token_info.get('name'):
-        return True
+    try:
+        name =g.jwt_oidc_token_info.get('name')
+        if certify_name and certify_name == name:
+            return True
+    except (AttributeError, RuntimeError):
+        pass
     return False
