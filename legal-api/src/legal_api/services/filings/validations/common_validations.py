@@ -479,7 +479,7 @@ def validate_effective_date(filing_json: dict) -> list:
     return msg
 
 def validate_staff_payment(filing_json: dict) -> bool:
-    """Ensure Staff Filing is Allowed"""
+    """Check staff specific headers are in the filing."""
     header = filing_json['filing']['header']
     if (
         'routingSlipNumber' in header or
