@@ -515,46 +515,12 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     if matched_db_party:
                         matched_db_party_ids.add(role.party_id)
                         break
-        else:
-            for party_role in db_party_roles:
-                if party_role.party_id in matched_db_party_ids:
-                    continue
-                db_party = role.party
-                if not db_party:
-                    continue
-
-                # Name comparison
-                old_name = {
-                    'firstName': db_party.first_name or '',
-                    'middleName': db_party.middle_initial or '',
-                    'lastName': db_party.last_name or '',
-                    'organizationName': db_party.organization_name or ''
-                }
-                new_name = {
-                    'firstName': officer.get('firstName', ''),
-                    'middleName': officer.get('middleName', ''),
-                    'lastName': officer.get('lastName', ''),
-                    'organizationName': officer.get('organizationName', '')
-                }
-
-                name_matches = all(
-                    normalize_str(old_name.get(key)) == normalize_str(new_name.get(key))
-                    for key in ['firstName', 'middleName', 'lastName', 'organizationName']
-                )
-
-                email_matches = is_same_str(email, db_party.email)
-
-                if name_matches and email_matches:
-                    matched_db_party = db_party
-                    matched_db_party_ids.add(party_role.party_id)
-                    break
-
         if matched_db_party:
             changes = {}
             # Email comparison
-            if not is_same_str(email, db_party.email):
+            if not is_same_str(email, matched_db_party.email):
                 changes['email'] = {
-                    'old': normalize_str(db_party.email),
+                    'old': normalize_str(matched_db_party.email),
                     'new': normalize_str(email)
                 }
             
@@ -578,8 +544,8 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                 'changed': name_changed
             }
             # Mailing address comparison
-            db_mailing_address = (Address.find_by_id(db_party.mailing_address_id)
-                                  if db_party.mailing_address_id else None)
+            db_mailing_address = (Address.find_by_id(matched_db_party.mailing_address_id)
+                                  if matched_db_party.mailing_address_id else None)
             old_mailing = {
                 'streetAddress': db_mailing_address.street or '',
                 'addressCity': db_mailing_address.city or '',
