@@ -123,17 +123,18 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
 
-@pytest.mark.parametrize('test_name, certified_value','jwt_name' 'expected', [
-    ('names_match', 'First Last', 'First Last', True),
-    ('names_do_not_match', 'First Last', 'Forst Last', False),
-    ('certify_name_not_set', 'NOT_SET', 'First Last', False),
-    ('a_bit_different', 'First Last', 'First  Last', False)
+@pytest.mark.parametrize(('certified_value', 'expected'), [
+    ('First Last', True),
+    ('Forst Last', False),
+    ('NOT_SET', False),
+    ('First  Last', False)
 ])
-def test_validate_certify(session, monkeypatch, test_name, certified_value, jwt_name, expected):
+def test_validate_certify(session, monkeypatch, certified_value, expected):
     """Test certify name validation when no JWT is present."""
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['header']['certifiedBy'] = certified_value
+    if certified_value != 'NOT_SET':
+        filing['filing']['header']['certifiedBy'] = certified_value
     with patch('legal_api.services.filings.validations.common_validations.g') as mock_g:
-        mock_g.jwt_oidc_token_info = {'name': jwt_name}
-    result = validate_certify_name(filing)
-    assert result == expected
+        mock_g.jwt_oidc_token_info = {'name': 'First Last'}
+        result = validate_certify_name(filing)
+        assert result == expected
