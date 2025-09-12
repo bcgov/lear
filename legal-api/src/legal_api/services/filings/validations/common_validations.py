@@ -481,36 +481,17 @@ def validate_effective_date(filing_json: dict) -> list:
 def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure Staff Filing is Allowed"""
     header = filing_json['filing']['header']
-    # FAS
-    if header.get('routingSlipNumber'):
-        if (not header.get('bcolAccountNumber')) and (header.get('datNumber')) and header.get('folioNumber') and 'priority' in header:
-            return True
+    if header.get('routingSlipNumber') or header.get('datNumber') or header.get('waiveFees') or header.get('priority'):
         return False
-    # BCOL
-    elif header.get('bcolAccountNumber'):
-        if (not header.get('routingSlipNumber')) and (header.get('datNumber'))and header.get('folioNumber') and 'priority' in header:
-            return True
-        return False
-    # Waive Fees
-    elif header.get('waiveFees'):
-        if (not header.get('routingSlipNumber')) and (not header.get('bcolAccountNumber')) and (not header.get('datNumber'))and not header.get('folioNumber') and header.get('priority') is False:
-            return True
-        else:
-            return False
-    # No Payment
-    else:
-        if (not header.get('routingSlipNumber')) and (not header.get('bcolAccountNumber')) and (not header.get('datNumber'))and not header.get('folioNumber') and header.get('priority') is False:
-            return True
-        return False
-            
-            
+    return True
+
 def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
     certify_name = filing_json['filing']['header'].get('certifiedBy')
     try:
         name = g.jwt_oidc_token_info.get('name')
         if certify_name and certify_name == name:
-            return True
+            return False
     except (AttributeError, RuntimeError):
         pass
-    return False
+    return True

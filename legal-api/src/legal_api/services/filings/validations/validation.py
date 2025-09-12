@@ -19,6 +19,7 @@ from flask_babel import _ as babel  # noqa: N813
 
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import validate_certify_name, validate_staff_payment
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
@@ -70,14 +71,14 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
     err = None
 
-    if not validate_staff_payment(filing_json):
+    if validate_staff_payment(filing_json) and flags.is_on('enabled-deeper-permission-action'):
         required_permission = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
         message = f'Permission Denied - You do not have permissions to add a staff payment in this filing.'
         error = PermissionService.check_user_permission(required_permission, message)
         if error:
             return error
 
-    if not validate_certify_name(filing_json):
+    if validate_certify_name(filing_json) and flags.is_on('enabled-deeper-permission-action'):
         required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
         message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
         error = PermissionService.check_user_permission(required_permission, message)
