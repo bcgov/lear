@@ -483,8 +483,6 @@ def validate_effective_date(filing_json: dict) -> list:
 def find_updated_keys_for_firms(business: Business ,filing_json: dict, filing_type) -> list:
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
-    parties = filing_json['filing'][filing_type].get('parties')
-
     if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
         role_type = PartyRole.RoleTypes.PROPRIETOR.value
     elif business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
