@@ -14,9 +14,12 @@
 """Test Correction validations."""
 import copy
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import MagicMock, create_autospec, patch
 from datetime import date
-
+from flask import g
+from legal_api.errors import Error
+from legal_api.services.authz import PUBLIC_USER
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
@@ -174,6 +177,7 @@ class MockResponse:
     (True, 'legal_name-BC1234567_Changed', 'CCC', 'CBEN', 'ULCC', False, 2),
     (True, 'legal_name-BC1234567_Changed', 'CCC', 'CUL', 'ULCC', False, 2)
 ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
@@ -266,6 +270,7 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
     ('named_to_numbered', 'CCC', 'CCC', None),
     ('named_to_numbered', 'CUL', 'CUL', None),
 ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
@@ -274,7 +279,6 @@ def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, 
     if test_name in ['numbered_to_numbered', 'numbered_to_numbered_invalid']:
         business.legal_name = Business.generate_numbered_legal_name(legal_type, identifier)
     business.save()
-
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     if not new_legal_type:
@@ -311,6 +315,7 @@ def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, 
     ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
     ('legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECV', 'Name Request legal type is not same as the business legal type.')
 ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_nr_type(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
@@ -367,6 +372,7 @@ def test_validate_nr_type(session, new_name, legal_type, nr_legal_type, nr_type,
         ('SUCCESS_series', True, False, False, []),
         ('FAILURE_series', False, False, True, [])
     ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_alteration_resolution_date(
         session, test_name, should_pass, has_rights_or_restrictions,
         has_rights_or_restrictions_series, resolution_dates):
@@ -399,7 +405,7 @@ def test_alteration_resolution_date(
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
 
-
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_alteration_share_classes_optional(session):
     """Assert shareClasses is optional in alteration."""
     identifier = 'BC1234567'
@@ -444,6 +450,7 @@ memorandum_file_key_path = '/filing/alteration/memorandumFileKey'
                 'path': memorandum_file_key_path
             }]),
     ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_cooperative_documents(session, mocker, minio_server, test_name, key, scenario, expected_code,
                                         expected_msg):
     """Assert that validator validates cooperative documents correctly."""
@@ -584,6 +591,7 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
         ('CCC', 'CCC', True, False, True),
     ]
 )
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_alteration_share_class_series_validation(session, legal_type, new_legal_type, has_rights_or_restrictions,
                                                   has_series, should_pass):
     """Test corps-type share class/series validation in alteration."""
@@ -635,6 +643,7 @@ now = date(2020, 9, 17)
                 'path': '/filing/header/effectiveDate'
             }])
     ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_alteration_effective_date(session, test_name,
                                                effective_date, expected_code, expected_msg):
     """Test effective date validation in alteration."""
@@ -662,3 +671,49 @@ def test_validate_alteration_effective_date(session, test_name,
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize(
+    ('good_standing', 'has_permission', 'should_pass', 'entity_type'),
+    [
+        (True, True, True, 'BC'),
+        (True, False, True, 'BC'),
+        (False, False, False, 'BC'),
+        (False, True, True, 'BC')
+        ]
+        )
+def test_alteration_good_standing(session, good_standing, has_permission, should_pass, entity_type):
+    """Test that a valid Alteration passes/fails validation based on good standing."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=entity_type)
+
+    f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['business']['legalType'] = entity_type
+    f['filing']['alteration']['business']['legalType'] = 'BEN'
+    del f['filing']['alteration']['nameRequest']
+
+    if has_permission:
+        mock_check_user_permission = MagicMock(return_value=None)
+    else:
+        mock_check_user_permission = MagicMock(return_value=Error(
+            HTTPStatus.FORBIDDEN,
+            [{'error': 'Permission Denied - You do not have permissions send not in gpod standing businesss in this filing.'}],
+        ))
+    with patch.object(Business, 'good_standing', return_value=good_standing):
+        with patch.object(PermissionService, 'check_user_permission', mock_check_user_permission):
+            err = validate(business, f)
+    print(err.msg if err else 'No errors')
+    print(f'good_standing={good_standing}, has_permission={has_permission}, should_pass={should_pass}')
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        if not good_standing and not has_permission:
+            assert HTTPStatus.FORBIDDEN == err.code
+            assert 'Permission Denied' in err.msg[0]['error']
+        else:
+            assert HTTPStatus.BAD_REQUEST == err.code
+
