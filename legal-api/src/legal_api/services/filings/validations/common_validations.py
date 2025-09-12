@@ -491,7 +491,7 @@ def validate_staff_payment(filing_json: dict) -> bool:
         return True
     return False
 
-def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+def validate_certify_name(filing_json) -> bool:
     """Ensure certify name is being edited."""
     certify_name = filing_json['filing']['header'].get('certifiedBy')
     try:
