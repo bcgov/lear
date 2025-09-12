@@ -508,7 +508,7 @@ def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-
     """Ensure certify name is being edited."""
     certify_name = filing_json['filing']['header'].get('certifiedBy')
     try:
-        name =g.jwt_oidc_token_info.get('name')
+        name = g.jwt_oidc_token_info.get('name')
         if certify_name and certify_name == name:
             return True
     except (AttributeError, RuntimeError):

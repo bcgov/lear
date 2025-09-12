@@ -34,6 +34,7 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.services.filings.validations.common_validations import (
+    validate_certify_name,
     validate_offices_addresses,
     validate_parties_addresses,
 )
@@ -120,3 +121,12 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
+
+def test_validate_certify_name_no_jwt(session, monkeypatch):
+    """Test certify name validation when no JWT is present."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['certifiedBy'] = 'Full Name'
+
+    # no jwt
+    err = validate_certify_name(filing)
+    assert not err

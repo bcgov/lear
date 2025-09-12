@@ -34,6 +34,7 @@ from . import lists_are_equal
     'test_name, now, ar_date, agm_date, expected_code, expected_msg',
     [('SUCCESS', date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
      ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
                            expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a basic AR can be validated."""
