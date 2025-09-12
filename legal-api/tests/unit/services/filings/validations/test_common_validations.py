@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test Suite for common validations sharing through the different filings."""
 import copy
+from unittest.mock import patch
 
 import pytest
 from registry_schemas.example_data import (
@@ -122,11 +123,17 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
 
-def test_validate_certify_name_no_jwt(session, monkeypatch):
+@pytest.mark.parametrize('test_name, certified_value','jwt_name' 'expected', [
+    ('names_match', 'First Last', 'First Last', True),
+    ('names_do_not_match', 'First Last', 'Forst Last', False),
+    ('certify_name_not_set', 'NOT_SET', 'First Last', False),
+    ('a_bit_different', 'First Last', 'First  Last', False)
+])
+def test_validate_certify(session, monkeypatch, test_name, certified_value, jwt_name, expected):
     """Test certify name validation when no JWT is present."""
     filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['header']['certifiedBy'] = 'Full Name'
-
-    # no jwt
-    err = validate_certify_name(filing)
-    assert not err
+    filing['filing']['header']['certifiedBy'] = certified_value
+    with patch('legal_api.services.filings.validations.common_validations.g') as mock_g:
+        mock_g.jwt_oidc_token_info = {'name': jwt_name}
+    result = validate_certify_name(filing)
+    assert result == expected
