@@ -20,7 +20,7 @@ from typing import Dict, Optional
 
 import pycountry
 import PyPDF2
-from flask import current_app
+from flask import current_app, g
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -632,3 +632,28 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
        if not is_same_str(addr1.get(key), addr2.get(key)):
            return False
    return True
+def validate_staff_payment(filing_json: dict) -> bool:
+    """Check staff specific headers are in the filing."""
+    header = filing_json['filing']['header']
+    if (
+        'routingSlipNumber' in header or
+        'bcolAccountNumber' in header or
+        'datNumber' in header or
+        'waiveFees' in header or
+        'priority' in header
+    ):
+        return True
+    return False
+
+def validate_certify_name(filing_json) -> bool:
+    """Check certify_by is modified."""
+    certify_name = filing_json['filing']['header'].get('certifiedBy')
+    try:
+        name = g.jwt_oidc_token_info.get('name')
+        if certify_name and certify_name == name:
+            return False
+    except (AttributeError, RuntimeError) as err:
+        current_app.logger.error('No JWT present to validate certify name against.')
+        current_app.logger.error(err)
+        return True
+    return True

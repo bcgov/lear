@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test Suite for common validations sharing through the different filings."""
 import copy
+from unittest.mock import patch
 
 import pytest
 from registry_schemas.example_data import (
@@ -34,8 +35,10 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.services.filings.validations.common_validations import (
+    validate_certify_name,
     validate_offices_addresses,
     validate_parties_addresses,
+    validate_staff_payment,
 )
 
 
@@ -120,3 +123,39 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
+
+@pytest.mark.parametrize('payment_type, expected', [
+    ({}, False),
+    ({'routingSlipNumber': '123'}, True),
+    ({'bcolAccountNumber': '12345'}, True),
+    ({'datNumber': '1234567'}, True),
+    ({'waiveFees': True}, True),
+    ({'priority': False}, True),
+])
+def test_validate_staff_payment(session, payment_type, expected):
+    """Test staff payment validation."""
+    filing = {
+        'filing': {
+            'header': {
+                **payment_type
+                }
+        }
+    }
+    result = validate_staff_payment(filing)
+    assert result == expected
+
+@pytest.mark.parametrize(('certified_value', 'expected'), [
+    ('First Last', False),
+    ('Forst Last', True),
+    ('NOT_SET', True),
+    ('First  Last', True)
+])
+def test_validate_certify(session, monkeypatch, certified_value, expected):
+    """Test certify name validation when no JWT is present."""
+    filing = copy.deepcopy(FILING_HEADER)
+    if certified_value != 'NOT_SET':
+        filing['filing']['header']['certifiedBy'] = certified_value
+    with patch('legal_api.services.filings.validations.common_validations.g') as mock_g:
+        mock_g.jwt_oidc_token_info = {'name': 'First Last'}
+        result = validate_certify_name(filing)
+        assert result == expected

@@ -11,6 +11,7 @@
     "enable-new-ben-statements": false,
     "enable-auth-v2-business": true,
     "enable-permissions-for-action": false,
+    "enabled-deeper-permission-action": false,
     "involuntary-dissolution-filter": {
       "include-accounts": [],
       "exclude-accounts": []
