@@ -124,13 +124,25 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
 
-def test_validate_staff_payment(session):
+@pytest.mark.parametrize('payment_type, expected', [
+    ({}, False),
+    ({'routingSlipNumber': '123'}, True),
+    ({'bcolAccountNumber': '12345'}, True),
+    ({'datNumber': '1234567'}, True),
+    ({'waiveFees': True}, True),
+    ({'priority': False}, True),
+])
+def test_validate_staff_payment(session, payment_type, expected):
     """Test staff payment validation."""
-    filing = copy.deepcopy(FILING_HEADER)
-    assert not validate_staff_payment(filing)
-
-    filing['filing']['header']['waiveFees'] = True
-    assert validate_staff_payment(filing)
+    filing = {
+        'filing': {
+            'header': {
+                **payment_type
+                }
+        }
+    }
+    result = validate_staff_payment(filing)
+    assert result == expected
 
 @pytest.mark.parametrize(('certified_value', 'expected'), [
     ('First Last', False),
