@@ -19,7 +19,7 @@ from typing import Dict, Optional
 
 import pycountry
 import PyPDF2
-from flask import current_app
+from flask import current_app, g
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -478,3 +478,13 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
+def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure Staff Filing is Allowed"""
+    return filing_json['filing']['header'].get('waiveFees') is True
+
+def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
+    """Ensure certify name is being edited."""
+    certify_name = filing_json['filing']['header'].get('certifiedBy')
+    if certify_name and certify_name == g.jwt_oidc_token_info.get('name'):
+        return True
+    return False
