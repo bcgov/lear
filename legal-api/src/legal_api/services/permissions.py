@@ -15,10 +15,12 @@
 # pylint: disable=too-many-lines
 """This manages all of the permissions service."""
 from enum import Enum
+from http import HTTPStatus
 
 from flask import current_app, g
 
 from legal_api.core.filing import Filing as CoreFiling
+from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services import authz
 from legal_api.services.cache import cache
@@ -49,6 +51,7 @@ class ListFilingsPermissionsAllowed(str, Enum):
     FIRM_CONVERSION_FILING = 'FIRM_CONVERSION_FILING'
     INCORPORATION_APPLICATION_FILING = 'INCORPORATION_APPLICATION_FILING'
     NOTICE_WITHDRAWAL_FILING = 'NOTICE_WITHDRAWAL_FILING'
+    OFFICER_CHANGE_FILING = 'OFFICER_CHANGE_FILING'
     REGISTRATION_FILING = 'REGISTRATION_FILING'
     RESTORATION_REINSTATEMENT_FILING = 'RESTORATION_REINSTATEMENT_FILING'
     SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
@@ -67,11 +70,11 @@ class ListActionsPermissionsAllowed(str, Enum):
     FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
     FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
     FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
+    FIRM_NO_MIN_START_DATE = 'FIRM_NO_MIN_START_DATE'
     FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
     OVERRIDE_NIGS='OVERRIDE_NIGS'
     STAFF_COMMENTS = 'STAFF_COMMENTS'
     STAFF_PAYMENT='STAFF_PAYMENT'
-
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -146,6 +149,8 @@ class PermissionService:
                 ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
                 ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value,
+            CoreFiling.FilingTypes.CHANGEOFOFFICERS.value:
+                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,    
             CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
                 ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value,
             CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:
@@ -194,3 +199,16 @@ class PermissionService:
         else:
             current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
         return False
+
+    @staticmethod
+    def check_user_permission(required_permission, message: str = None) -> Error:
+        """Check if the user has the required permission."""
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        if required_permission not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{
+                    'message': message or f'Permission Denied - You do not have permissions to perform {required_permission} in filing.'
+                }]
+            )
+        return None

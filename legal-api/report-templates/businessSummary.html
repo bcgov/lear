@@ -48,6 +48,9 @@
          {% else %}
             [[notice-of-articles/directors.html]]
          {% endif %}
+         {% if officers and officers|length > 0 %}
+              [[notice-of-articles/officers.html]]
+         {% endif %}
          [[business-summary/receiverInformation.html]]
       </div>
    </body>

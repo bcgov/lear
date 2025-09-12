@@ -800,27 +800,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         """
         alternate_names = []
 
-        # Fetch aliases and related filings in a single query
-        alias_version = VersioningProxy.version_class(db.session(), Alias)
-        filing_alias = aliased(Filing)
-        aliases_query = db.session.query(
-            alias_version.alias,
-            alias_version.type,
-            filing_alias.effective_date
-        ).outerjoin(
-            filing_alias, filing_alias.transaction_id == alias_version.transaction_id
-        ).filter(
-            alias_version.id.in_([a.id for a in self.aliases]),
-            alias_version.end_transaction_id is None  # noqa: E711
-        )
-
-        for alias, alias_type, effective_date in aliases_query:
-            alternate_names.append({
-                'name': alias,
-                'startDate': LegislationDatetime.format_as_legislation_date(effective_date),
-                'type': alias_type
-            })
-
         # Get SP DBA entries if not SP
         if self.legal_type != Business.LegalTypes.SOLE_PROP:
             proprietors_query = db.session.query(

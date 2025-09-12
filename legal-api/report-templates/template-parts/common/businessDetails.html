@@ -59,7 +59,7 @@
                          {% endif %}
                      {% endif %}
                  </div>
-                 
+
                  </div>
               </td>
          {% elif header.reportType == 'amalgamationApplication' %}
@@ -132,7 +132,7 @@
                {% endif %}
                <div class="pt-2">{{filing_date_time}}</div>
                {% if not business or business.identifier.startswith('T') %}
-                  <div class="pt-2">&nbsp;</div> 
+                  <div class="pt-2">&nbsp;</div>
                {% elif header.status == 'COMPLETED' %}
                   <div class="pt-2">{{recognition_date_time}}</div>
                {% endif %}
@@ -352,6 +352,9 @@
           {% endif %}
       </tr>
    </table>
+   {% if (warning_text) and (reportType == 'summary') %}
+      [[common/warning-bar.html]]
+   {% endif %}
 </div>
 
 <!-- Retrieved Date and Time: -->

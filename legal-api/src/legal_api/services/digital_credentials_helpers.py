@@ -18,6 +18,7 @@ from typing import List, Union
 
 from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def get_digital_credential_data(business_user: DCBusinessUser,
@@ -108,7 +109,11 @@ def get_company_status(business: Business) -> str:
 
 def get_registered_on_dateint(business: Business) -> str:
     """Get registered on date in YYYYMMDD format."""
-    return business.founding_date.strftime('%Y%m%d') if business.founding_date else ''
+    return (
+        LegislationDatetime.as_legislation_timezone(business.founding_date).strftime('%Y%m%d')
+        if business.founding_date
+        else ''
+    )
 
 
 def get_family_name(user: User) -> str:
