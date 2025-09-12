@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
-from flask import current_app
+import logging
 from typing import Optional, Any
 from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
 from ldclient.config import Config  # noqa: I005
@@ -59,6 +59,8 @@ class Flags():
         """Initialize this object."""
         self.sdk_key = None
         self.app = None
+        # Always have a logger, even before Flask app exists.
+        self.logger = logging.getLogger(__name__)
 
         if app:
             self.init_app(app)
@@ -67,11 +69,13 @@ class Flags():
         """Initialize the Feature Flag environment."""
         self.app = app
         self.sdk_key = app.config.get('LD_SDK_KEY')
+        # Switch to Flask's logger once we have the app.
+        self.logger = app.logger
 
-        current_app.logger.info('starting feature flags init; has sdk key: %s, env: %s', bool(self.sdk_key), app.env)
+        self.logger.info('starting feature flags init; has sdk key: %s, env: %s', bool(self.sdk_key), app.env)
 
         if self.sdk_key or app.env != 'production':
-            current_app.logger.debug("sdk key used: %s", self.sdk_key)
+            self.logger.debug("sdk key used: %s", self.sdk_key)
 
             if app.env == 'production':
                 config = Config(sdk_key=self.sdk_key)
@@ -89,20 +93,23 @@ class Flags():
 
     def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
-        client = current_app.extensions['featureflags']
-        client.close()
+        client = self.app.extensions.get('featureflags') if self.app else None
+        if client:
+            client.close()
 
     def _get_client(self):
-        try:
-            client = current_app.extensions['featureflags']
-        except KeyError:
-            try:
-                self.init_app(current_app)
-                client = current_app.extensions['featureflags']
-            except KeyError:
-                client = None
+        if not self.app:
+            return None
 
-        return client
+        try:
+            return self.app.extensions['featureflags']
+        except KeyError:
+            # Lazy-init if needed
+            try:
+                self.init_app(self.app)
+                return self.app.extensions.get('featureflags')
+            except Exception:
+                return None
 
     @staticmethod
     def _get_anonymous_user():
@@ -123,8 +130,7 @@ class Flags():
         # Use Context.create(key, kind) to explicitly set non-default kind 'account'
         return Context.create(account_id, 'account')
 
-    @staticmethod
-    def _build_context(user: Optional[User], account_id: Optional[str]) -> Context:
+    def build_context(self, user: Optional[User], account_id: Optional[str]) -> Context:
         """Compose the appropriate LD context (single or multi) from user/account inputs.
 
         - user and account_id -> multi-context ('user' + 'account')
@@ -133,44 +139,44 @@ class Flags():
         - neither             -> anonymous 'user' context
         """
         if user and account_id:
-            current_app.logger.debug('creating LD context with user and account_id')
+            self.logger.debug('creating LD context with user and account_id')
             return Context.create_multi(
                 Flags._user_as_key(user),
                 Flags._account_context(account_id),
             )
         if user:
-            current_app.logger.debug("creating LD context with user")
+            self.logger.debug("creating LD context with user")
             return Flags._user_as_key(user)
         if account_id:
-            current_app.logger.debug("creating LD context with account_id")
+            self.logger.debug("creating LD context with account_id")
             return Flags._account_context(account_id)
 
-        current_app.logger.debug("creating LD context with anonymous user")
+        self.logger.debug("creating LD context with anonymous user")
         return Flags._get_anonymous_user()
 
 
     def is_on(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> bool:
         """Assert that the flag is set for this user."""
-        current_app.logger.debug('check if flag %s is on for user %s, account %s',
+        self.logger.debug('check if flag %s is on for user %s, account %s',
                                  flag, user.sub if user else '-', account_id)
 
         client = self._get_client()
 
-        ctx = self._build_context(user, account_id)
+        ctx = self.build_context(user, account_id)
 
         try:
             return bool(client.variation(flag, ctx, None))
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            self.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
             return False
 
     def value(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> Any:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
-        ctx = self._build_context(user, account_id)
+        ctx = self.build_context(user, account_id)
 
         try:
             return client.variation(flag, ctx, None)
         except Exception as err:
-            current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            self.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
             return False
