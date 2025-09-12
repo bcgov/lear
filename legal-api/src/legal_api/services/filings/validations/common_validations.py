@@ -481,9 +481,15 @@ def validate_effective_date(filing_json: dict) -> list:
 def validate_staff_payment(filing_json: dict) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure Staff Filing is Allowed"""
     header = filing_json['filing']['header']
-    if header.get('routingSlipNumber') or header.get('datNumber') or header.get('waiveFees') or header.get('priority'):
-        return False
-    return True
+    if (
+        'routingSlipNumber' in header or
+        'bcolAccountNumber' in header or
+        'datNumber' in header or
+        'waiveFees' in header or
+        'priority' in header
+    ):
+        return True
+    return False
 
 def validate_certify_name(filing_json) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure certify name is being edited."""
