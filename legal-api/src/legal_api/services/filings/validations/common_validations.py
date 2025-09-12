@@ -658,8 +658,9 @@ def validate_certify_name(filing_json) -> bool:
         current_app.logger.error(err)
         return True
     return True
-def validate_certified_by(filing_json: dict, filing_type: str) -> list:
-    """Validate and normalize certifiedBy field."""
+
+def validate_and_sanitize_certified_by(filing_json: dict) -> list:
+    """Validate certifiedBy field and strip whitespaces to match the FE."""
     msg = []
 
     certified_by = filing_json.get('filing', {}).get('header', {}).get('certifiedBy')
