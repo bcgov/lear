@@ -379,7 +379,7 @@ def test_business_json(app, session):
         'hasCourtOrders': False,
         'allowedActions': {},
         'noDissolution': False,
-        # 'alternateNames': []
+        'alternateNames': []
     }
 
     # with patch.object(flags, 'is_on', return_value=True):

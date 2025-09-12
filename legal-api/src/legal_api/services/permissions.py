@@ -51,6 +51,7 @@ class ListFilingsPermissionsAllowed(str, Enum):
     FIRM_CONVERSION_FILING = 'FIRM_CONVERSION_FILING'
     INCORPORATION_APPLICATION_FILING = 'INCORPORATION_APPLICATION_FILING'
     NOTICE_WITHDRAWAL_FILING = 'NOTICE_WITHDRAWAL_FILING'
+    OFFICER_CHANGE_FILING = 'OFFICER_CHANGE_FILING'
     REGISTRATION_FILING = 'REGISTRATION_FILING'
     RESTORATION_REINSTATEMENT_FILING = 'RESTORATION_REINSTATEMENT_FILING'
     SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
@@ -148,6 +149,8 @@ class PermissionService:
                 ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
                 ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value,
+            CoreFiling.FilingTypes.CHANGEOFOFFICERS.value:
+                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,    
             CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
                 ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value,
             CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:

@@ -28,7 +28,6 @@ class Alias(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
         """Render an Enum of the types of aliases."""
 
         TRANSLATION = 'TRANSLATION'
-        DBA = 'DBA'
 
     __versioned__ = {}
     __tablename__ = 'aliases'
