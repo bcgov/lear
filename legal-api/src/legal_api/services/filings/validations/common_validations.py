@@ -603,7 +603,6 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
 
     return updated_keys
 
-
 def normalize_str(value: str) -> str:
    """Convert None or empty values to a stripped uppercase string."""
    return (value or '').strip().upper()
@@ -656,3 +655,4 @@ def validate_certify_name(filing_json) -> bool:
         current_app.logger.error('No JWT present to validate certify name against.')
         current_app.logger.error(err)
         return True
+    return True
