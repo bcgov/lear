@@ -497,8 +497,8 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
 
     for party in parties:
         roles = party.get("roles", [])
-        party_role_type = roles[0].get("roleType") if roles else None
-        if party_role_type.lower() != role_type.lower():
+        has_matching_role = any(role.get("roleType") == role_type for role in roles)
+        if not has_matching_role:
             continue
         officer = party.get("officer", {})
         email = officer.get("email")
@@ -516,10 +516,10 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                         matched_db_party_ids.add(role.party_id)
                         break
         else:
-            for role in db_party_roles:
-                if role.party_id in matched_db_party_ids:
+            for party_role in db_party_roles:
+                if party_role.party_id in matched_db_party_ids:
                     continue
-                db_party = Party.find_by_id(role.party_id)
+                db_party = role.party
                 if not db_party:
                     continue
 
@@ -542,17 +542,17 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     for key in ['firstName', 'middleName', 'lastName', 'organizationName']
                 )
 
-                email_matches = normalize_str(db_party.email) == normalize_str(email)
+                email_matches = is_same_str(email, db_party.email)
 
                 if name_matches and email_matches:
                     matched_db_party = db_party
-                    matched_db_party_ids.add(role.party_id)
+                    matched_db_party_ids.add(party_role.party_id)
                     break
 
         if matched_db_party:
             changes = {}
             # Email comparison
-            if not is_email_changed(email, db_party.email):
+            if not is_same_str(email, db_party.email):
                 changes['email'] = {
                     'old': normalize_str(db_party.email),
                     'new': normalize_str(email)
@@ -646,10 +646,6 @@ def normalize_str(value: str) -> str:
 def is_same_str(str1: str, str2: str) -> bool:
    """Check if two strings are the same after normalization."""
    return normalize_str(str1) == normalize_str(str2)
-
-def is_email_changed(email1: str, email2: str) -> bool:
-   """Check if two emails are the same."""
-   return normalize_str(email1) == normalize_str(email2)
 
 def is_name_changed(name1: dict, name2: dict) -> bool:
    """Check if two names are different."""
