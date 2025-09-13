@@ -168,12 +168,12 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     """Test find updated keys for firms."""
     business = type('Business', (), {'id': 1, 'legal_type': 'GP'})()
 
-    mock_party_role.RoleType.PROPRIETOR.value = 'proprietor'
-    mock_party_role.RoleType.PARTNER.value = 'partner'
+    mock_party_role.RoleTypes.PROPRIETOR.value = 'proprietor'
+    mock_party_role.RoleTypes.PARTNER.value = 'partner'
 
     mock_role1 = type('PartyRole', (), {'party_id': 1})()
     mock_role2 = type('PartyRole', (), {'party_id': 2})()
-    mock_party_role.find_by_business_id.return_value = [mock_role1, mock_role2]
+    mock_party_role.get_parties_by_role.return_value = [mock_role1, mock_role2]
 
     mock_db_party1 = type('Party', (), {
         'email': 'john@example.com',
