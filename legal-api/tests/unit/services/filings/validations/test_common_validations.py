@@ -181,7 +181,8 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
         'middle_initial': 'A',
         'last_name': 'Doe',
         'organization_name': '',
-        'mailing_address_id': 1
+        'mailing_address_id': 1,
+        'delivery_address_id': 1
     })()
     
     mock_db_party2 = type('Party', (), {
@@ -190,7 +191,8 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
         'middle_initial': 'B',
         'last_name': 'Smith',
         'organization_name': '',
-        'mailing_address_id': 2
+        'mailing_address_id': 2,
+        'delivery_address_id': 2
     })()
     
     mock_role1.party = mock_db_party1
