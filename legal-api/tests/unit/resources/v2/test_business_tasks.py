@@ -302,6 +302,78 @@ def test_construct_task_list_ar(session, client, jwt, test_name, identifier, fou
             assert tasks[0]['task']['todo']['business']['nextAnnualReport'][-14:] != '00:00:00+00:00'
 
 
+@pytest.mark.parametrize('test_name, identifier, legal_type, founding_date, last_ar_date, restored_date, incomplete_filing_type, expected', [
+    ('TA_ONLY', 'BC1234567', Business.LegalTypes.COMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), None, [{'order': 1, 'name': 'transition', 'enabled': True}]),
+    ('TA_1_AR_2', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2024, 7, 2, 8), datetime(2024, 6, 1), None, [{'order': 1, 'name': 'transition', 'enabled': True}, {'order': 2, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': True}]),
+    ('TA_2_AR_1', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2024, 7, 2, 8), datetime(2025, 9, 1), None, [{'order': 2, 'name': 'transition', 'enabled': True}, {'order': 1, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': True}]),
+    ('TA_2_AR_1_AR_3', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2023, 7, 2, 8), datetime(2024, 9, 1), None, [{'order': 2, 'name': 'transition', 'enabled': True}, {'order': 1, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 3, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}]),
+    ('TA_1_AR_2_AR_3', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2023, 7, 2, 8), datetime(2024, 6, 1), None, [{'order': 1, 'name': 'transition', 'enabled': True}, {'order': 2, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 3, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}]),
+    ('TA_3_AR_1_AR_2', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2023, 7, 2, 8), datetime(2025, 9, 1), None, [{'order': 3, 'name': 'transition', 'enabled': True}, {'order': 1, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 2, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}]),
+    ('TA_DISABLED_DRAFT_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'changeOfDirectors', [{'order': 1, 'status': 'DRAFT', 'enabled': True}, {'order': 2, 'name': 'transition', 'enabled': False}]),
+    ('TA_DISABLED_PENDING_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'changeOfAddress', [{'order': 1, 'status': 'PENDING', 'enabled': True}, {'order': 2, 'name': 'transition', 'enabled': False}]),
+    ('TA_DRAFT_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'transition', [{'order': 1, 'status': 'DRAFT', 'enabled': True}]),
+    ('TA_PENDING_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'transition', [{'order': 1, 'status': 'PENDING', 'enabled': True}]),
+    ('NO_TA_FOUNDING_DATE_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(2022, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), None, []),
+    ('NO_TA_NO_RESTORATION', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), None, None, []),
+])
+def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier, legal_type, founding_date, last_ar_date, restored_date, incomplete_filing_type, expected):
+    """Assert that construct_task_list returns the correct items concerning Transition Application and AR filings."""
+    from legal_api.resources.v2.business.business_tasks import construct_task_list
+
+    # tests expect current date to be in 2025. Adjust accordingly for the current year (freezetime only works for some things)
+    year_offset = (datetime.now()).year - 2025
+    founding_date += datedelta.datedelta(years=year_offset)
+    if last_ar_date:
+        last_ar_date += datedelta.datedelta(years=year_offset)
+    for todo in expected:
+        if todo.get('ARFilingYear'):
+            todo['ARFilingYear'] += year_offset
+
+    with patch('legal_api.services.warnings.business.business_checks.business.involuntary_dissolution_check', return_value=[]):
+        business = factory_business(identifier, founding_date, last_ar_date, legal_type)
+
+        if restored_date:
+            filing = {'filing': {'header': {'name': 'restoration', 'date': restored_date.isoformat(), 'certifiedBy': 'test'}, 'restoration': {'type': 'fullRestoration'}}}
+            filing_obj = factory_completed_filing(business, filing, restored_date, None, None, 'restoration', 'fullRestoration')
+            filing_obj.effective_date = restored_date
+            filing_obj.save()
+        
+        if incomplete_filing_type:
+            filing = {
+                'filing': {
+                    'header': {'name': incomplete_filing_type, 'certifiedBy': 'test', 'date': restored_date.isoformat()},
+                    incomplete_filing_type: {}
+            }}
+            if 'DRAFT' in test_name:
+                factory_filing(business, filing, restored_date, filing['filing']['header']['name'])
+            elif 'PENDING' in test_name:
+                factory_pending_filing(business, filing, restored_date)
+
+        business.save()
+        tasks = construct_task_list(business)
+
+        # check number of tasks
+        # assert tasks == expected
+        assert len(tasks) == len(expected)
+        if tasks:
+            # check order and values
+            def get_order_val(e: dict):
+                """Return the order value of the task."""
+                return e['order']
+
+            tasks.sort(key=get_order_val)
+            expected.sort(key=get_order_val)
+
+            for task, expected_task in zip(tasks, expected):
+                assert task['order'] == expected_task['order']
+                assert task['enabled'] == expected_task.get('enabled')
+                if task['task'].get('todo'):
+                    assert task['task']['todo']['header']['name'] == expected_task['name']
+                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear')
+                else:
+                    assert task['task']['filing']['header']['status'] == expected_task.get('status')
+
+
 @pytest.mark.parametrize('test_name, identifier, founding_date, last_ar_date, legal_type, last_tr_date, tr_start_date, initial_date, restored_date, expected', [
     ('BEN_ITR', 'BC1234567', datetime(2025, 7, 2, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 1), None, None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'enabled': True}]),
     ('BEN_ITR_DRAFT', 'BC1234567', datetime(2025, 7, 2, 8), None, Business.LegalTypes.BCOMP.value, None, datetime(2025, 7, 1), datetime(2025, 7, 2), None, [{'order': 1, 'name': 'tranparencyRegister', 'subType': 'initial', 'status': 'DRAFT', 'enabled': True}]),
@@ -333,6 +405,11 @@ def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier
         last_ar_date += datedelta.datedelta(years=year_offset)
     if last_tr_date:
         last_tr_date += datedelta.datedelta(years=year_offset)
+    for todo in expected:
+        if todo.get('ARFilingYear'):
+            todo['ARFilingYear'] += year_offset
+        if todo.get('TRFilingYear'):
+            todo['TRFilingYear'] += year_offset
 
     app.config['TR_START_DATE'] = tr_start_date.isoformat()
     with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):

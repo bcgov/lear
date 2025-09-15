@@ -343,7 +343,10 @@ def get_allowable_filings_dict():
                     }
                 },
                 'transition': {
-                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
                 },
                 'restoration': {
                     'limitedRestorationExtension': {
@@ -545,7 +548,10 @@ def get_allowable_filings_dict():
                     }
                 },
                 'transition': {
-                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC']
+                    'legalTypes': ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CUL', 'CCC'],
+                    'blockerChecks': {
+                        'business': [BusinessBlocker.DEFAULT]
+                    }
                 },
                 CoreFiling.FilingTypes.TRANSPARENCY_REGISTER.value: {
                     'annual': {
