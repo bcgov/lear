@@ -527,6 +527,66 @@ paths:
                         paymentToken: '12345678'
                         status: PENDING
                         submitter: mocked submitter
+                change-of-officers-success-response:
+                  summary: Change Of Officers Response
+                  value:
+                    filing:
+                      business:
+                        foundingDate: '2025-03-25T07:00:00.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
+                      changeOfOfficers:
+                        relationships:
+                          - entity:
+                              givenName: Johnathon
+                              familyName: Smith
+                              middleInitial: E
+                              alternateName: John Smith
+                            deliveryAddress:
+                              streetAddress: 5-4761 Bay Street
+                              addressCity: Victoria
+                              addressRegion: BC
+                              addressCountry: Canada
+                              postalCode: V8R 2P1
+                              deliveryInstructions: Our apartment is located at the back of the building.
+                            mailingAddress:
+                              streetAddress: 5-4761 Bay Street
+                              addressCity: Victoria
+                              addressRegion: BC
+                              addressCountry: Canada
+                              postalCode: V8R 2P1
+                              deliveryInstructions: Our apartment is located at the back of the building.
+                            roles:
+                              - appointmentDate: '2018-08-24'
+                                cessationDate: '2024-08-24'
+                                roleType: Secretary
+                                roleClass: OFFICER
+                              - appointmentDate: '2024-08-24'
+                                cessationDate: null
+                                roleType: CEO
+                                roleClass: OFFICER
+                      header:
+                        accountId: 1234
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: First Last
+                        colinIds: []
+                        comments: []
+                        date: '2025-03-25T21:39:11.950027+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2025-03-25T07:00:00+00:00'
+                        filingId: 1234567
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfOfficers
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
+                        submitter: mocked submitter
                 consent-continuation-out-success-response:
                   summary: Consent Continuation Out Response
                   value:
@@ -1213,6 +1273,51 @@ paths:
                           actions:
                             - addressChanged
                             - nameChanged
+              change-of-officers-request:
+                summary: Change Of Officers Request
+                value:
+                  filing:
+                    header:
+                      name: changeOfOfficers
+                      certifiedBy: First Last
+                      date: '2025-03-25'
+                      effectiveDate: '2025-03-25T07:00:00+00:00'
+                      accountId: 1234
+                    business:
+                      foundingDate: '2024-07-08T07:00:00.000+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                    changeOfOfficers:
+                      relationships:
+                        - entity:
+                            givenName: Johnathon
+                            familyName: Smith
+                            middleInitial: E
+                            alternateName: John Smith
+                          deliveryAddress:
+                            streetAddress: 5-4761 Bay Street
+                            addressCity: Victoria
+                            addressRegion: BC
+                            addressCountry: Canada
+                            postalCode: V8R 2P1
+                            deliveryInstructions: Our apartment is located at the back of the building.
+                          mailingAddress:
+                            streetAddress: 5-4761 Bay Street
+                            addressCity: Victoria
+                            addressRegion: BC
+                            addressCountry: Canada
+                            postalCode: V8R 2P1
+                            deliveryInstructions: Our apartment is located at the back of the building.
+                          roles:
+                            - appointmentDate: '2018-08-24'
+                              cessationDate: '2024-08-24'
+                              roleType: Secretary
+                              roleClass: OFFICER
+                            - appointmentDate: '2024-08-24'
+                              cessationDate: null
+                              roleType: CEO
+                              roleClass: OFFICER
               consent-continuation-out-request:
                 summary: Consent Continuation Out Request
                 value:
@@ -5903,6 +6008,7 @@ components:
                     - $ref: '#/components/schemas/Change_of_address'
                     - $ref: '#/components/schemas/Change_of_directors'
                     - $ref: '#/components/schemas/Change_of_name'
+                    - $ref: '#/components/schemas/Change_of_officers'
                     - $ref: '#/components/schemas/Change_of_registration'
                     - $ref: '#/components/schemas/Consent_continuation_out'
                     - $ref: '#/components/schemas/Continuation_in'
