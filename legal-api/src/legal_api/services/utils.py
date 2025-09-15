@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common utilities used by the services."""
+import re
 from datetime import date
-from typing import Dict
+from typing import Dict, Optional
 
 import dpath.util
 
@@ -86,3 +87,9 @@ def get_int(filing: Dict, path: str) -> str:
         return int(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
+
+def get_clean_str(value: Optional[str]) -> Optional[str]:
+    """Return the string with whitespace collapsed and trimmed."""
+    if value is None:
+        return None
+    return re.sub(r'\s+', ' ', value).strip()

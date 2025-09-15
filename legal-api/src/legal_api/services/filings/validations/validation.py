@@ -38,7 +38,7 @@ from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
 from .change_of_officers import validate as coo_validate
 from .change_of_registration import validate as change_of_registration_validate
-from .common_validations import validate_and_sanitize_certified_by
+from .common_validations import validate_certified_by
 from .consent_amalgamation_out import validate as consent_amalgamation_out_validate
 from .consent_continuation_out import validate as consent_continuation_out_validate
 from .continuation_in import validate as continuation_in_validate
@@ -70,7 +70,7 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
     if err:
         return err
 
-    cert_errs = validate_and_sanitize_certified_by(filing_json)
+    cert_errs = validate_certified_by(filing_json)
     if cert_errs:
         return Error(HTTPStatus.BAD_REQUEST, cert_errs)
 

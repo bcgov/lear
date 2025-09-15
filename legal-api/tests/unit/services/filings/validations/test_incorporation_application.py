@@ -709,6 +709,79 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
             None
         ),
         (
+            'FAIL_FIRST_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '  ', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': '  ', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator first name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director first name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_MIDDLE_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': '  ', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': '  ', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator middle name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director middle name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_LAST_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': '  '}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': '  '}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director last name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_AND_LAST_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '   ', 'middleName': '   ', 'lastName': '   '}
+                },
+            ],
+            [{'error': 'Completing Party, Incorporator first name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator middle name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator last name cannot be only whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
             'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'BEN',
             [
                 {
@@ -747,17 +820,40 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'BEN',
+            'FAIL_PARTY_LAST_NAME_TOO_LONG', 'BEN',
             [
                 {
                     'partyName': 'officer1',
                     'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'Janeajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    'officer': {'firstName': 'John', 'middleName': 'None', 'lastName': 'Doeasdfasdfasdfasdfasdfasdfasdf'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane', 'middleName': 'jkalsdf', 'lastName': 'Doeasdfasdfasdfasdfasdfasdfasdf'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name cannot be longer than 30 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director last name cannot be longer than 30 characters',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_AND_LAST_NAME_TOO_LONG', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfjab',
+                                'middleName': 'Janeajksdfjljdkslfjab',
+                                'lastName': 'Doeasdfasdfasdfasdfasdfasdfasdf'}
                 },
             ],
             [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
               'path': '/filing/incorporationApplication/parties'},
              {'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator last name cannot be longer than 30 characters',
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (

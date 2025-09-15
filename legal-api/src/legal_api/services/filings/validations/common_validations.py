@@ -25,7 +25,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, Business, Party, PartyRole
 from legal_api.services import MinioService, flags, namex
-from legal_api.services.utils import get_str
+from legal_api.services.utils import get_str, get_clean_str
 from legal_api.utils.datetime import datetime as dt
 
 
@@ -245,6 +245,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     msg = []
 
     custom_allowed_max_length = 20
+    last_name_max_length = 30
     officer = party['officer']
     party_type = officer['partyType']
 
@@ -255,23 +256,51 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
         first_name = officer.get('firstName', None)
         if (legal_type in Business.CORPS) and (not first_name):
             msg.append({'error': 'firstName is required', 'path': f'{party_path}/firstName'})
+        trimmed = get_clean_str(first_name)
+        officer['firstName'] = trimmed
+        if not trimmed:
+            msg.append({
+                'error': f'{party_roles_str} first name cannot be only whitespace',
+                'path': party_path
+            })    
         elif len(first_name) > custom_allowed_max_length:
             err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})
 
-        if 'middleInitial' in officer \
-                and (middle_initial := officer['middleInitial']) \
-                and len(middle_initial) > custom_allowed_max_length:
-            err_msg = f'{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters'
-            msg.append({'error': err_msg, 'path': party_path})
+        middle_initial = officer.get('middleInitial')
+        if middle_initial is not None:
+            trimmed_initial = get_clean_str(middle_initial)
+            officer['middleInitial'] = trimmed_initial
+            if not trimmed_initial:
+                msg.append({'error': f'{party_roles_str} middle initial cannot be only whitespace',
+                             'path': party_path})
+            elif len(trimmed_initial) > custom_allowed_max_length:
+                err_msg = f'{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters'
+                msg.append({'error': err_msg, 'path': party_path})    
 
-        if 'middleName' in officer \
-                and (middle_name := officer['middleName']) \
-                and len(middle_name) > custom_allowed_max_length:
-            err_msg = f'{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters'
-            msg.append({'error': err_msg, 'path': party_path})
+        middle_name = officer.get('middleName')
+        if middle_name is not None:
+            trimmed_middle = get_clean_str(middle_name)
+            officer['middleName'] = trimmed_middle
+            if not trimmed_middle:
+                msg.append({'error': f'{party_roles_str} middle name cannot be only whitespace',
+                             'path': party_path})
+            elif len(trimmed_middle) > custom_allowed_max_length:
+                err_msg = f'{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters'
+                msg.append({'error': err_msg, 'path': party_path})
 
-    return msg
+        last_name = officer.get('lastName')
+        if last_name is not None:
+            trimmed_last = get_clean_str(last_name)
+            officer['lastName'] = trimmed_last
+            if not trimmed_last:
+                msg.append({'error': f'{party_roles_str} last name cannot be only whitespace',
+                             'path': party_path})
+            elif len(trimmed_last) > last_name_max_length:
+                err_msg = f'{party_roles_str} last name cannot be longer than {last_name_max_length} characters'
+                msg.append({'error': err_msg, 'path': party_path})      
+
+    return msg 
 
 
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
@@ -659,19 +688,16 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_and_sanitize_certified_by(filing_json: dict) -> list:
-    """Validate certifiedBy field and strip whitespaces to match the FE."""
+def validate_certified_by(filing_json: dict) -> list:
+    """Validate certifiedBy field."""
     msg = []
-
     certified_by = filing_json.get('filing', {}).get('header', {}).get('certifiedBy')
 
-    # empty string is passed for some staff filings that have no ceritifiedBy component
     if certified_by not in (None, ""):
+        trimmed = get_clean_str(certified_by)
+        filing_json['filing']['header']['certifiedBy'] = trimmed
 
-        normalized = re.sub(r'\s+', ' ', certified_by).strip()
-        filing_json['filing']['header']['certifiedBy'] = normalized
-
-        if not normalized:
+        if not trimmed:
             msg.append({
                 'error': 'Certified By field cannot be only whitespace.',
                 'path': '/filing/header/certifiedBy'

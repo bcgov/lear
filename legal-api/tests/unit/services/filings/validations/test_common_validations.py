@@ -37,7 +37,7 @@ from registry_schemas.example_data import (
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,
     validate_certify_name,
-    validate_and_sanitize_certified_by,
+    validate_certified_by,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_staff_payment,
@@ -310,11 +310,11 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     (None, None, False),
 ])
 def test_validate_and_normalize_certified_by(input_value, expected_value, expect_error):
-    """Test certifiedBy normalization and validation rules."""
+    """Test that certified by field can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = input_value
 
-    errors = validate_and_sanitize_certified_by(filing)
+    errors = validate_certified_by(filing)
 
     if expect_error:
         assert errors
