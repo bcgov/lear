@@ -13,7 +13,7 @@
 # limitations under the License.
 """Custom formatting."""
 import decimal
-
+import re
 
 def float_to_str(f, precision=17):
     """Convert the given float to a string without resorting to scientific notation."""

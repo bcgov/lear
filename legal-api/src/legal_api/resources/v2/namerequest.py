@@ -15,8 +15,6 @@
 
 Provides a proxy endpoint to retrieve name request data.
 """
-import re
-
 from flask import Blueprint, abort, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
