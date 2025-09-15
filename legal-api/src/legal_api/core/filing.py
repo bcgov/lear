@@ -493,6 +493,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.PUTBACKON.value,
             Filing.FilingTypes.REGISTRARSNOTATION.value,
             Filing.FilingTypes.REGISTRARSORDER.value,
+            Filing.FilingTypes.CHANGEOFOFFICERS.value
         ]
 
         if not filing \
