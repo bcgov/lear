@@ -325,6 +325,9 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
     founding_date += datedelta.datedelta(years=year_offset)
     if last_ar_date:
         last_ar_date += datedelta.datedelta(years=year_offset)
+    for todo in expected:
+        if todo.get('ARFilingYear'):
+            todo['ARFilingYear'] += year_offset
 
     with patch('legal_api.services.warnings.business.business_checks.business.involuntary_dissolution_check', return_value=[]):
         business = factory_business(identifier, founding_date, last_ar_date, legal_type)
@@ -366,7 +369,7 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
                 assert task['enabled'] == expected_task.get('enabled')
                 if task['task'].get('todo'):
                     assert task['task']['todo']['header']['name'] == expected_task['name']
-                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear') + year_offset
+                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear')
                 else:
                     assert task['task']['filing']['header']['status'] == expected_task.get('status')
 
@@ -402,6 +405,11 @@ def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier
         last_ar_date += datedelta.datedelta(years=year_offset)
     if last_tr_date:
         last_tr_date += datedelta.datedelta(years=year_offset)
+    for todo in expected:
+        if todo.get('ARFilingYear'):
+            todo['ARFilingYear'] += year_offset
+        if todo.get('TRFilingYear'):
+            todo['TRFilingYear'] += year_offset
 
     app.config['TR_START_DATE'] = tr_start_date.isoformat()
     with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):
@@ -446,8 +454,8 @@ def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier
                 assert task['enabled'] == expected_task.get('enabled')
                 if task['task'].get('todo'):
                     assert task['task']['todo']['header']['name'] == expected_task['name']
-                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear') + year_offset
-                    assert task['task']['todo']['header'].get('TRFilingYear') == expected_task.get('TRFilingYear') + year_offset
+                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear')
+                    assert task['task']['todo']['header'].get('TRFilingYear') == expected_task.get('TRFilingYear')
                     assert task['task']['todo']['header'].get('subType') == expected_task.get('subType')
                 else:
                     assert task['task']['filing']['header']['status'] == expected_task.get('status')
