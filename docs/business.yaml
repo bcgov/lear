@@ -74,6 +74,8 @@ paths:
         - $ref: '#/components/parameters/accountId'
       tags:
         - business
+      x-stoplight:
+        id: y4m53rfnmx7cx
   '/businesses/{identifier}/filings':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -101,6 +103,8 @@ paths:
         - business
       parameters:
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: q2nlw7ghmgp6d
     post:
       summary: submit new filing
       operationId: post-businesses-identifier-filings
@@ -175,7 +179,7 @@ paths:
                   value:
                     filing:
                       agmLocationChange:
-                        agmLocation: Victoria, BC, Canada
+                        agmLocation: 'Victoria, BC, Canada'
                         reason: API Specs Tests
                         year: '2024'
                       business:
@@ -219,10 +223,9 @@ paths:
                           nrNumber: NR 9684750
                         nameTranslations:
                           - name: API Specs Trans
-                        shareStructure:
-                        resolutionDates: [
-                          '2024-07-12'
-                        ]
+                        shareStructure: null
+                        resolutionDates:
+                          - '2024-07-12'
                         shareClasses:
                           - currency: CAD
                             hasMaximumShares: true
@@ -273,36 +276,36 @@ paths:
                       annualReport:
                         annualReportDate: '2025-02-22'
                         directors:
-                            appointmentDate: '2024-02-23'
-                            cessationDate: null
-                            deliveryAddress: 
-                              addressCity: delivery_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: H0H 0H0
-                              streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: mailing_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: H0H 0H0
-                              streetAddress: mailing_address - address line one
-                              streetAddressAdditional: ''
-                            officer:
-                              email: api.specs@api.specs
-                              firstName: firstName
-                              lastName: lastName
-                              partyType: person
-                              middleInitial: ''
-                              prevFirstName: ''
-                              prevLastName: ''
-                              prevMiddleInitial: ''
+                          appointmentDate: '2024-02-23'
+                          cessationDate: null
+                          deliveryAddress:
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ''
+                          officer:
+                            email: api.specs@api.specs
+                            firstName: firstName
+                            lastName: lastName
+                            partyType: person
+                            middleInitial: ''
+                            prevFirstName: ''
+                            prevLastName: ''
+                            prevMiddleInitial: ''
                         offices:
                           recordsOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
@@ -319,7 +322,7 @@ paths:
                               streetAddress: mailing_address - address line one
                               streetAddressAdditional: ''
                           registeredOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
@@ -375,54 +378,50 @@ paths:
                         offices:
                           recordsOffice:
                             deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
+                              actions:
+                                - addressChanged
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions:
+                              deliveryInstructions: null
                               postalCode: V8N 4R7
                               streetAddress: TEST D 2
-                              streetAddressAdditional: 
+                              streetAddressAdditional: null
                             mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
+                              actions:
+                                - addressChanged
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions:
+                              deliveryInstructions: null
                               postalCode: V8N 4R7
                               streetAddress: TEST M 2
-                              streetAddressAdditional:
+                              streetAddressAdditional: null
                           registeredOffice:
                             deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
+                              actions:
+                                - addressChanged
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions:
+                              deliveryInstructions: null
                               postalCode: V8N 4R7
                               streetAddress: TEST D 1
-                              streetAddressAdditional:
+                              streetAddressAdditional: null
                             mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
+                              actions:
+                                - addressChanged
                               addressCity: RICHMOND
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions:
+                              deliveryInstructions: null
                               postalCode: V8N 4R7
                               streetAddress: TEST M 1
-                              streetAddressAdditional:
+                              streetAddressAdditional: null
                       header:
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: "full name"
+                        certifiedBy: full name
                         colinIds: []
                         comments: []
                         date: '2024-07-17T23:14:58.831553+00:00'
@@ -438,8 +437,8 @@ paths:
                         name: changeOfAddress
                         paymentStatusCode: CREATED
                         paymentToken: 12345
-                        status: 'PENDING'
-                        submitter: 'mocked submitter'
+                        status: PENDING
+                        submitter: mocked submitter
                 change-of-directors-success-response:
                   summary: Change Of Directors Response
                   value:
@@ -451,61 +450,61 @@ paths:
                         legalType: BC
                       changeOfDirectors:
                         directors:
-                        - officer:
-                            firstName: NEW
-                            lastName: DIRECTOR
-                            middleInitial: ''
-                            prevFirstName: ''
-                            prevLastName: ''
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            streetAddress: delivery_address - address line one
-                            streetAddressAdditional: ''
-                            addressCity: delivery_address city
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: H0H 0H0
-                            addressCountry: CA
-                          mailingAddress:
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: ''
-                            addressCity: mailing_address city
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: H0H 0H0
-                            addressCountry: CA
-                          appointmentDate: '2025-03-25'
-                          cessationDate: null
-                          actions:
-                            - appointed
-                        - officer:
-                            firstName: UPDATED
-                            lastName: DIRECTOR
-                            middleInitial: ''
-                            prevFirstName: 'PREVIOUS'
-                            prevLastName: 'NAME'
-                            prevMiddleInitial: ''
-                          deliveryAddress:
-                            addressCity: Vancouver
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: H0H 0H0
-                            streetAddress: 200 Changed Address
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: Vancouver
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: H0H 0H0
-                            streetAddress: 200 Changed Address
-                            streetAddressAdditional: ''
-                          appointmentDate: '2025-03-25'
-                          cessationDate: null
-                          actions:
-                            - addressChanged
-                            - nameChanged
+                          - officer:
+                              firstName: NEW
+                              lastName: DIRECTOR
+                              middleInitial: ''
+                              prevFirstName: ''
+                              prevLastName: ''
+                              prevMiddleInitial: ''
+                            deliveryAddress:
+                              streetAddress: delivery_address - address line one
+                              streetAddressAdditional: ''
+                              addressCity: delivery_address city
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: H0H 0H0
+                              addressCountry: CA
+                            mailingAddress:
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ''
+                              addressCity: mailing_address city
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: H0H 0H0
+                              addressCountry: CA
+                            appointmentDate: '2025-03-25'
+                            cessationDate: null
+                            actions:
+                              - appointed
+                          - officer:
+                              firstName: UPDATED
+                              lastName: DIRECTOR
+                              middleInitial: ''
+                              prevFirstName: PREVIOUS
+                              prevLastName: NAME
+                              prevMiddleInitial: ''
+                            deliveryAddress:
+                              addressCity: Vancouver
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: H0H 0H0
+                              streetAddress: 200 Changed Address
+                              streetAddressAdditional: ''
+                            mailingAddress:
+                              addressCity: Vancouver
+                              addressCountry: CA
+                              addressRegion: BC
+                              deliveryInstructions: ''
+                              postalCode: H0H 0H0
+                              streetAddress: 200 Changed Address
+                              streetAddressAdditional: ''
+                            appointmentDate: '2025-03-25'
+                            cessationDate: null
+                            actions:
+                              - addressChanged
+                              - nameChanged
                       header:
                         accountId: 1234
                         affectedFilings: []
@@ -522,6 +521,66 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: true
                         name: changeOfDirectors
+                        paymentAccount: '12345'
+                        paymentStatusCode: COMPLETED
+                        paymentToken: '12345678'
+                        status: PENDING
+                        submitter: mocked submitter
+                change-of-officers-success-response:
+                  summary: Change Of Officers Response
+                  value:
+                    filing:
+                      business:
+                        foundingDate: '2025-03-25T07:00:00.000+00:00'
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
+                      changeOfOfficers:
+                        relationships:
+                          - entity:
+                              givenName: Johnathon
+                              familyName: Smith
+                              middleInitial: E
+                              alternateName: John Smith
+                            deliveryAddress:
+                              streetAddress: 5-4761 Bay Street
+                              addressCity: Victoria
+                              addressRegion: BC
+                              addressCountry: Canada
+                              postalCode: V8R 2P1
+                              deliveryInstructions: Our apartment is located at the back of the building.
+                            mailingAddress:
+                              streetAddress: 5-4761 Bay Street
+                              addressCity: Victoria
+                              addressRegion: BC
+                              addressCountry: Canada
+                              postalCode: V8R 2P1
+                              deliveryInstructions: Our apartment is located at the back of the building.
+                            roles:
+                              - appointmentDate: '2018-08-24'
+                                cessationDate: '2024-08-24'
+                                roleType: Secretary
+                                roleClass: OFFICER
+                              - appointmentDate: '2024-08-24'
+                                cessationDate: null
+                                roleType: CEO
+                                roleClass: OFFICER
+                      header:
+                        accountId: 1234
+                        affectedFilings: []
+                        availableOnPaperOnly: false
+                        certifiedBy: First Last
+                        colinIds: []
+                        comments: []
+                        date: '2025-03-25T21:39:11.950027+00:00'
+                        deletionLocked: false
+                        effectiveDate: '2025-03-25T07:00:00+00:00'
+                        filingId: 1234567
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+                        isPaymentActionRequired: true
+                        name: changeOfOfficers
                         paymentAccount: '12345'
                         paymentStatusCode: COMPLETED
                         paymentToken: '12345678'
@@ -547,7 +606,7 @@ paths:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
-                        certifiedBy: "First Last"
+                        certifiedBy: First Last
                         colinIds: []
                         comments: []
                         date: '2025-03-25'
@@ -560,10 +619,10 @@ paths:
                         isPaymentActionRequired: true
                         name: consentContinuationOut
                         paymentAccount: '12345'
-                        paymentStatusCode: 'COMPLETED'
+                        paymentStatusCode: COMPLETED
                         paymentToken: '12345678'
-                        status: 'PENDING'
-                        submitter: 'mocked submitter'
+                        status: PENDING
+                        submitter: mocked submitter
                 notice-of-withdrawal-success-response:
                   summary: Notice of Withdrawal Response
                   value:
@@ -587,10 +646,10 @@ paths:
                         isCorrectionPending: false
                         isPaymentActionRequired: false
                         name: noticeOfWithdrawal
-                        paymentStatusCode: 'APPROVED'
+                        paymentStatusCode: APPROVED
                         paymentToken: '12345'
-                        status: 'PENDING'
-                        submitter: 'mocked submitter'
+                        status: PENDING
+                        submitter: mocked submitter
                       noticeOfWithdrawal:
                         filingId: 123456
                         hasTakenEffect: false
@@ -675,7 +734,7 @@ paths:
                         status: PENDING
                         submitter: mocked submitter
         '400':
-          description: The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).
+          description: 'The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).'
           content:
             application/json:
               examples:
@@ -683,87 +742,87 @@ paths:
                   summary: AGM Extension - Invalid Total Approved Extension Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension
+                    rootCause: 'errors:[error:Fail to grant extension.],filing:agmExtension:agmDueDate:2026-06-20,agmYear:2024,alreadyExtended:false,currentDate:2024-07-10,expireDateApprovedExt:2026-06-20,extReqForAgmYear:false,extensionDuration:6,incorporationDate:2024-06-20T17:31:58.000Z,isEligible:true,isFirstAgm:true,isGoodStanding:true,isPrevExtension:false,prevAgmDate:null,prevExpiryDate:null,requestExpired:false,totalApprovedExt:7,year:2024,business:foundingDate:2024-06-20T17:31:58.000+00:00,identifier:BC0882365,legalName:0882365 B.C. LTD.,legalType:BC,header:certifiedBy:APISpecs,date:2024-07-10,name:agmExtension'
                 alteration-failed-invalid-legal-type-change-response:
                   summary: Alteration - Invalid Legal Type Change Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]
+                    rootCause: 'errors:[error:Your business type has not been updated to a BC Benefit Company, BC Unlimited Liability Company, BC Community Contribution Company, BC Limited Company or BC Cooperative Association.,path:/filing/alteration/business/legalType]'
                 alteration-failed-missing-business-legal-name-response:
                   summary: Alteration - Missing Business Legal Name Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]
+                    rootCause: 'errors:[error:Alteration to Numbered Company can only be done for a Named Company.,path:/filing/business/legalName]'
                 alteration-failed-missing-business-response:
                   summary: Alteration - Missing Business Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[message:A valid business is required.]
+                    rootCause: 'errors:[message:A valid business is required.]'
                 alteration-failed-missing-max-number-of-share-response:
                   summary: Alteration - Missing Max Number of Shares Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]
+                    rootCause: 'errors:[error:Share class Common Shares must provide value for maximum number of shares,path:/filing/alteration/shareClasses/0/maxNumberOfShares/]'
                 alteration-failed-name-request-does-not-have-the-same-legal-name-response:
                   summary: Alteration - Name Request Does Not Have the Same Legal Name Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                    rootCause: 'errors:[error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]'
                 alteration-failed-name-request-does-not-have-the-same-legal-type-response:
                   summary: Alteration - Name Request Does Not Have the Same Legal Type Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Name Request legal type is not same as the business legal type.,path:/filing/alteration/nameRequest/legalType]
+                    rootCause: 'errors:[error:Name Request legal type is not same as the business legal type.,path:/filing/alteration/nameRequest/legalType]'
                 alteration-failed-name-request-is-not-approved-response:
                   summary: Alteration - Name Request Is Not Approved Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]
+                    rootCause: 'errors:[error:Alteration of Name Request is not approved.,path:/filing/alteration/nameRequest/nrNumber,error:Alteration of Name Request has a different legal name.,path:/filing/alteration/nameRequest/legalName]'
                 change-of-directors-failed-invalid-address-country:
                   summary: Change Of Directors - Invalid Address Country
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Address Country must resolve to a valid ISO-2 country.]
+                    rootCause: 'errors:[error:Address Country must resolve to a valid ISO-2 country.]'
                 change-of-directors-failed-invalid-effective-date-prior-to-most-recent-filing-response:
                   summary: Change Of Directors - Invalid Effective Date (Earlier Than Previous Change of Director Filing)
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Effective date cannot be before another Change of Director filing.]
+                    rootCause: 'errors:[error:Effective date cannot be before another Change of Director filing.]'
                 change-of-directors-failed-invalid-future-effective-date:
                   summary: Change Of Directors - Invalid Future Effective Date
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Filing cannot have a future effective date.]
+                    rootCause: 'errors:[error:Filing cannot have a future effective date.]'
                 change-of-directors-failed-missing-business-response:
                   summary: Change Of Directors - Missing Business Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[message:A valid business is required.]
+                    rootCause: 'errors:[message:A valid business is required.]'
                 consent-continuation-out-failed-bc-as-foreign-jurisdiction-region-response:
                   summary: Consent Continuation Out - BC Specified as Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                    rootCause: 'errors:[error:Region should not be BC.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:BC,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut'
                 consent-continuation-out-failed-invalid-foreign-jurisdiction-country-response:
                   summary: Consent Continuation Out - Invalid Foreign Jurisdiction Country Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Invalid country.,path:/filing/consentContinuationOut/foreignJurisdiction/country],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                    rootCause: 'errors:[error:Invalid country.,path:/filing/consentContinuationOut/foreignJurisdiction/country],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut'
                 consent-continuation-out-failed-invalid-foreign-jurisdiction-region-response:
                   summary: Consent Continuation Out - Invalid Foreign Jurisdiction Region Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Invalid region.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,state:HISTORICAL,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                    rootCause: 'errors:[error:Invalid region.,path:/filing/consentContinuationOut/foreignJurisdiction/region],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,state:HISTORICAL,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut'
                 consent-continuation-out-failed-missing-required-field-response:
                   summary: Consent Continuation Out - Missing Required Field Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[message:A valid business is required.]
+                    rootCause: 'errors:[message:A valid business is required.]'
                 consent-continuation-out-failed-invalid-jurisdiction-response:
                   summary: Consent Continuation Out - Same Unexpired Foreign Jurisdiction Exist Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[error:Can't have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut
+                    rootCause: 'errors:[error:Can''t have new consent for same jurisdiction if an unexpired one already exists,path:/filing/consentContinuationOut/foreignJurisdiction],filing:business:foundingDate:2024-07-08T15:34:57.844764+00:00,identifier:BC0882848,legalName:0882848 B.C. LTD.,legalType:BEN,consentContinuationOut:courtOrder:effectOfOrder:planOfArrangement,fileNumber:12345,foreignJurisdiction:country:CA,region:AB,header:availableOnPaperOnly:false,certifiedBy:Api specs,date:2024-07-10,documentOptionalEmail:Apispecs@email.com,email:Apispecs@gov.bc.ca,inColinOnly:false,name:consentContinuationOut'
                 notice-of-withdrawal-failed-withdrawn-filing-issues-response:
                   summary: Notice of Withdrawal - invalid withdrawn filing
                   value:
@@ -774,9 +833,9 @@ paths:
                   summary: Voluntary Dissolution - Missing Filing Name Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: errors:[message:filing/header/name is a required property]
+                    rootCause: 'errors:[message:filing/header/name is a required property]'
         '401':
-          description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
+          description: 'Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.'
           content:
             application/json:
               examples:
@@ -784,7 +843,7 @@ paths:
                   summary: Consent Continuation Out - Unauthorized Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for BC1218840.
+                    rootCause: 'message:You are not authorized to submit a filing for BC1218840.'
                 notice-of-withdrawal-failed-not-staff-response:
                   summary: Notice of Withdrawal - Not a staff
                   value:
@@ -803,7 +862,7 @@ paths:
                   value:
                     message: You are not allowed to submit this type of filing for BC1218840.
         '404':
-          description: Cannot found, when a value cannot be found in the records
+          description: 'Cannot found, when a value cannot be found in the records'
           content:
             application/json:
               examples:
@@ -813,74 +872,74 @@ paths:
                     errors:
                       - error: The filing to be withdrawn cannot be found.
         '422':
-          description: UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)
+          description: 'UNPROCESSABLE ENTITY, in many cases caused by missing one or more required field(s)'
           content:
             application/json:
               examples:
                 agm-extension-failed-missing-agm-year-response:
-                   summary: AGM Extension - Missing agmYear Response
-                   value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                agm-extension-failed-missing-ext-req-for-agm-year-response:
-                   summary: AGM Extension - Missing extReqForAgmYear Response
-                   value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                agm-extension-failed-missing-is-first-agm-response:
-                   summary: AGM Extension - Missing isFirstAgm Response
-                   value:
-                    errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
-                agm-location-change-failed-missing-agm-location-response:
-                  summary: 'AGM Location Change - Missing AGM Location Response'
+                  summary: AGM Extension - Missing agmYear Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
+                agm-extension-failed-missing-ext-req-for-agm-year-response:
+                  summary: AGM Extension - Missing extReqForAgmYear Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
+                agm-extension-failed-missing-is-first-agm-response:
+                  summary: AGM Extension - Missing isFirstAgm Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
+                agm-location-change-failed-missing-agm-location-response:
+                  summary: AGM Location Change - Missing AGM Location Response
+                  value:
+                    errorMessage: API backend third party service error.
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 agm-location-change-failed-missing-reason-response:
                   summary: AGM Location Change - Missing Reason Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 agm-location-change-failed-missing-year-response:
                   summary: AGM Location Change - Missing Year Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 alteration-failed-missing-court-order-file-number-response:
                   summary: Alteration - Missing Court Order File Number Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 annual-report-failed-missing-annual-report-date-response:
                   summary: Annual Report - Missing Annual Report Date Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 annual-report-failed-missing-missing-directors-response:
                   summary: Annual Report - Missing Directors Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 annual-report-failed-missing-offices-response:
                   summary: Annual Report - Missing Offices Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 change-of-address-failed-missing-records-office-response:
                   summary: Change Of Address - Missing Records Office Address Response
                   value:
-                    errorMessage: "API backend third party service error."
+                    errorMessage: API backend third party service error.
                 consent-continuation-out-failed-invalid-court-order-response:
                   summary: Consent Continuation Out - Invalid Court Order Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
                 voluntary-dissolution-failed-missing-dissolution-date-response:
                   summary: Voluntary Dissolution - Missing Dissolution Date Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: "errors:<comma delimited list of potential validation errors by json path>"
+                    rootCause: 'errors:<comma delimited list of potential validation errors by json path>'
         '500':
           description: INTERNAL SERVER ERROR
           content:
@@ -890,7 +949,7 @@ paths:
                   summary: Voluntary Dissolution - Missing Dissolution Type Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:Internal server error
+                    rootCause: 'message:Internal server error'
       description: This is used to submit all filing types that are used to maintain or change the state of the Registration of any business entity in the Registry to which the user has access to.
       tags:
         - business
@@ -949,7 +1008,7 @@ paths:
                     agmLocationChange:
                       year: '2024'
                       reason: API Specs Tests
-                      agmLocation: Victoria, BC, Canada
+                      agmLocation: 'Victoria, BC, Canada'
               alteration-request:
                 summary: Alteration Request
                 value:
@@ -976,11 +1035,10 @@ paths:
                         - name: API Specs Trans
                       contactPoint:
                         email: no_one@never.get
-                        phone: '(111) 111-1111'
+                        phone: (111) 111-1111
                       shareStructure:
-                        resolutionDates: [
-                          '2024-07-12'
-                        ]
+                        resolutionDates:
+                          - '2024-07-12'
                         shareClasses:
                           - currency: CAD
                             hasMaximumShares: true
@@ -1017,7 +1075,7 @@ paths:
                       annualReportDate: '2025-02-22'
                       offices:
                         registeredOffice:
-                          deliveryAddress: 
+                          deliveryAddress:
                             addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
@@ -1034,7 +1092,7 @@ paths:
                             streetAddress: mailing_address - address line one
                             streetAddressAdditional: ''
                         recordsOffice:
-                          deliveryAddress: 
+                          deliveryAddress:
                             addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
@@ -1062,7 +1120,7 @@ paths:
                             prevMiddleInitial: ''
                           appointmentDate: '2024-02-23'
                           cessationDate: null
-                          deliveryAddress: 
+                          deliveryAddress:
                             addressCity: delivery_address city
                             addressCountry: CA
                             addressRegion: BC
@@ -1081,66 +1139,62 @@ paths:
               change-of-address-request:
                 summary: Change Of Address
                 value:
-                    filing:
-                      header:
-                        name: changeOfAddress
-                        certifiedBy: "full name"
-                        email: "no_one@never.get"
-                        date: '2024-07-23'
-                      business:
-                        legalType: BC
-                        foundingDate: '2024-06-09T00:00:00+00:00'
-                        identifier: BC0880343
-                        legalName: KD TEST BAKING BC LIMITED
-                      changeOfAddress:
-                        legalType: BC
-                        offices:
-                          recordsOffice:
-                            deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST D 2
-                              streetAddressAdditional: 
-                            mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST M 2
-                              streetAddressAdditional:
-                          registeredOffice: 
-                            deliveryAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST D 1
-                              streetAddressAdditional:
-                            mailingAddress:
-                              actions: [
-                                  addressChanged
-                              ]
-                              addressCity: RICHMOND
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: 
-                              postalCode: V8N 4R7
-                              streetAddress: TEST M 1
-                              streetAddressAdditional:
+                  filing:
+                    header:
+                      name: changeOfAddress
+                      certifiedBy: full name
+                      email: no_one@never.get
+                      date: '2024-07-23'
+                    business:
+                      legalType: BC
+                      foundingDate: '2024-06-09T00:00:00+00:00'
+                      identifier: BC0880343
+                      legalName: KD TEST BAKING BC LIMITED
+                    changeOfAddress:
+                      legalType: BC
+                      offices:
+                        recordsOffice:
+                          deliveryAddress:
+                            actions:
+                              - addressChanged
+                            addressCity: RICHMOND
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: null
+                            postalCode: V8N 4R7
+                            streetAddress: TEST D 2
+                            streetAddressAdditional: null
+                          mailingAddress:
+                            actions:
+                              - addressChanged
+                            addressCity: RICHMOND
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: null
+                            postalCode: V8N 4R7
+                            streetAddress: TEST M 2
+                            streetAddressAdditional: null
+                        registeredOffice:
+                          deliveryAddress:
+                            actions:
+                              - addressChanged
+                            addressCity: RICHMOND
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: null
+                            postalCode: V8N 4R7
+                            streetAddress: TEST D 1
+                            streetAddressAdditional: null
+                          mailingAddress:
+                            actions:
+                              - addressChanged
+                            addressCity: RICHMOND
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: null
+                            postalCode: V8N 4R7
+                            streetAddress: TEST M 1
+                            streetAddressAdditional: null
               change-of-directors-request:
                 summary: Change Of Directors Request
                 value:
@@ -1189,8 +1243,8 @@ paths:
                             firstName: UPDATED
                             lastName: DIRECTOR
                             middleInitial: ''
-                            prevFirstName: 'PREVIOUS'
-                            prevLastName: 'NAME'
+                            prevFirstName: PREVIOUS
+                            prevLastName: NAME
                             prevMiddleInitial: ''
                           deliveryAddress:
                             addressCity: Vancouver
@@ -1213,6 +1267,51 @@ paths:
                           actions:
                             - addressChanged
                             - nameChanged
+              change-of-officers-request:
+                summary: Change Of Officers Request
+                value:
+                  filing:
+                    header:
+                      name: changeOfOfficers
+                      certifiedBy: First Last
+                      date: '2025-03-25'
+                      effectiveDate: '2025-03-25T07:00:00+00:00'
+                      accountId: 1234
+                    business:
+                      foundingDate: '2024-07-08T07:00:00.000+00:00'
+                      identifier: BC1234567
+                      legalName: 1234567 B.C. LTD.
+                      legalType: BC
+                    changeOfOfficers:
+                      relationships:
+                        - entity:
+                            givenName: Johnathon
+                            familyName: Smith
+                            middleInitial: E
+                            alternateName: John Smith
+                          deliveryAddress:
+                            streetAddress: 5-4761 Bay Street
+                            addressCity: Victoria
+                            addressRegion: BC
+                            addressCountry: Canada
+                            postalCode: V8R 2P1
+                            deliveryInstructions: Our apartment is located at the back of the building.
+                          mailingAddress:
+                            streetAddress: 5-4761 Bay Street
+                            addressCity: Victoria
+                            addressRegion: BC
+                            addressCountry: Canada
+                            postalCode: V8R 2P1
+                            deliveryInstructions: Our apartment is located at the back of the building.
+                          roles:
+                            - appointmentDate: '2018-08-24'
+                              cessationDate: '2024-08-24'
+                              roleType: Secretary
+                              roleClass: OFFICER
+                            - appointmentDate: '2024-08-24'
+                              cessationDate: null
+                              roleType: CEO
+                              roleClass: OFFICER
               consent-continuation-out-request:
                 summary: Consent Continuation Out Request
                 value:
@@ -1220,7 +1319,7 @@ paths:
                     header:
                       name: consentContinuationOut
                       date: '2025-03-25'
-                      certifiedBy: "First Last"
+                      certifiedBy: First Last
                       accountId: 1234
                     business:
                       legalName: 1234567 B.C. LTD.
@@ -1269,7 +1368,7 @@ paths:
                     noticeOfWithdrawal:
                       filingId: 123456
                       courtOrder:
-                        fileNumber: "A12345"
+                        fileNumber: A12345
                         effectOfOrder: planOfArrangement
                       hasTakenEffect: false
                       partOfPoa: false
@@ -1346,10 +1445,12 @@ paths:
             type: boolean
           in: query
           name: only_validate
-          description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
+          description: 'This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.'
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: ror3q0v9c1goi
   '/businesses/{identifier}/filings/{filingId}':
-    description: to update a filing 
+    description: to update a filing
     parameters:
       - $ref: '#/components/parameters/identifier'
       - $ref: '#/components/parameters/filingId'
@@ -1406,66 +1507,66 @@ paths:
                         nameTranslations: []
                         offices:
                           recordsOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ""
+                              deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
+                              streetAddressAdditional: ''
                             mailingAddress:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ""
+                              deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
-                              streetAddressAdditional: ""
+                              streetAddressAdditional: ''
                           registeredOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ""
+                              deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
+                              streetAddressAdditional: ''
                             mailingAddress:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              deliveryInstructions: ""
+                              deliveryInstructions: ''
                               postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
-                              streetAddressAdditional: ""
+                              streetAddressAdditional: ''
                         parties:
-                        - roles:
-                          - roleType: Completing Party
-                            appointmentDate: '2025-03-21'
-                          - roleType: Director
-                            appointmentDate: '2025-03-21'
-                          officer:
-                            firstName: First
-                            lastName: Last
-                            middleName: ""
-                            organizationName: ""
-                            partyType: "person"
-                            email: "apiSpec@example.com"
-                          mailingAddress: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            addressRegion: BC
-                            postalCode: H0H 0H0
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: ""
-                          deliveryAddress:
+                          - roles:
+                              - roleType: Completing Party
+                                appointmentDate: '2025-03-21'
+                              - roleType: Director
+                                appointmentDate: '2025-03-21'
+                            officer:
+                              firstName: First
+                              lastName: Last
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                              email: apiSpec@example.com
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ''
+                            deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
+                              streetAddressAdditional: ''
                       shareStructure:
                         shareClasses:
                           - name: Sample Shares
@@ -1514,97 +1615,99 @@ paths:
                       date: '2025-03-21'
                       name: continuationIn
                     continuationIn:
-                        authorization:
-                          files:
-                            - fileKey: 123456-mock-value-1234.pdf
-                              fileName: Example_PDF.pdf
-                        contactPoint:
-                          email: test@test.com
-                          phone: 1234567890
-                        foreignJurisdiction:
-                          country: US
-                          identifier: TEST1234
-                          incorporationDate: '2024-05-01'
-                          legalName: Test business
-                          region: CA
-                        nameRequest:
-                          legalName: TEST CONT IN LTD.
-                          nrNumber: NR 1234567
-                          legalType: C
-                        nameTranslations: []
-                        offices:
-                          recordsOffice:
-                            deliveryAddress: 
-                              addressCity: delivery_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ""
-                              postalCode: H0H 0H0
-                              streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
-                            mailingAddress:
-                              addressCity: mailing_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ""
-                              postalCode: H0H 0H0
-                              streetAddress: mailing_address - address line one
-                              streetAddressAdditional: ""
-                          registeredOffice:
-                            deliveryAddress: 
-                              addressCity: delivery_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ""
-                              postalCode: H0H 0H0
-                              streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
-                            mailingAddress:
-                              addressCity: mailing_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ""
-                              postalCode: H0H 0H0
-                              streetAddress: mailing_address - address line one
-                              streetAddressAdditional: ""
-                        parties:
+                      authorization:
+                        files:
+                          - fileKey: 123456-mock-value-1234.pdf
+                            fileName: Example_PDF.pdf
+                      contactPoint:
+                        email: test@test.com
+                        phone: 1234567890
+                      foreignJurisdiction:
+                        country: US
+                        identifier: TEST1234
+                        incorporationDate: '2024-05-01'
+                        legalName: Test business
+                        region: CA
+                      nameRequest:
+                        legalName: TEST CONT IN LTD.
+                        nrNumber: NR 1234567
+                        legalType: C
+                      nameTranslations: []
+                      offices:
+                        recordsOffice:
+                          deliveryAddress:
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ''
+                        registeredOffice:
+                          deliveryAddress:
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: mailing_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            deliveryInstructions: ''
+                            postalCode: H0H 0H0
+                            streetAddress: mailing_address - address line one
+                            streetAddressAdditional: ''
+                      parties:
                         - roles:
-                          - roleType: Completing Party
-                            appointmentDate: '2025-03-21'
-                          - roleType: Director
-                            appointmentDate: '2025-03-21'
+                            - roleType: Completing Party
+                              appointmentDate: '2025-03-21'
+                            - roleType: Director
+                              appointmentDate: '2025-03-21'
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ""
-                            organizationName: ""
-                            partyType: "person"
-                            email: "apiSpec@example.com"
-                          mailingAddress: 
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                            email: apiSpec@example.com
+                          mailingAddress:
                             addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: H0H 0H0
                             streetAddress: mailing_address - address line one
-                            streetAddressAdditional: ""
+                            streetAddressAdditional: ''
                           deliveryAddress:
-                              addressCity: delivery_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: H0H 0H0
-                              streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
-                        shareStructure:
-                          shareClasses:
-                            - name: Sample Shares
-                              priority: 1
-                              hasMaximumShares: false
-                              maxNumberOfShares: null
-                              hasParValue: false
-                              parValue: null
-                              currency: null
-                              hasRightsOrRestrictions: false
-                              series: []
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
+                      shareStructure:
+                        shareClasses:
+                          - name: Sample Shares
+                            priority: 1
+                            hasMaximumShares: false
+                            maxNumberOfShares: null
+                            hasParValue: false
+                            parValue: null
+                            currency: null
+                            hasRightsOrRestrictions: false
+                            series: []
+      x-stoplight:
+        id: ydyi2dkukt4z6
   '/businesses/{identifier}/filings/{filingId}/documents':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -1633,6 +1736,8 @@ paths:
       description: Returns the list of documents available for a filing.
       parameters:
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: 1fo3ez60mzx2z
   '/businesses/{identifier}/addresses':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -1664,6 +1769,8 @@ paths:
         - business
       parameters:
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: 576oz42tpei1r
   '/businesses/{identifier}/filings/{filingId}/documents/{documentName}':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -1709,6 +1816,8 @@ paths:
           description: The mimetype of the object
           name: Content-type
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: l1x42f2nqufmw
   '/businesses/{identifier}/documents/{documentName}':
     parameters:
       - name: identifier
@@ -2506,6 +2615,8 @@ paths:
           name: Accept
           description: The accept mimetype of the object
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: 2yp7szdwjpcqt
   /businesses:
     post:
       summary: save business creation filing
@@ -2533,44 +2644,44 @@ paths:
                 amalgamation-regular-success-response:
                   summary: Amalgamation Regular Response
                   value:
-                    filing: 
+                    filing:
                       amalgamationApplication:
                         amalgamatingBusinesses:
                           - identifier: BC0883189
                             role: amalgamating
                           - identifier: BC0883230
                             role: amalgamating
-                        contactPoint: 
+                        contactPoint:
                           email: no_one@never.get
                           phone: (555) 555-5555
                         courtApproval: false
-                        nameRequest: 
-                            legalType: BC
-                        offices: 
+                        nameRequest:
+                          legalType: BC
+                        offices:
                           recordsOffice:
-                            deliveryAddress: 
+                            deliveryAddress:
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
                               streetAddressAdditional: ''
-                            mailingAddress: 
+                            mailingAddress:
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
                               streetAddressAdditional: ''
-                          registeredOffice: 
-                            deliveryAddress: 
+                          registeredOffice:
+                            deliveryAddress:
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: V8Z 5C5
                               streetAddress: Test rd
                               streetAddressAdditional: ''
-                            mailingAddress: 
+                            mailingAddress:
                               addressCity: Victoria
                               addressCountry: CA
                               addressRegion: BC
@@ -2624,7 +2735,7 @@ paths:
                             roles:
                               - appointmentDate: '2024-07-24'
                                 roleType: Director
-                        shareStructure: 
+                        shareStructure:
                           shareClasses:
                             - name: Classic 1 Shares
                               priority: 1
@@ -2636,18 +2747,18 @@ paths:
                               hasRightsOrRestrictions: false
                               series: []
                         type: regular
-                      business: 
+                      business:
                         identifier: TO12345678
-                      header: 
+                      header:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: 2024-07-25T19:54:02.949741+00:00
+                        date: '2024-07-25T19:54:02.949741+00:00'
                         deletionLocked: false
-                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        effectiveDate: '2024-07-25T19:54:02.949764+00:00'
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
@@ -2662,19 +2773,19 @@ paths:
                 amalgamation-short-form-horizontal-success-response:
                   summary: Amalgamation Short Form Horizontal Response
                   value:
-                    filing: 
+                    filing:
                       amalgamationApplication:
                         amalgamatingBusinesses:
                           - identifier: BC0883189
                             role: primary
                           - identifier: BC0883230
                             role: amalgamating
-                        contactPoint: 
+                        contactPoint:
                           email: no_one@never.get
                           phone: (555) 555-5555
                         courtApproval: false
-                        nameRequest: 
-                            legalType: BC
+                        nameRequest:
+                          legalType: BC
                         offices:
                           recordsOffice:
                             deliveryAddress:
@@ -2765,18 +2876,18 @@ paths:
                               hasRightsOrRestrictions: false
                               series: []
                         type: horizontal
-                      business: 
+                      business:
                         identifier: TO12345678
-                      header: 
+                      header:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: 2024-07-25T19:54:02.949741+00:00
+                        date: '2024-07-25T19:54:02.949741+00:00'
                         deletionLocked: false
-                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        effectiveDate: '2024-07-25T19:54:02.949764+00:00'
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
@@ -2798,12 +2909,12 @@ paths:
                             role: holding
                           - identifier: BC0883230
                             role: amalgamating
-                        contactPoint: 
+                        contactPoint:
                           email: no_one@never.get
                           phone: (555) 555-5555
                         courtApproval: false
-                        nameRequest: 
-                            legalType: BC
+                        nameRequest:
+                          legalType: BC
                         offices:
                           recordsOffice:
                             deliveryAddress:
@@ -2894,18 +3005,18 @@ paths:
                               hasRightsOrRestrictions: false
                               series: []
                         type: vertical
-                      business: 
+                      business:
                         identifier: TO12345678
-                      header: 
+                      header:
                         accountId: 1234
                         affectedFilings: []
                         availableOnPaperOnly: false
                         certifiedBy: First Last
                         colinIds: []
                         comments: []
-                        date: 2024-07-25T19:54:02.949741+00:00
+                        date: '2024-07-25T19:54:02.949741+00:00'
                         deletionLocked: false
-                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        effectiveDate: '2024-07-25T19:54:02.949764+00:00'
                         filingId: 150338
                         inColinOnly: false
                         isCorrected: false
@@ -2921,25 +3032,25 @@ paths:
                   summary: Continuation In - To Be Approved Response
                   value:
                     filing:
-                      continuationIn: 
-                        authorization: 
-                            files: 
-                              - fileKey: 123456-mock-value-1234.pdf.pdf
-                                fileName: Example_PDF.pdf
-                        contactPoint: 
-                            email: test@test.com
-                            phone: 1234567890
-                        foreignJurisdiction: 
-                            country: US
-                            identifier: TEST1234
-                            incorporationDate: '2024-06-01'
-                            legalName: Test business
-                            region: CA
-                        nameRequest: 
-                            legalName: TEST CONT IN LTD.
-                            legalType: C
-                            nrNumber: NR 1234567
-                      business: 
+                      continuationIn:
+                        authorization:
+                          files:
+                            - fileKey: 123456-mock-value-1234.pdf.pdf
+                              fileName: Example_PDF.pdf
+                        contactPoint:
+                          email: test@test.com
+                          phone: 1234567890
+                        foreignJurisdiction:
+                          country: US
+                          identifier: TEST1234
+                          incorporationDate: '2024-06-01'
+                          legalName: Test business
+                          region: CA
+                        nameRequest:
+                          legalName: TEST CONT IN LTD.
+                          legalType: C
+                          nrNumber: NR 1234567
+                      business:
                         identifier: TO12345678
                       header:
                         accountId: 1234
@@ -2959,11 +3070,11 @@ paths:
                         status: AWAITING_REVIEW
                         submitter: mocked submitter
                 incorporation-application-success-response:
-                  summary: Incorporation Application Response  
+                  summary: Incorporation Application Response
                   value:
                     filing:
                       business:
-                        identifier: T12345678  
+                        identifier: T12345678
                       header:
                         accountId: 1234
                         affectedFilings: []
@@ -2997,14 +3108,14 @@ paths:
                             deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
-                              addressRegion: BC 
+                              addressRegion: BC
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
                             mailingAddress:
                               addressCity: mailing_address city
                               addressCountry: CA
                               addressRegion: BC
-                              postalCode: H0H 0H0 
+                              postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
                           registeredOffice:
                             deliveryAddress:
@@ -3020,34 +3131,34 @@ paths:
                               postalCode: H0H 0H0
                               streetAddress: mailing_address - address line one
                         parties:
-                        - roles:
-                          - roleType: Completing Party
-                            appointmentDate: '2025-03-20'
-                          - roleType: Incorporator
-                            appointmentDate: '2025-03-20'
-                          - roleType: Director
-                            appointmentDate: '2025-03-20'
-                          officer:
-                            firstName: First
-                            lastName: Last
-                            middleName: ""
-                            organizationName: ""
-                            partyType: "person"
-                            email: "apiSpec@example.com"
-                          mailingAddress: 
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            addressRegion: BC
-                            postalCode: H0H 0H0
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: ""
-                          deliveryAddress:
+                          - roles:
+                              - roleType: Completing Party
+                                appointmentDate: '2025-03-20'
+                              - roleType: Incorporator
+                                appointmentDate: '2025-03-20'
+                              - roleType: Director
+                                appointmentDate: '2025-03-20'
+                            officer:
+                              firstName: First
+                              lastName: Last
+                              middleName: ''
+                              organizationName: ''
+                              partyType: person
+                              email: apiSpec@example.com
+                            mailingAddress:
+                              addressCity: mailing_address city
+                              addressCountry: CA
+                              addressRegion: BC
+                              postalCode: H0H 0H0
+                              streetAddress: mailing_address - address line one
+                              streetAddressAdditional: ''
+                            deliveryAddress:
                               addressCity: delivery_address city
                               addressCountry: CA
                               addressRegion: BC
                               postalCode: H0H 0H0
                               streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
+                              streetAddressAdditional: ''
                       shareStructure:
                         shareClasses:
                           - name: Sample Shares
@@ -3072,9 +3183,9 @@ paths:
                         certifiedBy: full name
                         colinIds: []
                         comments: []
-                        date: 2024-07-25T19:54:02.949741+00:00
+                        date: '2024-07-25T19:54:02.949741+00:00'
                         deletionLocked: false
-                        effectiveDate: 2024-07-25T19:54:02.949764+00:00
+                        effectiveDate: '2024-07-25T19:54:02.949764+00:00'
                         email: no_one@never.get
                         filingId: 150338
                         inColinOnly: false
@@ -3083,52 +3194,52 @@ paths:
                         name: amalgamationApplication
                         status: DRAFT
                         submitter: mocked submitter
-                      registration: 
-                        business: 
+                      registration:
+                        business:
                           natureOfBusiness: sample business
                         businessType: SP
-                        offices: 
-                          businessOffice: 
-                            deliveryAddress: 
+                        offices:
+                          businessOffice:
+                            deliveryAddress:
                               streetAddress: delivery_address - address line one
                               addressCity: delivery_address city
                               addressCountry: Canada
                               postalCode: H0H 0H0
                               addressRegion: BC
-                            mailingAddress: 
+                            mailingAddress:
                               streetAddress: mailing_address - address line one
                               addressCity: mailing_address city
                               addressCountry: Canada
                               postalCode: H0H 0H0
                               addressRegion: BC
-                        contactPoint: 
+                        contactPoint:
                           email: no_one@never.get
                         startDate: '2024-07-26'
-                        nameRequest: 
+                        nameRequest:
                           nrNumber: NR 8332083
                           legalName: KD API SPEC SP
                           legalType: SP
                         parties:
-                          - mailingAddress: 
+                          - mailingAddress:
                               streetAddress: mailing_address - address line one
-                              streetAddressAdditional: 
+                              streetAddressAdditional: null
                               addressCity: mailing_address city
                               addressCountry: CA
                               postalCode: H0H 0H0
                               addressRegion: BC
-                            deliveryAddress: 
+                            deliveryAddress:
                               streetAddress: delivery_address - address line one
-                              streetAddressAdditional: 
+                              streetAddressAdditional: null
                               addressCity: delivery_address city
                               addressCountry: CA
                               postalCode: H0H 0H0
                               addressRegion: BC
-                            officer: 
+                            officer:
                               firstName: Joe
                               lastName: Swanson
                               middleName: P
                               email: joe@email.com
-                              organizationName: 
+                              organizationName: null
                               partyType: person
                             roles:
                               - appointmentDate: '2024-07-26'
@@ -3136,7 +3247,7 @@ paths:
                               - appointmentDate: '2024-07-26'
                                 roleType: Proprietor
         '401':
-          description: Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.
+          description: 'Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.'
           content:
             application/json:
               examples:
@@ -3144,28 +3255,28 @@ paths:
                   summary: Amalgamation - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                    rootCause: 'message:You are not authorized to submit a filing for TgtPxoS4FF.'
                 continuation-in-unauthorized-response:
                   summary: Continuation In - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                    rootCause: 'message:You are not authorized to submit a filing for TgtPxoS4FF.'
                 incorporation-unauthorized-response:
                   summary: Incorporation - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                    rootCause: 'message:You are not authorized to submit a filing for TgtPxoS4FF.'
                 registration-unauthorized-response:
                   summary: Registration - Not Authorized To Submit Response
                   value:
                     errorMessage: API backend third party service error.
-                    rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+                    rootCause: 'message:You are not authorized to submit a filing for TgtPxoS4FF.'
       description: '<p>Use this endpoint to create a new business. This endpoint supports creation of a new business entity by these filings:<ul><li>Incorporation Application</li><li>Amalgamation (Regular, Horizontal and Vertical)</li><li>Continuation In</li><li>Registration</li></ul></p>'
       requestBody:
         content:
           application/json:
             schema:
-                $ref: '#/components/schemas/Filing'
+              $ref: '#/components/schemas/Filing'
             examples:
               amalgamation-regular-request:
                 summary: Amalgamation Regular Request
@@ -3182,37 +3293,37 @@ paths:
                           role: amalgamating
                         - identifier: BC0883230
                           role: amalgamating
-                      contactPoint: 
+                      contactPoint:
                         email: no_one@never.get
                         phone: (555) 555-5555
                       courtApproval: false
-                      nameRequest: 
-                          legalType: BC
-                      offices: 
-                        recordsOffice: 
-                          deliveryAddress: 
+                      nameRequest:
+                        legalType: BC
+                      offices:
+                        recordsOffice:
+                          deliveryAddress:
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
                             streetAddressAdditional: ''
-                          mailingAddress: 
+                          mailingAddress:
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
                             streetAddressAdditional: ''
-                        registeredOffice: 
-                          deliveryAddress: 
+                        registeredOffice:
+                          deliveryAddress:
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: V8Z 5C5
                             streetAddress: Test rd
                             streetAddressAdditional: ''
-                          mailingAddress: 
+                          mailingAddress:
                             addressCity: Victoria
                             addressCountry: CA
                             addressRegion: BC
@@ -3266,7 +3377,7 @@ paths:
                           roles:
                             - appointmentDate: '2024-07-24'
                               roleType: Director
-                      shareStructure: 
+                      shareStructure:
                         shareClasses:
                           - name: Classic 1 Shares
                             priority: 1
@@ -3279,116 +3390,116 @@ paths:
                             series: []
                       type: regular
               amalgamation-short-form-horizontal-request:
-                  summary: Amalgamation Short Form Horizontal Request
-                  value:
-                    filing:
-                      header:
-                        accountId: 1234
-                        certifiedBy: First Last
-                        date: '2024-07-26'
-                        name: amalgamationApplication
-                      amalgamationApplication:
-                        amalgamatingBusinesses:
-                          - identifier: BC0883189
-                            role: primary
-                          - identifier: BC0883230
-                            role: amalgamating
-                        contactPoint: 
-                          email: no_one@never.get
-                          phone: (555) 555-5555
-                        courtApproval: false
-                        nameRequest: 
-                            legalType: BC
-                        offices:
-                          recordsOffice:
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                          registeredOffice:
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                        parties:
-                          - mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: First
-                              lastName: Last
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-24'
-                                roleType: Completing Party
-                          - mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: First
-                              lastName: Director
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
+                summary: Amalgamation Short Form Horizontal Request
+                value:
+                  filing:
+                    header:
+                      accountId: 1234
+                      certifiedBy: First Last
+                      date: '2024-07-26'
+                      name: amalgamationApplication
+                    amalgamationApplication:
+                      amalgamatingBusinesses:
+                        - identifier: BC0883189
+                          role: primary
+                        - identifier: BC0883230
+                          role: amalgamating
+                      contactPoint:
+                        email: no_one@never.get
+                        phone: (555) 555-5555
+                      courtApproval: false
+                      nameRequest:
+                        legalType: BC
+                      offices:
+                        recordsOffice:
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                        registeredOffice:
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                      parties:
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Completing Party
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            firstName: First
+                            lastName: Director
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
                             - appointmentDate: '2024-07-24'
                               roleType: Director
-                        shareStructure:
-                          shareClasses:
-                            - name: Classic 1 Shares
-                              priority: 1
-                              maxNumberOfShares: null
-                              parValue: null
-                              currency: null
-                              hasMaximumShares: false
-                              hasParValue: false
-                              hasRightsOrRestrictions: false
-                              series: []
-                        type: horizontal
+                      shareStructure:
+                        shareClasses:
+                          - name: Classic 1 Shares
+                            priority: 1
+                            maxNumberOfShares: null
+                            parValue: null
+                            currency: null
+                            hasMaximumShares: false
+                            hasParValue: false
+                            hasRightsOrRestrictions: false
+                            series: []
+                      type: horizontal
               amalgamation-short-form-vertical-request:
                 summary: Amalgamation Short Form Vertical Request
                 value:
@@ -3404,129 +3515,129 @@ paths:
                           role: holding
                         - identifier: BC0883230
                           role: amalgamating
-                      contactPoint: 
+                      contactPoint:
                         email: no_one@never.get
                         phone: (555) 555-5555
                       courtApproval: false
-                      nameRequest: 
-                          legalType: BC
+                      nameRequest:
+                        legalType: BC
                       offices:
-                          recordsOffice:
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                          registeredOffice:
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
-                            mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: Test rd
-                              streetAddressAdditional: ''
+                        recordsOffice:
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                        registeredOffice:
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
+                          mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: Test rd
+                            streetAddressAdditional: ''
                       parties:
-                          - mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: First
-                              lastName: Last
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2024-07-24'
-                                roleType: Completing Party
-                          - mailingAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            deliveryAddress:
-                              addressCity: Victoria
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: V8Z 5C5
-                              streetAddress: 3950 Helen Rd
-                              streetAddressAdditional: ''
-                            officer:
-                              firstName: First
-                              lastName: Director
-                              middleName: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            firstName: First
+                            lastName: Last
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
+                            - appointmentDate: '2024-07-24'
+                              roleType: Completing Party
+                        - mailingAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          deliveryAddress:
+                            addressCity: Victoria
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: V8Z 5C5
+                            streetAddress: 3950 Helen Rd
+                            streetAddressAdditional: ''
+                          officer:
+                            firstName: First
+                            lastName: Director
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                          roles:
                             - appointmentDate: '2024-07-24'
                               roleType: Director
                       shareStructure:
-                          shareClasses:
-                            - name: Classic 1 Shares
-                              priority: 1
-                              maxNumberOfShares: null
-                              parValue: null
-                              currency: null
-                              hasMaximumShares: false
-                              hasParValue: false
-                              hasRightsOrRestrictions: false
-                              series: []
+                        shareClasses:
+                          - name: Classic 1 Shares
+                            priority: 1
+                            maxNumberOfShares: null
+                            parValue: null
+                            currency: null
+                            hasMaximumShares: false
+                            hasParValue: false
+                            hasRightsOrRestrictions: false
+                            series: []
                       type: vertical
               continuation-in-request:
                 summary: Continuation In - To Be Approved Request
                 value:
                   filing:
-                    header: 
+                    header:
                       accountId: 1234
                       certifiedBy: First Last
                       date: '2025-03-21'
                       name: continuationIn
                     continuationIn:
-                      authorization: 
-                          files: 
-                              - fileKey: 123456-mock-value-1234.pdf
-                                fileName: Example_PDF.pdf
-                      contactPoint: 
-                          email: test@test.com
-                          phone: 1234567890
-                      foreignJurisdiction: 
-                          country: US
-                          identifier: TEST1234
-                          incorporationDate: '2024-06-01'
-                          legalName: Test business
-                          region: CA
-                      nameRequest: 
-                          nrNumber: NR 1234567
-                          legalName: TEST CONT IN LTD.
-                          legalType: C
+                      authorization:
+                        files:
+                          - fileKey: 123456-mock-value-1234.pdf
+                            fileName: Example_PDF.pdf
+                      contactPoint:
+                        email: test@test.com
+                        phone: 1234567890
+                      foreignJurisdiction:
+                        country: US
+                        identifier: TEST1234
+                        incorporationDate: '2024-06-01'
+                        legalName: Test business
+                        region: CA
+                      nameRequest:
+                        nrNumber: NR 1234567
+                        legalName: TEST CONT IN LTD.
+                        legalType: C
               incorporation-application-request:
                 summary: Incorporation Application Request
                 value:
@@ -3571,33 +3682,33 @@ paths:
                         phone: 123-456-7890
                       parties:
                         - roles:
-                          - roleType: Completing Party
-                            appointmentDate: '2025-03-20'
-                          - roleType: Incorporator
-                            appointmentDate: '2025-03-20'
-                          - roleType: Director
-                            appointmentDate: '2025-03-20'
+                            - roleType: Completing Party
+                              appointmentDate: '2025-03-20'
+                            - roleType: Incorporator
+                              appointmentDate: '2025-03-20'
+                            - roleType: Director
+                              appointmentDate: '2025-03-20'
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ""
-                            organizationName: ""
-                            partyType: "person"
-                            email: "apiSpec@example.com"
-                          mailingAddress: 
+                            middleName: ''
+                            organizationName: ''
+                            partyType: person
+                            email: apiSpec@example.com
+                          mailingAddress:
                             addressCity: mailing_address city
                             addressCountry: CA
                             addressRegion: BC
                             postalCode: H0H 0H0
                             streetAddress: mailing_address - address line one
-                            streetAddressAdditional: ""
+                            streetAddressAdditional: ''
                           deliveryAddress:
-                              addressCity: delivery_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              postalCode: H0H 0H0
-                              streetAddress: delivery_address - address line one
-                              streetAddressAdditional: ""
+                            addressCity: delivery_address city
+                            addressCountry: CA
+                            addressRegion: BC
+                            postalCode: H0H 0H0
+                            streetAddress: delivery_address - address line one
+                            streetAddressAdditional: ''
                       shareStructure:
                         shareClasses:
                           - name: Sample Shares
@@ -3618,55 +3729,55 @@ paths:
                     header:
                       accountId: 1234
                       certifiedBy: full name
-                      email: "no_one@never.get"
+                      email: no_one@never.get
                       date: '2024-07-26'
                       name: registration
-                    registration: 
-                      business: 
+                    registration:
+                      business:
                         natureOfBusiness: sample business
                       businessType: SP
-                      offices: 
-                        businessOffice: 
-                          deliveryAddress: 
+                      offices:
+                        businessOffice:
+                          deliveryAddress:
                             streetAddress: delivery_address - address line one
                             addressCity: delivery_address city
                             addressCountry: Canada
                             postalCode: H0H 0H0
                             addressRegion: BC
-                          mailingAddress: 
+                          mailingAddress:
                             streetAddress: mailing_address - address line one
                             addressCity: mailing_address city
                             addressCountry: Canada
                             postalCode: H0H 0H0
                             addressRegion: BC
-                      contactPoint: 
+                      contactPoint:
                         email: no_one@never.get
                       startDate: '2024-07-26'
-                      nameRequest: 
+                      nameRequest:
                         nrNumber: NR 8332083
                         legalName: KD API SPEC SP
                         legalType: SP
                       parties:
-                        - mailingAddress: 
+                        - mailingAddress:
                             streetAddress: mailing_address - address line one
-                            streetAddressAdditional: 
+                            streetAddressAdditional: null
                             addressCity: mailing_address city
                             addressCountry: CA
                             postalCode: H0H 0H0
                             addressRegion: BC
-                          deliveryAddress: 
+                          deliveryAddress:
                             streetAddress: delivery_address - address line one
-                            streetAddressAdditional: 
+                            streetAddressAdditional: null
                             addressCity: delivery_address city
                             addressCountry: CA
                             postalCode: H0H 0H0
                             addressRegion: BC
-                          officer: 
+                          officer:
                             firstName: Joe
                             lastName: Swanson
                             middleName: P
                             email: joe@email.com
-                            organizationName: 
+                            organizationName: null
                             partyType: person
                           roles:
                             - appointmentDate: '2024-07-26'
@@ -3685,6 +3796,8 @@ paths:
           description: 'This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.'
           name: only_validate
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: hbwt6cwoga1o0
     parameters: []
   '/businesses/{identifier}/parties':
     parameters:
@@ -3715,9 +3828,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/party'
       operationId: get-businesses-identifier-parties
-      description: Get all parties (Incorporator, Completing Party and Directors) associated with a business.
+      description: 'Get all parties (Incorporator, Completing Party and Directors) associated with a business.'
       parameters:
         - $ref: '#/components/parameters/accountId'
+      x-stoplight:
+        id: bbtah7dack385
   /businesses/search:
     get:
       summary: business_autocomplete
@@ -3790,6 +3905,8 @@ paths:
           description: 'partial string of a business name, identifier or BN'
         - $ref: '#/components/parameters/accountId'
       x-internal: false
+      x-stoplight:
+        id: w1tfppy6x4gfl
     parameters: []
 components:
   schemas:
@@ -3815,7 +3932,7 @@ components:
         addressRegion:
           type: string
           maxLength: 2
-          example: 'BC'
+          example: BC
           description: '2 char code for province, state, territory or district.'
         addressCountry:
           type: string
@@ -3830,7 +3947,7 @@ components:
           type: string
           maxLength: 80
           example: '"Our apartment is located at the back of the building."'
-          description: 'Specific instructions for the freight forwarder or carrier'
+          description: Specific instructions for the freight forwarder or carrier
       required:
         - streetAddress
         - addressCity
@@ -3841,10 +3958,12 @@ components:
           streetAddress: 5-4761 Bay Street
           streetAddressAdditional: Student Residence
           addressCity: Victoria
-          addressRegion: 'BC for British Columbia'
+          addressRegion: BC for British Columbia
           addressCountry: Canada
           postalCode: V8R 2P1
-          deliveryInstructions: 'Our apartment is located at the back of the building.'
+          deliveryInstructions: Our apartment is located at the back of the building.
+      x-stoplight:
+        id: 1x4137qgd53x7
     Agm_extension:
       type: object
       title: AGM Extension Information Schema
@@ -3867,21 +3986,21 @@ components:
               example: true
             extReqForAgmYear:
               type: boolean
-              description: Indicates if an extension has already been requested for this AGM year. False for the first extension request of the year, true for subsequent requests within the same AGM year.
+              description: 'Indicates if an extension has already been requested for this AGM year. False for the first extension request of the year, true for subsequent requests within the same AGM year.'
               example: false
             prevAgmRefDate:
               type: string
               format: date
-              description: Point of reference from which companies have 15 months to either file an AGM or request an extension. For the first AGM (when isFirstAgm is true), this is not required. Required when isFirstAgm is false.
+              description: 'Point of reference from which companies have 15 months to either file an AGM or request an extension. For the first AGM (when isFirstAgm is true), this is not required. Required when isFirstAgm is false.'
               example: '2023-06-01'
             expireDateCurrExt:
               type: string
               format: date
-              description: Date of expiration for current extension, if applicable. Required when requesting an additional extension (when extReqForAgmYear is true).
+              description: 'Date of expiration for current extension, if applicable. Required when requesting an additional extension (when extReqForAgmYear is true).'
               example: '2024-04-10'
             totalApprovedExt:
               type: integer
-              description: Total duration of extension approved, measured in months.
+              description: 'Total duration of extension approved, measured in months.'
               example: 6
             extensionDuration:
               type: integer
@@ -3892,6 +4011,8 @@ components:
               format: date
               description: Expiration date for approved extension.
               example: '2024-07-10'
+      x-stoplight:
+        id: bicsy9j4kme6s
     Agm_location_change:
       type: object
       title: AGM Location Change Information Schema
@@ -3906,13 +4027,15 @@ components:
           properties:
             year:
               type: string
-              description: Year of the AGM, Must be on or after incorporation year and cannot be future year.
+              description: 'Year of the AGM, Must be on or after incorporation year and cannot be future year.'
             reason:
               type: string
               maxLength: 2000
             agmLocation:
               type: string
               maxLength: 400
+      x-stoplight:
+        id: h98b816kqomvw
     Agreement_type:
       type: object
       title: Incorporation Agreement Type
@@ -3930,6 +4053,8 @@ components:
           description: 'Example: Sample and custom'
       required:
         - agreementType
+      x-stoplight:
+        id: pelmi15zyebb6
     Alteration:
       type: object
       title: Alteration Filing
@@ -4049,10 +4174,12 @@ components:
                 orderDate: '2019-08-24T14:15:22Z'
                 effectOfOrder: The Company will cease operations
                 orderDetails: The Company is ordered to dissolve
+      x-stoplight:
+        id: ff7ggi2s6hptk
     Amalgamation_application:
       type: object
       title: Amalgamation Application Filing
-      description: 'Amalgamation_application'
+      description: Amalgamation_application
       properties:
         amalgamationApplication:
           type: object
@@ -4068,22 +4195,22 @@ components:
               type: string
               title: The type of Amalgamation
               enum:
-              - regular
-              - vertical
-              - horizontal
+                - regular
+                - vertical
+                - horizontal
             amalgamatingBusinesses:
               type: array
               items:
                 required:
-                - role
-                - identifier
+                  - role
+                  - identifier
                 properties:
                   role:
                     type: string
                     enum:
-                    - amalgamating
-                    - holding
-                    - primary
+                      - amalgamating
+                      - holding
+                      - primary
                   identifier:
                     type: string
                   foreignJurisdiction:
@@ -4110,7 +4237,7 @@ components:
               required:
                 - registeredOffice
                 - recordsOffice
-              description: 'Addresses related to the business.'
+              description: Addresses related to the business.
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
@@ -4120,6 +4247,8 @@ components:
               $ref: '#/components/schemas/Share_structure'
       required:
         - amalgamationApplication
+      x-stoplight:
+        id: o2qb6hxrtrngc
     Annual_report:
       type: object
       title: Annual Report Filing
@@ -4136,11 +4265,11 @@ components:
             annualGeneralMeetingDate:
               type: string
               format: date
-              description: 'Date the AGM (annual general meeting) took place.'
+              description: Date the AGM (annual general meeting) took place.
             annualReportDate:
               type: string
               format: date
-              description: 'Fiscal Year covered in the annual report.'
+              description: Fiscal Year covered in the annual report.
             directors:
               type: array
               description: Individual who is a member of the board of directors of the company as a result of having been elected or appointed to that position
@@ -4209,7 +4338,7 @@ components:
               required:
                 - registeredOffice
                 - recordsOffice
-              description: 'Addresses related to the business.'
+              description: Addresses related to the business.
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
@@ -4267,6 +4396,8 @@ components:
                 addressCountry: Canada
                 postalCode: V8R 2P1
                 deliveryInstructions: '"Our local is located at the back of the building."'
+      x-stoplight:
+        id: rimw4riltwspd
     Business:
       type: object
       title: Businesses Schema
@@ -4292,25 +4423,25 @@ components:
               message: A minimum of 3 directors is required.
               filing: 'https://LEGAL-API-HOST/api/v2/businesses/IDENTIFIER/filings/FILING_ID'
           alternateNames:
-            - name: 'Name Translation 1'
+            - name: Name Translation 1
               startDate: '2021-11-28'
-              type: 'TRANSLATION'
-            - name: 'Name Translation 2'
+              type: TRANSLATION
+            - name: Name Translation 2
               startDate: '2023-01-25'
-              type: 'TRANSLATION'
-            - entityType: 'SP'
-              identifier: 'FM1111111'
-              name: 'Some DBA Name'
+              type: TRANSLATION
+            - entityType: SP
+              identifier: FM1111111
+              name: Some DBA Name
               registeredDate: '2021-03-16T21:36:07.009977+00:00'
               startDate: '2021-03-10'
-              type: 'DBA'
-            - entityType: 'SP'
-              identifier: 'FM2222222'
-              name: 'Another DBA Name'
+              type: DBA
+            - entityType: SP
+              identifier: FM2222222
+              name: Another DBA Name
               registeredDate: '2022-04-16T21:36:07.009977+00:00'
               startDate: '2022-04-10'
-              type: 'DBA'
-      description: 'Organization or business entity.'
+              type: DBA
+      description: Organization or business entity.
       properties:
         lastLedgerTimestamp:
           type: string
@@ -4352,7 +4483,7 @@ components:
           enum:
             - A
             - B
-            - BC   
+            - BC
             - BEN
             - CBEN
             - C
@@ -4397,16 +4528,16 @@ components:
             - XL
             - XP
             - XS
-          example: 'GP'
+          example: GP
           description: 'Type of business eg: BC corporation (B), Continued in corporation (C), Sole proprietor(SP), General Partnership(GP).'
         taxId:
           type: string
           pattern: '^[0-9]{9}[A-Z]{2}[0-9]{4}$|^[0-9]{9}$'
-          example: '123456789BC0001'
+          example: 123456789BC0001
           description: 'Company unique business number assigned by CRA: BN9 or BN15. '
         goodStanding:
           type: boolean
-          description: The business is up to date with required filings, e.g. Annual Report.
+          description: 'The business is up to date with required filings, e.g. Annual Report.'
         adminFreeze:
           type: boolean
           description: 'The business has been placed in a Frozen state by the Registry which will prevent any further filings from being made  '
@@ -4447,11 +4578,11 @@ components:
                 enum:
                   - SP
                   - GP
-                example: 'SP'
+                example: SP
                 description: 'Type of business eg: Sole Proprietorship(SP), Partnership(GP).'
               identifier:
                 type: string
-                example: 'FM1234567'
+                example: FM1234567
                 pattern: '^[A-Z]{1,3}[0-9]{7}|T[A-Za-z0-9]{9}$'
                 description: 'Unique code(letters & numbers) to identify a business, issued by the provincial or federal registry.'
               name:
@@ -4459,7 +4590,7 @@ components:
                 description: The alternate name of the business.
                 default: ''
                 example: operating name of FM1234567
-                pattern: '^(.*)$'
+                pattern: ^(.*)$
               registeredDate:
                 type: string
                 format: date-time
@@ -4490,20 +4621,22 @@ components:
               code:
                 type: string
                 title: Warning code
-                example: 'INVALID_LEGAL_STRUCTURE_DIRECTORS' 
+                example: INVALID_LEGAL_STRUCTURE_DIRECTORS
               message:
                 type: string
                 title: Warning message
-                example: 'A minimum of 3 directors is required'
+                example: A minimum of 3 directors is required
               warningType:
                 type: string
                 title: Warning message
-                example: 'MISSING_REQUIRED_BUSINESS_INFO'
-              filing: 
+                example: MISSING_REQUIRED_BUSINESS_INFO
+              filing:
                 type: string
                 title: The link to the filing that resulted in the non-compliance.
       required:
         - identifier
+      x-stoplight:
+        id: 52llwz1ix81te
     Change_of_address:
       title: Change of Address Filing
       type: object
@@ -4561,40 +4694,12 @@ components:
                 addressCountry: Canada
                 postalCode: V8R 2P1
                 deliveryInstructions: '"Our unit is located at the back of the building."'
+      x-stoplight:
+        id: 80ffrq5wp76rc
     Change_of_directors:
       type: object
       title: Change of Directors Filing
-      description: Filing to add, remove, or update information regarding company directors.
-      properties:
-        changeOfDirectors:
-          type: object
-          description: This section contains all the changes you want to make to your company''s directors.
-          required:
-            - directors
-          properties:
-            directors:
-              type: array
-              items:
-                allOf:
-                  - $ref: '#/components/schemas/Director'
-                  - type: object
-                    properties:
-                      actions:
-                        type: array
-                        title: List of actions taken on a director
-                        description: Select one or more actions that apply to this director
-                        items:
-                          type: string
-                          enum:
-                            - appointed
-                            - ceased
-                            - nameChanged
-                            - addressChanged
-                        example: ["appointed"]
-                    required:
-                      - actions
-      required:
-        - changeOfDirectors
+      description: 'Filing to add, remove, or update information regarding company directors.'
       x-examples:
         Example 1:
           changeOfDirectors:
@@ -4610,7 +4715,7 @@ components:
                   addressRegion: BC
                   addressCountry: Canada
                   postalCode: V8R 2P1
-                  deliveryInstructions: "Our unit is located at the back of the building."
+                  deliveryInstructions: Our unit is located at the back of the building.
                 mailingAddress:
                   streetAddress: 5-4761 Bay Street
                   streetAddressAdditional: string
@@ -4618,12 +4723,45 @@ components:
                   addressRegion: BC
                   addressCountry: Canada
                   postalCode: V8R 2P1
-                  deliveryInstructions: "Our unit is located at the back of the building."
+                  deliveryInstructions: Our unit is located at the back of the building.
                 title: Chief Executive Officer
                 appointmentDate: '2019-08-24'
                 cessationDate: null
                 actions:
                   - appointed
+      x-stoplight:
+        id: tyd6g6rlr2qwy
+      required:
+        - changeOfDirectors
+      properties:
+        changeOfDirectors:
+          type: object
+          description: This section contains all the changes you want to make to your company''s directors.
+          required:
+            - directors
+          properties:
+            directors:
+              type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/Director'
+                  - type: object
+                    required:
+                      - actions
+                    properties:
+                      actions:
+                        type: array
+                        title: List of actions taken on a director
+                        description: Select one or more actions that apply to this director
+                        example:
+                          - appointed
+                        items:
+                          type: string
+                          enum:
+                            - appointed
+                            - ceased
+                            - nameChanged
+                            - addressChanged
     Change_of_name:
       type: object
       title: Change of Entity Name
@@ -4659,6 +4797,53 @@ components:
               addressCountry: Canada
               postalCode: V8R 2P1
               deliveryInstructions: '"Our unit is located at the back of the building."'
+      x-stoplight:
+        id: oiq3puu8na7qo
+    Change_of_officers:
+      title: Change of Officers Filing
+      description: 'Filing to add, remove, or update information regarding company officers.'
+      type: object
+      required:
+        - changeOfOfficers
+      properties:
+        changeOfOfficers:
+          type: object
+          description: "This section contains all the changes you want to make to your company's officers."
+          properties:
+            relationships:
+              $ref: '#/components/schemas/Relationship/properties/relationships'
+      x-examples:
+        Example 1:
+          changeOfOfficers:
+            relationships:
+              - entity:
+                  givenName: Johnathon
+                  familyName: Smith
+                  middleInitial: E
+                  alternateName: John Smith
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  addressCity: Victoria
+                  addressRegion: BC
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: Our apartment is located at the back of the building.
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  addressCity: Victoria
+                  addressRegion: BC
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: Our apartment is located at the back of the building.
+                roles:
+                  - appointmentDate: '2018-08-24'
+                    cessationDate: '2024-08-24'
+                    roleType: Secretary
+                    roleClass: OFFICER
+                  - appointmentDate: '2024-08-24'
+                    cessationDate: null
+                    roleType: CEO
+                    roleClass: OFFICER
     Change_of_registration:
       type: object
       description: 'Filing to alter the information of a business that uses a registration, such as Sole Proprietor or General Partnership.'
@@ -4775,6 +4960,8 @@ components:
                     postalCode: V8R 2P1
                     deliveryInstructions: '"Our unit apartment is located at the back of the building."'
                   title: Chief Executive Officer
+      x-stoplight:
+        id: roufboruhsh8c
     Comment:
       type: object
       description: 'Extra detail or note to post regarding the filing. '
@@ -4813,23 +5000,25 @@ components:
           timestamp: '2022-04-19 15:59:55'
           reference:
             businessId: C1234567
+      x-stoplight:
+        id: jxeunekdsvjb5
     Continuation_in:
       type: object
       title: Continuation In Filing
-      description: Represents the filing for a foreign corporation applying to “continue in” to BC. To do so, user must first submit a Continuation Authorization and have it approved by BC Registries before filing a Continuation Application. Authorization is typically in the form of a letter. The authorization must be reviewed and approved prior to complete filing. Once the authorization is approved by registries staff, user can continue with submitting continuation In filing.
+      description: 'Represents the filing for a foreign corporation applying to “continue in” to BC. To do so, user must first submit a Continuation Authorization and have it approved by BC Registries before filing a Continuation Application. Authorization is typically in the form of a letter. The authorization must be reviewed and approved prior to complete filing. Once the authorization is approved by registries staff, user can continue with submitting continuation In filing.'
       required:
         - continuationIn
       properties:
         continuationIn:
           type: object
           required:
-          - foreignJurisdiction
-          - authorization
-          - nameRequest
-          - contactPoint
-          - offices
-          - parties
-          - shareStructure
+            - foreignJurisdiction
+            - authorization
+            - nameRequest
+            - contactPoint
+            - offices
+            - parties
+            - shareStructure
           properties:
             isApproved:
               type: boolean
@@ -4839,10 +5028,10 @@ components:
             foreignJurisdiction:
               type: object
               required:
-              - country
-              - identifier
-              - legalName
-              - incorporationDate
+                - country
+                - identifier
+                - legalName
+                - incorporationDate
               properties:
                 country:
                   $ref: '#/components/schemas/Foreign_jurisdiction/properties/country'
@@ -4861,14 +5050,14 @@ components:
                 taxId:
                   type: string
                   title: The BN9 of this business
-                  pattern: "^[0-9]{9}$"
+                  pattern: '^[0-9]{9}$'
                 affidavitFileKey:
                   type: string
                   title: The Identifier for affidavit file in file server
             authorization:
               type: object
               required:
-              - files
+                - files
               properties:
                 files:
                   type: array
@@ -4876,8 +5065,8 @@ components:
                   maxItems: 5
                   items:
                     required:
-                    - fileKey
-                    - fileName
+                      - fileKey
+                      - fileName
                     properties:
                       fileKey:
                         type: string
@@ -4901,15 +5090,15 @@ components:
               $ref: '#/components/schemas/Name_translations'
             offices:
               type: object
-              description: 'Addresses related to the business.'
+              description: Addresses related to the business.
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
                 recordsOffice:
                   $ref: '#/components/schemas/Office'
               required:
-              - registeredOffice
-              - recordsOffice
+                - registeredOffice
+                - recordsOffice
             parties:
               type: array
               description: 'Persons having a role in the corporation eg: company officer.'
@@ -4919,26 +5108,30 @@ components:
               $ref: '#/components/schemas/Share_structure'
             courtOrder:
               $ref: '#/components/schemas/Court_order'
+      x-stoplight:
+        id: 30omjsqjeevig
     Consent_continuation_out:
       type: object
       title: Consent Continuation Out Filing
-      description: Represents the filing for a company's consent to continue out of British Columbia to another jurisdiction. This filing is required when a BC company wants to move its registration to a different province or country. This consent is valid for six months from the date of authorization. If the continuation is not completed within this period, a new consent may be required.
+      description: 'Represents the filing for a company''s consent to continue out of British Columbia to another jurisdiction. This filing is required when a BC company wants to move its registration to a different province or country. This consent is valid for six months from the date of authorization. If the continuation is not completed within this period, a new consent may be required.'
       required:
-            - foreignJurisdiction
+        - foreignJurisdiction
       properties:
-            foreignJurisdiction:
-              $ref: '#/components/schemas/Foreign_jurisdiction'
-            courtOrder:
-              $ref: '#/components/schemas/Court_order'
+        foreignJurisdiction:
+          $ref: '#/components/schemas/Foreign_jurisdiction'
+        courtOrder:
+          $ref: '#/components/schemas/Court_order'
       x-examples:
         Example 1:
           consentContinuationOut:
             foreignJurisdiction:
-              country: "CA"
-              region: "ON"
+              country: CA
+              region: 'ON'
             courtOrder:
-              fileNumber: "A1234"
-              effectOfOrder: "planOfArrangement"
+              fileNumber: A1234
+              effectOfOrder: planOfArrangement
+      x-stoplight:
+        id: flyz0b5l5onio
     Contact_point:
       type: object
       title: Business Contact Point Schema
@@ -4965,6 +5158,8 @@ components:
           description: 'Extension number of the business contact phone number (555) 555-5555, maximum 5 digits'
       required:
         - email
+      x-stoplight:
+        id: 1aik7t9myawb8
     Conversion:
       type: object
       title: Conversion Filing
@@ -5093,6 +5288,8 @@ components:
               $ref: '#/components/schemas/Agreement_type'
       required:
         - conversion
+      x-stoplight:
+        id: of5pbr8ktjbc3
     Cooperative:
       type: object
       title: Cooperative Schema
@@ -5112,7 +5309,7 @@ components:
             - CP
             - HC
             - CSC
-          example: 'CP'
+          example: CP
           description: 'Defines cooperatives by type of membership eg: Financial Cooperatives.'
         rulesFileKey:
           type: string
@@ -5140,6 +5337,8 @@ components:
         - rulesFileName
         - memorandumFileKey
         - memorandumFileName
+      x-stoplight:
+        id: vmck62e80q5h0
     Correction:
       type: object
       title: Correction Filing
@@ -5192,6 +5391,8 @@ components:
                 $ref: '#/components/schemas/Diff'
       required:
         - correction
+      x-stoplight:
+        id: j1b4tonlhevhd
     Court_order:
       type: object
       title: Court Order Information Schema
@@ -5234,6 +5435,8 @@ components:
             orderDate: '2019-08-24T14:15:22Z'
             effectOfOrder: The Company will cease operations
             orderDetails: The Company is ordered to dissolve
+      x-stoplight:
+        id: v9ultoxn8bq8p
     Diff:
       title: Differences filed in a correction
       anyOf:
@@ -5260,10 +5463,12 @@ components:
                 title: Path of the property in json
       description: '***Item not used*** What will be changed in the correction filing.'
       type: object
+      x-stoplight:
+        id: cfsgnnx1p6o1y
     Director:
       title: Director Schema
       type: object
-      description: Represents a single director of a company, including personal information and appointment details.
+      description: 'Represents a single director of a company, including personal information and appointment details.'
       properties:
         officer:
           type: object
@@ -5273,32 +5478,32 @@ components:
               type: string
               maxLength: 30
               description: First name of the director/officer.
-              example: "Jane"
+              example: Jane
             lastName:
               type: string
               maxLength: 30
               description: Last name of the director/officer.
-              example: "Doe"
+              example: Doe
             middleInitial:
               type: string
               maxLength: 30
               description: The middle name initial of the director/officer.
-              example: "A"
+              example: A
             prevFirstName:
               type: string
               maxLength: 30
-              description: previous first name, in the case of a legal name change in a filing
-              example: "Janet"
+              description: 'previous first name, in the case of a legal name change in a filing'
+              example: Janet
             prevLastName:
               type: string
               maxLength: 30
-              description: previous last name, in the case of a legal name change in a filing
-              example: "Smith"
+              description: 'previous last name, in the case of a legal name change in a filing'
+              example: Smith
             prevMiddleInitial:
               type: string
               maxLength: 30
-              description: previous middle name, in the case of a legal name change in a filing
-              example: "B"
+              description: 'previous middle name, in the case of a legal name change in a filing'
+              example: B
           required:
             - firstName
             - lastName
@@ -5312,13 +5517,13 @@ components:
           description: 'Standard address format: apartment, unit, or street address number and street name. City, province or territory code, country, postal code and instructions for delivery. Required for Change of Directors filing and Annual Report filing.'
         title:
           type: string
-          description: 'Official title or position of the director in the company.'
-          example: "Chief Financial Officer"
+          description: Official title or position of the director in the company.
+          example: Chief Financial Officer
         appointmentDate:
           type: string
           format: date
           description: 'The date when the director started their role. Format: YYYY-MM-DD'
-          example: "2023-06-15"
+          example: '2023-06-15'
         cessationDate:
           type: string
           format: date
@@ -5329,6 +5534,8 @@ components:
         - deliveryAddress
         - appointmentDate
         - cessationDate
+      x-stoplight:
+        id: bbcod3p9l8a4f
     Dissolution:
       title: Dissolution Filing
       type: object
@@ -5433,7 +5640,7 @@ components:
             courtOrder:
               $ref: '#/components/schemas/Court_order'
             custodialOffice:
-              description: 'Corporations required custodial office when applying for voluntary dissolution.'
+              description: Corporations required custodial office when applying for voluntary dissolution.
               allOf:
                 - $ref: '#/components/schemas/Office'
             affidavitFileKey:
@@ -5447,6 +5654,8 @@ components:
               example: '***Item not used***'
       required:
         - dissolution
+      x-stoplight:
+        id: iedt1nu4oktcc
     filing_header:
       type: object
       description: 'Information identigying the filing. '
@@ -5550,7 +5759,7 @@ components:
           type: string
           format: date-time
           title: The date and time a filing should become valid and applied.
-          description: Date and time the filing is taking effect. Required for Annual Report and Change of Directors filing. For Annual report, this is a required field and should be the Annual report date.
+          description: 'Date and time the filing is taking effect. Required for Annual Report and Change of Directors filing. For Annual report, this is a required field and should be the Annual report date.'
         paymentToken:
           type: string
           title: A valid payment token for this filing against this business.
@@ -5568,7 +5777,7 @@ components:
             - COMPLETED
             - ERROR
           description: 'Status of the filing eg: ''draft''. '
-          example: 'DRAFT'
+          example: DRAFT
         affectedFilings:
           type: array
           title: List of affected filings (ids) from this filing.
@@ -5644,7 +5853,7 @@ components:
             - DRAWDOWN
             - INTERNAL
           description: 'Method of payment used to pay for filing, possible values are: ONLINE_BANKING,CC,DIRECT_PAY,DRAWDOWN,INTERNAL.'
-          example: 'CC'
+          example: CC
         isPaymentActionRequired:
           type: boolean
           title: flag for payment redirect.
@@ -5658,6 +5867,8 @@ components:
         - name
         - date
         - certifiedBy
+      x-stoplight:
+        id: 874v5qfmxtekp
     Filing:
       type: object
       title: Registry Filing Envelope
@@ -5858,6 +6069,7 @@ components:
                     - $ref: '#/components/schemas/Change_of_address'
                     - $ref: '#/components/schemas/Change_of_directors'
                     - $ref: '#/components/schemas/Change_of_name'
+                    - $ref: '#/components/schemas/Change_of_officers'
                     - $ref: '#/components/schemas/Change_of_registration'
                     - $ref: '#/components/schemas/Consent_continuation_out'
                     - $ref: '#/components/schemas/Continuation_in'
@@ -5877,6 +6089,8 @@ components:
           description: Submitting updates related to a business or incorporating/registering a new business.
       required:
         - filing
+      x-stoplight:
+        id: syspc6e0jlnkw
     Foreign_jurisdiction:
       type: object
       title: Foreign Jurisdiction Schema
@@ -5889,94 +6103,96 @@ components:
           description: The country code of the foreign jurisdiction (ISO 3166-1 alpha-2 code).
           minLength: 2
           maxLength: 2
-          example: "CA"
+          example: CA
         region:
-          description: The specific region (province/state) within Canada or USA. For other countries, this field can be null.
+          description: 'The specific region (province/state) within Canada or USA. For other countries, this field can be null.'
           oneOf:
             - type: string
               description: Canadian provinces and territories.
               enum:
-                - "AB"
-                - "BC"
-                - "MB"
-                - "NB"
-                - "NL"
-                - "NS"
-                - "NT"
-                - "NU"
-                - "ON"
-                - "PE"
-                - "QC"
-                - "SK"
-                - "YT"
-                - "FEDERAL"
-              example: "ON"
+                - AB
+                - BC
+                - MB
+                - NB
+                - NL
+                - NS
+                - NT
+                - NU
+                - 'ON'
+                - PE
+                - QC
+                - SK
+                - YT
+                - FEDERAL
+              example: 'ON'
             - type: string
               description: US states and territories.
               enum:
-                - "AK"
-                - "AL"
-                - "AR"
-                - "AS"
-                - "AZ"
-                - "CA"
-                - "CO"
-                - "CT"
-                - "DC"
-                - "DE"
-                - "FL"
-                - "GA"
-                - "GU"
-                - "HI"
-                - "IA"
-                - "ID"
-                - "IL"
-                - "IN"
-                - "KS"
-                - "KY"
-                - "LA"
-                - "MA"
-                - "MD"
-                - "ME"
-                - "MI"
-                - "MN"
-                - "MO"
-                - "MP"
-                - "MS"
-                - "MT"
-                - "NC"
-                - "ND"
-                - "NE"
-                - "NH"
-                - "NJ"
-                - "NM"
-                - "NV"
-                - "NY"
-                - "OH"
-                - "OK"
-                - "OR"
-                - "PA"
-                - "PR"
-                - "RI"
-                - "SC"
-                - "SD"
-                - "TN"
-                - "TX"
-                - "UM"
-                - "UT"
-                - "VA"
-                - "VI"
-                - "VT"
-                - "WA"
-                - "WI"
-                - "WV"
-                - "WY"
-              example: "WA"
+                - AK
+                - AL
+                - AR
+                - AS
+                - AZ
+                - CA
+                - CO
+                - CT
+                - DC
+                - DE
+                - FL
+                - GA
+                - GU
+                - HI
+                - IA
+                - ID
+                - IL
+                - IN
+                - KS
+                - KY
+                - LA
+                - MA
+                - MD
+                - ME
+                - MI
+                - MN
+                - MO
+                - MP
+                - MS
+                - MT
+                - NC
+                - ND
+                - NE
+                - NH
+                - NJ
+                - NM
+                - NV
+                - NY
+                - OH
+                - OK
+                - OR
+                - PA
+                - PR
+                - RI
+                - SC
+                - SD
+                - TN
+                - TX
+                - UM
+                - UT
+                - VA
+                - VI
+                - VT
+                - WA
+                - WI
+                - WV
+                - WY
+              example: WA
       x-examples:
         Example 1:
           foreignJurisdiction:
-            country: "CA"
-            region: "QC"
+            country: CA
+            region: QC
+      x-stoplight:
+        id: nfhg7ihq9f83h
     Incorporation_application:
       title: Incorporation Application Filing
       type: object
@@ -6121,15 +6337,15 @@ components:
               $ref: '#/components/schemas/Name_translations'
             offices:
               type: object
-              description: 'Addresses related to the business.'
+              description: Addresses related to the business.
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'
                 recordsOffice:
                   $ref: '#/components/schemas/Office'
               required:
-              - registeredOffice
-              - recordsOffice
+                - registeredOffice
+                - recordsOffice
             parties:
               type: array
               description: 'Persons having a role in the corporation eg: company director.'
@@ -6141,6 +6357,8 @@ components:
               $ref: '#/components/schemas/Court_order'
       required:
         - incorporationApplication
+      x-stoplight:
+        id: gj489jxqkistf
     Filing_documents:
       type: object
       description: 'Documents submitted (uploaded) with filing.  '
@@ -6171,6 +6389,8 @@ components:
             receipt:
               type: string
               description: 'Confirmation of filing and payment completion.  '
+      x-stoplight:
+        id: 25i9we42dm3ns
     Ledger:
       type: array
       x-examples:
@@ -6196,10 +6416,12 @@ components:
           submitter: Registry Staff
       items:
         $ref: '#/components/schemas/Ledger_item'
-      description: 'The ledger is the record of all filings that have been performed on or in association with a business entity.'
+      description: The ledger is the record of all filings that have been performed on or in association with a business entity.
+      x-stoplight:
+        id: c385ymkv3ztf7
     Ledger_item:
       type: object
-      description: 'Set of information recorded by the Registry in relation to an individual filing on a business entity''s ledger.'
+      description: Set of information recorded by the Registry in relation to an individual filing on a business entity's ledger.
       x-examples:
         Example 1:
           availableOnPaperOnly: true
@@ -6279,7 +6501,7 @@ components:
           type: string
           minLength: 1
           format: uri
-          description: 'Link for documents related to filing.'
+          description: Link for documents related to filing.
         displayName:
           type: string
           minLength: 1
@@ -6291,16 +6513,16 @@ components:
           description: Date filing was to be effective.
         filingId:
           type: number
-          description: 'Unique Identifier of the filing.'
+          description: Unique Identifier of the filing.
         filingLink:
           type: string
           minLength: 1
           format: uri
-          description: 'Link related to filing.'
+          description: Link related to filing.
         name:
           type: string
           minLength: 1
-          description: 'Name of the filing to which the record relates.'
+          description: Name of the filing to which the record relates.
         isFutureEffective:
           type: boolean
           description: Identify if filing was submitted with a future effective date (yes/no).
@@ -6308,7 +6530,7 @@ components:
           type: string
           minLength: 1
           format: date-time
-          description: 'Date the payment was made for the filing (legacy filings may not have a value).'
+          description: Date the payment was made for the filing (legacy filings may not have a value).
         paymentStatusCode:
           type: string
           minLength: 1
@@ -6317,15 +6539,15 @@ components:
         status:
           type: string
           minLength: 1
-          description: 'Text describing the state of the filing.'
+          description: Text describing the state of the filing.
         submittedDate:
           type: string
           minLength: 1
-          description: 'Date the filing was submitted.'
+          description: Date the filing was submitted.
         submitter:
           type: string
           minLength: 1
-          description: 'Name of the user who performed the filing.'
+          description: Name of the user who performed the filing.
       required:
         - availableOnPaperOnly
         - businessIdentifier
@@ -6343,10 +6565,12 @@ components:
         - status
         - submittedDate
         - submitter
+      x-stoplight:
+        id: 2o9t28cnpwa1m
     Naics:
       type: object
       title: NAICS Schema
-      description: '<p>NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities.</p><p>NAICS information is not required or collected for all types of business entities.</p>'
+      description: <p>NAICS is an abbreviation for The North American Industry Classification System and is a standard used to classify business activities.</p><p>NAICS information is not required or collected for all types of business entities.</p>
       properties:
         naicsCode:
           type: string
@@ -6361,6 +6585,8 @@ components:
         Example 1:
           naicsCode: 32621 is the code for description 'Tires Manufacturing'
           naicsDescription: '''Tires Manufacturing'' is the description for code 32621'
+      x-stoplight:
+        id: 2m8wso08xskvn
     Name_request:
       type: object
       title: Name Request Schema
@@ -6419,10 +6645,12 @@ components:
             addressCountry: Canada
             postalCode: V8R 2P1
             deliveryInstructions: '"Our apartment is located at the back of the building."'
+      x-stoplight:
+        id: z56vqe14py2jd
     Name_translations:
       type: array
       title: Name Translations Schema
-      description: 'Used when business name is to be translated.'
+      description: Used when business name is to be translated.
       x-examples:
         Example 1:
           - id: '1234'
@@ -6439,7 +6667,7 @@ components:
             maxLength: 50
             title: Name Translation
             pattern: '^[ A-Za-zÀ-ÿ_@./#’&+-]*$'
-            description: 'Text indicating name translation to be used.'
+            description: Text indicating name translation to be used.
           type:
             type: string
             title: The type of translation
@@ -6448,6 +6676,8 @@ components:
               - DBA
         required:
           - name
+      x-stoplight:
+        id: ruwgb1dq7kq4h
     Notice_of_withdrawal:
       type: object
       title: Notice of Withdrawal Filing
@@ -6476,17 +6706,19 @@ components:
         Example 1:
           noticeOfWithdrawal:
             filingId: 123456
+      x-stoplight:
+        id: od58i98mzsgdk
     Office:
       title: Office Schema
       type: object
-      description: 'Addresses related to the business.'
+      description: Addresses related to the business.
       required:
         - mailingAddress
         - deliveryAddress
       properties:
         officeType:
           type: string
-          example: 'Head office'
+          example: Head office
           description: 'Type of office eg: registered office.'
         mailingAddress:
           $ref: '#/components/schemas/Address'
@@ -6499,26 +6731,28 @@ components:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
             addressCity: Victoria
-            addressRegion: 'BC for British Columbia'
+            addressRegion: BC for British Columbia
             addressCountry: Canada
             postalCode: V8R 2P1
-            deliveryInstructions: 'Our apartment is located at the back of the building.'
+            deliveryInstructions: Our apartment is located at the back of the building.
           deliveryAddress:
             streetAddress: 5-4761 Bay Street
             streetAddressAdditional: Building A
             addressCity: Victoria
-            addressRegion: 'BC for British Columbia'
+            addressRegion: BC for British Columbia
             addressCountry: Canada
             postalCode: V8R 2P1
-            deliveryInstructions: 'Our apartment is located at the back of the building.'
+            deliveryInstructions: Our apartment is located at the back of the building.
+      x-stoplight:
+        id: p6uugrgjrds27
     party:
       type: object
       title: party
-      description: 'Represent a person and its role in relation to a business.'
+      description: Represent a person and its role in relation to a business.
       properties:
         party:
           type: object
-          description: 'Represent a person and its role in relation to a business.'
+          description: Represent a person and its role in relation to a business.
           properties:
             roles:
               type: array
@@ -6533,7 +6767,7 @@ components:
             deliveryAddress:
               allOf:
                 - $ref: '#/components/schemas/Address'
-              description: 'Required when the role type is Director or Custodian.'
+              description: Required when the role type is Director or Custodian.
             mailingAddress:
               $ref: '#/components/schemas/Address'
             title:
@@ -6561,19 +6795,21 @@ components:
               streetAddress: 5-4761 Bay Street
               streetAddressAdditional: Building A
               addressCity: Victoria
-              addressRegion: 'BC for British Columbia'
+              addressRegion: BC for British Columbia
               addressCountry: Canada
               postalCode: V8R 2P1
-              deliveryInstructions: 'Our apartment is located at the back of the building.'
+              deliveryInstructions: Our apartment is located at the back of the building.
             mailingAddress:
               streetAddress: 5-4761 Bay Street
               streetAddressAdditional: Building A
               addressCity: Victoria
-              addressRegion: 'BC for British Columbia'
+              addressRegion: BC for British Columbia
               addressCountry: Canada
               postalCode: V8R 2P1
-              deliveryInstructions: 'Our apartment is located at the back of the building.'
+              deliveryInstructions: Our apartment is located at the back of the building.
             title: Chief Executive Officer
+      x-stoplight:
+        id: nvdxat1uwngy0
     partyRole:
       type: object
       description: 'Role of the person in relation to the business eg: director.'
@@ -6606,15 +6842,17 @@ components:
       required:
         - roleType
         - appointmentDate
+      x-stoplight:
+        id: p7vdfzsap14ov
     Person:
       type: object
       title: Person Schema
-      description: 'An individual that is currently or had previously occupied a role in relation to a business.'
+      description: An individual that is currently or had previously occupied a role in relation to a business.
       properties:
         firstName:
           type: string
           maxLength: 30
-          description: 'First name of the individual. Used in corporations filings.'
+          description: First name of the individual. Used in corporations filings.
         givenName:
           type: string
           maxLength: 30
@@ -6626,16 +6864,24 @@ components:
         lastName:
           type: string
           maxLength: 30
-          description: 'Last name or surname of the individual. Used in corporations filings.'
+          description: Last name or surname of the individual. Used in corporations filings.
         additionalName:
           type: string
           title: 'An additional name for a Person, can be used for a middle name.'
           maxLength: 30
-          description: 'Other name used by the individual.'
+          description: Other name used by the individual.
         middleInitial:
           type: string
           maxLength: 30
           description: Initial of the individual's middle name.
+        alternateName:
+          type: string
+          maxLength: 90
+          description: 'An alternative name for a Person (e.g., preferred name).'
+        fullName:
+          type: string
+          maxLength: 90
+          description: The full name of the individual.
         email:
           type: string
           format: email
@@ -6648,6 +6894,8 @@ components:
           additionalName: Adam
           middleInitial: A
           email: abc.def@gov.bc.ca
+      x-stoplight:
+        id: qx6aed5h11vsw
     Registrars_notation:
       title: Registrars Notation Information Schema
       type: object
@@ -6687,6 +6935,8 @@ components:
             orderDate: '2019-08-24T14:15:22Z'
             effectOfOrder: planOfArrangement
             orderDetails: Court order to process with liquidation of assets
+      x-stoplight:
+        id: 1ydnt0jn9uij6
     Registrars_order:
       type: object
       title: Registrars Order Information Schema
@@ -6726,6 +6976,106 @@ components:
             orderDate: '2019-08-24T14:15:22Z'
             effectOfOrder: Company will be dissolved
             orderDetails: Order to proceed with company dissolution
+      x-stoplight:
+        id: gtpeui3e28ov2
+    Relationship:
+      type: object
+      title: The Relationship Schema
+      description: Represents the relationship between an individual and a business.
+      x-examples:
+        Example 1:
+          relationships:
+            - entity:
+                givenName: Johnathon
+                familyName: Smith
+                middleInitial: E
+                alternateName: John Smith
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                addressCity: Victoria
+                addressRegion: BC
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: Our apartment is located at the back of the building.
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                addressCity: Victoria
+                addressRegion: BC
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: Our apartment is located at the back of the building.
+              roles:
+                - appointmentDate: '2018-08-24'
+                  cessationDate: '2024-08-24'
+                  roleType: Secretary
+                  roleClass: OFFICER
+                - appointmentDate: '2024-08-24'
+                  cessationDate: null
+                  roleType: CEO
+                  roleClass: OFFICER
+      required:
+        - relationships
+      properties:
+        relationships:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - entity
+              - deliveryAddress
+              - roles
+            properties:
+              entity:
+                allOf:
+                  - $ref: '#/components/schemas/Person'
+                  - required:
+                      - familyName
+              deliveryAddress:
+                $ref: '#/components/schemas/Address'
+              mailingAddress:
+                $ref: '#/components/schemas/Address'
+              roles:
+                type: array
+                minItems: 1
+                items:
+                  type: object
+                  required:
+                    - appointmentDate
+                    - roleType
+                    - roleClass
+                  properties:
+                    identifier:
+                      type: string
+                      maxLength: 36
+                      description: '***Item not used***'
+                    appointmentDate:
+                      type: string
+                      format: date
+                      description: Date the person has been appointed to the role.
+                    cessationDate:
+                      type: string
+                      format: date
+                      description: Date the person's role has been terminated.
+                    roleType:
+                      description: 'Role of the person in relation to the business eg: President.'
+                      enum:
+                        - CEO
+                        - CFO
+                        - President
+                        - Vice President
+                        - Chair
+                        - Treasurer
+                        - Secretary
+                        - Assistant Secretary
+                        - Other
+                    roleClass:
+                      description: Class or category of the roleType
+                      enum:
+                        - ATTORNEY
+                        - AGENT
+                        - DIRECTOR
+                        - OFFICER
     Restoration:
       title: Restoration Filing
       type: object
@@ -6761,6 +7111,8 @@ components:
             date: '2019-08-24'
             type: limitedRestoration
             expiry: '2020-02-20'
+      x-stoplight:
+        id: uzwjai0ex5db1
     Registration:
       title: Registration Filing
       type: object
@@ -6908,6 +7260,8 @@ components:
                 orderDate: '2019-08-24T14:15:22Z'
                 effectOfOrder: string
                 orderDetails: string
+      x-stoplight:
+        id: 4f1a9rbjiwhzw
     shareSeries:
       type: object
       description: Describe share structure of a company.
@@ -6940,6 +7294,8 @@ components:
           priority: 100
           hasMaximumShares: true
           hasRightsOrRestrictions: true
+      x-stoplight:
+        id: wme0ijd1oix8p
     shareClass:
       type: object
       description: 'Designation that describes the different types of shares the company can issue, typically designated by letters of the alphabet, such as A or B. '
@@ -7005,6 +7361,8 @@ components:
         - hasMaximumShares
         - hasParValue
         - hasRightsOrRestrictions
+      x-stoplight:
+        id: l8thfefnyrrq6
     Special_resolution:
       type: object
       title: Special Resolution Filing
@@ -7051,6 +7409,8 @@ components:
               middleInitial: A
               taxId: BN123456789
               email: abc.def@gov.bc.ca
+      x-stoplight:
+        id: zn093als1lg8x
     Share_structure:
       type: object
       title: Share Structure Schema
@@ -7087,6 +7447,8 @@ components:
                   priority: 2
                   hasMaximumShares: true
                   hasRightsOrRestrictions: true
+      x-stoplight:
+        id: 07qu8uz717gkr
     Suggestion_item:
       type: object
       description: '***Item not used*** A suggestion from an auto-search'
@@ -7111,6 +7473,8 @@ components:
           BN: '123456789'
           target: string
           weight: 0
+      x-stoplight:
+        id: vn3upfrdo0ylq
     Transition:
       type: object
       title: Transition Filing
@@ -7244,6 +7608,8 @@ components:
               email: abc.def@gov.bc.ca
               phone: string
               extension: 1234
+      x-stoplight:
+        id: vggqzz72hxus1
     Unmanaged:
       title: Unmanaged Filing
       required:
@@ -7259,6 +7625,8 @@ components:
               type: string
               title: Display name of the filing.
       description: '***Item not used*** '
+      x-stoplight:
+        id: 3f6gicm15kdrg
   securitySchemes:
     api_key:
       type: apiKey
