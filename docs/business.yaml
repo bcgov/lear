@@ -6734,6 +6734,104 @@ components:
             orderDate: '2019-08-24T14:15:22Z'
             effectOfOrder: Company will be dissolved
             orderDetails: Order to proceed with company dissolution
+    Relationship:
+      type: object
+      title: The Relationship Schema
+      description: Represents the relationship between an individual and a business.
+      x-examples:
+        Example 1:
+          relationships:
+            - entity:
+                givenName: Johnathon
+                familyName: Smith
+                middleInitial: E
+                alternateName: John Smith
+              deliveryAddress:
+                streetAddress: 5-4761 Bay Street
+                addressCity: Victoria
+                addressRegion: BC
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: Our apartment is located at the back of the building.
+              mailingAddress:
+                streetAddress: 5-4761 Bay Street
+                addressCity: Victoria
+                addressRegion: BC
+                addressCountry: Canada
+                postalCode: V8R 2P1
+                deliveryInstructions: Our apartment is located at the back of the building.
+              roles:
+                - appointmentDate: '2018-08-24'
+                  cessationDate: '2024-08-24'
+                  roleType: Secretary
+                  roleClass: OFFICER
+                - appointmentDate: '2024-08-24'
+                  cessationDate: null
+                  roleType: CEO
+                  roleClass: OFFICER
+      required:
+        - relationships
+      properties:
+        relationships:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required:
+              - entity
+              - deliveryAddress
+              - roles
+            properties:
+              entity:
+                allOf:
+                  - $ref: '#/components/schemas/Person'
+                  - required:
+                      - familyName
+              deliveryAddress:
+                $ref: '#/components/schemas/Address'
+              mailingAddress:
+                $ref: '#/components/schemas/Address'
+              roles:
+                type: array
+                minItems: 1
+                items:
+                  type: object
+                  required:
+                    - appointmentDate
+                    - roleType
+                    - roleClass
+                  properties:
+                    identifier:
+                      type: string
+                      maxLength: 36
+                      description: '***Item not used***'
+                    appointmentDate:
+                      type: string
+                      format: date
+                      description: Date the person has been appointed to the role.
+                    cessationDate:
+                      type: string
+                      format: date
+                      description: Date the person's role has been terminated.
+                    roleType:
+                      description: 'Role of the person in relation to the business eg: President.'
+                      enum:
+                        - CEO
+                        - CFO
+                        - President
+                        - Vice President
+                        - Chair
+                        - Treasurer
+                        - Secretary
+                        - Assistant Secretary
+                        - Other
+                    roleClass:
+                      description: Class or category of the roleType
+                      enum:
+                        - ATTORNEY
+                        - AGENT
+                        - DIRECTOR
+                        - OFFICER
     Restoration:
       title: Restoration Filing
       type: object
