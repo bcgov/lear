@@ -94,11 +94,22 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
     msg = []
     for series_index, series in enumerate(item.get('series', [])):
         err_path = '/filing/{0}/shareClasses/{1}/series/{2}'.format(filing_type, index, series_index)
-        if series['name'] in memoize_names:
-            msg.append({'error': 'Share series %s name already used in a share class or series.' % series['name'],
+
+        raw_series_name = series.get('name', '')
+        cleaned_series_name = raw_series_name.strip()
+        series['name'] = cleaned_series_name
+
+        if not cleaned_series_name:
+            msg.append({
+                'error': 'Share series name cannot be empty or only whitespace',
+                'path': f'{err_path}/name/'
+            })
+
+        if cleaned_series_name in memoize_names:
+            msg.append({'error': 'Share series %s name already used in a share class or series.' % cleaned_series_name,
                         'path': err_path})
         else:
-            memoize_names.append(series['name'])
+            memoize_names.append(cleaned_series_name)
 
         if series['hasMaximumShares']:
             if not series.get('maxNumberOfShares', None):
@@ -120,12 +131,24 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
 def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
     """Validate a wellformed share structure."""
     msg = []
-    if item['name'] in memoize_names:
+
+    raw_name = item.get('name', '')
+    cleaned_name = raw_name.strip()
+    item['name'] = cleaned_name
+
+    if not cleaned_name:
         err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
-        msg.append({'error': 'Share class %s name already used in a share class or series.' % item['name'],
+        msg.append({
+            'error': 'Share class name cannot be empty or only whitespace',
+            'path': err_path
+        })
+
+    if cleaned_name in memoize_names:
+        err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
+        msg.append({'error': 'Share class %s name already used in a share class or series.' % cleaned_name,
                     'path': err_path})
     else:
-        memoize_names.append(item['name'])
+        memoize_names.append(cleaned_name)
 
     if item['hasMaximumShares'] and not item.get('maxNumberOfShares', None):
         err_path = '/filing/{0}/shareClasses/{1}/maxNumberOfShares/'.format(filing_type, index)
@@ -255,10 +278,11 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
 
         first_name = officer.get('firstName', None)
         if (legal_type in Business.CORPS) and (not first_name):
-            msg.append({'error': 'firstName is required', 'path': f'{party_path}/firstName'})
-        trimmed = get_clean_str(first_name)
-        officer['firstName'] = trimmed
-        if not trimmed:
+            msg.append({'error': f'{party_roles_str} first name is required', 'path': f'{party_path}'})
+            return msg
+        trimmed_first = get_clean_str(first_name)
+        officer['firstName'] = trimmed_first
+        if not trimmed_first:
             msg.append({
                 'error': f'{party_roles_str} first name cannot be only whitespace',
                 'path': party_path
@@ -268,7 +292,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
             msg.append({'error': err_msg, 'path': party_path})
 
         middle_initial = officer.get('middleInitial')
-        if middle_initial is not None:
+        if middle_initial:
             trimmed_initial = get_clean_str(middle_initial)
             officer['middleInitial'] = trimmed_initial
             if not trimmed_initial:
@@ -279,7 +303,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
                 msg.append({'error': err_msg, 'path': party_path})    
 
         middle_name = officer.get('middleName')
-        if middle_name is not None:
+        if middle_name:
             trimmed_middle = get_clean_str(middle_name)
             officer['middleName'] = trimmed_middle
             if not trimmed_middle:
@@ -289,16 +313,20 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
                 err_msg = f'{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters'
                 msg.append({'error': err_msg, 'path': party_path})
 
-        last_name = officer.get('lastName')
-        if last_name is not None:
-            trimmed_last = get_clean_str(last_name)
-            officer['lastName'] = trimmed_last
-            if not trimmed_last:
-                msg.append({'error': f'{party_roles_str} last name cannot be only whitespace',
-                             'path': party_path})
-            elif len(trimmed_last) > last_name_max_length:
-                err_msg = f'{party_roles_str} last name cannot be longer than {last_name_max_length} characters'
-                msg.append({'error': err_msg, 'path': party_path})      
+        last_name = officer.get('lastName', None)
+        if (legal_type in Business.CORPS) and (not last_name):
+            msg.append({'error': f'{party_roles_str} last name is required', 'path': f'{party_path}'})
+            return msg
+        trimmed_last = get_clean_str(last_name)
+        officer['lastName'] = trimmed_last
+        if not trimmed_last:
+            msg.append({
+                'error': f'{party_roles_str} last name cannot be only whitespace',
+                'path': party_path
+            })    
+        elif len(last_name) > last_name_max_length:
+            err_msg = f'{party_roles_str} last name cannot be longer than {last_name_max_length} characters'
+            msg.append({'error': err_msg, 'path': party_path})  
 
     return msg 
 

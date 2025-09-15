@@ -698,7 +698,7 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
                 {
                     'partyName': 'officer1',
                     'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
+                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': 'Doe'}
                 },
                 {
                     'partyName': 'officer2',
@@ -707,6 +707,44 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
                 }
             ],
             None
+        ),
+        (
+            'FAIL_FIRST_NAME_EMPTY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': '', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator first name is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director first name is required',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_LAST_NAME_EMPTY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': ''}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': ''}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director last name is required',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
             'FAIL_FIRST_NAME_WHITESPACE_ONLY', 'BEN',
@@ -1034,6 +1072,26 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
          HTTPStatus.BAD_REQUEST, [{
              'error': 'Share series Share Series 1 name already used in a share class or series.',
              'path': '/filing/incorporationApplication/shareClasses/0/series/1'
+         }]),
+        ('FAIL_EMPTY_CLASS_NAME', 'BEN', '', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share class name cannot be empty or only whitespace',
+             'path': '/filing/incorporationApplication/shareClasses/0/name/'
+         }]),
+        ('FAIL_WHITESPACE_ONLY_CLASS_NAME', 'BEN', '   ', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share class name cannot be empty or only whitespace',
+             'path': '/filing/incorporationApplication/shareClasses/0/name/'
+         }]),
+        ('FAIL_EMPTY_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share series name cannot be empty or only whitespace',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
+         }]),
+        ('FAIL_WHITESPACE_ONLY_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '   ', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share series name cannot be empty or only whitespace',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
          'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,

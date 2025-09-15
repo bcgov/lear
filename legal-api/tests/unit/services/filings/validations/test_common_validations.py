@@ -309,7 +309,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     ('', '', False),
     (None, None, False),
 ])
-def test_validate_and_normalize_certified_by(input_value, expected_value, expect_error):
+def test_validate_certified_by(input_value, expected_value, expect_error):
     """Test that certified by field can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = input_value
