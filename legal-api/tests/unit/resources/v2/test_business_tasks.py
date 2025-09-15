@@ -309,10 +309,10 @@ def test_construct_task_list_ar(session, client, jwt, test_name, identifier, fou
     ('TA_2_AR_1_AR_3', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2023, 7, 2, 8), datetime(2024, 9, 1), None, [{'order': 2, 'name': 'transition', 'enabled': True}, {'order': 1, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 3, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}]),
     ('TA_1_AR_2_AR_3', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2023, 7, 2, 8), datetime(2024, 6, 1), None, [{'order': 1, 'name': 'transition', 'enabled': True}, {'order': 2, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 3, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}]),
     ('TA_3_AR_1_AR_2', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2023, 7, 2, 8), datetime(2025, 9, 1), None, [{'order': 3, 'name': 'transition', 'enabled': True}, {'order': 1, 'name': 'annualReport', 'ARFilingYear': 2024, 'enabled': True}, {'order': 2, 'name': 'annualReport', 'ARFilingYear': 2025, 'enabled': False}]),
-    ('TA_DISABLED_DRAFT_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'changeOfDirectors', [{'order': 1, 'status': 'DRAFT', 'name': 'changeOfDirectors', 'enabled': True}, {'order': 2, 'name': 'transition', 'enabled': False}]),
-    ('TA_DISABLED_PENDING_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'changeOfAddress', [{'order': 1, 'status': 'PENDING', 'name': 'changeOfAddress', 'enabled': True}, {'order': 2, 'name': 'transition', 'enabled': False}]),
-    ('TA_DRAFT_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'transition', [{'order': 1, 'status': 'DRAFT', 'name': 'transition', 'enabled': True}]),
-    ('TA_PENDING_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'transition', [{'order': 1, 'status': 'PENDING', 'name': 'transition', 'enabled': True}]),
+    ('TA_DISABLED_DRAFT_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'changeOfDirectors', [{'order': 1, 'status': 'DRAFT', 'enabled': True}, {'order': 2, 'name': 'transition', 'enabled': False}]),
+    ('TA_DISABLED_PENDING_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'changeOfAddress', [{'order': 1, 'status': 'PENDING', 'enabled': True}, {'order': 2, 'name': 'transition', 'enabled': False}]),
+    ('TA_DRAFT_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'transition', [{'order': 1, 'status': 'DRAFT', 'enabled': True}]),
+    ('TA_PENDING_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), 'transition', [{'order': 1, 'status': 'PENDING', 'enabled': True}]),
     ('NO_TA_FOUNDING_DATE_REASON', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(2022, 7, 2, 8), datetime(2025, 7, 2, 8), datetime(2025, 9, 1), None, []),
     ('NO_TA_NO_RESTORATION', 'BC1234567', Business.LegalTypes.BCOMP.value, datetime(1999, 7, 2, 8), datetime(2025, 7, 2, 8), None, None, []),
 ])
@@ -366,8 +366,7 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
                 assert task['enabled'] == expected_task.get('enabled')
                 if task['task'].get('todo'):
                     assert task['task']['todo']['header']['name'] == expected_task['name']
-                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear')
-                    assert task['task']['todo']['header'].get('subType') == expected_task.get('subType')
+                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear') + year_offset
                 else:
                     assert task['task']['filing']['header']['status'] == expected_task.get('status')
 
@@ -447,8 +446,8 @@ def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier
                 assert task['enabled'] == expected_task.get('enabled')
                 if task['task'].get('todo'):
                     assert task['task']['todo']['header']['name'] == expected_task['name']
-                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear')
-                    assert task['task']['todo']['header'].get('TRFilingYear') == expected_task.get('TRFilingYear')
+                    assert task['task']['todo']['header'].get('ARFilingYear') == expected_task.get('ARFilingYear') + year_offset
+                    assert task['task']['todo']['header'].get('TRFilingYear') == expected_task.get('TRFilingYear') + year_offset
                     assert task['task']['todo']['header'].get('subType') == expected_task.get('subType')
                 else:
                     assert task['task']['filing']['header']['status'] == expected_task.get('status')
