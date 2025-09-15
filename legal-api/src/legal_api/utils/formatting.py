@@ -22,3 +22,28 @@ def float_to_str(f, precision=17):
 
     value = ctx.create_decimal(repr(f))
     return format(value, 'f')
+
+
+def normalize_phone(phone: str) -> str:
+    """
+    Normalize a phone number by stripping all non-digit characters.
+
+    This function takes a phone number string in various formats
+    (e.g., "555-555-5555", "555 555 5555", "(555) 555-5555", "+1 (555) 555-5555") and returns
+    a normalized string containing only digits.
+
+    Args:
+        phone_number (str): The phone number string to normalize.
+
+    Returns:
+        str: The normalized phone number containing only digits.
+             Example: "5555555555".
+    """
+    # keep only digits
+    digits = re.sub(r"\D", "", phone)
+
+    # handle North America: allow 10 digits, or 11 with leading "1"
+    if len(digits) == 11 and digits.startswith("1"):
+        digits = digits[1:]
+    else:
+        return digits
