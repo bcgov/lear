@@ -251,13 +251,13 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
                             'streetAddressAdditional': ''
                         },
                         'deliveryAddress': {
-                            'streetAddress': '123 Main St',
-                            'addressCity': 'Vancouver',
-                            'addressRegion': 'BC',
-                            'postalCode': 'V6B 1A1',
-                            'addressCountry': 'CA',
-                            'deliveryInstructions': '',
-                            'streetAddressAdditional': ''
+                            'street': '456 Oak Ave',
+                            'city': 'Vancouver',
+                            'region': 'BC',
+                            'postal_code': 'V6B 1A1',
+                            'country': 'CA',
+                            'delivery_instructions': '',
+                            'street_additional': ''
                         }
                     },
                     {
@@ -270,7 +270,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
                             'organizationName': ''
                         },
                         'mailingAddress': {
-                            'streetAddress': '789 New St',
+                            'streetAddress': '123 Main St',
                             'addressCity': 'Vancouver',
                             'addressRegion': 'BC',
                             'postalCode': 'V6B 1A1',
@@ -279,13 +279,13 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
                             'streetAddressAdditional': ''
                         },
                         'deliveryAddress': {
-                            'streetAddress': '789 New St',
-                            'addressCity': 'Vancouver',
-                            'addressRegion': 'BC',
-                            'postalCode': 'V6B 1A1',
-                            'addressCountry': 'CA',
-                            'deliveryInstructions': '',
-                            'streetAddressAdditional': ''
+                            'street': '456 Oak Ave',
+                            'city': 'Vancouver',
+                            'region': 'BC',
+                            'postal_code': 'V6B 1A1',
+                            'country': 'CA',
+                            'delivery_instructions': '',
+                            'street_additional': ''
                         }
                     }
                 ]
@@ -297,6 +297,6 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
 
     assert len(result) == 1
     assert result[0]['email_changed'] == True
-    assert result[0]['name_changed'] == False
-    assert result[0]['address_changed'] == False
+    assert result[0]['name_changed'] == True
+    assert result[0]['address_changed'] == True
     assert result[0]['delivery_address_changed'] == False

@@ -510,7 +510,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
         if party_id:
             for role in db_party_roles:
                 if role.party_id == party_id and role.party_id not in matched_db_party_ids:
-                    matched_db_party = Party.find_by_id(role.party_id)
+                    matched_db_party = role.party
                     if matched_db_party:
                         matched_db_party_ids.add(role.party_id)
                         break
