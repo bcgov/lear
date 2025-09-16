@@ -540,20 +540,9 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         # for incorporationApplication and registration, get legalType from nameRequest
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
-        if (
-            not flags.is_on('supported-change-of-officers-entities')
-            and
-            filing_type == CoreFiling.FilingTypes.CHANGEOFOFFICERS.value
-        ):
-            return (
-                jsonify({
-                    'message': (
-                        f'Officer Filing is currently not available for: '
-                        f'{identifier}.'
-                    )
-                }),
-                HTTPStatus.BAD_REQUEST
-            )
+        is_filing_available = PermissionService.check_filing_enabled(filing_type, identifier)
+        if is_filing_available:
+            return jsonify(is_filing_available.message), is_filing_available.code
         if (
             flags.is_on('enable-permissions-for-action')
             and
