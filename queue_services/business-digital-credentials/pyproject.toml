@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-digital-credentials"
-version = "0.1.1"
+version = "0.1.2"
 description = "This module is the service worker for handling events that deal with Digital Business Card credential tasks."
 authors = ["Lucas O'Neil <lucasoneil@gmail.com>"]
 license = "BSD-3-Clause"
@@ -10,9 +10,9 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.13"
 gunicorn = "23.0.0"
-launchdarkly-server-sdk = "7.1.0"
+launchdarkly-server-sdk = "9.12.0"
 psycopg2-binary = "2.9.10"
-Flask = "^3.1.0"
+Flask = "^3.1.2"
 
 # Git-based dependencies
 gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/gcp-queue", branch = "main" }
@@ -25,15 +25,15 @@ business-registry-digital-credentials = {git = "https://github.com/bcgov/lear.gi
 
 
 [tool.poetry.group.test.dependencies]
-pytest = "^8.3.5"
-pytest-cov = "6.1.0"
-pytest-mock = "^3.14.0"
+pytest = "^8.4.2"
+pytest-cov = "7.0.0"
+pytest-mock = "^3.15.0"
 requests-mock = "1.12.1"
 
 [tool.poetry.group.dev.dependencies]
-freezegun = "^1.5.1"
-ruff = "^0.11.2"
-deptry = "^0.23.0"
+freezegun = "^1.5.5"
+ruff = "^0.13.0"
+deptry = "^0.23.1"
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.

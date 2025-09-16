@@ -58,6 +58,9 @@ test: ## Unit testing
 coverage-check:
 	poetry run pytest --cov=src --cov-fail-under=85
 
+lint: ## Linting
+	poetry run ruff check
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
