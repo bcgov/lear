@@ -72,8 +72,8 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message, m
 @pytest.mark.parametrize(
     'test_name, reason, expected_code, message',
     [
-        ('EMPTY', '', HTTPStatus.BAD_REQUEST, 'Reason cannot be empty or only whitespace.'),        
-        ('ONLY_WHITESPACE', '     ', HTTPStatus.BAD_REQUEST, 'Reason cannot be empty or only whitespace.'),
+        ('EMPTY', '', HTTPStatus.BAD_REQUEST, 'Reason is required.'),        
+        ('ONLY_WHITESPACE', '     ', HTTPStatus.BAD_REQUEST, 'Reason is required.'),
         ('VALID_REASON', 'Test Reason', None, None),
         ('VALID_REASON_WITH_SPACES', '   Valid Reason   ', None, None),
     ]

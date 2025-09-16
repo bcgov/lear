@@ -53,7 +53,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     agm_reason_path: Final = '/filing/agmLocationChange/reason'
     reason = get_str(filing, agm_reason_path)
     if reason is not None and not reason.strip():
-        msg.append({'error': 'Reason cannot be empty or only whitespace.', 'path': agm_reason_path})
+        msg.append({'error': 'Reason is required.', 'path': agm_reason_path})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

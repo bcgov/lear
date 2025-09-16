@@ -333,21 +333,21 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
         # Whitespace-only emails
         ('FAIL', 'BC', 'voluntary', ' ', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
         ('FAIL', 'BC', 'voluntary', '   ', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
         ('FAIL', 'BC', 'voluntary', '\t', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
         ('FAIL', 'BC', 'voluntary', '\n', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
 
         # Leading/trailing/middle whitespace
         ('FAIL', 'BC', 'voluntary', ' test@example.com', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
         ('FAIL', 'BC', 'voluntary', 'test@example.com ', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
         ('FAIL', 'BC', 'voluntary', 'te st@example.com', HTTPStatus.BAD_REQUEST,
-         'Custodian email cannot contain any whitespaces'),
+         'Custodian email cannot contain any whitespaces.'),
 
         # Valid emails (no whitespace)
         ('SUCCESS', 'CP', 'voluntary', None, None, None),
@@ -394,11 +394,11 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
     [
         # Required organization name cases (missing or None)
         ('FAIL', 'BC', 'voluntary', 'organization', None, HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required for organization'),
+         'Corporation or firm name is required for an organization.'),
         ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required for organization'),
+         'Corporation or firm name is required for an organization.'),
         ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required for organization'),
+         'Corporation or firm name is required for an organization.'),
 
         # Leading/trailing whitespace
         ('SUCCESS', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, None),

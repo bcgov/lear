@@ -101,7 +101,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
 
         if not trimmed_series_name:
             msg.append({
-                'error': 'Share series name cannot be empty or only whitespace',
+                'error': 'Share series name is required.',
                 'path': f'{err_path}/name/'
             })
 
@@ -139,7 +139,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
     if not trimmed_share_name:
         err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
         msg.append({
-            'error': 'Share class name cannot be empty or only whitespace',
+            'error': 'Share class name is required.',
             'path': err_path
         })
 
@@ -745,7 +745,7 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
 
         if not cleaned_name:
             msg.append({
-                'error': 'Name translation cannot be empty or only whitespace.',
+                'error': 'Name translation is required.',
                 'path': f'/filing/{filing_type}/nameTranslations/{idx}/name/'
             })
 

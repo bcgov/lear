@@ -488,9 +488,9 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
 @pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
-    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, 'Name translation cannot be empty or only whitespace.'),
-    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation cannot be empty or only whitespace.'),
-    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation cannot be empty or only whitespace.'),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, 'Name translation is required.'),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation is required.'),
+    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation is required.'),
 ])
 def test_validate_restoration_name_translation(session, test_name, name_translation, expected_code, expected_msg):
     """Assert that party is validated."""

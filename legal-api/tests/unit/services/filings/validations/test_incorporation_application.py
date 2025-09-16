@@ -1075,22 +1075,22 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
          }]),
         ('FAIL_EMPTY_CLASS_NAME', 'BEN', '', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class name cannot be empty or only whitespace',
+             'error': 'Share class name is required.',
              'path': '/filing/incorporationApplication/shareClasses/0/name/'
          }]),
         ('FAIL_WHITESPACE_ONLY_CLASS_NAME', 'BEN', '   ', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class name cannot be empty or only whitespace',
+             'error': 'Share class name is required.',
              'path': '/filing/incorporationApplication/shareClasses/0/name/'
          }]),
         ('FAIL_EMPTY_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '', True, 1000,
          None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series name cannot be empty or only whitespace',
+             'error': 'Share series name is required.',
              'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
          }]),
         ('FAIL_WHITESPACE_ONLY_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '   ', True, 1000,
          None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series name cannot be empty or only whitespace',
+             'error': 'Share series name is required.',
              'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
@@ -1664,15 +1664,15 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/incorporationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/incorporationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/incorporationApplication/nameTranslations/1/name/'
     }]),
 ])

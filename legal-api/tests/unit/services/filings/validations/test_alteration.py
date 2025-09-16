@@ -717,15 +717,15 @@ def test_alteration_good_standing(session, good_standing, has_permission, should
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/alteration/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/alteration/nameTranslations/0/name/'
     }]),
     ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/alteration/nameTranslations/1/name/'
     }]),
 ])

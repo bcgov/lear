@@ -1633,15 +1633,15 @@ def test_validate_amalgamation_effective_date(
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be empty or only whitespace.',
+        'error': 'Name translation is required.',
         'path': '/filing/amalgamationApplication/nameTranslations/1/name/'
     }]),
 ])
