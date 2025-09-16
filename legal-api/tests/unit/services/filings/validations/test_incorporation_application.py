@@ -698,12 +698,12 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
                 {
                     'partyName': 'officer1',
                     'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': 'Doe'}
+                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': 'Doe'}
                 },
                 {
                     'partyName': 'officer2',
                     'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': '', 'lastName': 'Doe'}
                 }
             ],
             None
@@ -1659,3 +1659,41 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     else:
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
+
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be empty or only whitespace.',
+        'path': '/filing/incorporationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be empty or only whitespace.',
+        'path': '/filing/incorporationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be empty or only whitespace.',
+        'path': '/filing/incorporationApplication/nameTranslations/1/name/'
+    }]),
+])
+def test_validate_name_translation(session, test_name, name_translation, expected_code, expected_msg):
+    """Test validate name translation if provided."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+    
+    filing_json['filing'][incorporation_application_name]['nameTranslations'] = name_translation
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing_json)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None

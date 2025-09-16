@@ -26,6 +26,7 @@ from legal_api.services.utils import get_bool, get_str
 from .common_validations import (
     validate_court_order,
     validate_effective_date,
+    validate_name_translation,
     validate_name_request,
     validate_pdf,
     validate_phone_number,
@@ -62,6 +63,7 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
         msg.extend(err)
 
     msg.extend(validate_effective_date(filing))    
+    msg.extend(validate_name_translation(filing, 'alteration'))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
