@@ -295,13 +295,21 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     
     result = find_updated_keys_for_firms(business, filing_json, 'changeOfRegistration')
 
-    assert len(result) == 2
+    assert len(result) == 3
+
     edited_result = next((r for r in result if 'email_changed' in r), None)
     assert edited_result['email_changed'] == True
     assert edited_result['name_changed'] == False
     assert edited_result['address_changed'] == False
     assert edited_result['delivery_address_changed'] == True
 
+    deletion_result = next((r for r in result if r.get('key') == 'parties_deleted'), None)
+    assert deletion_result['count']['deleted'] == 1
+    assert deletion_result['count']['added'] == 0
+
+    addition_result = next((r for r in result if r.get('key') == 'parties_added'), None)
+    assert addition_result['count']['deleted'] == 0
+    assert addition_result['count']['added'] == 1
+
     replacement_result = next((r for r in result if r.get('key') == 'parties_replaced'), None)
-    assert replacement_result['count']['deleted'] == 1
-    assert replacement_result['count']['added'] == 1
+    assert replacement_result is None
