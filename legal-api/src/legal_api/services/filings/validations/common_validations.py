@@ -550,7 +550,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
             }
             # Mailing address comparison
             db_mailing_address = (Address.find_by_id(matched_db_party.mailing_address_id)
-                                  if hasattr(matched_db_party.mailing_address_id, 'delivery_address_id') and matched_db_party.delivery_address_id else None)
+                                  if matched_db_party.mailing_address_id else None)
             old_mailing = {
                 'streetAddress': db_mailing_address.street or '',
                 'addressCity': db_mailing_address.city or '',
@@ -574,8 +574,8 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                 changes['address'] = {'old': old_mailing, 'new': new_mailing}
 
             # Delivery address comparison
-            db_delivery_address = (Address.find_by_id(mailing_address.get('id'))
-                                   if mailing_address.get('id') else None)
+            db_delivery_address = (Address.find_by_id(matched_db_party.delivery_address_id)
+                                  if matched_db_party.delivery_address_id else None)
             
             old_delivery = {
                 'streetAddress': db_delivery_address.street or '',
