@@ -304,6 +304,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     assert edited_result['address_changed'] == False
     assert edited_result['delivery_address_changed'] == True
 @pytest.mark.parametrize('input_value, expected_value, expect_error', [
+@pytest.mark.parametrize('input_value, expected_value, expected_error', [
     ('John   Doe', 'John Doe', False),
     ('   \t   ', '', True),
     ('', '', False),
