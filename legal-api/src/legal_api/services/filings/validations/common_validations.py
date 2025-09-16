@@ -607,7 +607,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     'delivery_address_changed': 'deliveryAddress' in changes
                 })
     # Replacements and new Additions
-    db_party_ids = (role.party_id for role in db_party_roles)
+    db_party_ids = set(role.party_id for role in db_party_roles)
     unmatched_db_parties = db_party_ids - matched_db_parties
 
     if unmatched_db_parties and new_parties:
