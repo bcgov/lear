@@ -57,7 +57,6 @@ SET backfill_cutoff_filing_id = lhf.last_historical_filing_id,
     last_modified = NOW()
 FROM last_historical_filings lhf
 WHERE businesses_version.id = lhf.business_id
-    AND businesses_version.end_transaction_id IS NULL
     AND lhf.last_historical_filing_id IS NOT NULL;
 
 -- The following queries are for verification purposes only
