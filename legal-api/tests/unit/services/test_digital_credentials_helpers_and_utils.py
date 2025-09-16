@@ -59,8 +59,8 @@ def test_determine_allowed_business_types(app, monkeypatch, flag_value, valid_re
     """Test filtering of allowed business types based on flag values."""
 
     # Mock flag values
-    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: True)
-    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.value', lambda _: flag_value)
+    monkeypatch.setattr('legal_api.services.flags.is_on', lambda _: True)
+    monkeypatch.setattr('legal_api.services.flags.value', lambda _: flag_value)
 
     with app.app_context():
         result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
@@ -82,8 +82,8 @@ def test_determine_allowed_business_types_invalid_flags(app, monkeypatch, flag_v
     """Test filtering of allowed business types based on flag values."""
 
     # Mock flag values
-    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: True)
-    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.value', lambda _: flag_value)
+    monkeypatch.setattr('legal_api.services.flags.is_on', lambda _: True)
+    monkeypatch.setattr('legal_api.services.flags.value', lambda _: flag_value)
 
     with app.app_context():
         result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
@@ -93,7 +93,7 @@ def test_determine_allowed_business_types_missing_flag(app, monkeypatch):
     """Test filtering of allowed business types based on flag value not set."""
 
     # Mock flag values
-    monkeypatch.setattr('legal_api.services.digital_credentials_utils.flags.is_on', lambda _: False)
+    monkeypatch.setattr('legal_api.services.flags.is_on', lambda _: False)
 
     with app.app_context():
         result = determine_allowed_business_types(['SP', 'GP'], ['BEN'])
