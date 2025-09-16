@@ -106,7 +106,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
             })
 
         if trimmed_series_name in memoize_names:
-            msg.append({'error': 'Share series %s name already used in a share class or series.' % cleaned_series_name,
+            msg.append({'error': 'Share series %s name already used in a share class or series.' % trimmed_series_name,
                         'path': err_path})
         else:
             memoize_names.append(trimmed_series_name)
@@ -145,7 +145,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
 
     if trimmed_share_name in memoize_names:
         err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
-        msg.append({'error': 'Share class %s name already used in a share class or series.' % cleaned_name,
+        msg.append({'error': 'Share class %s name already used in a share class or series.' % trimmed_share_name,
                     'path': err_path})
     else:
         memoize_names.append(trimmed_share_name)
@@ -719,7 +719,7 @@ def validate_certify_name(filing_json) -> bool:
 def validate_certified_by(filing_json: dict) -> list:
     """Validate certifiedBy field."""
     msg = []
-    certified_by = filing_json.get('filing', {}).get('header', {}).get('certifiedBy')
+    certified_by = filing_json['filing']['header'].get('certifiedBy')
 
     if certified_by not in (None, ""):
         trimmed = get_clean_str(certified_by)

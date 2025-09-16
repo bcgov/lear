@@ -318,7 +318,7 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
 
             if not org_name:
                 msg.append({
-                    'error': 'Corporation or firm name is required',
+                    'error': 'Corporation or firm name is required for organization',
                     'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
                 })
 
