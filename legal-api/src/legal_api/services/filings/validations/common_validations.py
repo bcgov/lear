@@ -492,7 +492,8 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
     db_party_roles = PartyRole.get_parties_by_role(business.id, role_type)
     parties = filing_json['filing'][filing_type].get('parties', [])
 
-    matched_db_party_ids = set()
+    matched_db_parties = set()
+    new_parties = []
 
     for party in parties:
         roles = party.get("roles", [])
@@ -507,13 +508,18 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
         # Match with existing DB party
         matched_db_party = None
         party_id = party.get("officer", {}).get("id")
+
         if party_id:
             for role in db_party_roles:
-                if role.party_id == party_id and role.party_id not in matched_db_party_ids:
+                if role.party_id == party_id and role.party_id not in matched_db_parties:
                     matched_db_party = role.party
                     if matched_db_party:
-                        matched_db_party_ids.add(role.party_id)
+                        matched_db_parties.add(role.party_id)
                         break
+        else:
+            new_parties.append(party)
+            continue
+
         if matched_db_party:
             changes = {}
             # Email comparison
@@ -600,7 +606,43 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     'address_changed': 'address' in changes,
                     'delivery_address_changed': 'deliveryAddress' in changes
                 })
+    # Replacements and new Additions
+    db_party_ids = (role.party_id for role in db_party_roles)
+    unmatched_db_parties = db_party_ids - matched_db_parties
 
+    if unmatched_db_parties and new_parties:
+        updated_keys.append({
+            'key':'parties_replaced',
+            'old': list(unmatched_db_parties),
+            'new': [party.get('officer', {}).get('firstName', '') + ' ' + 
+                    party.get('officer', {}).get('lastName', '') for party in new_parties],
+            'count': {
+                'deleted': len(unmatched_db_parties),
+                'added': len(new_parties)
+            }
+        })
+    
+    elif unmatched_db_parties:
+        updated_keys.append({
+            'key':'parties_deleted',
+            'old': list(unmatched_db_parties),
+            'new': [],
+            'count': {
+                'deleted': len(unmatched_db_parties),
+                'added': 0
+            }
+        })
+    elif new_parties:
+        updated_keys.append({
+            'key':'parties_added',
+            'old': [],
+            'new': [party.get('officer', {}).get('firstName', '') + ' ' + 
+                    party.get('officer', {}).get('lastName', '') for party in new_parties],
+            'count': {
+                'deleted': 0,
+                'added': len(new_parties)
+            }
+        })
     return updated_keys
 
 def normalize_str(value: str) -> str:
