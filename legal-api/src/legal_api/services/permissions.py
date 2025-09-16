@@ -222,7 +222,7 @@ class PermissionService:
         flag_name = filings_feature_flag.get(filing_type)
         if flag_name and not flags.is_on(flag_name):
             return Error(
-                HTTPStatus.FORBIDDEN,
+                HTTPStatus.BAD_REQUEST,
                 [{
                     'message': f'Permission Denied - {filing_type} filing is currently not available for: {identifier}.'
                 }]
