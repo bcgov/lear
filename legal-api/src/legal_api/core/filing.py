@@ -590,6 +590,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                     Filing.FilingTypes.AGMEXTENSION.value,
                     Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                     Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
+                    Filing.FilingTypes.CHANGEOFOFFICERS.value
                 ]
                 if filing.filing_type not in no_legal_filings:
                     documents['documents']['legalFilings'] = \
