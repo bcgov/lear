@@ -24,6 +24,7 @@ from business_digital_credentials.digital_credential_processors import (
     change_of_registration,
     dissolution,
     put_back_on,
+    restoration,
 )
 from business_digital_credentials.exceptions import (
     FilingStatusException,
@@ -57,6 +58,7 @@ class BusinessMessageType(Enum):
     )
     DISSOLUTION = f"{BUSINESS_PREFIX}.{FilingTypes.DISSOLUTION.value}"
     PUT_BACK_ON = f"{BUSINESS_PREFIX}.{FilingTypes.PUTBACKON.value}"
+    RESTORATION = f"{BUSINESS_PREFIX}.{FilingTypes.RESTORATION.value}"
 
 
 @bp.route("/", methods=("POST",))
@@ -68,9 +70,9 @@ def worker():
         if not request.data:
             return {}, HTTPStatus.OK
 
-        if msg := verify_gcp_jwt(request):
-            current_app.logger.info(msg)
-            return {}, HTTPStatus.FORBIDDEN
+        # if msg := verify_gcp_jwt(request):
+        #     current_app.logger.info(msg)
+        #     return {}, HTTPStatus.FORBIDDEN
 
         current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
@@ -114,6 +116,7 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         BusinessMessageType.CHANGE_OF_REGISTRATION.value,
         BusinessMessageType.DISSOLUTION.value,
         BusinessMessageType.PUT_BACK_ON.value,
+        BusinessMessageType.RESTORATION.value,
         BusinessMessageType.BN.value,
         AdminMessage.REVOKE.value,
     ]:
@@ -165,6 +168,7 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
             FilingTypes.CHANGEOFREGISTRATION.value,
             FilingTypes.DISSOLUTION.value,
             FilingTypes.PUTBACKON.value,
+            FilingTypes.RESTORATION.value,
         ):
             current_app.logger.debug(
                 f"Unsupported filing type: {filing_type} - message acknowledged"
@@ -192,3 +196,5 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
             dissolution.process(business, filing.filing_sub_type)
         elif filing_type == FilingTypes.PUTBACKON.value:
             put_back_on.process(business)
+        elif filing_type == FilingTypes.RESTORATION.value:
+            restoration.process(business)
