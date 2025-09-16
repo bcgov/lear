@@ -309,14 +309,14 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     ('', '', False),
     (None, None, False),
 ])
-def test_validate_certified_by(input_value, expected_value, expect_error):
+def test_validate_certified_by(input_value, expected_value, expected_error):
     """Test that certified by field can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = input_value
 
     errors = validate_certified_by(filing)
 
-    if expect_error:
+    if expected_error:
         assert errors
         assert errors[0]['error'] == 'Certified By field cannot be only whitespace.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'

@@ -484,3 +484,30 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
         for nr_type in nr_types:
             execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, nr_type, new_legal_name,
                                         expected_code, expected_msg)
+
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, 'Name translation cannot be empty or only whitespace.'),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation cannot be empty or only whitespace.'),
+    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation cannot be empty or only whitespace.'),
+])
+def test_validate_restoration_name_translation(session, test_name, name_translation, expected_code, expected_msg):
+    """Assert that party is validated."""
+    business = Business(identifier='BC1234567', legal_type='BC')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['relationships'] = relationships
+    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+
+    filing['filing']['restoration']['nameTranslations'] = name_translation
+
+    err = validate(business, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err

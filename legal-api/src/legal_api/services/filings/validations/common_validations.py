@@ -742,7 +742,6 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
 
         cleaned_name = get_clean_str(translation.get('name'))
         translation['name'] = cleaned_name
-        print('here is the cleaned name: ', cleaned_name)
 
         if not cleaned_name:
             msg.append({
