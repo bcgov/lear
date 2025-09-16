@@ -394,11 +394,11 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
     [
         # Required organization name cases (missing or None)
         ('FAIL', 'BC', 'voluntary', 'organization', None, HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required'),
+         'Corporation or firm name is required for organization'),
         ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required'),
+         'Corporation or firm name is required for organization'),
         ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required'),
+         'Corporation or firm name is required for organization'),
 
         # Leading/trailing whitespace
         ('SUCCESS', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, None),

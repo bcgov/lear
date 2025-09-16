@@ -27,7 +27,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
+from legal_api.services.utils import get_str, get_clean_str # noqa: I003; needed as the linter gets confused from the babel override.
 
 
 class DissolutionTypes(str, Enum):
@@ -308,22 +308,20 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
     msg = []
     for idx, party in enumerate(parties):
         party_type = get_str(party, '/officer/partyType')
-        # Only validate if parytyType is organization
+        # Only validate if partyType is organization
         if party_type == 'organization':
-            org_name = get_str(party, '/officer/organizationName')
 
-            # Trim spaces before validation and update payload
-            if org_name:
-                trimmed_name = org_name.strip()
-                party['officer']['organizationName'] = trimmed_name
-            else:
-                trimmed_name = ''
+            raw_name = get_str(party, '/officer/organizationName')
+            org_name = get_clean_str(raw_name)
 
-            if not trimmed_name:
+            party['officer']['organizationName'] = org_name or ''
+
+            if not org_name:
                 msg.append({
                     'error': 'Corporation or firm name is required',
                     'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
                 })
+
     return msg
 
 def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Optional[list]:

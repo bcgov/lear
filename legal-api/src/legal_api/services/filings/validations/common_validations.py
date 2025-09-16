@@ -95,21 +95,21 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
     for series_index, series in enumerate(item.get('series', [])):
         err_path = '/filing/{0}/shareClasses/{1}/series/{2}'.format(filing_type, index, series_index)
 
-        raw_series_name = series.get('name', '')
-        cleaned_series_name = raw_series_name.strip()
-        series['name'] = cleaned_series_name
+        series_name = series.get('name', '')
+        trimmed_series_name = get_clean_str(series_name)
+        series['name'] = trimmed_series_name
 
-        if not cleaned_series_name:
+        if not trimmed_series_name:
             msg.append({
                 'error': 'Share series name cannot be empty or only whitespace',
                 'path': f'{err_path}/name/'
             })
 
-        if cleaned_series_name in memoize_names:
+        if trimmed_series_name in memoize_names:
             msg.append({'error': 'Share series %s name already used in a share class or series.' % cleaned_series_name,
                         'path': err_path})
         else:
-            memoize_names.append(cleaned_series_name)
+            memoize_names.append(trimmed_series_name)
 
         if series['hasMaximumShares']:
             if not series.get('maxNumberOfShares', None):
@@ -132,23 +132,23 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
     """Validate a wellformed share structure."""
     msg = []
 
-    raw_name = item.get('name', '')
-    cleaned_name = raw_name.strip()
-    item['name'] = cleaned_name
+    share_name = item.get('name', '')
+    trimmed_share_name = get_clean_str(share_name)
+    item['name'] = trimmed_share_name
 
-    if not cleaned_name:
+    if not trimmed_share_name:
         err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
         msg.append({
             'error': 'Share class name cannot be empty or only whitespace',
             'path': err_path
         })
 
-    if cleaned_name in memoize_names:
+    if trimmed_share_name in memoize_names:
         err_path = '/filing/{0}/shareClasses/{1}/name/'.format(filing_type, index)
         msg.append({'error': 'Share class %s name already used in a share class or series.' % cleaned_name,
                     'path': err_path})
     else:
-        memoize_names.append(cleaned_name)
+        memoize_names.append(trimmed_share_name)
 
     if item['hasMaximumShares'] and not item.get('maxNumberOfShares', None):
         err_path = '/filing/{0}/shareClasses/{1}/maxNumberOfShares/'.format(filing_type, index)
@@ -291,7 +291,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
             err_msg = f'{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})
 
-        middle_initial = officer.get('middleInitial')
+        middle_initial = officer.get('middleInitial', None)
         if middle_initial:
             trimmed_initial = get_clean_str(middle_initial)
             officer['middleInitial'] = trimmed_initial
@@ -302,7 +302,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
                 err_msg = f'{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters'
                 msg.append({'error': err_msg, 'path': party_path})    
 
-        middle_name = officer.get('middleName')
+        middle_name = officer.get('middleName', None)
         if middle_name:
             trimmed_middle = get_clean_str(middle_name)
             officer['middleName'] = trimmed_middle
