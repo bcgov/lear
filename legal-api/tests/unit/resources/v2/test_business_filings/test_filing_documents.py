@@ -615,7 +615,9 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ),
      'bc_change_of_officers', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.COMPLETED,
-     {'documents': {}},
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
+     }},
      HTTPStatus.OK, None
      ),
     ('sp_dissolution_completed', 'FM7654321', 'SP',
