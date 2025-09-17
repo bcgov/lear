@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common utilities used by the services."""
-import re
+
 from datetime import date
-from typing import Dict, Optional
+from typing import Dict
 
 import dpath.util
 
