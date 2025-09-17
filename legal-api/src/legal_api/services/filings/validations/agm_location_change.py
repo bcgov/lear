@@ -47,12 +47,9 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     else:
         msg.append({'error': 'Invalid AGM year.', 'path': agm_year_path})
 
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
-    
     agm_reason_path: Final = '/filing/agmLocationChange/reason'
     reason = get_str(filing, agm_reason_path)
-    if reason is not None and not reason.strip():
+    if not reason.strip():
         msg.append({'error': 'Reason is required.', 'path': agm_reason_path})
 
     if msg:

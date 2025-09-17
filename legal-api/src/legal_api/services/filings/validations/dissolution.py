@@ -27,7 +27,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.utils import get_str, get_clean_str # noqa: I003; needed as the linter gets confused from the babel override.
+from legal_api.services.utils import get_str # noqa: I003; needed as the linter gets confused from the babel override.
 
 
 class DissolutionTypes(str, Enum):
@@ -311,16 +311,19 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
         # Only validate if partyType is organization
         if party_type == 'organization':
 
-            raw_name = get_str(party, '/officer/organizationName')
-            org_name = get_clean_str(raw_name)
+            org_name = get_str(party, '/officer/organizationName')
+            stripped_org_name = org_name.strip()
 
-            party['officer']['organizationName'] = org_name or ''
-
-            if not org_name:
+            if not stripped_org_name:
                 msg.append({
                     'error': 'Corporation or firm name is required for an organization.',
                     'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
                 })
+            elif org_name != stripped_org_name:
+                msg.append({
+                    'error': 'Corporation or firm name cannot have leading or trailing spaces.',
+                    'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
+                })    
 
     return msg
 

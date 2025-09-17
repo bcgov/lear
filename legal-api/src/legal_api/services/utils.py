@@ -87,9 +87,3 @@ def get_int(filing: Dict, path: str) -> str:
         return int(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
-
-def get_clean_str(value: Optional[str]) -> Optional[str]:
-    """Return the string with whitespace collapsed and trimmed."""
-    if value is None:
-        return None
-    return re.sub(r'\s+', ' ', value).strip()

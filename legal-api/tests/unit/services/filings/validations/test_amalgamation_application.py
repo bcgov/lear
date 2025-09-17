@@ -1630,7 +1630,7 @@ def test_validate_amalgamation_effective_date(
     ]
 )
 @pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
-    ('SUCCESS_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
         'error': 'Name translation is required.',
@@ -1640,10 +1640,19 @@ def test_validate_amalgamation_effective_date(
         'error': 'Name translation is required.',
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
-    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
-        'path': '/filing/amalgamationApplication/nameTranslations/1/name/'
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation is required.',
+        'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/amalgamationApplication/nameTranslations/1/name/'
+    }
+    ]),
 ])
 def test_validate_amalgamation_name_translation(mocker, session, test_name, amalgamation_type, name_translation, expected_code, expected_msg):
     """Test validate name translation if provided."""

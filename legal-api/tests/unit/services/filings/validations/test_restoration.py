@@ -25,6 +25,8 @@ from legal_api.models import Business, Filing
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from tests.unit.services.filings.validations import lists_are_equal
+
 date_format = '%Y-%m-%d'
 now = datetime.now().strftime(date_format)
 
@@ -486,11 +488,29 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
                                         expected_code, expected_msg)
 
 @pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
-    ('SUCCESS_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
-    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, 'Name translation is required.'),
-    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation is required.'),
-    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, 'Name translation is required.'),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation is required.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation is required.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation is required.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/restoration/nameTranslations/1/name/'
+    }
+    ]),
 ])
 def test_validate_restoration_name_translation(session, test_name, name_translation, expected_code, expected_msg):
     """Assert that party is validated."""
@@ -507,7 +527,9 @@ def test_validate_restoration_name_translation(session, test_name, name_translat
 
     # validate outcomes
     if expected_code:
-        assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
     else:
-        assert not err
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None

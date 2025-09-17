@@ -392,18 +392,19 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
 @pytest.mark.parametrize(
     'test_status, legal_type, dissolution_type, party_type, org_name, expected_code, expected_msg',
     [
-        # Required organization name cases (missing or None)
-        ('FAIL', 'BC', 'voluntary', 'organization', None, HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required for an organization.'),
+        # Required organization name cases
         ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
          'Corporation or firm name is required for an organization.'),
         ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
          'Corporation or firm name is required for an organization.'),
 
         # Leading/trailing whitespace
-        ('SUCCESS', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, None),
-        ('SUCCESS', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', None, None),
-        ('SUCCESS', 'BC', 'voluntary', 'organization', '  BothSides  ', None, None),
+        ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', HTTPStatus.BAD_REQUEST,
+         'Corporation or firm name cannot have leading or trailing spaces.'),
+        ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', HTTPStatus.BAD_REQUEST,
+         'Corporation or firm name cannot have leading or trailing spaces.'),
+        ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', HTTPStatus.BAD_REQUEST,
+         'Corporation or firm name cannot have leading or trailing spaces.'),
 
         # Valid name
         ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None),
@@ -448,11 +449,6 @@ def test_dissolution_custodian_org_name(session, test_status, legal_type, dissol
         assert any(expected_msg in msg['error'] for msg in err.msg)
     else:
         assert err is None
-
-    # Check that the organizationName is trimmed for successful payloads
-    if org_name and party_type == 'organization' and test_status == 'SUCCESS' and legal_type in Business.CORPS:
-        trimmed = filing['filing']['dissolution']['parties'][1]['officer'].get('organizationName')
-        assert trimmed == org_name.strip()
 
 
 

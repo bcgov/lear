@@ -1064,7 +1064,7 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
         assert err is None
 
 @pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
-    ('SUCCESS_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
         'error': 'Name translation is required.',
@@ -1074,10 +1074,19 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
         'error': 'Name translation is required.',
         'path': '/filing/continuationIn/nameTranslations/0/name/'
     }]),
-    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
-        'path': '/filing/continuationIn/nameTranslations/1/name/'
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/continuationIn/nameTranslations/0/name/'
     }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation is required.',
+        'path': '/filing/continuationIn/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/continuationIn/nameTranslations/1/name/'
+    }
+    ]),
 ])
 def test_validate_continuation_in_name_translation(mocker, session, test_name, name_translation, expected_code, expected_msg, monkeypatch):
     """Test validate name translation if provided."""
