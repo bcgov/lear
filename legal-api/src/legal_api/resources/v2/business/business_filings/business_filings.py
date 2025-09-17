@@ -540,9 +540,10 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         # for incorporationApplication and registration, get legalType from nameRequest
         else:
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
-        is_filing_available = PermissionService.check_filing_enabled(filing_type, identifier)
-        if is_filing_available:
-            return jsonify(is_filing_available.message), is_filing_available.code
+
+        if err := PermissionService.check_filing_enabled(filing_type, identifier):
+            return jsonify(err.message), err.code
+
         if (
             flags.is_on('enable-permissions-for-action')
             and
