@@ -362,7 +362,7 @@ class BusinessDocument:
             for role in party.get('roles', []):
                 if role.get('roleClass') == 'OFFICER':
                     is_officer = True
-                    break
+                    role['roleType'] = BusinessDocument._format_role_type(role.get('roleType', ''))
             if is_officer:
                 if party.get('mailingAddress'):
                     party['mailingAddress'] = BusinessDocument._format_address(party['mailingAddress'])
@@ -806,7 +806,27 @@ class BusinessDocument:
         'CC': 'BC Community Contribution Company',
         'LLC': 'Limited Liability Company'
     }
+    
+    @staticmethod
+    def _format_role_type(role_type: str) -> str:
+        if not role_type:
+            return role_type
+        
+        role_display_mapping = {
+            'ceo': 'Chief Executive Officer',
+            'cfo': 'Chief Financial Officer',
+            'president': 'President',
+            'vice_president': 'Vice President',
+            'chair': 'Chairman',
+            'treasurer': 'Treasurer',
+            'secretary': 'Secretary',
+            'assistant_secretary': 'Assistant Secretary',
+            'other': 'Other'
+        }
 
+        role_key = role_type.lower()
+
+        return role_display_mapping.get(role_key, role_type)
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
