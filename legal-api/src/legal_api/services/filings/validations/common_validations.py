@@ -548,22 +548,22 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
             db_mailing_address = (Address.find_by_id(matched_db_party.mailing_address_id)
                                   if matched_db_party.mailing_address_id else None)
             old_mailing = {
-                'streetAddress': db_mailing_address.street or '',
-                'addressCity': db_mailing_address.city or '',
-                'addressRegion': db_mailing_address.region or '',
-                'postalCode': db_mailing_address.postal_code or '',
-                'addressCountry': db_mailing_address.country or '',
-                'deliveryInstructions': db_mailing_address.delivery_instructions or '',
-                'streetAddressAdditional': db_mailing_address.street_additional or ''
+                'streetAddress': db_mailing_address.street,
+                'addressCity': db_mailing_address.city,
+                'addressRegion': db_mailing_address.region,
+                'postalCode': db_mailing_address.postal_code,
+                'addressCountry': db_mailing_address.country,
+                'deliveryInstructions': db_mailing_address.delivery_instructions,
+                'streetAddressAdditional': db_mailing_address.street_additional
             } if db_mailing_address else {}
             new_mailing = {
-                'streetAddress': mailing_address.get('streetAddress', ''),
-                'addressCity': mailing_address.get('addressCity', ''),
-                'addressRegion': mailing_address.get('addressRegion', ''),
-                'postalCode': mailing_address.get('postalCode', ''),
-                'addressCountry': mailing_address.get('addressCountry', ''),
-                'deliveryInstructions': mailing_address.get('deliveryInstructions', ''),
-                'streetAddressAdditional': mailing_address.get('streetAddressAdditional', '')
+                'streetAddress': mailing_address.get('streetAddress'),
+                'addressCity': mailing_address.get('addressCity'),
+                'addressRegion': mailing_address.get('addressRegion'),
+                'postalCode': mailing_address.get('postalCode'),
+                'addressCountry': mailing_address.get('addressCountry'),
+                'deliveryInstructions': mailing_address.get('deliveryInstructions'),
+                'streetAddressAdditional': mailing_address.get('streetAddressAdditional')
             }
 
             if not is_address_changed(old_mailing, new_mailing):
@@ -574,22 +574,22 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                                   if matched_db_party.delivery_address_id else None)
             
             old_delivery = {
-                'streetAddress': db_delivery_address.street or '',
-                'addressCity': db_delivery_address.city or '',
-                'addressRegion': db_delivery_address.region or '',
-                'postalCode': db_delivery_address.postal_code or '',
-                'addressCountry': db_delivery_address.country or '',
-                'deliveryInstructions': db_delivery_address.delivery_instructions or '',
-                'streetAddressAdditional': db_delivery_address.street_additional or ''
+                'streetAddress': db_delivery_address.street,
+                'addressCity': db_delivery_address.city,
+                'addressRegion': db_delivery_address.region,
+                'postalCode': db_delivery_address.postal_code,
+                'addressCountry': db_delivery_address.country,
+                'deliveryInstructions': db_delivery_address.delivery_instructions,
+                'streetAddressAdditional': db_delivery_address.street_additional
             } if db_delivery_address else {}
             new_delivery = {
-                'streetAddress': delivery_address.get('streetAddress', ''),
-                'addressCity': delivery_address.get('addressCity', ''),
-                'addressRegion': delivery_address.get('addressRegion', ''),
-                'postalCode': delivery_address.get('postalCode', ''),
-                'addressCountry': delivery_address.get('addressCountry', ''),
-                'deliveryInstructions': delivery_address.get('deliveryInstructions', ''),
-                'streetAddressAdditional': delivery_address.get('streetAddressAdditional', '')
+                'streetAddress': delivery_address.get('streetAddress'),
+                'addressCity': delivery_address.get('addressCity'),
+                'addressRegion': delivery_address.get('addressRegion'),
+                'postalCode': delivery_address.get('postalCode'),
+                'addressCountry': delivery_address.get('addressCountry'),
+                'deliveryInstructions': delivery_address.get('deliveryInstructions'),
+                'streetAddressAdditional': delivery_address.get('streetAddressAdditional')
             }
 
             if not is_address_changed(old_delivery, new_delivery):
