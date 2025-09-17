@@ -22,7 +22,7 @@ from flask import current_app, g
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-from legal_api.services import authz
+from legal_api.services import authz, flags
 from legal_api.services.cache import cache
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 
@@ -212,3 +212,20 @@ class PermissionService:
                 }]
             )
         return None
+    
+    @staticmethod
+    def check_filing_enabled(filing_type: str, identifier: str) -> Error:
+        """Check if a filing type is enabled via FF."""
+        filings_feature_flag = {
+            'changeOfOfficers': 'supported-change-of-officers-entities'
+        }
+        flag_name = filings_feature_flag.get(filing_type)
+        if flag_name and not flags.is_on(flag_name):
+            return Error(
+                HTTPStatus.BAD_REQUEST,
+                [{
+                    'message': f'Permission Denied - {filing_type} filing is currently not available for: {identifier}.'
+                }]
+            )
+        return None
+    

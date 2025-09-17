@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_OFFICERS,
     CHANGE_OF_REGISTRATION,
     CONTINUATION_IN,
     CONTINUATION_OUT,
@@ -610,6 +611,20 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('gp_ia_completed', 'FM7654321', Business.LegalTypes.PARTNERSHIP.value,
      'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
      {'documents': {}},
+     HTTPStatus.OK, None
+     ),
+     ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }},
+     HTTPStatus.OK, None
+     ),
+     ('bc_change_of_officers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.PAID,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }},
      HTTPStatus.OK, None
      ),
     ('sp_dissolution_completed', 'FM7654321', 'SP',

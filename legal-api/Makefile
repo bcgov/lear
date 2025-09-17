@@ -57,12 +57,12 @@ pylint: ## Linting with pylint
 	fi
 
 flake8: ## Linting with flake8
-	. venv/bin/activate && flake8 src/$(PROJECT_NAME)
+	. .venv/bin/activate && flake8 src/$(PROJECT_NAME)
 
 lint: pylint flake8 ## run all lint type scripts
 
 test: ## Unit testing
-	. venv/bin/activate && pytest
+	. .venv/bin/activate && pytest
 
 mac-cov: test ## Run the coverage report and display in a browser window (mac)
 	@open -a "Google Chrome" htmlcov/index.html
