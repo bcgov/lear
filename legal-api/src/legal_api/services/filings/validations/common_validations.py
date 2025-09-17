@@ -526,10 +526,10 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                 }
             
             old_name = {
-                    'firstName': matched_db_party.first_name or '',
-                    'middleName': matched_db_party.middle_initial or '',
-                    'lastName': matched_db_party.last_name or '',
-                    'organizationName': matched_db_party.organization_name or ''
+                    'firstName': matched_db_party.first_name,
+                    'middleName': matched_db_party.middle_initial,
+                    'lastName': matched_db_party.last_name,
+                    'organizationName': matched_db_party.organization_name
                 }
             new_name = {
                 'firstName': officer.get('firstName'),
