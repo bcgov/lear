@@ -19,10 +19,6 @@ from typing import List, Union
 from flask import current_app
 
 from legal_api.models import Party, User
-from legal_api.services.flags import Flags
-
-
-flags = Flags()
 
 DBC_ENABLED_BUSINESS_TYPES_FLAG = 'dbc-enabled-business-types'
 
@@ -30,6 +26,9 @@ DBC_ENABLED_BUSINESS_TYPES_FLAG = 'dbc-enabled-business-types'
 def determine_allowed_business_types(valid_registration_types: List[str],
                                      valid_incorporation_types: List[str]) -> List[str]:
     """Determine if the business type is allowed for digital credentials based on flags."""
+    # Import inside function to avoid circular dependency and ensure app context is available
+    from legal_api.services import flags
+
     if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG):
         current_app.logger.warning('%s is OFF', DBC_ENABLED_BUSINESS_TYPES_FLAG)
         return []
