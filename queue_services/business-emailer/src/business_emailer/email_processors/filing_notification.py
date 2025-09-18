@@ -126,10 +126,10 @@ def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
 
         if filing.filing_type == "incorporationApplication":
             # add certificate
-            certificate_pdf_type = "certificate"
+            certificate_pdf_type = "certificateOfIncorporation"
             certificate_encoded = get_filing_document(business["identifier"], filing.id, certificate_pdf_type, token)
             if certificate_encoded:
-                file_name = "Incorporation Certificate.pdf"
+                file_name = "Certificate Of Incorporation.pdf"
                 pdfs.append(
                     {
                         "fileName": file_name,
