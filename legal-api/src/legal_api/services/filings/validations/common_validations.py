@@ -747,7 +747,7 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
 
         if not stripped_name:
             msg.append({
-                'error': 'Name translation is required.',
+                'error': 'Name translation cannot be an empty string.',
                 'path': f'/filing/{filing_type}/nameTranslations/{idx}/name/'
             })
         elif name != stripped_name:

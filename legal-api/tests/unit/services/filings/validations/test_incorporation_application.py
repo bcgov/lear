@@ -1731,15 +1731,18 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/incorporationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/incorporationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/incorporationApplication/nameTranslations/1/name/'
     }]),
 ])

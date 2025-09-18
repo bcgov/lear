@@ -1633,11 +1633,13 @@ def test_validate_amalgamation_effective_date(
     ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
@@ -1645,7 +1647,8 @@ def test_validate_amalgamation_effective_date(
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     }]),
     ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
     },
     {

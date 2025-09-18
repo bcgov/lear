@@ -491,11 +491,13 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
     ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/restoration/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/restoration/nameTranslations/0/name/'
     }]),
     ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
@@ -503,7 +505,8 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
         'path': '/filing/restoration/nameTranslations/0/name/'
     }]),
     ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation is required.',
+        'error': 'Name translation cannot be an empty string.',
+
         'path': '/filing/restoration/nameTranslations/0/name/'
     },
     {
