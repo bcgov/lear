@@ -120,7 +120,8 @@ def test_set_warning_text_from_backfill_cutoff(session, app, jwt):
         filing_json = {"filing": {"header": {"name": "annualReport"}}}
         filing = factory_filing(business, filing_json)
         # Use a fixed date to create deterministic output
-        filing.filing_date = datetime(2020, 1, 15)
+        # set date to 30 min past midnight UTC on 16th, the warning should say 15th as it should be in pacific time
+        filing.filing_date = datetime(2020, 1, 16, 00, 30)
         filing.save()
 
         business.backfill_cutoff_filing_id = filing.id
@@ -130,6 +131,6 @@ def test_set_warning_text_from_backfill_cutoff(session, app, jwt):
 
         assert template_data.get('warning_text')
         assert 'Warning, data older than' in template_data['warning_text']
-        assert 'January 15, 2020' in template_data['warning_text']
+        assert 'January 15, 2020 at 4:30 pm Pacific time' in template_data['warning_text']
         assert 'may not appear in the Business Summary' in template_data['warning_text']
 

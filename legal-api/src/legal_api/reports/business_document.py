@@ -339,7 +339,7 @@ class BusinessDocument:
             filing = Filing.find_by_id(self._business.backfill_cutoff_filing_id)
 
             business['warning_text'] = 'Warning, data older than {} may not appear in the Business Summary'.format(
-                filing.filing_date.strftime(OUTPUT_DATE_FORMAT)
+                LegislationDatetime.format_as_report_string(filing.filing_date)
             )
 
     def _set_officers(self, business: dict):
