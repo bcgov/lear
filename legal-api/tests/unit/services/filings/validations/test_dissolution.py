@@ -319,25 +319,47 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
 
 @pytest.mark.parametrize(
-    'test_status, legal_type, dissolution_type, has_email, expected_code, expected_msg',
+    'test_status, legal_type, dissolution_type, email, expected_code, expected_msg',
     [
-        ('FAIL', 'BC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
+        # Required email cases (missing or None)
+        ('FAIL', 'BC', 'voluntary', None, HTTPStatus.BAD_REQUEST,
          'Custodian email is required for voluntary dissolution.'),
-        ('FAIL', 'BEN', 'voluntary', False, HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'BEN', 'voluntary', None, HTTPStatus.BAD_REQUEST,
          'Custodian email is required for voluntary dissolution.'),
-        ('FAIL', 'CC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'CC', 'voluntary', None, HTTPStatus.BAD_REQUEST,
          'Custodian email is required for voluntary dissolution.'),
-        ('FAIL', 'ULC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'ULC', 'voluntary', None, HTTPStatus.BAD_REQUEST,
          'Custodian email is required for voluntary dissolution.'),
-        ('SUCCESS', 'CP', 'voluntary', False, None, None),
-        ('SUCCESS', 'BC', 'voluntary', True, None, None),
-        ('SUCCESS', 'BEN', 'voluntary', True, None, None),
-        ('SUCCESS', 'CC', 'voluntary', True, None, None),
-        ('SUCCESS', 'ULC', 'voluntary', True, None, None),
-        ('SUCCESS', 'BC', 'administrative', False, None, None),
+
+        # Whitespace-only emails
+        ('FAIL', 'BC', 'voluntary', ' ', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+        ('FAIL', 'BC', 'voluntary', '   ', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+        ('FAIL', 'BC', 'voluntary', '\t', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+        ('FAIL', 'BC', 'voluntary', '\n', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+
+        # Leading/trailing/middle whitespace
+        ('FAIL', 'BC', 'voluntary', ' test@example.com', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+        ('FAIL', 'BC', 'voluntary', 'test@example.com ', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+        ('FAIL', 'BC', 'voluntary', 'te st@example.com', HTTPStatus.BAD_REQUEST,
+         'Custodian email cannot contain any whitespaces.'),
+
+        # Valid emails (no whitespace)
+        ('SUCCESS', 'CP', 'voluntary', None, None, None),
+        ('SUCCESS', 'BC', 'voluntary', 'test@example.com', None, None),
+        ('SUCCESS', 'BEN', 'voluntary', 'test@example.com', None, None),
+        ('SUCCESS', 'CC', 'voluntary', 'test@example.com', None, None),
+        ('SUCCESS', 'ULC', 'voluntary', 'test@example.com', None, None),
+        ('SUCCESS', 'BC', 'administrative', None, None, None),
     ]
 )
-def test_dissolution_custodian_email(session, test_status, legal_type, dissolution_type, has_email, expected_code, expected_msg):
+def test_dissolution_custodian_email(session, test_status, legal_type, dissolution_type,
+                                     email, expected_code, expected_msg):
     """Test custodian email validation in voluntary dissolution."""
     business = Business(identifier='BC1234567', legal_type=legal_type)
     filing = copy.deepcopy(FILING_HEADER)
@@ -348,8 +370,11 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
 
-    if not has_email:
-        del filing['filing']['dissolution']['parties'][1]['officer']['email']
+    officer = filing['filing']['dissolution']['parties'][1]['officer']
+    if email is None:
+        officer.pop('email', None)
+    else:
+        officer['email'] = email
 
     if dissolution_type == 'administrative':
         filing['filing']['dissolution']['details'] = "Some Details"
@@ -363,6 +388,68 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
         assert any(expected_msg in msg['error'] for msg in err.msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_status, legal_type, dissolution_type, party_type, org_name, expected_code, expected_msg',
+    [
+        # Required organization name cases
+        ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
+         'Organization name is required.'),
+        ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
+         'Organization name is required.'),
+
+        # Leading/trailing whitespace
+        ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', HTTPStatus.BAD_REQUEST,
+         'Organization name cannot have leading or trailing spaces.'),
+        ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', HTTPStatus.BAD_REQUEST,
+         'Organization name cannot have leading or trailing spaces.'),
+        ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', HTTPStatus.BAD_REQUEST,
+         'Organization name cannot have leading or trailing spaces.'),
+
+        # Valid name
+        ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None),
+
+        # Non-organization party types should skip validation
+        ('SUCCESS', 'BC', 'voluntary', 'person', None, None, None),
+
+        # Legal types other than CORP should skip validation
+        ('SUCCESS', 'CP', 'voluntary', 'organization', None, None, None),
+        ('SUCCESS', 'BC', 'administrative', 'organization', None, None, None),
+    ]
+)
+def test_dissolution_custodian_org_name(session, test_status, legal_type, dissolution_type,
+                                        party_type, org_name, expected_code, expected_msg):
+    """Test custodian organization name validation and trimming."""
+
+    business = Business(identifier='BC1234567', legal_type=legal_type)
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = legal_type
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionType'] = dissolution_type
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+
+    if dissolution_type == 'administrative':
+        filing['filing']['dissolution']['details'] = "Some Details"
+        del filing['filing']['dissolution']['affidavitFileKey']
+
+    officer = filing['filing']['dissolution']['parties'][1]['officer']
+    officer['partyType'] = party_type
+    if org_name is not None:
+        officer['organizationName'] = org_name
+    elif 'organizationName' in officer:
+        del officer['organizationName']
+
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        err = validate(business, filing)
+
+    if test_status == 'FAIL':
+        assert err.code == expected_code
+        assert any(expected_msg in msg['error'] for msg in err.msg)
+    else:
+        assert err is None
+
 
 
 @pytest.mark.parametrize(

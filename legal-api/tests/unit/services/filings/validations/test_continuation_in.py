@@ -1062,3 +1062,66 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/continuationIn/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/continuationIn/nameTranslations/0/name/'
+    }]),
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/continuationIn/nameTranslations/0/name/'
+    }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/continuationIn/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/continuationIn/nameTranslations/1/name/'
+    }
+    ]),
+])
+def test_validate_continuation_in_name_translation(mocker, session, test_name, name_translation, expected_code, expected_msg, monkeypatch):
+    """Test validate name translation if provided."""
+    monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        ) 
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+
+    filing['filing']['continuationIn']['nameRequest'] = {}
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'CBEN'
+
+    filing['filing']['continuationIn']['nameTranslations'] = name_translation
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None
+

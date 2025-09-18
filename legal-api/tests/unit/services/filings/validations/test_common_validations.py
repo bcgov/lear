@@ -37,6 +37,7 @@ from registry_schemas.example_data import (
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,
     validate_certify_name,
+    validate_certified_by,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_staff_payment,
@@ -302,3 +303,24 @@ def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
     assert edited_result['name_changed'] == False
     assert edited_result['address_changed'] == False
     assert edited_result['delivery_address_changed'] == True
+
+@pytest.mark.parametrize('input_value, expected_error', [
+    ('John   Doe', False),
+    ('   \t   ', False),
+    ('', False),
+    ('  John Doe', True),
+    ('John Doe   ', True),    
+])
+def test_validate_certified_by(input_value, expected_error):
+    """Test that certified by field can be validated."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['certifiedBy'] = input_value
+
+    errors = validate_certified_by(filing)
+
+    if expected_error:
+        assert errors
+        assert errors[0]['error'] == 'Certified by field cannot start or end with whitespace.'
+        assert errors[0]['path'] == '/filing/header/certifiedBy'
+    else:
+        assert errors == []

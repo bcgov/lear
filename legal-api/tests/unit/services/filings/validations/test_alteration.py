@@ -713,3 +713,54 @@ def test_alteration_good_standing(session, good_standing, has_permission, should
         else:
             assert HTTPStatus.BAD_REQUEST == err.code
 
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/alteration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/alteration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/alteration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/alteration/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/alteration/nameTranslations/1/name/'
+    }
+    ]),
+])
+def test_validate_name_translation(session, test_name, name_translation, expected_code, expected_msg):
+    """Test validate name translation if provided."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['alteration']['business']['legalType'] = 'BEN'
+    del filing['filing']['alteration']['nameRequest']
+    if 'courtOrder' in filing['filing']['alteration']:
+        del filing['filing']['alteration']['courtOrder']
+    
+    filing['filing']['alteration']['nameTranslations'] = name_translation
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None

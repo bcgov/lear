@@ -693,7 +693,7 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
     'test_name, legal_type, parties, expected_msg',
     [
         (
-            'SUCCESS_VALID_FIRST_MIDDLE_NAME_LENGTHS', 'BEN',
+            'SUCCESS_VALID_FIRST_MIDDLE_LAST_NAME_LENGTHS', 'BEN',
             [
                 {
                     'partyName': 'officer1',
@@ -703,10 +703,178 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
                 {
                     'partyName': 'officer2',
                     'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': '', 'lastName': 'Doe'}
+                },
+                                {
+                    'partyName': 'officer3',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': '  ', 'lastName': 'Doe'}
                 }
             ],
             None
+        ),
+        (
+            'FAIL_FIRST_NAME_EMPTY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': '', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator first name is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director first name is required',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_LAST_NAME_EMPTY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': ''}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': ''}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director last name is required',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_FIRST_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '  John', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'John  ', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator first name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director first name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_MIDDLE_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'John', 'middleName': '  B', 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'John', 'middleName': 'B  ', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator middle name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director middle name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_LAST_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': '  Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe  '}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director last name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_PARTY_FIRST_MIDDLE_LAST_NAME_WHITESPACE', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': ' John  ', 'middleName': ' B ', 'lastName': '  Doe  '}
+                },
+            ],
+            [{'error': 'Completing Party, Incorporator first name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator middle name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator last name cannot start or end with whitespace',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_FIRST_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '  ', 'middleName': None, 'lastName': 'Doe'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': '  ', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator first name is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director first name is required',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_LAST_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': '  '}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Incorporator', 'Director'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': '  '}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Incorporator, Director last name is required',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_PARTY_FIRST_LAST_NAME_WHITESPACE_ONLY', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': '   ', 'middleName': '   ', 'lastName': '   '}
+                },
+            ],
+            [{'error': 'Completing Party, Incorporator first is required',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator last name is required',
+              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
             'FAIL_PARTY_FIRST_NAME_TOO_LONG', 'BEN',
@@ -747,17 +915,40 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_TOO_LONG', 'BEN',
+            'FAIL_PARTY_LAST_NAME_TOO_LONG', 'BEN',
             [
                 {
                     'partyName': 'officer1',
                     'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfjab', 'middleName': 'Janeajksdfjljdkslfjab', 'lastName': 'Doe'}
+                    'officer': {'firstName': 'John', 'middleName': 'None', 'lastName': 'Doeasdfasdfasdfasdfasdfasdfasdf'}
+                },
+                {
+                    'partyName': 'officer2',
+                    'roles': ['Director'],
+                    'officer': {'firstName': 'Jane', 'middleName': 'jkalsdf', 'lastName': 'Doeasdfasdfasdfasdfasdfasdfasdf'}
+                }
+            ],
+            [{'error': 'Completing Party, Incorporator last name cannot be longer than 30 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Director last name cannot be longer than 30 characters',
+              'path': '/filing/incorporationApplication/parties'}]
+        ),
+        (
+            'FAIL_PARTY_FIRST_AND_MIDDLE_NAME_AND_LAST_NAME_TOO_LONG', 'BEN',
+            [
+                {
+                    'partyName': 'officer1',
+                    'roles': ['Completing Party', 'Incorporator'],
+                    'officer': {'firstName': 'Janeajksdfjljdkslfjab',
+                                'middleName': 'Janeajksdfjljdkslfjab',
+                                'lastName': 'Doeasdfasdfasdfasdfasdfasdfasdf'}
                 },
             ],
             [{'error': 'Completing Party, Incorporator first name cannot be longer than 20 characters',
               'path': '/filing/incorporationApplication/parties'},
              {'error': 'Completing Party, Incorporator middle name cannot be longer than 20 characters',
+              'path': '/filing/incorporationApplication/parties'},
+             {'error': 'Completing Party, Incorporator last name cannot be longer than 30 characters',
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (
@@ -939,6 +1130,36 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
              'error': 'Share series Share Series 1 name already used in a share class or series.',
              'path': '/filing/incorporationApplication/shareClasses/0/series/1'
          }]),
+        ('FAIL_EMPTY_CLASS_NAME', 'BEN', '', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share class name is required.',
+             'path': '/filing/incorporationApplication/shareClasses/0/name/'
+         }]),
+        ('FAIL_WHITESPACE_ONLY_CLASS_NAME', 'BEN', '   ', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share class name is required.',
+             'path': '/filing/incorporationApplication/shareClasses/0/name/'
+         }]),
+        ('FAIL_LEADING_AND_TRAILING_WHITESPACE_CLASS_NAME', 'BEN', ' Share Series 1 ', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share class name cannot start or end with whitespace.',
+             'path': '/filing/incorporationApplication/shareClasses/0/name/'
+         }]),
+        ('FAIL_EMPTY_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share series name is required.',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
+         }]),
+        ('FAIL_WHITESPACE_ONLY_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '   ', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share series name is required.',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
+         }]),
+        ('FAIL_LEADING_AND_TRAILING_WHITESPACE_SERIES_NAME', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', '  Share Series 1  ', True, 1000,
+         None, None,  HTTPStatus.BAD_REQUEST, [{
+             'error': 'Share series name cannot start or end with whitespace.',
+             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
+         }]), 
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
          'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
          None, None,
@@ -1505,3 +1726,41 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     else:
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
+
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/incorporationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/incorporationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/incorporationApplication/nameTranslations/1/name/'
+    }]),
+])
+def test_validate_name_translation(session, test_name, name_translation, expected_code, expected_msg):
+    """Test validate name translation if provided."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+    
+    filing_json['filing'][incorporation_application_name]['nameTranslations'] = name_translation
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing_json)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None

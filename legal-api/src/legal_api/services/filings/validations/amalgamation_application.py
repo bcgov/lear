@@ -24,6 +24,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
     validate_foreign_jurisdiction,
+    validate_name_translation,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -86,6 +87,8 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
         msg.extend(err)
 
     msg.extend(validate_effective_date(amalgamation_json))
+
+    msg.extend(validate_name_translation(amalgamation_json, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

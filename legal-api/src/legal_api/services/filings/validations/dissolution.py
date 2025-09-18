@@ -27,7 +27,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
+from legal_api.services.utils import get_str # noqa: I003; needed as the linter gets confused from the babel override.
 
 
 class DissolutionTypes(str, Enum):
@@ -193,6 +193,7 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
 
     if len(parties) > 0:
         msg.extend(_validate_custodian_email(parties, dissolution_type, legal_type))
+        msg.extend(validate_custodian_org_name(parties, dissolution_type, legal_type))
 
         err, address_in_bc, address_in_ca = _validate_address_location(parties)
         if err:
@@ -291,8 +292,40 @@ def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
         if not email:
             msg.append({'error': 'Custodian email is required for voluntary dissolution.',
                         'path': f'/filing/dissolution/parties/{idx}/officer/email'})
+        elif any(char.isspace() for char in email):
+            msg.append({
+                'error': 'Custodian email cannot contain any whitespaces.',
+                'path': f'/filing/dissolution/parties/{idx}/officer/email'
+            })    
     return msg
 
+def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
+    """Validate custodian organization name of the dissolution filing and trim it."""
+    # Only validate for CORP voluntary dissolution
+    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
+        return []
+
+    msg = []
+    for idx, party in enumerate(parties):
+        party_type = get_str(party, '/officer/partyType')
+        # Only validate if partyType is organization
+        if party_type == 'organization':
+
+            org_name = get_str(party, '/officer/organizationName')
+            stripped_org_name = org_name.strip()
+
+            if not stripped_org_name:
+                msg.append({
+                    'error': 'Organization name is required.',
+                    'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
+                })
+            elif org_name != stripped_org_name:
+                msg.append({
+                    'error': 'Organization name cannot have leading or trailing spaces.',
+                    'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
+                })    
+
+    return msg
 
 def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate custodial office of the dissolution filing."""

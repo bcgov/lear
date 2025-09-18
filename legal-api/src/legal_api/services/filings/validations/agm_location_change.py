@@ -20,7 +20,7 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services import flags
-from legal_api.services.utils import get_int
+from legal_api.services.utils import get_int, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003
 
@@ -46,6 +46,11 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
             msg.append({'error': 'AGM year must be between -2 or +1 year from current year.', 'path': agm_year_path})
     else:
         msg.append({'error': 'Invalid AGM year.', 'path': agm_year_path})
+
+    agm_reason_path: Final = '/filing/agmLocationChange/reason'
+    reason = get_str(filing, agm_reason_path)
+    if not reason.strip():
+        msg.append({'error': 'Reason is required.', 'path': agm_reason_path})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

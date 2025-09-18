@@ -25,6 +25,8 @@ from legal_api.models import Business, Filing
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
+from tests.unit.services.filings.validations import lists_are_equal
+
 date_format = '%Y-%m-%d'
 now = datetime.now().strftime(date_format)
 
@@ -484,3 +486,50 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
         for nr_type in nr_types:
             execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, nr_type, new_legal_name,
                                         expected_code, expected_msg)
+
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/restoration/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/restoration/nameTranslations/1/name/'
+    }
+    ]),
+])
+def test_validate_restoration_name_translation(session, test_name, name_translation, expected_code, expected_msg):
+    """Assert that party is validated."""
+    business = Business(identifier='BC1234567', legal_type='BC')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['relationships'] = relationships
+    filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+
+    filing['filing']['restoration']['nameTranslations'] = name_translation
+
+    err = validate(business, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None

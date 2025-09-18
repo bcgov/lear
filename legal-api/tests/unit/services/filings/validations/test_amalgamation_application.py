@@ -1620,3 +1620,77 @@ def test_validate_amalgamation_effective_date(
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize(
+    'amalgamation_type',
+    [
+        Amalgamation.AmalgamationTypes.regular.name,
+        Amalgamation.AmalgamationTypes.horizontal.name,
+        Amalgamation.AmalgamationTypes.vertical.name,
+    ]
+)
+@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
+    ('SUCCESS_NAME_TRANSLATION_EMPTY_ARRAY', [], None, None),
+    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
+    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
+    }]),
+    ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
+        'error': 'Name translation cannot be an empty string.',
+        'path': '/filing/amalgamationApplication/nameTranslations/0/name/'
+    },
+    {
+        'error': 'Name translation cannot start or end with whitespace.',
+        'path': '/filing/amalgamationApplication/nameTranslations/1/name/'
+    }
+    ]),
+])
+def test_validate_amalgamation_name_translation(mocker, session, test_name, amalgamation_type, name_translation, expected_code, expected_msg):
+    """Test validate name translation if provided."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'date': '2019-04-08',
+        'certifiedBy': 'full name',
+        'email': 'no_one@never.get',
+        'filingId': 1
+    }
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+
+    if 'courtOrder' in filing['filing']['amalgamationApplication']:
+        del filing['filing']['amalgamationApplication']['courtOrder']    
+
+    filing['filing']['amalgamationApplication']['nameTranslations'] = name_translation    
+
+    mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+        return_value=[]
+    )
+    mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+        return_value=[]
+    )
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        if err:
+            print(err, err.code, err.msg)
+        assert err is None
