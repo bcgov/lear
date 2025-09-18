@@ -113,7 +113,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
-    filing, alternate_names, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
     template = Path(
@@ -122,11 +122,9 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # Firms can have proprietors or partners, so we may need to pass in a different value for name. 
     business_name = ""
-    if business.get("legalType") in ["SP", "GP"] and alternate_names:
-        for alt_name in alternate_names:
-            if alt_name.get("identifier") == business.get("identifier") and alt_name.get("name"):
-                business_name = alt_name.get("name")
-                break
+    if business.get("legalType") in ["SP", "GP"] and business.get("businessName"):
+        business_name = business.get("businessName")
+
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)["filing"][f"{filing_type}"]

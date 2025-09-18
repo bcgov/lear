@@ -32,13 +32,12 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
-    alternate_names = []
     if filing.business_id:
         business = Business.find_by_internal_id(filing.business_id)
-        alternate_names = Business.get_alternate_names(business)
         business_json = business.json()
+        business_json['businessName'] = business.legal_name  # `legalName` in json would be replaced for SP/GP
     else:
-        business_json = (filing.json)["filing"].get("business") 
+        business_json = (filing.json)["filing"].get("business")
 
     filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
     leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
@@ -52,7 +51,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     am_pm = leg_tmz_effective_date.strftime("%p").lower()
     leg_tmz_effective_date = leg_tmz_effective_date.strftime(f"%B %d, %Y at {hour}:%M {am_pm} Pacific time")
 
-    return filing, alternate_names, business_json, leg_tmz_filing_date, leg_tmz_effective_date
+    return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
 def get_recipients(option: str, filing_json: dict, token: str | None = None, filing_type: str | None = None) -> str:
