@@ -35,7 +35,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     if filing.business_id:
         business = Business.find_by_internal_id(filing.business_id)
         business_json = business.json()
-        business_json['businessName'] = business.legal_name  # `legalName` in json would be replaced for SP/GP
+        business_json["businessName"] = business.legal_name  # `legalName` in json would be replaced for SP/GP
     else:
         business_json = (filing.json)["filing"].get("business")
 
