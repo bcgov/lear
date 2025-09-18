@@ -1068,12 +1068,10 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
     ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
         'error': 'Name translation cannot be an empty string.',
-
         'path': '/filing/continuationIn/nameTranslations/0/name/'
     }]),
     ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
         'error': 'Name translation cannot be an empty string.',
-
         'path': '/filing/continuationIn/nameTranslations/0/name/'
     }]),
     ('FAIL_LEADING_AND_TRAILING_WHITESPACE_NAME_TRANSLATION', [{"name": " TEST "}], HTTPStatus.BAD_REQUEST, [{
@@ -1082,7 +1080,6 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
     }]),
     ('FAIL_MULTIPLE_NAME_TRANSLATION', [{"name": "   "}, {"name": " TEST  "}], HTTPStatus.BAD_REQUEST, [{
         'error': 'Name translation cannot be an empty string.',
-
         'path': '/filing/continuationIn/nameTranslations/0/name/'
     },
     {
