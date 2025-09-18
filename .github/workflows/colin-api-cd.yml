@@ -1,4 +1,4 @@
-name: Colin API CD
+name: Colin API CD - OCP Gold
 
 on:
   push:
@@ -8,117 +8,27 @@ on:
       - "colin-api/**"
   workflow_dispatch:
     inputs:
-      environment:
-        description: "Environment (dev/test/prod)"
+      target:
+        description: "Deploy To"
         required: true
-        default: "dev"
-
-defaults:
-  run:
-    shell: bash
-    working-directory: ./colin-api
-
-env:
-  APP_NAME: "colin-api"
-  TAG_NAME: "dev"
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
 
 jobs:
-  colin-api-cd-by-push:
-    runs-on: ubuntu-24.04
-
-    if: github.event_name == 'push' && github.repository == 'bcgov/lear'
-    environment:
-      name: "dev"
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Install CLI tools from OpenShift
-        uses: redhat-actions/openshift-tools-installer@v1
-        with:
-          oc: "4"
-
-      - name: Login Openshift
-        shell: bash
-        run: |
-          oc login --server=${{secrets.OPENSHIFT4_LOGIN_REGISTRY}} --token=${{secrets.OPENSHIFT4_SA_TOKEN}}
-
-      - name: CD Flow
-        shell: bash
-        env:
-          OPS_REPOSITORY: ${{ secrets.OPS_REPOSITORY }}
-          OPENSHIFT_DOCKER_REGISTRY: ${{ secrets.OPENSHIFT4_DOCKER_REGISTRY }}
-          OPENSHIFT_SA_NAME: ${{ secrets.OPENSHIFT4_SA_NAME }}
-          OPENSHIFT_SA_TOKEN: ${{ secrets.OPENSHIFT4_SA_TOKEN }}
-          OPENSHIFT_REPOSITORY: ${{ secrets.OPENSHIFT4_REPOSITORY }}
-          TAG_NAME: ${{ env.TAG_NAME }}
-        run: |
-          make cd
-
-      - name: Watch new rollout (trigger by image change in Openshift)
-        shell: bash
-        run: |
-          oc rollout status dc/${{ env.APP_NAME }}-${{ env.TAG_NAME }} -n ${{ secrets.OPENSHIFT4_REPOSITORY }}-${{ env.TAG_NAME }} -w
-
-      - name: Rocket.Chat Notification
-        uses: RocketChat/Rocket.Chat.GitHub.Action.Notification@master
-        if: failure()
-        with:
-          type: ${{ job.status }}
-          job_name: "*Colin API Built and Deployed to ${{env.TAG_NAME}}*"
-          channel: "#registries-bot"
-          url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
-          commit: true
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-  colin-api-cd-by-dispatch:
-    runs-on: ubuntu-24.04
-
-    if: github.event_name == 'workflow_dispatch' && github.repository == 'bcgov/lear'
-    environment:
-      name: "${{ github.event.inputs.environment }}"
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set env by input
-        run: |
-          echo "TAG_NAME=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
-
-      - name: Install CLI tools from OpenShift
-        uses: redhat-actions/openshift-tools-installer@v1
-        with:
-          oc: "4"
-
-      - name: Login Openshift
-        shell: bash
-        run: |
-          oc login --server=${{secrets.OPENSHIFT4_LOGIN_REGISTRY}} --token=${{secrets.OPENSHIFT4_SA_TOKEN}}
-
-      - name: CD Flow
-        shell: bash
-        env:
-          OPS_REPOSITORY: ${{ secrets.OPS_REPOSITORY }}
-          OPENSHIFT_DOCKER_REGISTRY: ${{ secrets.OPENSHIFT4_DOCKER_REGISTRY }}
-          OPENSHIFT_SA_NAME: ${{ secrets.OPENSHIFT4_SA_NAME }}
-          OPENSHIFT_SA_TOKEN: ${{ secrets.OPENSHIFT4_SA_TOKEN }}
-          OPENSHIFT_REPOSITORY: ${{ secrets.OPENSHIFT4_REPOSITORY }}
-          TAG_NAME: ${{ env.TAG_NAME }}
-        run: |
-          make cd
-
-      - name: Watch new rollout (trigger by image change in Openshift)
-        shell: bash
-        run: |
-          oc rollout status dc/${{ env.APP_NAME }}-${{ env.TAG_NAME }} -n ${{ secrets.OPENSHIFT4_REPOSITORY }}-${{ env.TAG_NAME }} -w
-
-      - name: Rocket.Chat Notification
-        uses: RocketChat/Rocket.Chat.GitHub.Action.Notification@master
-        if: failure()
-        with:
-          type: ${{ job.status }}
-          job_name: "*Colin API Built and Deployed to ${{env.TAG_NAME}}*"
-          channel: "#registries-bot"
-          url: ${{ secrets.ROCKETCHAT_WEBHOOK }}
-          commit: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+  colin-api-cd:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-cd-ocp.yaml@main
+    with:
+      target: ${{ inputs.target }}
+      app_name: "colin-api"
+      working_directory: "./colin-api"
+    secrets:
+      OP_CONNECT_URL: ${{ secrets.OP_CONNECT_URL }}
+      OP_CONNECT_TOKEN: ${{ secrets.OP_CONNECT_TOKEN }}
+      OPENSHIFT_DOCKER_REGISTRY: ${{ secrets.OPENSHIFT_GOLD_DOCKER_REGISTRY }}
+      OPENSHIFT_LOGIN_REGISTRY: ${{secrets.OPENSHIFT_GOLD_LOGIN_REGISTRY}}
+      OPENSHIFT_SA_NAME: ${{ secrets.OPENSHIFT_GOLD_SA_NAME }}
+      OPENSHIFT_SA_TOKEN: ${{ secrets.OPENSHIFT_GOLD_SA_TOKEN }}
+      OPENSHIFT_REPOSITORY: ${{ secrets.OPENSHIFT_GOLD_REPOSITORY }}
