@@ -394,17 +394,17 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
     [
         # Required organization name cases
         ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required for an organization.'),
+         'Organization name is required.'),
         ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name is required for an organization.'),
+         'Organization name is required.'),
 
         # Leading/trailing whitespace
         ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name cannot have leading or trailing spaces.'),
+         'Organization name cannot have leading or trailing spaces.'),
         ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name cannot have leading or trailing spaces.'),
+         'Organization name cannot have leading or trailing spaces.'),
         ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', HTTPStatus.BAD_REQUEST,
-         'Corporation or firm name cannot have leading or trailing spaces.'),
+         'Organization name cannot have leading or trailing spaces.'),
 
         # Valid name
         ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None),

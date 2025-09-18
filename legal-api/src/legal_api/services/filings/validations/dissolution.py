@@ -316,12 +316,12 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
 
             if not stripped_org_name:
                 msg.append({
-                    'error': 'Corporation or firm name is required for an organization.',
+                    'error': 'Organization name is required.',
                     'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
                 })
             elif org_name != stripped_org_name:
                 msg.append({
-                    'error': 'Corporation or firm name cannot have leading or trailing spaces.',
+                    'error': 'Organization name cannot have leading or trailing spaces.',
                     'path': f'/filing/dissolution/parties/{idx}/officer/organizationName'
                 })    
 
