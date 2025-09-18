@@ -437,7 +437,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # Effective Date
         effective_date = filing_datetime if self._filing.effective_date is None \
             else LegislationDatetime.as_legislation_timezone(self._filing.effective_date)
-        filing['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_date)
+
+        if self._report_key == 'noticeOfArticles' and self._filing.filing_type == 'changeOfDirectors':
+            # NOA generated for COD, effective date (Issued Date and Time) is the filing date
+            filing['effective_date_time'] = filing['filing_date_time']
+        else:
+            filing['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_date)
+
         filing['effective_date'] = effective_date.strftime(OUTPUT_DATE_FORMAT)
         # Recognition Date
         if self._business:
