@@ -15,6 +15,7 @@
 
 This module is the API for the Legal Entity system.
 """
+
 import os
 
 from flask import Flask
@@ -25,12 +26,11 @@ from colin_api.services import flags
 from colin_api.utils.auth import jwt
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
-# noqa: I003; the sentry import creates a bad line count in isort
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
+def create_app(run_mode=os.getenv("FLASK_ENV", "production")):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
@@ -44,7 +44,7 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     @app.after_request
     def add_version(response):  # pylint: disable=unused-variable
         version = get_run_version()
-        response.headers['API'] = f'colin_api/{version}'
+        response.headers["API"] = f"colin_api/{version}"
         return response
 
     register_shellcontext(app)
@@ -54,19 +54,20 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
 def setup_jwt_manager(app, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
+
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
+        return a_dict["realm_access"]["roles"]  # pragma: no cover
+
+    app.config["JWT_ROLE_CALLBACK"] = get_roles
 
     jwt_manager.init_app(app)
 
 
 def register_shellcontext(app):
     """Register shell context objects."""
+
     def shell_context():
         """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt}  # pragma: no cover
+        return {"app": app, "jwt": jwt}  # pragma: no cover
 
     app.shell_context_processor(shell_context)
