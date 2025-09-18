@@ -16,10 +16,8 @@
 This module is the API for the Legal Entity system.
 """
 import os
-import sentry_sdk  # noqa: I001; pylint: disable=ungrouped-imports; conflicts with Flake8
 
 from flask import Flask
-from sentry_sdk.integrations.flask import FlaskIntegration  # noqa: I001
 
 from colin_api import config, errorhandlers
 from colin_api.resources import API, API_BLUEPRINT, OPS_BLUEPRINT
@@ -36,12 +34,6 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(config.CONFIGURATION[run_mode])
-    # Configure Sentry
-    if app.config.get('SENTRY_DSN', None):
-        sentry_sdk.init(  # pylint: disable=abstract-class-instantiated
-            dsn=app.config.get('SENTRY_DSN'),
-            integrations=[FlaskIntegration()]
-        )
 
     flags.init_app(app)
     errorhandlers.init_app(API)

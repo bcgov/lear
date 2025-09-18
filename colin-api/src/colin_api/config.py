@@ -62,9 +62,6 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
-
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
     # ORACLE - CDEV/CTST/CPRD
@@ -94,7 +91,7 @@ class _Config:  # pylint: disable=too-few-public-methods
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
     # legal api
-    LEGAL_API_URL = os.getenv('LEGAL_API_URL')
+    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
 
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
