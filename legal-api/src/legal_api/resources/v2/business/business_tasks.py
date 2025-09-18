@@ -174,11 +174,25 @@ def construct_task_list(business: Business):  # pylint: disable=too-many-locals;
 
     tasks, order = add_tr_tasks(business, tasks, order, pending_tr_type)
 
-    # Transition Application todo task appears below the Annual Report (and TR) tasks
-    # and it does not affect the 'enabled' status of above todo items.
+    # Transition Application todo task appears below overdue Annual Reports before the restoration date causing the warning
+    # and it does not affect the 'enabled' status of other todo items.
     if any(x['code'] == BusinessWarningCodes.TRANSITION_NOT_FILED.value for x in warnings):
         if not Filing.get_incomplete_filings_by_type(business.id, 'transition'):
-            tasks.append(create_transition_todo(business, order, True))
+            # Gets all completed restorations of the business (most recent first)
+            restorations = Filing.get_filings_by_types(business.id, ['restoration', 'restorationApplication'])
+            if not restorations:
+                # Should never get here
+                current_app.logger.error(f'Error - Business id: {business.id}. TRANSITION_NOT_FILED warning and no restoration filing on record.')
+                return tasks
+            # Use the first restoration in the list for the most recent completed restoration date
+            last_restoration_date = restorations[0].effective_date
+            last_ar_date = business.last_ar_date or business.founding_date
+            # Get the transition application todo order based on the ar tasks, last restoration date, and ar date information
+            transition_order = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
+            # Bump all the task orders by one that are at and above transition_order
+            tasks = _bump_task_order(tasks, transition_order)
+            # Append the TA task at with order: transition_order. Disable if there are any incomplete filings
+            tasks.append(create_transition_todo(business, transition_order, (not pending_filings)))
             order += 1
 
     return tasks
@@ -250,16 +264,42 @@ def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: s
     return tasks, order
 
 
+def _by_order(e: dict):
+    """Return the order value of the given task."""
+    return e['order']
+
+
+def _find_task_order_for_ta(tasks: list, order: int, restoration_date: datetime, last_ar_date: datetime) -> int:
+    """Find the appropriate task order value for the Transition Application filing in the task list."""
+    prioritize_ar_before_year = restoration_date.year
+    # add 1 if the restoration happened after the AR was scheduled for this year
+    if restoration_date > last_ar_date:
+        year_diff = restoration_date.year - last_ar_date.year
+        adjusted_ar_date = last_ar_date + datedelta.datedelta(years=year_diff)
+        if restoration_date > adjusted_ar_date:
+            prioritize_ar_before_year += 1
+    
+    ar_todo_tasks = [task for task in tasks if task['task'].get('todo', {}).get('header', {}).get('ARFilingYear')]
+    if not ar_todo_tasks:
+        # default order will be after any pending tasks
+        return order
+
+    ar_todo_tasks.sort(key=_by_order)
+    for ar_task in ar_todo_tasks:
+        if prioritize_ar_before_year <= ar_task['task']['todo']['header']['ARFilingYear']:
+            # Will be before this ar task
+            return ar_task['order']
+
+    # will be after all existing AR tasks
+    return order
+
+
 def _find_task_order_for_tr(tasks: list, order: int, tr_sub_type: str, year: int) -> int:
     """Find the appropriate task order value for the TR filing in the task list."""
     ar_todo_tasks = [task for task in tasks if task['task'].get('todo', {}).get('header', {}).get('ARFilingYear')]
     if not ar_todo_tasks:
         # default order will be after any pending tasks
         return order
-
-    def _by_order(e: dict):
-        """Return the order value of the given task."""
-        return e['order']
 
     ar_todo_tasks.sort(key=_by_order)
     if tr_sub_type == 'initial':

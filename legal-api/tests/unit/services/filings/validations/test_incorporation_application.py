@@ -25,7 +25,7 @@ from reportlab.lib.pagesizes import letter
 
 from legal_api.models import Business
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_parties_mailing_address, validate_parties_names
+from legal_api.services.filings.validations.incorporation_application import validate_coop_parties_mailing_address, validate_parties_names
 
 from tests.unit.services.filings.test_utils import _upload_file
 
@@ -538,53 +538,6 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
 @pytest.mark.parametrize(
     'test_name, legal_type, parties, expected_msg',
     [
-        ('SUCCESS', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 st', 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}}
-         ], None
-         ),
-        ('FAIL_INVALID_STREET', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': None, 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address streetAddress None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/streetAddress/None/'}]
-         ),
-        ('FAIL_INVALID_CITY', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': None, 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address addressCity None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCity/None/'}]
-         ),
-        ('FAIL_INVALID_COUNTRY', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': None,
-                                 'postalCode': 'h0h0h0', 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address addressCountry None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressCountry/None/'}]
-         ),
-        ('FAIL_INVALID_POSTAL_CODE', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': None, 'region': 'BC'}},
-         ], [{'error': 'Person 1: Mailing address postalCode None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/postalCode/None/'}]
-         ),
-        ('FAIL_INVALID_REGION', 'BEN',
-         [
-             {'partyName': 'officer1', 'roles': ['Director'],
-              'mailingAddress': {'street': '123 St', 'city': 'Vancouver', 'country': 'CA',
-                                 'postalCode': 'h0h0h0', 'region': None}},
-         ], [{'error': 'Person 1: Mailing address addressRegion None is invalid',
-              'path': '/filing/incorporationApplication/parties/1/mailingAddress/addressRegion/None/'}]
-         ),
         ('SUCCESS', 'CP',
          [
              {
@@ -727,13 +680,13 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
 
     # perform test
     with freeze_time(now):
-        err = validate_parties_mailing_address(filing_json, legal_type)
+        err = validate_coop_parties_mailing_address(filing_json)
 
     # validate outcomes
     if expected_msg:
         assert lists_are_equal(err, expected_msg)
     else:
-        assert err is None
+        assert not err
 
 
 @pytest.mark.parametrize(
@@ -1273,20 +1226,23 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
         ('SUCCESS', None, None, None),
         ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
             HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effective_date.'
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'path': '/filing/header/effectiveDate'
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
-                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.'
+                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                'path': '/filing/header/effectiveDate'
             }]),
         ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
-                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.'
+                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                'path': '/filing/header/effectiveDate'
             }])
     ])
 @not_github_ci
 def test_validate_incorporation_effective_date(session, mocker, test_name, effective_date, expected_code, expected_msg):
-    """Assert that validator validates share class correctly."""
+    """Assert that validator validates effective date correctly."""
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',

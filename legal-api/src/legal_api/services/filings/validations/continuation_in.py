@@ -22,6 +22,7 @@ from legal_api.models import Business, PartyRole
 from legal_api.services import colin, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
     validate_offices_addresses,
@@ -32,10 +33,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
-    validate_incorporation_effective_date,
     validate_offices,
     validate_parties_delivery_address,
-    validate_parties_mailing_address,
 )
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
@@ -55,7 +54,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         return msg  # Cannot continue validation without legal_type
 
     enabled_filings = flags.value('supported-continuation-in-entities').split()
-    if enabled_filings and legal_type not in enabled_filings:
+    if legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
                      [{'error': babel(f'{legal_type} does not support continuation in filing.')}])
 
@@ -71,17 +70,13 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
         msg.extend(validate_parties_names(filing_json, filing_type, legal_type))
         msg.extend(validate_parties_addresses(filing_json, filing_type))
 
-        if err := validate_parties_mailing_address(filing_json, legal_type, filing_type):
-            msg.extend(err)
-
         if err := validate_parties_delivery_address(filing_json, legal_type, filing_type):
             msg.extend(err)
 
         if err := validate_share_structure(filing_json, filing_type, legal_type):
             msg.extend(err)
 
-        if err := validate_incorporation_effective_date(filing_json):
-            msg.extend(err)
+        msg.extend(validate_effective_date(filing_json))
 
         msg.extend(validate_continuation_in_court_order(filing_json, filing_type))
 

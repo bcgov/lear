@@ -27,6 +27,7 @@ from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
 from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services.request_context import get_request_context, RequestContext
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -37,7 +38,7 @@ OUTPUT_DATE_FORMAT: Final = '%B %-d, %Y'
 class BusinessDocument:
     """Service to create business document outputs."""
 
-    def __init__(self, business, document_key):
+    def __init__(self, business, document_key, request_context: RequestContext = None):
         """Create the Report instance."""
         self._business = business
         self._document_key = document_key
@@ -45,6 +46,8 @@ class BusinessDocument:
         self._epoch_filing_date = None
         self._tombstone_filing_date = None
         self._document_service = DocumentService()
+        # Default to current request context if not explicitly provided
+        self._request_context = request_context or get_request_context()
 
     def get_pdf(self):
         """Render the business document pdf response."""
@@ -57,6 +60,7 @@ class BusinessDocument:
             'template': "'" + base64.b64encode(bytes(self._get_template(), 'utf-8')).decode() + "'",
             'templateVars': self._get_template_data()
         }
+
         response = requests.post(url=current_app.config.get('REPORT_SVC_URL'), headers=headers, data=json.dumps(data))
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
@@ -115,6 +119,8 @@ class BusinessDocument:
             'footer',
             'logo',
             'macros',
+            'common/warning-bar',
+            'notice-of-articles/officers',
             'notice-of-articles/directors'
         ]
         # substitute template parts - marked up by [[filename]]
@@ -183,7 +189,9 @@ class BusinessDocument:
 
             if self._document_key == 'summary':
                 # set party groups
+                self._set_warning(business_json)
                 self._set_directors(business_json)
+                self._set_officers(business_json)
                 self._set_record_keepers(business_json)
                 self._set_receivers(business_json)
 
@@ -324,6 +332,45 @@ class BusinessDocument:
             if party.get('deliveryAddress'):
                 party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
         business['parties'] = party_json
+
+    def _set_warning(self, business: dict):
+        """Set the warning."""
+        if self._business.backfill_cutoff_filing_id:
+            filing = Filing.find_by_id(self._business.backfill_cutoff_filing_id)
+
+            business['warning_text'] = 'Warning, data older than {} may not appear in the Business Summary'.format(
+                LegislationDatetime.format_as_report_string(filing.filing_date)
+            )
+
+    def _set_officers(self, business: dict):
+        """Set the officers of the business (parties with officer role)."""
+        if not flags.is_on(
+            'enable-officers-business-summary',
+            user=self._request_context.user,
+            account_id=self._request_context.account_id,
+        ):
+            # if flag is not enabled return from the function
+            return
+
+        parties_json = get_parties(self._business.identifier).json['parties']
+        officer_json = []
+
+        # Extract officers - parties that have at least one role marked as OFFICER
+        for party in parties_json:
+            is_officer = False
+            # check any role has attribute roleClass set to 'officer'
+            for role in party.get('roles', []):
+                if role.get('roleClass') == 'OFFICER':
+                    is_officer = True
+                    role['roleType'] = BusinessDocument._format_role_type(role.get('roleType', ''))
+            if is_officer:
+                if party.get('mailingAddress'):
+                    party['mailingAddress'] = BusinessDocument._format_address(party['mailingAddress'])
+                if party.get('deliveryAddress'):
+                    party['deliveryAddress'] = BusinessDocument._format_address(party['deliveryAddress'])
+                officer_json.append(party)
+
+        business['officers'] = officer_json
 
     def _set_receivers(self, business: dict):
         """Set the receivers of the business (all parties)."""
@@ -759,7 +806,27 @@ class BusinessDocument:
         'CC': 'BC Community Contribution Company',
         'LLC': 'Limited Liability Company'
     }
+    
+    @staticmethod
+    def _format_role_type(role_type: str) -> str:
+        if not role_type:
+            return role_type
+        
+        role_display_mapping = {
+            'ceo': 'Chief Executive Officer',
+            'cfo': 'Chief Financial Officer',
+            'president': 'President',
+            'vice_president': 'Vice President',
+            'chair': 'Chairman',
+            'treasurer': 'Treasurer',
+            'secretary': 'Secretary',
+            'assistant_secretary': 'Assistant Secretary',
+            'other': 'Other'
+        }
 
+        role_key = role_type.lower()
+
+        return role_display_mapping.get(role_key, role_type)
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""

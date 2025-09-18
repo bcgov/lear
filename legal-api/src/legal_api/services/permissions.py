@@ -15,18 +15,20 @@
 # pylint: disable=too-many-lines
 """This manages all of the permissions service."""
 from enum import Enum
+from http import HTTPStatus
 
 from flask import current_app, g
 
 from legal_api.core.filing import Filing as CoreFiling
+from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
-from legal_api.services import authz
+from legal_api.services import authz, flags
 from legal_api.services.cache import cache
 from legal_api.services.filings.validations.dissolution import DissolutionTypes
 
 
 class ListFilingsPermissionsAllowed(str, Enum):
-    """Define an enum for permissions checks."""
+    """Define an enum for filing permissions checks."""
 
     ADDRESS_CHANGE_FILING = 'ADDRESS_CHANGE_FILING'
     AGM_CHG_LOCATION_FILING = 'AGM_CHG_LOCATION_FILING'
@@ -49,12 +51,30 @@ class ListFilingsPermissionsAllowed(str, Enum):
     FIRM_CONVERSION_FILING = 'FIRM_CONVERSION_FILING'
     INCORPORATION_APPLICATION_FILING = 'INCORPORATION_APPLICATION_FILING'
     NOTICE_WITHDRAWAL_FILING = 'NOTICE_WITHDRAWAL_FILING'
+    OFFICER_CHANGE_FILING = 'OFFICER_CHANGE_FILING'
     REGISTRATION_FILING = 'REGISTRATION_FILING'
     RESTORATION_REINSTATEMENT_FILING = 'RESTORATION_REINSTATEMENT_FILING'
     SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
     STAFF_FILINGS = 'STAFF_FILINGS'
     TRANSITION_FILING = 'TRANSITION_FILING'
+    
+class ListActionsPermissionsAllowed(str, Enum):
+    """Define an enum for action permissions checks."""
 
+    ADD_ENTITY_NO_AUTHENTICATION = 'ADD_ENTITY_NO_AUTHENTICATION'
+    AML_OVERRIDES = 'AML_OVERRIDES'
+    COURT_ORDER_POA = 'COURT_ORDER_POA'
+    DETAIL_COMMENTS = 'DETAIL_COMMENTS'
+    EDITABLE_CERTIFY_NAME = 'EDITABLE_CERTIFY_NAME'
+    EDITABLE_COMPLETING_PARTY = 'EDITABLE_COMPLETING_PARTY'
+    FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
+    FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
+    FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
+    FIRM_NO_MIN_START_DATE = 'FIRM_NO_MIN_START_DATE'
+    FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
+    OVERRIDE_NIGS='OVERRIDE_NIGS'
+    STAFF_COMMENTS = 'STAFF_COMMENTS'
+    STAFF_PAYMENT='STAFF_PAYMENT'
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -129,6 +149,8 @@ class PermissionService:
                 ListFilingsPermissionsAllowed.FIRM_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
                 ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value,
+            CoreFiling.FilingTypes.CHANGEOFOFFICERS.value:
+                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,    
             CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
                 ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value,
             CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:
@@ -177,3 +199,33 @@ class PermissionService:
         else:
             current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
         return False
+
+    @staticmethod
+    def check_user_permission(required_permission, message: str = None) -> Error:
+        """Check if the user has the required permission."""
+        authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+        if required_permission not in authorized_permissions:
+            return Error(
+                HTTPStatus.FORBIDDEN,
+                [{
+                    'message': message or f'Permission Denied - You do not have permissions to perform {required_permission} in filing.'
+                }]
+            )
+        return None
+    
+    @staticmethod
+    def check_filing_enabled(filing_type: str, identifier: str) -> Error:
+        """Check if a filing type is enabled via FF."""
+        filings_feature_flag = {
+            'changeOfOfficers': 'supported-change-of-officers-entities'
+        }
+        flag_name = filings_feature_flag.get(filing_type)
+        if flag_name and not flags.is_on(flag_name):
+            return Error(
+                HTTPStatus.BAD_REQUEST,
+                [{
+                    'message': f'Permission Denied - {filing_type} filing is currently not available for: {identifier}.'
+                }]
+            )
+        return None
+    

@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test Suite for common validations sharing through the different filings."""
 import copy
+from unittest.mock import patch
 
 import pytest
 from registry_schemas.example_data import (
@@ -34,8 +35,11 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.services.filings.validations.common_validations import (
+    find_updated_keys_for_firms,
+    validate_certify_name,
     validate_offices_addresses,
     validate_parties_addresses,
+    validate_staff_payment,
 )
 
 
@@ -120,3 +124,181 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
+
+@pytest.mark.parametrize('payment_type, expected', [
+    ({}, False),
+    ({'routingSlipNumber': '123'}, True),
+    ({'bcolAccountNumber': '12345'}, True),
+    ({'datNumber': '1234567'}, True),
+    ({'waiveFees': True}, True),
+    ({'priority': False}, True),
+])
+def test_validate_staff_payment(session, payment_type, expected):
+    """Test staff payment validation."""
+    filing = {
+        'filing': {
+            'header': {
+                **payment_type
+                }
+        }
+    }
+    result = validate_staff_payment(filing)
+    assert result == expected
+
+@pytest.mark.parametrize(('certified_value', 'expected'), [
+    ('First Last', False),
+    ('Forst Last', True),
+    ('NOT_SET', True),
+    ('First  Last', True)
+])
+def test_validate_certify(session, monkeypatch, certified_value, expected):
+    """Test certify name validation when no JWT is present."""
+    filing = copy.deepcopy(FILING_HEADER)
+    if certified_value != 'NOT_SET':
+        filing['filing']['header']['certifiedBy'] = certified_value
+    with patch('legal_api.services.filings.validations.common_validations.g') as mock_g:
+        mock_g.jwt_oidc_token_info = {'name': 'First Last'}
+        result = validate_certify_name(filing)
+        assert result == expected
+
+@patch('legal_api.services.filings.validations.common_validations.PartyRole')
+@patch('legal_api.services.filings.validations.common_validations.Party')
+@patch('legal_api.services.filings.validations.common_validations.Address')
+def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
+    """Test find updated keys for firms."""
+    business = type('Business', (), {'id': 1, 'legal_type': 'GP'})()
+
+    mock_party_role.RoleTypes.PROPRIETOR.value = 'proprietor'
+    mock_party_role.RoleTypes.PARTNER.value = 'partner'
+
+    mock_role1 = type('PartyRole', (), {'party_id': 1})()
+    mock_role2 = type('PartyRole', (), {'party_id': 2})()
+    mock_party_role.get_parties_by_role.return_value = [mock_role1, mock_role2]
+
+    mock_db_party1 = type('Party', (), {
+        'email': 'john@example.com',
+        'first_name': 'John',
+        'middle_initial': 'A',
+        'last_name': 'Doe',
+        'organization_name': '',
+        'mailing_address_id': 1,
+        'delivery_address_id': 1
+    })()
+    
+    mock_db_party2 = type('Party', (), {
+        'email': 'jane@example.com',
+        'first_name': 'Jane',
+        'middle_initial': 'B',
+        'last_name': 'Smith',
+        'organization_name': '',
+        'mailing_address_id': 2,
+        'delivery_address_id': 2
+    })()
+    
+    mock_role1.party = mock_db_party1
+    mock_role2.party = mock_db_party2
+    
+    mock_address1 = type('Address', (), {
+        'street': '123 Main St',
+        'city': 'Vancouver',
+        'region': 'BC',
+        'postal_code': 'V6B 1A1',
+        'country': 'CA',
+        'delivery_instructions': '',
+        'street_additional': ''
+    })()
+    
+    mock_address2 = type('Address', (), {
+        'street': '456 Oak Ave',
+        'city': 'Vancouver',
+        'region': 'BC',
+        'postal_code': 'V6B 1A1',
+        'country': 'CA',
+        'delivery_instructions': '',
+        'street_additional': ''
+    })()
+    
+    def mock_address_find_by_id(address_id):
+        if address_id == 1:
+            return mock_address1
+        elif address_id == 2:
+            return mock_address2
+        return None
+    
+    mock_address.find_by_id = mock_address_find_by_id
+    
+    filing_json = {
+        'filing': {
+            'changeOfRegistration': {
+                'parties': [
+                    {
+                        'roles': [{'roleType': 'partner'}],
+                        'officer': {
+                            'id': 1,
+                            'email': 'john.new@example.com',
+                            'firstName': 'John',
+                            'middleName': 'A',
+                            'lastName': 'Doe',
+                            'organizationName': ''
+                        },
+                        'mailingAddress': {
+                            'streetAddress': '123 Main St',
+                            'addressCity': 'Vancouver',
+                            'addressRegion': 'BC',
+                            'postalCode': 'V6B 1A1',
+                            'addressCountry': 'CA',
+                            'deliveryInstructions': '',
+                            'streetAddressAdditional': ''
+                        },
+                        'deliveryAddress': {
+                            'street': '456 Oak Ave',
+                            'city': 'Vancouver',
+                            'region': 'BC',
+                            'postal_code': 'V6B 1A1',
+                            'country': 'CA',
+                            'delivery_instructions': '',
+                            'street_additional': ''
+                        }
+                    },
+                    {
+                        'roles': [{'roleType': 'partner'}],
+                        'officer': {
+                            'email': 'newpartner@example.com',
+                            'firstName': 'New',
+                            'middleName': 'C',
+                            'lastName': 'Partner',
+                            'organizationName': ''
+                        },
+                        'mailingAddress': {
+                            'streetAddress': '123 Main St',
+                            'addressCity': 'Vancouver',
+                            'addressRegion': 'BC',
+                            'postalCode': 'V6B 1A1',
+                            'addressCountry': 'CA',
+                            'deliveryInstructions': '',
+                            'streetAddressAdditional': ''
+                        },
+                        'deliveryAddress': {
+                            'street': '456 Oak Ave',
+                            'city': 'Vancouver',
+                            'region': 'BC',
+                            'postal_code': 'V6B 1A1',
+                            'country': 'CA',
+                            'delivery_instructions': '',
+                            'street_additional': ''
+                        }
+                    }
+                ]
+            }
+        }
+    }
+    
+    result = find_updated_keys_for_firms(business, filing_json, 'changeOfRegistration')
+
+    assert len(result) == 1
+
+    edited_result = next((r for r in result if 'email_changed' in r), None)
+    assert edited_result['email_changed'] == True
+    assert edited_result['name_changed'] == False
+    assert edited_result['address_changed'] == False
+    assert edited_result['delivery_address_changed'] == True

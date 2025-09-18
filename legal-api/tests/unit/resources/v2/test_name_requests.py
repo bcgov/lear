@@ -19,15 +19,19 @@ Test-Suite to ensure that the /nameRequests endpoint is working as expected.
 from http import HTTPStatus
 
 import copy
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import datedelta
+from pytest_mock import mocker
 import pytz
 
 from legal_api.services import flags, namex
 from legal_api.utils.legislation_datetime import LegislationDatetime
+from legal_api.models import UserRoles
 
 from tests import integration_namerequests
+
+from tests.unit.services.utils import create_header
 
 
 # Mock NR Data
@@ -136,6 +140,38 @@ nr_consumable_conditional = {
     ],
     'nrNum': 'NR 1234567',
     'state': 'CONDITIONAL'
+}
+
+nr_approved = {
+    'applicants': {
+        'phoneNumber': '123',
+        'emailAddress': 'a@b.com'
+    },
+    'consentFlag': None,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'APPROVED'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'APPROVED'
+}
+
+nr_approved_no_contact_info = {
+    'consentFlag': None,
+    'names': [
+        {
+            'choice': 1,
+            'consumptionDate': None,
+            'name': 'ABC 1234',
+            'state': 'APPROVED'
+        }
+    ],
+    'nrNum': 'NR 1234567',
+    'state': 'APPROVED'
 }
 
 skip_nr_check_validation_result = {
@@ -361,4 +397,67 @@ def test_get_approved_name_skips_nr_state_check():
         nr_name = namex.get_approved_name(nr_consumable_approved)
         assert nr_name == nr_consumable_approved['names'][0]['name']
         nr_name = namex.get_approved_name(nr_consumable_conditional)
-        assert nr_name == nr_consumable_conditional['names'][1]['name']
+        assert nr_name == nr_consumable_conditional['names'][1]['name'] 
+    
+
+def test_nr_success_staff_role(client, jwt):
+    """Test NR for staff role. Staff role has ADD_ENTITY_NO_AUTHENTICATION permission."""
+    with patch.object(namex,
+                      'query_nr_number',
+                      return_value=MagicMock(status_code=200,
+                                             json=MagicMock(return_value=nr_approved_no_contact_info))):
+        rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
+                        headers=create_header(jwt, [UserRoles.staff]))
+        assert rv.status_code == 200
+       
+
+def test_nr_not_found_staff_role(client, jwt):
+    """Test NR for staff role. Staff role has ADD_ENTITY_NO_AUTHENTICATION permission."""
+    with patch.object(namex, 'query_nr_number', return_value=MagicMock(status_code=404,
+                                                                       json=MagicMock(return_value=None))):
+        rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
+                        headers=create_header(jwt, [UserRoles.staff]))
+        assert rv.status_code == 404
+        assert rv.json == {'message': 'NR 1234567 not found.'}   
+
+
+def test_nr_success_public_user(mocker, client, jwt):
+    """Test NR for public user role, NR affiliated."""
+    with patch.object(namex,
+                      'query_nr_number',
+                      return_value=MagicMock(status_code=200,
+                                             json=MagicMock(return_value=nr_approved))):
+        mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+                 return_value={'orgs': [{'id': 123456}]})
+        rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
+                        headers=create_header(jwt, [UserRoles.public_user]))
+        assert rv.status_code == 200
+
+
+def test_nr_not_affiliated_public_user(mocker, client, jwt):
+    """Test NR for public user role, NR not affiliated, email or phone is required."""
+    with patch.object(namex,
+                      'query_nr_number',
+                      return_value=MagicMock(status_code=200,
+                                             json=MagicMock(return_value=nr_approved_no_contact_info))):
+        mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+                 return_value={'orgs': []})
+        rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
+                        headers=create_header(jwt, [UserRoles.public_user]))
+        assert rv.status_code == 403
+        assert rv.json == {'message': 'The request must include email or phone number.'}
+        
+def test_nr_valid_contact_public_user(mocker, client, jwt):
+    """Test NR for public user role, NR not affiliated, valid email or phone."""
+    with patch.object(namex,
+                      'query_nr_number',
+                      return_value=MagicMock(status_code=200,
+                                             json=MagicMock(return_value=nr_approved))):
+        mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+                 return_value={'orgs': []})
+        rv = client.get(
+            '/api/v2/nameRequests/NR 1234567/validate',
+            headers=create_header(jwt, [UserRoles.public_user]),
+            query_string={'email': 'a@b.com'}
+        )
+        assert rv.status_code == 200

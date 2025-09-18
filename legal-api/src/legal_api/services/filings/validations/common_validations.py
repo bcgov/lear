@@ -14,16 +14,16 @@
 """Common validations share through the different filings."""
 import io
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Optional
 
 import pycountry
 import PyPDF2
-from flask import current_app
+from flask import current_app, g
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business
+from legal_api.models import Address, Business, Party, PartyRole
 from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -446,3 +446,215 @@ def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) 
             msg.append({'error': 'Invalid extension, maximum 5 digits', 'path': f'{contact_point_path}/extension'})
 
     return msg
+
+def validate_effective_date(filing_json: dict) -> list:
+    """Validate effective date like incorporation filing, with debug prints."""
+    msg = []
+
+    now = dt.utcnow() 
+    min_allowed = now + timedelta(minutes=2)
+    max_allowed = now + timedelta(days=10)
+
+    filing_effective_date = filing_json.get('filing', {}).get('header', {}).get('effectiveDate')
+    if not filing_effective_date:
+        return msg
+
+    try:
+        effective_date = datetime.fromisoformat(filing_effective_date)
+    except ValueError:
+        msg.append({'error': f'{filing_effective_date} is an invalid ISO format for effectiveDate.',
+                    'path': '/filing/header/effectiveDate'})
+        return msg
+
+    if effective_date < min_allowed:
+        msg.append({'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                    'path': '/filing/header/effectiveDate'})
+        return msg            
+
+    if effective_date > max_allowed:
+        msg.append({'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                    'path': '/filing/header/effectiveDate'})
+        return msg            
+
+    return msg
+
+def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list:
+    """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
+    updated_keys = []
+    if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
+        role_type = PartyRole.RoleTypes.PROPRIETOR.value
+    elif business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
+        role_type = PartyRole.RoleTypes.PARTNER.value
+    else:
+        return updated_keys
+
+    # Get business and existing parties from DB
+    db_party_roles = PartyRole.get_parties_by_role(business.id, role_type)
+    parties = filing_json['filing'][filing_type].get('parties', [])
+
+    matched_db_parties = set()
+
+    for party in parties:
+        roles = party.get("roles", [])
+        has_matching_role = any(role.get("roleType") == role_type for role in roles)
+        if not has_matching_role:
+            continue
+        officer = party.get("officer", {})
+        email = officer.get("email")
+        mailing_address = party.get("mailingAddress", {})
+        delivery_address = party.get("deliveryAddress", {})
+
+        # Match with existing DB party
+        matched_db_party = None
+        party_id = party.get("officer", {}).get("id")
+
+        if party_id:
+            for role in db_party_roles:
+                if role.party_id == party_id and role.party_id not in matched_db_parties:
+                    matched_db_party = role.party
+                    if matched_db_party:
+                        matched_db_parties.add(role.party_id)
+                        break
+       
+        if matched_db_party:
+            changes = {}
+            # Email comparison
+            if not is_same_str(email, matched_db_party.email):
+                changes['email'] = {
+                    'old': normalize_str(matched_db_party.email),
+                    'new': normalize_str(email)
+                }
+            
+            old_name = {
+                    'firstName': matched_db_party.first_name,
+                    'middleName': matched_db_party.middle_initial,
+                    'lastName': matched_db_party.last_name,
+                    'organizationName': matched_db_party.organization_name
+                }
+            new_name = {
+                'firstName': officer.get('firstName'),
+                'middleName': officer.get('middleName'),
+                'lastName': officer.get('lastName'),
+                'organizationName': officer.get('organizationName')
+            }
+          
+            name_changed = is_name_changed(old_name, new_name)
+            changes['name'] = {
+                'old': old_name,
+                'new': new_name,
+                'changed': name_changed
+            }
+            # Mailing address comparison
+            db_mailing_address = (Address.find_by_id(matched_db_party.mailing_address_id)
+                                  if matched_db_party.mailing_address_id else None)
+            old_mailing = {
+                'streetAddress': db_mailing_address.street,
+                'addressCity': db_mailing_address.city,
+                'addressRegion': db_mailing_address.region,
+                'postalCode': db_mailing_address.postal_code,
+                'addressCountry': db_mailing_address.country,
+                'deliveryInstructions': db_mailing_address.delivery_instructions,
+                'streetAddressAdditional': db_mailing_address.street_additional
+            } if db_mailing_address else {}
+            new_mailing = {
+                'streetAddress': mailing_address.get('streetAddress'),
+                'addressCity': mailing_address.get('addressCity'),
+                'addressRegion': mailing_address.get('addressRegion'),
+                'postalCode': mailing_address.get('postalCode'),
+                'addressCountry': mailing_address.get('addressCountry'),
+                'deliveryInstructions': mailing_address.get('deliveryInstructions'),
+                'streetAddressAdditional': mailing_address.get('streetAddressAdditional')
+            }
+
+            if not is_address_changed(old_mailing, new_mailing):
+                changes['address'] = {'old': old_mailing, 'new': new_mailing}
+
+            # Delivery address comparison
+            db_delivery_address = (Address.find_by_id(matched_db_party.delivery_address_id)
+                                  if matched_db_party.delivery_address_id else None)
+            
+            old_delivery = {
+                'streetAddress': db_delivery_address.street,
+                'addressCity': db_delivery_address.city,
+                'addressRegion': db_delivery_address.region,
+                'postalCode': db_delivery_address.postal_code,
+                'addressCountry': db_delivery_address.country,
+                'deliveryInstructions': db_delivery_address.delivery_instructions,
+                'streetAddressAdditional': db_delivery_address.street_additional
+            } if db_delivery_address else {}
+            new_delivery = {
+                'streetAddress': delivery_address.get('streetAddress'),
+                'addressCity': delivery_address.get('addressCity'),
+                'addressRegion': delivery_address.get('addressRegion'),
+                'postalCode': delivery_address.get('postalCode'),
+                'addressCountry': delivery_address.get('addressCountry'),
+                'deliveryInstructions': delivery_address.get('deliveryInstructions'),
+                'streetAddressAdditional': delivery_address.get('streetAddressAdditional')
+            }
+
+            if not is_address_changed(old_delivery, new_delivery):
+                changes['deliveryAddress'] = {'old': old_delivery, 'new': new_delivery}
+
+            if changes:
+                updated_keys.append({
+                    'name_changed':changes.get('name', {}).get('changed', False),
+                    'email_changed': 'email' in changes,
+                    'address_changed': 'address' in changes,
+                    'delivery_address_changed': 'deliveryAddress' in changes
+                })
+
+    return updated_keys
+
+def normalize_str(value: str) -> str:
+   """Convert None or empty values to a stripped uppercase string."""
+   return (value or '').strip().upper()
+   
+def is_same_str(str1: str, str2: str) -> bool:
+   """Check if two strings are the same after normalization."""
+   return normalize_str(str1) == normalize_str(str2)
+
+def is_name_changed(name1: dict, name2: dict) -> bool:
+   """Check if two names are different."""
+   name_keys = ['firstName', 'middleName', 'lastName', 'organizationName']
+   for key in name_keys:
+       if not is_same_str(name1.get(key), name2.get(key)):
+           return True
+   return False
+
+def is_address_changed(addr1: dict, addr2: dict) -> bool:
+   """Check if two addresses are the same."""
+   keys = [
+       'streetAddress', 'addressCity', 'addressRegion',
+       'postalCode', 'addressCountry',
+       'deliveryInstructions', 'streetAddressAdditional'
+   ]
+   for key in keys:
+       if not is_same_str(addr1.get(key), addr2.get(key)):
+           return False
+   return True
+
+def validate_staff_payment(filing_json: dict) -> bool:
+    """Check staff specific headers are in the filing."""
+    header = filing_json['filing']['header']
+    if (
+        'routingSlipNumber' in header or
+        'bcolAccountNumber' in header or
+        'datNumber' in header or
+        'waiveFees' in header or
+        'priority' in header
+    ):
+        return True
+    return False
+
+def validate_certify_name(filing_json) -> bool:
+    """Check certify_by is modified."""
+    certify_name = filing_json['filing']['header'].get('certifiedBy')
+    try:
+        name = g.jwt_oidc_token_info.get('name')
+        if certify_name and certify_name == name:
+            return False
+    except (AttributeError, RuntimeError) as err:
+        current_app.logger.error('No JWT present to validate certify name against.')
+        current_app.logger.error(err)
+        return True
+    return True

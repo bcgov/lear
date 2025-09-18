@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/expired-limited-restoration/**"
+      - "gcp-jobs/expired-limited-restoration/**"
   workflow_dispatch:
     inputs:
       target:

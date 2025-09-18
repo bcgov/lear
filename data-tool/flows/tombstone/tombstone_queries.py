@@ -120,8 +120,9 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
         if mig_group_ids:
                mig_extra_where += f" AND g.id IN ({mig_group_ids})"
 
+        account_map_prefix = "WITH" if not cte_clause.strip() else ","
         account_map_cte = f"""
-        , account_map AS (
+        {account_map_prefix} account_map AS (
             SELECT mca.corp_num,
                    array_to_string(array_agg(DISTINCT mca.account_id ORDER BY mca.account_id), ',') AS account_ids
             FROM mig_corp_account mca

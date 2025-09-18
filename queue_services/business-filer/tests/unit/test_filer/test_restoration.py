@@ -63,7 +63,6 @@ def test_restoration_business_update(app, session, mocker, restoration_type):
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
     business.state = Business.State.HISTORICAL
     business.dissolution_date = datetime(2017, 5, 17)
-    business.save()
     business_id = business.id
 
     filing = copy.deepcopy(FILING_HEADER)
@@ -108,7 +107,6 @@ def test_restoration_legal_name(app, session, mocker, test_name):
     legal_name = f'{identifier} Limited'
     legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['business']['identifier'] = identifier
@@ -152,7 +150,6 @@ def test_restoration_office_addresses(app, session, mocker):
     legal_name = f'{identifier} Limited'
     legal_type = 'BC'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['business']['identifier'] = identifier
@@ -188,7 +185,6 @@ def test_restoration_court_order(app, session, mocker, approval_type):
     identifier = f'BC{random.randint(1000000, 9999999)}'
     legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['business']['identifier'] = identifier
@@ -225,7 +221,6 @@ def test_restoration_registrar(app, session, mocker, approval_type):
     identifier = f'BC{random.randint(1000000, 9999999)}'
     legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
@@ -267,7 +262,6 @@ def test_restoration_name_translations(app, session, mocker):
     identifier = f'BC{random.randint(1000000, 9999999)}'
     legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
@@ -292,7 +286,6 @@ def test_update_party(app, session, mocker):
     identifier = f'BC{random.randint(1000000, 9999999)}'
     legal_name = f'{identifier} Limited'
     business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    business.save()
     business_id = business.id
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)

@@ -7,7 +7,7 @@ on:
       - feature*
       - hotfix*
     paths:
-      - "./gcp-jobs/email-reminder/**"
+      - "gcp-jobs/email-reminder/**"
   workflow_dispatch:
     inputs:
       target:

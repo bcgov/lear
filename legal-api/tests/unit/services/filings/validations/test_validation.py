@@ -15,8 +15,10 @@
 import copy
 from datetime import date, datetime
 from http import HTTPStatus
+from unittest.mock import MagicMock, patch
 
 import datedelta
+from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_ADDRESS, FILING_HEADER
@@ -32,6 +34,7 @@ from . import lists_are_equal
     'test_name, now, ar_date, agm_date, expected_code, expected_msg',
     [('SUCCESS', date(2020, 9, 17), date(2020, 8, 5), date(2020, 7, 1), None, None),
      ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
                            expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a basic AR can be validated."""
@@ -85,6 +88,7 @@ def test_validate_ar_basic(session, test_name, now, ar_date, agm_date,
               'path': '/filing/changeOfAddress/offices/registeredOffice/deliveryAddress/addressCountry'}
         ]),
     ])
+@patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_country, mailing_region, mailing_country,
                             expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that a basic COA can be validated."""

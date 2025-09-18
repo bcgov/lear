@@ -15,8 +15,10 @@
 import copy
 from unittest.mock import patch
 from http import HTTPStatus
+from datetime import date
 
 import pytest
+from freezegun import freeze_time
 from registry_schemas.example_data import CONTINUATION_IN
 
 from legal_api.models import Business
@@ -998,5 +1000,65 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
     if expected_code:
         assert err.code == expected_code
         assert any(expected_msg in msg['error'] for msg in err.msg)
+    else:
+        assert err is None
+        
+#setup
+now = date(2020, 9, 17)
+
+@pytest.mark.parametrize(
+    'test_name, effective_date , expected_code, expected_msg',
+    [
+        ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
+        ('SUCCESS', None, None, None),
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
+                'path': '/filing/header/effectiveDate'
+            }]),
+        ('FAIL_INVALID_DATE_TIME_MAXIMUM', '2020-09-27T00:01:00+00:00',
+            HTTPStatus.BAD_REQUEST, [{
+                'error': 'Invalid Datetime, effective date must be a maximum of 10 days ahead.',
+                'path': '/filing/header/effectiveDate'
+            }])
+    ])
+def test_validate_continuation_in_effective_date(mocker, app, session, test_name,
+                                               effective_date, expected_code, expected_msg, monkeypatch):
+    """Test effective date validation in continuation in application."""
+    monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        ) 
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+
+    if effective_date is not None:
+        filing['filing']['header']['effectiveDate'] = effective_date
+
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+
+    filing['filing']['continuationIn']['nameRequest'] = {}
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = 'CBEN'
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
