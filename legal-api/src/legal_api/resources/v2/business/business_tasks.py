@@ -188,11 +188,11 @@ def construct_task_list(business: Business):  # pylint: disable=too-many-locals;
             last_restoration_date = restorations[0].effective_date
             last_ar_date = business.last_ar_date or business.founding_date
             # Get the transition application todo order based on the ar tasks, last restoration date, and ar date information
-            transition_order = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
+            transition_order, transition_enabled = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
             # Bump all the task orders by one that are at and above transition_order
             tasks = _bump_task_order(tasks, transition_order)
             # Append the TA task at with order: transition_order. Disable if there are any incomplete filings
-            tasks.append(create_transition_todo(business, transition_order, (not pending_filings)))
+            tasks.append(create_transition_todo(business, transition_order, (transition_enabled and not pending_filings)))
             order += 1
 
     return tasks
@@ -278,20 +278,24 @@ def _find_task_order_for_ta(tasks: list, order: int, restoration_date: datetime,
         adjusted_ar_date = last_ar_date + datedelta.datedelta(years=year_diff)
         if restoration_date > adjusted_ar_date:
             prioritize_ar_before_year += 1
-    
+
+    enabled = True
     ar_todo_tasks = [task for task in tasks if task['task'].get('todo', {}).get('header', {}).get('ARFilingYear')]
     if not ar_todo_tasks:
         # default order will be after any pending tasks
-        return order
+        return order, enabled
 
     ar_todo_tasks.sort(key=_by_order)
     for ar_task in ar_todo_tasks:
         if prioritize_ar_before_year <= ar_task['task']['todo']['header']['ARFilingYear']:
             # Will be before this ar task
-            return ar_task['order']
+            return ar_task['order'], enabled
+        else:
+            # There is at least 1 overdue AR task that should be filed before the TA task is enabled
+            enabled = False
 
     # will be after all existing AR tasks
-    return order
+    return order, enabled
 
 
 def _find_task_order_for_tr(tasks: list, order: int, tr_sub_type: str, year: int) -> int:
