@@ -127,11 +127,13 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
                 'legalName': 'Not Available',
                 'amalgamationDate': 'Not Available'
             }
-
+        print(5)
         amalgamation = Amalgamation.get_revision(transaction_id, business_id)
+        print(6)
         from .business import Business  # pylint: disable=import-outside-toplevel
+        print(7)
         business = Business.find_by_internal_id(amalgamation.business_id)
-
+        print(8)
         return {
             'amalgamationDate': amalgamation.amalgamation_date.isoformat(),
             'amalgamationType': amalgamation.amalgamation_type.name,

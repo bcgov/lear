@@ -21,10 +21,17 @@ from http import HTTPStatus
 import pytest
 
 import registry_schemas
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR, COURT_ORDER_FILING_TEMPLATE, FILING_HEADER, \
-    FILING_TEMPLATE, INCORPORATION
+from registry_schemas.example_data import (
+    AMALGAMATION_APPLICATION,
+    ANNUAL_REPORT,
+    CORRECTION_AR,
+    COURT_ORDER_FILING_TEMPLATE,
+    FILING_HEADER,
+    FILING_TEMPLATE,
+    INCORPORATION
+)
 
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from legal_api.models import Amalgamation, Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.services import flags
 from legal_api.utils.datetime import datetime
@@ -194,6 +201,60 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
     assert registry_schemas.validate(rv.json, 'business')
+
+
+@pytest.mark.parametrize('test_name,role,amalgamated', [
+    ('regular', PUBLIC_USER, False),
+    ('amalgamated', PUBLIC_USER, True),
+])
+def test_get_business_slim_info(app, session, client, jwt, requests_mock, test_name, role, amalgamated):
+    """Assert that the business slim info can be received with the expected data."""
+    identifier = 'BC7654321'
+    legal_type = 'BC'
+    legal_name = identifier + ' legal name'
+    tax_id = '123'
+    business = factory_business_model(legal_name=legal_name,
+                                      legal_type=legal_type,
+                                      identifier=identifier,
+                                      founding_date=datetime.fromtimestamp(0),
+                                      last_ledger_timestamp=datetime.fromtimestamp(0),
+                                      last_modified=datetime.fromtimestamp(0),
+                                      fiscal_year_end_date=None,
+                                      tax_id=tax_id,
+                                      dissolution_date=None)
+
+    if amalgamated:
+        filing = copy.deepcopy(FILING_TEMPLATE)
+        filing['filing'].pop('business')
+        filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+        filing['filing']['header']['name'] = 'amalgamationApplication'
+        filing = factory_completed_filing(business, filing)
+        business.state_filing_id = filing.id
+        business.state = 'HISTORICAL'
+        amalgamation = Amalgamation(
+            amalgamation_type=Amalgamation.AmalgamationTypes.regular,
+            business_id=business.id,
+            filing_id=filing.id,
+            amalgamation_date=datetime.utcnow(),
+            court_approval=True
+        )
+        amalgamation.save()
+        business.save()
+
+    # with patch('legal_api.services.warnings.business.business_checks.business.involuntary_dissolution_check', return_value=filing.id):
+    rv = client.get(f'/api/v2/businesses/{identifier}?slim=true' ,
+                    headers=create_header(jwt, [role], identifier))
+
+    print('business json', rv.json)
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business']['identifier'] == identifier
+    assert rv.json['business']['legalType'] == legal_type
+    assert rv.json['business']['taxId'] == tax_id
+    assert rv.json['business'].get('state') is not None
+    assert rv.json['business'].get('goodStanding') is not None
+    if amalgamated:
+        assert rv.json['business'].get('amalgamatedInto') is not None
 
 
 @pytest.mark.parametrize('test_name, slim_version, auth_check_on', [

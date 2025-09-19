@@ -38,15 +38,19 @@ from registry_schemas.example_data import (
     CHANGE_OF_OFFICERS,
     CONTINUATION_IN,
     CONTINUATION_IN_FILING_TEMPLATE,
+    CONTINUATION_OUT,
     CORRECTION_AR,
     CORRECTION_INCORPORATION,
     CP_SPECIAL_RESOLUTION_TEMPLATE,
     DISSOLUTION,
     FILING_HEADER,
+    FILING_TEMPLATE,
     INCORPORATION,
     INCORPORATION_FILING_TEMPLATE,
+    PUT_BACK_OFF,
     NOTICE_OF_WITHDRAWAL as SCHEMA_NOTICE_OF_WITHDRAWAL,
     REGISTRATION,
+    RESTORATION,
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE
 )
@@ -62,7 +66,7 @@ from legal_api.models import (
     UserRoles,
 )
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -247,6 +251,51 @@ def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['annualReport'] == ANNUAL_REPORT['filing']['annualReport']
     assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
+
+
+@pytest.mark.parametrize(
+    'test_name, filing_name, filing',
+    [
+        ('Annual Report', 'annualReport', ANNUAL_REPORT),
+        ('Dissolution', 'dissolution', DISSOLUTION),
+        ('Contintuation Out', 'continuationOut', CONTINUATION_OUT),
+        ('Resoration', 'restoration', RESTORATION),
+        ('Put back off', 'putBackOff', PUT_BACK_OFF),
+    ]
+)
+def test_get_one_business_filing_by_id_slim_json(session, client, jwt, test_name, filing_name, filing):
+    """Assert that the raw json originally submitted is returned."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_TEMPLATE)
+    filing_json['filing'].pop('business')
+    if filing_name not in filing.get('filing', {}):
+        filing_json['filing'][filing_name] = copy.deepcopy(filing)
+    else:
+        filing_json['filing'][filing_name] = copy.deepcopy(filing['filing'][filing_name])
+
+    filing_json['filing']['header']['name'] = filing_name
+
+    filing = factory_filing(b, filing_json)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}?slim=true',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['name'] == filing_name
+    assert rv.json['filing']['header'].get('effectiveDate') is not None
+    assert rv.json['filing'].get(filing_name) is not None
+    if filing_name == 'dissolution':
+        assert rv.json['filing'][filing_name].get('dissolutionType') is not None
+        assert rv.json['filing'][filing_name].get('dissolutionDate') is not None
+    if filing_json['filing'][filing_name].get('type'):
+        assert rv.json['filing'][filing_name].get('type') is not None
+    if filing_json['filing'][filing_name].get('reason'):
+        assert rv.json['filing'][filing_name].get('reason') is not None
+
+    assert not any([key for key in rv.json['filing'] if key not in ['header', filing_name]])
+    assert not any([key for key in rv.json['filing']['header'] if key not in ['name', 'effectiveDate']])
+    assert not any([key for key in rv.json['filing'][filing_name] if key not in ['dissolutionType', 'dissolutionDate', 'type', 'reason']])
 
 
 def test_get_404_when_business_invalid_filing_id(session, client, jwt):
