@@ -54,10 +54,10 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
         email = change_of_registration_notification.process(
             {'filingId': filing.id, 'type': 'changeOfRegistration', 'option': status}, token)
         if status == 'PAID':
-            assert email['content']['subject'] == 'JANE A DOE - Confirmation of Filing from the Business Registry'
+            assert email['content']['subject'] == 'test business - Confirmation of Filing from the Business Registry'
         else:
             assert email['content']['subject'] == \
-                'JANE A DOE - Change of Registration Documents from the Business Registry'
+                'test business - Change of Registration Documents from the Business Registry'
 
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
