@@ -28,6 +28,7 @@ from flask_jwt_oidc import AuthError
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -55,14 +56,14 @@ def handle_http_error(error):
     if isinstance(error, RoutingException):
         return error
 
-    app_name = request.headers.get("App-Name", "unknown").strip()
+    app_name = request.headers.get('App-Name', 'unknown').strip()
     # Allow spaces as well as letters, numbers, underscores and hyphens
-    if not re.match(r"^[a-zA-Z0-9 _-]+$", app_name):
-        app_name = "invalid app name"
-    logger.error("HTTP error from app: %s", app_name, exc_info=sys.exc_info())
+    if not re.match(r'^[a-zA-Z0-9 _-]+$', app_name):
+        app_name = 'invalid app name'
+    logger.error('HTTP error from app: %s', app_name, exc_info=sys.exc_info())
 
     error_details = error.response
-    return {"message": error.description}, error_details.status_code
+    return {'message': error.description}, error_details.status_code
 
 
 def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
@@ -71,21 +72,21 @@ def handle_uncaught_error(error: Exception):  # pylint: disable=unused-argument
     Since the handler suppresses the actual exception, log it explicitly to
     ensure it's logged.
     """
-    app_name = request.headers.get("App-Name", "unknown").strip()
+    app_name = request.headers.get('App-Name', 'unknown').strip()
     # Allow spaces as well as letters, numbers, underscores and hyphens
-    if not re.match(r"^[a-zA-Z0-9 _-]+$", app_name):
-        app_name = "invalid app name"
-    logger.error("Uncaught exception from app: %s", app_name, exc_info=sys.exc_info())
+    if not re.match(r'^[a-zA-Z0-9 _-]+$', app_name):
+        app_name = 'invalid app name'
+    logger.error('Uncaught exception from app: %s', app_name, exc_info=sys.exc_info())
 
     if isinstance(error, KeyError):
-        return jsonify({"message": f"A required field {error.args[0]} was missing or invalid."}), 400
+        return jsonify({'message': f'A required field {error.args[0]} was missing or invalid.'}), 400
     if isinstance(error, AttributeError):
         return jsonify(
-            {"message": "Invalid request format, one or more fields have an unexpected value or structure."}
+            {'message': 'Invalid request format, one or more fields have an unexpected value or structure.'}
         ), 400
     if isinstance(error, TypeError):
-        return jsonify({"message": f"Encountered an error processing the request, {str(error)}"}), 400
+        return jsonify({'message': f'Encountered an error processing the request, {str(error)}'}), 400
 
-    response = jsonify({"message": "Internal server error"})
+    response = jsonify({'message': 'Internal server error'})
     response.status_code = 500
     return response
