@@ -1,13 +1,13 @@
 # Copyright © 2019 Province of British Columbia
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
+# Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
+# distributed under the License is distributed on an 'AS IS' BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
@@ -33,7 +33,7 @@ CONFIGURATION = {
     'development': 'colin_api.config.DevConfig',
     'testing': 'colin_api.config.TestConfig',
     'production': 'colin_api.config.ProdConfig',
-    'default': 'colin_api.config.ProdConfig'
+    'default': 'colin_api.config.ProdConfig',
 }
 
 
@@ -49,7 +49,7 @@ def get_named_config(config_name: str = 'production'):
     elif config_name == 'development':
         config = DevConfig()
     else:
-        raise KeyError(f"Unknown configuration '{config_name}'")
+        raise KeyError(f'Unknown configuration "{config_name}"')
     return config
 
 
@@ -61,9 +61,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     SECRET_KEY = 'a secret'
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
-    SENTRY_DSN = os.getenv('SENTRY_DSN') or ''
-    SENTRY_DSN = '' if SENTRY_DSN.lower() == 'null' else SENTRY_DSN
 
     LD_SDK_KEY = os.getenv('LD_SDK_KEY', None)
 
@@ -94,7 +91,7 @@ class _Config:  # pylint: disable=too-few-public-methods
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
     # legal api
-    LEGAL_API_URL = os.getenv('LEGAL_API_URL')
+    LEGAL_API_URL = os.getenv('BUSINESS_API_URL', '') + os.getenv('BUSINESS_API_VERSION_2', '')
 
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv('ACCOUNT_SVC_AUTH_URL')
