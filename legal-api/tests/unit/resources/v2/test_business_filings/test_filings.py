@@ -263,7 +263,7 @@ def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
         ('Put back off', 'putBackOff', PUT_BACK_OFF),
     ]
 )
-def test_get_one_business_filing_by_id_slim_json(session, client, jwt, test_name, filing_name, filing):
+def test_get_one_business_filing_by_id_public_json(session, client, jwt, test_name, filing_name, filing):
     """Assert that the raw json originally submitted is returned."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -278,16 +278,13 @@ def test_get_one_business_filing_by_id_slim_json(session, client, jwt, test_name
 
     filing = factory_filing(b, filing_json)
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}?slim=true',
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}?public=true',
                     headers=create_header(jwt, [PUBLIC_USER], identifier))
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['header']['name'] == filing_name
     assert rv.json['filing']['header'].get('effectiveDate') is not None
     assert rv.json['filing'].get(filing_name) is not None
-    if filing_name == 'dissolution':
-        assert rv.json['filing'][filing_name].get('dissolutionType') is not None
-        assert rv.json['filing'][filing_name].get('dissolutionDate') is not None
     if filing_json['filing'][filing_name].get('type'):
         assert rv.json['filing'][filing_name].get('type') is not None
     if filing_json['filing'][filing_name].get('reason'):

@@ -99,6 +99,20 @@ class FilingModel(GenericModel, Generic[FilingT]):
 def get_filings(identifier: str, filing_id: Optional[int] = None):
     """Return a JSON object with meta information about the Filing Submission."""
     if filing_id or identifier.startswith('T'):
+        if str(request.args.get('public', None)).lower() == 'true':
+            return ListFilingResource.get_single_filing_public_json(filing_id)
+
+        if flags.is_on('enable-auth-v2-filing') and not authorized(identifier, jwt, action=['view']):
+            current_app.logger.warning(
+                'Unauthorized request for filing: %s, from username: %s, accountId: %s, app-name: %s',
+                identifier,
+                g.jwt_oidc_token_info.get('preferred_username'),
+                request.args.get('account'),
+                request.headers.get('app-name'))
+            return jsonify({'message':
+                            f'You are not authorized to view filing {identifier}.'}), \
+                HTTPStatus.UNAUTHORIZED
+
         return ListFilingResource.get_single_filing(identifier, filing_id)
 
     return ListFilingResource.get_ledger_listing(identifier, jwt)
@@ -293,49 +307,33 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
     """Business Filings service."""
 
     @staticmethod
+    def get_single_filing_public_json(filing_id: int):
+        """Return public details of a filing."""
+        filing: Filing = Filing.find_by_id(filing_id)
+        if not filing or not (filing_name := filing.filing_type):
+            return jsonify({'message': f'Filing {filing_id} not found'}), HTTPStatus.NOT_FOUND
+
+        filing_json = {'header': {'name': filing_name}, filing_name: {}}
+
+        if effective_date := filing.effective_date:
+            filing_json['header']['effectiveDate'] = effective_date.isoformat()
+
+        if sub_type := filing.filing_sub_type:
+            filing_json[filing_name]['type'] = sub_type
+
+        if filing.filing_json and (reason := filing.filing_json.get('filing', {}).get(filing_name, {}).get('reason')):
+            filing_json[filing_name]['reason'] = reason
+
+        return jsonify({'filing': filing_json})
+
+
+    @staticmethod
     def get_single_filing(identifier: str, filing_id: int):
         """Return a single filing and all of its components."""
         original_filing = str(request.args.get('original', None)).lower() == 'true'
         rv = CoreFiling.get(identifier, filing_id)
         if not rv:
             return jsonify({'message': f'{identifier} no filings found'}), HTTPStatus.NOT_FOUND
-
-        if str(request.args.get('slim', None)).lower() == 'true':
-            # only return publicly accessible data
-            if str(request.accept_mimetypes) == 'application/pdf':
-                return jsonify({'message': 'A slim version of the filing pdf is not available.'}), HTTPStatus.BAD_REQUEST
-
-            def get_redacted_json(json: dict[str, Any], allowed_keys: list[str]):
-                """Return the json with only the specified allowed_keys."""
-                return {key: json[key] for key in allowed_keys if json.get(key)}
-                
-            filing_json = rv.json
-            filing_name = filing_json['filing']['header']['name']
-
-            # only need 'header' and '<filing_name>' sections from 'filing'
-            public_root_filing_keys = ['header', filing_name]
-            filing_json['filing'] = get_redacted_json(filing_json['filing'], public_root_filing_keys)
-            
-            # only need 'name' and 'effectiveDate' from 'header'
-            public_header_keys = ['name', 'effectiveDate']
-            filing_json['filing']['header'] = get_redacted_json(filing_json['filing']['header'], public_header_keys)
-
-            # only need the following keys when they are available in the nested filing info
-            public_filing_keys = ['dissolutionType', 'dissolutionDate', 'type', 'reason']
-            filing_json['filing'][filing_name] = get_redacted_json(filing_json['filing'][filing_name], public_filing_keys)
-            
-            return jsonify(filing_json)
-
-        if flags.is_on('enable-auth-v2-filing') and not authorized(identifier, jwt, action=['view']):
-            current_app.logger.warning(
-                'Unauthorized request for filing: %s, from username: %s, accountId: %s, app-name: %s',
-                identifier,
-                g.jwt_oidc_token_info.get('preferred_username'),
-                request.args.get('account'),
-                request.headers.get('app-name'))
-            return jsonify({'message':
-                            f'You are not authorized to view filing {identifier}.'}), \
-                HTTPStatus.UNAUTHORIZED
 
         if original_filing:
             return jsonify(rv.redacted(rv.raw, jwt))
