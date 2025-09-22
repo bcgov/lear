@@ -20,7 +20,7 @@ import copy
 from contextlib import suppress
 from datetime import datetime as _datetime
 from http import HTTPStatus
-from typing import Any, Generic, Optional, Tuple, TypeVar, Union
+from typing import Generic, Optional, Tuple, TypeVar, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
