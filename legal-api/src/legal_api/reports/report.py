@@ -431,20 +431,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing['entityAct'] = act.get(legal_type, 'Business Corporations Act')
 
     def _set_dates(self, filing):
-        # Payment Date
+        # Filing Date
+        # use payment date if available
         payment_datetime = None
         if self._filing.payment_completion_date:
             payment_datetime = LegislationDatetime.as_legislation_timezone(self._filing.payment_completion_date)
-            filing['payment_date_time'] = LegislationDatetime.format_as_report_string(payment_datetime)
-
-        # Filing Date
-        # use payment date if available
-        if payment_datetime:
             filing_datetime = payment_datetime
-            filing['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
         else:
             # use filing date if payment date not available
             filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
+        filing['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
 
         # Effective Date
         effective_date = filing_datetime if self._filing.effective_date is None \
@@ -452,9 +448,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if self._report_key == 'noticeOfArticles' and self._filing.filing_type == 'changeOfDirectors':
             # NOA generated for COD, effective date (Issued Date and Time) is the payment date / filing date
-            filing['effective_date_time'] = (
-                filing['payment_date_time'] if payment_datetime else filing['filing_date_time']
-            )
+            filing['effective_date_time'] = filing['filing_date_time']
         else:
             filing['effective_date_time'] = LegislationDatetime.format_as_report_string(effective_date)
 
