@@ -438,8 +438,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['payment_date_time'] = LegislationDatetime.format_as_report_string(payment_datetime)
 
         # Filing Date
-        filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
-        filing['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
+        # use payment date if available
+        if payment_datetime:
+            filing_datetime = payment_datetime
+            filing['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
+        else:
+            # use filing date if payment date not available
+            filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
 
         # Effective Date
         effective_date = filing_datetime if self._filing.effective_date is None \
