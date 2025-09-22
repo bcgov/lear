@@ -432,13 +432,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_dates(self, filing):
         # Filing Date
-        # use payment date if available
-        payment_datetime = None
+        # use payment date if available else use filing date
         if self._filing.payment_completion_date:
-            payment_datetime = LegislationDatetime.as_legislation_timezone(self._filing.payment_completion_date)
-            filing_datetime = payment_datetime
+            filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.payment_completion_date)
         else:
-            # use filing date if payment date not available
             filing_datetime = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
         filing['filing_date_time'] = LegislationDatetime.format_as_report_string(filing_datetime)
 
