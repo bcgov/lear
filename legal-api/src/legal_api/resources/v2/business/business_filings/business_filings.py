@@ -321,8 +321,11 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
         if sub_type := filing.filing_sub_type:
             filing_json[filing_name]['type'] = sub_type
 
-        if filing.filing_json and (reason := filing.filing_json.get('filing', {}).get(filing_name, {}).get('reason')):
+        if filing.meta_data and (reason := filing.meta_data.get(filing_name, {}).get('reason')):
             filing_json[filing_name]['reason'] = reason
+
+        if filing.meta_data and (expiryDate := filing.meta_data.get(filing_name, {}).get('expiryDate')):
+            filing_json[filing_name]['expiryDate'] = expiryDate
 
         return jsonify({'filing': filing_json})
 

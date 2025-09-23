@@ -17,6 +17,7 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
+import json
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
@@ -277,6 +278,18 @@ def test_get_one_business_filing_by_id_public_json(session, client, jwt, test_na
     filing_json['filing']['header']['name'] = filing_name
 
     filing = factory_filing(b, filing_json)
+    expected_expiry_date = (datetime.now()).isoformat()
+    expected_reason = 'Limited Restoration Expired'
+    if filing_name == 'putBackOff':
+        # Filer adds these values into the meta_data so we need to do this manually here as part of the setup
+        filing._meta_data = json.loads(json.dumps(
+            {
+                filing_name: {
+                    'expiryDate': expected_expiry_date,
+                    'reason': expected_reason
+                }
+            }))
+        filing.save()
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}?public=true',
                     headers=create_header(jwt, [PUBLIC_USER], identifier))
@@ -287,12 +300,13 @@ def test_get_one_business_filing_by_id_public_json(session, client, jwt, test_na
     assert rv.json['filing'].get(filing_name) is not None
     if filing_json['filing'][filing_name].get('type'):
         assert rv.json['filing'][filing_name].get('type') is not None
-    if filing_json['filing'][filing_name].get('reason'):
-        assert rv.json['filing'][filing_name].get('reason') is not None
+    if filing_name == 'putBackOff':
+        assert rv.json['filing'][filing_name].get('reason') == expected_reason
+        assert rv.json['filing'][filing_name].get('expiryDate') == expected_expiry_date
 
     assert not any([key for key in rv.json['filing'] if key not in ['header', filing_name]])
     assert not any([key for key in rv.json['filing']['header'] if key not in ['name', 'effectiveDate']])
-    assert not any([key for key in rv.json['filing'][filing_name] if key not in ['dissolutionType', 'dissolutionDate', 'type', 'reason']])
+    assert not any([key for key in rv.json['filing'][filing_name] if key not in ['expiryDate', 'type', 'reason']])
 
 
 def test_get_404_when_business_invalid_filing_id(session, client, jwt):
