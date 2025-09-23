@@ -309,7 +309,7 @@ def test_good_standing_check_transition_filing(session, test_name, has_no_transi
     elif test_name == 'TRANSITION_COMPLETED':
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
 
-    check_result = business._has_no_transition_filed_after_restoration()
+    check_result = business.transition_needed_but_not_filed()
     assert check_result == has_no_transition_filed
     # with patch.object(flags, 'is_on', return_value=True):
     #     assert business.good_standing == good_standing
