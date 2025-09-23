@@ -49,16 +49,15 @@ class FilingTypes(BaseEnum):
 class FilingSubTypes(BaseEnum):
     """Enum for Filing Sub Types."""
 
-    pass
 
-class DissolutionTypes(FilingSubTypes):
+class DissolutionSubTypes(FilingSubTypes):
     """Enum for Dissolution Types."""
 
     VOLUNTARY = 'voluntary'
     ADMINISTRATIVE = 'administrative'
     INVOLUNTARY = 'involuntary'
 
-class RestorationTypes(FilingSubTypes):
+class RestorationSubTypes(FilingSubTypes):
     """Enum for Restoration Types."""
 
     FULL = 'fullRestoration'
@@ -66,14 +65,14 @@ class RestorationTypes(FilingSubTypes):
     LIMITED_EXT = 'limitedRestorationExtension'
     LIMITED_TO_FULL = 'limitedRestorationToFull'
 
-class AmalgamationTypes(FilingSubTypes):
+class AmalgamationSubTypes(FilingSubTypes):
     """Enum for Amalgamation Types."""
 
     REGULAR = 'regular'
     VERTICAL = 'vertical'
     HORIZONTAL = 'horizontal'
 
-class TransparencyRegisterTypes(FilingSubTypes):
+class TransparencyRegisterSubTypes(FilingSubTypes):
     """Enum for Transparency Register Types."""
 
     ANNUAL = 'annual'

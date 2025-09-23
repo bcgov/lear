@@ -65,7 +65,7 @@ from .resolution import (
 from .share_class import (
     ShareClass,
 )
-from .types.filings import FilingTypes, RestorationTypes
+from .types.filings import FilingTypes, RestorationSubTypes
 from .user import (
     User,
 )
@@ -559,8 +559,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 restoration_filing.business_id == self.id,
                 restoration_filing._filing_type == FilingTypes.RESTORATION.value,
                 restoration_filing._filing_sub_type.in_([
-                    RestorationTypes.FULL.value,
-                    RestorationTypes.LIMITED_TO_FULL.value
+                    RestorationSubTypes.FULL.value,
+                    RestorationSubTypes.LIMITED_TO_FULL.value
                 ]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,
                 not_(transition_exists_condition)
@@ -673,7 +673,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
         return d
 
-    def _extend_json(self, d):  # noqa: PLR0912
+    def _extend_json(self, d):
         """Include conditional fields to json."""
         if self.last_coa_date:
             d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
@@ -906,12 +906,13 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         # Query the database to find amalgamation filings
         # pylint: disable=protected-access
         # pylint: disable=unsubscriptable-object
-        filing = db.session.query(Filing). \
-            filter(Filing._status == Filing.Status.PAID.value,
-                   Filing._filing_type == FilingTypes.AMALGAMATIONAPPLICATION.value,
-                   Filing.filing_json['filing']['amalgamationApplication']
-                   ['amalgamatingBusinesses'].contains([where_clause])
-                   ).one_or_none()
+        filing = db.session.query(Filing).filter(
+            Filing._status == Filing.Status.PAID.value,
+            Filing._filing_type == FilingTypes.AMALGAMATIONAPPLICATION.value,
+            Filing.filing_json['filing'][FilingTypes.AMALGAMATIONAPPLICATION.value]
+            ['amalgamatingBusinesses'].contains([where_clause])
+        ).one_or_none()
+
         return filing
 
     @classmethod
