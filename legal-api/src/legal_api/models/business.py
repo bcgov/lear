@@ -506,40 +506,43 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return True
 
     def transition_needed_but_not_filed(self) -> bool:
-        """Return True for no transition filed after restoration check. Otherwise, return False.
+        """Return True if no transition filed after restoration check. Otherwise, return False.
 
-        Check whether the business needs to file Transition but has not done so
+        Check whether the business needs to file Transition but has not done so.
         """
         from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
+        
+        new_act_date = LegislationDatetime.as_legislation_timezone_from_date_str('2004-03-29')
+        if (
+            self.legal_type == Business.LegalTypes.EXTRA_PRO_A.value or
+            self.founding_date >= new_act_date
+        ):
+            return False  # No transition needed
 
-        new_act_date = func.date('2004-03-29 00:00:00+00:00')
         restoration_filing = aliased(Filing)
         transition_filing = aliased(Filing)
 
-        condition = exists().where(
+        # Transition exists condition
+        transition_exists_condition = exists().where(
             and_(
-                self.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
-                self.founding_date < new_act_date,
-                restoration_filing.business_id == self.id,
-                restoration_filing._filing_type.in_([  # pylint: disable=protected-access
-                    CoreFiling.FilingTypes.RESTORATION.value,
-                    CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
-                ]),
-                restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                not_(
-                    exists().where(
-                        and_(
-                            transition_filing.business_id == self.id,
-                            (transition_filing._filing_type ==  # pylint: disable=protected-access
-                             CoreFiling.FilingTypes.TRANSITION.value),
-                            (transition_filing._status ==  # pylint: disable=protected-access
-                             Filing.Status.COMPLETED.value),
-                            transition_filing.effective_date >= restoration_filing.effective_date
-                        )
-                    )
-                )
+                transition_filing.business_id == self.id,
+                transition_filing._filing_type == CoreFiling.FilingTypes.TRANSITION.value,
+                transition_filing._status == Filing.Status.COMPLETED.value,
+                transition_filing.effective_date >= restoration_filing.effective_date
             )
         )
+
+        # Main condition
+        condition = exists().where(
+            and_(
+                restoration_filing.business_id == self.id,
+                restoration_filing._filing_type == CoreFiling.FilingTypes.RESTORATION.value,
+                restoration_filing._filing_sub_type.in_(['fullRestoration', 'limitedRestorationToFull']),
+                restoration_filing._status == Filing.Status.COMPLETED.value,
+                not_(transition_exists_condition)
+            )
+        )
+
         return db.session.query(condition).scalar()
 
     @property

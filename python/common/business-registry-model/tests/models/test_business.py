@@ -294,7 +294,10 @@ RESTORATION_FILING['filing']['restoration'] = RESTORATION
 def test_good_standing_check_transition_filing(session, test_name, has_no_transition_filed, good_standing):
     "Assert that the business is in good standing with additional check for transition filing"
     business = factory_business_from_tests(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
-    restoration_filing = factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
+    restoration_filing = factory_completed_filing(business, 
+                                                  RESTORATION_FILING,
+                                                  filing_type='restoration',
+                                                  filing_sub_type='fullRestoration')
     if test_name == 'NO_NEED_TRANSITION_NEW_ACT':
         business.founding_date = datetime.utcnow()
         business.save()

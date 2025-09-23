@@ -65,7 +65,7 @@ from .resolution import (
 from .share_class import (
     ShareClass,
 )
-from .types.filings import FilingTypes
+from .types.filings import FilingTypes, RestorationTypes
 from .user import (
     User,
 )
@@ -380,7 +380,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 datetime.fromisoformat(tr_start_date))
 
         last_restoration_datetime = None
-        if restoration_filing := Filing.get_most_recent_filing(self.id, 'restoration'):
+        if restoration_filing := Filing.get_most_recent_filing(self.id, FilingTypes.RESTORATION.value):
             if restoration_filing.effective_date:
                 last_restoration_datetime = LegislationDatetime.as_legislation_timezone(
                     restoration_filing.effective_date)
@@ -511,9 +511,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if self.is_firm:
             return True
 
-        # involuntary dissolution, check transition filing
-        if self._has_no_transition_filed_after_restoration():
+        # check transition filing for corps
+        if self.legal_type in self.CORPS and self.transition_needed_but_not_filed():
             return False
+
         # Date of last AR or founding date if they haven't yet filed one
         last_ar_date = self.last_ar_date or self.founding_date
         # Good standing is if last AR was filed within the past 1 year, 2 months and 1 day and is in an active state
@@ -526,44 +527,46 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 return date_cutoff.replace(tzinfo=pytz.UTC) > datetime.utcnow()
         return True
 
-    def _has_no_transition_filed_after_restoration(self) -> bool:
-        """Return True for no transition filed after restoration check. Otherwise, return False.
+    
+    def transition_needed_but_not_filed(self) -> bool:
+        """Return True if no transition filed after restoration check. Otherwise, return False.
 
-        Check whether the business needs to file Transition but does not file it within 12 months after restoration.
+        Check whether the business needs to file Transition but has not done so.
         """
-        new_act_date = func.date('2004-03-29 00:00:00+00:00')
+        new_act_date = LegislationDatetime.as_legislation_timezone_from_date_str('2004-03-29')
+        if (
+            self.legal_type == Business.LegalTypes.EXTRA_PRO_A.value or
+            self.founding_date >= new_act_date
+        ):
+            return False  # No transition needed
+
         restoration_filing = aliased(Filing)
         transition_filing = aliased(Filing)
 
-        restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
-        condition = exists(Filing).where(
+        # Transition exists condition
+        transition_exists_condition = exists().where(
             and_(
-                self.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
-                self.founding_date < new_act_date,
-                restoration_filing.business_id == self.id,
-                restoration_filing._filing_type.in_([  # pylint: disable=protected-access
-                    FilingTypes.RESTORATION.value,
-                    FilingTypes.RESTORATIONAPPLICATION.value
-                ]),
-                restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
-                restoration_filing_effective_cutoff <= func.timezone('UTC', func.now()),
-                not_(
-                    exists(Filing).where(
-                        and_(
-                            transition_filing.business_id == self.id,
-                            (transition_filing._filing_type ==  # pylint: disable=protected-access
-                             FilingTypes.TRANSITION.value),
-                            (transition_filing._status ==  # pylint: disable=protected-access
-                             Filing.Status.COMPLETED.value),
-                            transition_filing.effective_date.between(
-                                restoration_filing.effective_date,
-                                restoration_filing_effective_cutoff
-                            )
-                        )
-                    )
-                )
+                transition_filing.business_id == self.id,
+                transition_filing._filing_type == FilingTypes.TRANSITION.value,
+                transition_filing._status == Filing.Status.COMPLETED.value,
+                transition_filing.effective_date >= restoration_filing.effective_date
             )
         )
+
+        # Main condition
+        condition = exists().where(
+            and_(
+                restoration_filing.business_id == self.id,
+                restoration_filing._filing_type == FilingTypes.RESTORATION.value,
+                restoration_filing._filing_sub_type.in_([
+                    RestorationTypes.FULL.value,
+                    RestorationTypes.LIMITED_TO_FULL.value
+                ]),
+                restoration_filing._status == Filing.Status.COMPLETED.value,
+                not_(transition_exists_condition)
+            )
+        )
+
         return db.session.query(condition).scalar()
 
     @property
@@ -661,12 +664,17 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if self.tax_id:
             d['taxId'] = self.tax_id
 
+        if self.state_filing_id:
+            if (amalgamated_into := self.get_amalgamated_into()):
+                d['amalgamatedInto'] = amalgamated_into
+            else:
+                base_url = current_app.config.get('LEGAL_API_BASE_URL')
+                d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
+
         return d
 
     def _extend_json(self, d):  # noqa: PLR0912
         """Include conditional fields to json."""
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
-
         if self.last_coa_date:
             d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
         if self.last_cod_date:
@@ -677,11 +685,6 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
         if self.fiscal_year_end_date:
             d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
-        if self.state_filing_id:
-            if (amalgamated_into := self.get_amalgamated_into()):
-                d['amalgamatedInto'] = amalgamated_into
-            else:
-                d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
 
         if self.start_date:
             d['startDate'] = LegislationDatetime.format_as_legislation_date(self.start_date)
@@ -701,8 +704,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if self.accession_number:
             d['accessionNumber'] = self.accession_number
 
-        d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
-        d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')
+        d['hasCorrections'] = Filing.has_completed_filing(self.id, FilingTypes.CORRECTION.value)
+        d['hasCourtOrders'] = Filing.has_completed_filing(self.id, FilingTypes.COURTORDER.value)
 
     @property
     def compliance_warnings(self):
@@ -905,7 +908,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         # pylint: disable=unsubscriptable-object
         filing = db.session.query(Filing). \
             filter(Filing._status == Filing.Status.PAID.value,
-                   Filing._filing_type == 'amalgamationApplication',
+                   Filing._filing_type == FilingTypes.AMALGAMATIONAPPLICATION.value,
                    Filing.filing_json['filing']['amalgamationApplication']
                    ['amalgamatingBusinesses'].contains([where_clause])
                    ).one_or_none()
