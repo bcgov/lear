@@ -285,23 +285,24 @@ RESTORATION_FILING = copy.deepcopy(FILING_HEADER)
 RESTORATION_FILING['filing']['restoration'] = RESTORATION
 
 
-@pytest.mark.parametrize('test_name, has_no_transition_filed, good_standing', [
+@pytest.mark.parametrize('test_name, transition_needed, good_standing', [
     ('NO_NEED_TRANSITION_NEW_ACT', False, True),
-    ('NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION', False, False),
+    ('NO_TRANSITION_IN_LIMITED_REST', False, False),
     ('TRANSITION_COMPLETED', False, True),
     ('TRANSITION_NOT_FILED', True, False)
 ])
-def test_good_standing_check_transition_filing(session, test_name, has_no_transition_filed, good_standing):
+def test_good_standing_check_transition_filing(session, test_name, transition_needed, good_standing):
     "Assert that the business is in good standing with additional check for transition filing"
     business = factory_business_from_tests(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
-    restoration_filing = factory_completed_filing(business, 
-                                                  RESTORATION_FILING,
-                                                  filing_type='restoration',
-                                                  filing_sub_type='fullRestoration')
+    restoration_filing = factory_completed_filing(
+        business, 
+        RESTORATION_FILING,
+        filing_type='restoration',
+        filing_sub_type= 'limitedRestoration' if test_name == 'NO_TRANSITION_IN_LIMITED_REST' else 'fullRestoration')
     if test_name == 'NO_NEED_TRANSITION_NEW_ACT':
         business.founding_date = datetime.utcnow()
         business.save()
-    elif test_name == 'NO_NEED_TRANSITION_BUT_IN_LIMITED_RESTORATION':
+    elif test_name == 'NO_TRANSITION_IN_LIMITED_REST':
         business.restoration_expiry_date = datetime.utcnow() + datedelta.datedelta(years=1)
         business.save()
         restoration_filing.effective_date = datetime.utcnow()
@@ -310,9 +311,8 @@ def test_good_standing_check_transition_filing(session, test_name, has_no_transi
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
 
     check_result = business.transition_needed_but_not_filed()
-    assert check_result == has_no_transition_filed
-    # with patch.object(flags, 'is_on', return_value=True):
-    #     assert business.good_standing == good_standing
+    assert check_result == transition_needed
+    assert business.good_standing == good_standing
 
 
 def test_business_json(app, session):
