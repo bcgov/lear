@@ -38,17 +38,11 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     else:
         business_json = (filing.json)["filing"].get("business")
 
-    filing_date = datetime.fromisoformat(filing.filing_date.isoformat())
-    leg_tmz_filing_date = LegislationDatetime.as_legislation_timezone(filing_date)
-    hour = leg_tmz_filing_date.strftime("%I").lstrip("0")
-    am_pm = leg_tmz_filing_date.strftime("%p").lower()
-    leg_tmz_filing_date = leg_tmz_filing_date.strftime(f"%B %d, %Y at {hour}:%M {am_pm} Pacific time")
+    # payment date if available otherwise filing date
+    leg_tmz_filing_date = LegislationDatetime.format_as_report_string(
+        filing.payment_completion_date if filing.payment_completion_date else filing.filing_date)
 
-    effective_date = datetime.fromisoformat(filing.effective_date.isoformat())
-    leg_tmz_effective_date = LegislationDatetime.as_legislation_timezone(effective_date)
-    hour = leg_tmz_effective_date.strftime("%I").lstrip("0")
-    am_pm = leg_tmz_effective_date.strftime("%p").lower()
-    leg_tmz_effective_date = leg_tmz_effective_date.strftime(f"%B %d, %Y at {hour}:%M {am_pm} Pacific time")
+    leg_tmz_effective_date = LegislationDatetime.format_as_report_string(filing.effective_date)
 
     return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
