@@ -360,11 +360,17 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
             pass_code=pass_code
         )
 
+        # Determine which email to use for the entity contact (if any)
         admin_email = tombstone_data.get('admin_email')
         if config.USE_CUSTOM_CONTACT_EMAIL:
             admin_email = config.CUSTOM_CONTACT_EMAIL
 
-        if entity_status == HTTPStatus.OK and admin_email:
+        # Only fail if the entity creation failed. Email is optional.
+        if entity_status != HTTPStatus.OK:
+            raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
+
+        # Update the contact email when one is provided/configured
+        if admin_email:
             update_email_status = AuthService.update_contact_email(
                 config=config,
                 identifier=business_data['identifier'],
@@ -372,8 +378,6 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
             )
             if update_email_status != HTTPStatus.OK:
                 raise Exception(f"""Failed to update admin email in auth {business_data['identifier']}""")
-        else:
-            raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
 
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
