@@ -31,7 +31,7 @@ def process(business: Business, filing_sub_type: str) -> None:
     credentials = get_all_digital_credentials_for_business(business=business)
 
     if not (credentials and len(credentials)):
-        current_app.logger.warning(
+        current_app.logger.debug(
             f"No issued credentials found for business: {business.identifier}"
         )
         return None
