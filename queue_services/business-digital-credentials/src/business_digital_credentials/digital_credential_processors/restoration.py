@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Processing put back on actions."""
+"""Processing restoration actions."""
+
 
 from flask import current_app
 
@@ -24,8 +25,8 @@ from .helpers import (
 
 
 def process(business: Business) -> None:
-    """Process put back on actions."""
-    current_app.logger.debug(f"Process put back on actions for: {business.identifier}")
+    """Process restoration actions."""
+    current_app.logger.debug(f"Process restoration on actions for: {business.identifier}")
     credentials = get_all_digital_credentials_for_business(business=business)
 
     if not (credentials and len(credentials)):
@@ -36,6 +37,6 @@ def process(business: Business) -> None:
 
     for credential in credentials:
         revoke_digital_credential(
-            credential=credential, reason=DCRevocationReason.PUT_BACK_ON
+            credential=credential, reason=DCRevocationReason.RESTORATION
         )
     return None

@@ -21,9 +21,11 @@ from simple_cloudevent import SimpleCloudEvent
 from business_digital_credentials.digital_credential_processors import (
     admin_revoke,
     business_number,
+    change_of_directors,
     change_of_registration,
     dissolution,
     put_back_on,
+    restoration,
 )
 from business_digital_credentials.exceptions import (
     FilingStatusException,
@@ -52,12 +54,13 @@ class BusinessMessageType(Enum):
     """Business Digital Credential business message type."""
 
     BN = f"{BUSINESS_PREFIX}.bn"
+    CHANGE_OF_DIRECTORS = f"{BUSINESS_PREFIX}.{FilingTypes.CHANGEOFDIRECTORS.value}"
     CHANGE_OF_REGISTRATION = (
         f"{BUSINESS_PREFIX}.{FilingTypes.CHANGEOFREGISTRATION.value}"
     )
     DISSOLUTION = f"{BUSINESS_PREFIX}.{FilingTypes.DISSOLUTION.value}"
     PUT_BACK_ON = f"{BUSINESS_PREFIX}.{FilingTypes.PUTBACKON.value}"
-
+    RESTORATION = f"{BUSINESS_PREFIX}.{FilingTypes.RESTORATION.value}"
 
 @bp.route("/", methods=("POST",))
 def worker():
@@ -111,9 +114,11 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         raise QueueException("Digital credential message is missing data.")
 
     if not etype or etype not in [
+        BusinessMessageType.CHANGE_OF_DIRECTORS.value,
         BusinessMessageType.CHANGE_OF_REGISTRATION.value,
         BusinessMessageType.DISSOLUTION.value,
         BusinessMessageType.PUT_BACK_ON.value,
+        BusinessMessageType.RESTORATION.value,
         BusinessMessageType.BN.value,
         AdminMessage.REVOKE.value,
     ]:
@@ -162,9 +167,11 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         filing_type = filing.filing_type
         current_app.logger.debug(f"Filing type: {filing_type}")
         if filing_type not in (
+            FilingTypes.CHANGEOFDIRECTORS.value,
             FilingTypes.CHANGEOFREGISTRATION.value,
             FilingTypes.DISSOLUTION.value,
             FilingTypes.PUTBACKON.value,
+            FilingTypes.RESTORATION.value,
         ):
             current_app.logger.debug(
                 f"Unsupported filing type: {filing_type} - message acknowledged"
@@ -186,9 +193,13 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         )
 
         # Process based on filing type
+        if filing_type == FilingTypes.CHANGEOFDIRECTORS.value:
+            change_of_directors.process(business, filing)
         if filing_type == FilingTypes.CHANGEOFREGISTRATION.value:
             change_of_registration.process(business, filing)
         elif filing_type == FilingTypes.DISSOLUTION.value:
             dissolution.process(business, filing.filing_sub_type)
         elif filing_type == FilingTypes.PUTBACKON.value:
             put_back_on.process(business)
+        elif filing_type == FilingTypes.RESTORATION.value:
+            restoration.process(business)

@@ -4,7 +4,7 @@
 
 # Application Name
 
-BC Registries Names Business Filer Service
+BC Registries - Digital Business Card credentials queue service
 
 ## Technology Stack Used
 * poetry
@@ -12,24 +12,31 @@ BC Registries Names Business Filer Service
 * Postgres -  SQLAlchemy, psycopg2-binary & alembic
 
 ## Project Status
+As of 2025-08-14 in Production on Google Cloud Platform
 
 ## Documentation
-
 
 ### Local Dev Setup
 Refer to the Makefile for specifics
 
-Build and run locally
+**Build and run locally**
 ```
 make build
 make run
 ```
 
-Test
+To run locally with hot reload can use `make run-dev`.
 
-`poetry install`
+If you need to make changes to dependent modules (such as the ones in python/common like *business-registry-digital-credentials* or *business-registry-model*) those can be developed locally and loaded in with `run-dev` with hot reload. See commented out docker command setup in makefile for examples.
 
-`make test`
+**Test**
+
+```
+poetry install
+make lint 
+make test
+```
+
 ## Security
 
 ## Getting Help or Reporting an Issue
