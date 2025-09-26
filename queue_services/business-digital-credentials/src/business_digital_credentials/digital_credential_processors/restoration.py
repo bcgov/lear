@@ -13,29 +13,15 @@
 # limitations under the License.
 """Processing restoration actions."""
 
-from flask import current_app
-from enum import Enum
 
-from business_model.models import Business
+from flask import current_app
+
+from business_model.models import Business, DCRevocationReason
 
 from .helpers import (
     get_all_digital_credentials_for_business,
     revoke_digital_credential,
 )
-
-class DCRevocationReason(Enum):
-    """Digital Credential Revocation Reasons."""
-
-    ADMINISTRATIVE_REVOCATION = 'Your credential was revoked.'
-    UPDATED_INFORMATION = 'You were offered a new credential with updated information ' \
-        'and that revoked all previous copies.'
-    VOLUNTARY_DISSOLUTION = 'You chose to dissolve your business. ' \
-        'A new credential was offered that reflects the new company status and that revoked all previous copies.'
-    ADMINISTRATIVE_DISSOLUTION = 'Your business was dissolved by the Registrar.'
-    PUT_BACK_ON = 'Your business was put back on the Registry. '
-    RESTORATION = 'Your business was restored to the Registry. '
-    SELF_REISSUANCE = 'You chose to issue yourself a new credential and that revoked all previous copies.'
-    SELF_REVOCATION = 'You chose to revoke your own credential.'
 
 
 def process(business: Business) -> None:
@@ -44,7 +30,7 @@ def process(business: Business) -> None:
     credentials = get_all_digital_credentials_for_business(business=business)
 
     if not (credentials and len(credentials)):
-        current_app.logger.warning(
+        current_app.logger.debug(
             f"No issued credentials found for business: {business.identifier}"
         )
         return None

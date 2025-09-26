@@ -182,3 +182,49 @@ def replace_digital_credential(
         return None
     except Exception as err:
         raise err
+
+def _does_officer_match_user(officer: dict, user: DCBusinessUser) -> bool:
+    """Check if officer name matches user name (case insensitive)."""
+    return (
+        officer.get("firstName", "").lower() == user.firstname.lower()
+        and officer.get("lastName", "").lower() == user.lastname.lower()
+    )
+
+
+def is_user_in_officers(
+        user: DCBusinessUser, 
+        filing_data: dict,
+        role_name: str
+) -> bool:
+    """Check if the user associated with the business user is in the filing parties as a specific role."""
+    user_in_parties = False
+    for party in filing_data.get("parties", []):
+        officer = party.get("officer", {})
+        roles = party.get("roles", [])
+        has_partner_role = any(role.get("roleType") == role_name for role in roles)
+        if _does_officer_match_user(officer, user) and has_partner_role:
+            user_in_parties = True
+            break
+    return user_in_parties
+
+
+def does_officer_have_action(
+        user: DCBusinessUser, 
+        filing_data: dict,
+        officer_type: str,
+        action_type: str
+) -> bool:
+    """
+    Check if a type of officer has a specific action on them.
+    e.g., Check if a director has a 'ceased' action.
+    """
+    for officer_record in filing_data.get(officer_type, []):
+        officer = officer_record.get("officer", {})
+        if _does_officer_match_user(officer, user):
+            # Check if they have the supplied action
+            actions = [a.lower() for a in officer_record.get("actions", [])]
+            if action_type.lower() in actions:
+                return True
+            break
+    
+    return False

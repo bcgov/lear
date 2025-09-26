@@ -77,10 +77,12 @@ FILING_TYPE_MAPPER = {
 LEGAL_NAME = "test business"
 
 
-def create_user(user_name='test_user'):
+def create_user(user_name='test_user', firstname=None, lastname=None):
     """Return a new user model."""
     user = User()
     user.username = user_name
+    user.firstname = firstname or 'TestFirst'
+    user.lastname = lastname or 'TestLast'
     user.save()
     return user
 

@@ -21,6 +21,7 @@ from simple_cloudevent import SimpleCloudEvent
 from business_digital_credentials.digital_credential_processors import (
     admin_revoke,
     business_number,
+    change_of_directors,
     change_of_registration,
     dissolution,
     put_back_on,
@@ -53,13 +54,13 @@ class BusinessMessageType(Enum):
     """Business Digital Credential business message type."""
 
     BN = f"{BUSINESS_PREFIX}.bn"
+    CHANGE_OF_DIRECTORS = f"{BUSINESS_PREFIX}.{FilingTypes.CHANGEOFDIRECTORS.value}"
     CHANGE_OF_REGISTRATION = (
         f"{BUSINESS_PREFIX}.{FilingTypes.CHANGEOFREGISTRATION.value}"
     )
     DISSOLUTION = f"{BUSINESS_PREFIX}.{FilingTypes.DISSOLUTION.value}"
     PUT_BACK_ON = f"{BUSINESS_PREFIX}.{FilingTypes.PUTBACKON.value}"
     RESTORATION = f"{BUSINESS_PREFIX}.{FilingTypes.RESTORATION.value}"
-
 
 @bp.route("/", methods=("POST",))
 def worker():
@@ -70,9 +71,9 @@ def worker():
         if not request.data:
             return {}, HTTPStatus.OK
 
-        # if msg := verify_gcp_jwt(request):
-        #     current_app.logger.info(msg)
-        #     return {}, HTTPStatus.FORBIDDEN
+        if msg := verify_gcp_jwt(request):
+            current_app.logger.info(msg)
+            return {}, HTTPStatus.FORBIDDEN
 
         current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
@@ -113,6 +114,7 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         raise QueueException("Digital credential message is missing data.")
 
     if not etype or etype not in [
+        BusinessMessageType.CHANGE_OF_DIRECTORS.value,
         BusinessMessageType.CHANGE_OF_REGISTRATION.value,
         BusinessMessageType.DISSOLUTION.value,
         BusinessMessageType.PUT_BACK_ON.value,
@@ -165,6 +167,7 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         filing_type = filing.filing_type
         current_app.logger.debug(f"Filing type: {filing_type}")
         if filing_type not in (
+            FilingTypes.CHANGEOFDIRECTORS.value,
             FilingTypes.CHANGEOFREGISTRATION.value,
             FilingTypes.DISSOLUTION.value,
             FilingTypes.PUTBACKON.value,
@@ -190,6 +193,8 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         )
 
         # Process based on filing type
+        if filing_type == FilingTypes.CHANGEOFDIRECTORS.value:
+            change_of_directors.process(business, filing)
         if filing_type == FilingTypes.CHANGEOFREGISTRATION.value:
             change_of_registration.process(business, filing)
         elif filing_type == FilingTypes.DISSOLUTION.value:
