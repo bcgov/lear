@@ -101,7 +101,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
-    business = business if business else filing.json["filing"]["registration"]["business"]
+    filing_data = (filing.json)["filing"][filing_type]
+    if not business:  # if filing status PAID
+        business = filing_data["nameRequest"]
+        business["identifier"] = filing.temp_reg
     identifier = business.get("identifier")
     name_request = filing.json["filing"]["registration"]["nameRequest"]
     corp_type = CorpType.find_by_id(name_request.get("legalType"))
@@ -112,7 +115,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,

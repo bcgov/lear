@@ -39,6 +39,9 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # get template variables from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    if not business:
+        business = (filing.json)["filing"].get("business")
+
     legal_type = business.get("legalType")
 
     # display company name for existing businesses and temp businesses

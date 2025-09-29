@@ -32,11 +32,10 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     """Get filing info for the email."""
     filing = Filing.find_by_id(filing_id)
+    business_json = None
     if filing.business_id:
         business = Business.find_by_internal_id(filing.business_id)
         business_json = business.json()
-    else:
-        business_json = (filing.json)["filing"].get("business")
 
     # payment date if available otherwise filing date
     leg_tmz_filing_date = LegislationDatetime.format_as_report_string(
@@ -138,6 +137,14 @@ def get_org_id_for_temp_identifier(identifier, token: str) -> int:
     """Get org id from auth for the specific identifier."""
     account_response = get_account_by_affiliated_identifier(identifier, token)
     orgs = account_response.get("orgs")
+    if not orgs or len(orgs) == 0:
+        additional_info = ""
+        if identifier.startswith("T"):
+            additional_info = ("This is likely due to the temp identifier being removed from the account."
+                        "It should work on queue retry (with the business identifier).")
+        
+        current_app.logger.error(f"Queue Error: No account in auth for identifier {identifier}. {additional_info}")
+        raise Exception
     return orgs[0].get("id")  # Temp identifer cannot be present in more than one account
 
 

@@ -108,7 +108,7 @@ def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
                 }
             )
             attach_order += 1
-    if status == Filing.Status.COMPLETED.value:
+    elif status == Filing.Status.COMPLETED.value:
         if legal_type != Business.LegalTypes.COOP.value:
             # add notice of articles
             noa_pdf_type = "noticeOfArticles"
@@ -197,8 +197,9 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
-    if filing_type == "incorporationApplication" and status == Filing.Status.PAID.value:
-        business = (filing.json)["filing"]["incorporationApplication"]["nameRequest"]
+    filing_data = (filing.json)["filing"][filing_type]
+    if not business:  # incorporationApplication (if filing status PAID):
+        business = filing_data["nameRequest"]
         business["identifier"] = filing.temp_reg
 
     legal_type = business.get("legalType")
@@ -211,7 +212,6 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
     # render template with vars
     numbered_description = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
         filing=filing_data,
