@@ -258,10 +258,10 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "amalgamationOut":
             email = amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "consentContinuationOut":
+        elif etype == "consentContinuationOut" and option == Filing.Status.COMPLETED.value:
             email = consent_continuation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "continuationOut":
+        elif etype == "continuationOut" and option == Filing.Status.COMPLETED.value:
             email = continuation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "specialResolution":

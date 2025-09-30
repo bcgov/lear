@@ -39,8 +39,11 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # get template variables from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
-    if not business:
-        business = (filing.json)["filing"].get("business")
+    withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
+    if not business: # Temporary business
+        business = (withdrawn_filing.json)["filing"][withdrawn_filing.filing_type]["nameRequest"]
+        business["identifier"] = filing.temp_reg
+
 
     legal_type = business.get("legalType")
 
@@ -52,7 +55,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         or "Unknown Company"
     )
     # record to be withdrawn --> withdrawn filing display name
-    withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
     withdrawn_filing_display_name = FilingMeta.get_display_name(
         business["legalType"],
         withdrawn_filing.filing_type,
@@ -64,7 +66,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filled_template = substitute_template_parts(template)
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
-    filing_data = (filing.json)["filing"][f"{filing_type}"]
+    filing_data = (filing.json)["filing"][filing_type]
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
 
     # default to None
