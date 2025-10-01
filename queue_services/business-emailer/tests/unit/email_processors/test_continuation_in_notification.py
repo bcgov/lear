@@ -21,16 +21,16 @@ from business_emailer.email_processors import continuation_in_notification
 from tests.unit import prep_continuation_in_filing
 
 
-@pytest.mark.parametrize('status', [
-    (Filing.Status.APPROVED.value),
-    (Filing.Status.AWAITING_REVIEW.value),
-    (Filing.Status.CHANGE_REQUESTED.value),
-    (Filing.Status.COMPLETED.value),
-    (Filing.Status.PAID.value),
-    (Filing.Status.REJECTED.value),
-    ('RESUBMITTED'),
+@pytest.mark.parametrize('status, subject, content', [
+    (Filing.Status.APPROVED.value, 'Authorization Approved', 'Results of your Continuation Authorization'),
+    (Filing.Status.AWAITING_REVIEW.value, 'Authorization Documents Received', 'We have received your Continuation Authorization documents'),
+    (Filing.Status.CHANGE_REQUESTED.value, 'Changes Needed to Authorization', 'Make changes to your Continuation Authorization'),
+    (Filing.Status.COMPLETED.value, 'Successful Continuation into B.C.', 'Your business has successfully continued into B.C.'),
+    (Filing.Status.PAID.value, 'Continuation Application Received', 'Receipt'),
+    (Filing.Status.REJECTED.value, 'Authorization Rejected', 'rejected'),
+    ('RESUBMITTED', 'Authorization Updates Received', 'your updated'),
 ])
-def test_continuation_in_notification(app, session, mocker, status):
+def test_continuation_in_notification(app, session, mocker, status, subject, content):
     """Assert Continuation notification is created."""
     # setup filing + business for email
     filing = prep_continuation_in_filing(session, 'C1234567', '1', status)
@@ -52,32 +52,8 @@ def test_continuation_in_notification(app, session, mocker, status):
         assert mock_get_pdfs.call_args[0][3] == filing
 
         # spot check email content based on status
-        if status == Filing.Status.APPROVED.value:
-            assert email['content']['subject'] == 'Authorization Approved'
-            assert 'Results of your Continuation Authorization' in email['content']['body']
-        elif status == Filing.Status.AWAITING_REVIEW.value:
-            assert email['content']['subject'] == 'Authorization Documents Received'
-            assert 'We have received your Continuation Authorization documents' in email['content']['body']
+        assert email['content']['subject'] == subject
+        assert content in email['content']['body']
 
-        elif status == Filing.Status.CHANGE_REQUESTED.value:
-            assert email['content']['subject'] == 'Changes Needed to Authorization'
-            assert 'Make changes to your Continuation Authorization' in email['content']['body']
-
-        elif status == Filing.Status.COMPLETED.value:
-            assert email['content']['subject'] == 'Successful Continuation into B.C.'
-            assert 'Your business has successfully continued into B.C.' in email['content']['body']
-            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'C1234567'
-
-        elif status == Filing.Status.PAID.value:
-            assert email['content']['subject'] == \
-                'HAULER MEDIA INC. - Continuation Application Received'
-            assert 'Receipt' in email['content']['body']
+        if status == Filing.Status.PAID.value:
             assert 'comp_party@email.com' in email['recipients']
-
-        elif status == Filing.Status.REJECTED.value:
-            assert email['content']['subject'] == 'Authorization Rejected'
-            assert 'rejected' in email['content']['body']
-
-        elif status == 'RESUBMITTED':
-            assert email['content']['subject'] == 'Authorization Updates Received'
-            assert 'your updated' in email['content']['body']

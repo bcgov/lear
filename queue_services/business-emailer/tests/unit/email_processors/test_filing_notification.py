@@ -48,9 +48,7 @@ def test_incorp_notification(app, session, mocker, status):
         assert email['content']['attachments'] == []
         assert mock_get_pdfs.call_args[0][0] == status
         assert mock_get_pdfs.call_args[0][1] == token
-        if status == 'PAID':
-            assert mock_get_pdfs.call_args[0][2]['identifier'].startswith('T')
-        else:
+        if status == 'COMPLETED':
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
 
         assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'

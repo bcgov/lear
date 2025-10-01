@@ -42,7 +42,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id)
     if not business: # Temporary business
         business = (withdrawn_filing.json)["filing"][withdrawn_filing.filing_type]["nameRequest"]
-        business["identifier"] = filing.temp_reg
+        business["identifier"] = withdrawn_filing.temp_reg
 
 
     legal_type = business.get("legalType")
