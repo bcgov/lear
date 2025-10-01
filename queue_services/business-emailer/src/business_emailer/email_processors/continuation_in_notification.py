@@ -153,8 +153,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
-    filing_data = (filing.json)["filing"][f"{filing_type}"]
-    if status == Filing.Status.PAID.value:
+    filing_data = (filing.json)["filing"][filing_type]
+    if not business:  # if filing status PAID
         business = filing_data["nameRequest"]
         business["identifier"] = filing.temp_reg
     legal_type = business.get("legalType")

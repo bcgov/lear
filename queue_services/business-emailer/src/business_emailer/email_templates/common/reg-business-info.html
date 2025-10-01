@@ -20,7 +20,7 @@
   [[20px.html]]
   <div>
     <div class="name bold">Registration number:</div>
-    {% if status == 'PAID' and filing_type == 'registration' %}
+    {% if business.identifier.startswith('T') %}
     <div class="value">Pending</div>
     {% else %}
     <!-- Eg, FM1234567 -->

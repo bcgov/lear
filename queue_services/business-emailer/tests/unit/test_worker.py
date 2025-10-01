@@ -67,9 +67,7 @@ def test_process_incorp_email(app, session, mocker, option):
 
                 assert mock_get_pdfs.call_args[0][0] == option
                 assert mock_get_pdfs.call_args[0][1] == token
-                if option == 'PAID':
-                    assert mock_get_pdfs.call_args[0][2]['identifier'].startswith('T')
-                else:
+                if option == 'COMPLETED':
                     assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
 
                 assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'

@@ -35,7 +35,7 @@
     {% else %}
       <div class="name bold">Incorporation Number:</div>
     {% endif %}
-    {% if filing_status == 'PAID' and filing_type == 'incorporationApplication' %}
+    {% if business.identifier.startswith('T') %}
     <div class="value">Pending</div>
     {% else %}
     <!-- Eg, BC0878529 -->

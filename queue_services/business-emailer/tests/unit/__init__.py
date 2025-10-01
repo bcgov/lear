@@ -194,7 +194,9 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
             'foundingDate': business.founding_date.isoformat()
         }
 
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business_id)
+    temp_identifier = generate_temp_filing()
+    filing = create_filing(token=payment_id, filing_json=filing_template,
+                           business_id=business_id, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
     filing.save()
     if option in ['COMPLETED']:
@@ -858,6 +860,7 @@ def create_future_effective_filing(
         del filing_template['filing']['business']
         new_business_filing_json = copy.deepcopy(filing_json)
         new_business_filing_json['nameRequest']['legalType'] = legal_type
+        new_business_filing_json['nameRequest']['legalName'] = legal_name
         filing_template['filing'][filing_type] = new_business_filing_json
         filing_template['filing'][filing_type]['contactPoint']['email'] = 'recipient@email.com'
     else:
