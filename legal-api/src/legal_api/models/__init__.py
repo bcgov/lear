@@ -22,6 +22,7 @@ from .authorized_role_permission import AuthorizedRolePermission
 from .batch import Batch
 from .batch_processing import BatchProcessing
 from .business import Business  # noqa: I001
+from .business_account_settings import BusinessAccountSettings
 from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .configuration import Configuration
@@ -66,6 +67,7 @@ __all__ = (
     'Batch',
     'BatchProcessing',
     'Business',
+    'BusinessAccountSettings',
     'ColinLastUpdate',
     'Comment',
     'Configuration',
