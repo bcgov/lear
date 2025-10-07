@@ -1080,7 +1080,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                         PartyRole.RoleTypes.PARTNER.value,
                         PartyRole.RoleTypes.PROPRIETOR.value]
                 ]:
-                        filing['newParties'].append(party)
+                    filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
                 prev_completed_filing, self._business.id, True)
