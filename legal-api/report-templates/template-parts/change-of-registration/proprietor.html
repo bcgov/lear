@@ -1,4 +1,4 @@
-{% if partyChange %}
+{% if partyChange or newParties %}
 <div class="no-page-break">
   <div class="section-title mt-4">
       {% if header.name == 'correction' %}
@@ -9,9 +9,10 @@
   </div>
 </div>
 <table class="section-data section-data-table mt-4" role="presentation">
+  {% set parties = parties or newParties %}
   {% for party in (parties| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + parties| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
     {% for party_role in party.roles %}
-      {% if party_role.roleType in ['Partner', 'Proprietor'] %}
+      {% if party_role.roleType in ['Proprietor'] %}
         <tr class="no-page-break">
           <td class="col-33">
             <div class="section-sub-title">
