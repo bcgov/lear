@@ -45,13 +45,13 @@ class BusinessAccountSettings(db.Model):
     account_id = db.Column(db.Integer, nullable=True)
     business_account_constraint = db.UniqueConstraint(business_id, account_id)
     # Contact
-    email = db.Column("email", db.String(100))
-    phone = db.Column("phone", db.String(15))
-    phone_extension = db.Column("phone_extension", db.String(10))
+    email = db.Column('email', db.String(100))
+    phone = db.Column('phone', db.String(15))
+    phone_extension = db.Column('phone_extension', db.String(10))
     # Notification preferences
-    ar_reminder = db.Column("ar_reminder", db.Boolean, default=True, nullable=False)
+    ar_reminder = db.Column('ar_reminder', db.Boolean, default=True, nullable=False)
 
-    business = db.relationship("Business", foreign_keys=[business_id])
+    business = db.relationship('Business', foreign_keys=[business_id])
 
     @property
     def json(self):
