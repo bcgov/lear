@@ -13,7 +13,6 @@
 # limitations under the License.
 """Date time utilities."""
 # from datetime import datetime, timezone
-import time as _time
 from datetime import date, datetime as _datetime, timedelta, timezone  # pylint: disable=unused-import # noqa: E501, F401, I001, I005
 # noqa: I003,I005
 
@@ -23,9 +22,8 @@ class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha dat
 
     @classmethod
     def utcnow(cls):
-        """Construct a UTC non-naive datetime, meaning it includes timezone from time.time()."""
-        time_stamp = _time.time()
-        return super().utcfromtimestamp(time_stamp).replace(tzinfo=timezone.utc)
+        """Construct a timezone-aware UTC datetime, which includes timezone from time.time()."""
+        return super().now(tz=timezone.utc)
 
     @classmethod
     def from_date(cls, date_obj):

@@ -14,7 +14,6 @@ import copy
 import json
 import os
 from contextlib import suppress
-from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
 from typing import Final
@@ -41,7 +40,7 @@ from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import MinioService, VersionedBusinessDetailsService, flags  # pylint: disable=line-too-long
 from legal_api.utils.auth import jwt
-from legal_api.utils.datetime import timezone
+from legal_api.utils.datetime import datetime
 from legal_api.utils.formatting import float_to_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -573,7 +572,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing['ceasedReceivers'] = self._format_receiver_dates(ceased_receivers)
 
         all_receivers = PartyRole.get_party_roles(self._business.id,
-                                                  datetime.now(tz=timezone.utc).date(),
+                                                  datetime.utcnow().date(),
                                                   PartyRole.RoleTypes.RECEIVER.value)
         current_receivers = []  # Initialize the receivers list
         for receiver in all_receivers:
@@ -1076,9 +1075,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     if self._compare_address(party.get('deliveryAddress'), prev_party_json.get('deliveryAddress')):
                         party['deliveryAddress']['changed'] = True
                         filing['partyChange'] = True
-                else:
-                    if [role for role in party.get('roles', []) if role['roleType'].lower() in ['partner']]:
-                        filing['newParties'].append(party)
+                elif [
+                    role for role in party.get('roles', []) if role['roleType'].lower() in [
+                        PartyRole.RoleTypes.PARTNER.value,
+                        PartyRole.RoleTypes.PROPRIETOR.value]
+                ]:
+                    filing['newParties'].append(party)
 
             existing_party_json = VersionedBusinessDetailsService.get_party_role_revision(
                 prev_completed_filing, self._business.id, True)
