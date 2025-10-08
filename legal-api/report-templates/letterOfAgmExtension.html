@@ -17,12 +17,14 @@
       <div class="letter-copy">
          <div>{{ report_date }}</div>
          {% set office = offices.registeredOffice %}
-         <div class="mt-12">{{ office.mailingAddress.streetAddress }}</div>
-         <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
-         <div>
-            {{ office.mailingAddress.addressCity }}, {{ office.mailingAddress.addressRegion }}
-         </div>
-         <div> {{ office.mailingAddress.postalCode }}</div>
+         {% if office and office.mailingAddress %}
+            <div class="mt-12">{{ office.mailingAddress.streetAddress }}</div>
+            <div>{{ office.mailingAddress.streetAddressAdditional }}</div>
+            <div>
+               {{ office.mailingAddress.addressCity }}, {{ office.mailingAddress.addressRegion }}
+            </div>
+            <div> {{ office.mailingAddress.postalCode }}</div>
+         {% endif %}
          <div class="mt-7">Dear Applicant,</div>
          <div class="mt-5">Re: <span class="underline">{{ business.legalName }} - {{ business.identifier }}</span></div>
          <div class="mt-5">
