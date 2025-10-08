@@ -27,6 +27,10 @@
 """This module holds data for business account settings."""
 from __future__ import annotations
 
+from http import HTTPStatus
+
+from legal_api.exceptions import BusinessException
+
 from .db import db
 
 
@@ -59,6 +63,11 @@ class BusinessAccountSettings(db.Model):
             'phoneExtension': self.phone_extension,
             'arReminder': self.ar_reminder
         }
+
+    def delete(self):
+        """Delete the business account setting."""
+        db.session.delete(self)
+        db.session.commit()
         
     def save(self):
         """Save and commit the object to the database."""
@@ -98,3 +107,15 @@ class BusinessAccountSettings(db.Model):
         settings.save()
 
         return settings
+
+    @staticmethod
+    def delete(business_id: int, account_id: int):
+        """Delete the BusinessAccountSettings record for the business and account id."""
+        if not account_id:
+            raise BusinessException(
+                error='Cannot delete the default business settings.',
+                status_code=HTTPStatus.FORBIDDEN
+            )
+        if (settings := BusinessAccountSettings.find_by_business_account(business_id, account_id)):
+            db.session.delete(settings)
+            db.session.commit()

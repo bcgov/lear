@@ -26,7 +26,7 @@ from .business_filings import delete_filings, get_documents, get_filings, patch_
 from .business_furnishings import get_furnishing_document
 from .business_parties import get_parties
 from .business_resolutions import get_resolutions
-from .business_settings import get_business_account_settings, update_business_account_settings
+from .business_account_settings import get_business_account_settings, update_business_account_settings
 from .business_share_classes import get_share_class
 from .business_tasks import get_tasks
 from .colin_sync import (
