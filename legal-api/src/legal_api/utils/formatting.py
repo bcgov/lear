@@ -46,5 +46,4 @@ def normalize_phone(phone: str) -> str:
     # handle North America: allow 10 digits, or 11 with leading "1"
     if len(digits) == 11 and digits.startswith("1"):
         digits = digits[1:]
-    else:
-        return digits
+    return digits
