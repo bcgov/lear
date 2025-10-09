@@ -25,6 +25,7 @@ from .batch_processing import BatchProcessing
 from .business import Business
 from .business import BusinessIdentifier
 from .business import BusinessType
+from .business_account_settings import BusinessAccountSettings
 from .colin_update import ColinLastUpdate
 from .comment import Comment
 from .configuration import Configuration
@@ -67,6 +68,7 @@ __all__ = (
     'Batch',
     'BatchProcessing',
     'Business',
+    'BusinessAccountSettings',
     'BusinessIdentifier',
     'BusinessType',
     'ColinLastUpdate',
