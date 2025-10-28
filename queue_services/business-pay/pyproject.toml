@@ -19,7 +19,7 @@ gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirect
 structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/structured-logging", branch = "main" }
 sentry-sdk = {extras = ["flask"], version = "^2.1.1"}
 launchdarkly-server-sdk = "^9.4.0"
-pg8000 = "^1.31.2"
+pg8000 = "^1.31.5"
 cachecontrol = "^0.14.0"
 gunicorn = "^22.0.0"
 nest-asyncio = "^1.6.0"
