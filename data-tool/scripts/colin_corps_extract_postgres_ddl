@@ -723,7 +723,8 @@ create table if not exists mig_corp_batch
     mig_batch_id integer     not null
         constraint fk_mig_corp_batch_mig_batch
             references mig_batch,
-    corp_num     varchar(10) not null
+    corp_num     varchar(10) not null,
+    notes            varchar(600)
 );
 
 alter table mig_corp_batch
@@ -955,6 +956,39 @@ create table if not exists colin_tracking
 alter table colin_tracking
     owner to postgres;
 
+create table if not exists corps_with_third_party
+(
+    corp_num     text,
+    vendor       text,
+    vendor_count integer
+);
+
+alter table corps_with_third_party
+    owner to postgres;
+
+
+-- helper so that `is_blank(text)` returns TRUE for '' (but NULL stays NULL)
+create or replace function is_blank(t text)
+    returns boolean
+    language sql
+    immutable strict
+as
+$$
+select btrim(t) = ''
+$$;
+
+alter function is_blank
+    owner to postgres;
+
+
+CREATE TABLE IF NOT EXISTS email_domain_groups (
+    email_domain VARCHAR(255) PRIMARY KEY,
+    group_name VARCHAR(100) NOT NULL
+);
+
+alter table email_domain_groups
+    owner to postgres;
+
 CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
 
 CREATE INDEX if not exists ix_conv_ledger_event_id ON conv_ledger (event_id);
@@ -1082,3 +1116,9 @@ CREATE INDEX if not exists idx_corp_state_corp_num_end_event_id ON corp_state (c
 CREATE INDEX if not exists ix_mig_corp_account_corp_env ON mig_corp_account (corp_num, target_environment);
 
 CREATE INDEX if not exists ix_mig_corp_account_mig_batch ON mig_corp_account (mig_batch_id);
+
+CREATE INDEX IF NOT EXISTS ix_corp_state_curr ON corp_state (corp_num, op_state_type_cd) WHERE end_event_id IS NULL;
+
+CREATE INDEX IF NOT EXISTS ix_corporation_corpnum ON corporation (corp_num);
+
+CREATE INDEX IF NOT EXISTS ix_corporation_type ON corporation (corp_type_cd);
