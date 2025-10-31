@@ -144,8 +144,11 @@ def _get_receipt(business: Business, filing: Filing, token):
         return {}, HTTPStatus.BAD_REQUEST
 
     effective_date = None
-    if filing.storage.effective_date.date() != filing.storage.filing_date.date() \
-            or filing.filing_type == 'noticeOfWithdrawal':
+    filing_date = filing.storage.payment_completion_date or filing.storage.filing_date
+    if (
+        filing.storage.effective_date.date() != filing_date.date() or
+        filing.filing_type == 'noticeOfWithdrawal'
+    ):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
 
     headers = {'Authorization': 'Bearer ' + token}
@@ -157,7 +160,7 @@ def _get_receipt(business: Business, filing: Filing, token):
         url,
         json={
             'corpName': corp_name,
-            'filingDateTime': LegislationDatetime.format_as_report_string(filing.storage.filing_date),
+            'filingDateTime': LegislationDatetime.format_as_report_string(filing_date),
             'effectiveDateTime': effective_date if effective_date else '',
             'filingIdentifier': str(filing.id),
             'businessNumber': business.tax_id if business and business.tax_id else ''
