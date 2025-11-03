@@ -120,10 +120,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         f'{current_app.config.get("TEMPLATE_PATH")}/CHGREG-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
-    # Firms can have proprietors or partners, so we may need to pass in a different value for name. 
-    business_name = ""
-    if business.get("legalType") in ["SP", "GP"] and business.get("businessName"):
-        business_name = business.get("businessName")
 
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
@@ -175,12 +171,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if not subject:  # fallback case - should never happen
         subject = "Notification from the BC Business Registry"
 
-    if business_name:
-        subject = f"{business_name} - {subject}" if business_name else subject
-    else:
-        legal_name = business.get("legalName", None)
-        subject = f"{legal_name} - {subject}" if legal_name else subject
-
+    legal_name = business.get("businessName") or business.get("legalName")
+    subject = f"{legal_name} - {subject}" if legal_name else subject
     return {
         "recipients": recipients,
         "requestBy": "BCRegistries@gov.bc.ca",
