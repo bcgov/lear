@@ -126,7 +126,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing_data = (filing.json)["filing"][f"{filing_type}"]
     html_out = jnja_template.render(
         business=business,
-        business_name=business_name,
         filing=filing_data,
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
