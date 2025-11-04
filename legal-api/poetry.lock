@@ -2089,7 +2089,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.50"
+version = "2.18.51"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -2107,8 +2107,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.50"
-resolved_reference = "c8b20809d24c155aec1958bc1f421c72ad2ee562"
+reference = "2.18.51"
+resolved_reference = "81ac042761d7ecf4a4c6095b33034b7fda47d0a4"
 
 [[package]]
 name = "reportlab"
