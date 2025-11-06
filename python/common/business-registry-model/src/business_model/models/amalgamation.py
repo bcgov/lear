@@ -117,7 +117,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         return amalgamation
 
     @classmethod
-    def get_revision_json(cls, transaction_id, business_id, tombstone=False):
+    def get_revision_json(cls, transaction_id, business_id):
         """Get amalgamation json for the given transaction id."""
         amalgamation = Amalgamation.get_revision(transaction_id, business_id)
 
