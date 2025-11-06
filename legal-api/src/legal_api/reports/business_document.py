@@ -419,7 +419,7 @@ class BusinessDocument:
                         amalgamating_business.amalgamation_id, amalgamating_business.transaction_id)
                 filing = Filing.find_by_id(amalgamation.filing_id)
                 state_filing = self._format_state_filing(filing)
-                amalgamation_json = Amalgamation.get_revision_json(filing.transaction_id, filing.business_id, tombstone)
+                amalgamation_json = Amalgamation.get_revision_json(filing.transaction_id, filing.business_id)
                 state_filings.append({
                     **state_filing,
                     **amalgamation_json
