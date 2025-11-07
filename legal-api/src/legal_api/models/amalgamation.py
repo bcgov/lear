@@ -116,19 +116,18 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         return amalgamation
 
     @classmethod
-    def get_revision_json(cls, transaction_id, business_id, tombstone=False):
-        """Get amalgamation json for the given transaction id.
-
-        If tombstone is True, return placeholder amalgamation json.
-        """
-        if tombstone:
-            return {
-                'identifier': 'Not Available',
-                'legalName': 'Not Available',
-                'amalgamationDate': 'Not Available'
-            }
+    def get_revision_json(cls, transaction_id, business_id):
+        """Get amalgamation json for the given transaction id."""
 
         amalgamation = Amalgamation.get_revision(transaction_id, business_id)
+
+        # This is fallback in case amalgamation is not found in versioned table.
+        # This can happen for amalgamations of businesses created prior to migration from COLIN.
+        # In that case, get the amalgamation to get the business info.
+        # Note: It can be removed once migration of versioned data is complete.
+        if amalgamation is None:
+            amalgamation = cls.query.filter_by(business_id=business_id).one_or_none()
+
         from .business import Business  # pylint: disable=import-outside-toplevel
         business = Business.find_by_internal_id(amalgamation.business_id)
 

@@ -887,15 +887,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             self.state_filing_id and
             (state_filing := Filing.find_by_id(self.state_filing_id)) and
                 state_filing.is_amalgamation_application):
-            if not self.is_tombstone:
-                return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
-            else:
-                return {
-                    'identifier': 'Not Available',
-                    'legalName': 'Not Available',
-                    'amalgamationDate': 'Not Available'
-                }
-
+            return Amalgamation.get_revision_json(state_filing.transaction_id, state_filing.business_id)
         return None
 
     @classmethod
