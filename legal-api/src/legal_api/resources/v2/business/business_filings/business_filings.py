@@ -580,7 +580,7 @@ class ListFilingResource():  # pylint: disable=too-many-public-methods
             legal_type = filing_json['filing'][filing_type]['nameRequest'].get('legalType')
 
         if err := PermissionService.check_filing_enabled(filing_type, identifier):
-            return jsonify(err.message), err.code
+            return jsonify(err.msg), err.code
 
         if (
             flags.is_on('enable-permissions-for-action')
