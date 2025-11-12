@@ -27,7 +27,7 @@ from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
 from legal_api.utils.datetime import datetime as dt, timedelta
 
-from tests.unit.services.filings.validations import lists_are_equal
+from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
 
 class MockResponse:
@@ -95,8 +95,8 @@ def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
         (Business.LegalTypes.CCC_CONTINUE_IN.value),
     ]
 )
-def test_invalid_party(mocker, app, session, legal_type, monkeypatch):
-    """Assert that party is invalid."""
+def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, monkeypatch):
+    """Assert that continuation in party roles can be validated for missing roles."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
@@ -131,6 +131,54 @@ def test_invalid_party(mocker, app, session, legal_type, monkeypatch):
     assert err.msg[0]['error'] == 'Must have a minimum of one completing party.'
     assert err.msg[1]['error'] == f'Must have a minimum of {min_director_count_info[legal_type]} Director.'
 
+@pytest.mark.parametrize(
+    'parties, expected_msg',
+    [
+        (
+            [{'partyName': 'officer1', 'roles': ['Custodian']}],
+            'Invalid party role(s) provided: custodian.'
+        ),
+        (
+            [{'partyName': 'officer1', 'roles': ['Director']},
+             {'partyName': 'officer2', 'roles': ['Completing Party', 'Liquidator']}],
+            'Invalid party role(s) provided: liquidator.'
+        ),
+    ]
+)
+def test_continuation_in_parties_invalid_role(mocker, app, session, parties, expected_msg):
+    """Assert that continuation in party roles can be validated for invalid roles."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'continuationIn',
+        'date': '2019-04-08',
+        'certifiedBy': 'full name',
+        'email': 'no_one@never.get',
+        'filingId': 1
+    }
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing['filing']['continuationIn']['isApproved'] = True
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = Business.LegalTypes.CONTINUE_IN.value
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+
+    base_mailing_address = filing['filing']['continuationIn']['parties'][0]['mailingAddress']
+    base_delivery_address = filing['filing']['continuationIn']['parties'][0]['deliveryAddress']
+    filing['filing']['continuationIn']['parties'] = []
+
+    for index, party in enumerate(parties):
+        mailing_addr = create_party_address(base_address=base_mailing_address)
+        delivery_addr = create_party_address(base_address=base_delivery_address)
+        p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
+        filing['filing']['continuationIn']['parties'].append(p)
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+
+    err = validate(None, filing)
+
+    assert err is not None
+    assert err.msg[0]['error'] == expected_msg
+    assert '/filing/continuationIn/parties/roles' in err.msg[0]['path']
 
 @pytest.mark.parametrize(
     'test_name, legal_type, delivery_region, delivery_country, mailing_region, mailing_country, expected_code, expected_msg',

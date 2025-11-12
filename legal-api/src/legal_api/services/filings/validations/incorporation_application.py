@@ -157,17 +157,29 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
     completing_party_count = 0
     incorporator_count = 0
     director_count = 0
+    invalid_roles = set()
 
     for item in parties_array:
         for role in item['roles']:
-            if role['roleType'] == 'Completing Party':
+            role_type = role.get('roleType')
+            if role_type == 'Completing Party':
                 completing_party_count += 1
 
-            if role['roleType'] == 'Incorporator':
+            elif role_type == 'Incorporator':
                 incorporator_count += 1
 
-            if role['roleType'] == 'Director':
+            elif role_type == 'Director':
                 director_count += 1
+
+            else:
+                invalid_roles.add(role_type)
+
+    if invalid_roles:
+        err_path = f'/filing/{filing_type}/parties/roles'
+        msg.append({
+            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}',
+            'path': err_path
+        })         
 
     if filing_type == 'incorporationApplication' or \
             (filing_type == 'correction' and filing_dict['filing'][filing_type].get('type') == 'CLIENT'):

@@ -104,6 +104,7 @@ def validate_party(filing: Dict, legal_type: str, filing_type='registration') ->
     completing_parties = 0
     proprietor_parties = 0
     partner_parties = 0
+    invalid_roles = set()
     parties = filing['filing'][filing_type]['parties']
     for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
         for role in party.get('roles', []):
@@ -114,6 +115,15 @@ def validate_party(filing: Dict, legal_type: str, filing_type='registration') ->
                 proprietor_parties += 1
             elif role_type == PartyRole.RoleTypes.PARTNER.value:
                 partner_parties += 1
+            else:
+                invalid_roles.add(role_type)  
+
+    if invalid_roles:
+        err_path = f'/filing/{filing_type}/parties/roles'
+        msg.append({
+            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            'path': err_path
+        })   
 
     party_path = '/filing/registration/parties'
     if legal_type == Business.LegalTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):

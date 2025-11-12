@@ -164,6 +164,7 @@ def validate_party(filing: Dict, legal_type: str) -> list:
     completing_parties = 0
     proprietor_parties = 0
     partner_parties = 0
+    invalid_roles = set()
     parties = filing['filing']['correction']['parties']
     for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
         for role in party.get('roles', []):
@@ -174,6 +175,15 @@ def validate_party(filing: Dict, legal_type: str) -> list:
                 proprietor_parties += 1
             elif role_type == PartyRole.RoleTypes.PARTNER.value:
                 partner_parties += 1
+            else:
+                invalid_roles.add(role_type)  
+
+    if invalid_roles:
+        err_path = f'/filing/correction/parties/roles'
+        msg.append({
+            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            'path': err_path
+        })    
 
     correction_type = filing.get('filing').get('correction').get('type', 'STAFF')
     party_path = '/filing/correction/parties'

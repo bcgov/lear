@@ -102,6 +102,7 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
     msg = []
     completing_party_count = 0
     director_count = 0
+    invalid_roles = set()
 
     parties = filing_dict['filing'][filing_type]['parties']
     for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
@@ -111,6 +112,15 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
                 completing_party_count += 1
             elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
                 director_count += 1
+            else:
+                invalid_roles.add(role_type)  
+
+    if invalid_roles:
+        err_path = f'/filing/{filing_type}/parties/roles'
+        msg.append({
+            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            'path': err_path
+        })      
 
     if completing_party_count == 0:
         err_path = f'/filing/{filing_type}/parties/roles'
