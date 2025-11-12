@@ -121,6 +121,42 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
     else:
         assert not err
 
+@pytest.mark.parametrize(
+    'legal_type, dissolution_type, roles, expected_code, expected_msg',
+    [
+        # Validate roles for CORP/COOP
+        ('BC', 'voluntary', ['Custodian'], None, None),
+        ('BC', 'voluntary', ['Liquidator'], None, None),
+        
+        # Validate roles for SP/GP
+        ('SP', 'voluntary', ['Completing Party'], None, None),
+        ('GP', 'voluntary', ['Completing Party'], None, None),
+
+        # Admin dissolution – any role skipped
+        ('BC', 'administrative', ['Custodian'], None, None),
+    ]
+)
+def test_dissolution_party_roles(session, legal_type, dissolution_type, roles, expected_code, expected_msg):
+    """Test dissolution party role validation logic."""
+    business = Business(identifier='BC1234567', legal_type=legal_type)
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = legal_type
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionType'] = dissolution_type
+
+    for i, role in enumerate(roles):
+        filing['filing']['dissolution']['parties'][i]['roles'] = [{'roleType': role}]
+
+    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+        err = validate(business, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert expected_msg in err.msg[0]['error']
+    else:
+        assert err is None
+
 
 @pytest.mark.parametrize(
     'test_status, legal_type, address_validation, identifier, expected_code, expected_msg',
