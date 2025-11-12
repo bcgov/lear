@@ -36,7 +36,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     if filing.business_id:
         business = Business.find_by_internal_id(filing.business_id)
         business_json = business.json()
-        business_json['businessName'] = business.legal_name
+        business_json["businessName"] = business.legal_name
 
     # payment date if available otherwise filing date
     leg_tmz_filing_date = LegislationDatetime.format_as_report_string(
