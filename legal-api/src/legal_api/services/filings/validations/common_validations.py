@@ -333,18 +333,17 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
             err_msg = f'{party_roles_str} last name cannot be longer than {last_name_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})  
         
-        if officer.get('organizationName'):
+        if party_type == 'person' and officer.get('organizationName'):
             err_msg = f'{party_roles_str} organization name should be set for person party type'
             msg.append({'error': err_msg, 'path': party_path})
         elif party_type == 'organization':
             organization_name = officer.get('organizationName', None)
-            if organization_name is not None:
-                if organization_name != organization_name.strip():
-                    err_msg = f'{party_roles_str} organization name cannot start or end with whitespace'
-                    msg.append({'error': err_msg, 'path': party_path})
-                else:
+            if organization_name is not None or not organization_name.strip():
                     err_msg = f'organization name is required'
                     msg.append({'error': err_msg, 'path': party_path})
+            elif organization_name != organization_name.strip():
+                err_msg = f'{party_roles_str} organization name cannot start or end with whitespace'
+                msg.append({'error': err_msg, 'path': party_path})
     return msg 
 
 
