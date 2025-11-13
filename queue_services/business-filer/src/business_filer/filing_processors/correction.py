@@ -49,7 +49,11 @@ def process(correction_filing: Filing, filing: dict, filing_meta: FilingMeta, bu
     original_filing = Filing.find_by_id(filing["correction"]["correctedFilingId"])
     original_filing.parent_filing = correction_filing
 
-    filing_meta.correction = {}
+    corrected_filing_type = filing["correction"]["correctedFilingType"]
+    filing_meta.correction = {
+        "correctedFilingId": filing["correction"]["correctedFilingId"],
+        "correctedFilingType": filing["correction"]["correctedFilingType"]
+    }
 
     # add comment to the original filing
     original_filing.comments.append(
@@ -70,7 +74,9 @@ def process(correction_filing: Filing, filing: dict, filing_meta: FilingMeta, bu
         )
     )
 
-    corrected_filing_type = filing["correction"]["correctedFilingType"]
+    # special case: check for ben statement correction (not part of regular filing)
+    if bool(dpath.get(correction_filing.filing_json, "filing/header/correctionBenStatement", default=None)):
+        filing_meta.correction = {**filing_meta.correction, "correctionBenStatement": True}
 
     # check if empty correction and set commentOnly value in filing_meta
     if bool(dpath.get(filing, "/correction/commentOnly", default=None)):
