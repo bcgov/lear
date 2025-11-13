@@ -334,7 +334,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
             err_msg = f'{party_roles_str} last name cannot be longer than {last_name_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})  
         
-        if organization_name not in (None, ''):
+        if organization_name:
             err_msg = f'{party_roles_str} organization name should not be set for person party type'
             msg.append({'error': err_msg, 'path': party_path})
     elif party_type == 'organization':
