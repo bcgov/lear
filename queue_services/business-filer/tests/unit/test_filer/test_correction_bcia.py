@@ -875,7 +875,14 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
         assert [item.json for item in business.share_classes.all()[0].series] == share_class_json2['series']
         
 
-def test_comment_only_correction(app, session, mocker):
+@pytest.mark.parametrize(
+    'test_name',
+    [
+        ('comment_only'),
+        ('ben_correction_statement'),
+    ]
+)
+def test_comment_only_correction(app, session, mocker, test_name):
     """Assert the worker process calls the BEN correction statement correctly."""
     
     identifier = f'BC{random.randint(1000000, 9999999)}'
@@ -884,7 +891,9 @@ def test_comment_only_correction(app, session, mocker):
     business_id = business.id
 
     filing = copy.deepcopy(BC_COMMENT_ONLY_CORRECTION)
-    
+    if test_name == 'ben_correction_statement':
+        filing['filing']['header']['correctionBenStatement'] = True
+
     corrected_filing_id = factory_completed_filing(business, BC_COMMENT_ONLY_CORRECTION).id
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
     
@@ -901,8 +910,16 @@ def test_comment_only_correction(app, session, mocker):
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     process_filing(filing_msg)
-    
+
     final_filing = Filing.find_by_id(filing_id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    assert meta_data.get('commentOnly')
+
+    if test_name == 'ben_correction_statement':
+        assert meta_data.get('correctionBenStatement')
+    else:
+        assert not meta_data.get('correctionBenStatement')
+
 
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1

@@ -894,7 +894,11 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Handle output file list modification for corrections."""
         if filing.filing_type == 'correction':
             correction = filing.meta_data.get('correction', {})
-            if correction.get('commentOnly') and business.legal_type in Business.CORPS:
+            if (
+                correction.get('commentOnly') and
+                business.legal_type in Business.CORPS and
+                not correction.get('correctionBenStatement')  # BEN correction statement require NOA
+            ):
                 outputs.remove('noticeOfArticles')
             else:
                 corrected_filing_type = filing.filing_json['filing'].get('correction', {}).get('correctedFilingType')
