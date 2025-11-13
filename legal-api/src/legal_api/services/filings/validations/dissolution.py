@@ -170,7 +170,7 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
 
     return None
 
-def validate_dissolution_parties_roles(filing_json, dissolution_type) -> Optional[list]:
+def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate that all party roles in the dissolution are valid.
 
     This needs not to be validated for administrative dissolution
@@ -183,12 +183,18 @@ def validate_dissolution_parties_roles(filing_json, dissolution_type) -> Optiona
 
     parties_json = filing_json['filing']['dissolution']['parties']
     party_path = '/filing/dissolution/parties'
+
+    if legal_type in Business.CORPS:
+        allowed_roles = {PartyRole.RoleTypes.CUSTODIAN.value}
+    elif legal_type == Business.LegalTypes.COOP.value:
+        allowed_roles = {PartyRole.RoleTypes.CUSTODIAN.value,
+                         PartyRole.RoleTypes.LIQUIDATOR.value}
+    elif legal_type in {Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value}:
+        allowed_roles = {PartyRole.RoleTypes.COMPLETING_PARTY.value}
+    else:
+        allowed_roles = set()
+
     invalid_roles = set()
-
-    allowed_roles = {PartyRole.RoleTypes.CUSTODIAN.value,
-                     PartyRole.RoleTypes.LIQUIDATOR.value,
-                     PartyRole.RoleTypes.COMPLETING_PARTY.value}
-
     for party in parties_json:
         for role in party.get('roles', []):
             role_type = role.get('roleType').lower().replace(' ', '_')

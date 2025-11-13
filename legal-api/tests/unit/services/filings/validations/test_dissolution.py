@@ -28,7 +28,7 @@ from legal_api.services import MinioService
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
 from tests.unit.services.filings.test_utils import _upload_file
-from tests.unit.services.filings.validations import lists_are_equal
+from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
 
 @pytest.mark.parametrize(
@@ -72,7 +72,8 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
         del filing['filing']['dissolution']['affidavitFileKey']
         del filing['filing']['dissolution']['parties']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     # validate outcomes
@@ -111,7 +112,8 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
         del filing['filing']['dissolution']['dissolutionStatementType']
 
     # perform test
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     # validate outcomes
@@ -124,20 +126,24 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
 @pytest.mark.parametrize(
     'legal_type, dissolution_type, roles, expected_code, expected_msg',
     [
-        # Validate roles for CORP/COOP
         ('BC', 'voluntary', ['Custodian'], None, None),
-        ('BC', 'voluntary', ['Liquidator'], None, None),
-        
-        # Validate roles for SP/GP
+        ('BC', 'voluntary', ['Liquidator'], HTTPStatus.BAD_REQUEST, 'Invalid party role(s) provided: liquidator'),
+        ('BC', 'voluntary', ['Completing Party'], HTTPStatus.BAD_REQUEST, 'Invalid party role(s) provided: completing_party'),
+
+        ('CP', 'voluntary', ['Custodian'], None, None),
+        ('CP', 'voluntary', ['Liquidator'], None, None),
+        ('CP', 'voluntary', ['Completing Party'], HTTPStatus.BAD_REQUEST, 'Invalid party role(s) provided: completing_party'),
+
         ('SP', 'voluntary', ['Completing Party'], None, None),
         ('GP', 'voluntary', ['Completing Party'], None, None),
+        ('SP', 'voluntary', ['Custodian'], HTTPStatus.BAD_REQUEST, 'Invalid party role(s) provided: custodian'),
+        ('GP', 'voluntary', ['Liquidator'], HTTPStatus.BAD_REQUEST, 'Invalid party role(s) provided: liquidator'),
 
-        # Admin dissolution – any role skipped
         ('BC', 'administrative', ['Custodian'], None, None),
+        ('CP', 'administrative', ['Completing Party'], None, None),
     ]
 )
 def test_dissolution_party_roles(session, legal_type, dissolution_type, roles, expected_code, expected_msg):
-    """Test dissolution party role validation logic."""
     business = Business(identifier='BC1234567', legal_type=legal_type)
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['name'] = 'dissolution'
@@ -145,8 +151,19 @@ def test_dissolution_party_roles(session, legal_type, dissolution_type, roles, e
     filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
     filing['filing']['dissolution']['dissolutionType'] = dissolution_type
 
+    base_mailing_address = filing['filing']['dissolution']['parties'][0]['mailingAddress']
+    base_delivery_address = filing['filing']['dissolution']['parties'][0]['deliveryAddress']
+    filing['filing']['dissolution']['parties'] = []
+
+    if dissolution_type == 'administrative':
+        filing['filing']['dissolution']['details'] = "Some Details"
+        del filing['filing']['dissolution']['affidavitFileKey']
+
     for i, role in enumerate(roles):
-        filing['filing']['dissolution']['parties'][i]['roles'] = [{'roleType': role}]
+        mailing_addr = create_party_address(base_address=base_mailing_address)
+        delivery_addr = create_party_address(base_address=base_delivery_address)
+        p = create_party([role], i + 1, mailing_addr, delivery_addr)
+        filing['filing']['dissolution']['parties'].append(p)
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None):
         err = validate(business, filing)
@@ -201,7 +218,8 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
     elif address_validation == 'lookup_error':
         filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'adssadkj'
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     # validate outcomes
@@ -241,7 +259,8 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
         resolution_date_time = datetime.strptime(resolution_date_str, '%Y-%m-%d')
         business.founding_date = resolution_date_time - timedelta(days=1000)
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     # validate outcomes
@@ -301,7 +320,8 @@ def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dis
         key_value = ''
         filing['filing']['dissolution'][key] = key_value
 
-    err = validate(business, filing)
+    with patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
+        err = validate(business, filing)
 
     # validate outcomes
     if expected_code:
@@ -343,7 +363,8 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
     filing['filing']['dissolution']['courtOrder'] = court_order
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     # validate outcomes
@@ -416,7 +437,8 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
         filing['filing']['dissolution']['details'] = "Some Details"
         del filing['filing']['dissolution']['affidavitFileKey']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     if test_status == 'FAIL':
@@ -477,7 +499,8 @@ def test_dissolution_custodian_org_name(session, test_status, legal_type, dissol
     elif 'organizationName' in officer:
         del officer['organizationName']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     if test_status == 'FAIL':
@@ -526,7 +549,8 @@ def test_dissolution_custodial_office(session, test_status, legal_type, dissolut
         filing['filing']['dissolution']['details'] = "Some Details"
         del filing['filing']['dissolution']['affidavitFileKey']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None):
+    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
         err = validate(business, filing)
 
     if test_status == 'FAIL':
@@ -575,8 +599,8 @@ def test_dissolution_effective_date(session, test_name,
         filing['filing']['header']['effectiveDate'] = effective_date
 
     # perform test
-    with freeze_time(now):
-        err = validate(business, filing)
+    with freeze_time(now), patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
+      err = validate(business, filing)
 
     if expected_code:
         assert err.code == expected_code
