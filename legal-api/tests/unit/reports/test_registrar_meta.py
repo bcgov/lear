@@ -38,7 +38,8 @@ from tests.unit.models import factory_business
         (datetime.datetime(2022, 6, 1), "T.K. SPARKS", "Registrar of Companies"),
         (datetime.datetime(2025, 4, 17), "T.K. SPARKS", "Registrar of Companies"),
         (datetime.datetime(2025, 4, 18), "S. O'CALLAGHAN", "Registrar of Companies"),
-        (datetime.datetime(2025, 8, 12), "S. O'CALLAGHAN", "Registrar of Companies")
+        (datetime.datetime(2025, 11, 18), "S. O'CALLAGHAN", "Registrar of Companies"),
+        (datetime.datetime(2025, 11, 19), "KERRY TAYLOR", "Registrar of Companies"),
     ]
 )
 def test_get_registrar_by_date(session, date, name, title):
