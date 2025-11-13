@@ -335,6 +335,12 @@ def test_validate_certified_by(input_value, expected_error):
             {'firstName': 'First', 'lastName': 'Last'},
             'director organization name should not be set for person party type'
         ),
+        (
+            'person',
+            '',
+            {'firstName': 'First', 'lastName': 'Last'},
+            None
+        ),
         ('organization', None, {}, 'organization name is required'),
         ('organization', '  ', {}, 'organization name is required'),
         ('organization', ' Org Name', {}, 'director organization name cannot start or end with whitespace'),
