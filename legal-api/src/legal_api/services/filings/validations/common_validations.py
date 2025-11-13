@@ -282,10 +282,11 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
     last_name_max_length = 30
     officer = party['officer']
     party_type = officer['partyType']
+    party_roles = [x.get('roleType') for x in party['roles']]
+    party_roles_str = ', '.join(party_roles)
+    organization_name = officer.get('organizationName', None)
 
     if party_type == 'person':
-        party_roles = [x.get('roleType') for x in party['roles']]
-        party_roles_str = ', '.join(party_roles)
 
         first_name = officer.get('firstName', None)
         stripped_first_name = first_name.strip()
@@ -332,7 +333,36 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
         elif len(last_name) > last_name_max_length:
             err_msg = f'{party_roles_str} last name cannot be longer than {last_name_max_length} characters'
             msg.append({'error': err_msg, 'path': party_path})  
-
+        
+        if organization_name is not None:
+            err_msg = f'{party_roles_str} organization name should not be set for person party type'
+            msg.append({'error': err_msg, 'path': party_path})
+    elif party_type == 'organization':
+        if organization_name is None:
+            err_msg = 'organization name is required'
+            msg.append({'error': err_msg, 'path': party_path})
+        else:
+            stripped = organization_name.strip()
+            if not stripped:
+                err_msg = 'organization name is required'
+                msg.append({'error': err_msg, 'path': party_path})
+            elif organization_name != stripped:
+                err_msg = f'{party_roles_str} organization name cannot start or end with whitespace'
+                msg.append({'error': err_msg, 'path': party_path})
+        
+        if officer.get('firstName') not in (None, ''):
+            err_msg = f'{party_roles_str} first name should not be set for organization party type'
+            msg.append({'error': err_msg, 'path': party_path})
+        if officer.get('middleInitial') not in (None, ''):
+            err_msg = f'{party_roles_str} middle initial should not be set for organization party type'
+            msg.append({'error': err_msg, 'path': party_path})
+        if officer.get('middleName') not in (None, ''):
+            err_msg = f'{party_roles_str} middle name should not be set for organization party type'
+            msg.append({'error': err_msg, 'path': party_path})
+        if officer.get('lastName') not in (None, ''):
+            err_msg = f'{party_roles_str} last name should not be set for organization party type'
+            msg.append({'error': err_msg, 'path': party_path})
+        
     return msg 
 
 

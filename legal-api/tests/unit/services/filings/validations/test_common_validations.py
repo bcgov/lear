@@ -40,6 +40,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_certified_by,
     validate_offices_addresses,
     validate_parties_addresses,
+    validate_party_name,
     validate_staff_payment,
 )
 
@@ -322,5 +323,49 @@ def test_validate_certified_by(input_value, expected_error):
         assert errors
         assert errors[0]['error'] == 'Certified by field cannot start or end with whitespace.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'
+    else:
+        assert errors == []
+
+@pytest.mark.parametrize(
+    ('party_type', 'organization_name','officer_override', 'expected_errors'),
+    [
+        (
+            'person',
+            ' ',
+            {'firstName': 'First', 'lastName': 'Last'},
+            'director organization name should not be set for person party type'
+        ),
+        ('organization', None, {}, 'organization name is required'),
+        ('organization', '  ', {}, 'organization name is required'),
+        ('organization', ' Org Name', {}, 'director organization name cannot start or end with whitespace'),
+        ('organization', 'Org Name', {'firstName':'First'}, 'director first name should not be set for organization party type'),
+        ('organization', 'Org Name', {'firstName':' '}, 'director first name should not be set for organization party type'),
+        ('organization', 'Org Name', {'middleInitial':'A'}, 'director middle initial should not be set for organization party type'),
+        ('organization', 'Org Name', {'middleName':'Middle'}, 'director middle name should not be set for organization party type'),
+        ('organization', 'Org Name', {'lastName':'Last'}, 'director last name should not be set for organization party type'),
+        ('organization', 'Org Name', {}, None)
+    ]
+)
+def test_validate_party_name(session, party_type, organization_name, officer_override, expected_errors):
+    """Test that party name validation works as expected."""
+    officer = {
+        'partyType': party_type,
+        'firstName': '',
+        'middleInitial': '',
+        'middleName': '',
+        'lastName': '',
+        'organizationName': organization_name
+    }
+    officer.update(officer_override)
+    party = {
+        'officer': officer,
+        'roles': [{'roleType': 'director'}]
+    }
+
+    errors = validate_party_name(party, '/filing/incorporationApplication/parties/0' , 'BC')
+
+    if expected_errors:
+        assert errors
+        assert expected_errors in [error['error'] for error in errors]
     else:
         assert errors == []
