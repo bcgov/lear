@@ -203,7 +203,7 @@ def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type
 
     if invalid_roles:
         return [{
-            'error': f"Invalid party role(s) provided: {', '.join(invalid_roles)}",
+            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             'path': f'{party_path}/roles'
         }]
 
