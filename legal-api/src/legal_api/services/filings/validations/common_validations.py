@@ -350,16 +350,16 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
                 err_msg = f'{party_roles_str} organization name cannot start or end with whitespace'
                 msg.append({'error': err_msg, 'path': party_path})
         
-        if officer.get('firstName', None) is not None:
+        if officer.get('firstName') not in (None, ''):
             err_msg = f'{party_roles_str} first name should not be set for organization party type'
             msg.append({'error': err_msg, 'path': party_path})
-        if officer.get('middleInitial', None) is not None:
+        if officer.get('middleInitial') not in (None, ''):
             err_msg = f'{party_roles_str} middle initial should not be set for organization party type'
             msg.append({'error': err_msg, 'path': party_path})
-        if officer.get('middleName', None) is not None:
+        if officer.get('middleName') not in (None, ''):
             err_msg = f'{party_roles_str} middle name should not be set for organization party type'
             msg.append({'error': err_msg, 'path': party_path})
-        if officer.get('lastName', None) is not None:
+        if officer.get('lastName') not in (None, ''):
             err_msg = f'{party_roles_str} last name should not be set for organization party type'
             msg.append({'error': err_msg, 'path': party_path})
         
