@@ -120,6 +120,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         f'{current_app.config.get("TEMPLATE_PATH")}/CHGREG-{status}.html'
     ).read_text()
     filled_template = substitute_template_parts(template)
+
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     filing_data = (filing.json)["filing"][f"{filing_type}"]
@@ -169,9 +170,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if not subject:  # fallback case - should never happen
         subject = "Notification from the BC Business Registry"
 
-    legal_name = business.get("legalName", None)
+    legal_name = business.get("businessName") or business.get("legalName")
     subject = f"{legal_name} - {subject}" if legal_name else subject
-
     return {
         "recipients": recipients,
         "requestBy": "BCRegistries@gov.bc.ca",
