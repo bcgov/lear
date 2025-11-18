@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Manage the database and some other items required to run the API
-"""
+"""Manage the database and some other items required to run the API"""
+
 import logging
 
 from flask import url_for
@@ -22,6 +22,7 @@ from flask_migrate import Migrate, MigrateCommand
 
 from legal_api import create_app
 from legal_api.models import db
+
 # models included so that migrate can build the database migrations
 from legal_api import models  # pylint: disable=unused-import
 
@@ -29,27 +30,26 @@ APP = create_app()
 MIGRATE = Migrate(APP, db)
 MANAGER = Manager(APP)
 
-MANAGER.add_command('db', MigrateCommand)
+MANAGER.add_command("db", MigrateCommand)
 
 
 @MANAGER.command
 def list_routes():
     output = []
     for rule in APP.url_map.iter_rules():
-
         options = {}
         for arg in rule.arguments:
             options[arg] = "[{0}]".format(arg)
 
-        methods = ','.join(rule.methods)
+        methods = ",".join(rule.methods)
         url = url_for(rule.endpoint, **options)
-        line = ("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
+        line = "{:50s} {:20s} {}".format(rule.endpoint, methods, url)
         output.append(line)
 
     for line in sorted(output):
         print(line)
 
 
-if __name__ == '__main__':
-    logging.log(logging.INFO, 'Running the Manager')
+if __name__ == "__main__":
+    logging.log(logging.INFO, "Running the Manager")
     MANAGER.run()

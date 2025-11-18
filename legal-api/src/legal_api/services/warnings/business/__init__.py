@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Checks for businesses."""
+
 from .business_checks.business import check_business
 
 
-__all__ = ('check_business',)
+__all__ = ("check_business",)

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Application Common Error Messages."""
+
 from enum import Enum, auto
 
 
@@ -23,6 +24,7 @@ class AutoName(str, Enum):
     def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
         """Return the name of the key, but in lowercase."""
         return name.lower()
+
     # pragma warning enable S5720; # noqa: E265
 
 

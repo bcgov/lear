@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Translations for the API messages, not for the content returned from the datastore or entered by users."""
+
 from flask_babel import Babel
 
 

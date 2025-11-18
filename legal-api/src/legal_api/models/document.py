@@ -29,28 +29,28 @@ from .db import db
 class DocumentType(Enum):
     """Document types."""
 
-    AFFIDAVIT = 'affidavit'
-    AUTHORIZATION_FILE = 'authorization_file'
-    COOP_RULES = 'coop_rules'
-    COOP_MEMORANDUM = 'coop_memorandum'
-    COURT_ORDER = 'court_order'
-    DIRECTOR_AFFIDAVIT = 'director_affidavit'
+    AFFIDAVIT = "affidavit"
+    AUTHORIZATION_FILE = "authorization_file"
+    COOP_RULES = "coop_rules"
+    COOP_MEMORANDUM = "coop_memorandum"
+    COURT_ORDER = "court_order"
+    DIRECTOR_AFFIDAVIT = "director_affidavit"
 
 
 class Document(db.Model, Versioned):
     """This is the model for a document."""
 
     __versioned__ = {}
-    __tablename__ = 'documents'
+    __tablename__ = "documents"
 
     id = db.Column(db.Integer, primary_key=True)
-    type = db.Column('type', db.String(30), nullable=False)
-    file_key = db.Column('file_key', db.String(100), nullable=False)
-    file_name = db.Column('file_name', db.String(1000))
+    type = db.Column("type", db.String(30), nullable=False)
+    file_key = db.Column("file_key", db.String(100), nullable=False)
+    file_name = db.Column("file_name", db.String(1000))
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -70,10 +70,7 @@ class Document(db.Model, Versioned):
     @classmethod
     def find_by_business_id_and_type(cls, business_id: int, document_type: str):
         """Return the document matching the business id and type."""
-        return cls.query.filter_by(
-            business_id=business_id,
-            type=document_type
-        ).order_by(desc(Document.id)).first()
+        return cls.query.filter_by(business_id=business_id, type=document_type).order_by(desc(Document.id)).first()
 
     @classmethod
     def find_by_file_key(cls, file_key: str):
@@ -83,8 +80,8 @@ class Document(db.Model, Versioned):
     @classmethod
     def find_one_by(cls, business_id: int, filing_id: int, document_type: str):
         """Return the document matching the business id, filing id and document type."""
-        return cls.query.filter_by(
-            business_id=business_id,
-            filing_id=filing_id,
-            type=document_type
-        ).order_by(desc(Document.id)).first()
+        return (
+            cls.query.filter_by(business_id=business_id, filing_id=filing_id, type=document_type)
+            .order_by(desc(Document.id))
+            .first()
+        )

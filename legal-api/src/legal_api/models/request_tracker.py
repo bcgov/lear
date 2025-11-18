@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for request tracker."""
+
 from __future__ import annotations
 
 from enum import auto
@@ -43,34 +44,34 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         CHANGE_STATUS = auto()
         CHANGE_PARTY = auto()
 
-    __tablename__ = 'request_tracker'
+    __tablename__ = "request_tracker"
 
     id = db.Column(db.Integer, primary_key=True)
-    request_type = db.Column('request_type', db.Enum(RequestType), nullable=False)
-    is_processed = db.Column('is_processed', db.Boolean, default=False)
+    request_type = db.Column("request_type", db.Enum(RequestType), nullable=False)
+    is_processed = db.Column("is_processed", db.Boolean, default=False)
     request_object = db.Column(db.Text)
     response_object = db.Column(db.Text)
-    retry_number = db.Column('retry_number', db.Integer, default=0, nullable=False)
-    service_name = db.Column('service_name', db.Enum(ServiceName), nullable=False)
-    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
-    is_admin = db.Column('is_admin', db.Boolean, default=False)
-    message_id = db.Column('message_id', db.String(60))
+    retry_number = db.Column("retry_number", db.Integer, default=0, nullable=False)
+    service_name = db.Column("service_name", db.Enum(ServiceName), nullable=False)
+    creation_date = db.Column("creation_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
+    is_admin = db.Column("is_admin", db.Boolean, default=False)
+    message_id = db.Column("message_id", db.String(60))
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True)
 
     @property
     def json(self) -> dict:
         """Return the request tracker as a json object."""
         return {
-            'id': self.id,
-            'requestType': self.request_type.name,
-            'isProcessed': self.is_processed,
-            'serviceName': self.service_name.name,
-            'isAdmin': self.is_admin,
-            'creationDate': LegislationDatetime.as_legislation_timezone(self.creation_date).isoformat()
+            "id": self.id,
+            "requestType": self.request_type.name,
+            "isProcessed": self.is_processed,
+            "serviceName": self.service_name.name,
+            "isAdmin": self.is_admin,
+            "creationDate": LegislationDatetime.as_legislation_timezone(self.creation_date).isoformat(),
         }
 
     def save(self):
@@ -87,17 +88,21 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         return request_tracker
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
-                business_id: int,
-                service_name: ServiceName,
-                request_type: RequestType = None,
-                filing_id: int = None,
-                is_admin: bool = None,
-                message_id: str = None) -> List[RequestTracker]:
+    def find_by(
+        cls,  # pylint: disable=too-many-arguments
+        business_id: int,
+        service_name: ServiceName,
+        request_type: RequestType = None,
+        filing_id: int = None,
+        is_admin: bool = None,
+        message_id: str = None,
+    ) -> List[RequestTracker]:
         """Return the request tracker matching."""
-        query = db.session.query(RequestTracker). \
-            filter(RequestTracker.business_id == business_id). \
-            filter(RequestTracker.service_name == service_name)
+        query = (
+            db.session.query(RequestTracker)
+            .filter(RequestTracker.business_id == business_id)
+            .filter(RequestTracker.service_name == service_name)
+        )
 
         if request_type:
             query = query.filter(RequestTracker.request_type == request_type)

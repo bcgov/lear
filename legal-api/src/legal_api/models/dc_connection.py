@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for digital credentials connections."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -26,47 +27,46 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
     class State(Enum):
         """Enum of the didexchange protocol states."""
 
-        START = 'start'  # altough there is a start state we never see it
-        INVITATION_SENT = 'invitation-sent'
-        REQUEST_RECEIVED = 'request-received'
-        RESPONSE_SENT = 'response-sent'
-        ABANDONED = 'abandoned'
-        COMPLETED = 'completed'
-        ACTIVE = 'active'  # artifact from the connection protocol
+        START = "start"  # altough there is a start state we never see it
+        INVITATION_SENT = "invitation-sent"
+        REQUEST_RECEIVED = "request-received"
+        RESPONSE_SENT = "response-sent"
+        ABANDONED = "abandoned"
+        COMPLETED = "completed"
+        ACTIVE = "active"  # artifact from the connection protocol
 
-    __tablename__ = 'dc_connections'
+    __tablename__ = "dc_connections"
 
     id = db.Column(db.Integer, primary_key=True)
-    connection_id = db.Column('connection_id', db.String(100))
+    connection_id = db.Column("connection_id", db.String(100))
     # connection_state values we recieve in webhook, but we may not need all of it
-    connection_state = db.Column('connection_state', db.String(50))
-    invitation_url = db.Column('invitation_url', db.String(4096))
+    connection_state = db.Column("connection_state", db.String(50))
+    invitation_url = db.Column("invitation_url", db.String(4096))
 
-    is_active = db.Column('is_active', db.Boolean, default=False)
-    is_attested = db.Column('is_attested', db.Boolean, default=False)
-    last_attested = db.Column('last_attested', db.DateTime, default=None)
+    is_active = db.Column("is_active", db.Boolean, default=False)
+    is_attested = db.Column("is_attested", db.Boolean, default=False)
+    last_attested = db.Column("last_attested", db.DateTime, default=None)
 
     # DEPRECATED: use business_user_id instead, remove when all references are removed
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), nullable=False)
-    business_user_id = db.Column('business_user_id', db.Integer, db.ForeignKey('dc_business_users.id'), nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), nullable=False)
+    business_user_id = db.Column("business_user_id", db.Integer, db.ForeignKey("dc_business_users.id"), nullable=False)
 
     # relationships
-    business_user = db.relationship(
-        'DCBusinessUser', backref='connections', foreign_keys=[business_user_id])
+    business_user = db.relationship("DCBusinessUser", backref="connections", foreign_keys=[business_user_id])
 
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         dc_connection = {
-            'id': self.id,
-            'connectionId': self.connection_id,
-            'connectionState': self.connection_state,
-            'invitationUrl': self.invitation_url,
-            'isActive': self.is_active,
-            'isAttested': self.is_attested,
-            'lastAttested': self.last_attested,
-            'businessId': self.business_id,  # DEPRECATED
-            'businessUserId': self.business_user_id,
+            "id": self.id,
+            "connectionId": self.connection_id,
+            "connectionState": self.connection_state,
+            "invitationUrl": self.invitation_url,
+            "isActive": self.is_active,
+            "isAttested": self.is_attested,
+            "lastAttested": self.last_attested,
+            "businessId": self.business_id,  # DEPRECATED
+            "businessUserId": self.business_user_id,
         }
         return dc_connection
 
@@ -110,10 +110,10 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         dc_connection = None
         if business_user_id:
             dc_connection = (
-                cls.query
-                   .filter(DCConnection.business_user_id == business_user_id)
-                   .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
-                   .one_or_none())
+                cls.query.filter(DCConnection.business_user_id == business_user_id)
+                .filter(DCConnection.is_active == True)  # noqa: E712 # pylint: disable=singleton-comparison
+                .one_or_none()
+            )
         return dc_connection
 
     @classmethod
@@ -122,10 +122,10 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         dc_connection = None
         if business_user_id:
             dc_connection = (
-                cls.query
-                   .filter(DCConnection.business_user_id == business_user_id)
-                   .filter(DCConnection.connection_state == connection_state)
-                   .one_or_none())
+                cls.query.filter(DCConnection.business_user_id == business_user_id)
+                .filter(DCConnection.connection_state == connection_state)
+                .one_or_none()
+            )
         return dc_connection
 
     @classmethod

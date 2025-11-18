@@ -16,6 +16,7 @@
 This is the core business class.
 It is used to represent a business and its historical values.
 """
+
 import re
 from enum import Enum, EnumMeta
 from typing import Final, Optional
@@ -39,14 +40,14 @@ class BaseMeta(EnumMeta):
 class BusinessType(str, Enum, metaclass=BaseMeta):
     """The business type."""
 
-    CONTINUE_IN = 'C'
-    COOPERATIVE = 'CP'
-    CORPORATION = 'BC'
-    INDIVIDUAL = 'FP'
-    PARTNERSHIP_AND_SOLE_PROP = 'FM'
-    TRUST = 'TRUST'
-    OTHER = 'OT'
-    DEFAULT = 'OT'
+    CONTINUE_IN = "C"
+    COOPERATIVE = "CP"
+    CORPORATION = "BC"
+    INDIVIDUAL = "FP"
+    PARTNERSHIP_AND_SOLE_PROP = "FM"
+    TRUST = "TRUST"
+    OTHER = "OT"
+    DEFAULT = "OT"
 
     @classmethod
     def get_enum_by_value(cls, value: str) -> Optional[str]:
@@ -60,15 +61,15 @@ class BusinessType(str, Enum, metaclass=BaseMeta):
 MAX_IDENTIFIER_NUM_LENGTH: Final[int] = 7
 
 
-class BusinessIdentifier():
+class BusinessIdentifier:
     """The business identifier."""
 
     @staticmethod
     def validate_format(value: str) -> bool:
         """Validate the business identifier."""
-        legal_type = value[:re.search(r'\d', value).start()]
+        legal_type = value[: re.search(r"\d", value).start()]
 
-        if legal_type not in BusinessType or (not value[value.find(legal_type) + len(legal_type):].isdigit()):
+        if legal_type not in BusinessType or (not value[value.find(legal_type) + len(legal_type) :].isdigit()):
             return False
 
         return True
@@ -76,8 +77,9 @@ class BusinessIdentifier():
     @staticmethod
     def next_identifier(business_type: BusinessType) -> Optional[str]:
         """Get the next identifier."""
-        if not (business_type in BusinessType and
-                (sequence_val := Business.get_next_value_from_sequence(business_type))):
+        if not (
+            business_type in BusinessType and (sequence_val := Business.get_next_value_from_sequence(business_type))
+        ):
             return None
 
-        return f'{business_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}'
+        return f"{business_type.value}{str(sequence_val).zfill(MAX_IDENTIFIER_NUM_LENGTH)}"

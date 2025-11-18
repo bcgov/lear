@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for resolutions."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -27,25 +28,25 @@ class Resolution(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
     class ResolutionType(Enum):
         """Render an Enum of the types of resolutions."""
 
-        ORDINARY = 'ORDINARY'
-        SPECIAL = 'SPECIAL'
+        ORDINARY = "ORDINARY"
+        SPECIAL = "SPECIAL"
 
     __versioned__ = {}
-    __tablename__ = 'resolutions'
+    __tablename__ = "resolutions"
 
     id = db.Column(db.Integer, primary_key=True)
-    resolution_date = db.Column('resolution_date', db.Date, nullable=False)
-    resolution_type = db.Column('type', db.String(20), default=ResolutionType.SPECIAL, nullable=False)
-    resolution_sub_type = db.Column('sub_type', db.String(20))
-    signing_party_id = db.Column('signing_party_id', db.Integer, db.ForeignKey('parties.id'))
-    signing_date = db.Column('signing_date', db.Date)
+    resolution_date = db.Column("resolution_date", db.Date, nullable=False)
+    resolution_type = db.Column("type", db.String(20), default=ResolutionType.SPECIAL, nullable=False)
+    resolution_sub_type = db.Column("sub_type", db.String(20))
+    signing_party_id = db.Column("signing_party_id", db.Integer, db.ForeignKey("parties.id"))
+    signing_date = db.Column("signing_date", db.Date)
     resolution = db.Column(db.Text)
 
     # relationships
-    party = db.relationship('Party')
+    party = db.relationship("Party")
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -55,23 +56,19 @@ class Resolution(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
-        resolution_json = {
-            'id': self.id,
-            'type': self.resolution_type,
-            'date': self.resolution_date.isoformat()
-        }
+        resolution_json = {"id": self.id, "type": self.resolution_type, "date": self.resolution_date.isoformat()}
         if self.resolution:
-            resolution_json['resolution'] = self.resolution
+            resolution_json["resolution"] = self.resolution
         if self.resolution_sub_type:
-            resolution_json['subType'] = self.resolution_sub_type
+            resolution_json["subType"] = self.resolution_sub_type
         if self.signing_date:
-            resolution_json['signingDate'] = self.signing_date.isoformat()
+            resolution_json["signingDate"] = self.signing_date.isoformat()
         if self.signing_party_id:
-            resolution_json['signatory'] = {}
-            resolution_json['signatory']['givenName'] = self.party.first_name
-            resolution_json['signatory']['familyName'] = self.party.last_name
+            resolution_json["signatory"] = {}
+            resolution_json["signatory"]["givenName"] = self.party.first_name
+            resolution_json["signatory"]["familyName"] = self.party.last_name
             if self.party.middle_initial:
-                resolution_json['signatory']['additionalName'] = self.party.middle_initial
+                resolution_json["signatory"]["additionalName"] = self.party.middle_initial
         return resolution_json
 
     @classmethod
@@ -85,8 +82,10 @@ class Resolution(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
     @classmethod
     def find_by_type(cls, business_id: int, resolution_type: str):
         """Return the resolutions matching the type."""
-        resolutions = db.session.query(Resolution). \
-            filter(Resolution.business_id == business_id). \
-            filter(Resolution.resolution_type == resolution_type). \
-            all()
+        resolutions = (
+            db.session.query(Resolution)
+            .filter(Resolution.business_id == business_id)
+            .filter(Resolution.resolution_type == resolution_type)
+            .all()
+        )
         return resolutions

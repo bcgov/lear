@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """PostgresDB data type utilities."""
+
 from sqlalchemy.types import UserDefinedType
 
 
@@ -35,7 +36,7 @@ class PostgreSQLXML(UserDefinedType):
 
         This method returns the string 'XML' to indicate that the column should store XML data.
         """
-        return 'XML'
+        return "XML"
 
     def bind_processor(self, dialect):
         """
@@ -47,8 +48,10 @@ class PostgreSQLXML(UserDefinedType):
             A function that processes the value to be stored in the database. In this case, the function
             returns the value unchanged, as no special processing is needed.
         """
+
         def process(value):
             return value
+
         return process
 
     def result_processor(self, dialect, coltype):
@@ -62,6 +65,8 @@ class PostgreSQLXML(UserDefinedType):
             A function that processes the value retrieved from the database. In this case, the function
             returns the value unchanged, as no special processing is needed.
         """
+
         def process(value):
             return value
+
         return process

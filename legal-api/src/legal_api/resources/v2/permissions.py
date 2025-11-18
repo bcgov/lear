@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve permissions for a user role."""
+
 from http import HTTPStatus
 
 from flask import Blueprint, jsonify
@@ -21,15 +22,13 @@ from legal_api.services.permissions import PermissionService
 from legal_api.utils.auth import jwt
 
 
-bp = Blueprint('PERMISSIONS2', __name__, url_prefix='/api/v2/permissions')
+bp = Blueprint("PERMISSIONS2", __name__, url_prefix="/api/v2/permissions")
 
 
-@bp.route('', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_permissions():
     """Return a list of authorized permissions for the user."""
     authorized_permissions = PermissionService.get_authorized_permissions_for_user()
-    return jsonify({
-        'authorizedPermissions': authorized_permissions
-    }), HTTPStatus.OK
+    return jsonify({"authorizedPermissions": authorized_permissions}), HTTPStatus.OK

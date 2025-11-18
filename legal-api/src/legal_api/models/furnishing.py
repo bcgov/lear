@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for furnishings."""
+
 from __future__ import annotations
 
 from enum import auto
@@ -55,34 +56,35 @@ class Furnishing(db.Model):
         PROCESSED = auto()
         FAILED = auto()
 
-    __tablename__ = 'furnishings'
+    __tablename__ = "furnishings"
 
     id = db.Column(db.Integer, primary_key=True)
-    furnishing_type = db.Column('furnishing_type', db.Enum(FurnishingType), nullable=False)
-    furnishing_name = db.Column('furnishing_name', db.Enum(FurnishingName), nullable=False)
-    business_identifier = db.Column('business_identifier', db.String(10), default='', nullable=False)
-    processed_date = db.Column('processed_date', db.DateTime(timezone=True), nullable=True)
-    status = db.Column('status', db.Enum(FurnishingStatus), nullable=False)
-    notes = db.Column('notes', db.String(150), default='', nullable=True)
-    meta_data = db.Column('meta_data', JSONB, nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
-    email = db.Column('email', db.String(254), default='', nullable=True)
-    last_name = db.Column('last_name', db.String(30), default='', nullable=True)
-    first_name = db.Column('first_name', db.String(30), default='', nullable=True)
-    middle_name = db.Column('middle_name', db.String(30), default='', nullable=True)
-    last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True), nullable=True)
-    business_name = db.Column('business_name', db.String(1000), nullable=True)
+    furnishing_type = db.Column("furnishing_type", db.Enum(FurnishingType), nullable=False)
+    furnishing_name = db.Column("furnishing_name", db.Enum(FurnishingName), nullable=False)
+    business_identifier = db.Column("business_identifier", db.String(10), default="", nullable=False)
+    processed_date = db.Column("processed_date", db.DateTime(timezone=True), nullable=True)
+    status = db.Column("status", db.Enum(FurnishingStatus), nullable=False)
+    notes = db.Column("notes", db.String(150), default="", nullable=True)
+    meta_data = db.Column("meta_data", JSONB, nullable=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
+    email = db.Column("email", db.String(254), default="", nullable=True)
+    last_name = db.Column("last_name", db.String(30), default="", nullable=True)
+    first_name = db.Column("first_name", db.String(30), default="", nullable=True)
+    middle_name = db.Column("middle_name", db.String(30), default="", nullable=True)
+    last_ar_date = db.Column("last_ar_date", db.DateTime(timezone=True), nullable=True)
+    business_name = db.Column("business_name", db.String(1000), nullable=True)
 
     # parent keys
-    batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
-    furnishing_group_id = db.Column('furnishing_group_id', db.Integer, db.ForeignKey('furnishing_groups.id'),
-                                    index=True, nullable=True)
+    batch_id = db.Column("batch_id", db.Integer, db.ForeignKey("batches.id"), index=True, nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True, nullable=False)
+    furnishing_group_id = db.Column(
+        "furnishing_group_id", db.Integer, db.ForeignKey("furnishing_groups.id"), index=True, nullable=True
+    )
 
     # relationships
-    business = db.relationship('Business', backref=db.backref('furnishings', lazy=True))
-    furnishing_group = db.relationship('FurnishingGroup', backref=db.backref('furnishings', lazy=True))
+    business = db.relationship("Business", backref=db.backref("furnishings", lazy=True))
+    furnishing_group = db.relationship("FurnishingGroup", backref=db.backref("furnishings", lazy=True))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -98,14 +100,15 @@ class Furnishing(db.Model):
         return furnishing
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
-                batch_id: int = None,
-                business_id: int = None,
-                furnishing_name: str = None,
-                furnishing_type: str = None,
-                status: str = None,
-                furnishing_group_id: int = None
-                ) -> List[Furnishing]:
+    def find_by(
+        cls,  # pylint: disable=too-many-arguments
+        batch_id: int = None,
+        business_id: int = None,
+        furnishing_name: str = None,
+        furnishing_type: str = None,
+        status: str = None,
+        furnishing_group_id: int = None,
+    ) -> List[Furnishing]:
         """Return the Furnishing entries matching the filter."""
         query = db.session.query(Furnishing)
 

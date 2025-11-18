@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for batch processing."""
+
 from enum import auto
 
 from sqlalchemy.dialects.postgresql import JSONB
@@ -42,25 +43,25 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
         COMPLETED = auto()
         ERROR = auto()
 
-    __tablename__ = 'batch_processing'
+    __tablename__ = "batch_processing"
 
     id = db.Column(db.Integer, primary_key=True)
-    business_identifier = db.Column('business_identifier', db.String(10), default='', nullable=False)
-    step = db.Column('step', db.Enum(BatchProcessingStep), nullable=False)
-    status = db.Column('status', db.Enum(BatchProcessingStatus), nullable=False)
-    notes = db.Column('notes', db.String(150), default='', nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    trigger_date = db.Column('trigger_date', db.DateTime(timezone=True), nullable=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
-    meta_data = db.Column('meta_data', JSONB, nullable=True)
+    business_identifier = db.Column("business_identifier", db.String(10), default="", nullable=False)
+    step = db.Column("step", db.Enum(BatchProcessingStep), nullable=False)
+    status = db.Column("status", db.Enum(BatchProcessingStatus), nullable=False)
+    notes = db.Column("notes", db.String(150), default="", nullable=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    trigger_date = db.Column("trigger_date", db.DateTime(timezone=True), nullable=True)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
+    meta_data = db.Column("meta_data", JSONB, nullable=True)
 
     # parent keys
-    batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True, nullable=True)
+    batch_id = db.Column("batch_id", db.Integer, db.ForeignKey("batches.id"), index=True, nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True, nullable=False)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True, nullable=True)
 
     # relationships
-    business = db.relationship('Business', back_populates='batch_processing')
+    business = db.relationship("Business", back_populates="batch_processing")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -76,12 +77,14 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
         return batch_processing
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
-                batch_id: int = None,
-                business_id: int = None,
-                filing_id: int = None,
-                step: BatchProcessingStep = None,
-                status: BatchProcessingStatus = None) -> dict:
+    def find_by(
+        cls,  # pylint: disable=too-many-arguments
+        batch_id: int = None,
+        business_id: int = None,
+        filing_id: int = None,
+        step: BatchProcessingStep = None,
+        status: BatchProcessingStatus = None,
+    ) -> dict:
         """Return the batch matching."""
         query = db.session.query(BatchProcessing)
         batch_processinges = []

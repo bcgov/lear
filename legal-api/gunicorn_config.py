@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The configuration for gunicorn, which picks up the
-   runtime options from environment variables
+runtime options from environment variables
 """
 
 import os

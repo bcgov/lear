@@ -15,6 +15,7 @@
 
 Provides all business entity externalized services.
 """
+
 from .api_namespace import API
 from .business import BusinessResource
 from .business_address import AddressResource
@@ -29,4 +30,4 @@ from .filing_comments import CommentResource
 from .internal_services import InternalBusinessResource
 
 
-__all__ = ('API',)
+__all__ = ("API",)

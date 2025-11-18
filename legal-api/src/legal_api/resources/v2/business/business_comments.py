@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+
 import datetime
 from http import HTTPStatus
 from typing import Tuple
@@ -32,14 +33,14 @@ from .bp import bp
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@bp.route('/<string:identifier>/comments', methods=['GET'])
-@bp.route('/<string:identifier>/comments/<int:comment_id>', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/comments", methods=["GET"])
+@bp.route("/<string:identifier>/comments/<int:comment_id>", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_comments(identifier, comment_id=None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
-    if identifier.startswith('T'):
+    if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
     else:
@@ -53,7 +54,7 @@ def get_comments(identifier, comment_id=None):
     if comment_id:
         comment = comments.filter(Comment.id == comment_id).one_or_none()
         if not comment:
-            return jsonify({'message': f'Comment {comment_id} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"Comment {comment_id} not found"}), HTTPStatus.NOT_FOUND
 
         return jsonify(comment.json)
 
@@ -64,8 +65,8 @@ def get_comments(identifier, comment_id=None):
     return jsonify(comments=rv)
 
 
-@bp.route('/<string:identifier>/comments', methods=['POST'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/comments", methods=["POST"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def post_comments(identifier):
     """Create a new comment for the business."""
@@ -78,29 +79,31 @@ def post_comments(identifier):
     json_input = request.get_json()
 
     # check authorization
-    if not authorized(identifier, jwt, action=['add_comment']):
-        return jsonify({'message':
-                        f'You are not authorized to submit a comment for {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["add_comment"]):
+        return jsonify(
+            {"message": f"You are not authorized to submit a comment for {identifier}."}
+        ), HTTPStatus.UNAUTHORIZED
 
     # validate comment
     err = validate(json_input, False)
     if err:
-        json_input['errors'] = err.msg
+        json_input["errors"] = err.msg
         return jsonify(json_input), err.code
 
     # save comment
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
         comment = Comment()
-        comment.comment = json_input['comment']['comment']
+        comment.comment = json_input["comment"]["comment"]
         comment.staff_id = user.id
         comment.business_id = business.id
         comment.timestamp = datetime.datetime.utcnow()
         comment.save()
     except BusinessException as err:
         reply = json_input
-        reply['errors'] = [{'error': err.error}, ]
+        reply["errors"] = [
+            {"error": err.error},
+        ]
         return jsonify(reply), err.status_code
 
     # all done
@@ -110,11 +113,10 @@ def post_comments(identifier):
 def _basic_checks(identifier: str, business: Business, client_request) -> Tuple[dict, int]:
     """Perform basic checks to ensure put can do something."""
     json_input = client_request.get_json()
-    if client_request.method == 'POST' and not json_input:
-        return ({'message': f'No comment json data in body of post for {identifier}.'},
-                HTTPStatus.BAD_REQUEST)
+    if client_request.method == "POST" and not json_input:
+        return ({"message": f"No comment json data in body of post for {identifier}."}, HTTPStatus.BAD_REQUEST)
 
     if not business:
-        return ({'message': f'{identifier} not found'}, HTTPStatus.NOT_FOUND)
+        return ({"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND)
 
     return (None, None)

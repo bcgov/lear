@@ -15,6 +15,7 @@
 
 Currently this only provides API versioning information
 """
+
 from __future__ import annotations
 
 from enum import auto
@@ -39,19 +40,19 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         unknown = auto()
 
     __versioned__ = {}
-    __tablename__ = 'amalgamations'
+    __tablename__ = "amalgamations"
 
     id = db.Column(db.Integer, primary_key=True)
-    amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes), nullable=False)
-    amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=False)
-    court_approval = db.Column('court_approval', db.Boolean())
+    amalgamation_type = db.Column("amalgamation_type", db.Enum(AmalgamationTypes), nullable=False)
+    amalgamation_date = db.Column("amalgamation_date", db.DateTime(timezone=True), nullable=False)
+    court_approval = db.Column("court_approval", db.Boolean())
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False)
 
     # Relationships
-    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
+    amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -69,14 +70,15 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     def json(self):
         """Return amalgamation json."""
         from .business import Business  # pylint: disable=import-outside-toplevel
+
         business = Business.find_by_internal_id(self.business_id)
 
         return {
-            'amalgamationDate': self.amalgamation_date.isoformat(),
-            'amalgamationType': self.amalgamation_type.name,
-            'courtApproval': self.court_approval,
-            'identifier': business.identifier,
-            'legalName': business.legal_name
+            "amalgamationDate": self.amalgamation_date.isoformat(),
+            "amalgamationType": self.amalgamation_type.name,
+            "courtApproval": self.court_approval,
+            "identifier": business.identifier,
+            "legalName": business.legal_name,
         }
 
     @classmethod
@@ -87,18 +89,23 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         """
         # pylint: disable=singleton-comparison;
         if tombstone:
-            amalgamation = db.session.query(Amalgamation) \
-                .filter(Amalgamation.id == amalgamation_id) \
-                .one_or_none()
+            amalgamation = db.session.query(Amalgamation).filter(Amalgamation.id == amalgamation_id).one_or_none()
         else:
             amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
-            amalgamation = db.session.query(amalgamation_version) \
-                .filter(amalgamation_version.transaction_id <= transaction_id) \
-                .filter(amalgamation_version.operation_type == 0) \
-                .filter(amalgamation_version.id == amalgamation_id) \
-                .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
-                            amalgamation_version.end_transaction_id > transaction_id)) \
-                .order_by(amalgamation_version.transaction_id).one_or_none()
+            amalgamation = (
+                db.session.query(amalgamation_version)
+                .filter(amalgamation_version.transaction_id <= transaction_id)
+                .filter(amalgamation_version.operation_type == 0)
+                .filter(amalgamation_version.id == amalgamation_id)
+                .filter(
+                    or_(
+                        amalgamation_version.end_transaction_id == None,  # noqa: E711;
+                        amalgamation_version.end_transaction_id > transaction_id,
+                    )
+                )
+                .order_by(amalgamation_version.transaction_id)
+                .one_or_none()
+            )
         return amalgamation
 
     @classmethod
@@ -106,13 +113,20 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         """Get amalgamation for the given transaction id."""
         # pylint: disable=singleton-comparison;
         amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
-        amalgamation = db.session.query(amalgamation_version) \
-            .filter(amalgamation_version.transaction_id <= transaction_id) \
-            .filter(amalgamation_version.operation_type == 0) \
-            .filter(amalgamation_version.business_id == business_id) \
-            .filter(or_(amalgamation_version.end_transaction_id == None,  # noqa: E711;
-                        amalgamation_version.end_transaction_id > transaction_id)) \
-            .order_by(amalgamation_version.transaction_id).one_or_none()
+        amalgamation = (
+            db.session.query(amalgamation_version)
+            .filter(amalgamation_version.transaction_id <= transaction_id)
+            .filter(amalgamation_version.operation_type == 0)
+            .filter(amalgamation_version.business_id == business_id)
+            .filter(
+                or_(
+                    amalgamation_version.end_transaction_id == None,  # noqa: E711;
+                    amalgamation_version.end_transaction_id > transaction_id,
+                )
+            )
+            .order_by(amalgamation_version.transaction_id)
+            .one_or_none()
+        )
         return amalgamation
 
     @classmethod
@@ -129,12 +143,13 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
             amalgamation = cls.query.filter_by(business_id=business_id).one_or_none()
 
         from .business import Business  # pylint: disable=import-outside-toplevel
+
         business = Business.find_by_internal_id(amalgamation.business_id)
 
         return {
-            'amalgamationDate': amalgamation.amalgamation_date.isoformat(),
-            'amalgamationType': amalgamation.amalgamation_type.name,
-            'courtApproval': amalgamation.court_approval,
-            'identifier': business.identifier,
-            'legalName': business.legal_name
+            "amalgamationDate": amalgamation.amalgamation_date.isoformat(),
+            "amalgamationType": amalgamation.amalgamation_type.name,
+            "courtApproval": amalgamation.court_approval,
+            "identifier": business.identifier,
+            "legalName": business.legal_name,
         }

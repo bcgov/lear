@@ -12,7 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This has the meta insformation for the core domain used by the application."""
+
 from .filing import FILINGS, FilingMeta
 
 
-__all__ = ('FILINGS', 'FilingMeta',)
+__all__ = (
+    "FILINGS",
+    "FilingMeta",
+)

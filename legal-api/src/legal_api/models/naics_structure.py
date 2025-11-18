@@ -23,6 +23,7 @@ The 4th number = industry group
 The 5th number = industry
 The 6th number = national industry (a zero indicates no national industry is needed)
 """
+
 from __future__ import annotations
 
 import uuid
@@ -43,40 +44,40 @@ class NaicsStructure(db.Model):
     Represents NAICS Structure.
     """
 
-    __tablename__ = 'naics_structures'
+    __tablename__ = "naics_structures"
 
     id = db.Column(db.Integer, primary_key=True)
-    naics_key = db.Column('naics_key', UUID, nullable=False, default=uuid.uuid4)
-    level = db.Column('level', db.Integer, index=True, nullable=False)
-    hierarchical_structure = db.Column('hierarchical_structure', db.String(25), nullable=False)
-    code = db.Column('code', db.String(10), index=True, nullable=False)
-    year = db.Column('year', db.Integer, index=True, nullable=False)
-    version = db.Column('version', db.Integer, index=True, nullable=False)
-    class_title = db.Column('class_title', db.String(150), index=True, nullable=False)
-    superscript = db.Column('superscript', db.String(5), nullable=True)
-    class_definition = db.Column('class_definition', db.String(5100), index=True, nullable=False)
+    naics_key = db.Column("naics_key", UUID, nullable=False, default=uuid.uuid4)
+    level = db.Column("level", db.Integer, index=True, nullable=False)
+    hierarchical_structure = db.Column("hierarchical_structure", db.String(25), nullable=False)
+    code = db.Column("code", db.String(10), index=True, nullable=False)
+    year = db.Column("year", db.Integer, index=True, nullable=False)
+    version = db.Column("version", db.Integer, index=True, nullable=False)
+    class_title = db.Column("class_title", db.String(150), index=True, nullable=False)
+    superscript = db.Column("superscript", db.String(5), nullable=True)
+    class_definition = db.Column("class_definition", db.String(5100), index=True, nullable=False)
 
     # relationships
-    naics_elements = db.relationship('NaicsElement')
+    naics_elements = db.relationship("NaicsElement")
 
     # json serializer
     @property
     def json(self) -> dict:
         """Return a dict of this object, with keys in JSON format."""
         naics_structures = {
-            'naicsKey': self.naics_key,
-            'code': self.code,
-            'year': self.year,
-            'version': self.version,
-            'classTitle': self.class_title,
-            'classDefinition': self.class_definition
+            "naicsKey": self.naics_key,
+            "code": self.code,
+            "year": self.year,
+            "version": self.version,
+            "classTitle": self.class_title,
+            "classDefinition": self.class_definition,
         }
 
         elements = []
         for naics_element in self.naics_elements:
             elements.append(naics_element.json)
 
-        naics_structures['naicsElements'] = elements
+        naics_structures["naicsElements"] = elements
         return naics_structures
 
     @classmethod
@@ -99,15 +100,16 @@ class NaicsStructure(db.Model):
     @classmethod
     def has_exact_match_class_title_match(cls, search_term: str, level=5) -> bool:
         """Return whether there is at least one exact match on class title exists."""
-        search_term = f'%{search_term}%'
+        search_term = f"%{search_term}%"
         naics_year, naics_version = cls.get_naics_config()
 
-        query = \
-            db.session.query(NaicsStructure) \
-            .filter(NaicsStructure.level == level) \
-            .filter(NaicsStructure.year == naics_year) \
-            .filter(NaicsStructure.version == naics_version) \
+        query = (
+            db.session.query(NaicsStructure)
+            .filter(NaicsStructure.level == level)
+            .filter(NaicsStructure.year == naics_year)
+            .filter(NaicsStructure.version == naics_version)
             .filter(NaicsStructure.class_title.ilike(search_term))
+        )
 
         first_match = query.first()
         result = bool(first_match)
@@ -123,45 +125,49 @@ class NaicsStructure(db.Model):
         examples where contains exact match in NaicsElement.element_description
         """
         naics_year, naics_version = cls.get_naics_config()
-        search_term = f'%{search_term}%'
+        search_term = f"%{search_term}%"
 
         # query used to retrieve query matching 6 digit NAICS codes along with relevant NAICS elements
-        query = \
-            db.session.query(NaicsStructure) \
-            .distinct() \
-            .outerjoin(NaicsElement,  # logic used to populate NaicsElement as per logic outlined in function desc
-                       and_(
-                           NaicsElement.naics_structure_id == NaicsStructure.id,
-                           or_(
-                               and_(
-                                   NaicsStructure.class_title.ilike(search_term),
-                                   NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                                  NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES])
-                               ).self_group(),
-                               and_(
-                                   NaicsStructure.class_title.notilike(search_term),
-                                   NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                                  NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]),
-                                   NaicsElement.element_description.ilike(search_term)
-                               ).self_group()
-                           ).self_group()
-                       ).self_group()) \
-            .options(contains_eager(NaicsStructure.naics_elements)) \
-            .filter(NaicsStructure.year == naics_year) \
-            .filter(NaicsStructure.version == naics_version) \
-            .filter(NaicsStructure.level == 5) \
+        query = (
+            db.session.query(NaicsStructure)
+            .distinct()
+            .outerjoin(
+                NaicsElement,  # logic used to populate NaicsElement as per logic outlined in function desc
+                and_(
+                    NaicsElement.naics_structure_id == NaicsStructure.id,
+                    or_(
+                        and_(
+                            NaicsStructure.class_title.ilike(search_term),
+                            NaicsElement.element_type.in_(
+                                [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                            ),
+                        ).self_group(),
+                        and_(
+                            NaicsStructure.class_title.notilike(search_term),
+                            NaicsElement.element_type.in_(
+                                [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                            ),
+                            NaicsElement.element_description.ilike(search_term),
+                        ).self_group(),
+                    ).self_group(),
+                ).self_group(),
+            )
+            .options(contains_eager(NaicsStructure.naics_elements))
+            .filter(NaicsStructure.year == naics_year)
+            .filter(NaicsStructure.version == naics_version)
+            .filter(NaicsStructure.level == 5)
             .filter(  # core logic to determine which NaicsStructure records to return in addition to year and level
                 or_(
-                    or_(
-                        NaicsStructure.class_title.ilike(search_term)
-                    ).self_group(),
+                    or_(NaicsStructure.class_title.ilike(search_term)).self_group(),
                     and_(
-                        NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                       NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]),
-                        NaicsElement.element_description.ilike(search_term)
-                    ).self_group()
+                        NaicsElement.element_type.in_(
+                            [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                        ),
+                        NaicsElement.element_description.ilike(search_term),
+                    ).self_group(),
                 ).self_group()
             )
+        )
 
         return query
 
@@ -172,30 +178,37 @@ class NaicsStructure(db.Model):
         Return only elements where example desc matches one of the words in the search term.
         """
         naics_year, naics_version = cls.get_naics_config()
-        search_terms = search_term.split(' ')
-        search_terms = [f'%{x}%' for x in search_terms]
-        search_term = f'%{search_term}%'
+        search_terms = search_term.split(" ")
+        search_terms = [f"%{x}%" for x in search_terms]
+        search_term = f"%{search_term}%"
         naics_element_class_desc_ilike_filters = [NaicsElement.element_description.ilike(x) for x in search_terms]
 
         # query used to retrieve query matching 6 digit NAICS codes along with relevant NAICS elements
-        query = \
-            db.session.query(NaicsStructure) \
-            .distinct() \
-            .outerjoin(NaicsElement,  # logic used to populate NaicsElement as per logic outlined in function desc
-                       and_(
-                           NaicsElement.naics_structure_id == NaicsStructure.id,
-                           or_(*naics_element_class_desc_ilike_filters),
-                           NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                          NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES])
-                       ).self_group()) \
-            .options(contains_eager(NaicsStructure.naics_elements)) \
-            .filter(NaicsStructure.year == naics_year) \
-            .filter(NaicsStructure.version == naics_version) \
-            .filter(NaicsStructure.level == 5) \
-            .filter(or_(*naics_element_class_desc_ilike_filters)) \
-            .filter(NaicsStructure.class_title.notilike(search_term)) \
-            .filter(NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                   NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]))
+        query = (
+            db.session.query(NaicsStructure)
+            .distinct()
+            .outerjoin(
+                NaicsElement,  # logic used to populate NaicsElement as per logic outlined in function desc
+                and_(
+                    NaicsElement.naics_structure_id == NaicsStructure.id,
+                    or_(*naics_element_class_desc_ilike_filters),
+                    NaicsElement.element_type.in_(
+                        [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                    ),
+                ).self_group(),
+            )
+            .options(contains_eager(NaicsStructure.naics_elements))
+            .filter(NaicsStructure.year == naics_year)
+            .filter(NaicsStructure.version == naics_version)
+            .filter(NaicsStructure.level == 5)
+            .filter(or_(*naics_element_class_desc_ilike_filters))
+            .filter(NaicsStructure.class_title.notilike(search_term))
+            .filter(
+                NaicsElement.element_type.in_(
+                    [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                )
+            )
+        )
 
         return query
 
@@ -204,16 +217,20 @@ class NaicsStructure(db.Model):
         """Return NAICS Structure matching code and level."""
         naics_year, naics_version = cls.get_naics_config()
 
-        query = \
-            db.session.query(NaicsStructure) \
-            .join(NaicsElement) \
-            .options(contains_eager(NaicsStructure.naics_elements)) \
-            .filter(NaicsStructure.level == level) \
-            .filter(NaicsStructure.year == naics_year) \
-            .filter(NaicsStructure.version == naics_version) \
-            .filter(NaicsStructure.code == code) \
-            .filter(NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                   NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]))
+        query = (
+            db.session.query(NaicsStructure)
+            .join(NaicsElement)
+            .options(contains_eager(NaicsStructure.naics_elements))
+            .filter(NaicsStructure.level == level)
+            .filter(NaicsStructure.year == naics_year)
+            .filter(NaicsStructure.version == naics_version)
+            .filter(NaicsStructure.code == code)
+            .filter(
+                NaicsElement.element_type.in_(
+                    [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                )
+            )
+        )
 
         result = query.one_or_none()
         return result
@@ -221,13 +238,17 @@ class NaicsStructure(db.Model):
     @classmethod
     def find_by_naics_key(cls, naics_key: str) -> Optional[NaicsStructure]:
         """Return NAICS Structure matching naics_key."""
-        query = \
-            db.session.query(NaicsStructure) \
-            .join(NaicsElement) \
-            .options(contains_eager(NaicsStructure.naics_elements)) \
-            .filter(NaicsStructure.naics_key == naics_key) \
-            .filter(NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
-                                                   NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]))
+        query = (
+            db.session.query(NaicsStructure)
+            .join(NaicsElement)
+            .options(contains_eager(NaicsStructure.naics_elements))
+            .filter(NaicsStructure.naics_key == naics_key)
+            .filter(
+                NaicsElement.element_type.in_(
+                    [NaicsElement.ElementType.ALL_EXAMPLES, NaicsElement.ElementType.ILLUSTRATIVE_EXAMPLES]
+                )
+            )
+        )
 
         result = query.one_or_none()
         return result
@@ -235,7 +256,7 @@ class NaicsStructure(db.Model):
     @classmethod
     def get_naics_config(cls):
         """Return NAICS config."""
-        naics_year = int(current_app.config.get('NAICS_YEAR'))
-        naics_version = int(current_app.config.get('NAICS_VERSION'))
+        naics_year = int(current_app.config.get("NAICS_YEAR"))
+        naics_version = int(current_app.config.get("NAICS_VERSION"))
 
         return naics_year, naics_version

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Change of Name filing."""
+
 from http import HTTPStatus
 from typing import Dict, Final
 
@@ -26,35 +27,38 @@ from legal_api.services.utils import get_str
 def validate(business: Business, filing: Dict) -> Error:
     """Validate the Change of Name filing."""
     if not business or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
-    legal_name_path = '/filing/changeOfName/legalName'
+    legal_name_path = "/filing/changeOfName/legalName"
     legal_name = get_str(filing, legal_name_path)
 
-    nr__number_path = '/filing/changeOfName/nameRequest/nrNumber'
+    nr__number_path = "/filing/changeOfName/nameRequest/nrNumber"
     nr_number = get_str(filing, nr__number_path)
 
     if nr_number:
         # Skip the NR check in the Sandbox
-        if flags.is_on('enable-sandbox'):
+        if flags.is_on("enable-sandbox"):
             return None
         # ensure NR is approved or conditionally approved
         nr_response = namex.query_nr_number(nr_number).json()
         validation_result = namex.validate_nr(nr_response)
 
-        if not validation_result['is_consumable']:
-            msg.append({'error': babel('SR CON of Name Request is not approved.'), 'path': nr__number_path})
+        if not validation_result["is_consumable"]:
+            msg.append({"error": babel("SR CON of Name Request is not approved."), "path": nr__number_path})
 
         # ensure NR request has the same legal name
-        nr_legal_name_path: Final = '/filing/changeOfName/nameRequest/legalName'
+        nr_legal_name_path: Final = "/filing/changeOfName/nameRequest/legalName"
         legal_name = get_str(filing, nr_legal_name_path)
         nr_name = namex.get_approved_name(nr_response)
         if nr_name != legal_name:
-            msg.append({'error': babel('SR CON of Name Request has a different legal name.'),
-                        'path': legal_name_path})
+            msg.append({"error": babel("SR CON of Name Request has a different legal name."), "path": legal_name_path})
     elif not legal_name:
-        msg.append({'error': babel('Either Legal Name or NR number must be provided.'),
-                    'path': legal_name_path + ' or ' + nr__number_path})
+        msg.append(
+            {
+                "error": babel("Either Legal Name or NR number must be provided."),
+                "path": legal_name_path + " or " + nr__number_path,
+            }
+        )
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

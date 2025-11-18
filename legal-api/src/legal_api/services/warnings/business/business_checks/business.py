@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Service to check compliancy for a business."""
+
 from legal_api.models import Business
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
@@ -25,9 +26,7 @@ def check_business(business: any) -> list:
     """Check business for warnings."""
     result = []
 
-    if business.legal_type in \
-            (Business.LegalTypes.SOLE_PROP.value,
-             Business.LegalTypes.PARTNERSHIP.value):
+    if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
         result = firms_check(business)
     elif business.legal_type in Business.CORPS:
         result = corps_check(business)

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This model holds data for consent continuation out."""
+
 from __future__ import annotations
 
 from enum import auto
@@ -33,19 +34,19 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
         continuation_out = auto()
         amalgamation_out = auto()
 
-    __tablename__ = 'consent_continuation_outs'
+    __tablename__ = "consent_continuation_outs"
 
-    id = db.Column('id', db.Integer, unique=True, primary_key=True)
-    consent_type = db.Column('consent_type', db.Enum(ConsentTypes), nullable=False)
-    foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
-    foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
-    expiry_date = db.Column('expiry_date', db.DateTime(timezone=True))
+    id = db.Column("id", db.Integer, unique=True, primary_key=True)
+    consent_type = db.Column("consent_type", db.Enum(ConsentTypes), nullable=False)
+    foreign_jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
+    foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
+    expiry_date = db.Column("expiry_date", db.DateTime(timezone=True))
 
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"))
 
     # relationships
-    filing = db.relationship('Filing', backref=backref('filing', uselist=False), foreign_keys=[filing_id])
+    filing = db.relationship("Filing", backref=backref("filing", uselist=False), foreign_keys=[filing_id])
 
     def save(self):
         """Save the object to the database immediately."""
@@ -53,28 +54,34 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
         db.session.commit()
 
     @staticmethod
-    def get_active_cco(business_id,
-                       expiry_date,
-                       foreign_jurisdiction=None,
-                       foreign_jurisdiction_region=None,
-                       consent_type=ConsentTypes.continuation_out) -> list[ConsentContinuationOut]:
+    def get_active_cco(
+        business_id,
+        expiry_date,
+        foreign_jurisdiction=None,
+        foreign_jurisdiction_region=None,
+        consent_type=ConsentTypes.continuation_out,
+    ) -> list[ConsentContinuationOut]:
         """Get a list of active consent_continuation_outs linked to the given business_id."""
-        query = (db.session.query(ConsentContinuationOut).
-                 filter(ConsentContinuationOut.business_id == business_id).
-                 filter(ConsentContinuationOut.consent_type == consent_type).
-                 filter(ConsentContinuationOut.expiry_date >= expiry_date))
+        query = (
+            db.session.query(ConsentContinuationOut)
+            .filter(ConsentContinuationOut.business_id == business_id)
+            .filter(ConsentContinuationOut.consent_type == consent_type)
+            .filter(ConsentContinuationOut.expiry_date >= expiry_date)
+        )
 
         if foreign_jurisdiction:
             query = query.filter(ConsentContinuationOut.foreign_jurisdiction == foreign_jurisdiction.upper())
 
         if foreign_jurisdiction_region:
             query = query.filter(
-                ConsentContinuationOut.foreign_jurisdiction_region == foreign_jurisdiction_region.upper())
+                ConsentContinuationOut.foreign_jurisdiction_region == foreign_jurisdiction_region.upper()
+            )
 
         return query.all()
 
     @staticmethod
     def get_by_filing_id(filing_id) -> Optional[ConsentContinuationOut]:
         """Get consent continuation out by filing_id."""
-        return db.session.query(ConsentContinuationOut). \
-            filter(ConsentContinuationOut.filing_id == filing_id).one_or_none()
+        return (
+            db.session.query(ConsentContinuationOut).filter(ConsentContinuationOut.filing_id == filing_id).one_or_none()
+        )

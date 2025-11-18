@@ -22,10 +22,10 @@ from .db import db
 class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
     """This table maps colin_event_ids to filing ids."""
 
-    __tablename__ = 'colin_event_ids'
+    __tablename__ = "colin_event_ids"
 
-    colin_event_id = db.Column('colin_event_id', db.Integer, unique=True, primary_key=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
+    colin_event_id = db.Column("colin_event_id", db.Integer, unique=True, primary_key=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -44,6 +44,7 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
     @staticmethod
     def get_by_colin_id(colin_id):
         """Get the ColinEventId obj with the given colin id."""
-        colin_event_id_obj =\
+        colin_event_id_obj = (
             db.session.query(ColinEventId).filter(ColinEventId.colin_event_id == colin_id).one_or_none()
+        )
         return colin_event_id_obj

@@ -15,6 +15,7 @@
 
 Currently this only provides API versioning information
 """
+
 from flask import jsonify
 from flask_restx import Namespace, Resource
 from registry_schemas import __version__ as registry_schemas_version
@@ -22,10 +23,10 @@ from registry_schemas import __version__ as registry_schemas_version
 from legal_api.utils.run_version import get_run_version
 
 
-API = Namespace('Meta', description='Metadata')
+API = Namespace("Meta", description="Metadata")
 
 
-@API.route('/info')
+@API.route("/info")
 class Info(Resource):
     """Meta information about the overall service."""
 
@@ -33,4 +34,4 @@ class Info(Resource):
     def get():
         """Return a JSON object with meta information about the Service."""
         version = get_run_version()
-        return jsonify(API=f'legal_api/{version}', SCHEMAS=f'registry_schemas/{registry_schemas_version}')
+        return jsonify(API=f"legal_api/{version}", SCHEMAS=f"registry_schemas/{registry_schemas_version}")

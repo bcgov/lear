@@ -15,6 +15,7 @@
 
 Provides all business entity externalized services.
 """
+
 from .bp import bp  # noqa: I001
 from .business import get_businesses, post_businesses
 from .business_address import get_addresses
@@ -40,4 +41,4 @@ from .colin_sync import (
 from .filing_comments import get_filing_comments, not_allowed_filing_comments, post_filing_comments
 
 
-__all__ = ('bp',)
+__all__ = ("bp",)

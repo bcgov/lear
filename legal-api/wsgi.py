@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides the WSGI entry point for running the application
-"""
+"""Provides the WSGI entry point for running the application"""
+
 import os
 
 from legal_api import create_app
@@ -21,5 +21,5 @@ from legal_api import create_app
 application = create_app()  # pylint: disable=invalid-name
 
 if __name__ == "__main__":
-    server_port = os.environ.get('PORT', '8080')
-    application.run(debug=False, port=server_port, host='0.0.0.0')
+    server_port = os.environ.get("PORT", "8080")
+    application.run(debug=False, port=server_port, host="0.0.0.0")

@@ -1,19 +1,19 @@
 # Copyright (c) 2025, Province of British Columbia
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice, this
 #    list of conditions and the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 #    this list of conditions and the following disclaimer in the documentation
 #    and/or other materials provided with the distribution.
-# 
+#
 # 3. Neither the name of the copyright holder nor the names of its
 #    contributors may be used to endorse or promote products derived from
 #    this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,6 +25,7 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """This module holds data for business account settings."""
+
 from __future__ import annotations
 
 from http import HTTPStatus
@@ -37,10 +38,10 @@ from .db import db
 class BusinessAccountSettings(db.Model):
     """This class manages the business account settings."""
 
-    __tablename__ = 'business_account_settings'
+    __tablename__ = "business_account_settings"
 
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
     # NOTE: account_id should map to the Org.id in auth, businesses without any affiliations will have a null entry
     account_id = db.Column(db.Integer, nullable=True)
     business_account_constraint = db.UniqueConstraint(business_id, account_id)
@@ -56,19 +57,19 @@ class BusinessAccountSettings(db.Model):
     @property
     def json(self):
         return {
-            'accountId': self.account_id,
-            'businessIdentifier': self.business.identifier,
-            'email': self.email,
-            'phone': self.phone,
-            'phoneExtension': self.phone_extension,
-            'arReminder': self.ar_reminder
+            "accountId": self.account_id,
+            "businessIdentifier": self.business.identifier,
+            "email": self.email,
+            "phone": self.phone,
+            "phoneExtension": self.phone_extension,
+            "arReminder": self.ar_reminder,
         }
 
     def delete(self):
         """Delete the business account setting."""
         db.session.delete(self)
         db.session.commit()
-        
+
     def save(self):
         """Save and commit the object to the database."""
         db.session.add(self)
@@ -93,17 +94,19 @@ class BusinessAccountSettings(db.Model):
         if account_id:
             query = query.filter_by(account_id=account_id)
         return query.all()
-    
+
     @staticmethod
-    def create_or_update(business_id: int, account_id: int, data: dict[str, dict[str, str | bool]]) -> BusinessAccountSettings:
+    def create_or_update(
+        business_id: int, account_id: int, data: dict[str, dict[str, str | bool]]
+    ) -> BusinessAccountSettings:
         """Create or update the BusinessAccountSettings record for the business and account id."""
         if not (settings := BusinessAccountSettings.find_by_business_account(business_id, account_id)):
             settings = BusinessAccountSettings(business_id=business_id, account_id=account_id)
 
-        settings.email = data.get('email', settings.email)
-        settings.phone = data.get('phone', settings.phone)
-        settings.phone_extension = data.get('phoneExtension', settings.phone_extension)
-        settings.ar_reminder = data.get('arReminder', settings.ar_reminder)
+        settings.email = data.get("email", settings.email)
+        settings.phone = data.get("phone", settings.phone)
+        settings.phone_extension = data.get("phoneExtension", settings.phone_extension)
+        settings.ar_reminder = data.get("arReminder", settings.ar_reminder)
         settings.save()
 
         return settings
@@ -113,9 +116,8 @@ class BusinessAccountSettings(db.Model):
         """Delete the BusinessAccountSettings record for the business and account id."""
         if not account_id:
             raise BusinessException(
-                error='Cannot delete the default business settings.',
-                status_code=HTTPStatus.FORBIDDEN
+                error="Cannot delete the default business settings.", status_code=HTTPStatus.FORBIDDEN
             )
-        if (settings := BusinessAccountSettings.find_by_business_account(business_id, account_id)):
+        if settings := BusinessAccountSettings.find_by_business_account(business_id, account_id):
             db.session.delete(settings)
             db.session.commit()

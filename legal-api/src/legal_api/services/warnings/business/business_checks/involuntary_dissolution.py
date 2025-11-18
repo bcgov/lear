@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """Service to check involuntary dissolution for a business."""
+
 from datedelta import datedelta
 from flask import current_app
 
@@ -28,18 +29,19 @@ def check_business(business: Business) -> list:
     result = []
 
     ar_overdue_warning = {
-        'code': BusinessWarningCodes.MULTIPLE_ANNUAL_REPORTS_NOT_FILED,
-        'message': 'Multiple annual reports not filed. Eligible for involuntary dissolution.',
-        'warningType': WarningType.NOT_IN_GOOD_STANDING
+        "code": BusinessWarningCodes.MULTIPLE_ANNUAL_REPORTS_NOT_FILED,
+        "message": "Multiple annual reports not filed. Eligible for involuntary dissolution.",
+        "warningType": WarningType.NOT_IN_GOOD_STANDING,
     }
     transition_warning = {
-        'code': BusinessWarningCodes.TRANSITION_NOT_FILED_AFTER_12_MONTH_RESTORATION.value,
-        'message': 'Transition filing not filed. Eligible for involuntary dissolution.',
-        'warningType': WarningType.NOT_IN_GOOD_STANDING
+        "code": BusinessWarningCodes.TRANSITION_NOT_FILED_AFTER_12_MONTH_RESTORATION.value,
+        "message": "Transition filing not filed. Eligible for involuntary dissolution.",
+        "warningType": WarningType.NOT_IN_GOOD_STANDING,
     }
 
     eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(
-        business.identifier, InvoluntaryDissolutionService.EligibilityFilters(exclude_future_effective_filing=True))
+        business.identifier, InvoluntaryDissolutionService.EligibilityFilters(exclude_future_effective_filing=True)
+    )
     if eligibility:
         if details.transition_overdue:
             result.append(transition_warning)
@@ -48,9 +50,10 @@ def check_business(business: Business) -> list:
     elif batch_datas := InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id):
         batch_processing, _ = batch_datas
         _, dis_details = InvoluntaryDissolutionService.check_business_eligibility(
-            business.identifier, InvoluntaryDissolutionService.EligibilityFilters(
+            business.identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(
                 exclude_in_dissolution=False, exclude_future_effective_filing=True
-            )
+            ),
         )
 
         # dis_details is None when the account is not included in FF filter
@@ -64,12 +67,14 @@ def check_business(business: Business) -> list:
 
         data = _get_modified_warning_data(batch_processing)
 
-        result.append({
-            'code': BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,
-            'data': data,
-            'message': 'Business is in the process of involuntary dissolution.',
-            'warningType': WarningType.INVOLUNTARY_DISSOLUTION
-        })
+        result.append(
+            {
+                "code": BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,
+                "data": data,
+                "message": "Business is in the process of involuntary dissolution.",
+                "warningType": WarningType.INVOLUNTARY_DISSOLUTION,
+            }
+        )
 
     return result
 
@@ -82,14 +87,11 @@ def _get_modified_warning_data(batch_processing: BatchProcessing) -> dict:
     current_date = datetime.utcnow()
     modified_target_date = None
     if batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1:
-        modified_target_date = max(current_date, trigger_date) + datedelta(days=current_app.config.get('STAGE_2_DELAY'))
+        modified_target_date = max(current_date, trigger_date) + datedelta(days=current_app.config.get("STAGE_2_DELAY"))
     elif batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2:
         modified_target_date = max(current_date, trigger_date)
 
     if modified_target_date:
-        meta_data = {
-            **meta_data,
-            'targetDissolutionDate': modified_target_date.date().isoformat()
-        }
+        meta_data = {**meta_data, "targetDissolutionDate": modified_target_date.date().isoformat()}
 
     return meta_data

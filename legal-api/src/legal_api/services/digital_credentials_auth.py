@@ -24,7 +24,7 @@ from legal_api.models.user import User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 
 
-STAFF_ROLE = 'staff'
+STAFF_ROLE = "staff"
 
 
 def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:

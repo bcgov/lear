@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Alteration filing."""
+
 from http import HTTPStatus
 from typing import Dict, Final
 
@@ -38,14 +39,14 @@ from .common_validations import (
 def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-many-branches
     """Validate the Alteration filing."""
     if not business or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
-    if not business.good_standing and flags.is_on('enabled-deeper-permission-action'):
+    if not business.good_standing and flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
-        message = 'Permission Denied - You do not have permissions send not in good standing business in this filing.'
+        message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
         error = PermissionService.check_user_permission(required_permission, message=message)
         if error:
-           return error
+            return error
     msg.extend(type_change_validation(filing, business))
     msg.extend(company_name_validation(filing, business))
     msg.extend(share_structure_validation(filing, business))
@@ -53,17 +54,17 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
 
-    if err := validate_resolution_date_in_share_structure(filing, 'alteration'):
+    if err := validate_resolution_date_in_share_structure(filing, "alteration"):
         msg.append(err)
 
-    new_legal_type = filing['filing']['alteration'].get('business', {}).get('legalType', None)
-    err = validate_phone_number(filing, new_legal_type or business.legal_type, 'alteration')
+    new_legal_type = filing["filing"]["alteration"].get("business", {}).get("legalType", None)
+    err = validate_phone_number(filing, new_legal_type or business.legal_type, "alteration")
 
     if err:
         msg.extend(err)
 
-    msg.extend(validate_effective_date(filing))    
-    msg.extend(validate_name_translation(filing, 'alteration'))
+    msg.extend(validate_effective_date(filing))
+    msg.extend(validate_name_translation(filing, "alteration"))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -73,9 +74,9 @@ def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-
 
 def court_order_validation(filing):
     """Validate court order."""
-    court_order_path: Final = '/filing/alteration/courtOrder'
+    court_order_path: Final = "/filing/alteration/courtOrder"
     if get_str(filing, court_order_path):
-        err = validate_court_order(court_order_path, filing['filing']['alteration']['courtOrder'])
+        err = validate_court_order(court_order_path, filing["filing"]["alteration"]["courtOrder"])
         if err:
             return err
     return []
@@ -83,11 +84,11 @@ def court_order_validation(filing):
 
 def share_structure_validation(filing, business: Business):
     """Validate share structure."""
-    share_structure_path: Final = '/filing/alteration/shareStructure'
-    new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
+    share_structure_path: Final = "/filing/alteration/shareStructure"
+    new_legal_type = get_str(filing, "/filing/alteration/business/legalType")
 
     if get_str(filing, share_structure_path):
-        err = validate_share_structure(filing, 'alteration', new_legal_type or business.legal_type)
+        err = validate_share_structure(filing, "alteration", new_legal_type or business.legal_type)
         if err:
             return err
     return []
@@ -96,38 +97,48 @@ def share_structure_validation(filing, business: Business):
 def company_name_validation(filing, business: Business):
     """Validate company name."""
     msg = []
-    if filing['filing']['header'].get('source') == 'COLIN':
+    if filing["filing"]["header"].get("source") == "COLIN":
         return msg
 
-    new_legal_type = get_str(filing, '/filing/alteration/business/legalType')
-    if get_str(filing, '/filing/alteration/nameRequest/nrNumber'):
+    new_legal_type = get_str(filing, "/filing/alteration/business/legalType")
+    if get_str(filing, "/filing/alteration/nameRequest/nrNumber"):
         accepted_request_types = [
-            'BEC', 'CCC', 'CCP', 'CCR', 'CUL',  # name change types
-            'BECV', 'CCV', 'UC', 'BECR', 'BECC', 'ULCB', 'ULBE'  # conversion types
+            "BEC",
+            "CCC",
+            "CCP",
+            "CCR",
+            "CUL",  # name change types
+            "BECV",
+            "CCV",
+            "UC",
+            "BECR",
+            "BECC",
+            "ULCB",
+            "ULBE",  # conversion types
         ]
-        msg.extend(validate_name_request(filing,
-                                         new_legal_type or business.legal_type,
-                                         'alteration',
-                                         accepted_request_types))
+        msg.extend(
+            validate_name_request(filing, new_legal_type or business.legal_type, "alteration", accepted_request_types)
+        )
     else:
         valid_names = [business.legal_name]
-        if (new_legal_type and
-                (new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier))):
+        if new_legal_type and (
+            new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier)
+        ):
             # if existing legal_name is a numbered name and if type has changed
             # then the legal name get updated according to the new legal type
             valid_names.append(new_numbered_name)
 
-        nr_legal_name_path: Final = '/filing/alteration/nameRequest/legalName'
+        nr_legal_name_path: Final = "/filing/alteration/nameRequest/legalName"
         new_legal_name = get_str(filing, nr_legal_name_path)
         if new_legal_name and new_legal_name not in valid_names:
-            msg.append({'error': babel('Unexpected legal name.'), 'path': nr_legal_name_path})
+            msg.append({"error": babel("Unexpected legal name."), "path": nr_legal_name_path})
     return msg
 
 
 def type_change_validation(filing, business: Business):
     """Validate type change."""
     msg = []
-    legal_type_path: Final = '/filing/alteration/business/legalType'
+    legal_type_path: Final = "/filing/alteration/business/legalType"
     new_legal_type = get_str(filing, legal_type_path)
 
     # Valid type changes
@@ -141,39 +152,57 @@ def type_change_validation(filing, business: Business):
 
     valid_type_changes = {
         Business.LegalTypes.COOP.value: [Business.LegalTypes.COOP.value],
-        Business.LegalTypes.BCOMP.value: [Business.LegalTypes.BCOMP.value,
-                                          Business.LegalTypes.COMP.value,
-                                          Business.LegalTypes.BC_CCC.value],
-        Business.LegalTypes.COMP.value: [Business.LegalTypes.COMP.value,
-                                         Business.LegalTypes.BCOMP.value,
-                                         Business.LegalTypes.BC_ULC_COMPANY.value,
-                                         Business.LegalTypes.BC_CCC.value],
+        Business.LegalTypes.BCOMP.value: [
+            Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BC_CCC.value,
+        ],
+        Business.LegalTypes.COMP.value: [
+            Business.LegalTypes.COMP.value,
+            Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.BC_ULC_COMPANY.value,
+            Business.LegalTypes.BC_CCC.value,
+        ],
         Business.LegalTypes.BC_CCC.value: [Business.LegalTypes.BC_CCC.value],
-        Business.LegalTypes.BC_ULC_COMPANY.value: [Business.LegalTypes.BC_ULC_COMPANY.value,
-                                                   Business.LegalTypes.BCOMP.value,
-                                                   Business.LegalTypes.COMP.value],
-        Business.LegalTypes.BCOMP_CONTINUE_IN.value: [Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                                                      Business.LegalTypes.CONTINUE_IN.value,
-                                                      Business.LegalTypes.CCC_CONTINUE_IN.value],
-        Business.LegalTypes.CONTINUE_IN.value: [Business.LegalTypes.CONTINUE_IN.value,
-                                                Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                                                Business.LegalTypes.ULC_CONTINUE_IN.value,
-                                                Business.LegalTypes.CCC_CONTINUE_IN.value],
+        Business.LegalTypes.BC_ULC_COMPANY.value: [
+            Business.LegalTypes.BC_ULC_COMPANY.value,
+            Business.LegalTypes.BCOMP.value,
+            Business.LegalTypes.COMP.value,
+        ],
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value: [
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+            Business.LegalTypes.CONTINUE_IN.value,
+            Business.LegalTypes.CCC_CONTINUE_IN.value,
+        ],
+        Business.LegalTypes.CONTINUE_IN.value: [
+            Business.LegalTypes.CONTINUE_IN.value,
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+            Business.LegalTypes.ULC_CONTINUE_IN.value,
+            Business.LegalTypes.CCC_CONTINUE_IN.value,
+        ],
         Business.LegalTypes.CCC_CONTINUE_IN.value: [Business.LegalTypes.CCC_CONTINUE_IN.value],
-        Business.LegalTypes.ULC_CONTINUE_IN.value: [Business.LegalTypes.ULC_CONTINUE_IN.value,
-                                                    Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-                                                    Business.LegalTypes.CONTINUE_IN.value]
+        Business.LegalTypes.ULC_CONTINUE_IN.value: [
+            Business.LegalTypes.ULC_CONTINUE_IN.value,
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+            Business.LegalTypes.CONTINUE_IN.value,
+        ],
     }
 
     errors = {
-        Business.LegalTypes.COOP.value: 'Cannot change the business type of a Cooperative Association.',
-        Business.LegalTypes.BCOMP.value: ("""BC Benefit Company can only change to BC Limited Company or
-                                          BC Community Contribution Company."""),
-        Business.LegalTypes.COMP.value: ("""BC Limited Company can only change to BC Benefit Company or
-                                         BC Unlimited Liability Company or BC Community Contribution Company."""),
-        Business.LegalTypes.BC_CCC.value: 'Cannot change the business type of a BC Community Contribution Company.',
-        Business.LegalTypes.BC_ULC_COMPANY.value: ("""BC Unlimited Liability Company can only change to
-                                                   BC Benefit Company or BC Limited Company.""")
+        Business.LegalTypes.COOP.value: "Cannot change the business type of a Cooperative Association.",
+        Business.LegalTypes.BCOMP.value: (
+            """BC Benefit Company can only change to BC Limited Company or
+                                          BC Community Contribution Company."""
+        ),
+        Business.LegalTypes.COMP.value: (
+            """BC Limited Company can only change to BC Benefit Company or
+                                         BC Unlimited Liability Company or BC Community Contribution Company."""
+        ),
+        Business.LegalTypes.BC_CCC.value: "Cannot change the business type of a BC Community Contribution Company.",
+        Business.LegalTypes.BC_ULC_COMPANY.value: (
+            """BC Unlimited Liability Company can only change to
+                                                   BC Benefit Company or BC Limited Company."""
+        ),
     }
     errors[Business.LegalTypes.BCOMP_CONTINUE_IN.value] = errors[Business.LegalTypes.BCOMP.value]
     errors[Business.LegalTypes.CONTINUE_IN.value] = errors[Business.LegalTypes.COMP.value]
@@ -181,23 +210,22 @@ def type_change_validation(filing, business: Business):
     errors[Business.LegalTypes.ULC_CONTINUE_IN.value] = errors[Business.LegalTypes.BC_ULC_COMPANY.value]
 
     if new_legal_type and new_legal_type not in valid_type_changes.get(business.legal_type, []):
-        msg.append({'error': babel(errors.get(business.legal_type, '')), 'path': legal_type_path})
+        msg.append({"error": babel(errors.get(business.legal_type, "")), "path": legal_type_path})
     return msg
 
 
 def rules_change_validation(filing):
     """Validate rules change."""
     msg = []
-    rules_file_key_path: Final = '/filing/alteration/rulesFileKey'
+    rules_file_key_path: Final = "/filing/alteration/rulesFileKey"
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
-    rules_change_in_sr_path: Final = '/filing/alteration/rulesInResolution'
+    rules_change_in_sr_path: Final = "/filing/alteration/rulesInResolution"
     rules_change_in_sr: Final = get_bool(filing, rules_change_in_sr_path)
 
     if rules_file_key and rules_change_in_sr:
-        error_msg = 'Cannot provide both file upload and rules change in SR'
-        msg.append({'error': babel(error_msg),
-                    'path': rules_file_key_path + ' and ' + rules_change_in_sr_path})
+        error_msg = "Cannot provide both file upload and rules change in SR"
+        msg.append({"error": babel(error_msg), "path": rules_file_key_path + " and " + rules_change_in_sr_path})
         return msg
 
     if rules_file_key:
@@ -212,16 +240,15 @@ def rules_change_validation(filing):
 def memorandum_change_validation(filing):
     """Validate memorandum change."""
     msg = []
-    memorandum_file_key_path: Final = '/filing/alteration/memorandumFileKey'
+    memorandum_file_key_path: Final = "/filing/alteration/memorandumFileKey"
     memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
 
-    memorandum_change_in_sr_path: Final = '/filing/alteration/memorandumInResolution'
+    memorandum_change_in_sr_path: Final = "/filing/alteration/memorandumInResolution"
     memorandum_change_in_sr: Final = get_bool(filing, memorandum_change_in_sr_path)
 
     if memorandum_file_key and memorandum_change_in_sr:
-        error_msg = 'Cannot provide both file upload and memorandum change in SR'
-        msg.append({'error': babel(error_msg),
-                    'path': memorandum_file_key + ' and ' + memorandum_change_in_sr_path})
+        error_msg = "Cannot provide both file upload and memorandum change in SR"
+        msg.append({"error": babel(error_msg), "path": memorandum_file_key + " and " + memorandum_change_in_sr_path})
         return msg
 
     if memorandum_file_key:

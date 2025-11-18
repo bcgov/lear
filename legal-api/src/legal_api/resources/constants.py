@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Constants used in managing the end-points."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -20,16 +21,16 @@ from enum import Enum
 class EndpointEnum(str, Enum):
     """Enumerate the endpoint mounts used in the system."""
 
-    API_V1 = '/api/v1'
-    API_V2 = '/api/v2'
-    API = '/api'
-    BUSINESSES_V2 = '/api/v2/businesses'
+    API_V1 = "/api/v1"
+    API_V2 = "/api/v2"
+    API = "/api"
+    BUSINESSES_V2 = "/api/v2/businesses"
     DEFAULT_API = API_V1
-    ADMIN_V2 = '/api/v2/admin'
+    ADMIN_V2 = "/api/v2/admin"
 
 
 class EndpointVersionEnum(str, Enum):
     """Enumerate the Accept Version Headers."""
 
-    V1 = 'v1'
-    V2 = 'v2'
+    V1 = "v1"
+    V2 = "v2"

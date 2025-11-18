@@ -15,6 +15,7 @@
 
 These endpoint are reqired as long as we sync to colin.
 """
+
 import copy
 from http import HTTPStatus
 
@@ -49,116 +50,122 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from .bp import bp
 
 
-@bp.route('/internal/filings', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/internal/filings", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_completed_filings_for_colin():  # pylint: disable=too-many-branches
     """Get filings by status formatted in json."""
     filings = []
 
-    limit = int(request.args.get('limit', 20))
-    offset = int(request.args.get('offset', 0))
+    limit = int(request.args.get("limit", 20))
+    offset = int(request.args.get("offset", 0))
     pending_filings = Filing.get_completed_filings_for_colin(limit, offset)
     for filing in pending_filings:
         business = Business.find_by_internal_id(filing.business_id)
 
         filing_json = copy.deepcopy(filing.filing_json)
-        filing_json['filingId'] = filing.id
-        filing_json['filing']['header']['source'] = Filing.Source.LEAR.value
-        filing_json['filing']['header']['date'] = (filing.payment_completion_date or filing.filing_date).isoformat()
-        filing_json['filing']['header']['learEffectiveDate'] = filing.effective_date.isoformat()
-        filing_json['filing']['header']['isFutureEffective'] = filing.is_future_effective
-        filing_json['filing']['header']['hideInLedger'] = filing.hide_in_ledger
+        filing_json["filingId"] = filing.id
+        filing_json["filing"]["header"]["source"] = Filing.Source.LEAR.value
+        filing_json["filing"]["header"]["date"] = (filing.payment_completion_date or filing.filing_date).isoformat()
+        filing_json["filing"]["header"]["learEffectiveDate"] = filing.effective_date.isoformat()
+        filing_json["filing"]["header"]["isFutureEffective"] = filing.is_future_effective
+        filing_json["filing"]["header"]["hideInLedger"] = filing.hide_in_ledger
 
         if filing.submitter_roles:
-            filing_json['filing']['header']['isStaff'] = (
+            filing_json["filing"]["header"]["isStaff"] = (
                 UserRoles.staff in filing.submitter_roles or UserRoles.system in filing.submitter_roles
             )
         if filing.filing_submitter:
-            filing_json['filing']['header']['filedBy'] = {
-                'userName': filing.filing_submitter.username,
-                'firstName': filing.filing_submitter.firstname,
-                'lastName': filing.filing_submitter.lastname,
-                'email': filing.filing_submitter.email
+            filing_json["filing"]["header"]["filedBy"] = {
+                "userName": filing.filing_submitter.username,
+                "firstName": filing.filing_submitter.firstname,
+                "lastName": filing.filing_submitter.lastname,
+                "email": filing.filing_submitter.email,
             }
 
-        if not filing_json['filing'].get('business'):
+        if not filing_json["filing"].get("business"):
             if filing.transaction_id:
                 business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
-                filing_json['filing']['business'] = VersionedBusinessDetailsService.business_revision_json(
-                    business_revision, business.json())
+                filing_json["filing"]["business"] = VersionedBusinessDetailsService.business_revision_json(
+                    business_revision, business.json()
+                )
             else:
                 # should never happen unless its a test data created directly in db.
                 # found some filing in DEV, adding this check to avoid exception
-                filing_json['filing']['business'] = business.json()
-        elif not filing_json['filing']['business'].get('legalName'):
-            filing_json['filing']['business']['legalName'] = business.legal_name
+                filing_json["filing"]["business"] = business.json()
+        elif not filing_json["filing"]["business"].get("legalName"):
+            filing_json["filing"]["business"]["legalName"] = business.legal_name
 
-        if filing.filing_type == 'correction' and business.legal_type != Business.LegalTypes.COOP.value:
+        if filing.filing_type == "correction" and business.legal_type != Business.LegalTypes.COOP.value:
             try:
                 set_correction_flags(filing_json, filing)
             except Exception as ex:  # noqa: B902
-                current_app.logger.error(f'correction: filingId={filing.id}, error: {str(ex)}')
+                current_app.logger.error(f"correction: filingId={filing.id}, error: {str(ex)}")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
-                filing_json['filing']['header']['name'] = None
+                filing_json["filing"]["header"]["name"] = None
 
-        elif (filing.filing_type == 'amalgamationApplication' and
-              filing_json['filing']['amalgamationApplication']['type'] in [
-                  Amalgamation.AmalgamationTypes.horizontal.name,
-                  Amalgamation.AmalgamationTypes.vertical.name]):
+        elif filing.filing_type == "amalgamationApplication" and filing_json["filing"]["amalgamationApplication"][
+            "type"
+        ] in [Amalgamation.AmalgamationTypes.horizontal.name, Amalgamation.AmalgamationTypes.vertical.name]:
             try:
                 set_from_primary_or_holding_business_data(filing_json, filing)
             except Exception as ex:  # noqa: B902
-                current_app.logger.error(f'amalgamation: filingId={filing.id}, error: {str(ex)}')
+                current_app.logger.error(f"amalgamation: filingId={filing.id}, error: {str(ex)}")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
-                filing_json['filing']['header']['name'] = None
+                filing_json["filing"]["header"]["name"] = None
 
-        elif (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary'):
+        elif filing.filing_type == "dissolution" and filing.filing_sub_type == "involuntary":
             if batch_processings := BatchProcessing.find_by(filing_id=filing.id):
-                filing_json['filing']['dissolution']['metaData'] = batch_processings[0].meta_data
+                filing_json["filing"]["dissolution"]["metaData"] = batch_processings[0].meta_data
             else:
-                current_app.logger.error(f'dissolution: filingId={filing.id}, missing batch processing info')
+                current_app.logger.error(f"dissolution: filingId={filing.id}, missing batch processing info")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
-                filing_json['filing']['header']['name'] = None
-        elif (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'voluntary'):
+                filing_json["filing"]["header"]["name"] = None
+        elif filing.filing_type == "dissolution" and filing.filing_sub_type == "voluntary":
             mailing = business.mailing_address.one_or_none()
-            filing_json['filing']['dissolution']['mailingAddress'] = mailing.json
+            filing_json["filing"]["dissolution"]["mailingAddress"] = mailing.json
         filings.append(filing_json)
-    return jsonify({'filings': filings}), HTTPStatus.OK
+    return jsonify({"filings": filings}), HTTPStatus.OK
 
 
 def set_correction_flags(filing_json, filing: Filing):
     """Set what section changed in this correction."""
-    if filing.meta_data.get('commentOnly', False):
+    if filing.meta_data.get("commentOnly", False):
         return
 
-    if filing.meta_data.get('toLegalName'):
-        filing_json['filing']['correction']['nameChanged'] = True
+    if filing.meta_data.get("toLegalName"):
+        filing_json["filing"]["correction"]["nameChanged"] = True
 
     if has_alias_changed(filing):
-        filing_json['filing']['correction']['nameTranslationsChanged'] = True
+        filing_json["filing"]["correction"]["nameTranslationsChanged"] = True
 
     if has_office_changed(filing):
-        filing_json['filing']['correction']['officeChanged'] = True
+        filing_json["filing"]["correction"]["officeChanged"] = True
 
     if has_party_changed(filing):
-        filing_json['filing']['correction']['partyChanged'] = True
+        filing_json["filing"]["correction"]["partyChanged"] = True
 
     if has_resolution_changed(filing):
-        filing_json['filing']['correction']['resolutionChanged'] = True
+        filing_json["filing"]["correction"]["resolutionChanged"] = True
 
     if has_share_changed(filing):
-        filing_json['filing']['correction']['shareChanged'] = True
+        filing_json["filing"]["correction"]["shareChanged"] = True
 
 
 def has_alias_changed(filing) -> bool:
     """Has alias changed in the given filing."""
     alias_version = VersioningProxy.version_class(db.session(), Alias)
-    aliases_query = (db.session.query(alias_version)
-                     .filter(or_(alias_version.transaction_id == filing.transaction_id,
-                                 alias_version.end_transaction_id == filing.transaction_id))
-                     .filter(alias_version.business_id == filing.business_id)
-                     .exists())
+    aliases_query = (
+        db.session.query(alias_version)
+        .filter(
+            or_(
+                alias_version.transaction_id == filing.transaction_id,
+                alias_version.end_transaction_id == filing.transaction_id,
+            )
+        )
+        .filter(alias_version.business_id == filing.business_id)
+        .exists()
+    )
     return db.session.query(aliases_query).scalar()
 
 
@@ -167,50 +174,74 @@ def has_office_changed(filing) -> bool:
     offices = db.session.query(Office).filter(Office.business_id == filing.business_id).all()
 
     address_version = VersioningProxy.version_class(db.session(), Address)
-    addresses_query = (db.session.query(address_version)
-                       .filter(or_(address_version.transaction_id == filing.transaction_id,
-                                   address_version.end_transaction_id == filing.transaction_id))
-                       .filter(address_version.office_id.in_([office.id for office in offices]))
-                       .filter(address_version.address_type.in_(['mailing', 'delivery']))
-                       .exists())
+    addresses_query = (
+        db.session.query(address_version)
+        .filter(
+            or_(
+                address_version.transaction_id == filing.transaction_id,
+                address_version.end_transaction_id == filing.transaction_id,
+            )
+        )
+        .filter(address_version.office_id.in_([office.id for office in offices]))
+        .filter(address_version.address_type.in_(["mailing", "delivery"]))
+        .exists()
+    )
     return db.session.query(addresses_query).scalar()
 
 
 def has_party_changed(filing: Filing) -> bool:
     """Has party changed in the given filing."""
     party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
-    party_roles_query = (db.session.query(party_role_version)
-                         .filter(or_(party_role_version.transaction_id == filing.transaction_id,
-                                     party_role_version.end_transaction_id == filing.transaction_id))
-                         .filter(party_role_version.business_id == filing.business_id)
-                         .filter(party_role_version.role == PartyRole.RoleTypes.DIRECTOR.value)
-                         .exists())
+    party_roles_query = (
+        db.session.query(party_role_version)
+        .filter(
+            or_(
+                party_role_version.transaction_id == filing.transaction_id,
+                party_role_version.end_transaction_id == filing.transaction_id,
+            )
+        )
+        .filter(party_role_version.business_id == filing.business_id)
+        .filter(party_role_version.role == PartyRole.RoleTypes.DIRECTOR.value)
+        .exists()
+    )
     if db.session.query(party_roles_query).scalar():  # Has new party added/deleted by setting cessation_date
         return True
 
     # Has existing party modified
-    party_roles = VersionedBusinessDetailsService.get_party_role_revision(filing,
-                                                                          filing.business_id,
-                                                                          role=PartyRole.RoleTypes.DIRECTOR.value)
+    party_roles = VersionedBusinessDetailsService.get_party_role_revision(
+        filing, filing.business_id, role=PartyRole.RoleTypes.DIRECTOR.value
+    )
 
     party_version = VersioningProxy.version_class(db.session(), Party)
     for party_role in party_roles:
-        parties_query = (db.session.query(party_version)
-                         .filter(or_(party_version.transaction_id == filing.transaction_id,
-                                     party_version.end_transaction_id == filing.transaction_id))
-                         .filter(party_version.id == party_role['id'])
-                         .exists())
+        parties_query = (
+            db.session.query(party_version)
+            .filter(
+                or_(
+                    party_version.transaction_id == filing.transaction_id,
+                    party_version.end_transaction_id == filing.transaction_id,
+                )
+            )
+            .filter(party_version.id == party_role["id"])
+            .exists()
+        )
         if db.session.query(parties_query).scalar():  # Modified party
             return True
 
-        party = VersionedBusinessDetailsService.get_party_revision(filing, party_role['id'])
+        party = VersionedBusinessDetailsService.get_party_revision(filing, party_role["id"])
         address_version = VersioningProxy.version_class(db.session(), Address)
         # Has party delivery/mailing address modified
-        address_query = (db.session.query(address_version)
-                         .filter(or_(address_version.transaction_id == filing.transaction_id,
-                                     address_version.end_transaction_id == filing.transaction_id))
-                         .filter(address_version.id.in_([party.delivery_address_id, party.mailing_address_id]))
-                         .exists())
+        address_query = (
+            db.session.query(address_version)
+            .filter(
+                or_(
+                    address_version.transaction_id == filing.transaction_id,
+                    address_version.end_transaction_id == filing.transaction_id,
+                )
+            )
+            .filter(address_version.id.in_([party.delivery_address_id, party.mailing_address_id]))
+            .exists()
+        )
         if db.session.query(address_query).scalar():  # Modified party delivery/mailing address
             return True
 
@@ -220,33 +251,50 @@ def has_party_changed(filing: Filing) -> bool:
 def has_resolution_changed(filing: Filing) -> bool:
     """Has resolution changed in the given filing."""
     resolution_version = VersioningProxy.version_class(db.session(), Resolution)
-    resolution_query = (db.session.query(resolution_version)
-                        .filter(or_(resolution_version.transaction_id == filing.transaction_id,
-                                    resolution_version.end_transaction_id == filing.transaction_id))
-                        .filter(resolution_version.business_id == filing.business_id)
-                        .exists())
+    resolution_query = (
+        db.session.query(resolution_version)
+        .filter(
+            or_(
+                resolution_version.transaction_id == filing.transaction_id,
+                resolution_version.end_transaction_id == filing.transaction_id,
+            )
+        )
+        .filter(resolution_version.business_id == filing.business_id)
+        .exists()
+    )
     return db.session.query(resolution_query).scalar()
 
 
 def has_share_changed(filing: Filing) -> bool:
     """Has share changed in the given filing."""
     share_class_version = VersioningProxy.version_class(db.session(), ShareClass)
-    share_class_query = (db.session.query(share_class_version)
-                         .filter(or_(share_class_version.transaction_id == filing.transaction_id,
-                                     share_class_version.end_transaction_id == filing.transaction_id))
-                         .filter(share_class_version.business_id == filing.business_id)
-                         .exists())
+    share_class_query = (
+        db.session.query(share_class_version)
+        .filter(
+            or_(
+                share_class_version.transaction_id == filing.transaction_id,
+                share_class_version.end_transaction_id == filing.transaction_id,
+            )
+        )
+        .filter(share_class_version.business_id == filing.business_id)
+        .exists()
+    )
     if db.session.query(share_class_query).scalar():
         return True
 
     share_classes = VersionedBusinessDetailsService.get_share_class_revision(filing.transaction_id, filing.business_id)
     series_version = VersioningProxy.version_class(db.session(), ShareSeries)
-    share_series_query = (db.session.query(series_version)
-                          .filter(or_(series_version.transaction_id == filing.transaction_id,
-                                      series_version.end_transaction_id == filing.transaction_id))
-                          .filter(series_version.share_class_id.in_(
-                              [share_class['id'] for share_class in share_classes]))
-                          .exists())
+    share_series_query = (
+        db.session.query(series_version)
+        .filter(
+            or_(
+                series_version.transaction_id == filing.transaction_id,
+                series_version.end_transaction_id == filing.transaction_id,
+            )
+        )
+        .filter(series_version.share_class_id.in_([share_class["id"] for share_class in share_classes]))
+        .exists()
+    )
     if db.session.query(share_series_query).scalar():
         return True
 
@@ -255,15 +303,17 @@ def has_share_changed(filing: Filing) -> bool:
 
 def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
     """Set legal_name, director, office and shares from holding/primary business."""
-    amalgamation_filing = filing_json['filing']['amalgamationApplication']
-    primary_or_holding = next(x for x in amalgamation_filing['amalgamatingBusinesses']
-                              if x['role'] in [AmalgamatingBusiness.Role.holding.name,
-                                               AmalgamatingBusiness.Role.primary.name])
+    amalgamation_filing = filing_json["filing"]["amalgamationApplication"]
+    primary_or_holding = next(
+        x
+        for x in amalgamation_filing["amalgamatingBusinesses"]
+        if x["role"] in [AmalgamatingBusiness.Role.holding.name, AmalgamatingBusiness.Role.primary.name]
+    )
 
-    ting_business = Business.find_by_identifier(primary_or_holding['identifier'])
+    ting_business = Business.find_by_identifier(primary_or_holding["identifier"])
     primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing, ting_business.id)
 
-    amalgamation_filing['nameRequest']['legalName'] = primary_or_holding_business.legal_name
+    amalgamation_filing["nameRequest"]["legalName"] = primary_or_holding_business.legal_name
 
     _set_parties(primary_or_holding_business, filing, amalgamation_filing)
     _set_offices(primary_or_holding_business, amalgamation_filing, filing.id, filing.transaction_id)
@@ -272,40 +322,44 @@ def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
 
 def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
     parties = []
-    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing,
-                                                                              primary_or_holding_business.id,
-                                                                              role=PartyRole.RoleTypes.DIRECTOR.value)
+    parties_version = VersionedBusinessDetailsService.get_party_role_revision(
+        filing, primary_or_holding_business.id, role=PartyRole.RoleTypes.DIRECTOR.value
+    )
     # copy director
     for director_json in parties_version:
-        director_json['roles'] = [{
-            'roleType': 'Director',
-            'appointmentDate': LegislationDatetime.format_as_legislation_date(filing.effective_date)
-        }]
+        director_json["roles"] = [
+            {
+                "roleType": "Director",
+                "appointmentDate": LegislationDatetime.format_as_legislation_date(filing.effective_date),
+            }
+        ]
         parties.append(director_json)
 
     # copy completing party from filing json
-    for party_info in amalgamation_filing.get('parties'):
-        if comp_party_role := next((x for x in party_info.get('roles')
-                                    if x['roleType'].lower() == 'completing party'), None):
-            party_info['roles'] = [comp_party_role]  # override roles to have only completing party
+    for party_info in amalgamation_filing.get("parties"):
+        if comp_party_role := next(
+            (x for x in party_info.get("roles") if x["roleType"].lower() == "completing party"), None
+        ):
+            party_info["roles"] = [comp_party_role]  # override roles to have only completing party
             parties.append(party_info)
             break
-    amalgamation_filing['parties'] = parties
+    amalgamation_filing["parties"] = parties
 
 
 def _set_offices(primary_or_holding_business, amalgamation_filing, filing_id, transaction_id):
     # copy offices
-    amalgamation_filing['offices'] = VersionedBusinessDetailsService.get_office_revision(filing_id,
-                                                                                         transaction_id,
-                                                                                         primary_or_holding_business.id)
+    amalgamation_filing["offices"] = VersionedBusinessDetailsService.get_office_revision(
+        filing_id, transaction_id, primary_or_holding_business.id
+    )
 
 
 def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id):
     """Set shares from holding/primary business."""
     # Copy shares
-    share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
-                                                                             primary_or_holding_business.id)
-    amalgamation_filing['shareStructure'] = {'shareClasses': share_classes}
+    share_classes = VersionedBusinessDetailsService.get_share_class_revision(
+        transaction_id, primary_or_holding_business.id
+    )
+    amalgamation_filing["shareStructure"] = {"shareClasses": share_classes}
 
     # Get resolution dates using versioned query
     resolution_version = VersioningProxy.version_class(db.session(), Resolution)
@@ -314,21 +368,23 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
         .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
         .filter(resolution_version.operation_type != 2)  # Exclude deleted records
         .filter(resolution_version.business_id == primary_or_holding_business.id)
-        .filter(or_(
-            resolution_version.end_transaction_id.is_(None),  # Records not yet ended
-            resolution_version.end_transaction_id > transaction_id  # Records ended after our transaction
-        ))
+        .filter(
+            or_(
+                resolution_version.end_transaction_id.is_(None),  # Records not yet ended
+                resolution_version.end_transaction_id > transaction_id,  # Records ended after our transaction
+            )
+        )
         .order_by(resolution_version.transaction_id)
         .all()
     )
 
     business_dates = [res.resolution_date.isoformat() for res in resolutions_query]
     if business_dates:
-        amalgamation_filing['shareStructure']['resolutionDates'] = business_dates
+        amalgamation_filing["shareStructure"]["resolutionDates"] = business_dates
 
 
-@bp.route('/internal/filings/<int:filing_id>', methods=['PATCH'])
-@cross_origin(origin='*')
+@bp.route("/internal/filings/<int:filing_id>", methods=["PATCH"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def update_colin_id(filing_id):
     """Patch the colin_event_id for a filing."""
@@ -336,13 +392,17 @@ def update_colin_id(filing_id):
     try:
         json_input = request.get_json()
         if not json_input:
-            return None, None, {'message': f'No filing json data in body of patch for {filing_id}.'}, \
-                HTTPStatus.BAD_REQUEST
+            return (
+                None,
+                None,
+                {"message": f"No filing json data in body of patch for {filing_id}."},
+                HTTPStatus.BAD_REQUEST,
+            )
 
-        colin_ids = json_input['colinIds']
+        colin_ids = json_input["colinIds"]
         filing = Filing.find_by_id(filing_id)
         if not filing:
-            return {'message': f'{filing_id} no filings found'}, HTTPStatus.NOT_FOUND
+            return {"message": f"{filing_id} no filings found"}, HTTPStatus.NOT_FOUND
         for colin_id in colin_ids:
             try:
                 colin_event_id_obj = ColinEventId()
@@ -350,18 +410,18 @@ def update_colin_id(filing_id):
                 filing.colin_event_ids.append(colin_event_id_obj)
                 filing.save()
             except BusinessException as err:
-                current_app.logger.Error(f'Error adding colin event id {colin_id} to filing with id {filing_id}')
-                return None, None, {'message': err.error}, err.status_code
+                current_app.logger.Error(f"Error adding colin event id {colin_id} to filing with id {filing_id}")
+                return None, None, {"message": err.error}, err.status_code
 
         return jsonify(filing.json), HTTPStatus.ACCEPTED
     except Exception as err:
-        current_app.logger.Error(f'Error patching colin event id for filing with id {filing_id}')
+        current_app.logger.Error(f"Error patching colin event id for filing with id {filing_id}")
         raise err
 
 
-@bp.route('/internal/filings/colin_id', methods=['GET'])
-@bp.route('/internal/filings/colin_id/<int:colin_id>', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/internal/filings/colin_id", methods=["GET"])
+@bp.route("/internal/filings/colin_id/<int:colin_id>", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_colin_event_id(colin_id=None):
     """Get the last colin id updated in legal."""
@@ -369,10 +429,10 @@ def get_colin_event_id(colin_id=None):
         if colin_id:
             colin_id_obj = ColinEventId.get_by_colin_id(colin_id)
             if not colin_id_obj:
-                return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
-            return {'colinId': colin_id_obj.colin_event_id}, HTTPStatus.OK
+                return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
+            return {"colinId": colin_id_obj.colin_event_id}, HTTPStatus.OK
     except Exception as err:
-        current_app.logger.Error(f'Failed to get last updated colin event id: {err}')
+        current_app.logger.Error(f"Failed to get last updated colin event id: {err}")
         raise err
 
     query = db.session.execute(
@@ -383,13 +443,13 @@ def get_colin_event_id(colin_id=None):
     )
     last_event_id = query.fetchone()
     if not last_event_id or not last_event_id[0]:
-        return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
+        return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
 
-    return {'maxId': last_event_id[0]}, HTTPStatus.OK if request.method == 'GET' else HTTPStatus.CREATED
+    return {"maxId": last_event_id[0]}, HTTPStatus.OK if request.method == "GET" else HTTPStatus.CREATED
 
 
-@bp.route('/internal/last-event-id/<identifier>', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/internal/last-event-id/<identifier>", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_last_event_id(identifier):
     """Get the last colin event id for the identifier."""
@@ -404,13 +464,13 @@ def get_last_event_id(identifier):
     )
     last_event_id = query.scalar()
     if not last_event_id:
-        return {'message': 'No colin ids found'}, HTTPStatus.NOT_FOUND
+        return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
 
-    return {'maxId': last_event_id}, HTTPStatus.OK
+    return {"maxId": last_event_id}, HTTPStatus.OK
 
 
-@bp.route('/internal/filings/colin_id/<int:colin_id>', methods=['POST'])
-@cross_origin(origin='*')
+@bp.route("/internal/filings/colin_id/<int:colin_id>", methods=["POST"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def update_colin_event_id(colin_id):
     """Add a row to the colin_last_update table."""
@@ -425,12 +485,12 @@ def update_colin_event_id(colin_id):
         return get_colin_event_id()
 
     except Exception as err:  # pylint: disable=broad-except
-        current_app.logger.error(f'Error updating colin_last_update table in legal db: {err}')
-        return {'message: failed to update colin_last_update.', 500}
+        current_app.logger.error(f"Error updating colin_last_update table in legal db: {err}")
+        return {"message: failed to update colin_last_update.", 500}
 
 
-@bp.route('/internal/tax_ids', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/internal/tax_ids", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_all_identifiers_without_tax_id():
     """Return all identifiers with no tax_id set that are supposed to have a tax_id.
@@ -442,17 +502,17 @@ def get_all_identifiers_without_tax_id():
     bussinesses_no_taxid = Business.get_all_by_no_tax_id()
     for business in bussinesses_no_taxid:
         identifiers.append(business.identifier)
-    return jsonify({'identifiers': identifiers}), HTTPStatus.OK
+    return jsonify({"identifiers": identifiers}), HTTPStatus.OK
 
 
-@bp.route('/internal/tax_ids', methods=['POST'])
-@cross_origin(origin='*')
+@bp.route("/internal/tax_ids", methods=["POST"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
 def set_tax_ids():
     """Set tax ids for businesses for given identifiers."""
     json_input = request.get_json()
     if not json_input:
-        return ({'message': 'No identifiers in body of post.'}, HTTPStatus.BAD_REQUEST)
+        return ({"message": "No identifiers in body of post."}, HTTPStatus.BAD_REQUEST)
 
     for identifier in json_input.keys():
         # json input is a dict -> identifier: tax id
@@ -461,5 +521,5 @@ def set_tax_ids():
             business.tax_id = json_input[identifier]
             business.save()
         else:
-            current_app.logger.error(f'Unable to update tax_id for business ({identifier}), which is missing in lear')
-    return jsonify({'message': 'Successfully updated tax ids.'}), HTTPStatus.CREATED
+            current_app.logger.error(f"Unable to update tax_id for business ({identifier}), which is missing in lear")
+    return jsonify({"message": "Successfully updated tax ids."}), HTTPStatus.CREATED

@@ -20,28 +20,29 @@ from flask import current_app
 
 from legal_api.models import Party, User
 
-DBC_ENABLED_BUSINESS_TYPES_FLAG = 'dbc-enabled-business-types'
+DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
 
 
-def determine_allowed_business_types(valid_registration_types: List[str],
-                                     valid_incorporation_types: List[str]) -> List[str]:
+def determine_allowed_business_types(
+    valid_registration_types: List[str], valid_incorporation_types: List[str]
+) -> List[str]:
     """Determine if the business type is allowed for digital credentials based on flags."""
     # Import inside function to avoid circular dependency and ensure app context is available
     from legal_api.services import flags
 
     if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG):
-        current_app.logger.warning('%s is OFF', DBC_ENABLED_BUSINESS_TYPES_FLAG)
+        current_app.logger.warning("%s is OFF", DBC_ENABLED_BUSINESS_TYPES_FLAG)
         return []
 
     flag_obj = flags.value(DBC_ENABLED_BUSINESS_TYPES_FLAG)
 
     # Validate dbc-enabled-business-types is the right format to parse out
-    if not isinstance(flag_obj, dict) or 'types' not in flag_obj or not isinstance(flag_obj['types'], list):
-        current_app.logger.error('Invalid %s flag value: %s', DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)
+    if not isinstance(flag_obj, dict) or "types" not in flag_obj or not isinstance(flag_obj["types"], list):
+        current_app.logger.error("Invalid %s flag value: %s", DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)
         return []
 
     supported_types = valid_registration_types + valid_incorporation_types
-    valid_business_types = list(set(flag_obj['types']) & set(supported_types))
+    valid_business_types = list(set(flag_obj["types"]) & set(supported_types))
     return valid_business_types
 
 
@@ -59,14 +60,11 @@ class FormattedUser:
 
     def _formatted_user(self, user: Union[User, Party]) -> dict:
         """Return the formatted name of the user."""
-        first_name = (getattr(user, 'firstname', '') or getattr(
-            user, 'first_name', '') or '').lower()
-        last_name = (getattr(user, 'lastname', '') or getattr(
-            user, 'last_name', '') or '').lower()
-        middle_name = (getattr(user, 'middlename', '') or getattr(
-            user, 'middle_initial', '') or '').lower()
+        first_name = (getattr(user, "firstname", "") or getattr(user, "first_name", "") or "").lower()
+        last_name = (getattr(user, "lastname", "") or getattr(user, "last_name", "") or "").lower()
+        middle_name = (getattr(user, "middlename", "") or getattr(user, "middle_initial", "") or "").lower()
 
         if middle_name:
-            first_name = f'{first_name} {middle_name}'
+            first_name = f"{first_name} {middle_name}"
 
         return first_name, last_name

@@ -35,6 +35,7 @@
 
 This module is the API for the Legal Entity system.
 """
+
 import os
 
 from flask import Flask, jsonify  # noqa: I001
@@ -55,10 +56,10 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
+def create_app(run_mode=os.getenv("FLASK_ENV", "production")):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.register_blueprint(document_service_bp)
@@ -86,28 +87,28 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
 def setup_jwt_manager(app, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
+
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
+        return a_dict["realm_access"]["roles"]  # pragma: no cover
+
+    app.config["JWT_ROLE_CALLBACK"] = get_roles
 
     def custom_auth_error_handler(ex):
         response = jsonify(ex.error)
         response.status_code = ex.status_code
-        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers["Access-Control-Allow-Origin"] = "*"
         return response
-    app.config['JWT_OIDC_AUTH_ERROR_HANDLER'] = custom_auth_error_handler
+
+    app.config["JWT_OIDC_AUTH_ERROR_HANDLER"] = custom_auth_error_handler
 
     jwt_manager.init_app(app)
 
 
 def register_shellcontext(app):
     """Register shell context objects."""
+
     def shell_context():
         """Shell context objects."""
-        return {
-            'app': app,
-            'jwt': jwt,
-            'db': db,
-            'models': models}  # pragma: no cover
+        return {"app": app, "jwt": jwt, "db": db, "models": models}  # pragma: no cover
 
     app.shell_context_processor(shell_context)

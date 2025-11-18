@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """API endpoints for retrieving review data."""
+
 from http import HTTPStatus
 
 from flask import current_app, g, jsonify, request
@@ -25,26 +26,26 @@ from legal_api.utils.auth import jwt
 from .bp import bp_admin
 
 
-@bp_admin.route('/reviews', methods=['GET'])
-@cross_origin(origin='*')
+@bp_admin.route("/reviews", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_reviews():
     """Return a list of reviews."""
     review_filter = Review.ReviewFilter(
-        start_date=request.args.get('startDate', None),
-        end_date=request.args.get('endDate', None),
-        nr_number=request.args.get('nrNumber', None),
-        identifier=request.args.get('identifier', None),
-        contact_email=request.args.get('contactEmail', None),
-        status=request.args.getlist('status', None),
-        submitted_sort_by=request.args.get('sortBy', None),
-        submitted_sort_order=request.args.get('sortDesc', None),
-        page=int(request.args.get('page', 1)),
-        limit=int(request.args.get('limit', 10))
+        start_date=request.args.get("startDate", None),
+        end_date=request.args.get("endDate", None),
+        nr_number=request.args.get("nrNumber", None),
+        identifier=request.args.get("identifier", None),
+        contact_email=request.args.get("contactEmail", None),
+        status=request.args.getlist("status", None),
+        submitted_sort_by=request.args.get("sortBy", None),
+        submitted_sort_order=request.args.get("sortDesc", None),
+        page=int(request.args.get("page", 1)),
+        limit=int(request.args.get("limit", 10)),
     )
 
     result = Review.get_paginated_reviews(review_filter, get_mapped_column(review_filter.submitted_sort_by))
-    reviews = result['reviews']
+    reviews = result["reviews"]
 
     nr_numbers = get_applicable_nr_numbers(reviews)
     if nr_numbers:
@@ -58,12 +59,13 @@ def get_applicable_nr_numbers(reviews):
     """Return list of NR numbers of review with status CHANGE_REQUESTED/AWAITING_REVIEW/RESUBMITTED."""
     nr_numbers = []
     for review in reviews:
-        current_nr = review['nrNumber']
-        current_status = review['status']
-        if (current_nr is not None and
-            current_status in [ReviewStatus.CHANGE_REQUESTED.name,
-                               ReviewStatus.AWAITING_REVIEW.name,
-                               ReviewStatus.RESUBMITTED.name]):
+        current_nr = review["nrNumber"]
+        current_status = review["status"]
+        if current_nr is not None and current_status in [
+            ReviewStatus.CHANGE_REQUESTED.name,
+            ReviewStatus.AWAITING_REVIEW.name,
+            ReviewStatus.RESUBMITTED.name,
+        ]:
             nr_numbers.append(current_nr)
     return nr_numbers
 
@@ -72,39 +74,39 @@ def get_expiry_date_for_each_nr(nr_numbers):
     """Return list of NR numbers and respective Expiry date."""
     nr_response = namex.query_nr_numbers(nr_numbers)
     response_json = nr_response.json()
-    nr_expiry_dates = [{'nr': one['nrNum'], 'expiry_date': one['expirationDate']} for one in response_json['requests']]
+    nr_expiry_dates = [{"nr": one["nrNum"], "expiry_date": one["expirationDate"]} for one in response_json["requests"]]
     return nr_expiry_dates
 
 
 def update_reviews(reviews, nr_expiry_date):
     """Update review by appending NR Expiry date."""
     for review in reviews:
-        nr = review['nrNumber']
+        nr = review["nrNumber"]
         if nr is not None:
-            match = next((n for n in nr_expiry_date if n['nr'] == nr), None)
+            match = next((n for n in nr_expiry_date if n["nr"] == nr), None)
             if match:
-                review['nrExpiryDate'] = match['expiry_date']
+                review["nrExpiryDate"] = match["expiry_date"]
 
 
 def get_mapped_column(submitted_sort_by):
     """Get mapped column for each param."""
-    mapped_column = ''
+    mapped_column = ""
     if submitted_sort_by:
-        if submitted_sort_by == 'nrNumber':
-            mapped_column = 'nr_number'
-        elif submitted_sort_by == 'contactEmail':
-            mapped_column = 'contact_email'
-        elif submitted_sort_by == 'submissionDate':
-            mapped_column = 'submission_date'
-        elif submitted_sort_by == 'status':
-            mapped_column = 'status'
-        elif submitted_sort_by == 'identifier':
-            mapped_column = 'identifier'
+        if submitted_sort_by == "nrNumber":
+            mapped_column = "nr_number"
+        elif submitted_sort_by == "contactEmail":
+            mapped_column = "contact_email"
+        elif submitted_sort_by == "submissionDate":
+            mapped_column = "submission_date"
+        elif submitted_sort_by == "status":
+            mapped_column = "status"
+        elif submitted_sort_by == "identifier":
+            mapped_column = "identifier"
     return mapped_column
 
 
-@bp_admin.route('/reviews/<int:review_id>', methods=['POST'])
-@cross_origin(origin='*')
+@bp_admin.route("/reviews/<int:review_id>", methods=["POST"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def save_review(review_id: int):
     """Save review.
@@ -116,25 +118,24 @@ def save_review(review_id: int):
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     if review := Review.find_by_id(review_id):
         if review.status not in [ReviewStatus.AWAITING_REVIEW, ReviewStatus.RESUBMITTED]:
-            return jsonify({'message': 'No changes allowed.'}), HTTPStatus.BAD_REQUEST
+            return jsonify({"message": "No changes allowed."}), HTTPStatus.BAD_REQUEST
     else:
-        return jsonify({'message': 'Review not found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": "Review not found."}), HTTPStatus.NOT_FOUND
 
     json_input = request.get_json()
-    if status := json_input.get('status'):
-        if not ((status := ReviewStatus[status]) and
-                (status in [ReviewStatus.CHANGE_REQUESTED,
-                            ReviewStatus.APPROVED,
-                            ReviewStatus.REJECTED])):
-            return jsonify({'message': 'Invalid Status.'}), HTTPStatus.BAD_REQUEST
+    if status := json_input.get("status"):
+        if not (
+            (status := ReviewStatus[status])
+            and (status in [ReviewStatus.CHANGE_REQUESTED, ReviewStatus.APPROVED, ReviewStatus.REJECTED])
+        ):
+            return jsonify({"message": "Invalid Status."}), HTTPStatus.BAD_REQUEST
 
     else:
-        return jsonify({'message': 'Status is required.'}), HTTPStatus.BAD_REQUEST
+        return jsonify({"message": "Status is required."}), HTTPStatus.BAD_REQUEST
 
-    comment = json_input.get('comment')
-    if (status in [ReviewStatus.CHANGE_REQUESTED, ReviewStatus.REJECTED]
-            and not comment):
-        return jsonify({'message': 'Comment is required.'}), HTTPStatus.BAD_REQUEST
+    comment = json_input.get("comment")
+    if status in [ReviewStatus.CHANGE_REQUESTED, ReviewStatus.REJECTED] and not comment:
+        return jsonify({"message": "Comment is required."}), HTTPStatus.BAD_REQUEST
 
     filing = Filing.find_by_id(review.filing_id)
 
@@ -155,31 +156,31 @@ def save_review(review_id: int):
 
     # emailer notification
     publish_to_queue(
-        data={'email': {'filingId': filing.id, 'type': filing.filing_type, 'option': filing.status}},
-        subject=current_app.config.get('BUSINESS_EMAILER_TOPIC'),
+        data={"email": {"filingId": filing.id, "type": filing.filing_type, "option": filing.status}},
+        subject=current_app.config.get("BUSINESS_EMAILER_TOPIC"),
         identifier=None,  # todo: when new review types are added if they have business, add business identifier here
         event_type=None,
         message_id=None,
-        is_wrapped=False
+        is_wrapped=False,
     )
 
-    return jsonify({'message': 'Review saved.'}), HTTPStatus.CREATED
+    return jsonify({"message": "Review saved."}), HTTPStatus.CREATED
 
 
-@bp_admin.route('/reviews/<int:review_id>', methods=['GET'])
-@cross_origin(origin='*')
+@bp_admin.route("/reviews/<int:review_id>", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_review(review_id: int):
     """Return specific review."""
     review = Review.find_by_id(review_id)
 
     if not review:
-        return jsonify({'message': 'Review not found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": "Review not found."}), HTTPStatus.NOT_FOUND
     result = review.json
 
-    base_url = current_app.config.get('LEGAL_API_BASE_URL')
+    base_url = current_app.config.get("LEGAL_API_BASE_URL")
     filing = Filing.find_by_id(review.filing_id)
-    filing_link = f'{base_url}/{filing.temp_reg}/filings/{filing.id}'
-    result['filingLink'] = filing_link
+    filing_link = f"{base_url}/{filing.temp_reg}/filings/{filing.id}"
+    result["filingLink"] = filing_link
 
     return jsonify(result), HTTPStatus.OK

@@ -15,6 +15,7 @@
 
 The RegistrationBoostrap class and Schema are held in this module
 """
+
 from datetime import datetime
 
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -36,14 +37,14 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
     Businesses can be sole-proprietors, corporations, societies, etc.
     """
 
-    __tablename__ = 'registration_bootstrap'
+    __tablename__ = "registration_bootstrap"
 
-    _identifier = db.Column('identifier', db.String(10), primary_key=True)
-    account = db.Column('account', db.Integer, index=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
+    _identifier = db.Column("identifier", db.String(10), primary_key=True)
+    account = db.Column("account", db.Integer, index=True)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
 
     # relationships
-    filings = db.relationship('Filing', lazy='dynamic')
+    filings = db.relationship("Filing", lazy="dynamic")
 
     @hybrid_property
     def identifier(self):
@@ -56,7 +57,7 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
         if RegistrationBootstrap.validate_identifier(value):
             self._identifier = value
         else:
-            raise BusinessException('invalid-identifier-format', 406)
+            raise BusinessException("invalid-identifier-format", 406)
 
     @classmethod
     def find_by_identifier(cls, identifier: str = None):
@@ -79,14 +80,14 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
     def json(self):
         """Return the Business as a json object."""
         return {
-            'identifier': self.identifier,
-            'lastModified': self.last_modified.isoformat(),
+            "identifier": self.identifier,
+            "lastModified": self.last_modified.isoformat(),
         }
 
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
         """Validate the identifier is a temporary format."""
-        if identifier[:1] == 'T' and len(identifier) <= 10:
+        if identifier[:1] == "T" and len(identifier) <= 10:
             return True
 
         return False

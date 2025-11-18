@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Conversion filing."""
+
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, Optional
 
@@ -30,15 +31,15 @@ from legal_api.services.utils import get_str
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
     """Validate the Conversion filing."""
-    filing_type = 'conversion'
+    filing_type = "conversion"
     if not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
-    legal_type_path = '/filing/business/legalType'
+    legal_type_path = "/filing/business/legalType"
     legal_type = get_str(filing, legal_type_path)
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         msg = []
-        if filing.get('filing', {}).get('conversion', {}).get('nameRequest', None):
+        if filing.get("filing", {}).get("conversion", {}).get("nameRequest", None):
             msg.extend(validate_name_request(filing, legal_type, filing_type))
         msg.extend(validate_party(filing, legal_type, filing_type))
         msg.extend(validate_parties_addresses(filing, filing_type))

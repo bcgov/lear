@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
+
 # pylint: disable=unused-argument
 from __future__ import annotations
 
@@ -43,83 +44,83 @@ class Filing:  # pylint: disable=too-many-public-methods
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
-        COMPLETED = 'COMPLETED'
-        CORRECTED = 'CORRECTED'
-        DRAFT = 'DRAFT'
-        EPOCH = 'EPOCH'
-        ERROR = 'ERROR'
-        PAID = 'PAID'
-        PENDING = 'PENDING'
-        PAPER_ONLY = 'PAPER_ONLY'
-        PENDING_CORRECTION = 'PENDING_CORRECTION'
-        WITHDRAWN = 'WITHDRAWN'
+        COMPLETED = "COMPLETED"
+        CORRECTED = "CORRECTED"
+        DRAFT = "DRAFT"
+        EPOCH = "EPOCH"
+        ERROR = "ERROR"
+        PAID = "PAID"
+        PENDING = "PENDING"
+        PAPER_ONLY = "PAPER_ONLY"
+        PENDING_CORRECTION = "PENDING_CORRECTION"
+        WITHDRAWN = "WITHDRAWN"
 
         # filings with staff review
-        APPROVED = 'APPROVED'
-        AWAITING_REVIEW = 'AWAITING_REVIEW'
-        CHANGE_REQUESTED = 'CHANGE_REQUESTED'
-        REJECTED = 'REJECTED'
+        APPROVED = "APPROVED"
+        AWAITING_REVIEW = "AWAITING_REVIEW"
+        CHANGE_REQUESTED = "CHANGE_REQUESTED"
+        REJECTED = "REJECTED"
 
     class FilingTypes(str, Enum):
         """Render an Enum of all Filing Types."""
 
-        ADMIN_FREEZE = 'adminFreeze'
-        AGMEXTENSION = 'agmExtension'
-        AGMLOCATIONCHANGE = 'agmLocationChange'
-        ALTERATION = 'alteration'
-        AMALGAMATIONAPPLICATION = 'amalgamationApplication'
-        AMALGAMATIONOUT = 'amalgamationOut'
-        AMENDEDAGM = 'amendedAGM'
-        AMENDEDANNUALREPORT = 'amendedAnnualReport'
-        AMENDEDCHANGEOFDIRECTORS = 'amendedChangeOfDirectors'
-        ANNUALREPORT = 'annualReport'
-        APPOINTRECEIVER = 'appointReceiver'
-        CEASERECEIVER = 'ceaseReceiver'
-        CHANGEOFADDRESS = 'changeOfAddress'
-        CHANGEOFDIRECTORS = 'changeOfDirectors'
-        CHANGEOFNAME = 'changeOfName'
-        CHANGEOFOFFICERS = 'changeOfOfficers'
-        CHANGEOFREGISTRATION = 'changeOfRegistration'
-        CONSENTAMALGAMATIONOUT = 'consentAmalgamationOut'
-        CONSENTCONTINUATIONOUT = 'consentContinuationOut'
-        CONTINUATIONIN = 'continuationIn'
-        CONTINUATIONOUT = 'continuationOut'
-        CONTINUEDOUT = 'continuedOut'
-        CONVERSION = 'conversion'
-        CORRECTION = 'correction'
-        COURTORDER = 'courtOrder'
-        DISSOLUTION = 'dissolution'
-        DISSOLVED = 'dissolved'
-        INCORPORATIONAPPLICATION = 'incorporationApplication'
-        INTENTTOLIQUIDATE = 'intentToLiquidate'
-        NOTICEOFWITHDRAWAL = 'noticeOfWithdrawal'
-        PUTBACKOFF = 'putBackOff'
-        PUTBACKON = 'putBackOn'
-        REGISTRARSNOTATION = 'registrarsNotation'
-        REGISTRARSORDER = 'registrarsOrder'
-        REGISTRATION = 'registration'
-        RESTORATION = 'restoration'
-        RESTORATIONAPPLICATION = 'restorationApplication'
-        SPECIALRESOLUTION = 'specialResolution'
-        TRANSITION = 'transition'
-        TRANSPARENCY_REGISTER = 'transparencyRegister'
+        ADMIN_FREEZE = "adminFreeze"
+        AGMEXTENSION = "agmExtension"
+        AGMLOCATIONCHANGE = "agmLocationChange"
+        ALTERATION = "alteration"
+        AMALGAMATIONAPPLICATION = "amalgamationApplication"
+        AMALGAMATIONOUT = "amalgamationOut"
+        AMENDEDAGM = "amendedAGM"
+        AMENDEDANNUALREPORT = "amendedAnnualReport"
+        AMENDEDCHANGEOFDIRECTORS = "amendedChangeOfDirectors"
+        ANNUALREPORT = "annualReport"
+        APPOINTRECEIVER = "appointReceiver"
+        CEASERECEIVER = "ceaseReceiver"
+        CHANGEOFADDRESS = "changeOfAddress"
+        CHANGEOFDIRECTORS = "changeOfDirectors"
+        CHANGEOFNAME = "changeOfName"
+        CHANGEOFOFFICERS = "changeOfOfficers"
+        CHANGEOFREGISTRATION = "changeOfRegistration"
+        CONSENTAMALGAMATIONOUT = "consentAmalgamationOut"
+        CONSENTCONTINUATIONOUT = "consentContinuationOut"
+        CONTINUATIONIN = "continuationIn"
+        CONTINUATIONOUT = "continuationOut"
+        CONTINUEDOUT = "continuedOut"
+        CONVERSION = "conversion"
+        CORRECTION = "correction"
+        COURTORDER = "courtOrder"
+        DISSOLUTION = "dissolution"
+        DISSOLVED = "dissolved"
+        INCORPORATIONAPPLICATION = "incorporationApplication"
+        INTENTTOLIQUIDATE = "intentToLiquidate"
+        NOTICEOFWITHDRAWAL = "noticeOfWithdrawal"
+        PUTBACKOFF = "putBackOff"
+        PUTBACKON = "putBackOn"
+        REGISTRARSNOTATION = "registrarsNotation"
+        REGISTRARSORDER = "registrarsOrder"
+        REGISTRATION = "registration"
+        RESTORATION = "restoration"
+        RESTORATIONAPPLICATION = "restorationApplication"
+        SPECIALRESOLUTION = "specialResolution"
+        TRANSITION = "transition"
+        TRANSPARENCY_REGISTER = "transparencyRegister"
 
     class FilingTypesCompact(str, Enum):
         """Render enum for filing types with sub-types."""
 
-        DISSOLUTION_VOLUNTARY = 'dissolution.voluntary'
-        DISSOLUTION_ADMINISTRATIVE = 'dissolution.administrative'
-        DISSOLUTION_INVOLUNTARY = 'dissolution.involuntary'
-        RESTORATION_FULL_RESTORATION = 'restoration.fullRestoration'
-        RESTORATION_LIMITED_RESTORATION = 'restoration.limitedRestoration'
-        RESTORATION_LIMITED_RESTORATION_EXT = 'restoration.limitedRestorationExtension'
-        RESTORATION_LIMITED_RESTORATION_TO_FULL = 'restoration.limitedRestorationToFull'
-        AMALGAMATION_APPLICATION_REGULAR = 'amalgamationApplication.regular'
-        AMALGAMATION_APPLICATION_VERTICAL = 'amalgamationApplication.vertical'
-        AMALGAMATION_APPLICATION_HORIZONTAL = 'amalgamationApplication.horizontal'
-        TRANSPARENCY_REGISTER_ANNUAL = 'transparencyRegister.annual'
-        TRANSPARENCY_REGISTER_CHANGE = 'transparencyRegister.change'
-        TRANSPARENCY_REGISTER_INITIAL = 'transparencyRegister.initial'
+        DISSOLUTION_VOLUNTARY = "dissolution.voluntary"
+        DISSOLUTION_ADMINISTRATIVE = "dissolution.administrative"
+        DISSOLUTION_INVOLUNTARY = "dissolution.involuntary"
+        RESTORATION_FULL_RESTORATION = "restoration.fullRestoration"
+        RESTORATION_LIMITED_RESTORATION = "restoration.limitedRestoration"
+        RESTORATION_LIMITED_RESTORATION_EXT = "restoration.limitedRestorationExtension"
+        RESTORATION_LIMITED_RESTORATION_TO_FULL = "restoration.limitedRestorationToFull"
+        AMALGAMATION_APPLICATION_REGULAR = "amalgamationApplication.regular"
+        AMALGAMATION_APPLICATION_VERTICAL = "amalgamationApplication.vertical"
+        AMALGAMATION_APPLICATION_HORIZONTAL = "amalgamationApplication.horizontal"
+        TRANSPARENCY_REGISTER_ANNUAL = "transparencyRegister.annual"
+        TRANSPARENCY_REGISTER_CHANGE = "transparencyRegister.change"
+        TRANSPARENCY_REGISTER_INITIAL = "transparencyRegister.initial"
 
     NEW_BUSINESS_FILING_TYPES: Final = [
         FilingTypes.AMALGAMATIONAPPLICATION,
@@ -131,7 +132,7 @@ class Filing:  # pylint: disable=too-many-public-methods
     def __init__(self):
         """Create the Filing."""
         self._storage: Optional[FilingStorage] = None
-        self._id: str = ''
+        self._id: str = ""
         self._raw: Optional[Dict] = None
         self._completion_date: datetime
         self._filing_date: datetime
@@ -189,10 +190,12 @@ class Filing:  # pylint: disable=too-many-public-methods
 
     def redacted(self, filing: dict, jwt: JwtManager):
         """Redact the filing based on stored roles and those in JWT."""
-        if (self._storage
+        if (
+            self._storage
             and (submitter_roles := self._storage.submitter_roles)
-                and self.redact_submitter(submitter_roles, jwt)):
-            filing['filing']['header']['submitter'] = REDACTED_STAFF_SUBMITTER
+            and self.redact_submitter(submitter_roles, jwt)
+        ):
+            filing["filing"]["header"]["submitter"] = REDACTED_STAFF_SUBMITTER
 
         return filing
 
@@ -207,10 +210,15 @@ class Filing:  # pylint: disable=too-many-public-methods
     # json is returned as a property defined after this method
     def get_json(self) -> Optional[Dict]:
         """Return a dict representing the filing json."""
-        if not self._storage or (self._storage and self._storage.status not in [Filing.Status.COMPLETED.value,
-                                                                                Filing.Status.PAID.value,
-                                                                                Filing.Status.PENDING.value,
-                                                                                ]):
+        if not self._storage or (
+            self._storage
+            and self._storage.status
+            not in [
+                Filing.Status.COMPLETED.value,
+                Filing.Status.PAID.value,
+                Filing.Status.PENDING.value,
+            ]
+        ):
             filing_json = self.raw
 
         # this will return the raw filing instead of the versioned filing until
@@ -218,8 +226,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         # This ASSUMES that the JSONSchemas remain valid for that period of time
         # which fits with the N-1 approach to versioning, and
         # that handling of filings stuck in PENDING are handled appropriately.
-        elif self._storage.status in [Filing.Status.PAID.value,
-                                      Filing.Status.PENDING.value]:
+        elif self._storage.status in [Filing.Status.PAID.value, Filing.Status.PENDING.value]:
             if self._storage.tech_correction_json:
                 filing = self._storage.tech_correction_json
             else:
@@ -231,6 +238,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             filing_json = VersionedBusinessDetailsService.get_revision(self.id, self._storage.business_id)
 
         return filing_json
+
     json = property(get_json)
 
     @json.setter
@@ -282,7 +290,7 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get(identifier, filing_id=None) -> Optional[Filing]:
         """Return a Filing domain by the id."""
-        if identifier.startswith('T'):
+        if identifier.startswith("T"):
             storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)
@@ -333,13 +341,16 @@ class Filing:  # pylint: disable=too-many-public-methods
         """Return the most recent filing json."""
         if storage := FilingStorage.get_most_recent_filing(business_id, filing_type):
             submitter_displayname = REDACTED_STAFF_SUBMITTER
-            if (submitter := storage.filing_submitter) \
-                and submitter.username and jwt \
-                    and not Filing.redact_submitter(storage.submitter_roles, jwt):
+            if (
+                (submitter := storage.filing_submitter)
+                and submitter.username
+                and jwt
+                and not Filing.redact_submitter(storage.submitter_roles, jwt)
+            ):
                 submitter_displayname = submitter.username
 
             filing_json = storage.json
-            filing_json['filing']['header']['submitter'] = submitter_displayname
+            filing_json["filing"]["header"]["submitter"] = submitter_displayname
             return filing_json
         return None
 
@@ -354,10 +365,9 @@ class Filing:  # pylint: disable=too-many-public-methods
             return None
 
         legal_filings = []
-        for k in filing['filing'].keys():  # pylint: disable=unsubscriptable-object
+        for k in filing["filing"].keys():  # pylint: disable=unsubscriptable-object
             if FilingStorage.FILINGS.get(k, None):
-                legal_filings.append(
-                    {k: copy.deepcopy(filing['filing'].get(k))})  # pylint: disable=unsubscriptable-object
+                legal_filings.append({k: copy.deepcopy(filing["filing"].get(k))})  # pylint: disable=unsubscriptable-object
 
         return legal_filings
 
@@ -368,26 +378,30 @@ class Filing:  # pylint: disable=too-many-public-methods
             return None
 
         with suppress(KeyError, TypeError):
-            if (UserRoles.staff in submitter_roles
-                or UserRoles.system in submitter_roles) \
-                    and not has_roles(jwt, [UserRoles.staff, ]):
+            if (UserRoles.staff in submitter_roles or UserRoles.system in submitter_roles) and not has_roles(
+                jwt,
+                [
+                    UserRoles.staff,
+                ],
+            ):
                 return True
         return False
 
     @staticmethod
-    def ledger(business_id: int,  # pylint: disable=too-many-arguments
-               jwt: JwtManager = None,
-               statuses: List(str) = None,
-               start: int = None,
-               size: int = None,
-               effective_date=None,
-               **kwargs) \
-            -> list:
+    def ledger(
+        business_id: int,  # pylint: disable=too-many-arguments
+        jwt: JwtManager = None,
+        statuses: List(str) = None,
+        start: int = None,
+        size: int = None,
+        effective_date=None,
+        **kwargs,
+    ) -> list:
         """Return the ledger list by directly querying the storage objects.
 
         Note: Sort of breaks the "core" style, but searches are always interesting ducks.
         """
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        base_url = current_app.config.get("LEGAL_API_BASE_URL")
 
         business = Business.find_by_internal_id(business_id)
 
@@ -407,40 +421,41 @@ class Filing:  # pylint: disable=too-many-public-methods
 
         ledger = []
         for filing in query.all():
-
             submitter_displayname = REDACTED_STAFF_SUBMITTER
-            if (submitter := filing.filing_submitter) \
-                and submitter.username and jwt \
-                    and not Filing.redact_submitter(filing.submitter_roles, jwt):
+            if (
+                (submitter := filing.filing_submitter)
+                and submitter.username
+                and jwt
+                and not Filing.redact_submitter(filing.submitter_roles, jwt)
+            ):
                 submitter_displayname = submitter.display_name or submitter.username
 
             ledger_filing = {
-                'availableOnPaperOnly': filing.paper_only,
-                'businessIdentifier': business.identifier,
-                'displayName': FilingMeta.display_name(business, filing=filing),
-                'effectiveDate': filing.effective_date,
-                'filingId': filing.id,
-                'name': filing.filing_type,
-                'paymentStatusCode': filing.payment_status_code,
-                'status': filing.status,
-                'submitter': submitter_displayname,
-                'submittedDate': filing._filing_date,  # pylint: disable=protected-access
-                'paymentDate': filing.payment_completion_date,
-
+                "availableOnPaperOnly": filing.paper_only,
+                "businessIdentifier": business.identifier,
+                "displayName": FilingMeta.display_name(business, filing=filing),
+                "effectiveDate": filing.effective_date,
+                "filingId": filing.id,
+                "name": filing.filing_type,
+                "paymentStatusCode": filing.payment_status_code,
+                "status": filing.status,
+                "submitter": submitter_displayname,
+                "submittedDate": filing._filing_date,  # pylint: disable=protected-access
+                "paymentDate": filing.payment_completion_date,
                 **Filing.common_ledger_items(business.identifier, filing),
             }
             if filing.filing_sub_type:
-                ledger_filing['filingSubType'] = filing.filing_sub_type
+                ledger_filing["filingSubType"] = filing.filing_sub_type
 
             # correction
             if filing.parent_filing:
-                ledger_filing['correctionFilingId'] = filing.parent_filing.id
-                ledger_filing['correctionLink'] = f'{base_url}/{business.identifier}/filings/{filing.parent_filing.id}'
-                ledger_filing['correctionFilingStatus'] = filing.parent_filing.status
+                ledger_filing["correctionFilingId"] = filing.parent_filing.id
+                ledger_filing["correctionLink"] = f"{base_url}/{business.identifier}/filings/{filing.parent_filing.id}"
+                ledger_filing["correctionFilingStatus"] = filing.parent_filing.status
 
             # add the collected meta_data
             if filing.meta_data:
-                ledger_filing['data'] = filing.meta_data
+                ledger_filing["data"] = filing.meta_data
 
             # orders
             if filing.court_order_file_number or filing.order_details:
@@ -453,39 +468,42 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def common_ledger_items(business_identifier: str, filing_storage: FilingStorage) -> dict:
         """Return attributes and links that also get included in T-business filings."""
-        no_output_filing_types = ['Involuntary Dissolution', 'conversion']
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
+        no_output_filing_types = ["Involuntary Dissolution", "conversion"]
+        base_url = current_app.config.get("LEGAL_API_BASE_URL")
         filing = Filing()
         filing._storage = filing_storage  # pylint: disable=protected-access
         return {
-            'displayLedger': not filing_storage.hide_in_ledger,
-            'commentsCount': filing_storage.comments_count,
-            'commentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/comments',
-            'documentsLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}/documents' if
-            filing_storage.filing_type not in no_output_filing_types else None,
-            'filingLink': f'{base_url}/{business_identifier}/filings/{filing_storage.id}',
-            'isFutureEffective': filing.is_future_effective,
-            'withdrawalPending': filing_storage.withdrawal_pending
+            "displayLedger": not filing_storage.hide_in_ledger,
+            "commentsCount": filing_storage.comments_count,
+            "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
+            "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents"
+            if filing_storage.filing_type not in no_output_filing_types
+            else None,
+            "filingLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}",
+            "isFutureEffective": filing.is_future_effective,
+            "withdrawalPending": filing_storage.withdrawal_pending,
         }
 
     @staticmethod
     def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:
-        court_order_data = {'fileNumber': filing.court_order_file_number}
+        court_order_data = {"fileNumber": filing.court_order_file_number}
         if filing.court_order_date:
-            court_order_data['orderDate'] = filing.court_order_date
+            court_order_data["orderDate"] = filing.court_order_date
         if filing.court_order_effect_of_order:
-            court_order_data['effectOfOrder'] = filing.court_order_effect_of_order
+            court_order_data["effectOfOrder"] = filing.court_order_effect_of_order
         if filing.order_details:
-            court_order_data['orderDetails'] = filing.order_details
+            court_order_data["orderDetails"] = filing.order_details
 
-        if not ledger_filing.get('data'):
-            ledger_filing['data'] = {}
-        ledger_filing['data']['order'] = court_order_data
+        if not ledger_filing.get("data"):
+            ledger_filing["data"] = {}
+        ledger_filing["data"]["order"] = court_order_data
 
     @staticmethod
-    def get_document_list(business,  # pylint: disable=too-many-locals disable=too-many-branches
-                          filing,
-                          jwt: JwtManager) -> Optional[dict]:
+    def get_document_list(
+        business,  # pylint: disable=too-many-locals disable=too-many-branches
+        filing,
+        jwt: JwtManager,
+    ) -> Optional[dict]:
         """Return a list of documents for a particular filing."""
         no_output_filings = [
             Filing.FilingTypes.CONVERSION.value,
@@ -495,30 +513,29 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.REGISTRARSORDER.value,
         ]
 
-        if not filing \
-            or filing.status in (
-                Filing.Status.PAPER_ONLY,
-                Filing.Status.DRAFT,
-                Filing.Status.PENDING,
-                Filing.Status.AWAITING_REVIEW,
-                Filing.Status.CHANGE_REQUESTED,
-                Filing.Status.APPROVED,
-                Filing.Status.REJECTED,
-            ):  # noqa: E125; lint conflicts on the indenting
+        if not filing or filing.status in (
+            Filing.Status.PAPER_ONLY,
+            Filing.Status.DRAFT,
+            Filing.Status.PENDING,
+            Filing.Status.AWAITING_REVIEW,
+            Filing.Status.CHANGE_REQUESTED,
+            Filing.Status.APPROVED,
+            Filing.Status.REJECTED,
+        ):  # noqa: E125; lint conflicts on the indenting
             return None
 
-        base_url = current_app.config.get('LEGAL_API_BASE_URL')
-        base_url = base_url[:base_url.find('/api')]
+        base_url = current_app.config.get("LEGAL_API_BASE_URL")
+        base_url = base_url[: base_url.find("/api")]
         identifier = business.identifier if business else filing.storage.temp_reg
         if not identifier and filing.storage.withdrawn_filing_id:
             withdrawn_filing = Filing.find_by_id(filing.storage.withdrawn_filing_id)
             identifier = withdrawn_filing.storage.temp_reg
 
-        doc_url = url_for('API2.get_documents', **{'identifier': identifier,
-                                                   'filing_id': filing.id,
-                                                   'legal_filing_name': None})
+        doc_url = url_for(
+            "API2.get_documents", **{"identifier": identifier, "filing_id": filing.id, "legal_filing_name": None}
+        )
 
-        documents = {'documents': {}}
+        documents = {"documents": {}}
         # for paper_only filings return and empty documents list
         if filing.storage and filing.storage.paper_only:
             return documents
@@ -531,11 +548,11 @@ class Filing:  # pylint: disable=too-many-public-methods
         # return a receipt for filings completed in our system (but not for ca users
         # see https://github.com/bcgov/entity/issues/21881
         if filing.storage and filing.storage.payment_completion_date:
-            if filing.filing_type == 'courtOrder' and \
-                    (filing.storage.documents.filter(
-                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
-                documents['documents']['uploadedCourtOrder'] = f'{base_url}{doc_url}/uploadedCourtOrder'
-            documents['documents']['receipt'] = f'{base_url}{doc_url}/receipt'
+            if filing.filing_type == "courtOrder" and (
+                filing.storage.documents.filter(Document.type == DocumentType.COURT_ORDER.value).one_or_none()
+            ):
+                documents["documents"]["uploadedCourtOrder"] = f"{base_url}{doc_url}/uploadedCourtOrder"
+            documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
         no_legal_filings_in_paid_withdrawn_status = [
             Filing.FilingTypes.AMALGAMATIONOUT.value,
@@ -547,34 +564,46 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
             Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
-            Filing.FilingTypes.CHANGEOFOFFICERS.value
+            Filing.FilingTypes.CHANGEOFOFFICERS.value,
         ]
-        if (filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
-                (filing.status == Filing.Status.COMPLETED and
-                    filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value)) and \
-            not (filing.filing_type in no_legal_filings_in_paid_withdrawn_status
-                 or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
-                     business.legal_type in [
-                         Business.LegalTypes.SOLE_PROP.value,
-                         Business.LegalTypes.PARTNERSHIP.value])
-                 ):
-            documents['documents']['legalFilings'] = \
-                [{filing.filing_type: f'{base_url}{doc_url}/{filing.filing_type}'}, ]
+        if (
+            filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN)
+            or (
+                filing.status == Filing.Status.COMPLETED
+                and filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value
+            )
+        ) and not (
+            filing.filing_type in no_legal_filings_in_paid_withdrawn_status
+            or (
+                filing.filing_type == Filing.FilingTypes.DISSOLUTION.value
+                and business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
+            )
+        ):
+            documents["documents"]["legalFilings"] = [
+                {filing.filing_type: f"{base_url}{doc_url}/{filing.filing_type}"},
+            ]
             if user_is_ca:
-                del documents['documents']['receipt']
+                del documents["documents"]["receipt"]
             return documents
 
-        if filing.status in (
-            Filing.Status.COMPLETED,
-            Filing.Status.CORRECTED,
-        ) and filing.storage.meta_data:
-            if legal_filings := filing.storage.meta_data.get('legalFilings'):
+        if (
+            filing.status
+            in (
+                Filing.Status.COMPLETED,
+                Filing.Status.CORRECTED,
+            )
+            and filing.storage.meta_data
+        ):
+            if legal_filings := filing.storage.meta_data.get("legalFilings"):
                 legal_filings_copy = copy.deepcopy(legal_filings)
-                if (filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
-                        business.legal_type == Business.LegalTypes.COOP.value):
+                if (
+                    filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value
+                    and business.legal_type == Business.LegalTypes.COOP.value
+                ):
                     # add special resolution application output
-                    documents['documents']['specialResolutionApplication'] = \
-                        f'{base_url}{doc_url}/specialResolutionApplication'
+                    documents["documents"]["specialResolutionApplication"] = (
+                        f"{base_url}{doc_url}/specialResolutionApplication"
+                    )
                     if Filing.FilingTypes.CHANGEOFNAME.value in legal_filings:
                         # suppress change of name output for MVP since the design is outdated.
                         legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
@@ -591,16 +620,19 @@ class Filing:  # pylint: disable=too-many-public-methods
                     Filing.FilingTypes.AGMEXTENSION.value,
                     Filing.FilingTypes.AGMLOCATIONCHANGE.value,
                     Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
-                    Filing.FilingTypes.CHANGEOFOFFICERS.value
+                    Filing.FilingTypes.CHANGEOFOFFICERS.value,
                 ]
                 if filing.filing_type not in no_legal_filings:
-                    documents['documents']['legalFilings'] = \
-                        [{doc: f'{base_url}{doc_url}/{doc}'} for doc in legal_filings_copy]
+                    documents["documents"]["legalFilings"] = [
+                        {doc: f"{base_url}{doc_url}/{doc}"} for doc in legal_filings_copy
+                    ]
 
                 # get extra outputs
-                if filing.storage.transaction_id and \
-                        (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                        filing.storage, business.id)):
+                if filing.storage.transaction_id and (
+                    bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
+                        filing.storage, business.id
+                    )
+                ):
                     business = bus_rev_temp
 
                 adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
@@ -608,12 +640,12 @@ class Filing:  # pylint: disable=too-many-public-methods
 
                 FilingMeta.alter_outputs(filing.storage, business, additional)
                 for doc in additional:
-                    documents['documents'][doc] = f'{base_url}{doc_url}/{doc}'
+                    documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 
                 if has_roles(jwt, [UserRoles.staff]):
-                    if static_docs := FilingMeta.get_static_documents(filing.storage, f'{base_url}{doc_url}/static'):
-                        documents['documents']['staticDocuments'] = static_docs
+                    if static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"):
+                        documents["documents"]["staticDocuments"] = static_docs
 
         if user_is_ca:
-            del documents['documents']['receipt']
+            del documents["documents"]["receipt"]
         return documents

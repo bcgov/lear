@@ -29,13 +29,13 @@ from legal_api.utils.auth import jwt
 class DigitalCredentialsRulesService:
     """Digital Credentials Rules service."""
 
-    ALLOWED_DBC_ACCOUNT_ROLES = ['ADMIN', 'COORDINATOR']
+    ALLOWED_DBC_ACCOUNT_ROLES = ["ADMIN", "COORDINATOR"]
 
     class FilingTypes(Enum):
         """Filing Types Enum."""
 
-        REGISTRATION = 'registration'
-        INCORPORATION_APPLICATION = 'incorporationApplication'
+        REGISTRATION = "registration"
+        INCORPORATION_APPLICATION = "incorporationApplication"
 
     valid_filing_types = [
         FilingTypes.REGISTRATION.value,
@@ -47,10 +47,7 @@ class DigitalCredentialsRulesService:
         Business.LegalTypes.PARTNERSHIP.value,
     ]
 
-    valid_incorporation_types = [
-        Business.LegalTypes.BCOMP.value,
-        Business.LegalTypes.BCOMP_CONTINUE_IN.value
-    ]
+    valid_incorporation_types = [Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP_CONTINUE_IN.value]
 
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
         """Return True if the user is allowed to access digital credentials."""
@@ -73,12 +70,12 @@ class DigitalCredentialsRulesService:
     def _has_general_access(self, user: User) -> bool:
         """Return True if general access rules are met."""
         if not user:
-            current_app.logger.debug('No user is provided.')
+            current_app.logger.debug("No user is provided.")
             return False
 
-        is_login_source_bcsc = user.login_source == 'BCSC'
+        is_login_source_bcsc = user.login_source == "BCSC"
         if not is_login_source_bcsc:
-            current_app.logger.debug('User is not logged in with BCSC.')
+            current_app.logger.debug("User is not logged in with BCSC.")
             return False
 
         return True
@@ -88,36 +85,40 @@ class DigitalCredentialsRulesService:
         try:
             # Call Auth API to get org membership for the business
             auth_url = f"{current_app.config.get('AUTH_SVC_URL', '').rstrip('/')}/entities/{business.identifier}/authorizations"
-            resp = requests.get(auth_url, headers={'Authorization': f'Bearer {jwt.get_token_auth_header()}'}, timeout=30)
+            resp = requests.get(
+                auth_url, headers={"Authorization": f"Bearer {jwt.get_token_auth_header()}"}, timeout=30
+            )
             if resp.status_code == 200:
-                return resp.json().get('orgMembership') in self.ALLOWED_DBC_ACCOUNT_ROLES
+                return resp.json().get("orgMembership") in self.ALLOWED_DBC_ACCOUNT_ROLES
         except Exception as ex:
-            current_app.logger.error(f'DBC Rules: Error checking account role: {ex}', exc_info=True)
+            current_app.logger.error(f"DBC Rules: Error checking account role: {ex}", exc_info=True)
         return False
 
     def _has_specific_access(self, user: User, business: Business) -> bool:
         """Return True if business rules are met."""
         if not business:
-            current_app.logger.debug('No business is provided.')
+            current_app.logger.debug("No business is provided.")
             return False
 
         allowed_business_types = determine_allowed_business_types(
-            self.valid_registration_types, self.valid_incorporation_types)
-        current_app.logger.debug('DBC Allowed business types: %s', allowed_business_types)
+            self.valid_registration_types, self.valid_incorporation_types
+        )
+        current_app.logger.debug("DBC Allowed business types: %s", allowed_business_types)
 
         if business.legal_type in allowed_business_types:
-            return (self.user_has_filing_party_role(user, business)
-                    or self.user_has_business_party_role(user, business)
-                    or self.user_has_account_role(business))
+            return (
+                self.user_has_filing_party_role(user, business)
+                or self.user_has_business_party_role(user, business)
+                or self.user_has_account_role(business)
+            )
 
-        current_app.logger.debug('No specific DBC access rules are met.')
+        current_app.logger.debug("No specific DBC access rules are met.")
         return False
 
     def user_is_completing_party(self, user: User, business: Business) -> bool:
         """Return True if the user is the completing party."""
         if len(filings := self.valid_filings(business)) <= 0:
-            current_app.logger.debug(
-                'No registration or incorporation filing found for the business.')
+            current_app.logger.debug("No registration or incorporation filing found for the business.")
             return False
 
         filing = filings.pop(0)
@@ -142,16 +143,14 @@ class DigitalCredentialsRulesService:
     def user_filing_party_roles(self, user: User, business: Business) -> List[PartyRole]:
         """Return the filing roles of the user for the business, if any."""
         if len(filings := self.valid_filings(business)) <= 0:
-            current_app.logger.debug(
-                'No registration or incorporation filing found for the business.')
+            current_app.logger.debug("No registration or incorporation filing found for the business.")
             return []
 
         if business.legal_type in self.valid_registration_types:
             return []
 
         filing = filings.pop(0)
-        roles = filing.filing_party_roles.filter(
-            PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value).all()
+        roles = filing.filing_party_roles.filter(PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value).all()
         return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
 
     def user_business_party_roles(self, user: User, business: Business) -> List[PartyRole]:
@@ -163,20 +162,18 @@ class DigitalCredentialsRulesService:
         """Return True if the user submitted the filing."""
         did_user_submit_filing = user.id == filing.submitter_id
         if not did_user_submit_filing:
-            current_app.logger.debug('User is not the filing submitter.')
+            current_app.logger.debug("User is not the filing submitter.")
         return did_user_submit_filing
 
     def user_matches_completing_party(self, user: User, filing: Filing) -> bool:
         """Return the True if the user matches a completing party."""
         if len(roles := self.completing_party_roles(filing)) <= 0:
-            current_app.logger.debug(
-                'No completing parties found for the registration or incorporation filing.')
+            current_app.logger.debug("No completing parties found for the registration or incorporation filing.")
             return False
 
-        is_user_completing_party = len(
-            list(filter(lambda role: self.user_matches_party(user, role.party), roles))) > 0
+        is_user_completing_party = len(list(filter(lambda role: self.user_matches_party(user, role.party), roles))) > 0
         if not is_user_completing_party:
-            current_app.logger.debug('User is not the completing party.')
+            current_app.logger.debug("User is not the completing party.")
         return is_user_completing_party
 
     def user_matches_party(self, user: User, party: Party) -> bool:

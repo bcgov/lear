@@ -15,9 +15,10 @@
 
 Provides the mount point for all of the business entity end-points.
 """
+
 from flask import Blueprint
 
 from legal_api.resources.constants import EndpointEnum
 
 
-bp = Blueprint('API2', __name__, url_prefix=EndpointEnum.BUSINESSES_V2.value)
+bp = Blueprint("API2", __name__, url_prefix=EndpointEnum.BUSINESSES_V2.value)

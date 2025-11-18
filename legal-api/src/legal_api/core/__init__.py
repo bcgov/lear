@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This has the core domain used by the application."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -23,9 +24,9 @@ from .meta import FILINGS, FilingMeta
 
 
 __all__ = (
-    'BusinessIdentifier',
-    'BusinessType',
-    'FILINGS',
-    'Filing',
-    'FilingMeta',
+    "BusinessIdentifier",
+    "BusinessType",
+    "FILINGS",
+    "Filing",
+    "FilingMeta",
 )

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the share classes for the entity."""
+
 from http import HTTPStatus
 
 from flask import jsonify
@@ -25,27 +26,27 @@ from legal_api.utils.util import cors_preflight
 from .api_namespace import API
 
 
-@cors_preflight('GET,')
-@API.route('/<string:identifier>/share-classes', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>/share-classes/<int:share_class_id>', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,")
+@API.route("/<string:identifier>/share-classes", methods=["GET", "OPTIONS"])
+@API.route("/<string:identifier>/share-classes/<int:share_class_id>", methods=["GET", "OPTIONS"])
 class ShareClassResource(Resource):
     """Business Share Classes service."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get(identifier, share_class_id=None):
         """Return a JSON of the share classes."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
         # check authorization
-        if not authorized(identifier, jwt, action=['view']):
-            return jsonify({'message':
-                            f'You are not authorized to view share classes for {identifier}.'}), \
-                HTTPStatus.UNAUTHORIZED
+        if not authorized(identifier, jwt, action=["view"]):
+            return jsonify(
+                {"message": f"You are not authorized to view share classes for {identifier}."}
+            ), HTTPStatus.UNAUTHORIZED
 
         # return the matching share class
         if share_class_id:
@@ -65,9 +66,9 @@ class ShareClassResource(Resource):
         if share_class_id:
             rv = ShareClass.find_by_share_class_id(share_class_id)
             if rv:
-                share_class = {'shareClass': rv.json}
+                share_class = {"shareClass": rv.json}
 
         if not share_class:
-            return None, {'message': f'{business.identifier} share class not found'}, HTTPStatus.NOT_FOUND
+            return None, {"message": f"{business.identifier} share class not found"}, HTTPStatus.NOT_FOUND
 
         return share_class, None, HTTPStatus.OK

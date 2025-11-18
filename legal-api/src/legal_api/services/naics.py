@@ -14,7 +14,6 @@
 
 """This provides the service for naics-api calls."""
 
-
 import requests
 from flask import current_app
 
@@ -28,12 +27,12 @@ class NaicsService:
     def find_by_code(naics_code: str):
         """Return NAICS Structure matching code."""
         try:
-            naics_url = current_app.config.get('NAICS_API_URL')
+            naics_url = current_app.config.get("NAICS_API_URL")
             token = AccountService.get_bearer_token()
-            response = requests.get(naics_url + '/' + naics_code, headers={
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token
-            })
+            response = requests.get(
+                naics_url + "/" + naics_code,
+                headers={"Content-Type": "application/json", "Authorization": "Bearer " + token},
+            )
             response.raise_for_status()
             return response.json()
         except Exception as err:

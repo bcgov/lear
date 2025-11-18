@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common error."""
+
 from typing import Dict, List
 
 
-class Error():  # pylint: disable=too-few-public-methods; convenience class
+class Error:  # pylint: disable=too-few-public-methods; convenience class
     """A convenience class for managing errors as code outside of Exceptions."""
 
     def __init__(self, code: int, message: List[Dict]):

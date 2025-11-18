@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Exposes all of the resource endpoints mounted in Flask-Blueprints."""
+
 from typing import Optional
 
 from flask import Flask
@@ -39,7 +40,7 @@ class V2Endpoint:
     def init_app(self, app):
         """Register and initialize the Endpoint setup."""
         if not app:
-            raise Exception('Cannot initialize without a Flask App.')  # pylint: disable=broad-exception-raised
+            raise Exception("Cannot initialize without a Flask App.")  # pylint: disable=broad-exception-raised
 
         self.app = app
 

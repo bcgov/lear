@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """API endpoints for managing an Document Signature resource."""
+
 from http import HTTPStatus
 
 from flask_restx import Namespace, Resource, cors
@@ -21,16 +22,16 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 
-API = Namespace('documents', description='Endpoints for document signature management')
+API = Namespace("documents", description="Endpoints for document signature management")
 
 
-@cors_preflight('GET,OPTIONS')
-@API.route('/<string:file_name>/signatures', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,OPTIONS")
+@API.route("/<string:file_name>/signatures", methods=["GET", "OPTIONS"])
 class DocumentSignature(Resource):
     """Resource for managing Document Signature."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get(file_name: str):
         """Return a pre-signed URL for the new document."""

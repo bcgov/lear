@@ -21,17 +21,17 @@ from .db import db
 class AuthorizedRolePermission(db.Model):
     """This class manages all of the authorized role permissions."""
 
-    __tablename__ = 'authorized_role_permissions'
+    __tablename__ = "authorized_role_permissions"
 
-    role_id = db.Column(db.Integer, db.ForeignKey('authorized_roles.id'), primary_key=True)
-    permission_id = db.Column(db.Integer, db.ForeignKey('permissions.id'), primary_key=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
+    role_id = db.Column(db.Integer, db.ForeignKey("authorized_roles.id"), primary_key=True)
+    permission_id = db.Column(db.Integer, db.ForeignKey("permissions.id"), primary_key=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)
     modified_by_id = db.Column(db.Integer, nullable=True)
 
-    role = db.relationship('AuthorizedRole', back_populates='permissions')
-    permission = db.relationship('Permission', back_populates='authorized_roles')
+    role = db.relationship("AuthorizedRole", back_populates="permissions")
+    permission = db.relationship("Permission", back_populates="authorized_roles")
 
     def save(self):
         """Save the object to the database immediately."""

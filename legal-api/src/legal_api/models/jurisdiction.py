@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds the data about jurisdiction."""
+
 from __future__ import annotations
 
 from sql_versioning import Versioned
@@ -25,21 +26,21 @@ class Jurisdiction(db.Model, Versioned):  # pylint: disable=too-many-instance-at
     """This class manages the jurisdiction."""
 
     __versioned__ = {}
-    __tablename__ = 'jurisdictions'
+    __tablename__ = "jurisdictions"
 
     id = db.Column(db.Integer, primary_key=True)
-    country = db.Column('country', db.String(10))
-    region = db.Column('region', db.String(10))
-    identifier = db.Column('identifier', db.String(50))
-    legal_name = db.Column('legal_name', db.String(1000))
-    tax_id = db.Column('tax_id', db.String(15))
-    incorporation_date = db.Column('incorporation_date', db.DateTime(timezone=True))
-    expro_identifier = db.Column('expro_identifier', db.String(10))
-    expro_legal_name = db.Column('expro_legal_name', db.String(1000))
+    country = db.Column("country", db.String(10))
+    region = db.Column("region", db.String(10))
+    identifier = db.Column("identifier", db.String(50))
+    legal_name = db.Column("legal_name", db.String(1000))
+    tax_id = db.Column("tax_id", db.String(15))
+    incorporation_date = db.Column("incorporation_date", db.DateTime(timezone=True))
+    expro_identifier = db.Column("expro_identifier", db.String(10))
+    expro_legal_name = db.Column("expro_legal_name", db.String(1000))
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), nullable=False, index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False, index=True)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), nullable=False, index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False, index=True)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -60,17 +61,19 @@ class Jurisdiction(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         jurisdiction = None
         if business_id:
             # pylint: disable=protected-access
-            jurisdiction = (db.session.query(Jurisdiction).join(Filing).
-                            filter(Jurisdiction.business_id == business_id).
-                            filter(
-                                or_(
-                                    Filing._filing_type == 'continuationIn',
-                                    and_(
-                                        Filing._filing_type == 'conversion',
-                                        Filing._meta_data.op('->')('conversion').
-                                        op('->>')('convFilingType') == 'continuationIn'
-                                    )
-                                )
-                            ).
-                            one_or_none())
+            jurisdiction = (
+                db.session.query(Jurisdiction)
+                .join(Filing)
+                .filter(Jurisdiction.business_id == business_id)
+                .filter(
+                    or_(
+                        Filing._filing_type == "continuationIn",
+                        and_(
+                            Filing._filing_type == "conversion",
+                            Filing._meta_data.op("->")("conversion").op("->>")("convFilingType") == "continuationIn",
+                        ),
+                    )
+                )
+                .one_or_none()
+            )
         return jurisdiction

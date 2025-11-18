@@ -17,6 +17,7 @@ BusinessException - error, status_code - Business rules error
 error - a description of the error {code / description: classname / full text}
 status_code - where possible use HTTP Error Codes
 """
+
 import functools
 
 from .business_exception import BusinessException
@@ -24,7 +25,7 @@ from .error_messages import ErrorCode, get_error_message
 
 
 __all__ = (
-    'BusinessException',
-    'ErrorCode',
-    'get_error_message',
+    "BusinessException",
+    "ErrorCode",
+    "get_error_message",
 )

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Change of Address filing."""
+
 from http import HTTPStatus
 from typing import Dict
 
@@ -26,37 +27,31 @@ from legal_api.services.filings.validations.common_validations import validate_o
 def validate(business: Business, coa: Dict) -> Error:
     """Validate the Change of Address filing."""
     if not business or not coa:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
 
-    filing_type = 'changeOfAddress'
+    filing_type = "changeOfAddress"
     msg = []
 
     msg.extend(validate_offices_addresses(coa, filing_type))
 
-    addresses = coa['filing'][filing_type]['offices']
+    addresses = coa["filing"][filing_type]["offices"]
 
     for item in addresses.keys():
         for k, v in addresses[item].items():
-            region = v.get('addressRegion')
-            country = v['addressCountry']
+            region = v.get("addressRegion")
+            country = v["addressCountry"]
 
-            if region != 'BC':
-                path = '/filing/changeOfAddress/offices/%s/%s/addressRegion' % (
-                    item, k
-                )
-                msg.append({'error': _("Address Region must be 'BC'."),
-                            'path': path})
+            if region != "BC":
+                path = "/filing/changeOfAddress/offices/%s/%s/addressRegion" % (item, k)
+                msg.append({"error": _("Address Region must be 'BC'."), "path": path})
 
             try:
                 country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                if country != 'CA':
+                if country != "CA":
                     raise LookupError
             except LookupError:
-                err_path = '/filing/changeOfAddress/offices/%s/%s/addressCountry' % (
-                    item, k
-                )
-                msg.append({'error': _("Address Country must be 'CA'."),
-                            'path': err_path})
+                err_path = "/filing/changeOfAddress/offices/%s/%s/addressCountry" % (item, k)
+                msg.append({"error": _("Address Country must be 'CA'."), "path": err_path})
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 

@@ -32,18 +32,18 @@ from legal_api.utils.util import cors_preflight
 from .api_namespace import API
 
 
-@cors_preflight('GET,')
-@API.route('/<string:identifier>/tasks', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,")
+@API.route("/<string:identifier>/tasks", methods=["GET", "OPTIONS"])
 class TaskListResource(Resource):
     """Business Tasks service - Lists all incomplete filings and to-dos."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get(identifier):
         """Return a JSON object with meta information about the Service."""
         business = Business.find_by_identifier(identifier)
-        is_nr = identifier.startswith('NR')
+        is_nr = identifier.startswith("NR")
 
         # Check if this is a NR
         if is_nr:
@@ -53,10 +53,10 @@ class TaskListResource(Resource):
             validation_result = namex.validate_nr(nr_response.json())
 
             # Return error if the NR is not consumable (invalid)
-            if not validation_result['is_consumable']:
-                return jsonify({
-                    'message': f'{identifier} is invalid', 'validation': validation_result
-                }), HTTPStatus.FORBIDDEN
+            if not validation_result["is_consumable"]:
+                return jsonify(
+                    {"message": f"{identifier} is invalid", "validation": validation_result}
+                ), HTTPStatus.FORBIDDEN
 
         if not business:
             # Create Incorporate using NR to-do item
@@ -69,14 +69,15 @@ class TaskListResource(Resource):
         else:
             rv = TaskListResource.construct_task_list(business)
             if not rv and is_nr:
-                paid_completed_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value,
-                                                                                    Filing.Status.COMPLETED.value])
+                paid_completed_filings = Filing.get_filings_by_status(
+                    business.id, [Filing.Status.PAID.value, Filing.Status.COMPLETED.value]
+                )
                 # Append NR todo if there are no tasks and PAID or COMPLETED filings
                 if not paid_completed_filings:
                     rv.append(TaskListResource.create_incorporate_nr_todo(nr_response.json(), 1, True))
-            elif rv == 'pay_connection_error':
+            elif rv == "pay_connection_error":
                 return {
-                    'message': 'Failed to get payment details for a filing. Please try again later.'
+                    "message": "Failed to get payment details for a filing. Please try again later."
                 }, HTTPStatus.SERVICE_UNAVAILABLE
 
         return jsonify(tasks=rv)
@@ -101,36 +102,39 @@ class TaskListResource(Resource):
         order = 1
 
         # Retrieve filings that are either incomplete, or drafts
-        pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
-                                                                     Filing.Status.PENDING.value,
-                                                                     Filing.Status.PENDING_CORRECTION.value,
-                                                                     Filing.Status.ERROR.value])
+        pending_filings = Filing.get_filings_by_status(
+            business.id,
+            [
+                Filing.Status.DRAFT.value,
+                Filing.Status.PENDING.value,
+                Filing.Status.PENDING_CORRECTION.value,
+                Filing.Status.ERROR.value,
+            ],
+        )
         # Create a todo item for each pending filing
         for filing in pending_filings:
             filing_json = filing.json
-            if filing.payment_status_code == 'CREATED' and filing.payment_token:
+            if filing.payment_status_code == "CREATED" and filing.payment_token:
                 # get current pay details from pay-api
                 try:
                     headers = {
-                        'Authorization': f'Bearer {jwt.get_token_auth_header()}',
-                        'Content-Type': 'application/json'
+                        "Authorization": f"Bearer {jwt.get_token_auth_header()}",
+                        "Content-Type": "application/json",
                     }
                     pay_response = requests.get(
-                        url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
-                        headers=headers
+                        url=f"{current_app.config.get('PAYMENT_SVC_URL')}/{filing.payment_token}", headers=headers
                     )
                     pay_details = {
-                        'isPaymentActionRequired': pay_response.json().get('isPaymentActionRequired', False),
-                        'paymentMethod': pay_response.json().get('paymentMethod', '')
+                        "isPaymentActionRequired": pay_response.json().get("isPaymentActionRequired", False),
+                        "paymentMethod": pay_response.json().get("paymentMethod", ""),
                     }
-                    filing_json['filing']['header'].update(pay_details)
+                    filing_json["filing"]["header"].update(pay_details)
 
                 except (exceptions.ConnectionError, exceptions.Timeout) as err:
-                    current_app.logger.error(
-                        f'Payment connection failure for {business.identifier} task list. ', err)
-                    return 'pay_connection_error'
+                    current_app.logger.error(f"Payment connection failure for {business.identifier} task list. ", err)
+                    return "pay_connection_error"
 
-            task = {'task': filing_json, 'order': order, 'enabled': True}
+            task = {"task": filing_json, "order": order, "enabled": True}
             tasks.append(task)
             order += 1
 
@@ -138,7 +142,7 @@ class TaskListResource(Resource):
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
         # Checking for pending ar
-        annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, 'annualReport')
+        annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, "annualReport")
         if annual_report_filings:
             # Consider each filing as each year and add to find next ar year
             next_ar_year += len(annual_report_filings)
@@ -161,20 +165,20 @@ class TaskListResource(Resource):
     def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
         """Return a to-do JSON object."""
         todo = {
-            'task': {
-                'todo': {
-                    'business': business.json(),
-                    'header': {
-                        'name': 'annualReport',
-                        'ARFilingYear': ar_year,
-                        'status': 'NEW',
-                        'arMinDate': ar_min_date.isoformat(),
-                        'arMaxDate': ar_max_date.isoformat()
-                    }
+            "task": {
+                "todo": {
+                    "business": business.json(),
+                    "header": {
+                        "name": "annualReport",
+                        "ARFilingYear": ar_year,
+                        "status": "NEW",
+                        "arMinDate": ar_min_date.isoformat(),
+                        "arMaxDate": ar_max_date.isoformat(),
+                    },
                 }
             },
-            'order': order,
-            'enabled': enabled
+            "order": order,
+            "enabled": enabled,
         }
         return todo
 
@@ -182,16 +186,8 @@ class TaskListResource(Resource):
     def create_incorporate_nr_todo(name_request, order, enabled):
         """Return a to-do JSON object."""
         todo = {
-            'task': {
-                'todo': {
-                    'nameRequest': name_request,
-                    'header': {
-                        'name': 'nameRequest',
-                        'status': 'NEW'
-                    }
-                }
-            },
-            'order': order,
-            'enabled': enabled
+            "task": {"todo": {"nameRequest": name_request, "header": {"name": "nameRequest", "status": "NEW"}}},
+            "order": order,
+            "enabled": enabled,
         }
         return todo

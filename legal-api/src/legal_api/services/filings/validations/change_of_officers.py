@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Change of Directors filing."""
+
 from http import HTTPStatus
 from typing import Dict, List
 
@@ -28,7 +29,7 @@ from legal_api.services.utils import get_str
 def validate(business: Business, coo: Dict) -> Error:
     """Validate the Change of Officers filing."""
     if not business or not coo:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
     msg = []
 
@@ -48,19 +49,23 @@ def validate_relationship_addresses(coo: Dict) -> List:
     """
     msg = []
 
-    filing_type = 'changeOfOfficers'
-    msg.extend(validate_parties_addresses(coo, filing_type, 'relationships'))
+    filing_type = "changeOfOfficers"
+    msg.extend(validate_parties_addresses(coo, filing_type, "relationships"))
 
-    relationships = coo['filing'][filing_type]['relationships']
+    relationships = coo["filing"][filing_type]["relationships"]
 
     for idx, rel in enumerate(relationships):  # pylint: disable=too-many-nested-blocks;  # noqa: E501 review this when implementing corrections
         for address_type in Address.JSON_ADDRESS_TYPES:
             if address_type in rel:
                 try:
-                    country = get_str(rel, f'/{address_type}/addressCountry')
+                    country = get_str(rel, f"/{address_type}/addressCountry")
                     _ = pycountry.countries.search_fuzzy(country)[0].alpha_2
 
                 except LookupError:
-                    msg.append({'error': babel('Address Country must resolve to a valid ISO-2 country.'),
-                                'path': f'/filing/changeOfOfficers/relationships/{idx}/{address_type}/addressCountry'})
+                    msg.append(
+                        {
+                            "error": babel("Address Country must resolve to a valid ISO-2 country."),
+                            "path": f"/filing/changeOfOfficers/relationships/{idx}/{address_type}/addressCountry",
+                        }
+                    )
     return msg

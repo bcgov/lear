@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Consent Amalgamation Out filing."""
+
 from datetime import datetime
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
@@ -31,37 +33,47 @@ from legal_api.services.filings.validations.common_validations import (
 def validate(business: Business, filing: Dict) -> Optional[Error]:
     """Validate the Consent Amalgamation Out filing."""
     if not business or not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
     if business.state != Business.State.ACTIVE or not business.good_standing:
-        return Error(HTTPStatus.BAD_REQUEST, [{
-            'error': babel('Business should be Active and in Good Standing to file Consent Amalgamation Out.')
-        }])
+        return Error(
+            HTTPStatus.BAD_REQUEST,
+            [{"error": babel("Business should be Active and in Good Standing to file Consent Amalgamation Out.")}],
+        )
 
-    enabled_filings = flags.value('supported-consent-amalgamation-out-entities').split()
+    enabled_filings = flags.value("supported-consent-amalgamation-out-entities").split()
     if business.legal_type not in enabled_filings:
-        return Error(HTTPStatus.FORBIDDEN,
-                     [{'error': babel(f'{business.legal_type} does not support consent amalgamation out filing.')}])
+        return Error(
+            HTTPStatus.FORBIDDEN,
+            [{"error": babel(f"{business.legal_type} does not support consent amalgamation out filing.")}],
+        )
 
     msg = []
-    filing_type = 'consentAmalgamationOut'
+    filing_type = "consentAmalgamationOut"
 
-    foreign_jurisdiction = filing['filing'][filing_type]['foreignJurisdiction']
-    foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
+    foreign_jurisdiction = filing["filing"][filing_type]["foreignJurisdiction"]
+    foreign_jurisdiction_path = f"/filing/{filing_type}/foreignJurisdiction"
     if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
     else:
         now = datetime.utcnow()
-        country_code = foreign_jurisdiction.get('country')
-        region = foreign_jurisdiction.get('region')
-        ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region,
-                                                     consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out)
+        country_code = foreign_jurisdiction.get("country")
+        region = foreign_jurisdiction.get("region")
+        ccos = ConsentContinuationOut.get_active_cco(
+            business.id, now, country_code, region, consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out
+        )
         if ccos:
-            msg.extend([{'error': "Can't have new consent for same jurisdiction if an unexpired one already exists",
-                        'path': foreign_jurisdiction_path}])
+            msg.extend(
+                [
+                    {
+                        "error": "Can't have new consent for same jurisdiction if an unexpired one already exists",
+                        "path": foreign_jurisdiction_path,
+                    }
+                ]
+            )
 
-    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
-        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
+    if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
+        court_order_path: Final = f"/filing/{filing_type}/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             msg.extend(err)

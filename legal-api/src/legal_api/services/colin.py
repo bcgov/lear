@@ -13,25 +13,23 @@
 # limitations under the License.
 
 """This provides the service for colin-api calls."""
+
 import requests
 from flask import current_app
 
 from legal_api.services.bootstrap import AccountService
 
 
-class ColinService():
+class ColinService:
     """Provides services to use the colin-api."""
 
     @staticmethod
     def query_business(identifier: str):
         """Return a JSON object with business information."""
         # Perform proxy call with identifier
-        url = f'{current_app.config["COLIN_URL"]}/businesses/{identifier}/public'
+        url = f"{current_app.config['COLIN_URL']}/businesses/{identifier}/public"
         token = AccountService.get_bearer_token()
-        headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
-        }
+        headers = {"Content-Type": "application/json", "Authorization": "Bearer " + token}
         response = requests.get(url, headers=headers)
 
         return response

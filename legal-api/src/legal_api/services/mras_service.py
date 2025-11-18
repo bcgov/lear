@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This provides the service for MRAS API calls."""
+
 from http import HTTPStatus
 
 import requests
@@ -22,38 +23,31 @@ from lxml import etree
 class MrasService:
     """Provides services to use MRAS APIs."""
 
-    NAMESPACE = {'mras': 'http://mras.ca/schema/v1'}
+    NAMESPACE = {"mras": "http://mras.ca/schema/v1"}
 
     @staticmethod
     def get_jurisdictions(identifier: str):
         """Return foreign jurisdiction info for the given BC corps."""
         try:
-            mras_url = f'{current_app.config.get("MRAS_SVC_URL")}/api/v1/xpr/jurisdictions/{identifier}'
-            headers = {
-                'x-api-key': current_app.config.get('MRAS_SVC_API_KEY'),
-                'Accept': 'application/xml'
-            }
-            response = requests.get(
-                mras_url,
-                headers=headers
-            )
+            mras_url = f"{current_app.config.get('MRAS_SVC_URL')}/api/v1/xpr/jurisdictions/{identifier}"
+            headers = {"x-api-key": current_app.config.get("MRAS_SVC_API_KEY"), "Accept": "application/xml"}
+            response = requests.get(mras_url, headers=headers)
 
             if response.status_code != HTTPStatus.OK:
                 return None
 
             xml_content = etree.fromstring(response.content)  # pylint: disable=c-extension-no-member
             registered_jurisdictions_info = xml_content.xpath(
-                './/mras:Jurisdiction[mras:TargetProfileID]',
-                namespaces=MrasService.NAMESPACE
-                )
+                ".//mras:Jurisdiction[mras:TargetProfileID]", namespaces=MrasService.NAMESPACE
+            )
             results = []
             for j in registered_jurisdictions_info:
                 info = {
-                    'id': j.find('.//mras:JurisdictionID', namespaces=MrasService.NAMESPACE).text,
-                    'name': j.find('.//mras:NameEn', namespaces=MrasService.NAMESPACE).text,
-                    'nameFr': j.find('.//mras:NameFr', namespaces=MrasService.NAMESPACE).text,
-                    'redirectUrl': j.find('.//mras:RedirectUrl', namespaces=MrasService.NAMESPACE).text,
-                    'targetProfileId': j.find('.//mras:TargetProfileID', namespaces=MrasService.NAMESPACE).text
+                    "id": j.find(".//mras:JurisdictionID", namespaces=MrasService.NAMESPACE).text,
+                    "name": j.find(".//mras:NameEn", namespaces=MrasService.NAMESPACE).text,
+                    "nameFr": j.find(".//mras:NameFr", namespaces=MrasService.NAMESPACE).text,
+                    "redirectUrl": j.find(".//mras:RedirectUrl", namespaces=MrasService.NAMESPACE).text,
+                    "targetProfileId": j.find(".//mras:TargetProfileID", namespaces=MrasService.NAMESPACE).text,
                 }
                 results.append(info)
             return results

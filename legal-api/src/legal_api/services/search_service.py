@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This provides the service for getting business details as of a filing."""
+
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -45,13 +46,14 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
 
         def clean_list(values: List[str]) -> List[str]:
             return [v.strip() for v in values if v.strip()]
+
         return cls(
-            identifier=clean_str(req.get('identifier', None)),
-            name=clean_str(req.get('name', None)),
-            type=clean_list(req.get('type', [])),
-            status=clean_list(req.get('status', [])),
-            page=int(req.get('page', 1)),
-            limit=int(req.get('limit', 100000))
+            identifier=clean_str(req.get("identifier", None)),
+            name=clean_str(req.get("name", None)),
+            type=clean_list(req.get("type", [])),
+            status=clean_list(req.get("status", [])),
+            page=int(req.get("page", 1)),
+            limit=int(req.get("limit", 100000)),
         )
 
 
@@ -71,28 +73,23 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         Filing.Status.REJECTED.value,
         Filing.Status.PENDING.value,
         Filing.Status.PAID.value,
-        Filing.Status.WITHDRAWN.value
+        Filing.Status.WITHDRAWN.value,
     ]
 
     # Reverse Mapping for Filing to get filing type from
     # Temp code coming as filter such as: ATMP >>  amalgamationApplication
     BUSINESS_TEMP_FILINGS_CORP_CODES: Final = {
-        Filing.FILINGS[filing_type.value]['temporaryCorpTypeCode']: Filing.FILINGS[filing_type.value]['name']
+        Filing.FILINGS[filing_type.value]["temporaryCorpTypeCode"]: Filing.FILINGS[filing_type.value]["name"]
         for filing_type in Filing.TempCorpFilingType
     }
 
     # Excluded Statuses for Filing Search
-    EXCLUDED_FILINGS_STATUS: Final = [
-        Filing.Status.WITHDRAWN.value
-    ]
+    EXCLUDED_FILINGS_STATUS: Final = [Filing.Status.WITHDRAWN.value]
 
     @staticmethod
     def check_and_get_respective_values(codes):
         """Check if codes belong to BUSINESS_TEMP_FILINGS_CORP_CODES and return the matching ones."""
-        return {
-            code: BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES.get(code)
-            for code in codes
-        }
+        return {code: BusinessSearchService.BUSINESS_TEMP_FILINGS_CORP_CODES.get(code) for code in codes}
 
     @classmethod
     def separate_states_by_type(cls, states: List[str]) -> Tuple[List[str], List[str]]:
@@ -139,9 +136,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
     # pylint: disable=too-many-locals
     @staticmethod
-    def get_search_filtered_businesses_results(business_json,
-                                               identifiers=None,
-                                               search_filters: AffiliationSearchDetails = None):
+    def get_search_filtered_businesses_results(
+        business_json, identifiers=None, search_filters: AffiliationSearchDetails = None
+    ):
         """Return contact point from business json."""
         name = search_filters.name
         types = search_filters.type
@@ -160,18 +157,21 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if statuses and not states:
             return []
         filters = [
-            expr for expr in [
+            expr
+            for expr in [
                 Business._identifier.in_(identifiers)  # pylint: disable=protected-access
-                if identifiers else None,
-                Business._identifier.ilike(f'%{identifier}%')  # pylint: disable=protected-access
-                if identifier else None,
-                Business.legal_name.ilike(f'%{name}%')  # pylint: disable=protected-access
-                if name else None,
-                Business.legal_type.in_(valid_types)
-                if valid_types else None,
-                Business.state.in_(states)
-                if states else None
-            ] if expr is not None
+                if identifiers
+                else None,
+                Business._identifier.ilike(f"%{identifier}%")  # pylint: disable=protected-access
+                if identifier
+                else None,
+                Business.legal_name.ilike(f"%{name}%")  # pylint: disable=protected-access
+                if name
+                else None,
+                Business.legal_type.in_(valid_types) if valid_types else None,
+                Business.state.in_(states) if states else None,
+            ]
+            if expr is not None
         ]
 
         if not filters:
@@ -179,16 +179,13 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
         limit = search_filters.limit
         offset = (search_filters.page - 1) * limit
-        bus_query = db.session.query(Business).filter(*filters).limit(limit+1).offset(offset).all()
+        bus_query = db.session.query(Business).filter(*filters).limit(limit + 1).offset(offset).all()
         bus_results = []
         for business in bus_query[:limit]:
             business_json = business.json(slim=True)
 
-            if business.legal_type in (
-                Business.LegalTypes.SOLE_PROP,
-                Business.LegalTypes.PARTNERSHIP
-            ):
-                business_json['alternateNames'] = business.get_alternate_names()
+            if business.legal_type in (Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP):
+                business_json["alternateNames"] = business.get_alternate_names()
 
             bus_results.append(business_json)
         has_more = len(bus_query) > limit
@@ -196,9 +193,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
     # pylint: disable=too-many-locals
     @staticmethod
-    def get_search_filtered_filings_results(business_json,
-                                            identifiers=None,
-                                            search_filters: AffiliationSearchDetails = None):
+    def get_search_filtered_filings_results(
+        business_json, identifiers=None, search_filters: AffiliationSearchDetails = None
+    ):
         """Return contact point from business json."""
         if not identifiers:
             return [], False
@@ -223,62 +220,73 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             filing_names
             for filing_names in BusinessSearchService.check_and_get_respective_values(valid_types).values()
             if filing_names is not None
-            ]
+        ]
         # Below is to handle the NR scenario
         if len(valid_types) > 0 and not filing_name:
             return []
         filters = [
-            expr for expr in [
+            expr
+            for expr in [
                 and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
-                if isinstance(identifiers, list) and identifiers else None,
-                Filing.temp_reg.ilike(f'%{identifier}%') if identifier else None,
+                if isinstance(identifiers, list) and identifiers
+                else None,
+                Filing.temp_reg.ilike(f"%{identifier}%") if identifier else None,
                 Filing._status.in_(filing_states) if filing_states else None,  # pylint: disable=protected-access
                 Filing._filing_type.in_(filing_name) if filing_name else None,  # pylint: disable=protected-access
                 func.jsonb_extract_path_text(
                     Filing._filing_json,  # pylint: disable=protected-access
-                    'filing',
+                    "filing",
                     Filing._filing_type,  # pylint: disable=protected-access
-                    'nameRequest',
-                    'legalName'
-                ).ilike(f'%{name}%') if name else None
-            ] if expr is not None
+                    "nameRequest",
+                    "legalName",
+                ).ilike(f"%{name}%")
+                if name
+                else None,
+            ]
+            if expr is not None
         ]
         if identifiers and not name and not types and not statuses:
             # Exclude withdrawn filings from non filtered search results
-            filters.append(Filing._status  # pylint: disable=protected-access
-                           .notin_(BusinessSearchService.EXCLUDED_FILINGS_STATUS))
+            filters.append(
+                Filing._status.notin_(BusinessSearchService.EXCLUDED_FILINGS_STATUS)  # pylint: disable=protected-access
+            )
 
         limit = search_filters.limit
         offset = (search_filters.page - 1) * limit
-        draft_query = db.session.query(Filing).filter(*filters).limit(limit+1).offset(offset).all()
+        draft_query = db.session.query(Filing).filter(*filters).limit(limit + 1).offset(offset).all()
         draft_results = []
         # base filings query (for draft incorporation/registration filings -- treated as 'draft' business in auth-web)
         if identifiers:
             for draft_dao in draft_query[:limit]:
                 draft = {
-                    'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
-                    'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
-                    'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
-                    'draftStatus': draft_dao.status
+                    "identifier": draft_dao.temp_reg,  # Temporary registration number of the draft entity
+                    "legalType": draft_dao.json_legal_type,  # Legal type of the draft entity
+                    "draftType": Filing.FILINGS.get(draft_dao.filing_type, {}).get("temporaryCorpTypeCode"),
+                    "draftStatus": draft_dao.status,
                 }
 
-                if (draft_dao.status == Filing.Status.PAID.value and
-                        draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
-                    draft['effectiveDate'] = draft_dao.effective_date.isoformat()
+                if (
+                    draft_dao.status == Filing.Status.PAID.value
+                    and draft_dao.effective_date
+                    and draft_dao.effective_date > datetime.now(timezone.utc)
+                ):
+                    draft["effectiveDate"] = draft_dao.effective_date.isoformat()
 
                 if draft_dao.json_nr:
-                    draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
+                    draft["nrNumber"] = draft_dao.json_nr  # Name request number, if available
                 # Retrieves the legal name from the filing JSON. Defaults to None if not found.
-                draft['legalName'] = (draft_dao.filing_json.get('filing', {})
-                                      .get(draft_dao.filing_type, {})
-                                      .get('nameRequest', {})
-                                      .get('legalName'))
+                draft["legalName"] = (
+                    draft_dao.filing_json.get("filing", {})
+                    .get(draft_dao.filing_type, {})
+                    .get("nameRequest", {})
+                    .get("legalName")
+                )
 
-                if draft['legalName'] is None:
+                if draft["legalName"] is None:
                     # Fallback to a generic legal name based on the legal type if no specific legal name is found
-                    draft['legalName'] = (Business.BUSINESSES
-                                          .get(draft_dao.json_legal_type, {})
-                                          .get('numberedDescription'))
+                    draft["legalName"] = Business.BUSINESSES.get(draft_dao.json_legal_type, {}).get(
+                        "numberedDescription"
+                    )
                 draft_results.append(draft)
         has_more = len(draft_query) > limit
         return draft_results, has_more
@@ -286,21 +294,22 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_affiliation_mapping_results(identifiers):
         """Return affiliation mapping results for the given list of identifiers."""
-        query = db.session.query(
-            Business._identifier.label('identifier'),  # pylint: disable=protected-access
-            Filing
-            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
-            .label('nrNumber'),
-            RegistrationBootstrap._identifier.label('bootstrapIdentifier')  # pylint: disable=protected-access
-        ).select_from(Filing) \
-            .outerjoin(Business, Filing.business_id == Business.id) \
+        query = (
+            db.session.query(
+                Business._identifier.label("identifier"),  # pylint: disable=protected-access
+                Filing.filing_json["filing"][Filing._filing_type]["nameRequest"]["nrNumber"].label("nrNumber"),  # pylint: disable=protected-access
+                RegistrationBootstrap._identifier.label("bootstrapIdentifier"),  # pylint: disable=protected-access
+            )
+            .select_from(Filing)
+            .outerjoin(Business, Filing.business_id == Business.id)
             .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
+        )
 
         temp_identifiers, nr_identifiers, business_identifiers = [], [], []
         for identifier in identifiers:
-            if identifier.startswith('T'):
+            if identifier.startswith("T"):
                 temp_identifiers.append(identifier)
-            elif identifier.startswith('NR'):
+            elif identifier.startswith("NR"):
                 nr_identifiers.append(identifier)
             else:
                 business_identifiers.append(identifier)
@@ -308,10 +317,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if business_identifiers:
             conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
         if nr_identifiers:
-            conditions.append(Filing
-                              .filing_json['filing'][Filing._filing_type]  # pylint: disable=protected-access
-                              ['nameRequest']['nrNumber']
-                              .astext.in_(nr_identifiers))
+            conditions.append(
+                Filing.filing_json["filing"][Filing._filing_type]["nameRequest"]["nrNumber"].astext.in_(nr_identifiers)  # pylint: disable=protected-access
+            )
         if temp_identifiers:
             conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
         query = query.filter(db.or_(*conditions))

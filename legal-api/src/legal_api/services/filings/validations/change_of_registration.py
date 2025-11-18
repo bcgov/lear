@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Change of Registration filing."""
+
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Dict, Optional
 
@@ -34,17 +35,17 @@ from legal_api.services.filings.validations.registration import (
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
     """Validate the Change of Registration filing."""
-    filing_type = 'changeOfRegistration'
+    filing_type = "changeOfRegistration"
     if not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
     msg = []
-    if filing.get('filing', {}).get('changeOfRegistration', {}).get('nameRequest', None):
+    if filing.get("filing", {}).get("changeOfRegistration", {}).get("nameRequest", None):
         msg.extend(validate_name_request(filing, business.legal_type, filing_type))
-    if filing.get('filing', {}).get('changeOfRegistration', {}).get('parties', None):
+    if filing.get("filing", {}).get("changeOfRegistration", {}).get("parties", None):
         msg.extend(validate_party(filing, business.legal_type, filing_type))
         msg.extend(validate_parties_addresses(filing, filing_type))
-    if filing.get('filing', {}).get('changeOfRegistration', {}).get('offices', None):
+    if filing.get("filing", {}).get("changeOfRegistration", {}).get("offices", None):
         msg.extend(validate_offices(filing, filing_type))
         msg.extend(validate_offices_addresses(filing, filing_type))
 

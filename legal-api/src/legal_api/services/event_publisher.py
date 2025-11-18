@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module wraps the calls to external QUEUE services used by the API."""
+
 from __future__ import annotations
 
 import uuid
@@ -28,9 +29,9 @@ def _get_source_and_time(identifier: str):
     time = datetime.utcnow().isoformat()
 
     if identifier:
-        source = ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/', identifier])
+        source = "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/", identifier])
     else:
-        source = ''.join([current_app.config.get('LEGAL_API_BASE_URL'), '/'])
+        source = "".join([current_app.config.get("LEGAL_API_BASE_URL"), "/"])
 
     return source, time
 
@@ -41,7 +42,7 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
     event_type: Optional[str] = None,  # Fixed E231, E252
     message_id: Optional[str] = None,  # Fixed E231, E252
     identifier: Optional[str] = None,  # Fixed E231, E252
-    is_wrapped: Optional[bool] = True  # Fixed E231, E252
+    is_wrapped: Optional[bool] = True,  # Fixed E231, E252
 ) -> None:
     """Publish data to a message queue.
 
@@ -76,25 +77,24 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
         source, time = _get_source_and_time(identifier)
 
         if identifier is not None:  # Fixed E271
-            payload = {'identifier': identifier, **data}
+            payload = {"identifier": identifier, **data}
         else:
             payload = data
 
         ce = SimpleCloudEvent(
-            id=message_id or str(uuid.uuid4()),
-            source=source,
-            subject=subject,
-            time=time,
-            type=event_type,
-            data=payload
+            id=message_id or str(uuid.uuid4()), source=source, subject=subject, time=time, type=event_type, data=payload
         )
 
-        current_app.logger.debug('Publishing to GCP topic: %s, with payload: %s', subject, payload)
+        current_app.logger.debug("Publishing to GCP topic: %s, with payload: %s", subject, payload)
         gcp_queue.publish(subject, to_queue_message(ce))
 
     except Exception as err:  # pylint: disable=broad-except; # noqa: B902
         current_app.logger.error(
-            'Queue Publish Error: data=%s; subject=%s, identifier=%s, event_typ=%s, message_id=%s',
-            data, subject, identifier, event_type, message_id
+            "Queue Publish Error: data=%s; subject=%s, identifier=%s, event_typ=%s, message_id=%s",
+            data,
+            subject,
+            identifier,
+            event_type,
+            message_id,
         )
         current_app.logger.error(err)

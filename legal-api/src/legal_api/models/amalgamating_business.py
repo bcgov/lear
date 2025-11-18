@@ -37,20 +37,20 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         primary = auto()
 
     __versioned__ = {}
-    __tablename__ = 'amalgamating_businesses'
+    __tablename__ = "amalgamating_businesses"
 
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column('role', db.Enum(Role), nullable=False)
-    foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
-    foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
-    foreign_name = db.Column('foreign_name', db.String(100))
-    foreign_identifier = db.Column('foreign_identifier', db.String(50))
+    role = db.Column("role", db.Enum(Role), nullable=False)
+    foreign_jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
+    foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
+    foreign_name = db.Column("foreign_name", db.String(100))
+    foreign_identifier = db.Column("foreign_identifier", db.String(50))
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamations.id',
-                                                                             ondelete='CASCADE'),
-                                nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    amalgamation_id = db.Column(
+        "amalgamation_id", db.Integer, db.ForeignKey("amalgamations.id", ondelete="CASCADE"), nullable=False
+    )
 
     def save(self):
         """Save the object to the database immediately."""
@@ -62,13 +62,20 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         """Get amalgamating businesses for the given transaction id."""
         # pylint: disable=singleton-comparison;
         amalgamating_businesses_version = VersioningProxy.version_class(db.session(), AmalgamatingBusiness)
-        amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
-            .filter(amalgamating_businesses_version.transaction_id <= transaction_id) \
-            .filter(amalgamating_businesses_version.operation_type == 0) \
-            .filter(amalgamating_businesses_version.amalgamation_id == amalgamation_id) \
-            .filter(or_(amalgamating_businesses_version.end_transaction_id == None,  # noqa: E711;
-                        amalgamating_businesses_version.end_transaction_id > transaction_id)) \
-            .order_by(amalgamating_businesses_version.transaction_id).all()
+        amalgamating_businesses = (
+            db.session.query(amalgamating_businesses_version)
+            .filter(amalgamating_businesses_version.transaction_id <= transaction_id)
+            .filter(amalgamating_businesses_version.operation_type == 0)
+            .filter(amalgamating_businesses_version.amalgamation_id == amalgamation_id)
+            .filter(
+                or_(
+                    amalgamating_businesses_version.end_transaction_id == None,  # noqa: E711;
+                    amalgamating_businesses_version.end_transaction_id > transaction_id,
+                )
+            )
+            .order_by(amalgamating_businesses_version.transaction_id)
+            .all()
+        )
         return amalgamating_businesses
 
     @classmethod
@@ -87,14 +94,17 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         for the given business id.
         """
         if tombstone:
-            amalgamating_businesses = db.session.query(AmalgamatingBusiness) \
-                .filter(AmalgamatingBusiness.business_id == business_id) \
-                .all()
+            amalgamating_businesses = (
+                db.session.query(AmalgamatingBusiness).filter(AmalgamatingBusiness.business_id == business_id).all()
+            )
         else:
             amalgamating_businesses_version = VersioningProxy.version_class(db.session(), AmalgamatingBusiness)
-            amalgamating_businesses = db.session.query(amalgamating_businesses_version) \
-                .filter(amalgamating_businesses_version.operation_type == 0) \
-                .filter(amalgamating_businesses_version.business_id == business_id) \
-                .order_by(amalgamating_businesses_version.transaction_id).all()
+            amalgamating_businesses = (
+                db.session.query(amalgamating_businesses_version)
+                .filter(amalgamating_businesses_version.operation_type == 0)
+                .filter(amalgamating_businesses_version.business_id == business_id)
+                .order_by(amalgamating_businesses_version.transaction_id)
+                .all()
+            )
 
         return amalgamating_businesses

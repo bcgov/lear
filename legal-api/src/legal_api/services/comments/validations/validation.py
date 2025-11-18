@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validation entry point for all filing submissions."""
+
 from typing import Dict
 
 from legal_api.errors import Error

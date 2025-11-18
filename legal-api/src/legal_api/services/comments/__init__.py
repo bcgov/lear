@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Service to manage the filing verification."""
+
 from .validations.validation import validate
 
 
-__all__ = ('validate',)
+__all__ = ("validate",)

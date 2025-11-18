@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the aliases for the entity."""
+
 from http import HTTPStatus
 
 from flask import jsonify, request
@@ -23,20 +24,20 @@ from legal_api.utils.util import cors_preflight
 from .api_namespace import API
 
 
-@cors_preflight('GET,')
-@API.route('/<string:identifier>/aliases', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>/aliases/<int:alias_id>', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,")
+@API.route("/<string:identifier>/aliases", methods=["GET", "OPTIONS"])
+@API.route("/<string:identifier>/aliases/<int:alias_id>", methods=["GET", "OPTIONS"])
 class AliasResource(Resource):
     """Business Aliases service."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     def get(identifier, alias_id=None):
         """Return a JSON of the aliases."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
         # return the matching alias
         if alias_id:
@@ -45,7 +46,7 @@ class AliasResource(Resource):
 
         aliases_list = []
 
-        alias_type = request.args.get('type')
+        alias_type = request.args.get("type")
         if alias_type:
             aliases = Alias.find_by_type(business.id, alias_type.upper())
         else:
@@ -64,9 +65,9 @@ class AliasResource(Resource):
         if alias_id:
             rv = Alias.find_by_id(alias_id=alias_id)
             if rv:
-                alias = {'alias': rv.json}
+                alias = {"alias": rv.json}
 
         if not alias:
-            return None, {'message': f'{business.identifier} alias not found'}, HTTPStatus.NOT_FOUND
+            return None, {"message": f"{business.identifier} alias not found"}, HTTPStatus.NOT_FOUND
 
         return alias, None, HTTPStatus.OK

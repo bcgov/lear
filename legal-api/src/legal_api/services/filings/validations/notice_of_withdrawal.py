@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Notice of Withdrawal filing."""
+
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
@@ -27,24 +28,24 @@ from legal_api.utils.datetime import datetime as dt
 def validate(filing: Dict) -> Optional[Error]:
     """Validate the Notice of Withdrawal filing."""
     if not filing:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
     msg = []
 
-    base_path: Final = '/filing/noticeOfWithdrawal'
+    base_path: Final = "/filing/noticeOfWithdrawal"
 
-    withdrawn_filing_id_path: Final = f'{base_path}/filingId'
+    withdrawn_filing_id_path: Final = f"{base_path}/filingId"
     withdrawn_filing_id = get_int(filing, withdrawn_filing_id_path)
 
-    has_taken_effect = get_bool(filing, f'{base_path}/hasTakenEffect')
-    part_of_poa = get_bool(filing, f'{base_path}/partOfPoa')
+    has_taken_effect = get_bool(filing, f"{base_path}/hasTakenEffect")
+    part_of_poa = get_bool(filing, f"{base_path}/partOfPoa")
 
     if not withdrawn_filing_id:
-        msg.append({'error': babel('Filing Id is required.'), 'path': withdrawn_filing_id_path})
+        msg.append({"error": babel("Filing Id is required."), "path": withdrawn_filing_id_path})
         return msg  # cannot continue validation without the to be withdrawn filing id
 
     if has_taken_effect and part_of_poa:
-        msg.append({'error': babel('Cannot file a Notice of Withdrawal as the filing has a POA in effect.')})
+        msg.append({"error": babel("Cannot file a Notice of Withdrawal as the filing has a POA in effect.")})
         return Error(HTTPStatus.BAD_REQUEST, msg)  # cannot continue validation if the filing has a POA in effect
 
     is_not_found, err_msg = validate_withdrawn_filing(withdrawn_filing_id)
@@ -63,10 +64,9 @@ def validate_withdrawn_filing(withdrawn_filing_id: int):
     msg = []
     is_not_found = False
     # check whether the filing ID exists
-    withdrawn_filing = db.session.query(Filing). \
-        filter(Filing.id == withdrawn_filing_id).one_or_none()
+    withdrawn_filing = db.session.query(Filing).filter(Filing.id == withdrawn_filing_id).one_or_none()
     if not withdrawn_filing:
-        msg.append({'error': babel('The filing to be withdrawn cannot be found.')})
+        msg.append({"error": babel("The filing to be withdrawn cannot be found.")})
         is_not_found = True
         return is_not_found, msg  # cannot continue if the withdrawn filing doesn't exist
 
@@ -74,12 +74,12 @@ def validate_withdrawn_filing(withdrawn_filing_id: int):
     now = dt.utcnow()
     filing_effective_date = dt.fromisoformat(str(withdrawn_filing.effective_date))
     if filing_effective_date < now:
-        msg.append({'error': babel('Only filings with a future effective date can be withdrawn.')})
+        msg.append({"error": babel("Only filings with a future effective date can be withdrawn.")})
 
     # check the filing status
     filing_status = withdrawn_filing.status
     if filing_status != Filing.Status.PAID.value:
-        msg.append({'error': babel('Only paid filings with a future effective date can be withdrawn.')})
+        msg.append({"error": babel("Only paid filings with a future effective date can be withdrawn.")})
 
     if msg:
         return is_not_found, msg

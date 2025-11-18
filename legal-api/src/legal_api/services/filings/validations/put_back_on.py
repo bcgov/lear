@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Put Back On filing."""
+
 from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business
@@ -27,16 +29,17 @@ from legal_api.services.utils import get_str  # noqa: I003; needed as the linter
 def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not put_back_on:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
-    enabled_filings = flags.value('supported-put-back-on-entities').split()
+    enabled_filings = flags.value("supported-put-back-on-entities").split()
     if business.legal_type not in enabled_filings:
-        return Error(HTTPStatus.FORBIDDEN,
-                     [{'error': babel(f'{business.legal_type} does not support put back on filing.')}])
+        return Error(
+            HTTPStatus.FORBIDDEN, [{"error": babel(f"{business.legal_type} does not support put back on filing.")}]
+        )
     msg = []
 
-    if not get_str(put_back_on, '/filing/putBackOn/details'):
-        msg.append({'error': babel('Put Back On details are required.'), 'path': '/filing/putBackOn/details'})
+    if not get_str(put_back_on, "/filing/putBackOn/details"):
+        msg.append({"error": babel("Put Back On details are required."), "path": "/filing/putBackOn/details"})
 
     msg.extend(_validate_court_order(put_back_on))
 
@@ -47,8 +50,8 @@ def validate(business: Business, put_back_on: Dict) -> Optional[Error]:
 
 def _validate_court_order(filing):
     """Validate court order."""
-    if court_order := filing.get('filing', {}).get('putBackOn', {}).get('courtOrder', None):
-        court_order_path: Final = '/filing/putBackOn/courtOrder'
+    if court_order := filing.get("filing", {}).get("putBackOn", {}).get("courtOrder", None):
+        court_order_path: Final = "/filing/putBackOn/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             return err

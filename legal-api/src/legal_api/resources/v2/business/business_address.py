@@ -15,6 +15,7 @@
 
 Retrieve the Addresses for the entity.
 """
+
 from http import HTTPStatus
 
 from flask import jsonify, request
@@ -28,26 +29,26 @@ from .bp import bp
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@bp.route('/<string:identifier>/addresses', methods=['GET', 'OPTIONS'], strict_slashes=False)
-@bp.route('/<string:identifier>/addresses/<int:addresses_id>', methods=['GET', 'OPTIONS'], strict_slashes=False)
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/addresses", methods=["GET", "OPTIONS"], strict_slashes=False)
+@bp.route("/<string:identifier>/addresses/<int:addresses_id>", methods=["GET", "OPTIONS"], strict_slashes=False)
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_addresses(identifier, addresses_id=None):
     """Return a JSON of the addresses on file."""
     business = Business.find_by_identifier(identifier)
 
     if not business:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view addresses for {identifier}.'}), \
-            HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["view"]):
+        return jsonify(
+            {"message": f"You are not authorized to view addresses for {identifier}."}
+        ), HTTPStatus.UNAUTHORIZED
 
-    address_type = request.args.get('addressType', None)
+    address_type = request.args.get("addressType", None)
     if address_type and address_type not in Address.JSON_ADDRESS_TYPES:
-        return jsonify({'message': f'{address_type} not a valid address type'}), HTTPStatus.BAD_REQUEST
+        return jsonify({"message": f"{address_type} not a valid address type"}), HTTPStatus.BAD_REQUEST
 
     if addresses_id or address_type:
         addresses, msg, code = _get_address(business, addresses_id, address_type)
@@ -60,7 +61,7 @@ def get_addresses(identifier, addresses_id=None):
         for i in officelist:
             rv[i.office_type] = {}
             for address in i.addresses:
-                rv[i.office_type][f'{address.address_type}Address'] = address.json
+                rv[i.office_type][f"{address.address_type}Address"] = address.json
     else:
         mailing = business.mailing_address.one_or_none()
         if mailing:
@@ -69,7 +70,7 @@ def get_addresses(identifier, addresses_id=None):
         if delivery:
             rv[Address.JSON_DELIVERY] = delivery.json
         if not rv:
-            return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"{identifier} address not found"}), HTTPStatus.NOT_FOUND
     return jsonify(rv)
 
 
@@ -77,14 +78,15 @@ def _get_address(business, addresses_id=None, address_type=None):
     # find by ID
     addresses = None
     if addresses_id:
-        rv = db.session.query(Business, Address). \
-            filter(Business.id == Address.business_id).\
-            filter(Business.identifier == business.identifier).\
-            filter(Address.id == addresses_id).\
-            one_or_none()
+        rv = (
+            db.session.query(Business, Address)
+            .filter(Business.id == Address.business_id)
+            .filter(Business.identifier == business.identifier)
+            .filter(Address.id == addresses_id)
+            .one_or_none()
+        )
         if rv:
-            _address_type = Address.JSON_MAILING \
-                if rv[1].address_type == Address.MAILING else Address.JSON_DELIVERY
+            _address_type = Address.JSON_MAILING if rv[1].address_type == Address.MAILING else Address.JSON_DELIVERY
             addresses = {_address_type: rv[1].json}
 
     # find by address type
@@ -99,6 +101,6 @@ def _get_address(business, addresses_id=None, address_type=None):
             addresses = {_address_type: address.json}
 
     if not addresses:
-        return None, {'message': f'{business.identifier} address not found'}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} address not found"}, HTTPStatus.NOT_FOUND
 
     return addresses, None, HTTPStatus.OK

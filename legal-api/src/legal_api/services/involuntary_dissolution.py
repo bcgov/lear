@@ -13,6 +13,7 @@
 # limitations under the License.
 
 """This provides the service for involuntary dissolution."""
+
 from dataclasses import dataclass
 from typing import Final, Tuple
 
@@ -24,7 +25,7 @@ from legal_api.models import Batch, BatchProcessing, Business, Filing, db
 from .bootstrap import AccountService
 
 
-class InvoluntaryDissolutionService():
+class InvoluntaryDissolutionService:
     """Provides services to get information for involuntary dissolution."""
 
     ELIGIBLE_TYPES: Final = [
@@ -37,7 +38,7 @@ class InvoluntaryDissolutionService():
         Business.LegalTypes.CCC_CONTINUE_IN.value,
         Business.LegalTypes.BCOMP_CONTINUE_IN.value,
         Business.LegalTypes.EXTRA_PRO_A.value,
-        Business.LegalTypes.LIMITED_CO.value
+        Business.LegalTypes.LIMITED_CO.value,
     ]
 
     @dataclass
@@ -92,14 +93,19 @@ class InvoluntaryDissolutionService():
     @staticmethod
     def get_in_dissolution_batch_processing(business_id: int):
         """Fetch the BatchProcessing record for a business that is in the process of involuntary dissolution."""
-        return db.session.query(BatchProcessing, Batch).\
-            filter(BatchProcessing.business_id == business_id).\
-            filter(BatchProcessing.status.notin_([BatchProcessing.BatchProcessingStatus.COMPLETED,
-                                                  BatchProcessing.BatchProcessingStatus.WITHDRAWN])). \
-            filter(Batch.id == BatchProcessing.batch_id).\
-            filter(Batch.status != Batch.BatchStatus.COMPLETED).\
-            filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
-            one_or_none()
+        return (
+            db.session.query(BatchProcessing, Batch)
+            .filter(BatchProcessing.business_id == business_id)
+            .filter(
+                BatchProcessing.status.notin_(
+                    [BatchProcessing.BatchProcessingStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.WITHDRAWN]
+                )
+            )
+            .filter(Batch.id == BatchProcessing.batch_id)
+            .filter(Batch.status != Batch.BatchStatus.COMPLETED)
+            .filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION)
+            .one_or_none()
+        )
 
     @staticmethod
     def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters()):
@@ -108,57 +114,55 @@ class InvoluntaryDissolutionService():
         Args:
             exclude_in_dissolution (bool): If True, exclude businesses already in dissolution.
         """
-        in_dissolution = (
-            exists().where(
-                BatchProcessing.business_id == Business.id,
-                BatchProcessing.status.notin_([
-                    BatchProcessing.BatchProcessingStatus.WITHDRAWN,
-                    BatchProcessing.BatchProcessingStatus.COMPLETED
-                ]),
-                BatchProcessing.batch_id == Batch.id,
-                Batch.status != Batch.BatchStatus.COMPLETED,
-                Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
-            )
+        in_dissolution = exists().where(
+            BatchProcessing.business_id == Business.id,
+            BatchProcessing.status.notin_(
+                [BatchProcessing.BatchProcessingStatus.WITHDRAWN, BatchProcessing.BatchProcessingStatus.COMPLETED]
+            ),
+            BatchProcessing.batch_id == Batch.id,
+            Batch.status != Batch.BatchStatus.COMPLETED,
+            Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION,
         )
-        specific_filing_overdue = _has_specific_filing_overdue() < func.timezone('UTC', func.now())
-        no_transition_filed_after_restoration = func.coalesce((_has_no_transition_filed_after_restoration()
-                                                               <= func.timezone('UTC', func.now())), False)
+        specific_filing_overdue = _has_specific_filing_overdue() < func.timezone("UTC", func.now())
+        no_transition_filed_after_restoration = func.coalesce(
+            (_has_no_transition_filed_after_restoration() <= func.timezone("UTC", func.now())), False
+        )
 
-        query = db.session.query(
-            Business,
-            specific_filing_overdue.label('ar_overdue'),
-            no_transition_filed_after_restoration.label('transition_overdue')
-        ).\
-            filter(not_(Business.admin_freeze.is_(True))).\
-            filter(Business.state == Business.State.ACTIVE).\
-            filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES)).\
-            filter(Business.no_dissolution.is_(False))
+        query = (
+            db.session.query(
+                Business,
+                specific_filing_overdue.label("ar_overdue"),
+                no_transition_filed_after_restoration.label("transition_overdue"),
+            )
+            .filter(not_(Business.admin_freeze.is_(True)))
+            .filter(Business.state == Business.State.ACTIVE)
+            .filter(Business.legal_type.in_(InvoluntaryDissolutionService.ELIGIBLE_TYPES))
+            .filter(Business.no_dissolution.is_(False))
+        )
 
-        future_effective_filing = False if eligibility_filters.exclude_future_effective_filing \
-            else _has_future_effective_filing()
+        future_effective_filing = (
+            False if eligibility_filters.exclude_future_effective_filing else _has_future_effective_filing()
+        )
         if eligibility_filters.exclude_in_dissolution:
             query = query.filter(not_(in_dissolution))
 
-        query = query.filter(
-                or_(
-                    specific_filing_overdue,
-                    no_transition_filed_after_restoration
-                )
-            ).\
-            filter(
+        query = (
+            query.filter(or_(specific_filing_overdue, no_transition_filed_after_restoration))
+            .filter(
                 ~or_(
                     future_effective_filing,
                     _has_delay_of_dissolution_filing(),
                     _is_limited_restored(),
-                    _is_xpro_from_nwpta()
+                    _is_xpro_from_nwpta(),
                 )
-            ).\
-            order_by(
+            )
+            .order_by(
                 no_transition_filed_after_restoration.desc(),
                 _has_no_transition_filed_after_restoration().asc(),
                 specific_filing_overdue.desc(),
-                _has_specific_filing_overdue().asc()
+                _has_specific_filing_overdue().asc(),
             )
+        )
 
         query = query.filter(_check_feature_flags_filter())
 
@@ -174,17 +178,21 @@ def _has_specific_filing_overdue():
     from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
     latest_date = func.greatest(
-            Business.founding_date,
-            db.session.query(func.max(Filing.effective_date)).filter(
-                    Filing.business_id == Business.id,
-                    Filing._filing_type.in_([  # pylint: disable=protected-access
-                        CoreFiling.FilingTypes.RESTORATION.value,
-                        CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
-                    ]),
-                    Filing._status == Filing.Status.COMPLETED.value  # pylint: disable=protected-access
-                ).scalar_subquery(),
-            Business.last_ar_date
+        Business.founding_date,
+        db.session.query(func.max(Filing.effective_date))
+        .filter(
+            Filing.business_id == Business.id,
+            Filing._filing_type.in_(
+                [  # pylint: disable=protected-access
+                    CoreFiling.FilingTypes.RESTORATION.value,
+                    CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value,
+                ]
+            ),
+            Filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
         )
+        .scalar_subquery(),
+        Business.last_ar_date,
+    )
 
     latest_date_cutoff = latest_date + text("""INTERVAL '26 MONTHS'""")
 
@@ -198,40 +206,43 @@ def _has_no_transition_filed_after_restoration():
     """
     from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
-    new_act_date = func.date('2004-03-29 00:00:00+00:00')
+    new_act_date = func.date("2004-03-29 00:00:00+00:00")
 
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)
 
     restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
 
-    return select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))]).where(
+    return (
+        select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))])
+        .where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 Business.founding_date < new_act_date,
                 restoration_filing.business_id == Business.id,
-                restoration_filing._filing_type.in_([  # pylint: disable=protected-access
-                    CoreFiling.FilingTypes.RESTORATION.value,
-                    CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value
-                ]),
+                restoration_filing._filing_type.in_(
+                    [  # pylint: disable=protected-access
+                        CoreFiling.FilingTypes.RESTORATION.value,
+                        CoreFiling.FilingTypes.RESTORATIONAPPLICATION.value,
+                    ]
+                ),
                 restoration_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                 not_(
                     exists().where(
                         and_(
                             transition_filing.business_id == Business.id,
-                            transition_filing._filing_type \
-                            == CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
-                            transition_filing._status == \
-                            Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
+                            transition_filing._filing_type == CoreFiling.FilingTypes.TRANSITION.value,  # pylint: disable=protected-access
+                            transition_filing._status == Filing.Status.COMPLETED.value,  # pylint: disable=protected-access
                             transition_filing.effective_date.between(
-                                restoration_filing.effective_date,
-                                restoration_filing_effective_cutoff
-                            )
+                                restoration_filing.effective_date, restoration_filing_effective_cutoff
+                            ),
                         )
                     )
-                )
+                ),
             )
-        ).scalar_subquery()
+        )
+        .scalar_subquery()
+    )
 
 
 def _has_future_effective_filing():
@@ -240,10 +251,12 @@ def _has_future_effective_filing():
     Check if the business has future effective filings.
     """
     # pylint: disable=protected-access
-    return db.session.query(Filing). \
-        filter(Filing.business_id == Business.id). \
-        filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value])). \
-        exists()
+    return (
+        db.session.query(Filing)
+        .filter(Filing.business_id == Business.id)
+        .filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value]))
+        .exists()
+    )
 
 
 def _has_delay_of_dissolution_filing():
@@ -262,7 +275,7 @@ def _is_limited_restored():
     """
     return and_(
         Business.restoration_expiry_date.isnot(None),
-        Business.restoration_expiry_date >= func.timezone('UTC', func.now())
+        Business.restoration_expiry_date >= func.timezone("UTC", func.now()),
     )
 
 
@@ -273,9 +286,9 @@ def _is_xpro_from_nwpta():
     """
     return and_(
         Business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value,
-        Business.jurisdiction == 'CA',
+        Business.jurisdiction == "CA",
         Business.foreign_jurisdiction_region.isnot(None),
-        Business.foreign_jurisdiction_region.in_(['AB', 'SK', 'MB'])
+        Business.foreign_jurisdiction_region.in_(["AB", "SK", "MB"]),
     )
 
 
@@ -283,15 +296,16 @@ def _check_feature_flags_filter():
     """Check eligibility for dissolution based on inclusion and exclusion of businesses."""
     # pylint: disable=E1101
     from . import flags  # pylint: disable=import-outside-toplevel
+
     # Scenario 1: If the flag is off, proceed with the standard eligibility check.
-    if not flags.is_on('enable-involuntary-dissolution-filter'):
+    if not flags.is_on("enable-involuntary-dissolution-filter"):
         return True  # Continue with the usual logic
 
     # Get the dissolution filter data (handle if filter is None or empty)
-    involuntary_dissolution_filter = flags.value('involuntary-dissolution-filter') or {}
+    involuntary_dissolution_filter = flags.value("involuntary-dissolution-filter") or {}
 
-    include_accounts = involuntary_dissolution_filter.get('include-accounts', [])
-    exclude_accounts = involuntary_dissolution_filter.get('exclude-accounts', [])
+    include_accounts = involuntary_dissolution_filter.get("include-accounts", [])
+    exclude_accounts = involuntary_dissolution_filter.get("exclude-accounts", [])
 
     # Convert accounts to sets for efficient filtering
     include_entities = set(_get_filtered_entities(include_accounts)) if include_accounts else set()
@@ -321,8 +335,8 @@ def _get_filtered_entities(accounts):
         entities = AccountService.get_affiliations(int(org_id))
 
         for entity in entities:
-            identifier = entity.get('businessIdentifier')
-            if identifier and not (identifier.startswith('T') or identifier.startswith('NR')):
+            identifier = entity.get("businessIdentifier")
+            if identifier and not (identifier.startswith("T") or identifier.startswith("NR")):
                 filtered_entities.append(identifier)
 
     return filtered_entities

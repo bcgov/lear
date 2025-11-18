@@ -23,11 +23,11 @@ from legal_api.services.minio import MinioService
 from legal_api.utils.auth import jwt
 
 
-bp = Blueprint('DOCUMENTS2', __name__, url_prefix='/api/v2/documents')
+bp = Blueprint("DOCUMENTS2", __name__, url_prefix="/api/v2/documents")
 
 
-@bp.route('/<string:file_name>/signatures', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/<string:file_name>/signatures", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_signatures(file_name: str):
     """Return a pre-signed URL for the new document."""
@@ -43,37 +43,29 @@ def is_draft_filing(file_key: str) -> bool:
     return filing and filing.status == Filing.Status.DRAFT.value
 
 
-@bp.route('/<string:document_key>', methods=['DELETE'])
-@cross_origin(origin='*')
+@bp.route("/<string:document_key>", methods=["DELETE"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def delete_minio_document(document_key):
     """Delete Minio document based on the provided document key and if it is a draft filing."""
     try:
         if is_draft_filing(document_key):
             MinioService.delete_file(document_key)
-            return jsonify({'message': f'File {document_key} deleted successfully.'}), HTTPStatus.OK
-        return jsonify({'message': 'Filing is not a draft.'}), HTTPStatus.FORBIDDEN
+            return jsonify({"message": f"File {document_key} deleted successfully."}), HTTPStatus.OK
+        return jsonify({"message": "Filing is not a draft."}), HTTPStatus.FORBIDDEN
     except Exception as e:
-        current_app.logger.error(f'Error deleting file {document_key}: {e}')
-        return jsonify(
-            message=f'Error deleting file {document_key}.'
-        ), HTTPStatus.INTERNAL_SERVER_ERROR
+        current_app.logger.error(f"Error deleting file {document_key}: {e}")
+        return jsonify(message=f"Error deleting file {document_key}."), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
-@bp.route('/<string:document_key>', methods=['GET'])
-@cross_origin(origin='*')
+@bp.route("/<string:document_key>", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_minio_document(document_key: str):
     """Get the document from Minio."""
     try:
         response = MinioService.get_file(document_key)
-        return current_app.response_class(
-                response=response.data,
-                status=response.status,
-                mimetype='application/pdf'
-            )
+        return current_app.response_class(response=response.data, status=response.status, mimetype="application/pdf")
     except Exception as e:
-        current_app.logger.error(f'Error getting file {document_key}: {e}')
-        return jsonify(
-            message=f'Error getting file {document_key}.'
-        ), HTTPStatus.INTERNAL_SERVER_ERROR
+        current_app.logger.error(f"Error getting file {document_key}: {e}")
+        return jsonify(message=f"Error getting file {document_key}."), HTTPStatus.INTERNAL_SERVER_ERROR

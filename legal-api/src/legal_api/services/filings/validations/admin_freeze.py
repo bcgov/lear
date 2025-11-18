@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Admin Freeze filing."""
+
 from http import HTTPStatus
 from typing import Dict, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+
 # noqa: I004
 from legal_api.errors import Error
 from legal_api.models import Business
@@ -25,14 +27,15 @@ from ...utils import get_bool  # noqa: I003; needed as the linter gets confused 
 def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not admin_freeze:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
     current_state = business.admin_freeze or False
 
-    if current_state == get_bool(admin_freeze, '/filing/adminFreeze/freeze'):
-        msg.append({'error': babel('Admin Freeze flag cannot be same as current state.'),
-                    'path': '/filing/adminFreeze/freeze'})
+    if current_state == get_bool(admin_freeze, "/filing/adminFreeze/freeze"):
+        msg.append(
+            {"error": babel("Admin Freeze flag cannot be same as current state."), "path": "/filing/adminFreeze/freeze"}
+        )
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

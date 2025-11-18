@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Service to manage the document request validation."""
+
 from .validations.validator import validate_document_request
 
 
-__all__ = ('validate_document_request',)
+__all__ = ("validate_document_request",)

@@ -44,9 +44,9 @@ class PdfService:
 
     def __init__(self):
         """Create a PDF Service Instance."""
-        fonts_path = current_app.config.get('FONTS_PATH')
-        bcsans_path = f'{fonts_path}/BCSans-Regular.ttf'
-        pdfmetrics.registerFont(TTFont('BCSans', bcsans_path))
+        fonts_path = current_app.config.get("FONTS_PATH")
+        bcsans_path = f"{fonts_path}/BCSans-Regular.ttf"
+        pdfmetrics.registerFont(TTFont("BCSans", bcsans_path))
 
     @staticmethod
     def stamp_pdf(input_pdf, watermark, only_first_page=True):
@@ -81,30 +81,28 @@ class PdfService:
 
         image_x_margin = doc_width - 130
         image_y_margin = doc_height - 150
-        can.drawImage(registrar_info['signatureAndText'],
-                      image_x_margin,
-                      image_y_margin,
-                      width=100,
-                      preserveAspectRatio=True,
-                      mask='auto')
+        can.drawImage(
+            registrar_info["signatureAndText"],
+            image_x_margin,
+            image_y_margin,
+            width=100,
+            preserveAspectRatio=True,
+            mask="auto",
+        )
 
         certify_date = LegislationDatetime.as_legislation_timezone(data.certify_date)
-        text = 'Filed on ' + LegislationDatetime.format_as_report_string(certify_date)
+        text = "Filed on " + LegislationDatetime.format_as_report_string(certify_date)
         if data.is_correction:
-            text += ' (Corrected)'
+            text += " (Corrected)"
         if data.file_name:
-            text += '\nFile Name: ' + data.file_name
-        text += '\nIncorporation Number: ' + data.identifier
+            text += "\nFile Name: " + data.file_name
+        text += "\nIncorporation Number: " + data.identifier
 
         text_x_margin = 32
         text_y_margin = doc_height - 42
         line_height = 14
-        can.setFont('BCSans', 10)
-        _write_text(can,
-                    text,
-                    line_height,
-                    text_x_margin,
-                    text_y_margin)
+        can.setFont("BCSans", 10)
+        _write_text(can, text, line_height, text_x_margin, text_y_margin)
 
         can.showPage()
         can.save()

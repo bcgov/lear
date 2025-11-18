@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for furnishing groups."""
+
 from __future__ import annotations
 
 from typing import List
@@ -22,16 +23,17 @@ from .db import db
 class FurnishingGroup(db.Model):
     """This class manages the furnishing groups."""
 
-    __tablename__ = 'furnishing_groups'
+    __tablename__ = "furnishing_groups"
 
     id = db.Column(db.Integer, primary_key=True)
 
     # parent keys
-    xml_payload_id = db.Column('xml_payload_id', db.Integer, db.ForeignKey('xml_payloads.id'),
-                               index=True, nullable=True)
+    xml_payload_id = db.Column(
+        "xml_payload_id", db.Integer, db.ForeignKey("xml_payloads.id"), index=True, nullable=True
+    )
 
     # relationships
-    xml_payload = db.relationship('XmlPayload', backref=db.backref('furnishing_groups', lazy=True))
+    xml_payload = db.relationship("XmlPayload", backref=db.backref("furnishing_groups", lazy=True))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -47,9 +49,10 @@ class FurnishingGroup(db.Model):
         return furnishing_group
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
-                xml_payload_id: int = None
-                ) -> List[FurnishingGroup]:
+    def find_by(
+        cls,  # pylint: disable=too-many-arguments
+        xml_payload_id: int = None,
+    ) -> List[FurnishingGroup]:
         """Return the Furnishing entries matching the filter."""
         query = db.session.query(FurnishingGroup)
 

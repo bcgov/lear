@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Custom formatting."""
+
 import decimal
 import re
 
@@ -22,7 +23,7 @@ def float_to_str(f, precision=17):
     ctx.prec = precision
 
     value = ctx.create_decimal(repr(f))
-    return format(value, 'f')
+    return format(value, "f")
 
 
 def normalize_phone(phone: str) -> str:

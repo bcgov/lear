@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds data for party roles in a business."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -31,46 +32,44 @@ class PartyRole(db.Model, Versioned):
     class RoleTypes(Enum):
         """Render an Enum of the role types."""
 
-        APPLICANT = 'applicant'
-        COMPLETING_PARTY = 'completing_party'
-        CUSTODIAN = 'custodian'
-        DIRECTOR = 'director'
-        INCORPORATOR = 'incorporator'
-        LIQUIDATOR = 'liquidator'
-        PROPRIETOR = 'proprietor'
-        PARTNER = 'partner'
-        RECEIVER = 'receiver'
-        OFFICER = 'officer'
-        CEO = 'ceo'
-        CFO = 'cfo'
-        PRESIDENT = 'president'
-        VICE_PRESIDENT = 'vice_president'
-        CHAIR = 'chair'
-        TREASURER = 'treasurer'
-        SECRETARY = 'secretary'
-        ASSISTANT_SECRETARY = 'assistant_secretary'
-        OTHER = 'other'
+        APPLICANT = "applicant"
+        COMPLETING_PARTY = "completing_party"
+        CUSTODIAN = "custodian"
+        DIRECTOR = "director"
+        INCORPORATOR = "incorporator"
+        LIQUIDATOR = "liquidator"
+        PROPRIETOR = "proprietor"
+        PARTNER = "partner"
+        RECEIVER = "receiver"
+        OFFICER = "officer"
+        CEO = "ceo"
+        CFO = "cfo"
+        PRESIDENT = "president"
+        VICE_PRESIDENT = "vice_president"
+        CHAIR = "chair"
+        TREASURER = "treasurer"
+        SECRETARY = "secretary"
+        ASSISTANT_SECRETARY = "assistant_secretary"
+        OTHER = "other"
 
     __versioned__ = {}
-    __tablename__ = 'party_roles'
+    __tablename__ = "party_roles"
 
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column('role', db.String(30), default=RoleTypes.DIRECTOR)
-    appointment_date = db.Column('appointment_date', db.DateTime(timezone=True))
-    cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
+    role = db.Column("role", db.String(30), default=RoleTypes.DIRECTOR)
+    appointment_date = db.Column("appointment_date", db.DateTime(timezone=True))
+    cessation_date = db.Column("cessation_date", db.DateTime(timezone=True))
 
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"))
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
+    party_id = db.Column("party_id", db.Integer, db.ForeignKey("parties.id"))
     party_class_type = db.Column(
-        'party_class_type',
-        db.Enum(PartyClass.PartyClassType),
-        db.ForeignKey('party_class.class_type')
+        "party_class_type", db.Enum(PartyClass.PartyClassType), db.ForeignKey("party_class.class_type")
     )
 
     # relationships
-    party = db.relationship('Party')
-    party_class = db.relationship('PartyClass', back_populates='party_roles')
+    party = db.relationship("Party")
+    party_class = db.relationship("PartyClass", back_populates="party_roles")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -82,13 +81,13 @@ class PartyRole(db.Model, Versioned):
         """Return the party member as a json object."""
         party = {
             **self.party.json,
-            'appointmentDate': datetime.date(self.appointment_date).isoformat(),
-            'cessationDate': datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
-            'role': self.role
+            "appointmentDate": datetime.date(self.appointment_date).isoformat(),
+            "cessationDate": datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
+            "role": self.role,
         }
 
         if self.party_class_type:
-            party['roleClass'] = self.party_class_type.name
+            party["roleClass"] = self.party_class_type.name
 
         return party
 
@@ -101,22 +100,30 @@ class PartyRole(db.Model, Versioned):
         return party_role
 
     @classmethod
-    def find_party_by_name(cls, business_id: int, first_name: str,  # pylint: disable=too-many-arguments; one too many
-                           last_name: str, middle_initial: str, org_name: str) -> Party:
+    def find_party_by_name(
+        cls,
+        business_id: int,
+        first_name: str,  # pylint: disable=too-many-arguments; one too many
+        last_name: str,
+        middle_initial: str,
+        org_name: str,
+    ) -> Party:
         """Return a Party connected to the given business_id by the given name."""
-        party_roles = (db.session.query(PartyRole).
-                       filter(PartyRole.business_id == business_id).
-                       filter(PartyRole.cessation_date.is_(None)).
-                       all())
+        party_roles = (
+            db.session.query(PartyRole)
+            .filter(PartyRole.business_id == business_id)
+            .filter(PartyRole.cessation_date.is_(None))
+            .all()
+        )
         party = None
         # the given name to find
-        search_name = ''
+        search_name = ""
         if org_name:
             search_name = org_name
         elif middle_initial:
-            search_name = ' '.join((first_name.strip(), middle_initial.strip(), last_name.strip()))
+            search_name = " ".join((first_name.strip(), middle_initial.strip(), last_name.strip()))
         else:
-            search_name = ' '.join((first_name.strip(), last_name.strip()))
+            search_name = " ".join((first_name.strip(), last_name.strip()))
 
         for role in party_roles:
             # the name of the party for each role
@@ -130,37 +137,40 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_parties_by_role(business_id: int, role: str) -> list:
         """Return all people/oraganizations with the given role for this business (ceased + current)."""
-        members = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id). \
-            filter(PartyRole.role == role). \
-            all()
+        members = (
+            db.session.query(PartyRole)
+            .filter(PartyRole.business_id == business_id)
+            .filter(PartyRole.role == role)
+            .all()
+        )
         return members
 
     @classmethod
     def get_party_roles_by_class_type(
-        cls,
-        business_id: int,
-        class_type: PartyClass.PartyClassType,
-        end_date: datetime
+        cls, business_id: int, class_type: PartyClass.PartyClassType, end_date: datetime
     ) -> list[PartyRole]:
         """Return a list of party roles by the class type."""
-        party_roles = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id). \
-            filter(PartyRole.party_class_type == class_type). \
-            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
-            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date)). \
-            all()
+        party_roles = (
+            db.session.query(PartyRole)
+            .filter(PartyRole.business_id == business_id)
+            .filter(PartyRole.party_class_type == class_type)
+            .filter(cast(PartyRole.appointment_date, Date) <= end_date)
+            .filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+            .all()
+        )
         return party_roles
 
     @staticmethod
     def get_active_directors(business_id: int, end_date: datetime) -> list:
         """Return the active directors as of given date."""
-        directors = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id). \
-            filter(PartyRole.role == PartyRole.RoleTypes.DIRECTOR.value). \
-            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
-            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date)). \
-            all()
+        directors = (
+            db.session.query(PartyRole)
+            .filter(PartyRole.business_id == business_id)
+            .filter(PartyRole.role == PartyRole.RoleTypes.DIRECTOR.value)
+            .filter(cast(PartyRole.appointment_date, Date) <= end_date)
+            .filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+            .all()
+        )
         return directors
 
     @staticmethod
@@ -172,8 +182,7 @@ class PartyRole(db.Model, Versioned):
             PartyRole.RoleTypes.RECEIVER.value,
         ]
 
-        party_roles = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id)
+        party_roles = db.session.query(PartyRole).filter(PartyRole.business_id == business_id)
 
         # TODO: rework the unsupported party roles section; change-on-change to still bring back these roles
         if role:
@@ -182,8 +191,9 @@ class PartyRole(db.Model, Versioned):
             party_roles = party_roles.filter(PartyRole.role.notin_(unsupported_roles))
 
         if end_date is not None:
-            party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date). \
-                filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+            party_roles = party_roles.filter(cast(PartyRole.appointment_date, Date) <= end_date).filter(
+                or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date)
+            )
 
         party_roles = party_roles.all()
         return party_roles
@@ -191,19 +201,23 @@ class PartyRole(db.Model, Versioned):
     @staticmethod
     def get_party_roles_by_party_id(business_id: int, party_id: int) -> list:
         """Return the parties that match the filter conditions."""
-        party_roles = db.session.query(PartyRole). \
-            filter(PartyRole.business_id == business_id). \
-            filter(PartyRole.party_id == party_id). \
-            all()
+        party_roles = (
+            db.session.query(PartyRole)
+            .filter(PartyRole.business_id == business_id)
+            .filter(PartyRole.party_id == party_id)
+            .all()
+        )
         return party_roles
 
     @staticmethod
     def get_party_roles_by_filing(filing_id: int, end_date: datetime, role: str = None) -> list:
         """Return the parties that match the filter conditions."""
-        party_roles = db.session.query(PartyRole). \
-            filter(PartyRole.filing_id == filing_id). \
-            filter(cast(PartyRole.appointment_date, Date) <= end_date). \
-            filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+        party_roles = (
+            db.session.query(PartyRole)
+            .filter(PartyRole.filing_id == filing_id)
+            .filter(cast(PartyRole.appointment_date, Date) <= end_date)
+            .filter(or_(PartyRole.cessation_date.is_(None), cast(PartyRole.cessation_date, Date) > end_date))
+        )
 
         if role is not None:
             party_roles = party_roles.filter(PartyRole.role == role.lower())

@@ -34,11 +34,13 @@ def check_transition_application(business: Business) -> list:
 
     is_transition_needed_but_not_filed = business.transition_needed_but_not_filed()
     if is_transition_needed_but_not_filed:
-        result.append({
-            'code': BusinessWarningCodes.TRANSITION_NOT_FILED.value,
-            'message': 'This Business requires a post restoration transition application to be filed.',
-            'warningType': WarningType.NOT_IN_GOOD_STANDING
-        })
+        result.append(
+            {
+                "code": BusinessWarningCodes.TRANSITION_NOT_FILED.value,
+                "message": "This Business requires a post restoration transition application to be filed.",
+                "warningType": WarningType.NOT_IN_GOOD_STANDING,
+            }
+        )
 
     return result
 
@@ -51,13 +53,13 @@ def check_amalgamating_business(business: Business) -> list:
 
     # Check if a matching filing was found and if its effective date is greater than payment completion date
     if filing and filing.effective_date > filing.payment_completion_date:
-        result.append({
-            'code': 'AMALGAMATING_BUSINESS',
-            'message': 'This business is part of a future effective amalgamation.',
-            'warningType': WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
-            'data': {
-                'amalgamationDate': filing.effective_date
+        result.append(
+            {
+                "code": "AMALGAMATING_BUSINESS",
+                "message": "This business is part of a future effective amalgamation.",
+                "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
+                "data": {"amalgamationDate": filing.effective_date},
             }
-        })
+        )
 
     return result

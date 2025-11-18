@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Service to manage the business checks."""
+
 from .warning import check_warnings
 
 
-__all__ = ('check_warnings', )
+__all__ = ("check_warnings",)

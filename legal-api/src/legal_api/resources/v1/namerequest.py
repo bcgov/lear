@@ -15,6 +15,7 @@
 
 Provides a proxy endpoint to retrieve name request data.
 """
+
 from flask import abort, current_app, jsonify, make_response
 from flask_restx import Namespace, Resource, cors
 
@@ -22,16 +23,16 @@ from legal_api.services import namex
 from legal_api.utils.util import cors_preflight
 
 
-API = Namespace('NameRequest', description='NameRequest')
+API = Namespace("NameRequest", description="NameRequest")
 
 
-@cors_preflight('GET')
-@API.route('/<string:identifier>', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET")
+@API.route("/<string:identifier>", methods=["GET", "OPTIONS"])
 class NameRequest(Resource):
     """Proxied name request to namex-api."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     def get(identifier):
         """Return a JSON object with name request information."""
         try:
@@ -39,7 +40,7 @@ class NameRequest(Resource):
             # Errors in general will just pass though,
             # 404 is overriden as it is giving namex-api specific messaging
             if nr_response.status_code == 404:
-                return make_response(jsonify(message='{} not found.'.format(identifier)), 404)
+                return make_response(jsonify(message="{} not found.".format(identifier)), 404)
 
             return jsonify(nr_response.json())
         except Exception as err:
