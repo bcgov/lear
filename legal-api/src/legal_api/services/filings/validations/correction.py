@@ -188,6 +188,12 @@ def validate_party(filing: Dict, legal_type: str) -> list:
     correction_type = filing.get('filing').get('correction').get('type', 'STAFF')
     party_path = '/filing/correction/parties'
 
+    if legal_type == Business.LegalTypes.SOLE_PROP.value and partner_parties > 0:
+        msg.append({'error': 'Partner is not valid for a Sole Proprietorship.', 'path': party_path})
+
+    if legal_type == Business.LegalTypes.PARTNERSHIP.value and proprietor_parties > 0:
+        msg.append({'error': 'Proprietor is not valid for a General Partnership.', 'path': party_path})
+
     if correction_type == 'STAFF':
         if legal_type == Business.LegalTypes.SOLE_PROP.value and proprietor_parties < 1:
             msg.append({'error': '1 Proprietor is required.', 'path': party_path})
@@ -195,9 +201,9 @@ def validate_party(filing: Dict, legal_type: str) -> list:
             msg.append({'error': '2 Partners are required.', 'path': party_path})
     else:
         if legal_type == Business.LegalTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
-            msg.append({'error': '1 Proprietor and a Completing Party is required.', 'path': party_path})
+            msg.append({'error': '1 Proprietor and a Completing Party are required.', 'path': party_path})
         elif legal_type == Business.LegalTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
-            msg.append({'error': '2 Partners and a Completing Party is required.', 'path': party_path})
+            msg.append({'error': '2 Partners and a Completing Party are required.', 'path': party_path})
 
     return msg
 

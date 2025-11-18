@@ -194,21 +194,47 @@ def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type
     else:
         allowed_roles = set()
 
+    msg = []
+    custodian_count = 0
+    liquidator_count = 0
+    completing_party_count = 0
     invalid_roles = set()
     for party in parties_json:
         for role in party.get('roles', []):
             role_type = role.get('roleType').lower().replace(' ', '_')
             if role_type not in allowed_roles:
                 invalid_roles.add(role_type)
+                continue
+
+            if role_type == PartyRole.RoleTypes.CUSTODIAN.value:
+                custodian_count += 1
+            elif role_type == PartyRole.RoleTypes.LIQUIDATOR.value:
+                liquidator_count += 1
+            elif role_type == PartyRole.RoleTypes.COMPLETING_PARTY.value:
+                completing_party_count += 1
 
     if invalid_roles:
-        return [{
+        msg.append({
             'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             'path': f'{party_path}/roles'
-        }]
+        })
+    
+    if legal_type in Business.CORPS:
+        if custodian_count == 0:
+            msg.append({'error': 'Must have a minimum of one custodian.', 'path': party_path})
+        elif custodian_count > 1:
+            msg.append({'error': 'Must have a maximum of one custodian.', 'path': party_path})    
+    elif legal_type == Business.LegalTypes.COOP.value:
+        total = custodian_count + liquidator_count
+        if total == 0:
+            msg.append({'error': 'Must have a minimum of one custodian or one liquidator.', 'path': party_path})
+        elif total > 1:
+            msg.append({'error': 'Must have a maximum of one custodian or one liquidator, not both.', 'path': party_path})
+    elif legal_type in {Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value}:
+        if completing_party_count == 0:
+            msg.append({'error': 'Must have a completing party.', 'path': party_path})
 
-    return None
-
+    return msg
 
 def validate_dissolution_parties_address(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate the person data of the dissolution filing.

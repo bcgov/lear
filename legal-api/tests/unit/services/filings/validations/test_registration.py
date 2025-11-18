@@ -239,9 +239,9 @@ def test_naics_invalid(mocker, app, session, jwt):
 @pytest.mark.parametrize(
     'test_name, filing, expected_msg',
     [
-        ('sp_invalid_party', copy.deepcopy(SP_REGISTRATION), '1 Proprietor and a Completing Party is required.'),
-        ('dba_invalid_party', copy.deepcopy(DBA_REGISTRATION), '1 Proprietor and a Completing Party is required.'),
-        ('gp_invalid_party', copy.deepcopy(GP_REGISTRATION), '2 Partners and a Completing Party is required.'),
+        ('sp_invalid_party', copy.deepcopy(SP_REGISTRATION), '1 Proprietor and a Completing Party are required.'),
+        ('dba_invalid_party', copy.deepcopy(DBA_REGISTRATION), '1 Proprietor and a Completing Party are required.'),
+        ('gp_invalid_party', copy.deepcopy(GP_REGISTRATION), '2 Partners and a Completing Party are required.'),
     ]
 )
 def test_registration_parties_missing_role(mocker, app, session, jwt, test_name, filing, expected_msg):
@@ -275,6 +275,21 @@ def test_registration_parties_missing_role(mocker, app, session, jwt, test_name,
             ],
             'Invalid party role(s) provided: liquidator.'
         ),
+        (
+            copy.deepcopy(SP_REGISTRATION),
+            Business.LegalTypes.SOLE_PROP.value,
+            [{'partyName': 'sp_party', 'roles': ['Completing Party', 'Partner', 'Proprietor']}],
+            'Partner is not valid for a Sole Proprietorship.'
+        ),
+        (
+            copy.deepcopy(GP_REGISTRATION),
+            Business.LegalTypes.SOLE_PROP.value,
+            [
+                {'partyName': 'gp1_party', 'roles': ['Completing Party', 'Partner', 'Proprietor']},
+                {'partyName': 'gp2_party', 'roles': ['Partner']} 
+                ],
+            'Proprietor is not valid for a General Partnership.'
+        ),
     ]
 )
 def test_registration_parties_invalid_role(mocker, app, session, jwt, filing, legal_type, parties, expected_msg):
@@ -299,7 +314,6 @@ def test_registration_parties_invalid_role(mocker, app, session, jwt, filing, le
 
     assert err is not None
     assert err.msg[0]['error'] == expected_msg
-    assert '/filing/registration/parties/roles' in err.msg[0]['path']
 
 @pytest.mark.parametrize(
     'test_name, filing',

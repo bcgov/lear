@@ -372,12 +372,12 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
             None, None
         ),
         (
-            'FAIL_UNEXPECTED_PARTY_ROLE', 'BC',
+            'FAIL_INVALID_PARTY_ROLE', 'BC',
             [
                  {'partyName': 'officer1', 'roles': ['Completing Party', 'Incorporator']},
                  {'partyName': 'officer2', 'roles': ['Incorporator', 'Director', 'Custodian']}
             ],
-            HTTPStatus.BAD_REQUEST, [{'error': 'Invalid party role(s) provided: Custodian',
+            HTTPStatus.BAD_REQUEST, [{'error': 'Invalid party role(s) provided: custodian',
                                       'path': '/filing/incorporationApplication/parties/roles'}]
         ),
         (
@@ -389,7 +389,7 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
             ],
             HTTPStatus.BAD_REQUEST,
             [{
-                'error': 'Invalid party role(s) provided: Applicant, Custodian, Liquidator, Officer, Proprietor',
+                'error': 'Invalid party role(s) provided: applicant, custodian, liquidator, officer, proprietor',
                 'path': '/filing/incorporationApplication/parties/roles'
             }]
         ),

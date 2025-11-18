@@ -161,14 +161,14 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = 'incor
 
     for item in parties_array:
         for role in item['roles']:
-            role_type = role.get('roleType')
-            if role_type == 'Completing Party':
+            role_type = role.get('roleType').lower().replace(' ', '_')
+            if role_type == PartyRole.RoleTypes.COMPLETING_PARTY.value:
                 completing_party_count += 1
 
-            elif role_type == 'Incorporator':
+            elif role_type == PartyRole.RoleTypes.INCORPORATOR.value:
                 incorporator_count += 1
 
-            elif role_type == 'Director':
+            elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
                 director_count += 1
 
             else:
