@@ -15,22 +15,20 @@
 
 Currently this only provides API versioning information
 """
-from flask import Blueprint
+from flask import Blueprint, jsonify
 from flask import __version__ as framework_version
-from flask import jsonify
 from registry_schemas import __version__ as registry_schemas_version
 
 from legal_api.utils.run_version import get_run_version
 
+bp = Blueprint("META2", __name__, url_prefix="/api/v2/meta")
 
-bp = Blueprint('META2', __name__, url_prefix='/api/v2/meta')
 
-
-@bp.route('/info')
+@bp.route("/info")
 def info():
     """Return a JSON object with meta information about the Service."""
     version = get_run_version()
     return jsonify(
-        API=f'legal_api/{version}',
-        SCHEMAS=f'registry_schemas/{registry_schemas_version}',
-        FrameWork=f'{framework_version}')
+        API=f"legal_api/{version}",
+        SCHEMAS=f"registry_schemas/{registry_schemas_version}",
+        FrameWork=f"{framework_version}")

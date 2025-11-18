@@ -14,5 +14,4 @@
 """This has the common strings and values used across the core domain."""
 from typing import Final
 
-
-REDACTED_STAFF_SUBMITTER: Final = 'Registry Staff'
+REDACTED_STAFF_SUBMITTER: Final = "Registry Staff"

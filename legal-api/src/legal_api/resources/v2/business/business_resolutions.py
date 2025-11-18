@@ -24,21 +24,21 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/resolutions', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/resolutions/<int:resolution_id>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/resolutions", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/resolutions/<int:resolution_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_resolutions(identifier, resolution_id=None):
     """Return a JSON of the resolutions."""
     business = Business.find_by_identifier(identifier)
 
     if not business:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view resolutions for {identifier}.'}), \
+    if not authorized(identifier, jwt, action=["view"]):
+        return jsonify({"message":
+                        f"You are not authorized to view resolutions for {identifier}."}), \
             HTTPStatus.UNAUTHORIZED
 
     # return the matching resolution
@@ -48,7 +48,7 @@ def get_resolutions(identifier, resolution_id=None):
 
     resolution_list = []
 
-    resolution_type = request.args.get('type')
+    resolution_type = request.args.get("type")
     if resolution_type:
         resolutions = Resolution.find_by_type(business.id, resolution_type.upper())
     else:
@@ -67,9 +67,9 @@ def _get_resolution(business, resolution_id=None):
     if resolution_id:
         rv = Resolution.find_by_id(resolution_id=resolution_id)
         if rv:
-            resolution = {'resolution': rv.json}
+            resolution = {"resolution": rv.json}
 
     if not resolution:
-        return None, {'message': f'{business.identifier} resolution not found'}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} resolution not found"}, HTTPStatus.NOT_FOUND
 
     return resolution, None, HTTPStatus.OK

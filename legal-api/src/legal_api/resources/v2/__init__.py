@@ -39,7 +39,7 @@ class V2Endpoint:
     def init_app(self, app):
         """Register and initialize the Endpoint setup."""
         if not app:
-            raise Exception('Cannot initialize without a Flask App.')  # pylint: disable=broad-exception-raised
+            raise Exception("Cannot initialize without a Flask App.")  # pylint: disable=broad-exception-raised
 
         self.app = app
 

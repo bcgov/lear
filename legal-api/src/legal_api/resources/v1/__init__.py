@@ -30,41 +30,40 @@ from .namerequest import API as NAME_REQUEST_PROXY_API
 from .nr_type_map import API as NR_TYPE_MAP_API
 from .ops import API as OPS_API
 
-
-__all__ = ('API_BLUEPRINT', 'OPS_BLUEPRINT')
+__all__ = ("API_BLUEPRINT", "OPS_BLUEPRINT")
 
 # This will add the Authorize button to the swagger docs
 # TODO oauth2 & openid may not yet be supported by restx <- check on this
 AUTHORIZATIONS = {
-    'apikey': {
-        'type': 'apiKey',
-        'in': 'header',
-        'name': 'Authorization'
+    "apikey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
     }
 }
 
-OPS_BLUEPRINT = Blueprint('API_OPS', __name__, url_prefix='/ops')
+OPS_BLUEPRINT = Blueprint("API_OPS", __name__, url_prefix="/ops")
 
 API_OPS = Api(OPS_BLUEPRINT,
-              title='Service OPS API',
-              version='1.0',
-              description='The Core API for the Legal Entities System',
-              security=['apikey'],
+              title="Service OPS API",
+              version="1.0",
+              description="The Core API for the Legal Entities System",
+              security=["apikey"],
               authorizations=AUTHORIZATIONS)
 
-API_OPS.add_namespace(OPS_API, path='/')
+API_OPS.add_namespace(OPS_API, path="/")
 
-API_BLUEPRINT = Blueprint('API_V1', __name__, url_prefix='/api/v1')
+API_BLUEPRINT = Blueprint("API_V1", __name__, url_prefix="/api/v1")
 
 API = Api(API_BLUEPRINT,
-          title='BCROS Business API',
-          version='1.0',
-          description='The Core API for the Legal Entities System',
-          security=['apikey'],
+          title="BCROS Business API",
+          version="1.0",
+          description="The Core API for the Legal Entities System",
+          security=["apikey"],
           authorizations=AUTHORIZATIONS)
 
-API.add_namespace(META_API, path='/meta')
-API.add_namespace(BUSINESS_API, path='/businesses')
-API.add_namespace(DOCUMENT_API, path='/documents')
-API.add_namespace(NAME_REQUEST_PROXY_API, path='/nameRequests')
-API.add_namespace(NR_TYPE_MAP_API, path='/nrTypeMap')
+API.add_namespace(META_API, path="/meta")
+API.add_namespace(BUSINESS_API, path="/businesses")
+API.add_namespace(DOCUMENT_API, path="/documents")
+API.add_namespace(NAME_REQUEST_PROXY_API, path="/nameRequests")
+API.add_namespace(NR_TYPE_MAP_API, path="/nrTypeMap")

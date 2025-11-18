@@ -13,8 +13,7 @@
 # limitations under the License.
 """Date time utilities."""
 # from datetime import datetime, timezone
-from datetime import date, datetime as _datetime, timedelta, timezone  # pylint: disable=unused-import # noqa: E501, F401, I001, I005
-# noqa: I003,I005
+from datetime import date, datetime as _datetime, timedelta, timezone  # pylint: disable=unused-import # noqa: F401, I001
 
 
 class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??

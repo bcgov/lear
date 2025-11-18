@@ -23,16 +23,16 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/aliases', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/aliases/<int:alias_id>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/aliases", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/aliases/<int:alias_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_aliases(identifier, alias_id=None):
     """Return a JSON of the aliases."""
     business = Business.find_by_identifier(identifier)
 
     if not business:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # return the matching alias
     if alias_id:
@@ -41,7 +41,7 @@ def get_aliases(identifier, alias_id=None):
 
     aliases_list = []
 
-    alias_type = request.args.get('type')
+    alias_type = request.args.get("type")
     if alias_type:
         aliases = Alias.find_by_type(business.id, alias_type.upper())
     else:
@@ -60,9 +60,9 @@ def _get_alias(business, alias_id=None):
     if alias_id:
         rv = Alias.find_by_id(alias_id=alias_id)
         if rv:
-            alias = {'alias': rv.json}
+            alias = {"alias": rv.json}
 
     if not alias:
-        return None, {'message': f'{business.identifier} alias not found'}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} alias not found"}, HTTPStatus.NOT_FOUND
 
     return alias, None, HTTPStatus.OK

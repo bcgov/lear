@@ -20,17 +20,16 @@ from legal_api.services import MinioService
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
+API = Namespace("documents", description="Endpoints for document signature management")
 
-API = Namespace('documents', description='Endpoints for document signature management')
 
-
-@cors_preflight('GET,OPTIONS')
-@API.route('/<string:file_name>/signatures', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,OPTIONS")
+@API.route("/<string:file_name>/signatures", methods=["GET", "OPTIONS"])
 class DocumentSignature(Resource):
     """Resource for managing Document Signature."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get(file_name: str):
         """Return a pre-signed URL for the new document."""

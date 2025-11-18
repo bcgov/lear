@@ -27,22 +27,22 @@ from .review import Review, ReviewStatus
 class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the review result."""
 
-    __tablename__ = 'review_results'
+    __tablename__ = "review_results"
 
     id = db.Column(db.Integer, primary_key=True)
-    status = db.Column('status', db.Enum(ReviewStatus), nullable=False)
+    status = db.Column("status", db.Enum(ReviewStatus), nullable=False)
     comments = db.Column(db.Text)
 
-    reviewer_id = db.Column('reviewer_id', db.Integer, db.ForeignKey('users.id'))
-    reviewer = db.relationship('User',
-                               backref=backref('reviewer', uselist=False),
+    reviewer_id = db.Column("reviewer_id", db.Integer, db.ForeignKey("users.id"))
+    reviewer = db.relationship("User",
+                               backref=backref("reviewer", uselist=False),
                                foreign_keys=[reviewer_id])
 
-    creation_date = db.Column('creation_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    submission_date = db.Column('submission_date', db.DateTime(timezone=True))  # submission/re-submission date
+    creation_date = db.Column("creation_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    submission_date = db.Column("submission_date", db.DateTime(timezone=True))  # submission/re-submission date
 
     # parent keys
-    review_id = db.Column('review_id', db.Integer, db.ForeignKey('reviews.id'), nullable=False)
+    review_id = db.Column("review_id", db.Integer, db.ForeignKey("reviews.id"), nullable=False)
 
     def save(self):
         """Save the object to the database immediately."""
@@ -74,9 +74,9 @@ class ReviewResult(db.Model):  # pylint: disable=too-many-instance-attributes
     def json(self) -> dict:
         """Return ReviewResult as a JSON object."""
         return {
-            'status': self.status.name,
-            'comments': self.comments,
-            'reviewer': self.reviewer.display_name,
-            'submissionDate': self.submission_date.isoformat() if self.submission_date else None,
-            'creationDate': self.creation_date.isoformat()
+            "status": self.status.name,
+            "comments": self.comments,
+            "reviewer": self.reviewer.display_name,
+            "submissionDate": self.submission_date.isoformat() if self.submission_date else None,
+            "creationDate": self.creation_date.isoformat()
         }

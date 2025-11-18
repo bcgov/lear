@@ -14,8 +14,9 @@
 """This has the core domain used by the application."""
 from __future__ import annotations
 
+from collections.abc import MutableMapping, MutableSequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 
 @dataclass
@@ -30,9 +31,9 @@ class Node:
     def json(self) -> Optional[Dict]:
         """Return the node in a json styled Dict."""
         return {
-            'oldValue': self.old_value,
-            'newValue': self.new_value,
-            'path': '/'.join([''] + self.path)
+            "oldValue": self.old_value,
+            "newValue": self.new_value,
+            "path": "/".join([""] + self.path)
         }
 
 
@@ -98,16 +99,16 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
         return [Node(
             old_value=None,
             new_value=json1,
-            path=[''] if not path else path
+            path=[""] if not path else path
         )]
 
     diff = []
     memoize = []
     for row1 in json1:
         add_row = True
-        if row1_id := row1.get('id'):
+        if row1_id := row1.get("id"):
             for row2 in json2:
-                if row1_id == row2.get('id'):
+                if row1_id == row2.get("id"):
                     if d := diff_dict(row1, row2, path + [str(row1_id)], ignore_keys, diff_list_callback=diff_list):
                         diff.extend(d)
                     memoize.append(row1_id)
@@ -117,18 +118,18 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
             diff.append(Node(
                 old_value=None,
                 new_value=row1,
-                path=[''] if not path else path
+                path=[""] if not path else path
             ))
 
-    json2_rows = [x.get('id') for x in json2]
+    json2_rows = [x.get("id") for x in json2]
 
     if deleted_rows := set(json2_rows).difference(memoize):
         for row in json2:
-            if row.get('id', '') in deleted_rows:
+            if row.get("id", "") in deleted_rows:
                 diff.append(Node(
                     old_value=row,
                     new_value=None,
-                    path=[''] if not path else path
+                    path=[""] if not path else path
                 ))
 
     return diff

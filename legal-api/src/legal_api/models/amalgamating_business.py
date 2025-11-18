@@ -22,7 +22,7 @@ from sql_versioning import Versioned
 from sqlalchemy import or_
 
 from ..utils.base import BaseEnum
-from .db import db, VersioningProxy  # noqa: I001
+from .db import VersioningProxy, db
 
 
 class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -37,19 +37,19 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
         primary = auto()
 
     __versioned__ = {}
-    __tablename__ = 'amalgamating_businesses'
+    __tablename__ = "amalgamating_businesses"
 
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column('role', db.Enum(Role), nullable=False)
-    foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
-    foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
-    foreign_name = db.Column('foreign_name', db.String(100))
-    foreign_identifier = db.Column('foreign_identifier', db.String(50))
+    role = db.Column("role", db.Enum(Role), nullable=False)
+    foreign_jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
+    foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
+    foreign_name = db.Column("foreign_name", db.String(100))
+    foreign_identifier = db.Column("foreign_identifier", db.String(50))
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    amalgamation_id = db.Column('amalgamation_id', db.Integer, db.ForeignKey('amalgamations.id',
-                                                                             ondelete='CASCADE'),
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    amalgamation_id = db.Column("amalgamation_id", db.Integer, db.ForeignKey("amalgamations.id",
+                                                                             ondelete="CASCADE"),
                                 nullable=False)
 
     def save(self):

@@ -27,31 +27,31 @@ from ...utils import get_str
 def validate(comment: Dict, is_filing: bool) -> Error:
     """Validate a standalone comment."""
     if not comment:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid comment is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid comment is required.")}])
     msg = []
 
-    comment_text_path = '/comment/comment'
+    comment_text_path = "/comment/comment"
     comment_text = get_str(comment, comment_text_path)
     if not comment_text:
-        msg.append({'error': _('Comment text must be provided.'),
-                    'path': comment_text_path})
+        msg.append({"error": _("Comment text must be provided."),
+                    "path": comment_text_path})
 
     if is_filing:
-        message = 'Permission Denied - You do not have permissions to add detail comments in this filing.'
+        message = "Permission Denied - You do not have permissions to add detail comments in this filing."
         error = PermissionService.check_user_permission(ListActionsPermissionsAllowed.DETAIL_COMMENTS.value, message=message)
         if error:
-            current_app.logger.debug('detail comment permission denied.')
+            current_app.logger.debug("detail comment permission denied.")
             return error
-        filing_id_path = '/comment/filingId'
+        filing_id_path = "/comment/filingId"
         filing_id = get_str(comment, filing_id_path)
         if not filing_id:
-            msg.append({'error': _('Filing ID must be provided.'),
-                        'path': filing_id_path})
+            msg.append({"error": _("Filing ID must be provided."),
+                        "path": filing_id_path})
     else:
-        message = 'Permission Denied - You do not have permissions to add staff comments.'
+        message = "Permission Denied - You do not have permissions to add staff comments."
         error = PermissionService.check_user_permission(ListActionsPermissionsAllowed.STAFF_COMMENTS.value, message=message)
         if error:
-            current_app.logger.debug('Staff comment permission denied.')
+            current_app.logger.debug("Staff comment permission denied.")
             return error
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

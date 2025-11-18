@@ -25,21 +25,21 @@ from legal_api.utils.auth import jwt
 from .bp import bp
 
 
-@bp.route('/<string:identifier>/directors', methods=['GET', 'OPTIONS'])
-@bp.route('/<string:identifier>/directors/<int:director_id>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:identifier>/directors", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/directors/<int:director_id>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_directors(identifier, director_id=None):
     """Return a JSON of the directors."""
     business = Business.find_by_identifier(identifier)
 
     if not business:
-        return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization
-    if not authorized(identifier, jwt, action=['view']):
-        return jsonify({'message':
-                        f'You are not authorized to view directors for {identifier}.'}), \
+    if not authorized(identifier, jwt, action=["view"]):
+        return jsonify({"message":
+                        f"You are not authorized to view directors for {identifier}."}), \
             HTTPStatus.UNAUTHORIZED
 
     # return the matching director
@@ -48,8 +48,8 @@ def get_directors(identifier, director_id=None):
         return jsonify(director or msg), code
 
     # return all active directors as of date query param
-    end_date = datetime.utcnow().strptime(request.args.get('date'), '%Y-%m-%d').date()\
-        if request.args.get('date') else datetime.utcnow().date()
+    end_date = datetime.utcnow().strptime(request.args.get("date"), "%Y-%m-%d").date()\
+        if request.args.get("date") else datetime.utcnow().date()
 
     party_list = []
     active_directors = PartyRole.get_active_directors(business.id, end_date)
@@ -66,9 +66,9 @@ def _get_director(business, director_id=None):
     if director_id:
         rv = PartyRole.find_by_internal_id(internal_id=director_id)
         if rv:
-            director = {'director': rv.json}
+            director = {"director": rv.json}
 
     if not director:
-        return None, {'message': f'{business.identifier} director not found'}, HTTPStatus.NOT_FOUND
+        return None, {"message": f"{business.identifier} director not found"}, HTTPStatus.NOT_FOUND
 
     return director, None, HTTPStatus.OK

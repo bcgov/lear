@@ -22,19 +22,19 @@ from .db import db
 class DCBusinessUser(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the user of a business that has a digital credential."""
 
-    __tablename__ = 'dc_business_users'
+    __tablename__ = "dc_business_users"
 
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column('business_id', db.Integer,
-                            db.ForeignKey('businesses.id'), nullable=False)
-    user_id = db.Column('user_id', db.Integer,
-                        db.ForeignKey('users.id'), nullable=False)
+    business_id = db.Column("business_id", db.Integer,
+                            db.ForeignKey("businesses.id"), nullable=False)
+    user_id = db.Column("user_id", db.Integer,
+                        db.ForeignKey("users.id"), nullable=False)
 
     # relationships
     business = db.relationship(
-        'Business', backref='business_users', foreign_keys=[business_id])
+        "Business", backref="business_users", foreign_keys=[business_id])
     user = db.relationship(
-        'User', backref='business_users', foreign_keys=[user_id])
+        "User", backref="business_users", foreign_keys=[user_id])
 
     def save(self):
         """Save the object to the database immediately."""

@@ -27,12 +27,12 @@ def validate_against_schema(json_data: Dict = None) -> Error:
         List[Dict]: a list of errors defined as {error:message, path:schemaPath}
 
     """
-    valid, err = rsbc_schemas.validate(json_data, 'comment')
+    valid, err = rsbc_schemas.validate(json_data, "comment")
 
     if valid:
         return None
 
     errors = []
     for error in err:
-        errors.append({'path': '/'.join(error.path), 'error': error.message})
+        errors.append({"path": "/".join(error.path), "error": error.message})
     return Error(HTTPStatus.UNPROCESSABLE_ENTITY, errors)

@@ -21,5 +21,5 @@ from legal_api import create_app
 application = create_app()  # pylint: disable=invalid-name
 
 if __name__ == "__main__":
-    server_port = os.environ.get('PORT', '8080')
-    application.run(debug=False, port=server_port, host='0.0.0.0')
+    server_port = os.environ.get("PORT", "8080")
+    application.run(debug=False, port=server_port, host="0.0.0.0")

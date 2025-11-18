@@ -13,9 +13,11 @@
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
 import logging
-from typing import Optional, Any
-from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
-from ldclient.config import Config  # noqa: I005
+from typing import Any, Optional
+
+from ldclient import get as ldclient_get
+from ldclient import set_config as ldclient_set_config
+from ldclient.config import Config
 from ldclient.context import Context
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
 from ldclient.interfaces import UpdateProcessor
@@ -37,13 +39,13 @@ class FileDataSource(UpdateProcessor):
         The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
         """
         return lambda config, store, ready: _FileDataSource(store, ready,
-                                                            paths=kwargs.get('paths'),
-                                                            auto_update=kwargs.get('auto_update', False),
-                                                            poll_interval=kwargs.get('poll_interval', 1),
-                                                            force_polling=kwargs.get('force_polling', False))
+                                                            paths=kwargs.get("paths"),
+                                                            auto_update=kwargs.get("auto_update", False),
+                                                            poll_interval=kwargs.get("poll_interval", 1),
+                                                            force_polling=kwargs.get("force_polling", False))
 
 
-class Flags():
+class Flags:
     """Wrapper around the feature flag system.
 
     calls FAIL to FALSE
@@ -68,19 +70,19 @@ class Flags():
     def init_app(self, app):
         """Initialize the Feature Flag environment."""
         self.app = app
-        self.sdk_key = app.config.get('LD_SDK_KEY')
+        self.sdk_key = app.config.get("LD_SDK_KEY")
         # Switch to Flask's logger once we have the app.
         self.logger = app.logger
 
-        self.logger.info('starting feature flags init; has sdk key: %s, env: %s', bool(self.sdk_key), app.env)
+        self.logger.info("starting feature flags init; has sdk key: %s, env: %s", bool(self.sdk_key), app.env)
 
-        if self.sdk_key or app.env != 'production':
+        if self.sdk_key or app.env != "production":
             self.logger.debug("sdk key used: %s", self.sdk_key)
 
-            if app.env == 'production':
+            if app.env == "production":
                 config = Config(sdk_key=self.sdk_key)
             else:
-                factory = FileDataSource.factory(paths=['flags.json'],
+                factory = FileDataSource.factory(paths=["flags.json"],
                                                  auto_update=True)
                 config = Config(sdk_key=self.sdk_key,
                                 update_processor_class=factory,
@@ -89,11 +91,11 @@ class Flags():
             ldclient_set_config(config)
             client = ldclient_get()
 
-            app.extensions['featureflags'] = client
+            app.extensions["featureflags"] = client
 
     def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
-        client = self.app.extensions.get('featureflags') if self.app else None
+        client = self.app.extensions.get("featureflags") if self.app else None
         if client:
             client.close()
 
@@ -102,33 +104,33 @@ class Flags():
             return None
 
         try:
-            return self.app.extensions['featureflags']
+            return self.app.extensions["featureflags"]
         except KeyError:
             # Lazy-init if needed
             try:
                 self.init_app(self.app)
-                return self.app.extensions.get('featureflags')
+                return self.app.extensions.get("featureflags")
             except Exception:
                 return None
 
     @staticmethod
     def _get_anonymous_user():
         """Return a LaunchDarkly Context for anonymous evaluations."""
-        return Context.create('anonymous')
+        return Context.create("anonymous")
 
     @staticmethod
     def _user_as_key(user: User):
         """Return a single-kind 'user' LD context with the user's key and attributes."""
         return Context.builder(user.sub) \
-            .set('firstName', user.firstname) \
-            .set('lastName', user.lastname) \
+            .set("firstName", user.firstname) \
+            .set("lastName", user.lastname) \
             .build()
 
     @staticmethod
     def _account_context(account_id: str) -> Context:
         """Return a single-kind 'account' LD context, keyed by the account id."""
         # Use Context.create(key, kind) to explicitly set non-default kind 'account'
-        return Context.create(account_id, 'account')
+        return Context.create(account_id, "account")
 
     def build_context(self, user: Optional[User], account_id: Optional[str]) -> Context:
         """Compose the appropriate LD context (single or multi) from user/account inputs.
@@ -139,7 +141,7 @@ class Flags():
         - neither             -> anonymous 'user' context
         """
         if user and account_id:
-            self.logger.debug('creating LD context with user and account_id')
+            self.logger.debug("creating LD context with user and account_id")
             return Context.create_multi(
                 Flags._user_as_key(user),
                 Flags._account_context(account_id),
@@ -157,8 +159,8 @@ class Flags():
 
     def is_on(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> bool:
         """Assert that the flag is set for this user."""
-        self.logger.debug('check if flag %s is on for user %s, account %s',
-                                 flag, user.sub if user else '-', account_id)
+        self.logger.debug("check if flag %s is on for user %s, account %s",
+                                 flag, user.sub if user else "-", account_id)
 
         client = self._get_client()
 
@@ -167,7 +169,7 @@ class Flags():
         try:
             return bool(client.variation(flag, ctx, None))
         except Exception as err:
-            self.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            self.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
             return False
 
     def value(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> Any:
@@ -178,5 +180,5 @@ class Flags():
         try:
             return client.variation(flag, ctx, None)
         except Exception as err:
-            self.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+            self.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
             return False

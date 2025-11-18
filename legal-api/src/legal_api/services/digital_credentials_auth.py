@@ -17,14 +17,13 @@
 from typing import Dict, List
 
 from flask import g
-from flask_jwt_oidc import JwtManager
 
+from flask_jwt_oidc import JwtManager
 from legal_api.models.business import Business
 from legal_api.models.user import User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 
-
-STAFF_ROLE = 'staff'
+STAFF_ROLE = "staff"
 
 
 def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:

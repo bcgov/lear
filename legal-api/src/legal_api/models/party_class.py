@@ -35,14 +35,14 @@ class PartyClass(db.Model, Versioned):
         OFFICER = auto()
 
     __versioned__ = {}
-    __tablename__ = 'party_class'
+    __tablename__ = "party_class"
 
     id = db.Column(db.Integer, primary_key=True)
     class_type = db.Column(db.Enum(PartyClassType), nullable=False, unique=True)
     short_description = db.Column(db.String(512))
     full_description = db.Column(db.String(1024))
 
-    party_roles = db.relationship('PartyRole', back_populates='party_class')
+    party_roles = db.relationship("PartyRole", back_populates="party_class")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -53,10 +53,10 @@ class PartyClass(db.Model, Versioned):
     def json(self) -> dict:
         """Return the party class as a json object."""
         return {
-            'id': self.id,
-            'classType': self.class_type.name,
-            'shortDescription': self.short_description,
-            'fullDescription': self.full_description
+            "id": self.id,
+            "classType": self.class_type.name,
+            "shortDescription": self.short_description,
+            "fullDescription": self.full_description
         }
 
     @classmethod

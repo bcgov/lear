@@ -14,18 +14,18 @@
 """This has the core domain used by the application."""
 from __future__ import annotations
 
+from collections.abc import MutableMapping, MutableSequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, MutableMapping, MutableSequence, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from .business import BusinessIdentifier, BusinessType
 from .filing import Filing
 from .meta import FILINGS, FilingMeta
 
-
 __all__ = (
-    'BusinessIdentifier',
-    'BusinessType',
-    'FILINGS',
-    'Filing',
-    'FilingMeta',
+    "FILINGS",
+    "BusinessIdentifier",
+    "BusinessType",
+    "Filing",
+    "FilingMeta",
 )

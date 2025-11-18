@@ -25,26 +25,26 @@ from legal_api.utils.util import cors_preflight
 from .api_namespace import API
 
 
-@cors_preflight('GET,')
-@API.route('/<string:identifier>/resolutions', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>/resolutions/<int:resolution_id>', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,")
+@API.route("/<string:identifier>/resolutions", methods=["GET", "OPTIONS"])
+@API.route("/<string:identifier>/resolutions/<int:resolution_id>", methods=["GET", "OPTIONS"])
 class ResolutionResource(Resource):
     """Business Resolutions service."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get(identifier, resolution_id=None):
         """Return a JSON of the resolutions."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
         # check authorization
-        if not authorized(identifier, jwt, action=['view']):
-            return jsonify({'message':
-                            f'You are not authorized to view resolutions for {identifier}.'}), \
+        if not authorized(identifier, jwt, action=["view"]):
+            return jsonify({"message":
+                            f"You are not authorized to view resolutions for {identifier}."}), \
                 HTTPStatus.UNAUTHORIZED
 
         # return the matching resolution
@@ -54,7 +54,7 @@ class ResolutionResource(Resource):
 
         resolution_list = []
 
-        resolution_type = request.args.get('type')
+        resolution_type = request.args.get("type")
         if resolution_type:
             resolutions = Resolution.find_by_type(business.id, resolution_type.upper())
         else:
@@ -73,9 +73,9 @@ class ResolutionResource(Resource):
         if resolution_id:
             rv = Resolution.find_by_id(resolution_id=resolution_id)
             if rv:
-                resolution = {'resolution': rv.json}
+                resolution = {"resolution": rv.json}
 
         if not resolution:
-            return None, {'message': f'{business.identifier} resolution not found'}, HTTPStatus.NOT_FOUND
+            return None, {"message": f"{business.identifier} resolution not found"}, HTTPStatus.NOT_FOUND
 
         return resolution, None, HTTPStatus.OK

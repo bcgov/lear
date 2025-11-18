@@ -26,33 +26,34 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
 from .api_namespace import API
+
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-@cors_preflight('GET,')
-@API.route('/<string:identifier>/addresses', methods=['GET', 'OPTIONS'])
-@API.route('/<string:identifier>/addresses/<int:addresses_id>', methods=['GET', 'OPTIONS'])
+@cors_preflight("GET,")
+@API.route("/<string:identifier>/addresses", methods=["GET", "OPTIONS"])
+@API.route("/<string:identifier>/addresses/<int:addresses_id>", methods=["GET", "OPTIONS"])
 class AddressResource(Resource):
     """Business Address service."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get(identifier, addresses_id=None):
         """Return a JSON of the addresses on file."""
         business = Business.find_by_identifier(identifier)
 
         if not business:
-            return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+            return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
-        if not authorized(identifier, jwt, action=['view']):
-            return jsonify({'message':
-                            f'You are not authorized to view addresses for {identifier}.'}), \
+        if not authorized(identifier, jwt, action=["view"]):
+            return jsonify({"message":
+                            f"You are not authorized to view addresses for {identifier}."}), \
                 HTTPStatus.UNAUTHORIZED
 
-        address_type = request.args.get('addressType', None)
+        address_type = request.args.get("addressType", None)
         if address_type and address_type not in Address.JSON_ADDRESS_TYPES:
-            return jsonify({'message': f'{address_type} not a valid address type'}), HTTPStatus.BAD_REQUEST
+            return jsonify({"message": f"{address_type} not a valid address type"}), HTTPStatus.BAD_REQUEST
 
         if addresses_id or address_type:
             addresses, msg, code = AddressResource._get_address(business, addresses_id, address_type)
@@ -65,7 +66,7 @@ class AddressResource(Resource):
             for i in officelist:
                 rv[i.office_type] = {}
                 for address in i.addresses:
-                    rv[i.office_type][f'{address.address_type}Address'] = address.json
+                    rv[i.office_type][f"{address.address_type}Address"] = address.json
         else:
             mailing = business.mailing_address.one_or_none()
             if mailing:
@@ -74,7 +75,7 @@ class AddressResource(Resource):
             if delivery:
                 rv[Address.JSON_DELIVERY] = delivery.json
             if not rv:
-                return jsonify({'message': f'{identifier} address not found'}), HTTPStatus.NOT_FOUND
+                return jsonify({"message": f"{identifier} address not found"}), HTTPStatus.NOT_FOUND
         return jsonify(rv)
 
     @staticmethod
@@ -104,6 +105,6 @@ class AddressResource(Resource):
                 addresses = {_address_type: address.json}
 
         if not addresses:
-            return None, {'message': f'{business.identifier} address not found'}, HTTPStatus.NOT_FOUND
+            return None, {"message": f"{business.identifier} address not found"}, HTTPStatus.NOT_FOUND
 
         return addresses, None, HTTPStatus.OK

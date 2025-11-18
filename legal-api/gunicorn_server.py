@@ -16,7 +16,7 @@ def post_fork(server, worker):
         # Start LD background threads in the child process
         client.postfork()
         server.log.info("LaunchDarkly postfork() completed for worker pid=%s", worker.pid)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         server.log.error("LaunchDarkly postfork() failed in worker pid=%s: %s", worker.pid, e)
 
 def worker_exit(server, worker):

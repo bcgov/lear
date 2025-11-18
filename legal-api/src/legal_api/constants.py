@@ -13,4 +13,4 @@
 # limitations under the License.
 """Constants for legal api."""
 
-BOB_DATE = '2019-03-08'
+BOB_DATE = "2019-03-08"

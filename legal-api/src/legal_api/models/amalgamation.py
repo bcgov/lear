@@ -23,7 +23,7 @@ from sql_versioning import Versioned
 from sqlalchemy import or_
 
 from ..utils.base import BaseEnum
-from .db import db, VersioningProxy  # noqa: I001
+from .db import VersioningProxy, db
 
 
 class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -39,19 +39,19 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         unknown = auto()
 
     __versioned__ = {}
-    __tablename__ = 'amalgamations'
+    __tablename__ = "amalgamations"
 
     id = db.Column(db.Integer, primary_key=True)
-    amalgamation_type = db.Column('amalgamation_type', db.Enum(AmalgamationTypes), nullable=False)
-    amalgamation_date = db.Column('amalgamation_date', db.DateTime(timezone=True), nullable=False)
-    court_approval = db.Column('court_approval', db.Boolean())
+    amalgamation_type = db.Column("amalgamation_type", db.Enum(AmalgamationTypes), nullable=False)
+    amalgamation_date = db.Column("amalgamation_date", db.DateTime(timezone=True), nullable=False)
+    court_approval = db.Column("court_approval", db.Boolean())
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), nullable=False)
 
     # Relationships
-    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
+    amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -72,11 +72,11 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         business = Business.find_by_internal_id(self.business_id)
 
         return {
-            'amalgamationDate': self.amalgamation_date.isoformat(),
-            'amalgamationType': self.amalgamation_type.name,
-            'courtApproval': self.court_approval,
-            'identifier': business.identifier,
-            'legalName': business.legal_name
+            "amalgamationDate": self.amalgamation_date.isoformat(),
+            "amalgamationType": self.amalgamation_type.name,
+            "courtApproval": self.court_approval,
+            "identifier": business.identifier,
+            "legalName": business.legal_name
         }
 
     @classmethod
@@ -132,9 +132,9 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         business = Business.find_by_internal_id(amalgamation.business_id)
 
         return {
-            'amalgamationDate': amalgamation.amalgamation_date.isoformat(),
-            'amalgamationType': amalgamation.amalgamation_type.name,
-            'courtApproval': amalgamation.court_approval,
-            'identifier': business.identifier,
-            'legalName': business.legal_name
+            "amalgamationDate": amalgamation.amalgamation_date.isoformat(),
+            "amalgamationType": amalgamation.amalgamation_type.name,
+            "courtApproval": amalgamation.court_approval,
+            "identifier": business.identifier,
+            "legalName": business.legal_name
         }

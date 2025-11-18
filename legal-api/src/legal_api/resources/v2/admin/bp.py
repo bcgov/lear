@@ -20,5 +20,4 @@ from flask import Blueprint
 
 from legal_api.resources.constants import EndpointEnum
 
-
-bp_admin = Blueprint('ADMIN_V2', __name__, url_prefix=EndpointEnum.ADMIN_V2)
+bp_admin = Blueprint("ADMIN_V2", __name__, url_prefix=EndpointEnum.ADMIN_V2)

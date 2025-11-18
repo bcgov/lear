@@ -20,13 +20,13 @@ from flask import current_app
 from .datetime import date, datetime, timedelta, timezone
 
 
-class LegislationDatetime():
+class LegislationDatetime:
     """Date utility using legislation timezone for reporting and future effective dates."""
 
     @staticmethod
     def now() -> datetime:
         """Construct a datetime using the legislation timezone."""
-        return datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+        return datetime.now().astimezone(pytz.timezone(current_app.config.get("LEGISLATIVE_TIMEZONE")))
 
     @staticmethod
     def datenow() -> date:
@@ -36,7 +36,7 @@ class LegislationDatetime():
     @staticmethod
     def tomorrow_midnight() -> datetime:
         """Construct a datetime tomorrow 12:00 AM using the legislation timezone."""
-        _date = datetime.now().astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+        _date = datetime.now().astimezone(pytz.timezone(current_app.config.get("LEGISLATIVE_TIMEZONE")))
         _date += datedelta.datedelta(days=1)
         _date = _date.replace(hour=0, minute=0, second=0, microsecond=0)
 
@@ -50,13 +50,13 @@ class LegislationDatetime():
     @staticmethod
     def as_legislation_timezone(date_time: datetime) -> datetime:
         """Return a datetime adjusted to the legislation timezone."""
-        return date_time.astimezone(pytz.timezone(current_app.config.get('LEGISLATIVE_TIMEZONE')))
+        return date_time.astimezone(pytz.timezone(current_app.config.get("LEGISLATIVE_TIMEZONE")))
 
     @staticmethod
     def as_legislation_timezone_from_date(_date: date) -> datetime:
         """Return a datetime adjusted to the legislation timezone from a date object."""
         return datetime(
-            _date.year, _date.month, _date.day, tzinfo=gettz(current_app.config.get('LEGISLATIVE_TIMEZONE'))
+            _date.year, _date.month, _date.day, tzinfo=gettz(current_app.config.get("LEGISLATIVE_TIMEZONE"))
         )
 
     @staticmethod
@@ -73,7 +73,7 @@ class LegislationDatetime():
     @staticmethod
     def as_utc_timezone(date_time: datetime) -> datetime:
         """Return a datetime adjusted to the GMT timezone (aka UTC)."""
-        return date_time.astimezone(pytz.timezone('GMT'))
+        return date_time.astimezone(pytz.timezone("GMT"))
 
     @staticmethod
     def as_utc_timezone_from_legislation_date_str(date_string: str) -> datetime:
@@ -87,21 +87,21 @@ class LegislationDatetime():
         input_date = datetime.fromisoformat(date_string)
         next_day = input_date + timedelta(days=1)
 
-        return next_day.strftime('%B %d, %Y')
+        return next_day.strftime("%B %d, %Y")
 
     @staticmethod
     def format_as_report_string(date_time: datetime) -> str:
         """Return a datetime string in this format (eg: `August 5, 2021 at 11:00 am Pacific time`)."""
         # ensure is set to correct timezone
         date_time = LegislationDatetime.as_legislation_timezone(date_time)
-        hour = date_time.strftime('%I').lstrip('0')
+        hour = date_time.strftime("%I").lstrip("0")
         # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
-        am_pm = date_time.strftime('%p').lower()
+        am_pm = date_time.strftime("%p").lower()
 
         # Cross-platform way to remove leading zero from day; it removes leading zeros
         # %-d works on unix/linux but not on windows
         day = str(date_time.day)
-        date_time_str = date_time.strftime(f'%B {day}, %Y at {hour}:%M {am_pm} Pacific time')
+        date_time_str = date_time.strftime(f"%B {day}, %Y at {hour}:%M {am_pm} Pacific time")
         return date_time_str
 
     @staticmethod
@@ -121,13 +121,13 @@ class LegislationDatetime():
                                       second=custom_second,
                                       microsecond=custom_microsecond)
 
-        hour = date_time.strftime('%I').lstrip('0')
+        hour = date_time.strftime("%I").lstrip("0")
         # %p provides locale value: AM, PM (en_US); am, pm (de_DE); So forcing it to be lower in any case
-        am_pm = date_time.strftime('%p').lower()
+        am_pm = date_time.strftime("%p").lower()
         # Cross-platform way to remove leading zero from day; it removes leading zeros
         # %-d works on unix/linux but not on windows
         day = str(date_time.day)
-        date_time_str = date_time.strftime(f'%B {day}, %Y at {hour}:%M {am_pm} Pacific time')
+        date_time_str = date_time.strftime(f"%B {day}, %Y at {hour}:%M {am_pm} Pacific time")
         return date_time_str
 
     @staticmethod
@@ -152,7 +152,7 @@ class LegislationDatetime():
     def format_as_legislation_date(date_time: datetime) -> str:
         """Return the date in legislation timezone as a string."""
         date_time = LegislationDatetime.as_legislation_timezone(date_time)
-        return date_time.strftime('%Y-%m-%d')
+        return date_time.strftime("%Y-%m-%d")
 
     @staticmethod
     def is_future(date_string: str) -> bool:

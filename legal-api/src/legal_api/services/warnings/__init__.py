@@ -14,5 +14,4 @@
 """Service to manage the business checks."""
 from .warning import check_warnings
 
-
-__all__ = ('check_warnings', )
+__all__ = ("check_warnings", )

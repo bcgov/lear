@@ -31,12 +31,12 @@ from .db import db
 class UserRoles(BaseEnum):
     """Enum of the roles used across the domain."""
 
-    #pragma warning disable S5720; # noqa: E265
+    #pragma warning disable S5720;
     # disable sonar cloud complaining about this signature
     def _generate_next_value_(name, start, count, last_values):  # pylint: disable=W0221,E0213 # noqa: N805
         """Return the name of the key."""
         return name
-    #pragma warning enable S5720; # noqa: E265
+    #pragma warning enable S5720;
 
     # pylint: disable=invalid-name
     admin_edit = auto()
@@ -52,7 +52,7 @@ class User(db.Model, Versioned):
     """Used to hold the audit information for a User of this service."""
 
     __versioned__ = {}
-    __tablename__ = 'users'
+    __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(1000), index=True)
@@ -73,16 +73,16 @@ class User(db.Model, Versioned):
         If there is actual name info, return that; otherwise username.
         """
         if self.firstname or self.lastname or self.middlename:
-            return ' '.join(filter(None, [self.firstname, self.middlename, self.lastname])).strip()
+            return " ".join(filter(None, [self.firstname, self.middlename, self.lastname])).strip()
 
         # parse off idir\ or @idir
-        if self.username[:4] == 'idir':
+        if self.username[:4] == "idir":
             return self.username[5:]
-        if self.username[-4:] == 'idir':
+        if self.username[-4:] == "idir":
             return self.username[:-5]
 
         # do not show services card usernames
-        if self.username[:4] == 'bcsc':
+        if self.username[:4] == "bcsc":
             return None
 
         return self.username if self.username else None
@@ -95,7 +95,7 @@ class User(db.Model, Versioned):
     @classmethod
     def find_by_jwt_token(cls, token: dict):
         """Return a User if they exist and match the provided JWT."""
-        return cls.query.filter_by(idp_userid=token['idp_userid']).one_or_none()
+        return cls.query.filter_by(idp_userid=token["idp_userid"]).one_or_none()
 
     @classmethod
     def create_from_jwt_token(cls, token: dict):
@@ -106,15 +106,15 @@ class User(db.Model, Versioned):
         """
         if token:
             user = User(
-                username=token.get(current_app.config.get('JWT_OIDC_USERNAME'), None),
-                firstname=token.get(current_app.config.get('JWT_OIDC_FIRSTNAME'), None),
-                lastname=token.get(current_app.config.get('JWT_OIDC_LASTNAME'), None),
-                iss=token['iss'],
-                sub=token['sub'],
-                idp_userid=token['idp_userid'],
-                login_source=token['loginSource']
+                username=token.get(current_app.config.get("JWT_OIDC_USERNAME"), None),
+                firstname=token.get(current_app.config.get("JWT_OIDC_FIRSTNAME"), None),
+                lastname=token.get(current_app.config.get("JWT_OIDC_LASTNAME"), None),
+                iss=token["iss"],
+                sub=token["sub"],
+                idp_userid=token["idp_userid"],
+                login_source=token["loginSource"]
             )
-            current_app.logger.debug('Creating user from JWT:{}; User:{}'.format(token, user))
+            current_app.logger.debug(f"Creating user from JWT:{token}; User:{user}")
             db.session.add(user)
             db.session.commit()
             return user
@@ -126,15 +126,15 @@ class User(db.Model, Versioned):
         # GET existing or CREATE new user based on the JWT info
         try:
             user = User.find_by_jwt_token(jwt_oidc_token)
-            current_app.logger.debug(f'finding user: {jwt_oidc_token}')
+            current_app.logger.debug(f"finding user: {jwt_oidc_token}")
             if not user:
-                current_app.logger.debug(f'didnt find user, attempting to create new user:{jwt_oidc_token}')
+                current_app.logger.debug(f"didnt find user, attempting to create new user:{jwt_oidc_token}")
                 user = User.create_from_jwt_token(jwt_oidc_token)
 
             return user
         except Exception as err:
             current_app.logger.error(err.with_traceback(None))
-            raise BusinessException('unable_to_get_or_create_user',
+            raise BusinessException("unable_to_get_or_create_user",
                                     '{"code": "unable_to_get_or_create_user",'
                                     '"description": "Unable to get or create user from the JWT, ABORT"}'
                                     ) from err

@@ -14,5 +14,4 @@
 """Checks for businesses."""
 from .business_checks.business import check_business
 
-
-__all__ = ('check_business',)
+__all__ = ("check_business",)

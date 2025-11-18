@@ -33,7 +33,7 @@ def requires_agm(business: Business) -> bool:
 def validate(business: Business, annual_report: Dict) -> Error:
     """Validate the annual report JSON."""
     if not business or not annual_report:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': _('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
 
     err = validate_ar_year(business=business,
                            current_annual_report=annual_report)
@@ -58,17 +58,17 @@ def validate(business: Business, annual_report: Dict) -> Error:
 def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Error:
     """Validate that the annual report year is valid."""
     ar_date = get_date(current_annual_report,
-                       'filing/annualReport/annualReportDate')
+                       "filing/annualReport/annualReportDate")
     if not ar_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual Report Date must be a valid date.'),
-                       'path': 'filing/annualReport/annualReportDate'}])
+                     [{"error": _("Annual Report Date must be a valid date."),
+                       "path": "filing/annualReport/annualReportDate"}])
 
     # The AR Date cannot be in the future (eg. before now() )
     if ar_date > datetime.utcnow().date():
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual Report Date cannot be in the future.'),
-                       'path': 'filing/annualReport/annualReportDate'}])
+                     [{"error": _("Annual Report Date cannot be in the future."),
+                       "path": "filing/annualReport/annualReportDate"}])
 
     # The AR Date cannot be before the last AR Filed
     next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
@@ -76,14 +76,14 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
 
     if ar_date < ar_min_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual Report Date cannot be before a previous Annual Report or the Founding Date.'),
-                       'path': 'filing/annualReport/annualReportDate'}])
+                     [{"error": _("Annual Report Date cannot be before a previous Annual Report or the Founding Date."),
+                       "path": "filing/annualReport/annualReportDate"}])
 
     # AR Date must be the next contiguous year, from either the last AR or foundingDate
     if ar_date > ar_max_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual Report Date must be the next Annual Report in contiguous order.'),
-                       'path': 'filing/annualReport/annualReportDate'}])
+                     [{"error": _("Annual Report Date must be the next Annual Report in contiguous order."),
+                       "path": "filing/annualReport/annualReportDate"}])
 
     return None
 
@@ -92,34 +92,34 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
 def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, List[Dict]]:
     """Validate the AGM year."""
     ar_date = get_date(annual_report,
-                       'filing/annualReport/annualReportDate')
+                       "filing/annualReport/annualReportDate")
     if not ar_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual Report Date must be a valid date.'),
-                       'path': 'filing/annualReport/annualReportDate'}])
+                     [{"error": _("Annual Report Date must be a valid date."),
+                       "path": "filing/annualReport/annualReportDate"}])
 
     submission_date = get_date(annual_report,
-                               'filing/header/date')
+                               "filing/header/date")
     if not submission_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Submission date must be a valid date.'),
-                       'path': 'filing/header/date'}])
+                     [{"error": _("Submission date must be a valid date."),
+                       "path": "filing/header/date"}])
 
     agm_date = get_date(annual_report,
-                        'filing/annualReport/annualGeneralMeetingDate')
+                        "filing/annualReport/annualGeneralMeetingDate")
 
     if ar_date.year == submission_date.year \
             and agm_date is None:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': _('Annual General Meeting Date must be a valid date when '
-                                  'submitting an Annual Report in the current year.'),
-                       'path': 'filing/annualReport/annualGeneralMeetingDate'}])
+                     [{"error": _("Annual General Meeting Date must be a valid date when "
+                                  "submitting an Annual Report in the current year."),
+                       "path": "filing/annualReport/annualGeneralMeetingDate"}])
 
     if agm_date and business.last_agm_date and agm_date < business.last_agm_date.date():
         return Error(
             HTTPStatus.BAD_REQUEST,
-            [{'error': _('Annual General Meeting Date cannot be before the last AGM date.'),
-              'path': 'filing/annualReport/annualGeneralMeetingDate'}]
+            [{"error": _("Annual General Meeting Date cannot be before the last AGM date."),
+              "path": "filing/annualReport/annualGeneralMeetingDate"}]
         )
 
     # # ar filed for previous year, agm skipped, warn of pending dissolution
@@ -144,20 +144,20 @@ def validate_directors_addresses(annual_report: Dict, legal_type: str) -> Option
     if legal_type not in Business.CORPS:
         return None
 
-    if not annual_report['filing']['annualReport'].get('offices', {}).get('recordsOffice', {}):
+    if not annual_report["filing"]["annualReport"].get("offices", {}).get("recordsOffice", {}):
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{'error': 'recordsOffice is required',
-                       'path': '/filing/annualReport/offices/recordsOffice'}])
+                     [{"error": "recordsOffice is required",
+                       "path": "/filing/annualReport/offices/recordsOffice"}])
 
     msg = []
-    directors = annual_report['filing']['annualReport'].get('directors', [])
+    directors = annual_report["filing"]["annualReport"].get("directors", [])
 
     for idx, director in enumerate(directors):
         for address_type in Address.JSON_ADDRESS_TYPES:
             if address_type not in director:
                 msg.append({
-                    'error': f'missing {address_type}',
-                    'path': f'/filing/annualReport/directors/{idx}/{address_type}'
+                    "error": f"missing {address_type}",
+                    "path": f"/filing/annualReport/directors/{idx}/{address_type}"
                 })
 
     if msg:

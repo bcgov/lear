@@ -22,7 +22,6 @@ from sqlalchemy import event
 
 from .db import db
 
-
 EMAIL_PATTERN = (r'^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|'
                  r'(".+"))@'
                  r'((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|'
@@ -33,22 +32,22 @@ EMAIL_PATTERN = (r'^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|'
 class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the configurations."""
 
-    __tablename__ = 'configurations'
+    __tablename__ = "configurations"
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column('name', db.String(100), unique=True, nullable=False)
-    val = db.Column('val', db.String(100), nullable=False)
-    short_description = db.Column('short_description', db.String(150), nullable=True)
-    full_description = db.Column('full_description', db.String(1000), nullable=True)
+    name = db.Column("name", db.String(100), unique=True, nullable=False)
+    val = db.Column("val", db.String(100), nullable=False)
+    short_description = db.Column("short_description", db.String(150), nullable=True)
+    full_description = db.Column("full_description", db.String(1000), nullable=True)
 
     class Names(Enum):
         """Render an Enum of the name of configuration."""
 
-        NUM_DISSOLUTIONS_ALLOWED = 'NUM_DISSOLUTIONS_ALLOWED'
-        MAX_DISSOLUTIONS_ALLOWED = 'MAX_DISSOLUTIONS_ALLOWED'
-        DISSOLUTIONS_STAGE_1_SCHEDULE = 'DISSOLUTIONS_STAGE_1_SCHEDULE'
-        DISSOLUTIONS_STAGE_2_SCHEDULE = 'DISSOLUTIONS_STAGE_2_SCHEDULE'
-        DISSOLUTIONS_STAGE_3_SCHEDULE = 'DISSOLUTIONS_STAGE_3_SCHEDULE'
+        NUM_DISSOLUTIONS_ALLOWED = "NUM_DISSOLUTIONS_ALLOWED"
+        MAX_DISSOLUTIONS_ALLOWED = "MAX_DISSOLUTIONS_ALLOWED"
+        DISSOLUTIONS_STAGE_1_SCHEDULE = "DISSOLUTIONS_STAGE_1_SCHEDULE"
+        DISSOLUTIONS_STAGE_2_SCHEDULE = "DISSOLUTIONS_STAGE_2_SCHEDULE"
+        DISSOLUTIONS_STAGE_3_SCHEDULE = "DISSOLUTIONS_STAGE_3_SCHEDULE"
 
     def save(self):
         """Save the object to the database immediately."""
@@ -59,10 +58,10 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         configuration = {
-            'name': self.name,
-            'value': self.val,
-            'shortDescription': self.short_description,
-            'fullDescription': self.full_description
+            "name": self.name,
+            "value": self.val,
+            "shortDescription": self.short_description,
+            "fullDescription": self.full_description
         }
         return configuration
 
@@ -101,7 +100,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
     def validate_configuration_value(name: str, val: str):
         """Ensure the value is the correct type before insert or update."""
         if not isinstance(val, str):
-            raise ValueError('Value type must be string.')
+            raise ValueError("Value type must be string.")
 
         int_names = {Configuration.Names.NUM_DISSOLUTIONS_ALLOWED.value,
                      Configuration.Names.MAX_DISSOLUTIONS_ALLOWED.value}
@@ -113,20 +112,20 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         if name in int_names:
             try:
                 if int(val) < 0:
-                    raise ValueError(f'Value for key {name} must be a positive integer')
+                    raise ValueError(f"Value for key {name} must be a positive integer")
             except ValueError as exc:
-                raise ValueError(f'Value for key {name} must be a positive integer') from exc
+                raise ValueError(f"Value for key {name} must be a positive integer") from exc
         elif name in bool_names:
-            if val not in {'True', 'False'}:
-                raise ValueError(f'Value for key {name} must be a boolean')
+            if val not in {"True", "False"}:
+                raise ValueError(f"Value for key {name} must be a boolean")
         elif name in cron_names:
             if not croniter.is_valid(val):
-                raise ValueError(f'Value for key {name} must be a cron string')
+                raise ValueError(f"Value for key {name} must be a cron string")
 
 
 # Listen to 'before_insert' and 'before_update' events
-@event.listens_for(Configuration, 'before_insert')
-@event.listens_for(Configuration, 'before_update')
+@event.listens_for(Configuration, "before_insert")
+@event.listens_for(Configuration, "before_update")
 def receive_before_insert(mapper, connection, target):
     """Validate the value before it gets inserted/updated."""
     target.validate_value()

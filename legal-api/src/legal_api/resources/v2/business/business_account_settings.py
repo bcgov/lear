@@ -41,12 +41,12 @@ from .bp import bp
 
 @bp.route("/settings/<string:account_id>", methods=["GET"])
 @bp.route("/settings/<string:account_id>/<string:identifier>", methods=["GET"])
-@cross_origin(origin='*')
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_business_account_settings(account_id: str, identifier: str = None):
     """Return a JSON object containing the settings information for the business and account combination."""
     if identifier:
-        if not authorized(identifier, jwt, action=['view']):
+        if not authorized(identifier, jwt, action=["view"]):
             return jsonify({"message": f"You are not authorized to view business {identifier} settings."}), HTTPStatus.UNAUTHORIZED
 
         business = Business.find_by_identifier(identifier)
@@ -72,37 +72,37 @@ def get_business_account_settings(account_id: str, identifier: str = None):
     return jsonify([settings.json for settings in BusinessAccountSettings.find_all(None, account_id)])
 
 
-@bp.route('/settings/<string:account_id>/<string:identifier>', methods=['POST', 'PUT', 'PATCH'])
-@cross_origin(origin='*')
+@bp.route("/settings/<string:account_id>/<string:identifier>", methods=["POST", "PUT", "PATCH"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def update_business_account_settings(account_id: str, identifier: str):
     """Update the settings information for the business and account combination."""
     # FUTURE: Verify they are allowed to update the account - #30992
-    if not authorized(identifier, jwt, action=['edit']):
-        return jsonify({"message": f'You are not authorized to edit business {identifier} settings.'}), HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["edit"]):
+        return jsonify({"message": f"You are not authorized to edit business {identifier} settings."}), HTTPStatus.UNAUTHORIZED
 
     business = Business.find_by_identifier(identifier)
     if not business:
-        return jsonify({"message": f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     business_id = business.id
     settings = BusinessAccountSettings.create_or_update(business_id, account_id, request.get_json())
     return jsonify(settings.json), HTTPStatus.CREATED
 
 
-@bp.route('/settings/<string:account_id>/<string:identifier>', methods=['DELETE'])
-@cross_origin(origin='*')
+@bp.route("/settings/<string:account_id>/<string:identifier>", methods=["DELETE"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def delete_business_account_settings(account_id: str, identifier: str):
     """Update the settings information for the business and account combination."""
     # FUTURE: Verify they are allowed to update the account - #30992
-    if not authorized(identifier, jwt, action=['edit']):
-        return jsonify({"message": f'You are not authorized to remove business {identifier} settings.'}), HTTPStatus.UNAUTHORIZED
+    if not authorized(identifier, jwt, action=["edit"]):
+        return jsonify({"message": f"You are not authorized to remove business {identifier} settings."}), HTTPStatus.UNAUTHORIZED
 
     business = Business.find_by_identifier(identifier)
     if not business:
-        return jsonify({"message": f'{identifier} not found'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     business_id = business.id
     BusinessAccountSettings.delete(business_id, account_id)
-    return jsonify({"message": f'{identifier} settings for account {account_id} have been deleted.'}), HTTPStatus.OK
+    return jsonify({"message": f"{identifier} settings for account {account_id} have been deleted."}), HTTPStatus.OK
