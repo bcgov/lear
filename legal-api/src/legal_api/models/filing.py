@@ -1181,11 +1181,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "adminFreeze",
             "appointReceiver",
             "ceaseReceiver",
+            "changeOfOfficers",
             "courtOrder",
             "noticeOfWithdrawal",
             "registrarsNotation",
             "registrarsOrder",
-            "transparencyRegister",
+            "transparencyRegister"
         ]
         excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
         filings = (

@@ -232,7 +232,7 @@ class FilingInfo(Resource):
             filing_body = filing_list[filing_type]
             filing.filing_sub_type = Filing.get_filing_sub_type(filing_type, filing_body)
             filing.body = filing_body
-            if filing.header['isFutureEffective']:
+            if filing.header.get('source') == Filing.FilingSource.LEAR.value:
                 # get utc lear effective date and convert to pacific time for insert into oracle
                 filing.effective_date = convert_to_pacific_time(filing.header['learEffectiveDate'])
             else:
