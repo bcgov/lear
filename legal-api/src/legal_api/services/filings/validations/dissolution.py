@@ -249,6 +249,9 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
 
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
+    
+    if 'parties' not in filing_json['filing']['dissolution']:
+        return None
 
     parties_json = filing_json['filing']['dissolution']['parties']
     parties = list(filter(lambda x: _is_dissolution_party_role(x.get('roles', [])), parties_json))
