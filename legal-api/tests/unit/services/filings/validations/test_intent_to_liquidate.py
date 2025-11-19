@@ -104,13 +104,29 @@ def test_liquidation_date_validation(session, test_status, founding_date_offset,
 
 
 @pytest.mark.parametrize(
-    'test_status, has_liquidator, expected_code, expected_msg',
+    'test_status, parties, expected_code, expected_msg',
     [
-        ('SUCCESS', True, None, None),
-        ('FAIL_NO_LIQUIDATOR', False, HTTPStatus.BAD_REQUEST, 'At least one liquidator is required.'),
+        ('SUCCESS',
+         [{'partyName': 'liquidator1', 'roles': [{'roleType': 'Liquidator'}]}],
+         None,
+         None
+        ),
+        ('FAIL_NO_LIQUIDATOR',
+        [{'partyName': 'party1', 'roles': []}],
+        HTTPStatus.BAD_REQUEST,
+        'At least one liquidator is required.'
+        ),
+        ('FAIL_INVALID_ROLE',
+         [
+             {'partyName': 'liquidator1', 'roles': [{'roleType': 'Liquidator'}]},
+             {'partyName': 'party2', 'roles': [{'roleType': 'Custodian'}]}
+         ],
+         HTTPStatus.BAD_REQUEST,
+         'Invalid party role(s) provided: Custodian.'
+        ),
     ]
 )
-def test_parties_validation(session, test_status, has_liquidator, expected_code, expected_msg):
+def test_parties_validation(session, test_status, parties, expected_code, expected_msg):
     """Assert that parties validation works correctly."""
     # Setup
     business = factory_business(
@@ -128,9 +144,7 @@ def test_parties_validation(session, test_status, has_liquidator, expected_code,
     future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
     filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
 
-    if not has_liquidator:
-        # Change the role type to something other than Liquidator
-        filing['filing']['intentToLiquidate']['parties'][0]['roles'][0]['roleType'] = 'Director'
+    filing['filing']['intentToLiquidate']['parties'] = parties
 
     # Test
     err = validate(business, filing)
