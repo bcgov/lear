@@ -252,7 +252,7 @@ def test_alteration(mock_get_parties, session, use_nr, new_name, legal_type, new
         # check for minimum directors error message
         if (new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value,
                                Business.LegalTypes.COOP.value] and not mock_directors):
-            assert 'Must have a minimum of three Directors' in [e['error'] for e in err.msg]
+            assert 'Must have a minimum of three directors. File a director change first.' in [e['error'] for e in err.msg]
 
 
 @pytest.mark.parametrize('test_name, legal_type, new_legal_type, err_msg', [

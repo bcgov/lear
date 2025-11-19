@@ -187,7 +187,7 @@ def type_change_validation(filing, business: Business):
         db_party_roles = PartyRole.get_parties_by_role(business.id, 'director')
         active_directors = [role for role in db_party_roles if role.cessation_date is None]
         if len(active_directors) < 3:
-            msg.append({ 'error': 'Must have a minimum of three Directors',
+            msg.append({ 'error': 'Must have a minimum of three directors. File a director change first.',
                          'path': legal_type_path })    
     return msg
 
