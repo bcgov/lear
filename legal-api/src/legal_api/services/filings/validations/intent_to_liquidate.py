@@ -85,13 +85,24 @@ def validate_parties(filing_json: Dict) -> Optional[list]:
     parties = filing_json.get("filing", {}).get("intentToLiquidate", {}).get("parties", [])
 
     liquidator_count = 0
+    invalid_roles = set()
+
     for party in parties:
         roles = party.get("roles", [])
 
-        # Check for liquidator role
-        has_liquidator_role = any(role.get("roleType") == "Liquidator" for role in roles)
-        if has_liquidator_role:
-            liquidator_count += 1
+        for role in roles:
+            role_type = role.get("roleType")
+            # Check for liquidator role
+            if role_type == "Liquidator":
+                liquidator_count += 1
+            else:
+                invalid_roles.add(role_type)
+
+    if invalid_roles:
+        msg.append({
+            "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            "path": f"{parties_path}/roles"
+        })
 
     if liquidator_count == 0:
         msg.append({"error": babel("At least one liquidator is required."), "path": parties_path})

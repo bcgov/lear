@@ -24,6 +24,8 @@ from legal_api.models import Business
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings.validations.change_of_registration import validate
 
+from tests.unit.services.filings.validations import create_party, create_party_address
+
 
 now = datetime.now().strftime('%Y-%m-%d')
 
@@ -169,8 +171,8 @@ def test_invalid_nr_change_of_registration(session):
          '2 Partners and a Completing Party is required.'),
     ]
 )
-def test_invalid_party(session, test_name, filing, expected_msg):
-    """Assert that party is invalid."""
+def test_change_of_registration_parties_missing_role(session, test_name, filing, expected_msg):
+    """Assert that change of registration party roles can be validated for missing roles."""
     filing['filing']['changeOfRegistration']['parties'][0]['roles'] = []
 
     business = Business(identifier=filing['filing']['business']['identifier'],
@@ -184,6 +186,54 @@ def test_invalid_party(session, test_name, filing, expected_msg):
 
     assert err
     assert err.msg[0]['error'] == expected_msg
+
+@pytest.mark.parametrize(
+    'filing, legal_type, parties, expected_msg',
+    [
+        (
+            copy.deepcopy(SP_CHANGE_OF_REGISTRATION),
+            Business.LegalTypes.SOLE_PROP.value,
+            [{'partyName': 'proprietor1', 'roles': ['Custodian']}],
+            'Invalid party role(s) provided: custodian.'
+        ),
+        (
+            copy.deepcopy(GP_CHANGE_OF_REGISTRATION),
+            Business.LegalTypes.PARTNERSHIP.value,
+            [
+                {'partyName': 'partner1', 'roles': ['Partner']},
+                {'partyName': 'partner2', 'roles': ['Liquidator']}
+            ],
+            'Invalid party role(s) provided: liquidator.'
+        ),
+    ]
+)
+def test_change_of_registration_parties_invalid_role(mocker, app, session, jwt, filing, legal_type, parties, expected_msg):
+    """Assert that change of registration party roles can be validated for invalid roles."""
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+
+    business = Business(identifier=filing['filing']['business']['identifier'],
+                        legal_type=filing['filing']['business']['legalType'])
+
+    base_mailing_address = filing['filing']['changeOfRegistration']['parties'][0]['mailingAddress']
+    base_delivery_address = filing['filing']['changeOfRegistration']['parties'][0]['deliveryAddress']
+
+    filing['filing']['changeOfRegistration']['parties'] = []
+
+    for index, party in enumerate(parties):
+        mailing_addr = create_party_address(base_address=base_mailing_address)
+        delivery_addr = create_party_address(base_address=base_delivery_address)
+        p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
+        filing['filing']['changeOfRegistration']['parties'].append(p)
+
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = filing['filing']['changeOfRegistration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(business, filing)
+
+    assert err is not None
+    assert err.msg[0]['error'] == expected_msg
+    assert '/filing/changeOfRegistration/parties/roles' in err.msg[0]['path']    
 
 
 @pytest.mark.parametrize(

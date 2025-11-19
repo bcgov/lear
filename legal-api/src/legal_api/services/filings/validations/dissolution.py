@@ -80,6 +80,10 @@ def validate(business: Business, dissolution: Dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
+    err = validate_dissolution_parties_roles(dissolution, business.legal_type, dissolution_type)
+    if err:
+        msg.extend(err)    
+
     # Specific validation for addresses in dissolution
     err = validate_dissolution_parties_address(dissolution, business.legal_type, dissolution_type)
     if err:
@@ -166,6 +170,71 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
 
     return None
 
+def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type) -> Optional[list]:
+    """Validate that all party roles in the dissolution are valid.
+
+    This needs not to be validated for administrative dissolution
+    """
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+        return None
+
+    if "parties" not in filing_json["filing"]["dissolution"]:
+        return [{"error": "Parties are required.", "path": "/filing/dissolution/parties"}]
+
+    parties_json = filing_json["filing"]["dissolution"]["parties"]
+    party_path = "/filing/dissolution/parties"
+
+    if legal_type in Business.CORPS:
+        allowed_roles = {PartyRole.RoleTypes.CUSTODIAN.value}
+    elif legal_type == Business.LegalTypes.COOP.value:
+        allowed_roles = {PartyRole.RoleTypes.CUSTODIAN.value,
+                         PartyRole.RoleTypes.LIQUIDATOR.value}
+    elif legal_type in {Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value}:
+        allowed_roles = {PartyRole.RoleTypes.COMPLETING_PARTY.value}
+    else:
+        allowed_roles = set()
+
+    msg = []
+    custodian_count = 0
+    liquidator_count = 0
+    completing_party_count = 0
+    invalid_roles = set()
+    for party in parties_json:
+        for role in party.get("roles", []):
+            role_type = role.get("roleType").lower().replace(" ", "_")
+            if role_type not in allowed_roles:
+                invalid_roles.add(role_type)
+                continue
+
+            if role_type == PartyRole.RoleTypes.CUSTODIAN.value:
+                custodian_count += 1
+            elif role_type == PartyRole.RoleTypes.LIQUIDATOR.value:
+                liquidator_count += 1
+            elif role_type == PartyRole.RoleTypes.COMPLETING_PARTY.value:
+                completing_party_count += 1
+
+    if invalid_roles:
+        msg.append({
+            "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            "path": f"{party_path}/roles"
+        })
+    
+    if legal_type in Business.CORPS:
+        if custodian_count == 0:
+            msg.append({"error": "Must have a minimum of one custodian.", "path": party_path})
+        elif custodian_count > 1:
+            msg.append({"error": "Must have a maximum of one custodian.", "path": party_path})    
+    elif legal_type == Business.LegalTypes.COOP.value:
+        total = custodian_count + liquidator_count
+        if total == 0:
+            msg.append({"error": "Must have a minimum of one custodian or one liquidator.", "path": party_path})
+        elif total > 1:
+            msg.append({"error": "Must have a maximum of one custodian or one liquidator, not both.", "path": party_path})
+    elif legal_type in {Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value}:
+        if completing_party_count == 0:
+            msg.append({"error": "Must have a completing party.", "path": party_path})
+
+    return msg
 
 def validate_dissolution_parties_address(filing_json, legal_type, dissolution_type) -> Optional[list]:
     """Validate the person data of the dissolution filing.
@@ -180,9 +249,9 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
 
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
-
+    
     if "parties" not in filing_json["filing"]["dissolution"]:
-        return [{"error": "Parties are required.", "path": "/filing/dissolution/parties"}]
+        return None
 
     parties_json = filing_json["filing"]["dissolution"]["parties"]
     parties = list(filter(lambda x: _is_dissolution_party_role(x.get("roles", [])), parties_json))

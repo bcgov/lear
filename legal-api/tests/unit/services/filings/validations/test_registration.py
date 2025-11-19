@@ -21,10 +21,13 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
-from legal_api.services import NaicsService, NameXService
+from legal_api.models import Business
+from legal_api.services import NaicsService, NameXService 
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
+
+from tests.unit.services.filings.validations import create_party, create_party_address
 
 from ...utils import helper_create_jwt
 
@@ -236,13 +239,13 @@ def test_naics_invalid(mocker, app, session, jwt):
 @pytest.mark.parametrize(
     'test_name, filing, expected_msg',
     [
-        ('sp_invalid_party', copy.deepcopy(SP_REGISTRATION), '1 Proprietor and a Completing Party is required.'),
-        ('dba_invalid_party', copy.deepcopy(DBA_REGISTRATION), '1 Proprietor and a Completing Party is required.'),
-        ('gp_invalid_party', copy.deepcopy(GP_REGISTRATION), '2 Partners and a Completing Party is required.'),
+        ('sp_invalid_party', copy.deepcopy(SP_REGISTRATION), '1 Proprietor and a Completing Party are required.'),
+        ('dba_invalid_party', copy.deepcopy(DBA_REGISTRATION), '1 Proprietor and a Completing Party are required.'),
+        ('gp_invalid_party', copy.deepcopy(GP_REGISTRATION), '2 Partners and a Completing Party are required.'),
     ]
 )
-def test_invalid_party(mocker, app, session, jwt, test_name, filing, expected_msg):
-    """Assert that party is invalid."""
+def test_registration_parties_missing_role(mocker, app, session, jwt, test_name, filing, expected_msg):
+    """Assert that registration party roles can be validated for missing roles."""
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     filing['filing']['registration']['parties'] = []
 
@@ -254,6 +257,63 @@ def test_invalid_party(mocker, app, session, jwt, test_name, filing, expected_ms
     assert err
     assert err.msg[0]['error'] == expected_msg
 
+@pytest.mark.parametrize(
+    'filing, legal_type, parties, expected_msg',
+    [
+        (
+            copy.deepcopy(SP_REGISTRATION),
+            Business.LegalTypes.SOLE_PROP.value,
+            [{'partyName': 'proprietor1', 'roles': ['Custodian']}],
+            'Invalid party role(s) provided: custodian.'
+        ),
+        (
+            copy.deepcopy(GP_REGISTRATION),
+            Business.LegalTypes.PARTNERSHIP.value,
+            [
+                {'partyName': 'partner1', 'roles': ['Partner']},
+                {'partyName': 'partner2', 'roles': ['Liquidator']}
+            ],
+            'Invalid party role(s) provided: liquidator.'
+        ),
+        (
+            copy.deepcopy(SP_REGISTRATION),
+            Business.LegalTypes.SOLE_PROP.value,
+            [{'partyName': 'sp_party', 'roles': ['Completing Party', 'Partner', 'Proprietor']}],
+            'Partner is not valid for a Sole Proprietorship.'
+        ),
+        (
+            copy.deepcopy(GP_REGISTRATION),
+            Business.LegalTypes.SOLE_PROP.value,
+            [
+                {'partyName': 'gp1_party', 'roles': ['Completing Party', 'Partner', 'Proprietor']},
+                {'partyName': 'gp2_party', 'roles': ['Partner']} 
+                ],
+            'Proprietor is not valid for a General Partnership.'
+        ),
+    ]
+)
+def test_registration_parties_invalid_role(mocker, app, session, jwt, filing, legal_type, parties, expected_msg):
+    """Assert that registration party roles can be validated for invalid roles."""
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+
+    base_mailing_address = filing['filing']['registration']['parties'][0]['mailingAddress']
+    base_delivery_address = filing['filing']['registration']['parties'][0]['deliveryAddress']
+
+    filing['filing']['registration']['parties'] = []
+
+    for index, party in enumerate(parties):
+        mailing_addr = create_party_address(base_address=base_mailing_address)
+        delivery_addr = create_party_address(base_address=base_delivery_address)
+        p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
+        filing['filing']['registration']['parties'].append(p)
+
+    legal_type = filing['filing']['registration']['nameRequest']['legalType']
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            err = validate(None, filing)
+
+    assert err is not None
+    assert err.msg[0]['error'] == expected_msg
 
 @pytest.mark.parametrize(
     'test_name, filing',

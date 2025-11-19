@@ -164,6 +164,7 @@ def validate_party(filing: Dict, legal_type: str) -> list:
     completing_parties = 0
     proprietor_parties = 0
     partner_parties = 0
+    invalid_roles = set()
     parties = filing["filing"]["correction"]["parties"]
     for party in parties:  # pylint: disable=too-many-nested-blocks;
         for role in party.get("roles", []):
@@ -174,19 +175,31 @@ def validate_party(filing: Dict, legal_type: str) -> list:
                 proprietor_parties += 1
             elif role_type == PartyRole.RoleTypes.PARTNER.value:
                 partner_parties += 1
+            else:
+                invalid_roles.add(role_type)  
+
+    if invalid_roles:
+        err_path = "/filing/correction/parties/roles"
+        msg.append({
+            "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            "path": err_path
+        })    
 
     correction_type = filing.get("filing").get("correction").get("type", "STAFF")
     party_path = "/filing/correction/parties"
 
-    if correction_type == "STAFF":
+    if legal_type == Business.LegalTypes.SOLE_PROP.value and partner_parties > 0:
+        msg.append({"error": "Partner is not valid for a Sole Proprietorship.", "path": party_path})
+
+    if legal_type == Business.LegalTypes.PARTNERSHIP.value and proprietor_parties > 0:
         if legal_type == Business.LegalTypes.SOLE_PROP.value and proprietor_parties < 1:
             msg.append({"error": "1 Proprietor is required.", "path": party_path})
         elif legal_type == Business.LegalTypes.PARTNERSHIP.value and partner_parties < 2:
             msg.append({"error": "2 Partners are required.", "path": party_path})
     elif legal_type == Business.LegalTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
-        msg.append({"error": "1 Proprietor and a Completing Party is required.", "path": party_path})
+        msg.append({"error": "1 Proprietor and a Completing Party are required.", "path": party_path})
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
-        msg.append({"error": "2 Partners and a Completing Party is required.", "path": party_path})
+        msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
 
     return msg
 

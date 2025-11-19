@@ -26,7 +26,7 @@ from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filin
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER
 from legal_api.services.filings.validations.validation import validate
 
-from tests.unit.services.filings.validations import lists_are_equal
+from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
 
 class MockResponse:
@@ -88,8 +88,8 @@ def test_invalid_nr_amalgamation(mocker, app, session):
         (Amalgamation.AmalgamationTypes.horizontal.name, 'A Completing Party is required.'),
     ]
 )
-def test_invalid_party(mocker, app, session, amalgamation_type, expected_msg):
-    """Assert that party is invalid."""
+def test_amalgamation_parties_missing_role(mocker, app, session, amalgamation_type, expected_msg):
+    """Assert that amalgamation party roles can be validated for missing roles."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
@@ -107,6 +107,62 @@ def test_invalid_party(mocker, app, session, amalgamation_type, expected_msg):
 
     assert err
     assert err.msg[0]['error'] == expected_msg
+
+@pytest.mark.parametrize(
+    'parties, expected_msg',
+    [
+        (
+            [{'partyName': 'officer1', 'roles': ['Custodian']},],
+            'Invalid party role(s) provided: custodian.'
+        ),
+        (
+            [
+                {'partyName': 'officer1', 'roles': ['Director']},
+                {'partyName': 'officer2', 'roles': ['Liquidator']}
+            ],
+            'Invalid party role(s) provided: liquidator.'
+        ),
+    ]
+)
+def test_amalgamation_parties_invalid_role(mocker, app, session, parties, expected_msg):
+    """Assert that amalgamation party roles can be validated for invalid roles."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'date': '2019-04-08',
+        'certifiedBy': 'full name',
+        'email': 'no_one@never.get',
+        'filingId': 1
+    }
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.regular.name
+
+    base_mailing_address = filing['filing']['amalgamationApplication']['parties'][0]['mailingAddress']
+    base_delivery_address = filing['filing']['amalgamationApplication']['parties'][0]['deliveryAddress']
+
+    filing['filing']['amalgamationApplication']['parties'] = []
+
+    for index, party in enumerate(parties):
+        mailing_addr = create_party_address(base_address=base_mailing_address)
+        delivery_addr = create_party_address(base_address=base_delivery_address)
+        p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
+        filing['filing']['amalgamationApplication']['parties'].append(p)
+
+    mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+        return_value=[]
+    )
+    mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+        return_value=[]
+    )
+
+    err = validate(None, filing)
+
+    assert err is not None
+    assert err.msg[0]['error'] == expected_msg
+    assert '/filing/amalgamationApplication/parties/roles' in err.msg[0]['path']
 
 
 @pytest.mark.parametrize(

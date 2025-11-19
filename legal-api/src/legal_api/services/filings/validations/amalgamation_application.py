@@ -389,6 +389,7 @@ def validate_party(filing: Dict, amalgamation_type, filing_type) -> list:
     msg = []
     completing_parties = 0
     director_parties = 0
+    invalid_roles = set()
     parties = filing["filing"][filing_type]["parties"]
     for party in parties:  # pylint: disable=too-many-nested-blocks;
         for role in party.get("roles", []):
@@ -397,6 +398,15 @@ def validate_party(filing: Dict, amalgamation_type, filing_type) -> list:
                 completing_parties += 1
             elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
                 director_parties += 1
+            else:
+                invalid_roles.add(role_type)  
+
+    if invalid_roles:
+        err_path = f"/filing/{filing_type}/parties/roles"
+        msg.append({
+            "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            "path": err_path
+        })                  
 
     party_path = f"/filing/{filing_type}/parties"
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
