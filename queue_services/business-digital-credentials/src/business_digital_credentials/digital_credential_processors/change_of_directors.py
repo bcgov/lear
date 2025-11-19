@@ -29,7 +29,7 @@ def process(business: Business, filing: Filing) -> None:
     current_app.logger.debug(f"Process change of directors for: {business.identifier}")
 
     # Only BEN supported for DBC at this time (CoD can happen for others so bail if not)
-    if (business.legal_type != "BEN"):
+    if business.legal_type not in {Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP_CONTINUE_IN.value}:
         current_app.logger.debug(f"Business {business.identifier} is not a BEN, skipping DBC handling.")
         return None
 

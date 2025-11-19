@@ -201,7 +201,7 @@ def is_user_in_officers(
     for party in filing_data.get("parties", []):
         officer = party.get("officer", {})
         roles = party.get("roles", [])
-        has_partner_role = any(role.get("roleType") == role_name for role in roles)
+        has_partner_role = any(role.get("roleType").lower() == role_name.lower() for role in roles)
         if _does_officer_match_user(officer, user) and has_partner_role:
             user_in_parties = True
             break

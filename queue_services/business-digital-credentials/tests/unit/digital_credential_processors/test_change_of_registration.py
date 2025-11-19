@@ -15,7 +15,7 @@
 
 from unittest.mock import MagicMock, patch
 
-from business_model.models import DCDefinition, DCRevocationReason
+from business_model.models import DCDefinition, DCRevocationReason, PartyRole
 
 from business_digital_credentials.digital_credential_processors import change_of_registration
 from tests.unit import create_business, create_filing, create_user
@@ -119,7 +119,7 @@ def test_processor_replaces_credential_when_user_in_parties_and_name_request(moc
 
     mock_get_all_digital_credentials_for_business.assert_called_once_with(business=business)
     filing_data = filing.filing_json.get("filing", {}).get(filing.filing_type, {})
-    mock_is_user_in_officers.assert_called_once_with(user, filing_data, 'Partner')
+    mock_is_user_in_officers.assert_called_once_with(user, filing_data, PartyRole.RoleTypes.PARTNER.value)
     mock_replace_digital_credential.assert_called_once_with(
         credential=mock_credential,
         credential_type=DCDefinition.CredentialType.business.name,
@@ -160,7 +160,7 @@ def test_processor_does_not_replace_when_user_in_parties_but_no_name_request(moc
 
     mock_get_all_digital_credentials_for_business.assert_called_once_with(business=business)
     filing_data = filing.filing_json.get("filing", {}).get(filing.filing_type, {})
-    mock_is_user_in_officers.assert_called_once_with(user, filing_data, 'Partner')
+    mock_is_user_in_officers.assert_called_once_with(user, filing_data, PartyRole.RoleTypes.PARTNER.value)
     mock_replace_digital_credential.assert_not_called()
     mock_revoke_digital_credential.assert_not_called()
 
@@ -197,7 +197,7 @@ def test_processor_revokes_credential_when_user_not_in_parties(mock_revoke_digit
 
     mock_get_all_digital_credentials_for_business.assert_called_once_with(business=business)
     filing_data = filing.filing_json.get("filing", {}).get(filing.filing_type, {})
-    mock_is_user_in_officers.assert_called_once_with(user, filing_data, 'Partner')
+    mock_is_user_in_officers.assert_called_once_with(user, filing_data, PartyRole.RoleTypes.PARTNER.value)
     mock_replace_digital_credential.assert_not_called()
     mock_revoke_digital_credential.assert_called_once_with(
         credential=mock_credential,
@@ -253,8 +253,8 @@ def test_processor_continues_processing_after_credential_error(mock_revoke_digit
     mock_get_all_digital_credentials_for_business.assert_called_once_with(business=business)
     filing_data = filing.filing_json.get("filing", {}).get(filing.filing_type, {})
     assert mock_is_user_in_officers.call_count == 2
-    mock_is_user_in_officers.assert_any_call(user1, filing_data, 'Partner')
-    mock_is_user_in_officers.assert_any_call(user2, filing_data, 'Partner')
+    mock_is_user_in_officers.assert_any_call(user1, filing_data, PartyRole.RoleTypes.PARTNER.value)
+    mock_is_user_in_officers.assert_any_call(user2, filing_data, PartyRole.RoleTypes.PARTNER.value)
     
     # Both credentials should be attempted to be revoked, even though first one fails
     assert mock_revoke_digital_credential.call_count == 2

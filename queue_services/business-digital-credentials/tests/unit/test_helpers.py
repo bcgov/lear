@@ -411,6 +411,7 @@ def test_issue_digital_credential(mock_digital_credentials_helpers,
     # Positive cases
     ("John", "Doe", "John", "Doe", "Partner", "Partner", True),
     ("john", "doe", "JOHN", "DOE", "Partner", "Partner", True),  # Case insensitive
+    ("john", "doe", "JOHN", "DOE", "Partner", "partner", True),  # Case insensitive
     
     # Negative cases - name mismatch
     ("John", "Doe", "Jane", "Smith", "Partner", "Partner", False),

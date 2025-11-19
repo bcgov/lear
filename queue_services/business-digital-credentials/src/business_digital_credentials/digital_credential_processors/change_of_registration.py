@@ -15,7 +15,7 @@
 
 from flask import current_app
 
-from business_model.models import Business, DCDefinition, DCRevocationReason, Filing
+from business_model.models import Business, DCDefinition, DCRevocationReason, Filing, PartyRole
 
 from .helpers import (
     get_all_digital_credentials_for_business,
@@ -23,8 +23,6 @@ from .helpers import (
     replace_digital_credential,
     revoke_digital_credential,
 )
-
-PARTNER_ROLE = "Partner"
 
 
 def process(business: Business, filing: Filing) -> None:
@@ -50,7 +48,7 @@ def process(business: Business, filing: Filing) -> None:
                 current_app.logger.warning(f"Credential {credential.id} has no associated user, skipping.")
                 continue
 
-            if is_user_in_officers(user, filing_data, PARTNER_ROLE):
+            if is_user_in_officers(user, filing_data, PartyRole.RoleTypes.PARTNER.value):
                 # If the name has changed, replace the credential (unless the partner was also removed)
                 if filing_data.get("nameRequest") is not None:
                     current_app.logger.debug("Firm name changed, replacing cred")
