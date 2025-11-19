@@ -442,6 +442,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     filing_type = None
     filing_sub_type = None
     filing_date = None
+    cod_date = None
     paper_only = None
     colin_only = None
     user_id = None
@@ -665,13 +666,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 )
             elif filing_type_code in ['NOCDR']:
                 insert_stmnt = insert_stmnt + ', change_dt, arrangement_ind, ods_typ_cd) '
-                values_stmnt = values_stmnt + ", TO_DATE(:filing_date, 'YYYY-mm-dd'), 'N', 'F')"
+                values_stmnt = values_stmnt + ", TO_DATE(:change_dt, 'YYYY-mm-dd'), 'N', 'F')"
                 cursor.execute(
                     insert_stmnt + values_stmnt,
                     event_id=filing.event_id,
                     filing_type_code=filing_type_code,
                     effective_dt=filing.effective_date,
-                    filing_date=filing.filing_date[:10]
+                    change_dt=filing.cod_date[:10]
                 )
             elif filing_type_code in ['NOCAD', 'TRANP',
                                       'CO_BC', 'CO_DI', 'CO_RR', 'CO_SS', 'CO_LI',
