@@ -180,15 +180,15 @@ def type_change_validation(filing, business: Business):
     errors[Business.LegalTypes.CCC_CONTINUE_IN.value] = errors[Business.LegalTypes.BC_CCC.value]
     errors[Business.LegalTypes.ULC_CONTINUE_IN.value] = errors[Business.LegalTypes.BC_ULC_COMPANY.value]
 
-    if new_legal_type and new_legal_type not in valid_type_changes.get(business.legal_type, []):
-        msg.append({'error': babel(errors.get(business.legal_type, '')), 'path': legal_type_path})
-
-    if new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value]:
-        db_party_roles = PartyRole.get_parties_by_role(business.id, 'director')
-        active_directors = [role for role in db_party_roles if role.cessation_date is None]
-        if len(active_directors) < 3:
-            msg.append({ 'error': 'Must have a minimum of three directors. File a change of director filing first.',
-                         'path': legal_type_path })    
+    if new_legal_type:
+        if new_legal_type not in valid_type_changes.get(business.legal_type, []):
+            msg.append({'error': babel(errors.get(business.legal_type, '')), 'path': legal_type_path})
+        if new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value]:
+            db_party_roles = PartyRole.get_parties_by_role(business.id, 'director')
+            active_directors = [role for role in db_party_roles if role.cessation_date is None]
+            if len(active_directors) < 3:
+                msg.append({ 'error': 'Must have a minimum of three directors. File a change of director filing first.',
+                            'path': legal_type_path })      
     return msg
 
 
