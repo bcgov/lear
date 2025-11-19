@@ -44,141 +44,154 @@ class MockResponse:
     def json(self):
         return self.json_data
 
+class MockDirector:
+    def __init__(self, cessation_date=None):
+        self.cessation_date = cessation_date
 
-@pytest.mark.parametrize('use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors', [
-    (False, '', 'CP', 'CP', '', True, 0),
-    (False, '', 'CP', 'BEN', '', False, 1),
-    (False, '', 'CP', 'BC', '', False, 1),
-    (False, '', 'CP', 'ULC', '', False, 1),
-    (False, '', 'CP', 'CC', '', False, 1),
-    (False, '', 'CP', 'C', '', False, 1),
-    (False, '', 'CP', 'CBEN', '', False, 1),
-    (False, '', 'CP', 'CUL', '', False, 1),
-    (False, '', 'CP', 'CCC', '', False, 1),
+def create_mock_directors(count=3):
+    """Return a list of mock directors for tests."""
+    return [MockDirector() for _ in range(count)]  
 
-    (False, '', 'BEN', 'BEN', '', True, 0),
-    (False, '', 'BEN', 'BC', '', True, 0),
-    (False, '', 'BEN', 'ULC', '', False, 1),
-    (False, '', 'BEN', 'CC', '', True, 1),
-    (False, '', 'BEN', 'CP', '', False, 1),
-    (False, '', 'BEN', 'C', '', False, 1),
-    (False, '', 'BEN', 'CBEN', '', False, 1),
-    (False, '', 'BEN', 'CUL', '', False, 1),
-    (False, '', 'BEN', 'CCC', '', False, 1),
 
-    (False, '', 'BC', 'BC', '', True, 0),
-    (False, '', 'BC', 'BEN', '', True, 0),
-    (False, '', 'BC', 'ULC', '', True, 0),
-    (False, '', 'BC', 'CC', '', True, 0),
-    (False, '', 'BC', 'CP', '', False, 1),
-    (False, '', 'BC', 'C', '', False, 1),
-    (False, '', 'BC', 'CBEN', '', False, 1),
-    (False, '', 'BC', 'CUL', '', False, 1),
-    (False, '', 'BC', 'CCC', '', False, 1),
+@pytest.mark.parametrize('use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors', [
+    (False, '', 'CP', 'CP', '', True, True, 0),
+    (False, '', 'CP', 'BEN', '', True, False, 1),
+    (False, '', 'CP', 'BC', '', True, False, 1),
+    (False, '', 'CP', 'ULC', '', True, False, 1),
+    (False, '', 'CP', 'CC', '', True, False, 1),
+    (False, '', 'CP', 'C', '', True, False, 1),
+    (False, '', 'CP', 'CBEN', '', True, False, 1),
+    (False, '', 'CP', 'CUL', '', True, False, 1),
+    (False, '', 'CP', 'CCC', '', True, False, 1),
 
-    (False, '', 'ULC', 'ULC', '', True, 0),
-    (False, '', 'ULC', 'BC', '', True, 0),
-    (False, '', 'ULC', 'BEN', '', True, 0),
-    (False, '', 'ULC', 'CC', '', False, 1),
-    (False, '', 'ULC', 'CP', '', False, 1),
-    (False, '', 'ULC', 'C', '', False, 1),
-    (False, '', 'ULC', 'CBEN', '', False, 1),
-    (False, '', 'ULC', 'CUL', '', False, 1),
-    (False, '', 'ULC', 'CCC', '', False, 1),
+    (False, '', 'BEN', 'BEN', '', True, True, 0),
+    (False, '', 'BEN', 'BC', '', True, True, 0),
+    (False, '', 'BEN', 'ULC', '', True, False, 1),
+    (False, '', 'BEN', 'CC', '', True, True, 1),
+    (False, '', 'BEN', 'CP', '', True, False, 1),
+    (False, '', 'BEN', 'C', '', True, False, 1),
+    (False, '', 'BEN', 'CBEN', '', True, False, 1),
+    (False, '', 'BEN', 'CUL', '', True, False, 1),
+    (False, '', 'BEN', 'CCC', '', True, False, 1),
 
-    (False, '', 'CC', 'CC', '', True, 0),
-    (False, '', 'CC', 'BEN', '', False, 1),
-    (False, '', 'CC', 'BC', '', False, 1),
-    (False, '', 'CC', 'ULC', '', False, 1),
-    (False, '', 'CC', 'CP', '', False, 1),
-    (False, '', 'CC', 'C', '', False, 1),
-    (False, '', 'CC', 'CBEN', '', False, 1),
-    (False, '', 'CC', 'CUL', '', False, 1),
-    (False, '', 'CC', 'CCC', '', False, 1),
+    (False, '', 'BC', 'BC', '', True, True, 0),
+    (False, '', 'BC', 'BEN', '', True, True, 0),
+    (False, '', 'BC', 'ULC', '', True, True, 0),
+    (False, '', 'BC', 'CC', '', True, True, 0),
+    (False, '', 'BC', 'CP', '', True, False, 1),
+    (False, '', 'BC', 'C', '', True, False, 1),
+    (False, '', 'BC', 'CBEN', '', True, False, 1),
+    (False, '', 'BC', 'CUL', '', True, False, 1),
+    (False, '', 'BC', 'CCC', '', True, False, 1),
 
-    (False, '', 'CBEN', 'CBEN', '', True, 0),
-    (False, '', 'CBEN', 'C', '', True, 0),
-    (False, '', 'CBEN', 'CUL', '', False, 1),
-    (False, '', 'CBEN', 'CCC', '', True, 1),
-    (False, '', 'CBEN', 'BEN', '', False, 1),
-    (False, '', 'CBEN', 'BC', '', False, 1),
-    (False, '', 'CBEN', 'ULC', '', False, 1),
-    (False, '', 'CBEN', 'CC', '', False, 1),
-    (False, '', 'CBEN', 'CP', '', False, 1),
+    (False, '', 'ULC', 'ULC', '', True, True, 0),
+    (False, '', 'ULC', 'BC', '', True, True, 0),
+    (False, '', 'ULC', 'BEN', '', True, True, 0),
+    (False, '', 'ULC', 'CC', '', True, False, 1),
+    (False, '', 'ULC', 'CP', '', True, False, 1),
+    (False, '', 'ULC', 'C', '', True, False, 1),
+    (False, '', 'ULC', 'CBEN', '', True, False, 1),
+    (False, '', 'ULC', 'CUL', '', True, False, 1),
+    (False, '', 'ULC', 'CCC', '', True, False, 1),
 
-    (False, '', 'C', 'C', '', True, 0),
-    (False, '', 'C', 'CBEN', '', True, 0),
-    (False, '', 'C', 'CUL', '', True, 0),
-    (False, '', 'C', 'CCC', '', True, 0),
-    (False, '', 'C', 'BC', '', False, 1),
-    (False, '', 'C', 'BEN', '', False, 1),
-    (False, '', 'C', 'ULC', '', False, 1),
-    (False, '', 'C', 'CC', '', False, 1),
-    (False, '', 'C', 'CP', '', False, 1),
+    (False, '', 'CC', 'CC', '', True, True, 0),
+    (False, '', 'CC', 'BEN', '', True, False, 1),
+    (False, '', 'CC', 'BC', '', True, False, 1),
+    (False, '', 'CC', 'ULC', '', True, False, 1),
+    (False, '', 'CC', 'CP', '', True, False, 1),
+    (False, '', 'CC', 'C', '', True, False, 1),
+    (False, '', 'CC', 'CBEN', '', True, False, 1),
+    (False, '', 'CC', 'CUL', '', True, False, 1),
+    (False, '', 'CC', 'CCC', '', True, False, 1),
 
-    (False, '', 'CUL', 'CUL', '', True, 0),
-    (False, '', 'CUL', 'C', '', True, 0),
-    (False, '', 'CUL', 'CBEN', '', True, 0),
-    (False, '', 'CUL', 'CCC', '', False, 1),
-    (False, '', 'CUL', 'ULC', '', False, 1),
-    (False, '', 'CUL', 'BC', '', False, 1),
-    (False, '', 'CUL', 'BEN', '', False, 1),
-    (False, '', 'CUL', 'CC', '', False, 1),
-    (False, '', 'CUL', 'CP', '', False, 1),
+    (False, '', 'CBEN', 'CBEN', '', True, True, 0),
+    (False, '', 'CBEN', 'C', '', True, True, 0),
+    (False, '', 'CBEN', 'CUL', '', True, False, 1),
+    (False, '', 'CBEN', 'CCC', '', True, True, 1),
+    (False, '', 'CBEN', 'BEN', '', True, False, 1),
+    (False, '', 'CBEN', 'BC', '', True, False, 1),
+    (False, '', 'CBEN', 'ULC', '', True, False, 1),
+    (False, '', 'CBEN', 'CC', '', True, False, 1),
+    (False, '', 'CBEN', 'CP', '', True, False, 1),
 
-    (False, '', 'CCC', 'CCC', '', True, 0),
-    (False, '', 'CCC', 'CBEN', '', False, 1),
-    (False, '', 'CCC', 'C', '', False, 1),
-    (False, '', 'CCC', 'CUL', '', False, 1),
-    (False, '', 'CCC', 'CC', '', False, 1),
-    (False, '', 'CCC', 'BEN', '', False, 1),
-    (False, '', 'CCC', 'BC', '', False, 1),
-    (False, '', 'CCC', 'ULC', '', False, 1),
-    (False, '', 'CCC', 'CP', '', False, 1),
+    (False, '', 'C', 'C', '', True, True, 0),
+    (False, '', 'C', 'CBEN', '', True, True, 0),
+    (False, '', 'C', 'CUL', '', True, True, 0),
+    (False, '', 'C', 'CCC', '', True, True, 0),
+    (False, '', 'C', 'BC', '', True, False, 1),
+    (False, '', 'C', 'BEN', '', True, False, 1),
+    (False, '', 'C', 'ULC', '', True, False, 1),
+    (False, '', 'C', 'CC', '', True, False, 1),
+    (False, '', 'C', 'CP', '', True, False, 1),
+
+    (False, '', 'CUL', 'CUL', '', True, True, 0),
+    (False, '', 'CUL', 'C', '', True, True, 0),
+    (False, '', 'CUL', 'CBEN', '', True, True, 0),
+    (False, '', 'CUL', 'CCC', '', True, False, 1),
+    (False, '', 'CUL', 'ULC', '', True, False, 1),
+    (False, '', 'CUL', 'BC', '', True, False, 1),
+    (False, '', 'CUL', 'BEN', '', True, False, 1),
+    (False, '', 'CUL', 'CC', '', True, False, 1),
+    (False, '', 'CUL', 'CP', '', True, False, 1),
+
+    (False, '', 'CCC', 'CCC', '', True, True, 0),
+    (False, '', 'CCC', 'CBEN', '', True, False, 1),
+    (False, '', 'CCC', 'C', '', True, False, 1),
+    (False, '', 'CCC', 'CUL', '', True, False, 1),
+    (False, '', 'CCC', 'CC', '', True, False, 1),
+    (False, '', 'CCC', 'BEN', '', True, False, 1),
+    (False, '', 'CCC', 'BC', '', True, False, 1),
+    (False, '', 'CCC', 'ULC', '', True, False, 1),
+    (False, '', 'CCC', 'CP', '', True, False, 1),
+
+    # check minimum directors validation
+    (False, '', 'BC', 'CC', '', False, False, 1),
+    (False, '', 'CBEN', 'CCC', '', False, False, 1),  
 
     # use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors
 
     # CHG (name change) NR type code tests
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEN', 'BEC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'CC', 'CCC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'BC', 'CCR', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'ULC', 'ULC', 'CUL', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CBEN', 'BEC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CCC', 'CCC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'C', 'C', 'CCR', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CUL', 'CUL', True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BEN', 'BEC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'CC', 'CCC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'BC', 'CCR', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'ULC', 'ULC', 'CUL', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CBEN', 'BEC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CCC', 'CCC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'C', 'C', 'CCR', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CUL', 'CUL', True, True, 0),
 
-    (True, 'legal_name-CP1234567_Changed', 'CP', 'CP', 'CCP', True, 0),
-    (True, 'legal_name-CP1234567_Changed', 'CP', 'CP', 'XCLP', False, 1),
+    (True, 'legal_name-CP1234567_Changed', 'CP', 'CP', 'CCP', True, True, 0),
+    (True, 'legal_name-CP1234567_Changed', 'CP', 'CP', 'XCLP', True, False, 1),
 
     # CNV (conversion) NR type code tests
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'BEN', 'BECV', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'CC', 'CCV', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BC', 'ULC', 'UC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BC', 'BECR', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'CC', 'BECC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'ULC', 'BC', 'ULCB', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'ULC', 'BEN', 'ULBE', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'ULC', 'CC', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'BC', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'BEN', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'CC', 'ULC', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'C', 'CBEN', 'BECV', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'C', 'CCC', 'CCV', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'C', 'CUL', 'UC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'C', 'BECR', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CCC', 'BECC', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CUL', 'BECC', False, 1),
-    (True, 'legal_name-BC1234567_Changed', 'CUL', 'C', 'ULCB', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CBEN', 'ULBE', True, 0),
-    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CCC', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'C', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CBEN', 'ULCC', False, 2),
-    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CUL', 'ULCC', False, 2)
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'BEN', 'BECV', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'CC', 'CCV', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BC', 'ULC', 'UC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'BC', 'BECR', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'CC', 'BECC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECC', True, False, 1),
+    (True, 'legal_name-BC1234567_Changed', 'ULC', 'BC', 'ULCB', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'ULC', 'BEN', 'ULBE', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'ULC', 'CC', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'BC', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'BEN', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CC', 'ULC', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'C', 'CBEN', 'BECV', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'C', 'CCC', 'CCV', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'C', 'CUL', 'UC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'C', 'BECR', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CCC', 'BECC', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CBEN', 'CUL', 'BECC', True, False, 1),
+    (True, 'legal_name-BC1234567_Changed', 'CUL', 'C', 'ULCB', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CBEN', 'ULBE', True, True, 0),
+    (True, 'legal_name-BC1234567_Changed', 'CUL', 'CCC', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'C', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CBEN', 'ULCC', True, False, 2),
+    (True, 'legal_name-BC1234567_Changed', 'CCC', 'CUL', 'ULCC', True, False, 2)
 ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_type, should_pass, num_errors):
+@patch('legal_api.models.PartyRole.get_parties_by_role')
+def test_alteration(mock_get_parties, session, use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -188,6 +201,12 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
     f['filing']['header']['identifier'] = identifier
     f['filing']['business']['legalType'] = legal_type
     f['filing']['alteration']['business']['legalType'] = new_legal_type
+
+    # mock directors
+    if mock_directors:
+        mock_get_parties.return_value = create_mock_directors(3)
+    else:
+        mock_get_parties.return_value = []
 
     if use_nr:
         f['filing']['business']['identifier'] = identifier
@@ -230,6 +249,11 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
         assert HTTPStatus.BAD_REQUEST == err.code
         assert len(err.msg) == num_errors
 
+        # check for minimum directors error message
+        if (new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value,
+                               Business.LegalTypes.COOP.value] and not mock_directors):
+            assert 'Must have a minimum of three Directors' in [e['error'] for e in err.msg]
+
 
 @pytest.mark.parametrize('test_name, legal_type, new_legal_type, err_msg', [
     ('numbered_to_numbered', 'BC', 'BC', None),
@@ -271,7 +295,8 @@ def test_alteration(session, use_nr, new_name, legal_type, new_legal_type, nr_ty
     ('named_to_numbered', 'CUL', 'CUL', None),
 ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, err_msg):
+@patch('legal_api.models.PartyRole.get_parties_by_role')
+def test_validate_numbered_name(mock_get_parties, session, test_name, legal_type, new_legal_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
     identifier = 'BC1234567'
@@ -297,6 +322,8 @@ def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, 
             identifier)
     f['filing']['alteration']['nameRequest']['legalType'] = legal_type
 
+    mock_get_parties.return_value = create_mock_directors(3)
+
     err = validate(business, f)
     if err:
         print(err.msg)
@@ -316,7 +343,8 @@ def test_validate_numbered_name(session, test_name, legal_type, new_legal_type, 
     ('legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECV', 'Name Request legal type is not same as the business legal type.')
 ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-def test_validate_nr_type(session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+@patch('legal_api.models.PartyRole.get_parties_by_role')
+def test_validate_nr_type(mock_get_parties, session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
     identifier = 'BC1234567'
@@ -332,6 +360,8 @@ def test_validate_nr_type(session, new_name, legal_type, nr_legal_type, nr_type,
     f['filing']['alteration']['nameRequest']['nrNumber'] = identifier
     f['filing']['alteration']['nameRequest']['legalName'] = new_name
     f['filing']['alteration']['nameRequest']['legalType'] = legal_type
+
+    mock_get_parties.return_value = create_mock_directors(3)
 
     nr_json = {
         "state": "APPROVED",
@@ -592,7 +622,8 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     ]
 )
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-def test_alteration_share_class_series_validation(session, legal_type, new_legal_type, has_rights_or_restrictions,
+@patch('legal_api.models.PartyRole.get_parties_by_role')
+def test_alteration_share_class_series_validation(mock_get_parties, session, legal_type, new_legal_type, has_rights_or_restrictions,
                                                   has_series, should_pass):
     """Test corps-type share class/series validation in alteration."""
     identifier = 'BC1234567'
@@ -602,6 +633,9 @@ def test_alteration_share_class_series_validation(session, legal_type, new_legal
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['business']['legalType'] = legal_type
     filing['filing']['alteration']['business']['legalType'] = new_legal_type
+
+    mock_get_parties.return_value = create_mock_directors(3)
+
     del filing['filing']['alteration']['nameRequest']
 
     if 'shareStructure' in filing['filing']['alteration']:

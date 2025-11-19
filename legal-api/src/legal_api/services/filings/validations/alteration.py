@@ -18,7 +18,7 @@ from typing import Dict, Final
 from flask_babel import _ as babel  # noqa: N81
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from legal_api.models import Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_bool, get_str
@@ -182,6 +182,13 @@ def type_change_validation(filing, business: Business):
 
     if new_legal_type and new_legal_type not in valid_type_changes.get(business.legal_type, []):
         msg.append({'error': babel(errors.get(business.legal_type, '')), 'path': legal_type_path})
+
+    if new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value]:
+        db_party_roles = PartyRole.get_parties_by_role(business.id, 'director')
+        active_directors = [role for role in db_party_roles if role.cessation_date is None]
+        if len(active_directors) < 3:
+            msg.append({ 'error': 'Must have a minimum of three Directors',
+                         'path': legal_type_path })    
     return msg
 
 
