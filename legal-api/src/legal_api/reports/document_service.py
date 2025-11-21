@@ -26,9 +26,9 @@ class DocumentService:
 
     def __init__(self):
         """Initialize the document service."""
-        self.url = current_app.config.get('DOCUMENT_SVC_URL')
-        self.product_code = current_app.config.get('DOCUMENT_PRODUCT_CODE')
-        self.api_key = current_app.config.get('DOCUMENT_API_KEY')
+        self.url = current_app.config.get("DOCUMENT_SVC_URL")
+        self.product_code = current_app.config.get("DOCUMENT_PRODUCT_CODE")
+        self.api_key = current_app.config.get("DOCUMENT_API_KEY")
 
     def get_content(self, response):
         """Get the content of the response useful for test methods."""
@@ -97,26 +97,26 @@ class DocumentService:
         binary_or_url: The binary (pdf) or url of the document.
         """
         if self.has_document(business_identifier, filing_identifier, report_type):
-            raise BusinessException('Document already exists', HTTPStatus.CONFLICT)
+            raise BusinessException("Document already exists", HTTPStatus.CONFLICT)
 
         token = AccountService.get_bearer_token()
         headers = {
-            'Content-Type': 'application/json',
-            'X-ApiKey': self.api_key,
-            'Account-Id': account_id,
-            'Authorization': 'Bearer ' + token
+            "Content-Type": "application/json",
+            "X-ApiKey": self.api_key,
+            "Account-Id": account_id,
+            "Authorization": "Bearer " + token
         }
-        post_url = (f'{self.url}/application-reports/'
-                    f'{self.product_code}/{business_identifier}/'
-                    f'{filing_identifier}/{report_type}')
+        post_url = (f"{self.url}/application-reports/"
+                    f"{self.product_code}/{business_identifier}/"
+                    f"{filing_identifier}/{report_type}")
         response = requests.post(url=post_url, headers=headers, data=binary_or_url)
         content = self.get_content(response)
         if response.status_code != HTTPStatus.CREATED:
             return jsonify(message=str(content)), response.status_code
         self.create_document_record(
           Business.find_by_identifier(business_identifier).id,
-          filing_identifier, report_type, content['identifier'],
-          f'{business_identifier}_{filing_identifier}_{report_type}.pdf'
+          filing_identifier, report_type, content["identifier"],
+          f"{business_identifier}_{filing_identifier}_{report_type}.pdf"
         )
         return content, response.status_code
 
@@ -139,24 +139,24 @@ class DocumentService:
         """
         token = AccountService.get_bearer_token()
         headers = {
-            'X-ApiKey': self.api_key,
-            'Account-Id': account_id,
-            'Content-Type': 'application/pdf',
-            'Authorization': 'Bearer ' + token
+            "X-ApiKey": self.api_key,
+            "Account-Id": account_id,
+            "Content-Type": "application/pdf",
+            "Authorization": "Bearer " + token
         }
-        get_url = ''
+        get_url = ""
         if file_key is not None:
-            get_url = f'{self.url}/application-reports/{self.product_code}/{file_key}'
+            get_url = f"{self.url}/application-reports/{self.product_code}/{file_key}"
         else:
             document = self.has_document(business_identifier, filing_identifier, report_type)
             if document is False:
-                raise BusinessException('Document not found', HTTPStatus.NOT_FOUND)
-            get_url = f'{self.url}/application-reports/{self.product_code}/{document.file_key}'
+                raise BusinessException("Document not found", HTTPStatus.NOT_FOUND)
+            get_url = f"{self.url}/application-reports/{self.product_code}/{document.file_key}"
 
-        if get_url != '':
+        if get_url != "":
             response = requests.get(url=get_url, headers=headers)
             content = self.get_content(response)
             if response.status_code != HTTPStatus.OK:
                 return jsonify(message=str(content)), response.status_code
             return content, response.status_code
-        return jsonify(message='Document not found'), HTTPStatus.NOT_FOUND
+        return jsonify(message="Document not found"), HTTPStatus.NOT_FOUND

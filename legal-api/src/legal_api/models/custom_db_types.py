@@ -35,7 +35,7 @@ class PostgreSQLXML(UserDefinedType):
 
         This method returns the string 'XML' to indicate that the column should store XML data.
         """
-        return 'XML'
+        return "XML"
 
     def bind_processor(self, dialect):
         """

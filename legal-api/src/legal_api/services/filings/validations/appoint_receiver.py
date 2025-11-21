@@ -40,7 +40,7 @@ from legal_api.services.filings.validations.common_validations import validate_p
 
 def validate(filing_json: dict) -> Optional[Error]:
     """Validate the Appoint Receiver filing."""
-    filing_type = 'appointReceiver'
+    filing_type = "appointReceiver"
     msg = []
     msg.extend(validate_parties_addresses(filing_json, filing_type))
     return msg

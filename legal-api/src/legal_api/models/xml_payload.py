@@ -24,11 +24,11 @@ from .db import db
 class XmlPayload(db.Model):
     """This class manages the xml_payloads."""
 
-    __tablename__ = 'xml_payloads'
+    __tablename__ = "xml_payloads"
 
     id = db.Column(db.Integer, primary_key=True)
-    payload = db.Column('payload', PostgreSQLXML(), default='', nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
+    payload = db.Column("payload", PostgreSQLXML(), default="", nullable=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=datetime.utcnow)
 
     def save(self):
         """Save the object to the database immediately."""

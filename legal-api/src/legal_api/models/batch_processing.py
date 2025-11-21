@@ -42,25 +42,25 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
         COMPLETED = auto()
         ERROR = auto()
 
-    __tablename__ = 'batch_processing'
+    __tablename__ = "batch_processing"
 
     id = db.Column(db.Integer, primary_key=True)
-    business_identifier = db.Column('business_identifier', db.String(10), default='', nullable=False)
-    step = db.Column('step', db.Enum(BatchProcessingStep), nullable=False)
-    status = db.Column('status', db.Enum(BatchProcessingStatus), nullable=False)
-    notes = db.Column('notes', db.String(150), default='', nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    trigger_date = db.Column('trigger_date', db.DateTime(timezone=True), nullable=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
-    meta_data = db.Column('meta_data', JSONB, nullable=True)
+    business_identifier = db.Column("business_identifier", db.String(10), default="", nullable=False)
+    step = db.Column("step", db.Enum(BatchProcessingStep), nullable=False)
+    status = db.Column("status", db.Enum(BatchProcessingStatus), nullable=False)
+    notes = db.Column("notes", db.String(150), default="", nullable=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    trigger_date = db.Column("trigger_date", db.DateTime(timezone=True), nullable=True)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
+    meta_data = db.Column("meta_data", JSONB, nullable=True)
 
     # parent keys
-    batch_id = db.Column('batch_id', db.Integer, db.ForeignKey('batches.id'), index=True, nullable=False)
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True, nullable=False)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True, nullable=True)
+    batch_id = db.Column("batch_id", db.Integer, db.ForeignKey("batches.id"), index=True, nullable=False)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True, nullable=False)
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"), index=True, nullable=True)
 
     # relationships
-    business = db.relationship('Business', back_populates='batch_processing')
+    business = db.relationship("Business", back_populates="batch_processing")
 
     def save(self):
         """Save the object to the database immediately."""

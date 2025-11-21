@@ -17,5 +17,4 @@ Provides all furnishing entries externalized services.
 """
 from .furnishing_documents import get_furnishing_document
 
-
-__all__ = ('get_furnishing_document',)
+__all__ = ("get_furnishing_document",)

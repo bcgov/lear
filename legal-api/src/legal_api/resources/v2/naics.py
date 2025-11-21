@@ -21,24 +21,23 @@ from flask_cors import cross_origin
 from legal_api.models import NaicsStructure
 from legal_api.utils.auth import jwt
 
+bp = Blueprint("NAICS2", __name__, url_prefix="/api/v2/naics")
 
-bp = Blueprint('NAICS2', __name__, url_prefix='/api/v2/naics')
 
-
-@bp.route('', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_naics_results():
     """Return naics results matching search term."""
     results = []
     results_list = []
-    search_term = request.args.get('search_term', None)
+    search_term = request.args.get("search_term", None)
 
     if not search_term:
-        return jsonify({'message': 'search_term query parameter is required.'}), HTTPStatus.BAD_REQUEST
+        return jsonify({"message": "search_term query parameter is required."}), HTTPStatus.BAD_REQUEST
 
     if len(search_term) < 3:
-        return jsonify({'message': 'search_term cannot be less than 3 characters.'}), HTTPStatus.BAD_REQUEST
+        return jsonify({"message": "search_term cannot be less than 3 characters."}), HTTPStatus.BAD_REQUEST
 
     if is_naics_code_format(search_term):
         result = NaicsStructure.find_by_code(search_term)
@@ -53,8 +52,8 @@ def get_naics_results():
     return jsonify(results=results_list), HTTPStatus.OK
 
 
-@bp.route('/<string:naics_code_or_key>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@bp.route("/<string:naics_code_or_key>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_naics_code(naics_code_or_key: str):
     """Return naics code."""
@@ -63,11 +62,11 @@ def get_naics_code(naics_code_or_key: str):
     elif is_naics_key_format(naics_code_or_key):
         naics_structure = NaicsStructure.find_by_naics_key(naics_code_or_key)
     else:
-        return jsonify({'message': 'Invalid NAICS code(6 digits) or naics key(uuid v4) format.'}), \
+        return jsonify({"message": "Invalid NAICS code(6 digits) or naics key(uuid v4) format."}), \
                 HTTPStatus.BAD_REQUEST
 
     if not naics_structure:
-        return jsonify({'message': 'NAICS code not found.'}), HTTPStatus.NOT_FOUND
+        return jsonify({"message": "NAICS code not found."}), HTTPStatus.NOT_FOUND
 
     result = naics_structure.json
     return jsonify(result), HTTPStatus.OK
@@ -75,13 +74,13 @@ def get_naics_code(naics_code_or_key: str):
 
 def is_naics_code_format(value: str) -> bool:
     """Determine whether input value is a valid NAICS code format."""
-    pattern = '\\d{6}'
+    pattern = "\\d{6}"
     result = bool(re.fullmatch(pattern, value))
     return result
 
 
 def is_naics_key_format(value: str) -> bool:
     """Determine whether input value is a valid uuidv4 format."""
-    pattern = '[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}'
+    pattern = "[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}"
     result = bool(re.fullmatch(pattern, value, flags=re.IGNORECASE))
     return result

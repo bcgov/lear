@@ -16,7 +16,7 @@ from http import HTTPStatus
 from typing import Dict, Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
-# noqa: I004
+
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import validate_court_order
@@ -26,11 +26,11 @@ from legal_api.services.utils import get_str  # noqa: I003; needed as the linter
 def validate(business: Business, put_back_off: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not put_back_off:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
-    if not get_str(put_back_off, '/filing/putBackOff/details'):
-        msg.append({'error': babel('Put Back Off details are required.'), 'path': '/filing/putBackOff/details'})
+    if not get_str(put_back_off, "/filing/putBackOff/details"):
+        msg.append({"error": babel("Put Back Off details are required."), "path": "/filing/putBackOff/details"})
 
     msg.extend(_validate_court_order(put_back_off))
 
@@ -41,8 +41,8 @@ def validate(business: Business, put_back_off: Dict) -> Optional[Error]:
 
 def _validate_court_order(filing):
     """Validate court order."""
-    if court_order := filing.get('filing', {}).get('putBackOff', {}).get('courtOrder', None):
-        court_order_path: Final = '/filing/putBackOff/courtOrder'
+    if court_order := filing.get("filing", {}).get("putBackOff", {}).get("courtOrder", None):
+        court_order_path: Final = "/filing/putBackOff/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             return err

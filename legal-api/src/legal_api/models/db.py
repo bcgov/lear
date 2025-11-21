@@ -29,7 +29,6 @@ from sqlalchemy_continuum import make_versioned
 from sqlalchemy_continuum import version_class as _old_version_class
 from sqlalchemy_continuum.manager import VersioningManager
 
-
 # by convention in the Flask community these are lower case,
 # whereas pylint wants them upper case
 db = SQLAlchemy()  # pylint: disable=invalid-name
@@ -38,11 +37,11 @@ db = SQLAlchemy()  # pylint: disable=invalid-name
 class Transaction(db.Model):
     """This class manages the transaction."""
 
-    __tablename__ = 'transaction'
+    __tablename__ = "transaction"
 
     id = db.Column(
                 db.BigInteger,
-                db.Sequence('transaction_id_seq'),
+                db.Sequence("transaction_id_seq"),
                 primary_key=True,
                 autoincrement=True
             )
@@ -59,15 +58,15 @@ def print_versioning_info():
     try:
         from legal_api.services import flags as flag_service  # pylint: disable=import-outside-toplevel
 
-        current_service = current_app.config.get('SERVICE_NAME')
+        current_service = current_app.config.get("SERVICE_NAME")
         if current_service:
-            db_versioning = flag_service.value('db-versioning')
+            db_versioning = flag_service.value("db-versioning")
             use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
-            current_versioning = 'new' if use_new_versioning else 'old'
-            current_app.logger.info(f'\033[31mService: {current_service}, db versioning={current_versioning}\033[0m')
+            current_versioning = "new" if use_new_versioning else "old"
+            current_app.logger.info(f"\033[31mService: {current_service}, db versioning={current_versioning}\033[0m")
     except Exception as err:
         # Don't crash if something goes wrong
-        current_app.logger.error('Unable to read flags: %s' % repr(err), exc_info=True)
+        current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
 
 
 def init_db(app):
@@ -134,17 +133,17 @@ class VersioningProxy:
     _is_initialized = False
 
     _versioning_control = {
-        'old': {
-            'enable': _old_enable_versioning,
-            'disable': _old_disable_versioning,
-            'version_class': _old_version_class,
-            'get_transaction_id': _old_get_transaction_id
+        "old": {
+            "enable": _old_enable_versioning,
+            "disable": _old_disable_versioning,
+            "version_class": _old_version_class,
+            "get_transaction_id": _old_get_transaction_id
         },
-        'new': {
-            'enable': _new_enable_versioning,
-            'disable': _new_disable_versioning,
-            'version_class': _new_version_class,
-            'get_transaction_id': _new_get_transaction_id
+        "new": {
+            "enable": _new_enable_versioning,
+            "disable": _new_disable_versioning,
+            "version_class": _new_version_class,
+            "get_transaction_id": _new_get_transaction_id
         }
     }
 
@@ -155,10 +154,10 @@ class VersioningProxy:
         :return: None
         """
         from legal_api.services import flags  # pylint: disable=import-outside-toplevel
-        current_service = current_app.config['SERVICE_NAME']
-        db_versioning = flags.value('db-versioning')
+        current_service = current_app.config["SERVICE_NAME"]
+        db_versioning = flags.value("db-versioning")
         use_new_versioning = (bool(db_versioning) and bool(db_versioning.get(current_service)))
-        cls._current_versioning = 'new' if use_new_versioning else 'old'
+        cls._current_versioning = "new" if use_new_versioning else "old"
 
     @classmethod
     def _initialize_versioning(cls):
@@ -168,8 +167,8 @@ class VersioningProxy:
         """
         cls._is_initialized = True
         cls._check_versioning()
-        disabled = 'new' if cls._current_versioning == 'old' else 'old'
-        cls._versioning_control[disabled]['disable']()
+        disabled = "new" if cls._current_versioning == "old" else "old"
+        cls._versioning_control[disabled]["disable"]()
 
     @classmethod
     def _switch_versioning(cls, previous, current):
@@ -179,10 +178,10 @@ class VersioningProxy:
         :param current: The versioning system to switch to.
         :return: None
         """
-        cls._versioning_control[previous]['disable']()
-        cls._versioning_control[current]['enable']()
+        cls._versioning_control[previous]["disable"]()
+        cls._versioning_control[current]["enable"]()
         # Print when versioning changes
-        current_app.logger.info(f'\033[31mVersioning changed: {previous} -> {current}\033[0m')
+        current_app.logger.info(f"\033[31mVersioning changed: {previous} -> {current}\033[0m")
 
     @classmethod
     def lock_versioning(cls, session, transaction):
@@ -194,7 +193,7 @@ class VersioningProxy:
         :param transaction: The transaction associated with the session.
         :return: None
         """
-        if '_versioning_locked' not in session.info:
+        if "_versioning_locked" not in session.info:
             if not cls._is_initialized:
                 cls._initialize_versioning()
             else:
@@ -204,10 +203,10 @@ class VersioningProxy:
                 if cls._current_versioning != previous_versioning:
                     cls._switch_versioning(previous_versioning, cls._current_versioning)
 
-            session.info['_versioning_locked'] = cls._current_versioning
-            session.info['_transactions_locked'] = []
+            session.info["_versioning_locked"] = cls._current_versioning
+            session.info["_transactions_locked"] = []
 
-        session.info['_transactions_locked'].append(transaction)
+        session.info["_transactions_locked"].append(transaction)
 
     @classmethod
     def unlock_versioning(cls, session, transaction):
@@ -219,12 +218,12 @@ class VersioningProxy:
         :param transaction: The transaction associated with the session.
         :return: None
         """
-        if '_versioning_locked' in session.info and '_transactions_locked' in session.info:
-            session.info['_transactions_locked'].remove(transaction)
+        if "_versioning_locked" in session.info and "_transactions_locked" in session.info:
+            session.info["_transactions_locked"].remove(transaction)
 
-            if not session.info['_transactions_locked']:
-                session.info.pop('_versioning_locked', None)
-                session.info.pop('_transactions_locked', None)
+            if not session.info["_transactions_locked"]:
+                session.info.pop("_versioning_locked", None)
+                session.info.pop("_transactions_locked", None)
 
     @classmethod
     def get_transaction_id(cls, session):
@@ -234,9 +233,9 @@ class VersioningProxy:
         :return: The transaction ID.
         """
         transaction_id = None
-        current_versioning = session.info['_versioning_locked']
+        current_versioning = session.info["_versioning_locked"]
 
-        transaction_id = cls._versioning_control[current_versioning]['get_transaction_id'](session)
+        transaction_id = cls._versioning_control[current_versioning]["get_transaction_id"](session)
 
         return transaction_id
 
@@ -251,9 +250,9 @@ class VersioningProxy:
         if not session.in_transaction():  # trigger versioning setup listener
             session.begin()
 
-        current_versioning = session.info['_versioning_locked']
+        current_versioning = session.info["_versioning_locked"]
 
-        return cls._versioning_control[current_versioning]['version_class'](obj)
+        return cls._versioning_control[current_versioning]["version_class"](obj)
 
 
 def setup_versioning():
@@ -262,11 +261,11 @@ def setup_versioning():
     :return: None
     """
     # use SignallingSession to skip events for continuum's internal session/txn operations
-    @event.listens_for(SignallingSession, 'after_transaction_create')
+    @event.listens_for(SignallingSession, "after_transaction_create")
     def after_transaction_create(session, transaction):
         VersioningProxy.lock_versioning(session, transaction)
 
-    @event.listens_for(SignallingSession, 'after_transaction_end')
+    @event.listens_for(SignallingSession, "after_transaction_end")
     def clear_transaction(session, transaction):
         VersioningProxy.unlock_versioning(session, transaction)
 

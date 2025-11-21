@@ -19,7 +19,7 @@ from flask import current_app
 from legal_api.services.bootstrap import AccountService
 
 
-class ColinService():
+class ColinService:
     """Provides services to use the colin-api."""
 
     @staticmethod
@@ -29,8 +29,8 @@ class ColinService():
         url = f'{current_app.config["COLIN_URL"]}/businesses/{identifier}/public'
         token = AccountService.get_bearer_token()
         headers = {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token
         }
         response = requests.get(url, headers=headers)
 

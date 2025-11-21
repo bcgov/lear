@@ -40,16 +40,16 @@ class Batch(db.Model):  # pylint: disable=too-many-instance-attributes
         CANCELLED = auto()
         ERROR = auto()
 
-    __tablename__ = 'batches'
+    __tablename__ = "batches"
 
     id = db.Column(db.Integer, primary_key=True)
-    batch_type = db.Column('batch_type', db.Enum(BatchType), nullable=False)
-    status = db.Column('status', db.Enum(BatchStatus), nullable=False)
-    size = db.Column('size', db.Integer, nullable=True)
-    start_date = db.Column('start_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    end_date = db.Column('end_date', db.DateTime(timezone=True), nullable=True)
-    notes = db.Column('notes', db.String(150), default='', nullable=True)
-    max_size = db.Column('max_size', db.Integer, nullable=True)
+    batch_type = db.Column("batch_type", db.Enum(BatchType), nullable=False)
+    status = db.Column("status", db.Enum(BatchStatus), nullable=False)
+    size = db.Column("size", db.Integer, nullable=True)
+    start_date = db.Column("start_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    end_date = db.Column("end_date", db.DateTime(timezone=True), nullable=True)
+    notes = db.Column("notes", db.String(150), default="", nullable=True)
+    max_size = db.Column("max_size", db.Integer, nullable=True)
 
     def save(self):
         """Save the object to the database immediately."""

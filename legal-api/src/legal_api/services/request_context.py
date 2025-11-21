@@ -15,7 +15,7 @@
 from dataclasses import dataclass
 from typing import Optional
 
-from flask import current_app, g, has_request_context, request
+from flask import g, has_request_context, request
 
 from legal_api.models import User
 
@@ -32,10 +32,10 @@ def build_from_flask() -> RequestContext:
         return RequestContext()
 
     # Account header (configurable)
-    account_id = request.headers.get('Account-Id', None)
+    account_id = request.headers.get("Account-Id", None)
 
     # Token info and user
-    token_info = getattr(g, 'jwt_oidc_token_info', None)
+    token_info = getattr(g, "jwt_oidc_token_info", None)
     user = User.get_or_create_user_by_jwt(token_info) if token_info else None
 
     return RequestContext(
@@ -48,7 +48,7 @@ def get_request_context() -> RequestContext:
     """Get (or lazily create) the RequestContext for the current request."""
     if not has_request_context():
         return RequestContext()
-    rc = getattr(g, 'request_context', None)
+    rc = getattr(g, "request_context", None)
     if rc is None:
         rc = build_from_flask()
         g.request_context = rc

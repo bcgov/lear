@@ -33,19 +33,19 @@ class ConsentContinuationOut(db.Model):  # pylint: disable=too-few-public-method
         continuation_out = auto()
         amalgamation_out = auto()
 
-    __tablename__ = 'consent_continuation_outs'
+    __tablename__ = "consent_continuation_outs"
 
-    id = db.Column('id', db.Integer, unique=True, primary_key=True)
-    consent_type = db.Column('consent_type', db.Enum(ConsentTypes), nullable=False)
-    foreign_jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
-    foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
-    expiry_date = db.Column('expiry_date', db.DateTime(timezone=True))
+    id = db.Column("id", db.Integer, unique=True, primary_key=True)
+    consent_type = db.Column("consent_type", db.Enum(ConsentTypes), nullable=False)
+    foreign_jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
+    foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
+    expiry_date = db.Column("expiry_date", db.DateTime(timezone=True))
 
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"))
 
     # relationships
-    filing = db.relationship('Filing', backref=backref('filing', uselist=False), foreign_keys=[filing_id])
+    filing = db.relationship("Filing", backref=backref("filing", uselist=False), foreign_keys=[filing_id])
 
     def save(self):
         """Save the object to the database immediately."""

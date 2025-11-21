@@ -22,12 +22,12 @@ from typing import Dict, Union
 
 import requests
 from flask import current_app
-from flask_babel import _ as babel  # noqa: N813, I001, I003 casting _ to babel
-from sqlalchemy.orm.exc import FlushError  # noqa: I001
+from flask_babel import _ as babel
+from sqlalchemy.orm.exc import FlushError
 
-from legal_api.services.flags import Flags
-from legal_api.services import flags  # noqa: D204, I003, I001;# due to babel cast above
 from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
+from legal_api.services import flags  # noqa: D204, I003, I001;# due to babel cast above
+from legal_api.services.flags import Flags
 
 
 class RegistrationBootstrapService:
@@ -37,7 +37,7 @@ class RegistrationBootstrapService:
     def create_bootstrap(account: int) -> Union[Dict, RegistrationBootstrap]:
         """Return either a new bootstrap registration or an error struct."""
         if not account:
-            return {'error': babel('An account number must be provided.')}
+            return {"error": babel("An account number must be provided.")}
 
         bootstrap = RegistrationBootstrap(account=account)
 
@@ -52,7 +52,7 @@ class RegistrationBootstrapService:
             except Exception:
                 break
 
-        return {'error': babel('Unable to create bootstrap registration.')}
+        return {"error": babel("Unable to create bootstrap registration.")}
 
     @staticmethod
     def _generate_temp_identifier():
@@ -60,7 +60,7 @@ class RegistrationBootstrapService:
         allowed_encoded = string.ascii_letters + string.digits
         identifier = None
         while True:
-            identifier = 'T' + ''.join(secrets.choice(allowed_encoded) for _ in range(9))
+            identifier = "T" + "".join(secrets.choice(allowed_encoded) for _ in range(9))
             if any(c.isdigit() for c in identifier):  # identifier requires at least 1 digit (as per auth-api)
                 break
         return identifier
@@ -76,16 +76,16 @@ class RegistrationBootstrapService:
     def register_bootstrap(bootstrap: RegistrationBootstrap,
                            business_name: str,
                            nr_number: str = None,
-                           corp_type_code: str = 'TMP',
+                           corp_type_code: str = "TMP",
                            corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
         """Return either a new bootstrap registration or an error struct."""
         if not bootstrap:
-            return {'error': babel('An account number must be provided.')}
+            return {"error": babel("An account number must be provided.")}
 
         details = {
-            'bootstrapIdentifier': bootstrap.identifier,
-            'identifier': None,
-            'nrNumber': nr_number
+            "bootstrapIdentifier": bootstrap.identifier,
+            "identifier": None,
+            "nrNumber": nr_number
         }
 
         rv = AccountService.create_affiliation(account=bootstrap.account,
@@ -102,7 +102,7 @@ class RegistrationBootstrapService:
         with contextlib.suppress(Exception):
             AccountService.delete_affiliation(account=bootstrap.account,
                                               business_registration=bootstrap.identifier)
-        return {'error': babel('Unable to create bootstrap registration.')}
+        return {"error": babel("Unable to create bootstrap registration.")}
 
     @staticmethod
     def deregister_bootstrap(bootstrap: RegistrationBootstrap) -> HTTPStatus:
@@ -118,32 +118,32 @@ class AccountService:
     @TODO Cache and refresh / retry token as needed to reduce calls.
     """
 
-    BEARER: str = 'Bearer '
-    CONTENT_TYPE_JSON = {'Content-Type': 'application/json'}
+    BEARER: str = "Bearer "
+    CONTENT_TYPE_JSON = {"Content-Type": "application/json"}
 
     try:
-        timeout = int(current_app.config.get('ACCOUNT_SVC_TIMEOUT', 20))
+        timeout = int(current_app.config.get("ACCOUNT_SVC_TIMEOUT", 20))
     except Exception:
         timeout = 20
 
     @classmethod
     def get_bearer_token(cls):
         """Get a valid Bearer token for the service to use."""
-        token_url = current_app.config.get('ACCOUNT_SVC_AUTH_URL')
-        client_id = current_app.config.get('ACCOUNT_SVC_CLIENT_ID')
-        client_secret = current_app.config.get('ACCOUNT_SVC_CLIENT_SECRET')
+        token_url = current_app.config.get("ACCOUNT_SVC_AUTH_URL")
+        client_id = current_app.config.get("ACCOUNT_SVC_CLIENT_ID")
+        client_secret = current_app.config.get("ACCOUNT_SVC_CLIENT_SECRET")
 
-        data = 'grant_type=client_credentials'
+        data = "grant_type=client_credentials"
 
         # get service account token
         res = requests.post(url=token_url,
                             data=data,
-                            headers={'content-type': 'application/x-www-form-urlencoded'},
+                            headers={"content-type": "application/x-www-form-urlencoded"},
                             auth=(client_id, client_secret),
                             timeout=cls.timeout)
 
         try:
-            return res.json().get('access_token')
+            return res.json().get("access_token")
         except Exception:
             return None
 
@@ -152,53 +152,53 @@ class AccountService:
     def create_affiliation(cls, account: int,
                            business_registration: str,
                            business_name: str = None,
-                           corp_type_code: str = 'TMP',
+                           corp_type_code: str = "TMP",
                            corp_sub_type_code: str = None,
-                           pass_code: str = '',
+                           pass_code: str = "",
                            details: dict = None,
                            flags: any = None):
         """Affiliate a business to an account."""
-        current_app.logger.info(f'Creating affiliation of {business_registration} for {account}')
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_svc_entity_url = f'{auth_url}/entities'
-        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
+        current_app.logger.info(f"Creating affiliation of {business_registration} for {account}")
+        auth_url = current_app.config.get("AUTH_SVC_URL")
+        account_svc_entity_url = f"{auth_url}/entities"
+        account_svc_affiliate_url = f"{auth_url}/orgs/{account}/affiliations"
 
         token = cls.get_bearer_token()
 
         if not token:
-            current_app.logger.info('Missing token for affiliation call')
+            current_app.logger.info("Missing token for affiliation call")
             return HTTPStatus.UNAUTHORIZED
 
         # Create an entity record
         entity_data = {
-            'businessIdentifier': business_registration,
-            'corpTypeCode': corp_type_code,
-            'name': business_name or business_registration
+            "businessIdentifier": business_registration,
+            "corpTypeCode": corp_type_code,
+            "name": business_name or business_registration
         }
         if corp_sub_type_code:
-            entity_data['corpSubTypeCode'] = corp_sub_type_code
+            entity_data["corpSubTypeCode"] = corp_sub_type_code
 
         entity_record = requests.post(
             url=account_svc_entity_url,
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             data=json.dumps(entity_data),
             timeout=cls.timeout
         )
 
         # Create an account:business affiliation
         # headers with conditional sandbox override
-        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
-        if flags and isinstance(flags, Flags) and flags.is_on('enable-sandbox'):
-            current_app.logger.info('Appending Environment-Override = sandbox header to create affiliation call')
-            headers['Environment-Override'] = 'sandbox'
+        headers = {**cls.CONTENT_TYPE_JSON, "Authorization": cls.BEARER + token}
+        if flags and isinstance(flags, Flags) and flags.is_on("enable-sandbox"):
+            current_app.logger.info("Appending Environment-Override = sandbox header to create affiliation call")
+            headers["Environment-Override"] = "sandbox"
 
         affiliate_data = {
-            'businessIdentifier': business_registration,
-            'passCode': pass_code
+            "businessIdentifier": business_registration,
+            "passCode": pass_code
         }
         if details:
-            affiliate_data['entityDetails'] = details
+            affiliate_data["entityDetails"] = details
         affiliate = requests.post(
             url=account_svc_affiliate_url,
             headers=headers,
@@ -218,8 +218,8 @@ class AccountService:
                       corp_type_code: str,
                       state: str = None):
         """Update an entity."""
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_svc_entity_url = f'{auth_url}/entities'
+        auth_url = current_app.config.get("AUTH_SVC_URL")
+        account_svc_entity_url = f"{auth_url}/entities"
 
         token = cls.get_bearer_token()
 
@@ -228,17 +228,17 @@ class AccountService:
 
         # Create an entity record
         entity_data = {
-            'businessIdentifier': business_registration,
-            'corpTypeCode': corp_type_code,
-            'name': business_name
+            "businessIdentifier": business_registration,
+            "corpTypeCode": corp_type_code,
+            "name": business_name
         }
         if state:
-            entity_data['state'] = state
+            entity_data["state"] = state
 
         entity_record = requests.patch(
-            url=account_svc_entity_url + '/' + business_registration,
+            url=account_svc_entity_url + "/" + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             data=json.dumps(entity_data),
             timeout=cls.timeout
         )
@@ -253,25 +253,25 @@ class AccountService:
 
         @TODO Update this when account affiliation is changed next sprint.
         """
-        current_app.logger.info(f'Deleting affiliation of {business_registration} for {account}')
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_svc_entity_url = f'{auth_url}/entities'
-        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
+        current_app.logger.info(f"Deleting affiliation of {business_registration} for {account}")
+        auth_url = current_app.config.get("AUTH_SVC_URL")
+        account_svc_entity_url = f"{auth_url}/entities"
+        account_svc_affiliate_url = f"{auth_url}/orgs/{account}/affiliations"
 
         token = cls.get_bearer_token()
 
         # Delete an account:business affiliation
         affiliate = requests.delete(
-            url=account_svc_affiliate_url + '/' + business_registration,
+            url=account_svc_affiliate_url + "/" + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             timeout=cls.timeout
         )
         # Delete an entity record
         entity_record = requests.delete(
-            url=account_svc_entity_url + '/' + business_registration,
+            url=account_svc_entity_url + "/" + business_registration,
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             timeout=cls.timeout
         )
 
@@ -284,41 +284,41 @@ class AccountService:
     def get_account_by_affiliated_identifier(cls, identifier: str):
         """Return the account affiliated to the business."""
         token = cls.get_bearer_token()
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        url = f'{auth_url}/orgs?affiliation={identifier}'
+        auth_url = current_app.config.get("AUTH_SVC_URL")
+        url = f"{auth_url}/orgs?affiliation={identifier}"
 
         # headers with conditional sandbox override
-        headers = {**cls.CONTENT_TYPE_JSON, 'Authorization': cls.BEARER + token}
-        if flags and isinstance(flags, Flags) and flags.is_on('enable-sandbox'):
-            current_app.logger.info('Appending Environment-Override = sandbox header to get account affiliation info')
-            headers['Environment-Override'] = 'sandbox'
+        headers = {**cls.CONTENT_TYPE_JSON, "Authorization": cls.BEARER + token}
+        if flags and isinstance(flags, Flags) and flags.is_on("enable-sandbox"):
+            current_app.logger.info("Appending Environment-Override = sandbox header to get account affiliation info")
+            headers["Environment-Override"] = "sandbox"
         res = requests.get(url=url, headers=headers)
         try:
             return res.json()
-        except Exception:  # noqa B902; pylint: disable=W0703;
-            current_app.logger.error('Failed to get response')
+        except Exception:
+            current_app.logger.error("Failed to get response")
             return None
 
     @classmethod
     def get_affiliations(cls, account: int):
         """Affiliate a business to an account."""
-        auth_url = current_app.config.get('AUTH_SVC_URL')
-        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
+        auth_url = current_app.config.get("AUTH_SVC_URL")
+        account_svc_affiliate_url = f"{auth_url}/orgs/{account}/affiliations"
 
         token = cls.get_bearer_token()
 
         if not token:
-            current_app.logger.error('Not Authorized')
+            current_app.logger.error("Not Authorized")
             return None
 
         affiliates = requests.get(
             url=account_svc_affiliate_url,
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             timeout=cls.timeout
         )
 
         if affiliates.status_code == HTTPStatus.OK:
-            return affiliates.json().get('entities')
+            return affiliates.json().get("entities")
 
         return None

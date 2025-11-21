@@ -30,51 +30,51 @@ from legal_api.services.filings.validations.dissolution import DissolutionTypes
 class ListFilingsPermissionsAllowed(str, Enum):
     """Define an enum for filing permissions checks."""
 
-    ADDRESS_CHANGE_FILING = 'ADDRESS_CHANGE_FILING'
-    AGM_CHG_LOCATION_FILING = 'AGM_CHG_LOCATION_FILING'
-    AGM_EXTENSION_FILING = 'AGM_EXTENSION_FILING'
-    ALTERATION_FILING = 'ALTERATION_FILING'
-    AMALGAMATION_FILING = 'AMALGAMATION_FILING'
-    ANNUAL_REPORT_FILING = 'ANNUAL_REPORT_FILING'
-    CONSENT_AMALGAMATION_OUT_FILING = 'CONSENT_AMALGAMATION_OUT_FILING'
-    CONSENT_CONTINUATION_OUT_FILING = 'CONSENT_CONTINUATION_OUT_FILING'
-    CONTINUATION_IN_FILING = 'CONTINUATION_IN_FILING'
-    CORRECTION_FILING = 'CORRECTION_FILING'
-    COURT_ORDER_FILING = 'COURT_ORDER_FILING'
-    DISSOLUTION_ADMIN_FILING = 'ADMIN_DISSOLUTION_FILING'
-    DISSOLUTION_DELAY_FILING = 'DELAY_DISSOLUTION_FILING'
-    DISSOLUTION_FIRM_FILING = 'FIRM_DISSOLUTION_FILING'
-    DISSOLUTION_INVOLUNTARY_FILING = 'DISSOLUTION_INVOLUNTARY_FILING'
-    DISSOLUTION_VOLUNTARY_FILING = 'VOLUNTARY_DISSOLUTION_FILING'
-    DIRECTOR_CHANGE_FILING = 'DIRECTOR_CHANGE_FILING'
-    FIRM_CHANGE_FILING = 'FIRM_CHANGE_FILING'
-    FIRM_CONVERSION_FILING = 'FIRM_CONVERSION_FILING'
-    INCORPORATION_APPLICATION_FILING = 'INCORPORATION_APPLICATION_FILING'
-    NOTICE_WITHDRAWAL_FILING = 'NOTICE_WITHDRAWAL_FILING'
-    OFFICER_CHANGE_FILING = 'OFFICER_CHANGE_FILING'
-    REGISTRATION_FILING = 'REGISTRATION_FILING'
-    RESTORATION_REINSTATEMENT_FILING = 'RESTORATION_REINSTATEMENT_FILING'
-    SPECIAL_RESOLUTION_FILING = 'SPECIAL_RESOLUTION_FILING'
-    STAFF_FILINGS = 'STAFF_FILINGS'
-    TRANSITION_FILING = 'TRANSITION_FILING'
+    ADDRESS_CHANGE_FILING = "ADDRESS_CHANGE_FILING"
+    AGM_CHG_LOCATION_FILING = "AGM_CHG_LOCATION_FILING"
+    AGM_EXTENSION_FILING = "AGM_EXTENSION_FILING"
+    ALTERATION_FILING = "ALTERATION_FILING"
+    AMALGAMATION_FILING = "AMALGAMATION_FILING"
+    ANNUAL_REPORT_FILING = "ANNUAL_REPORT_FILING"
+    CONSENT_AMALGAMATION_OUT_FILING = "CONSENT_AMALGAMATION_OUT_FILING"
+    CONSENT_CONTINUATION_OUT_FILING = "CONSENT_CONTINUATION_OUT_FILING"
+    CONTINUATION_IN_FILING = "CONTINUATION_IN_FILING"
+    CORRECTION_FILING = "CORRECTION_FILING"
+    COURT_ORDER_FILING = "COURT_ORDER_FILING"
+    DISSOLUTION_ADMIN_FILING = "ADMIN_DISSOLUTION_FILING"
+    DISSOLUTION_DELAY_FILING = "DELAY_DISSOLUTION_FILING"
+    DISSOLUTION_FIRM_FILING = "FIRM_DISSOLUTION_FILING"
+    DISSOLUTION_INVOLUNTARY_FILING = "DISSOLUTION_INVOLUNTARY_FILING"
+    DISSOLUTION_VOLUNTARY_FILING = "VOLUNTARY_DISSOLUTION_FILING"
+    DIRECTOR_CHANGE_FILING = "DIRECTOR_CHANGE_FILING"
+    FIRM_CHANGE_FILING = "FIRM_CHANGE_FILING"
+    FIRM_CONVERSION_FILING = "FIRM_CONVERSION_FILING"
+    INCORPORATION_APPLICATION_FILING = "INCORPORATION_APPLICATION_FILING"
+    NOTICE_WITHDRAWAL_FILING = "NOTICE_WITHDRAWAL_FILING"
+    OFFICER_CHANGE_FILING = "OFFICER_CHANGE_FILING"
+    REGISTRATION_FILING = "REGISTRATION_FILING"
+    RESTORATION_REINSTATEMENT_FILING = "RESTORATION_REINSTATEMENT_FILING"
+    SPECIAL_RESOLUTION_FILING = "SPECIAL_RESOLUTION_FILING"
+    STAFF_FILINGS = "STAFF_FILINGS"
+    TRANSITION_FILING = "TRANSITION_FILING"
     
 class ListActionsPermissionsAllowed(str, Enum):
     """Define an enum for action permissions checks."""
 
-    ADD_ENTITY_NO_AUTHENTICATION = 'ADD_ENTITY_NO_AUTHENTICATION'
-    AML_OVERRIDES = 'AML_OVERRIDES'
-    COURT_ORDER_POA = 'COURT_ORDER_POA'
-    DETAIL_COMMENTS = 'DETAIL_COMMENTS'
-    EDITABLE_CERTIFY_NAME = 'EDITABLE_CERTIFY_NAME'
-    EDITABLE_COMPLETING_PARTY = 'EDITABLE_COMPLETING_PARTY'
-    FIRM_ADD_BUSINESS = 'FIRM_ADD_BUSINESS'
-    FIRM_EDITABLE_DBA = 'FIRM_EDITABLE_DBA'
-    FIRM_EDITABLE_EMAIL_ADDRESS = 'FIRM_EDITABLE_EMAIL_ADDRESS'
-    FIRM_NO_MIN_START_DATE = 'FIRM_NO_MIN_START_DATE'
-    FIRM_REPLACE_PERSON = 'FIRM_REPLACE_PERSON'
-    OVERRIDE_NIGS='OVERRIDE_NIGS'
-    STAFF_COMMENTS = 'STAFF_COMMENTS'
-    STAFF_PAYMENT='STAFF_PAYMENT'
+    ADD_ENTITY_NO_AUTHENTICATION = "ADD_ENTITY_NO_AUTHENTICATION"
+    AML_OVERRIDES = "AML_OVERRIDES"
+    COURT_ORDER_POA = "COURT_ORDER_POA"
+    DETAIL_COMMENTS = "DETAIL_COMMENTS"
+    EDITABLE_CERTIFY_NAME = "EDITABLE_CERTIFY_NAME"
+    EDITABLE_COMPLETING_PARTY = "EDITABLE_COMPLETING_PARTY"
+    FIRM_ADD_BUSINESS = "FIRM_ADD_BUSINESS"
+    FIRM_EDITABLE_DBA = "FIRM_EDITABLE_DBA"
+    FIRM_EDITABLE_EMAIL_ADDRESS = "FIRM_EDITABLE_EMAIL_ADDRESS"
+    FIRM_NO_MIN_START_DATE = "FIRM_NO_MIN_START_DATE"
+    FIRM_REPLACE_PERSON = "FIRM_REPLACE_PERSON"
+    OVERRIDE_NIGS="OVERRIDE_NIGS"
+    STAFF_COMMENTS = "STAFF_COMMENTS"
+    STAFF_PAYMENT="STAFF_PAYMENT"
 
 class PermissionService:
     """Service to manage permissions for user roles."""
@@ -86,7 +86,7 @@ class PermissionService:
         if not authorized_role:
             return []
 
-        cache_key = f'authorized_permissions_{authorized_role}'
+        cache_key = f"authorized_permissions_{authorized_role}"
         cached_permissions = cache.get(cache_key)
 
         if cached_permissions:
@@ -109,9 +109,9 @@ class PermissionService:
         ]
 
         if token_info is None:
-            token_info = getattr(g, 'jwt_oidc_token_info', {}) or {}
+            token_info = getattr(g, "jwt_oidc_token_info", {}) or {}
 
-        roles_in_token = token_info.get('realm_access', {}).get('roles', [])
+        roles_in_token = token_info.get("realm_access", {}).get("roles", [])
         for role in role_priority:
             if role in roles_in_token:
                 return role
@@ -121,14 +121,14 @@ class PermissionService:
     def get_filing_permission_mapping(legal_type: str, filing_sub_type: str) -> dict:
         """Return dictionary containing rules for filings are allowed for different roles."""
         def get_dissolution_mapping():
-            permission_granted = ''
+            permission_granted = ""
             dissolution_mapping = {
                 DissolutionTypes.VOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
                 DissolutionTypes.INVOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value,
                 DissolutionTypes.ADMINISTRATIVE: ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value,
             }
             permission_granted = dissolution_mapping.get(filing_sub_type)
-            if legal_type in ['FM', 'SP', 'GP', 'LLP']:
+            if legal_type in ["FM", "SP", "GP", "LLP"]:
                 permission_granted = ListFilingsPermissionsAllowed.DISSOLUTION_FIRM_FILING.value
             return permission_granted
 
@@ -183,7 +183,7 @@ class PermissionService:
     def find_roles_for_filing_type(filing_type_value: str, legal_type: str, filing_sub_type) -> str:
         """Find roles that are allowed to perform the given filing type."""
         allowable_permissions = PermissionService.get_filing_permission_mapping(legal_type, filing_sub_type)
-        roles_with_filing = allowable_permissions.get(filing_type_value, '')
+        roles_with_filing = allowable_permissions.get(filing_type_value, "")
         return roles_with_filing
 
     @staticmethod
@@ -191,13 +191,13 @@ class PermissionService:
         """Check if the user has permissions for the action per permissions table."""
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         if not authorized_permissions or not isinstance(authorized_permissions, list):
-            current_app.logger.error('No authorized permissions found for user.')
+            current_app.logger.error("No authorized permissions found for user.")
             return False
         roles_in_filings = PermissionService.find_roles_for_filing_type(filing_type, legal_type, filing_sub_type)
         if roles_in_filings in authorized_permissions:
             return True
         else:
-            current_app.logger.warning(f'User does not have permission for filing type: {filing_type}')
+            current_app.logger.warning(f"User does not have permission for filing type: {filing_type}")
         return False
 
     @staticmethod
@@ -208,7 +208,7 @@ class PermissionService:
             return Error(
                 HTTPStatus.FORBIDDEN,
                 [{
-                    'message': message or f'Permission Denied - You do not have permissions to perform {required_permission} in filing.'
+                    "message": message or f"Permission Denied - You do not have permissions to perform {required_permission} in filing."
                 }]
             )
         return None
@@ -217,14 +217,14 @@ class PermissionService:
     def check_filing_enabled(filing_type: str, identifier: str) -> Error:
         """Check if a filing type is enabled via FF."""
         filings_feature_flag = {
-            'changeOfOfficers': 'supported-change-of-officers-entities'
+            "changeOfOfficers": "supported-change-of-officers-entities"
         }
         flag_name = filings_feature_flag.get(filing_type)
         if flag_name and not flags.is_on(flag_name):
             return Error(
                 HTTPStatus.BAD_REQUEST,
                 [{
-                    'message': f'Permission Denied - {filing_type} filing is currently not available for: {identifier}.'
+                    "message": f"Permission Denied - {filing_type} filing is currently not available for: {identifier}."
                 }]
             )
         return None

@@ -20,25 +20,25 @@ from .db import db
 class CorpType(db.Model):  # pylint: disable=too-many-instance-attributes
     """This class manages the corp type."""
 
-    __tablename__ = 'corp_types'
+    __tablename__ = "corp_types"
 
-    corp_type_cd = db.Column('corp_type_cd', db.String(5), primary_key=True)
-    colin_ind = db.Column('colin_ind', db.String(1), nullable=False)
-    corp_class = db.Column('corp_class', db.String(10), nullable=False)
-    short_desc = db.Column('short_desc', db.String(25), nullable=False)
-    full_desc = db.Column('full_desc', db.String(100), nullable=False)
-    legislation = db.Column('legislation', db.String(100))
+    corp_type_cd = db.Column("corp_type_cd", db.String(5), primary_key=True)
+    colin_ind = db.Column("colin_ind", db.String(1), nullable=False)
+    corp_class = db.Column("corp_class", db.String(10), nullable=False)
+    short_desc = db.Column("short_desc", db.String(25), nullable=False)
+    full_desc = db.Column("full_desc", db.String(100), nullable=False)
+    legislation = db.Column("legislation", db.String(100))
 
     @property
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         corp_type = {
-            'corp_type_cd': self.corp_type_cd,
-            'colin_ind': self.colin_ind,
-            'corp_class': self.corp_class,
-            'short_desc': self.short_desc,
-            'full_desc': self.full_desc,
-            'legislation': self.legislation
+            "corp_type_cd": self.corp_type_cd,
+            "colin_ind": self.colin_ind,
+            "corp_class": self.corp_class,
+            "short_desc": self.short_desc,
+            "full_desc": self.full_desc,
+            "legislation": self.legislation
         }
         return corp_type
 

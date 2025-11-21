@@ -24,7 +24,8 @@ from flask_cors import cross_origin
 
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Document, Filing as FilingModel  # noqa: I001
+from legal_api.models import Business, Document
+from legal_api.models import Filing as FilingModel
 from legal_api.reports import get_pdf
 from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
@@ -32,40 +33,41 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
 
 from ..bp import bp
+
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-DOCUMENTS_BASE_ROUTE: Final = '/<string:identifier>/filings/<int:filing_id>/documents'
+DOCUMENTS_BASE_ROUTE: Final = "/<string:identifier>/filings/<int:filing_id>/documents"
 
 
-@cors_preflight('GET, POST')
-@bp.route(DOCUMENTS_BASE_ROUTE, methods=['GET', 'OPTIONS'])
-@bp.route(DOCUMENTS_BASE_ROUTE + '/<string:legal_filing_name>', methods=['GET', 'OPTIONS'])
-@bp.route(DOCUMENTS_BASE_ROUTE + '/static/<string:file_key>', methods=['GET', 'OPTIONS'])
-@cross_origin(origin='*')
+@cors_preflight("GET, POST")
+@bp.route(DOCUMENTS_BASE_ROUTE, methods=["GET", "OPTIONS"])
+@bp.route(DOCUMENTS_BASE_ROUTE + "/<string:legal_filing_name>", methods=["GET", "OPTIONS"])
+@bp.route(DOCUMENTS_BASE_ROUTE + "/static/<string:file_key>", methods=["GET", "OPTIONS"])
+@cross_origin(origin="*")
 @jwt.requires_auth
 def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None, file_key: str = None):
     # pylint: disable=too-many-branches
     """Return a JSON object with meta information about the Service."""
     # basic checks
-    if not authorized(identifier, jwt, ['view', ]):
+    if not authorized(identifier, jwt, ["view", ]):
         return jsonify(
-            message=get_error_message(ErrorCode.NOT_AUTHORIZED, **{'identifier': identifier})
+            message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
         ), HTTPStatus.UNAUTHORIZED
 
-    if identifier.startswith('T'):
+    if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
     else:
         business = Business.find_by_identifier(identifier)
 
-    if not business and not identifier.startswith('T'):
+    if not business and not identifier.startswith("T"):
         return jsonify(
-            message=get_error_message(ErrorCode.MISSING_BUSINESS, **{'identifier': identifier})
+            message=get_error_message(ErrorCode.MISSING_BUSINESS, identifier=identifier)
         ), HTTPStatus.NOT_FOUND
 
     filing = Filing.get(identifier, filing_id)
-    if filing and identifier.startswith('T') and filing.id != filing_id:
+    if filing and identifier.startswith("T") and filing.id != filing_id:
         withdrawn_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
                                                              withdrawn_filing_id=filing.id,
                                                              filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
@@ -75,25 +77,25 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
     if not filing:
         return jsonify(
             message=get_error_message(ErrorCode.FILING_NOT_FOUND,
-                                      **{'filing_id': filing_id, 'identifier': identifier})
+                                      filing_id=filing_id, identifier=identifier)
         ), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name and not file_key:
-        if identifier.startswith('T') and filing.status == Filing.Status.COMPLETED and \
+        if identifier.startswith("T") and filing.status == Filing.Status.COMPLETED and \
                 filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
-            return {'documents': {}}, HTTPStatus.OK
+            return {"documents": {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
 
-    if 'application/pdf' in request.accept_mimetypes:
+    if "application/pdf" in request.accept_mimetypes:
         file_name = (legal_filing_name or file_key)
         if not _is_document_available(business, filing, file_name):
             return jsonify(
                 message=get_error_message(ErrorCode.DOCUMENT_NOT_FOUND,
-                                          **{'file_name': file_name, 'filing_id': filing_id, 'identifier': identifier})
+                                          file_name=file_name, filing_id=filing_id, identifier=identifier)
             ), HTTPStatus.NOT_FOUND
 
         if legal_filing_name:
-            if legal_filing_name.lower().startswith('receipt'):
+            if legal_filing_name.lower().startswith("receipt"):
                 return _get_receipt(business, filing, jwt.get_token_auth_header())
 
             return get_pdf(filing.storage, legal_filing_name)
@@ -103,7 +105,7 @@ def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None
                 return current_app.response_class(
                     response=response.data,
                     status=response.status,
-                    mimetype='application/pdf'
+                    mimetype="application/pdf"
                 )
 
     return {}, HTTPStatus.NOT_FOUND
@@ -113,13 +115,13 @@ def _is_document_available(business, filing, file_name):
     """Check if the document is available."""
     document_list = Filing.get_document_list(business, filing, jwt)
     documents = {}
-    if legal_filings := document_list.get('documents').pop('legalFilings', None):
+    if legal_filings := document_list.get("documents").pop("legalFilings", None):
         for doc in legal_filings:
             documents = {**documents, **doc}
-    if static_documents := document_list.get('documents').pop('staticDocuments', None):
+    if static_documents := document_list.get("documents").pop("staticDocuments", None):
         for file in static_documents:  # file_key is the last part of the url
-            documents = {**documents, **{file['url'].split('/')[-1]: file['url']}}
-    if docs := document_list.get('documents'):
+            documents = {**documents, file["url"].split("/")[-1]: file["url"]}
+    if docs := document_list.get("documents"):
         documents = {**documents, **docs}
 
     return file_name in documents
@@ -147,11 +149,11 @@ def _get_receipt(business: Business, filing: Filing, token):
     filing_date = filing.storage.payment_completion_date or filing.storage.filing_date
     if (
         filing.storage.effective_date.date() != filing_date.date() or
-        filing.filing_type == 'noticeOfWithdrawal'
+        filing.filing_type == "noticeOfWithdrawal"
     ):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
 
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {"Authorization": "Bearer " + token}
 
     corp_name = _get_corp_name(business, filing.storage)
 
@@ -159,17 +161,17 @@ def _get_receipt(business: Business, filing: Filing, token):
     receipt = requests.post(
         url,
         json={
-            'corpName': corp_name,
-            'filingDateTime': LegislationDatetime.format_as_report_string(filing_date),
-            'effectiveDateTime': effective_date if effective_date else '',
-            'filingIdentifier': str(filing.id),
-            'businessNumber': business.tax_id if business and business.tax_id else ''
+            "corpName": corp_name,
+            "filingDateTime": LegislationDatetime.format_as_report_string(filing_date),
+            "effectiveDateTime": effective_date if effective_date else "",
+            "filingIdentifier": str(filing.id),
+            "businessNumber": business.tax_id if business and business.tax_id else ""
         },
         headers=headers
     )
 
     if receipt.status_code != HTTPStatus.CREATED:
-        current_app.logger.error('Failed to get receipt pdf for filing: %s', filing.id)
+        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
 
     return receipt.content, receipt.status_code
 
@@ -179,15 +181,15 @@ def _get_corp_name(business, filing):
     if business:
         return business.legal_name
 
-    filing_json = filing.filing_json.get('filing', {})
-    name_request = filing_json.get(filing.filing_type, {}).get('nameRequest', {})
+    filing_json = filing.filing_json.get("filing", {})
+    name_request = filing_json.get(filing.filing_type, {}).get("nameRequest", {})
 
-    legal_name = name_request.get('legalName') or filing_json.get('business', {}).get('legalName')
+    legal_name = name_request.get("legalName") or filing_json.get("business", {}).get("legalName")
     if legal_name:
         return legal_name
 
-    legal_type = name_request.get('legalType') or filing_json.get('business', {}).get('legal_type')
+    legal_type = name_request.get("legalType") or filing_json.get("business", {}).get("legal_type")
     if legal_type:
-        return Business.BUSINESSES.get(legal_type, {}).get('numberedDescription', '')
+        return Business.BUSINESSES.get(legal_type, {}).get("numberedDescription", "")
 
-    return ''
+    return ""

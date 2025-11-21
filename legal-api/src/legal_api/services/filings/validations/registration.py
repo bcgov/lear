@@ -18,7 +18,7 @@ from typing import Dict, Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
-from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
+from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
@@ -37,17 +37,17 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 def validate(registration_json: Dict) -> Optional[Error]:
     """Validate the Registration filing."""
     if not registration_json:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
-    legal_type_path = '/filing/registration/nameRequest/legalType'
+    legal_type_path = "/filing/registration/nameRequest/legalType"
     legal_type = get_str(registration_json, legal_type_path)
     if legal_type not in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return Error(
             HTTPStatus.BAD_REQUEST,
-            [{'error': babel('A valid legalType for registration is required.'), 'path': legal_type_path}]
+            [{"error": babel("A valid legalType for registration is required."), "path": legal_type_path}]
         )
 
-    filing_type = 'registration'
+    filing_type = "registration"
     msg = []
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
@@ -68,9 +68,9 @@ def validate(registration_json: Dict) -> Optional[Error]:
 def validate_business_type(filing: Dict, legal_type: str) -> list:
     """Validate business type."""
     msg = []
-    business_type_path = '/filing/registration/businessType'
+    business_type_path = "/filing/registration/businessType"
     if legal_type == Business.LegalTypes.SOLE_PROP.value and get_str(filing, business_type_path) is None:
-        msg.append({'error': 'Business Type is required.', 'path': business_type_path})
+        msg.append({"error": "Business Type is required.", "path": business_type_path})
 
     return msg
 
@@ -78,37 +78,37 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
 def validate_tax_id(filing: Dict) -> list:
     """Validate tax id."""
     msg = []
-    tax_id_path = '/filing/registration/business/taxId'
+    tax_id_path = "/filing/registration/business/taxId"
     if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == 15:
-        msg.append({'error': 'Can only provide BN9 for SP/GP registration.', 'path': tax_id_path})
+        msg.append({"error": "Can only provide BN9 for SP/GP registration.", "path": tax_id_path})
 
     return msg
 
 
-def validate_naics(filing: Dict, filing_type='registration') -> list:
+def validate_naics(filing: Dict, filing_type="registration") -> list:
     """Validate naics."""
     msg = []
-    naics_code_path = f'/filing/{filing_type}/business/naics/naicsCode'
-    naics_desc = get_str(filing, f'/filing/{filing_type}/business/naics/naicsDescription')
+    naics_code_path = f"/filing/{filing_type}/business/naics/naicsCode"
+    naics_desc = get_str(filing, f"/filing/{filing_type}/business/naics/naicsDescription")
     if naics_code := get_str(filing, naics_code_path):
         naics = NaicsService.find_by_code(naics_code)
-        if not naics or naics['classTitle'] != naics_desc:
-            msg.append({'error': 'Invalid naics code or description.', 'path': naics_code_path})
+        if not naics or naics["classTitle"] != naics_desc:
+            msg.append({"error": "Invalid naics code or description.", "path": naics_code_path})
 
     return msg
 
 
-def validate_party(filing: Dict, legal_type: str, filing_type='registration') -> list:
+def validate_party(filing: Dict, legal_type: str, filing_type="registration") -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
     proprietor_parties = 0
     partner_parties = 0
     invalid_roles = set()
-    parties = filing['filing'][filing_type]['parties']
-    for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
-        for role in party.get('roles', []):
-            role_type = role.get('roleType').lower().replace(' ', '_')
+    parties = filing["filing"][filing_type]["parties"]
+    for party in parties:  # pylint: disable=too-many-nested-blocks;
+        for role in party.get("roles", []):
+            role_type = role.get("roleType").lower().replace(" ", "_")
             if role_type == PartyRole.RoleTypes.COMPLETING_PARTY.value:
                 completing_parties += 1
             elif role_type == PartyRole.RoleTypes.PROPRIETOR.value:
@@ -119,23 +119,23 @@ def validate_party(filing: Dict, legal_type: str, filing_type='registration') ->
                 invalid_roles.add(role_type)  
 
     if invalid_roles:
-        err_path = f'/filing/{filing_type}/parties/roles'
+        err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
-            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
-            'path': err_path
+            "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            "path": err_path
         })   
 
-    party_path = '/filing/registration/parties'
+    party_path = "/filing/registration/parties"
     if legal_type == Business.LegalTypes.SOLE_PROP.value:
         if partner_parties > 0:
-            msg.append({'error': 'Partner is not valid for a Sole Proprietorship.', 'path': party_path})
+            msg.append({"error": "Partner is not valid for a Sole Proprietorship.", "path": party_path})
         if completing_parties < 1 or proprietor_parties < 1:
-            msg.append({'error': '1 Proprietor and a Completing Party are required.', 'path': party_path})    
+            msg.append({"error": "1 Proprietor and a Completing Party are required.", "path": party_path})    
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         if proprietor_parties > 0:
-            msg.append({'error': 'Proprietor is not valid for a General Partnership.', 'path': party_path})
+            msg.append({"error": "Proprietor is not valid for a General Partnership.", "path": party_path})
         if completing_parties < 1 or partner_parties < 2:
-            msg.append({'error': '2 Partners and a Completing Party are required.', 'path': party_path})
+            msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
 
     return msg
 
@@ -145,7 +145,7 @@ def validate_start_date(filing: Dict) -> list:
     # Non-staff can go less than or equal to 10 years in the past, less than or equal to 90 days in the future
     # Staff can go back with an unlimited period of time
     msg = []
-    start_date_path = '/filing/registration/startDate'
+    start_date_path = "/filing/registration/startDate"
     start_date = get_date(filing, start_date_path)
     now = LegislationDatetime.now().date()
     greater = now + timedelta(days=90)
@@ -153,43 +153,43 @@ def validate_start_date(filing: Dict) -> list:
 
     if not jwt.validate_roles([STAFF_ROLE]):
         if start_date < lesser:
-            msg.append({'error': 'Start date must be less than or equal to 10 years.',
-                        'path': start_date_path})
+            msg.append({"error": "Start date must be less than or equal to 10 years.",
+                        "path": start_date_path})
     if start_date > greater:
-        msg.append({'error': 'Start Date must be less than or equal to 90 days in the future.',
-                    'path': start_date_path})
+        msg.append({"error": "Start Date must be less than or equal to 90 days in the future.",
+                    "path": start_date_path})
 
     return msg
 
 
-def validate_offices(filing: Dict, filing_type='registration') -> list:
+def validate_offices(filing: Dict, filing_type="registration") -> list:
     """Validate the business address of registration filing."""
-    offices = filing['filing'][filing_type]['offices']
+    offices = filing["filing"][filing_type]["offices"]
     msg = []
 
-    if delivery_address := offices.get('businessOffice', {}).get('deliveryAddress'):
-        region = delivery_address['addressRegion']
-        country = delivery_address['addressCountry']
+    if delivery_address := offices.get("businessOffice", {}).get("deliveryAddress"):
+        region = delivery_address["addressRegion"]
+        country = delivery_address["addressCountry"]
 
-        if region != 'BC':
-            region_path = f'/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressRegion'
-            msg.append({'error': "Address Region must be 'BC'.", 'path': region_path})
+        if region != "BC":
+            region_path = f"/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressRegion"
+            msg.append({"error": "Address Region must be 'BC'.", "path": region_path})
 
         try:
             country = pycountry.countries.search_fuzzy(country)[0].alpha_2
-            if country != 'CA':
+            if country != "CA":
                 raise LookupError
         except LookupError:
-            country_path = f'/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressCountry'
-            msg.append({'error': "Address Country must be 'CA'.", 'path': country_path})
+            country_path = f"/filing/{filing_type}/offices/businessOffice/deliveryAddress/addressCountry"
+            msg.append({"error": "Address Country must be 'CA'.", "path": country_path})
 
     return msg
 
 
-def validate_registration_court_order(filing: Dict, filing_type='registration') -> list:
+def validate_registration_court_order(filing: Dict, filing_type="registration") -> list:
     """Validate court order."""
-    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
-        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
+    if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
+        court_order_path: Final = f"/filing/{filing_type}/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             return err

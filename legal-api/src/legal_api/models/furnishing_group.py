@@ -22,16 +22,16 @@ from .db import db
 class FurnishingGroup(db.Model):
     """This class manages the furnishing groups."""
 
-    __tablename__ = 'furnishing_groups'
+    __tablename__ = "furnishing_groups"
 
     id = db.Column(db.Integer, primary_key=True)
 
     # parent keys
-    xml_payload_id = db.Column('xml_payload_id', db.Integer, db.ForeignKey('xml_payloads.id'),
+    xml_payload_id = db.Column("xml_payload_id", db.Integer, db.ForeignKey("xml_payloads.id"),
                                index=True, nullable=True)
 
     # relationships
-    xml_payload = db.relationship('XmlPayload', backref=db.backref('furnishing_groups', lazy=True))
+    xml_payload = db.relationship("XmlPayload", backref=db.backref("furnishing_groups", lazy=True))
 
     def save(self):
         """Save the object to the database immediately."""

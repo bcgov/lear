@@ -37,15 +37,16 @@ This module is the API for the Legal Entity system.
 """
 import os
 
-from flask import Flask, jsonify  # noqa: I001
-from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
-from registry_schemas.flask import SchemaServices  # noqa: I001
-from structured_logging import StructuredLogging
+from flask import Flask, jsonify
+from registry_schemas import __version__ as registry_schemas_version
+from registry_schemas.flask import SchemaServices
 
 from legal_api import config, models
 from legal_api.models import db
 from legal_api.models.db import init_db
 from legal_api.resources import endpoints
+from structured_logging import StructuredLogging
+
 from legal_api.scripts.document_service_import import document_service_bp  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import digital_credentials, flags, gcp_queue
@@ -55,10 +56,10 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
+setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
+def create_app(run_mode=os.getenv("FLASK_ENV", "production")):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.register_blueprint(document_service_bp)
@@ -87,15 +88,15 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 def setup_jwt_manager(app, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
+        return a_dict["realm_access"]["roles"]  # pragma: no cover
+    app.config["JWT_ROLE_CALLBACK"] = get_roles
 
     def custom_auth_error_handler(ex):
         response = jsonify(ex.error)
         response.status_code = ex.status_code
-        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers["Access-Control-Allow-Origin"] = "*"
         return response
-    app.config['JWT_OIDC_AUTH_ERROR_HANDLER'] = custom_auth_error_handler
+    app.config["JWT_OIDC_AUTH_ERROR_HANDLER"] = custom_auth_error_handler
 
     jwt_manager.init_app(app)
 
@@ -105,9 +106,9 @@ def register_shellcontext(app):
     def shell_context():
         """Shell context objects."""
         return {
-            'app': app,
-            'jwt': jwt,
-            'db': db,
-            'models': models}  # pragma: no cover
+            "app": app,
+            "jwt": jwt,
+            "db": db,
+            "models": models}  # pragma: no cover
 
     app.shell_context_processor(shell_context)

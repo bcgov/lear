@@ -27,18 +27,18 @@ class Alias(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
     class AliasType(Enum):
         """Render an Enum of the types of aliases."""
 
-        TRANSLATION = 'TRANSLATION'
-        DBA = 'DBA'
+        TRANSLATION = "TRANSLATION"
+        DBA = "DBA"
 
     __versioned__ = {}
-    __tablename__ = 'aliases'
+    __tablename__ = "aliases"
 
     id = db.Column(db.Integer, primary_key=True)
-    alias = db.Column('alias', db.String(1000), index=True, nullable=False)
-    type = db.Column('type', db.String(20), default=AliasType.TRANSLATION, nullable=False)
+    alias = db.Column("alias", db.String(1000), index=True, nullable=False)
+    type = db.Column("type", db.String(20), default=AliasType.TRANSLATION, nullable=False)
 
     # parent keys
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"))
 
     def save(self):
         """Save the object to the database immediately."""
@@ -49,9 +49,9 @@ class Alias(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
     def json(self):
         """Return a dict of this object, with keys in JSON format."""
         alias = {
-            'id': str(self.id),
-            'name': self.alias,
-            'type': self.type
+            "id": str(self.id),
+            "name": self.alias,
+            "type": self.type
         }
         return alias
 

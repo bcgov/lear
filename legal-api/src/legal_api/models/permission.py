@@ -21,20 +21,20 @@ from .db import db
 class Permission(db.Model):
     """This class manages all of the permissions."""
 
-    __tablename__ = 'permissions'
+    __tablename__ = "permissions"
 
     id = db.Column(db.Integer, primary_key=True)
-    permission_name = db.Column('permission_name', db.String(100), nullable=False, unique=True)
-    description = db.Column('description', db.String(255), nullable=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
+    permission_name = db.Column("permission_name", db.String(100), nullable=False, unique=True)
+    description = db.Column("description", db.String(255), nullable=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)
     modified_by_id = db.Column(db.Integer, nullable=True)
 
     authorized_roles = db.relationship(
-        'AuthorizedRolePermission',
-        back_populates='permission',
-        cascade='all, delete-orphan'
+        "AuthorizedRolePermission",
+        back_populates="permission",
+        cascade="all, delete-orphan"
     )
 
     def save(self):

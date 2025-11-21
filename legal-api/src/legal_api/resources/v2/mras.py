@@ -21,12 +21,11 @@ from legal_api.models import UserRoles
 from legal_api.services import MrasService
 from legal_api.utils.auth import jwt
 
+bp = Blueprint("MRAS2", __name__, url_prefix="/api/v2/mras")
 
-bp = Blueprint('MRAS2', __name__, url_prefix='/api/v2/mras')
 
-
-@bp.route('/<string:identifier>', methods=['GET'])
-@cross_origin(origins='*')
+@bp.route("/<string:identifier>", methods=["GET"])
+@cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.system])
 def get_jurisdicions(identifier: str):
     """Return a list of foreign jurisdicions."""
@@ -34,9 +33,9 @@ def get_jurisdicions(identifier: str):
 
     if jurisdictions is None:
         return jsonify(
-            message=f'Error getting foreign jurisdiction information for {identifier}.'
+            message=f"Error getting foreign jurisdiction information for {identifier}."
         ), HTTPStatus.INTERNAL_SERVER_ERROR
 
     return jsonify({
-        'jurisdictions': jurisdictions
+        "jurisdictions": jurisdictions
     }), HTTPStatus.OK

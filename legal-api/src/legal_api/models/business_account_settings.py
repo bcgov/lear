@@ -37,10 +37,10 @@ from .db import db
 class BusinessAccountSettings(db.Model):
     """This class manages the business account settings."""
 
-    __tablename__ = 'business_account_settings'
+    __tablename__ = "business_account_settings"
 
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
     # NOTE: account_id should map to the Org.id in auth, businesses without any affiliations will have a null entry
     account_id = db.Column(db.Integer, nullable=True)
     business_account_constraint = db.UniqueConstraint(business_id, account_id)
@@ -56,12 +56,12 @@ class BusinessAccountSettings(db.Model):
     @property
     def json(self):
         return {
-            'accountId': self.account_id,
-            'businessIdentifier': self.business.identifier,
-            'email': self.email,
-            'phone': self.phone,
-            'phoneExtension': self.phone_extension,
-            'arReminder': self.ar_reminder
+            "accountId": self.account_id,
+            "businessIdentifier": self.business.identifier,
+            "email": self.email,
+            "phone": self.phone,
+            "phoneExtension": self.phone_extension,
+            "arReminder": self.ar_reminder
         }
 
     def delete(self):
@@ -100,10 +100,10 @@ class BusinessAccountSettings(db.Model):
         if not (settings := BusinessAccountSettings.find_by_business_account(business_id, account_id)):
             settings = BusinessAccountSettings(business_id=business_id, account_id=account_id)
 
-        settings.email = data.get('email', settings.email)
-        settings.phone = data.get('phone', settings.phone)
-        settings.phone_extension = data.get('phoneExtension', settings.phone_extension)
-        settings.ar_reminder = data.get('arReminder', settings.ar_reminder)
+        settings.email = data.get("email", settings.email)
+        settings.phone = data.get("phone", settings.phone)
+        settings.phone_extension = data.get("phoneExtension", settings.phone_extension)
+        settings.ar_reminder = data.get("arReminder", settings.ar_reminder)
         settings.save()
 
         return settings
@@ -113,7 +113,7 @@ class BusinessAccountSettings(db.Model):
         """Delete the BusinessAccountSettings record for the business and account id."""
         if not account_id:
             raise BusinessException(
-                error='Cannot delete the default business settings.',
+                error="Cannot delete the default business settings.",
                 status_code=HTTPStatus.FORBIDDEN
             )
         if (settings := BusinessAccountSettings.find_by_business_account(business_id, account_id)):

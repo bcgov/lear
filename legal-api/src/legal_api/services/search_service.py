@@ -46,12 +46,12 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
         def clean_list(values: List[str]) -> List[str]:
             return [v.strip() for v in values if v.strip()]
         return cls(
-            identifier=clean_str(req.get('identifier', None)),
-            name=clean_str(req.get('name', None)),
-            type=clean_list(req.get('type', [])),
-            status=clean_list(req.get('status', [])),
-            page=int(req.get('page', 1)),
-            limit=int(req.get('limit', 100000))
+            identifier=clean_str(req.get("identifier", None)),
+            name=clean_str(req.get("name", None)),
+            type=clean_list(req.get("type", [])),
+            status=clean_list(req.get("status", [])),
+            page=int(req.get("page", 1)),
+            limit=int(req.get("limit", 100000))
         )
 
 
@@ -77,7 +77,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     # Reverse Mapping for Filing to get filing type from
     # Temp code coming as filter such as: ATMP >>  amalgamationApplication
     BUSINESS_TEMP_FILINGS_CORP_CODES: Final = {
-        Filing.FILINGS[filing_type.value]['temporaryCorpTypeCode']: Filing.FILINGS[filing_type.value]['name']
+        Filing.FILINGS[filing_type.value]["temporaryCorpTypeCode"]: Filing.FILINGS[filing_type.value]["name"]
         for filing_type in Filing.TempCorpFilingType
     }
 
@@ -163,9 +163,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             expr for expr in [
                 Business._identifier.in_(identifiers)  # pylint: disable=protected-access
                 if identifiers else None,
-                Business._identifier.ilike(f'%{identifier}%')  # pylint: disable=protected-access
+                Business._identifier.ilike(f"%{identifier}%")  # pylint: disable=protected-access
                 if identifier else None,
-                Business.legal_name.ilike(f'%{name}%')  # pylint: disable=protected-access
+                Business.legal_name.ilike(f"%{name}%")  # pylint: disable=protected-access
                 if name else None,
                 Business.legal_type.in_(valid_types)
                 if valid_types else None,
@@ -188,7 +188,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 Business.LegalTypes.SOLE_PROP,
                 Business.LegalTypes.PARTNERSHIP
             ):
-                business_json['alternateNames'] = business.get_alternate_names()
+                business_json["alternateNames"] = business.get_alternate_names()
 
             bus_results.append(business_json)
         has_more = len(bus_query) > limit
@@ -231,16 +231,16 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             expr for expr in [
                 and_(Filing.temp_reg.in_(identifiers), Filing.business_id.is_(None))
                 if isinstance(identifiers, list) and identifiers else None,
-                Filing.temp_reg.ilike(f'%{identifier}%') if identifier else None,
+                Filing.temp_reg.ilike(f"%{identifier}%") if identifier else None,
                 Filing._status.in_(filing_states) if filing_states else None,  # pylint: disable=protected-access
                 Filing._filing_type.in_(filing_name) if filing_name else None,  # pylint: disable=protected-access
                 func.jsonb_extract_path_text(
                     Filing._filing_json,  # pylint: disable=protected-access
-                    'filing',
+                    "filing",
                     Filing._filing_type,  # pylint: disable=protected-access
-                    'nameRequest',
-                    'legalName'
-                ).ilike(f'%{name}%') if name else None
+                    "nameRequest",
+                    "legalName"
+                ).ilike(f"%{name}%") if name else None
             ] if expr is not None
         ]
         if identifiers and not name and not types and not statuses:
@@ -256,29 +256,29 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         if identifiers:
             for draft_dao in draft_query[:limit]:
                 draft = {
-                    'identifier': draft_dao.temp_reg,  # Temporary registration number of the draft entity
-                    'legalType': draft_dao.json_legal_type,  # Legal type of the draft entity
-                    'draftType': Filing.FILINGS.get(draft_dao.filing_type, {}).get('temporaryCorpTypeCode'),
-                    'draftStatus': draft_dao.status
+                    "identifier": draft_dao.temp_reg,  # Temporary registration number of the draft entity
+                    "legalType": draft_dao.json_legal_type,  # Legal type of the draft entity
+                    "draftType": Filing.FILINGS.get(draft_dao.filing_type, {}).get("temporaryCorpTypeCode"),
+                    "draftStatus": draft_dao.status
                 }
 
                 if (draft_dao.status == Filing.Status.PAID.value and
                         draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
-                    draft['effectiveDate'] = draft_dao.effective_date.isoformat()
+                    draft["effectiveDate"] = draft_dao.effective_date.isoformat()
 
                 if draft_dao.json_nr:
-                    draft['nrNumber'] = draft_dao.json_nr  # Name request number, if available
+                    draft["nrNumber"] = draft_dao.json_nr  # Name request number, if available
                 # Retrieves the legal name from the filing JSON. Defaults to None if not found.
-                draft['legalName'] = (draft_dao.filing_json.get('filing', {})
+                draft["legalName"] = (draft_dao.filing_json.get("filing", {})
                                       .get(draft_dao.filing_type, {})
-                                      .get('nameRequest', {})
-                                      .get('legalName'))
+                                      .get("nameRequest", {})
+                                      .get("legalName"))
 
-                if draft['legalName'] is None:
+                if draft["legalName"] is None:
                     # Fallback to a generic legal name based on the legal type if no specific legal name is found
-                    draft['legalName'] = (Business.BUSINESSES
+                    draft["legalName"] = (Business.BUSINESSES
                                           .get(draft_dao.json_legal_type, {})
-                                          .get('numberedDescription'))
+                                          .get("numberedDescription"))
                 draft_results.append(draft)
         has_more = len(draft_query) > limit
         return draft_results, has_more
@@ -287,20 +287,20 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     def get_affiliation_mapping_results(identifiers):
         """Return affiliation mapping results for the given list of identifiers."""
         query = db.session.query(
-            Business._identifier.label('identifier'),  # pylint: disable=protected-access
+            Business._identifier.label("identifier"),  # pylint: disable=protected-access
             Filing
-            .filing_json['filing'][Filing._filing_type]['nameRequest']['nrNumber']  # pylint: disable=protected-access
-            .label('nrNumber'),
-            RegistrationBootstrap._identifier.label('bootstrapIdentifier')  # pylint: disable=protected-access
+            .filing_json["filing"][Filing._filing_type]["nameRequest"]["nrNumber"]  # pylint: disable=protected-access
+            .label("nrNumber"),
+            RegistrationBootstrap._identifier.label("bootstrapIdentifier")  # pylint: disable=protected-access
         ).select_from(Filing) \
             .outerjoin(Business, Filing.business_id == Business.id) \
             .join(RegistrationBootstrap, Filing.temp_reg == RegistrationBootstrap.identifier)
 
         temp_identifiers, nr_identifiers, business_identifiers = [], [], []
         for identifier in identifiers:
-            if identifier.startswith('T'):
+            if identifier.startswith("T"):
                 temp_identifiers.append(identifier)
-            elif identifier.startswith('NR'):
+            elif identifier.startswith("NR"):
                 nr_identifiers.append(identifier)
             else:
                 business_identifiers.append(identifier)
@@ -309,8 +309,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
         if nr_identifiers:
             conditions.append(Filing
-                              .filing_json['filing'][Filing._filing_type]  # pylint: disable=protected-access
-                              ['nameRequest']['nrNumber']
+                              .filing_json["filing"][Filing._filing_type]  # pylint: disable=protected-access
+                              ["nameRequest"]["nrNumber"]
                               .astext.in_(nr_identifiers))
         if temp_identifiers:
             conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access

@@ -28,13 +28,13 @@ from legal_api.utils.util import cors_preflight
 from .api_namespace import API
 
 
-@cors_preflight('GET, POST')
-@API.route('/internal/tax_ids', methods=['GET', 'POST', 'OPTIONS'])
+@cors_preflight("GET, POST")
+@API.route("/internal/tax_ids", methods=["GET", "POST", "OPTIONS"])
 class InternalBusinessResource(Resource):
     """Internal information about businesses."""
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def get():
         """Return all identifiers with no tax_id set that are supposed to have a tax_id.
@@ -43,25 +43,25 @@ class InternalBusinessResource(Resource):
         Excludes SP/GP we don't sync firm to colin and we use entity-bn to get tax id/business number.
         """
         if not jwt.validate_roles([COLIN_SVC_ROLE]):
-            return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
+            return jsonify({"message": "You are not authorized to update the colin id"}), HTTPStatus.UNAUTHORIZED
 
         identifiers = []
         bussinesses_no_taxid = Business.get_all_by_no_tax_id()
         for business in bussinesses_no_taxid:
             identifiers.append(business.identifier)
-        return jsonify({'identifiers': identifiers}), HTTPStatus.OK
+        return jsonify({"identifiers": identifiers}), HTTPStatus.OK
 
     @staticmethod
-    @cors.crossdomain(origin='*')
+    @cors.crossdomain(origin="*")
     @jwt.requires_auth
     def post():
         """Set tax ids for businesses for given identifiers."""
         if not jwt.validate_roles([COLIN_SVC_ROLE]):
-            return jsonify({'message': 'You are not authorized to update the colin id'}), HTTPStatus.UNAUTHORIZED
+            return jsonify({"message": "You are not authorized to update the colin id"}), HTTPStatus.UNAUTHORIZED
 
         json_input = request.get_json()
         if not json_input:
-            return ({'message': 'No identifiers in body of post.'}, HTTPStatus.BAD_REQUEST)
+            return ({"message": "No identifiers in body of post."}, HTTPStatus.BAD_REQUEST)
 
         for identifier in json_input.keys():
             # json input is a dict -> identifier: tax id
@@ -70,6 +70,6 @@ class InternalBusinessResource(Resource):
                 business.tax_id = json_input[identifier]
                 business.save()
             else:
-                current_app.logger.error('Unable to update tax_id for business (%s), which is missing in lear',
+                current_app.logger.error("Unable to update tax_id for business (%s), which is missing in lear",
                                          identifier)
-        return jsonify({'message': 'Successfully updated tax ids.'}), HTTPStatus.CREATED
+        return jsonify({"message": "Successfully updated tax ids."}), HTTPStatus.CREATED

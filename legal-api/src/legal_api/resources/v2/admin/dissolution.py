@@ -24,16 +24,16 @@ from legal_api.utils.auth import jwt
 from .bp import bp_admin
 
 
-@bp_admin.route('/dissolutions/statistics', methods=['GET'])
-@cross_origin(origin='*')
+@bp_admin.route("/dissolutions/statistics", methods=["GET"])
+@cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_statistics():
     """Return a JSON object with statistic information."""
     count = InvoluntaryDissolutionService.get_businesses_eligible_count()
     data = {
-        'eligibleCount': count
+        "eligibleCount": count
     }
 
     return jsonify({
-        'data': data
+        "data": data
     }), HTTPStatus.OK

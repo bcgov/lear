@@ -33,21 +33,19 @@ from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-from .amalgamation import Amalgamation  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .batch import Batch  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .batch_processing import BatchProcessing  # noqa: F401, I001, I003 pylint: disable=unused-import
-from .db import db, VersioningProxy  # noqa: I001
-from .party import Party
-from .share_class import ShareClass  # noqa: F401,I001,I003 pylint: disable=unused-import
-
-
-from .address import Address  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .address import Address
 from .alias import Alias  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .filing import Filing  # noqa: F401, I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .office import Office  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
-from .party_role import PartyRole  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy relationship
+from .amalgamation import Amalgamation
+from .batch import Batch
+from .batch_processing import BatchProcessing
+from .db import db
+from .filing import Filing
+from .office import Office
+from .party import Party
+from .party_role import PartyRole
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
-from .user import User  # noqa: F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
+from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
@@ -68,53 +66,53 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     class LegalTypes(str, Enum):
         """Render an Enum of the Business Legal Types."""
 
-        COOP = 'CP'  # aka COOPERATIVE in namex
-        BCOMP = 'BEN'  # aka BENEFIT_COMPANY in namex
-        BCOMP_CONTINUE_IN = 'CBEN'
-        COMP = 'BC'  # aka CORPORATION in namex
-        CONTINUE_IN = 'C'
-        CO_1860 = 'QA'
-        CO_1862 = 'QB'
-        CO_1878 = 'QC'
-        CO_1890 = 'QD'
-        CO_1897 = 'QE'
-        BC_ULC_COMPANY = 'ULC'
-        ULC_CONTINUE_IN = 'CUL'
-        ULC_CO_1860 = 'UQA'
-        ULC_CO_1862 = 'UQB'
-        ULC_CO_1878 = 'UQC'
-        ULC_CO_1890 = 'UQD'
-        ULC_CO_1897 = 'UQE'
-        BC_CCC = 'CC'
-        CCC_CONTINUE_IN = 'CCC'
-        EXTRA_PRO_A = 'A'
-        EXTRA_PRO_B = 'B'
-        CEMETARY = 'CEM'
-        EXTRA_PRO_REG = 'EPR'
-        FOREIGN = 'FOR'
-        LICENSED = 'LIC'
-        LIBRARY = 'LIB'
-        LIMITED_CO = 'LLC'
-        PRIVATE_ACT = 'PA'
-        PARISHES = 'PAR'
-        PENS_FUND_SOC = 'PFS'
-        REGISTRATION = 'REG'
-        RAILWAYS = 'RLY'
-        SOCIETY_BRANCH = 'SB'
-        TRUST = 'T'
-        TRAMWAYS = 'TMY'
-        XPRO_COOP = 'XCP'
-        SOCIETY = 'S'
-        XPRO_SOCIETY = 'XS'
-        SOLE_PROP = 'SP'
-        PARTNERSHIP = 'GP'
-        LIM_PARTNERSHIP = 'LP'
-        XPRO_LIM_PARTNR = 'XP'
-        LL_PARTNERSHIP = 'LL'
-        XPRO_LL_PARTNR = 'XL'
-        MISC_FIRM = 'MF'
-        FINANCIAL = 'FI'
-        CONT_IN_SOCIETY = 'CS'
+        COOP = "CP"  # aka COOPERATIVE in namex
+        BCOMP = "BEN"  # aka BENEFIT_COMPANY in namex
+        BCOMP_CONTINUE_IN = "CBEN"
+        COMP = "BC"  # aka CORPORATION in namex
+        CONTINUE_IN = "C"
+        CO_1860 = "QA"
+        CO_1862 = "QB"
+        CO_1878 = "QC"
+        CO_1890 = "QD"
+        CO_1897 = "QE"
+        BC_ULC_COMPANY = "ULC"
+        ULC_CONTINUE_IN = "CUL"
+        ULC_CO_1860 = "UQA"
+        ULC_CO_1862 = "UQB"
+        ULC_CO_1878 = "UQC"
+        ULC_CO_1890 = "UQD"
+        ULC_CO_1897 = "UQE"
+        BC_CCC = "CC"
+        CCC_CONTINUE_IN = "CCC"
+        EXTRA_PRO_A = "A"
+        EXTRA_PRO_B = "B"
+        CEMETARY = "CEM"
+        EXTRA_PRO_REG = "EPR"
+        FOREIGN = "FOR"
+        LICENSED = "LIC"
+        LIBRARY = "LIB"
+        LIMITED_CO = "LLC"
+        PRIVATE_ACT = "PA"
+        PARISHES = "PAR"
+        PENS_FUND_SOC = "PFS"
+        REGISTRATION = "REG"
+        RAILWAYS = "RLY"
+        SOCIETY_BRANCH = "SB"
+        TRUST = "T"
+        TRAMWAYS = "TMY"
+        XPRO_COOP = "XCP"
+        SOCIETY = "S"
+        XPRO_SOCIETY = "XS"
+        SOLE_PROP = "SP"
+        PARTNERSHIP = "GP"
+        LIM_PARTNERSHIP = "LP"
+        XPRO_LIM_PARTNR = "XP"
+        LL_PARTNERSHIP = "LL"
+        XPRO_LL_PARTNR = "XL"
+        MISC_FIRM = "MF"
+        FINANCIAL = "FI"
+        CONT_IN_SOCIETY = "CS"
         # *** The following are not yet supported by legal-api: ***
         # DOING_BUSINESS_AS = 'DBA'
         # XPRO_CORPORATION = 'XCR'
@@ -150,29 +148,29 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     class AssociationTypes(Enum):
         """Render an Enum of the Business Association Types."""
 
-        CP_COOPERATIVE = 'CP'
-        CP_HOUSING_COOPERATIVE = 'HC'
-        CP_COMMUNITY_SERVICE_COOPERATIVE = 'CSC'
+        CP_COOPERATIVE = "CP"
+        CP_HOUSING_COOPERATIVE = "HC"
+        CP_COMMUNITY_SERVICE_COOPERATIVE = "CSC"
 
-        SP_SOLE_PROPRIETORSHIP = 'SP'
-        SP_DOING_BUSINESS_AS = 'DBA'
+        SP_SOLE_PROPRIETORSHIP = "SP"
+        SP_DOING_BUSINESS_AS = "DBA"
 
     BUSINESSES = {
         LegalTypes.BCOMP: {
-            'numberedLegalNameSuffix': 'B.C. LTD.',
-            'numberedDescription': 'Numbered Benefit Company'
+            "numberedLegalNameSuffix": "B.C. LTD.",
+            "numberedDescription": "Numbered Benefit Company"
         },
         LegalTypes.COMP: {
-            'numberedLegalNameSuffix': 'B.C. LTD.',
-            'numberedDescription': 'Numbered Limited Company'
+            "numberedLegalNameSuffix": "B.C. LTD.",
+            "numberedDescription": "Numbered Limited Company"
         },
         LegalTypes.BC_ULC_COMPANY: {
-            'numberedLegalNameSuffix': 'B.C. UNLIMITED LIABILITY COMPANY',
-            'numberedDescription': 'Numbered Unlimited Liability Company'
+            "numberedLegalNameSuffix": "B.C. UNLIMITED LIABILITY COMPANY",
+            "numberedDescription": "Numbered Unlimited Liability Company"
         },
         LegalTypes.BC_CCC: {
-            'numberedLegalNameSuffix': 'B.C. COMMUNITY CONTRIBUTION COMPANY LTD.',
-            'numberedDescription': 'Numbered Community Contribution Company'
+            "numberedLegalNameSuffix": "B.C. COMMUNITY CONTRIBUTION COMPANY LTD.",
+            "numberedDescription": "Numbered Community Contribution Company"
         }
     }
 
@@ -183,110 +181,110 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     BUSINESSES[LegalTypes.CCC_CONTINUE_IN] = BUSINESSES[LegalTypes.BC_CCC]
 
     __versioned__ = {}
-    __tablename__ = 'businesses'
+    __tablename__ = "businesses"
     __mapper_args__ = {
-        'include_properties': [
-            'id',
-            'accession_number',
-            'admin_freeze',
-            'amalgamation_out_date',
-            'association_type',
-            'backfill_cutoff_filing_id',
-            'continuation_out_date',
-            'dissolution_date',
-            'fiscal_year_end_date',
-            'foreign_jurisdiction_region',
-            'foreign_legal_name',
-            'founding_date',
-            'identifier',
-            'in_liquidation',
-            'jurisdiction',
-            'last_agm_date',
-            'last_ar_date',
-            'last_ar_year',
-            'last_ar_reminder_year',
-            'last_coa_date',
-            'last_cod_date',
-            'last_ledger_id',
-            'last_ledger_timestamp',
-            'last_modified',
-            'last_remote_ledger_id',
-            'last_tr_year',
-            'legal_name',
-            'legal_type',
-            'naics_code',
-            'naics_description',
-            'naics_key',
-            'no_dissolution',
-            'restoration_expiry_date',
-            'restriction_ind',
-            'send_ar_ind',
-            'state',
-            'start_date',
-            'state_filing_id',
-            'submitter_userid',
-            'tax_id',
+        "include_properties": [
+            "id",
+            "accession_number",
+            "admin_freeze",
+            "amalgamation_out_date",
+            "association_type",
+            "backfill_cutoff_filing_id",
+            "continuation_out_date",
+            "dissolution_date",
+            "fiscal_year_end_date",
+            "foreign_jurisdiction_region",
+            "foreign_legal_name",
+            "founding_date",
+            "identifier",
+            "in_liquidation",
+            "jurisdiction",
+            "last_agm_date",
+            "last_ar_date",
+            "last_ar_year",
+            "last_ar_reminder_year",
+            "last_coa_date",
+            "last_cod_date",
+            "last_ledger_id",
+            "last_ledger_timestamp",
+            "last_modified",
+            "last_remote_ledger_id",
+            "last_tr_year",
+            "legal_name",
+            "legal_type",
+            "naics_code",
+            "naics_description",
+            "naics_key",
+            "no_dissolution",
+            "restoration_expiry_date",
+            "restriction_ind",
+            "send_ar_ind",
+            "state",
+            "start_date",
+            "state_filing_id",
+            "submitter_userid",
+            "tax_id",
         ]
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_ledger_id = db.Column('last_ledger_id', db.Integer)
-    last_remote_ledger_id = db.Column('last_remote_ledger_id', db.Integer, default=0)
-    last_ledger_timestamp = db.Column('last_ledger_timestamp', db.DateTime(timezone=True), default=datetime.utcnow)
-    last_ar_date = db.Column('last_ar_date', db.DateTime(timezone=True))
-    last_agm_date = db.Column('last_agm_date', db.DateTime(timezone=True))
-    last_coa_date = db.Column('last_coa_date', db.DateTime(timezone=True))
-    last_cod_date = db.Column('last_cod_date', db.DateTime(timezone=True))
-    legal_name = db.Column('legal_name', db.String(1000), index=True)
-    legal_type = db.Column('legal_type', db.String(10))
-    founding_date = db.Column('founding_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    start_date = db.Column('start_date', db.DateTime(timezone=True))
-    restoration_expiry_date = db.Column('restoration_expiry_date', db.DateTime(timezone=True))
-    dissolution_date = db.Column('dissolution_date', db.DateTime(timezone=True), default=None)
-    continuation_out_date = db.Column('continuation_out_date', db.DateTime(timezone=True))
-    amalgamation_out_date = db.Column('amalgamation_out_date', db.DateTime(timezone=True))
-    _identifier = db.Column('identifier', db.String(10), index=True)
-    tax_id = db.Column('tax_id', db.String(15), index=True)
-    fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=datetime.utcnow)
-    restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
-    last_ar_year = db.Column('last_ar_year', db.Integer)
-    last_ar_reminder_year = db.Column('last_ar_reminder_year', db.Integer)
-    last_tr_year = db.Column('last_tr_year', db.Integer)
-    association_type = db.Column('association_type', db.String(50))
-    state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
-    state_filing_id = db.Column('state_filing_id', db.Integer)
-    admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
-    in_liquidation = db.Column('in_liquidation', db.Boolean, unique=False, default=False)
-    submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
-    submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
-    send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
-    no_dissolution = db.Column('no_dissolution', db.Boolean, unique=False, default=False)
-    accession_number = db.Column('accession_number', db.String(10))
-    backfill_cutoff_filing_id = db.Column('backfill_cutoff_filing_id', db.Integer)
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), default=datetime.utcnow)
+    last_ledger_id = db.Column("last_ledger_id", db.Integer)
+    last_remote_ledger_id = db.Column("last_remote_ledger_id", db.Integer, default=0)
+    last_ledger_timestamp = db.Column("last_ledger_timestamp", db.DateTime(timezone=True), default=datetime.utcnow)
+    last_ar_date = db.Column("last_ar_date", db.DateTime(timezone=True))
+    last_agm_date = db.Column("last_agm_date", db.DateTime(timezone=True))
+    last_coa_date = db.Column("last_coa_date", db.DateTime(timezone=True))
+    last_cod_date = db.Column("last_cod_date", db.DateTime(timezone=True))
+    legal_name = db.Column("legal_name", db.String(1000), index=True)
+    legal_type = db.Column("legal_type", db.String(10))
+    founding_date = db.Column("founding_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    start_date = db.Column("start_date", db.DateTime(timezone=True))
+    restoration_expiry_date = db.Column("restoration_expiry_date", db.DateTime(timezone=True))
+    dissolution_date = db.Column("dissolution_date", db.DateTime(timezone=True), default=None)
+    continuation_out_date = db.Column("continuation_out_date", db.DateTime(timezone=True))
+    amalgamation_out_date = db.Column("amalgamation_out_date", db.DateTime(timezone=True))
+    _identifier = db.Column("identifier", db.String(10), index=True)
+    tax_id = db.Column("tax_id", db.String(15), index=True)
+    fiscal_year_end_date = db.Column("fiscal_year_end_date", db.DateTime(timezone=True), default=datetime.utcnow)
+    restriction_ind = db.Column("restriction_ind", db.Boolean, unique=False, default=False)
+    last_ar_year = db.Column("last_ar_year", db.Integer)
+    last_ar_reminder_year = db.Column("last_ar_reminder_year", db.Integer)
+    last_tr_year = db.Column("last_tr_year", db.Integer)
+    association_type = db.Column("association_type", db.String(50))
+    state = db.Column("state", db.Enum(State), default=State.ACTIVE.value)
+    state_filing_id = db.Column("state_filing_id", db.Integer)
+    admin_freeze = db.Column("admin_freeze", db.Boolean, unique=False, default=False)
+    in_liquidation = db.Column("in_liquidation", db.Boolean, unique=False, default=False)
+    submitter_userid = db.Column("submitter_userid", db.Integer, db.ForeignKey("users.id"))
+    submitter = db.relationship("User", backref=backref("submitter", uselist=False), foreign_keys=[submitter_userid])
+    send_ar_ind = db.Column("send_ar_ind", db.Boolean, unique=False, default=True)
+    no_dissolution = db.Column("no_dissolution", db.Boolean, unique=False, default=False)
+    accession_number = db.Column("accession_number", db.String(10))
+    backfill_cutoff_filing_id = db.Column("backfill_cutoff_filing_id", db.Integer)
 
     naics_key = db.Column(db.String(50))
     naics_code = db.Column(db.String(10))
     naics_description = db.Column(db.String(150))
 
-    jurisdiction = db.Column('foreign_jurisdiction', db.String(10))
-    foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
+    jurisdiction = db.Column("foreign_jurisdiction", db.String(10))
+    foreign_jurisdiction_region = db.Column("foreign_jurisdiction_region", db.String(10))
     foreign_legal_name = db.Column(db.String(1000))
 
     # relationships
-    filings = db.relationship('Filing', lazy='dynamic')
-    offices = db.relationship('Office', backref='business', lazy='dynamic', cascade='all, delete, delete-orphan')
-    party_roles = db.relationship('PartyRole', lazy='dynamic')
-    share_classes = db.relationship('ShareClass', backref='business', lazy='dynamic',
-                                    cascade='all, delete, delete-orphan')
-    aliases = db.relationship('Alias', lazy='dynamic')
-    resolutions = db.relationship('Resolution', lazy='dynamic')
-    documents = db.relationship('Document', lazy='dynamic')
-    consent_continuation_outs = db.relationship('ConsentContinuationOut', lazy='dynamic')
-    amalgamating_businesses = db.relationship('AmalgamatingBusiness', lazy='dynamic')
-    amalgamation = db.relationship('Amalgamation', lazy='dynamic')
-    batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
-    jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
+    filings = db.relationship("Filing", lazy="dynamic")
+    offices = db.relationship("Office", backref="business", lazy="dynamic", cascade="all, delete, delete-orphan")
+    party_roles = db.relationship("PartyRole", lazy="dynamic")
+    share_classes = db.relationship("ShareClass", backref="business", lazy="dynamic",
+                                    cascade="all, delete, delete-orphan")
+    aliases = db.relationship("Alias", lazy="dynamic")
+    resolutions = db.relationship("Resolution", lazy="dynamic")
+    documents = db.relationship("Document", lazy="dynamic")
+    consent_continuation_outs = db.relationship("ConsentContinuationOut", lazy="dynamic")
+    amalgamating_businesses = db.relationship("AmalgamatingBusiness", lazy="dynamic")
+    amalgamation = db.relationship("Amalgamation", lazy="dynamic")
+    batch_processing = db.relationship("BatchProcessing", lazy="dynamic")
+    jurisdictions = db.relationship("Jurisdiction", lazy="dynamic")
 
     @hybrid_property
     def identifier(self):
@@ -299,7 +297,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if Business.validate_identifier(value):
             self._identifier = value
         else:
-            raise BusinessException('invalid-identifier-format', 406)
+            raise BusinessException("invalid-identifier-format", 406)
 
     @hybrid_property
     def business_legal_name(self):
@@ -310,10 +308,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         """
         if self.is_firm:
             sort_name = func.trim(
-                func.coalesce(Party.organization_name, '') +
-                func.coalesce(Party.last_name + ' ', '') +
-                func.coalesce(Party.first_name + ' ', '') +
-                func.coalesce(Party.middle_initial, '')
+                func.coalesce(Party.organization_name, "") +
+                func.coalesce(Party.last_name + " ", "") +
+                func.coalesce(Party.first_name + " ", "") +
+                func.coalesce(Party.middle_initial, "")
             )
 
             parties_query = self.party_roles.join(Party).filter(
@@ -326,9 +324,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
             parties = [party_role.party for party_role in parties_query.all()]
 
-            legal_names = ', '.join(party.name for party in parties[:2])
+            legal_names = ", ".join(party.name for party in parties[:2])
             if len(parties) > 2:
-                legal_names += ', et al'
+                legal_names += ", et al"
             return legal_names
 
         return self.legal_name
@@ -353,12 +351,12 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         founding_datetime = LegislationDatetime.as_legislation_timezone(self.founding_date)
 
         tr_start_datetime = None
-        if tr_start_date := current_app.config.get('TR_START_DATE', None):
+        if tr_start_date := current_app.config.get("TR_START_DATE", None):
             tr_start_datetime = LegislationDatetime.as_legislation_timezone_from_date(
                 datetime.fromisoformat(tr_start_date))
 
         last_restoration_datetime = None
-        if restoration_filing := Filing.get_most_recent_filing(self.id, 'restoration'):
+        if restoration_filing := Filing.get_most_recent_filing(self.id, "restoration"):
             if restoration_filing.effective_date:
                 last_restoration_datetime = LegislationDatetime.as_legislation_timezone(
                     restoration_filing.effective_date)
@@ -451,13 +449,13 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def mailing_address(self):
         """Return the mailing address."""
         registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
-            filter(Office.office_type == 'registeredOffice').one_or_none()
+            filter(Office.office_type == "registeredOffice").one_or_none()
         if registered_office:
-            return registered_office.addresses.filter(Address.address_type == 'mailing')
+            return registered_office.addresses.filter(Address.address_type == "mailing")
         elif (business_office := db.session.query(Office)  # SP/GP
               .filter(Office.business_id == self.id)
-              .filter(Office.office_type == 'businessOffice').one_or_none()):
-            return business_office.addresses.filter(Address.address_type == 'mailing')
+              .filter(Office.office_type == "businessOffice").one_or_none()):
+            return business_office.addresses.filter(Address.address_type == "mailing")
 
         return db.session.query(Address).filter(Address.business_id == self.id). \
             filter(Address.address_type == Address.MAILING)
@@ -466,13 +464,13 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def delivery_address(self):
         """Return the delivery address."""
         registered_office = db.session.query(Office).filter(Office.business_id == self.id).\
-            filter(Office.office_type == 'registeredOffice').one_or_none()
+            filter(Office.office_type == "registeredOffice").one_or_none()
         if registered_office:
-            return registered_office.addresses.filter(Address.address_type == 'delivery')
+            return registered_office.addresses.filter(Address.address_type == "delivery")
         elif (business_office := db.session.query(Office)  # SP/GP
               .filter(Office.business_id == self.id)
-              .filter(Office.office_type == 'businessOffice').one_or_none()):
-            return business_office.addresses.filter(Address.address_type == 'delivery')
+              .filter(Office.office_type == "businessOffice").one_or_none()):
+            return business_office.addresses.filter(Address.address_type == "delivery")
 
         return db.session.query(Address).filter(Address.business_id == self.id).\
             filter(Address.address_type == Address.DELIVERY)
@@ -512,7 +510,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         """
         from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
         
-        new_act_date = LegislationDatetime.as_legislation_timezone_from_date_str('2004-03-29')
+        new_act_date = LegislationDatetime.as_legislation_timezone_from_date_str("2004-03-29")
         if (
             self.legal_type == Business.LegalTypes.EXTRA_PRO_A.value or
             self.founding_date >= new_act_date
@@ -537,7 +535,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             and_(
                 restoration_filing.business_id == self.id,
                 restoration_filing._filing_type == CoreFiling.FilingTypes.RESTORATION.value,
-                restoration_filing._filing_sub_type.in_(['fullRestoration', 'limitedRestorationToFull']),
+                restoration_filing._filing_sub_type.in_(["fullRestoration", "limitedRestorationToFull"]),
                 restoration_filing._status == Filing.Status.COMPLETED.value,
                 not_(transition_exists_condition)
             )
@@ -597,26 +595,26 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
         d = {
             **slim_json,
-            'arMinDate': ar_min_date.isoformat() if ar_min_date else '',
-            'arMaxDate': ar_max_date.isoformat() if ar_max_date else '',
-            'hasRestrictions': self.restriction_ind,
-            'complianceWarnings': self.compliance_warnings,
-            'warnings': self.warnings,
-            'lastAnnualGeneralMeetingDate': datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else '',
-            'lastAnnualReportDate': datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else '',
-            'lastLedgerTimestamp': self.last_ledger_timestamp.isoformat() if self.last_ledger_timestamp else '',
-            'lastAddressChangeDate': '',
-            'lastDirectorChangeDate': '',
-            'naicsKey': self.naics_key,
-            'naicsCode': self.naics_code,
-            'naicsDescription': self.naics_description,
-            'nextAnnualReport': LegislationDatetime.as_legislation_timezone_from_date(
+            "arMinDate": ar_min_date.isoformat() if ar_min_date else "",
+            "arMaxDate": ar_max_date.isoformat() if ar_max_date else "",
+            "hasRestrictions": self.restriction_ind,
+            "complianceWarnings": self.compliance_warnings,
+            "warnings": self.warnings,
+            "lastAnnualGeneralMeetingDate": datetime.date(self.last_agm_date).isoformat() if self.last_agm_date else "",
+            "lastAnnualReportDate": datetime.date(self.last_ar_date).isoformat() if self.last_ar_date else "",
+            "lastLedgerTimestamp": self.last_ledger_timestamp.isoformat() if self.last_ledger_timestamp else "",
+            "lastAddressChangeDate": "",
+            "lastDirectorChangeDate": "",
+            "naicsKey": self.naics_key,
+            "naicsCode": self.naics_code,
+            "naicsDescription": self.naics_description,
+            "nextAnnualReport": LegislationDatetime.as_legislation_timezone_from_date(
                 self.next_anniversary
-            ).astimezone(timezone.utc).isoformat() if self.next_anniversary else '',
-            'noDissolution': self.no_dissolution,
-            'associationType': self.association_type,
-            'allowedActions': self.allowable_actions,
-            'alternateNames': self.get_alternate_names()
+            ).astimezone(timezone.utc).isoformat() if self.next_anniversary else "",
+            "noDissolution": self.no_dissolution,
+            "associationType": self.association_type,
+            "allowedActions": self.allowable_actions,
+            "alternateNames": self.get_alternate_names()
         }
         self._extend_json(d)
 
@@ -625,68 +623,68 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def _slim_json(self):
         """Return a smaller/faster version of the business json."""
         d = {
-            'adminFreeze': self.admin_freeze or False,
-            'foundingDate': self.founding_date.isoformat() if self.founding_date else '',
-            'goodStanding': self.good_standing,
-            'identifier': self.identifier,
-            'inDissolution': self.in_dissolution,
-            'inLiquidation': self.in_liquidation or False,
-            'legalName': self.business_legal_name,
-            'legalType': self.legal_type,
-            'state': self.state.name if self.state else Business.State.ACTIVE.name,
-            'lastModified': self.last_modified.isoformat()
+            "adminFreeze": self.admin_freeze or False,
+            "foundingDate": self.founding_date.isoformat() if self.founding_date else "",
+            "goodStanding": self.good_standing,
+            "identifier": self.identifier,
+            "inDissolution": self.in_dissolution,
+            "inLiquidation": self.in_liquidation or False,
+            "legalName": self.business_legal_name,
+            "legalType": self.legal_type,
+            "state": self.state.name if self.state else Business.State.ACTIVE.name,
+            "lastModified": self.last_modified.isoformat()
         }
 
         if self.tax_id:
-            d['taxId'] = self.tax_id
+            d["taxId"] = self.tax_id
         
         if self.state_filing_id:
             if (amalgamated_into := self.get_amalgamated_into()):
-                d['amalgamatedInto'] = amalgamated_into
+                d["amalgamatedInto"] = amalgamated_into
             else:
-                base_url = current_app.config.get('LEGAL_API_BASE_URL')
-                d['stateFiling'] = f'{base_url}/{self.identifier}/filings/{self.state_filing_id}'
+                base_url = current_app.config.get("LEGAL_API_BASE_URL")
+                d["stateFiling"] = f"{base_url}/{self.identifier}/filings/{self.state_filing_id}"
 
         return d
 
     def _extend_json(self, d):
         """Include conditional fields to json."""
         if self.last_coa_date:
-            d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
+            d["lastAddressChangeDate"] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
         if self.last_cod_date:
-            d['lastDirectorChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
+            d["lastDirectorChangeDate"] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
 
         if self.dissolution_date:
-            d['dissolutionDate'] = LegislationDatetime.format_as_legislation_date(self.dissolution_date)
+            d["dissolutionDate"] = LegislationDatetime.format_as_legislation_date(self.dissolution_date)
 
         if self.fiscal_year_end_date:
-            d['fiscalYearEndDate'] = datetime.date(self.fiscal_year_end_date).isoformat()
+            d["fiscalYearEndDate"] = datetime.date(self.fiscal_year_end_date).isoformat()
 
         if self.start_date:
-            d['startDate'] = LegislationDatetime.format_as_legislation_date(self.start_date)
+            d["startDate"] = LegislationDatetime.format_as_legislation_date(self.start_date)
 
         if self.restoration_expiry_date:
-            d['restorationExpiryDate'] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
+            d["restorationExpiryDate"] = LegislationDatetime.format_as_legislation_date(self.restoration_expiry_date)
         if self.continuation_out_date:
-            d['continuationOutDate'] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
+            d["continuationOutDate"] = LegislationDatetime.format_as_legislation_date(self.continuation_out_date)
         if self.amalgamation_out_date:
-            d['amalgamationOutDate'] = LegislationDatetime.format_as_legislation_date(self.amalgamation_out_date)
+            d["amalgamationOutDate"] = LegislationDatetime.format_as_legislation_date(self.amalgamation_out_date)
 
         if self.jurisdiction:
-            d['jurisdiction'] = self.jurisdiction
-            d['jurisdictionRegion'] = self.foreign_jurisdiction_region
-            d['foreignLegalName'] = self.foreign_legal_name
+            d["jurisdiction"] = self.jurisdiction
+            d["jurisdictionRegion"] = self.foreign_jurisdiction_region
+            d["foreignLegalName"] = self.foreign_legal_name
 
         if self.accession_number:
-            d['accessionNumber'] = self.accession_number
+            d["accessionNumber"] = self.accession_number
 
-        d['hasCorrections'] = Filing.has_completed_filing(self.id, 'correction')
-        d['hasCourtOrders'] = Filing.has_completed_filing(self.id, 'courtOrder')
+        d["hasCorrections"] = Filing.has_completed_filing(self.id, "correction")
+        d["hasCourtOrders"] = Filing.has_completed_filing(self.id, "courtOrder")
 
     @property
     def compliance_warnings(self):
         """Return compliance warnings."""
-        if not hasattr(self, '_compliance_warnings'):
+        if not hasattr(self, "_compliance_warnings"):
             return []
 
         return self._compliance_warnings
@@ -699,7 +697,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def warnings(self):
         """Return warnings."""
-        if not hasattr(self, '_warnings'):
+        if not hasattr(self, "_warnings"):
             return []
 
         return self._warnings
@@ -712,7 +710,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def allowable_actions(self):
         """Return warnings."""
-        if not hasattr(self, '_allowable_actions'):
+        if not hasattr(self, "_allowable_actions"):
             return {}
 
         return self._allowable_actions
@@ -825,24 +823,24 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
             for legal_type, identifier, legal_name, founding_date, start_date in proprietors_query:
                 alternate_names.append({
-                    'entityType': legal_type,
-                    'identifier': identifier,
-                    'name': legal_name,
-                    'registeredDate': founding_date.isoformat(),
-                    'startDate': LegislationDatetime.format_as_legislation_date(start_date) if start_date else None,
-                    'type': 'DBA'
+                    "entityType": legal_type,
+                    "identifier": identifier,
+                    "name": legal_name,
+                    "registeredDate": founding_date.isoformat(),
+                    "startDate": LegislationDatetime.format_as_legislation_date(start_date) if start_date else None,
+                    "type": "DBA"
                 })
 
         # For firms also get existing business record
         if self.is_firm:
             alternate_names.append({
-                'entityType': self.legal_type,
-                'identifier': self.identifier,
-                'name': self.legal_name,
-                'registeredDate': self.founding_date.isoformat(),
-                'startDate':
+                "entityType": self.legal_type,
+                "identifier": self.identifier,
+                "name": self.legal_name,
+                "registeredDate": self.founding_date.isoformat(),
+                "startDate":
                     LegislationDatetime.format_as_legislation_date(self.start_date) if self.start_date else None,
-                'type': 'DBA'
+                "type": "DBA"
             })
 
         return alternate_names
@@ -867,16 +865,16 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @classmethod
     def is_pending_amalgamating_business(cls, business_identifier):
         """Check if a business has a pending amalgamation with the provided business identifier."""
-        where_clause = {'identifier': business_identifier}
+        where_clause = {"identifier": business_identifier}
 
         # Query the database to find amalgamation filings
         # pylint: disable=protected-access
         # pylint: disable=unsubscriptable-object
         filing = db.session.query(Filing). \
             filter(Filing._status == Filing.Status.PAID.value,
-                   Filing._filing_type == 'amalgamationApplication',
-                   Filing.filing_json['filing']['amalgamationApplication']
-                   ['amalgamatingBusinesses'].contains([where_clause])
+                   Filing._filing_type == "amalgamationApplication",
+                   Filing.filing_json["filing"]["amalgamationApplication"]
+                   ["amalgamatingBusinesses"].contains([where_clause])
                    ).one_or_none()
         return filing
 
@@ -886,8 +884,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if legal_type not in Business.BUSINESSES:
             return None
 
-        numbered_legal_name_suffix = Business.BUSINESSES[legal_type]['numberedLegalNameSuffix']
-        numbered_legal_name_prefix = ''
+        numbered_legal_name_suffix = Business.BUSINESSES[legal_type]["numberedLegalNameSuffix"]
+        numbered_legal_name_prefix = ""
         if legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
                           Business.LegalTypes.ULC_CONTINUE_IN.value,
                           Business.LegalTypes.CCC_CONTINUE_IN.value,
@@ -895,18 +893,18 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             numbered_legal_name_prefix = identifier[1:]
         else:
             numbered_legal_name_prefix = identifier[2:]
-        return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
+        return f"{numbered_legal_name_prefix} {numbered_legal_name_suffix}"
 
     @classmethod
     def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
         """Return the next value from the sequence."""
         sequence_mapping = {
-            'BC': 'business_identifier_bc',  # only available in sandbox now
-            'C': 'business_identifier_c',  # only available in sandbox now
-            'CP': 'business_identifier_coop',
-            'FM': 'business_identifier_sp_gp',
+            "BC": "business_identifier_bc",  # only available in sandbox now
+            "C": "business_identifier_c",  # only available in sandbox now
+            "CP": "business_identifier_coop",
+            "FM": "business_identifier_sp_gp",
         }
-        if sequence_name := sequence_mapping.get(business_type, None):
+        if sequence_name := sequence_mapping.get(business_type):
             return db.session.execute(f"SELECT nextval('{sequence_name}')").scalar()
         return None
 
@@ -926,10 +924,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             ie: CP1234567 or XCP1234567
 
         """
-        if identifier[:2] == 'NR':
+        if identifier[:2] == "NR":
             return True
 
-        if not re.match(r'^(CP|XCP|BC|C|FM)\d{7}$', identifier):
+        if not re.match(r"^(CP|XCP|BC|C|FM)\d{7}$", identifier):
             return False
 
         try:
@@ -943,10 +941,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
 
 ASSOCIATION_TYPE_DESC: Final = {
-    Business.AssociationTypes.CP_COOPERATIVE.value: 'Ordinary Cooperative',
-    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: 'Housing Cooperative',
-    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: 'Community Service Cooperative',
+    Business.AssociationTypes.CP_COOPERATIVE.value: "Ordinary Cooperative",
+    Business.AssociationTypes.CP_HOUSING_COOPERATIVE.value: "Housing Cooperative",
+    Business.AssociationTypes.CP_COMMUNITY_SERVICE_COOPERATIVE.value: "Community Service Cooperative",
 
-    Business.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: 'Sole Proprietorship',
-    Business.AssociationTypes.SP_DOING_BUSINESS_AS.value: 'Sole Proprietorship (DBA)'
+    Business.AssociationTypes.SP_SOLE_PROPRIETORSHIP.value: "Sole Proprietorship",
+    Business.AssociationTypes.SP_DOING_BUSINESS_AS.value: "Sole Proprietorship (DBA)"
 }

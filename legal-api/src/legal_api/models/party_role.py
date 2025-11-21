@@ -20,9 +20,9 @@ from enum import Enum
 from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
-from .db import db  # noqa: I001
+from .db import db
+from .party import Party
 from .party_class import PartyClass
-from .party import Party  # noqa: I001,F401,I003 pylint: disable=unused-import; needed by the SQLAlchemy rel
 
 
 class PartyRole(db.Model, Versioned):
@@ -31,46 +31,46 @@ class PartyRole(db.Model, Versioned):
     class RoleTypes(Enum):
         """Render an Enum of the role types."""
 
-        APPLICANT = 'applicant'
-        COMPLETING_PARTY = 'completing_party'
-        CUSTODIAN = 'custodian'
-        DIRECTOR = 'director'
-        INCORPORATOR = 'incorporator'
-        LIQUIDATOR = 'liquidator'
-        PROPRIETOR = 'proprietor'
-        PARTNER = 'partner'
-        RECEIVER = 'receiver'
-        OFFICER = 'officer'
-        CEO = 'ceo'
-        CFO = 'cfo'
-        PRESIDENT = 'president'
-        VICE_PRESIDENT = 'vice_president'
-        CHAIR = 'chair'
-        TREASURER = 'treasurer'
-        SECRETARY = 'secretary'
-        ASSISTANT_SECRETARY = 'assistant_secretary'
-        OTHER = 'other'
+        APPLICANT = "applicant"
+        COMPLETING_PARTY = "completing_party"
+        CUSTODIAN = "custodian"
+        DIRECTOR = "director"
+        INCORPORATOR = "incorporator"
+        LIQUIDATOR = "liquidator"
+        PROPRIETOR = "proprietor"
+        PARTNER = "partner"
+        RECEIVER = "receiver"
+        OFFICER = "officer"
+        CEO = "ceo"
+        CFO = "cfo"
+        PRESIDENT = "president"
+        VICE_PRESIDENT = "vice_president"
+        CHAIR = "chair"
+        TREASURER = "treasurer"
+        SECRETARY = "secretary"
+        ASSISTANT_SECRETARY = "assistant_secretary"
+        OTHER = "other"
 
     __versioned__ = {}
-    __tablename__ = 'party_roles'
+    __tablename__ = "party_roles"
 
     id = db.Column(db.Integer, primary_key=True)
-    role = db.Column('role', db.String(30), default=RoleTypes.DIRECTOR)
-    appointment_date = db.Column('appointment_date', db.DateTime(timezone=True))
-    cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
+    role = db.Column("role", db.String(30), default=RoleTypes.DIRECTOR)
+    appointment_date = db.Column("appointment_date", db.DateTime(timezone=True))
+    cessation_date = db.Column("cessation_date", db.DateTime(timezone=True))
 
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
-    party_id = db.Column('party_id', db.Integer, db.ForeignKey('parties.id'))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"))
+    filing_id = db.Column("filing_id", db.Integer, db.ForeignKey("filings.id"))
+    party_id = db.Column("party_id", db.Integer, db.ForeignKey("parties.id"))
     party_class_type = db.Column(
-        'party_class_type',
+        "party_class_type",
         db.Enum(PartyClass.PartyClassType),
-        db.ForeignKey('party_class.class_type')
+        db.ForeignKey("party_class.class_type")
     )
 
     # relationships
-    party = db.relationship('Party')
-    party_class = db.relationship('PartyClass', back_populates='party_roles')
+    party = db.relationship("Party")
+    party_class = db.relationship("PartyClass", back_populates="party_roles")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -82,13 +82,13 @@ class PartyRole(db.Model, Versioned):
         """Return the party member as a json object."""
         party = {
             **self.party.json,
-            'appointmentDate': datetime.date(self.appointment_date).isoformat(),
-            'cessationDate': datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
-            'role': self.role
+            "appointmentDate": datetime.date(self.appointment_date).isoformat(),
+            "cessationDate": datetime.date(self.cessation_date).isoformat() if self.cessation_date else None,
+            "role": self.role
         }
 
         if self.party_class_type:
-            party['roleClass'] = self.party_class_type.name
+            party["roleClass"] = self.party_class_type.name
 
         return party
 
@@ -110,13 +110,13 @@ class PartyRole(db.Model, Versioned):
                        all())
         party = None
         # the given name to find
-        search_name = ''
+        search_name = ""
         if org_name:
             search_name = org_name
         elif middle_initial:
-            search_name = ' '.join((first_name.strip(), middle_initial.strip(), last_name.strip()))
+            search_name = " ".join((first_name.strip(), middle_initial.strip(), last_name.strip()))
         else:
-            search_name = ' '.join((first_name.strip(), last_name.strip()))
+            search_name = " ".join((first_name.strip(), last_name.strip()))
 
         for role in party_roles:
             # the name of the party for each role

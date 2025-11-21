@@ -16,8 +16,8 @@
 from legal_api.models import Business
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
-from .corps import check_business as corps_check  # noqa: I003
-from .firms import check_business as firms_check  # noqa: I003
+from .corps import check_business as corps_check
+from .firms import check_business as firms_check
 from .involuntary_dissolution import check_business as involuntary_dissolution_check
 
 

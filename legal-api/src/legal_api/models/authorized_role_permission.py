@@ -21,17 +21,17 @@ from .db import db
 class AuthorizedRolePermission(db.Model):
     """This class manages all of the authorized role permissions."""
 
-    __tablename__ = 'authorized_role_permissions'
+    __tablename__ = "authorized_role_permissions"
 
-    role_id = db.Column(db.Integer, db.ForeignKey('authorized_roles.id'), primary_key=True)
-    permission_id = db.Column(db.Integer, db.ForeignKey('permissions.id'), primary_key=True)
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
+    role_id = db.Column(db.Integer, db.ForeignKey("authorized_roles.id"), primary_key=True)
+    permission_id = db.Column(db.Integer, db.ForeignKey("permissions.id"), primary_key=True)
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)
     modified_by_id = db.Column(db.Integer, nullable=True)
 
-    role = db.relationship('AuthorizedRole', back_populates='permissions')
-    permission = db.relationship('Permission', back_populates='authorized_roles')
+    role = db.relationship("AuthorizedRole", back_populates="permissions")
+    permission = db.relationship("Permission", back_populates="authorized_roles")
 
     def save(self):
         """Save the object to the database immediately."""
@@ -41,8 +41,8 @@ class AuthorizedRolePermission(db.Model):
     @classmethod
     def get_authorized_permissions_by_role_name(cls, role_name):
         """Return a list of authorized permissions for a given role."""
-        from .permission import Permission  # pylint: disable=import-outside-toplevel
         from .authorized_role import AuthorizedRole  # pylint: disable=import-outside-toplevel
+        from .permission import Permission  # pylint: disable=import-outside-toplevel
 
         authorized_permissions = (
             db.session.query(Permission)

@@ -16,32 +16,33 @@ from http import HTTPStatus
 from typing import Dict, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
-# noqa: I004
+
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import validate_pdf
 from legal_api.services.utils import get_str
+
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(business: Business, court_order: Dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not court_order:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid business and filing are required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
-    effect_of_order = get_str(court_order, '/filing/courtOrder/effectOfOrder')
-    if effect_of_order and effect_of_order != 'planOfArrangement':
-        msg.append({'error': babel('Invalid effectOfOrder.'), 'path': '/filing/courtOrder/effectOfOrder'})
+    effect_of_order = get_str(court_order, "/filing/courtOrder/effectOfOrder")
+    if effect_of_order and effect_of_order != "planOfArrangement":
+        msg.append({"error": babel("Invalid effectOfOrder."), "path": "/filing/courtOrder/effectOfOrder"})
 
-    file_key_path = '/filing/courtOrder/fileKey'
+    file_key_path = "/filing/courtOrder/fileKey"
     file_key = get_str(court_order, file_key_path)
 
-    order_details_path = '/filing/courtOrder/orderDetails'
+    order_details_path = "/filing/courtOrder/orderDetails"
     order_details = get_str(court_order, order_details_path)
 
     if not order_details and not file_key:
-        msg.append({'error': babel('Court Order is required (in orderDetails/fileKey).'), 'path': '/filing/courtOrder'})
+        msg.append({"error": babel("Court Order is required (in orderDetails/fileKey)."), "path": "/filing/courtOrder"})
 
     if file_key:
         file_err = validate_pdf(file_key, file_key_path)

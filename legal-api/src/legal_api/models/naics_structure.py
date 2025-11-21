@@ -33,7 +33,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import contains_eager
 
-from .db import db  # noqa: I001
+from .db import db
 from .naics_element import NaicsElement
 
 
@@ -43,40 +43,40 @@ class NaicsStructure(db.Model):
     Represents NAICS Structure.
     """
 
-    __tablename__ = 'naics_structures'
+    __tablename__ = "naics_structures"
 
     id = db.Column(db.Integer, primary_key=True)
-    naics_key = db.Column('naics_key', UUID, nullable=False, default=uuid.uuid4)
-    level = db.Column('level', db.Integer, index=True, nullable=False)
-    hierarchical_structure = db.Column('hierarchical_structure', db.String(25), nullable=False)
-    code = db.Column('code', db.String(10), index=True, nullable=False)
-    year = db.Column('year', db.Integer, index=True, nullable=False)
-    version = db.Column('version', db.Integer, index=True, nullable=False)
-    class_title = db.Column('class_title', db.String(150), index=True, nullable=False)
-    superscript = db.Column('superscript', db.String(5), nullable=True)
-    class_definition = db.Column('class_definition', db.String(5100), index=True, nullable=False)
+    naics_key = db.Column("naics_key", UUID, nullable=False, default=uuid.uuid4)
+    level = db.Column("level", db.Integer, index=True, nullable=False)
+    hierarchical_structure = db.Column("hierarchical_structure", db.String(25), nullable=False)
+    code = db.Column("code", db.String(10), index=True, nullable=False)
+    year = db.Column("year", db.Integer, index=True, nullable=False)
+    version = db.Column("version", db.Integer, index=True, nullable=False)
+    class_title = db.Column("class_title", db.String(150), index=True, nullable=False)
+    superscript = db.Column("superscript", db.String(5), nullable=True)
+    class_definition = db.Column("class_definition", db.String(5100), index=True, nullable=False)
 
     # relationships
-    naics_elements = db.relationship('NaicsElement')
+    naics_elements = db.relationship("NaicsElement")
 
     # json serializer
     @property
     def json(self) -> dict:
         """Return a dict of this object, with keys in JSON format."""
         naics_structures = {
-            'naicsKey': self.naics_key,
-            'code': self.code,
-            'year': self.year,
-            'version': self.version,
-            'classTitle': self.class_title,
-            'classDefinition': self.class_definition
+            "naicsKey": self.naics_key,
+            "code": self.code,
+            "year": self.year,
+            "version": self.version,
+            "classTitle": self.class_title,
+            "classDefinition": self.class_definition
         }
 
         elements = []
         for naics_element in self.naics_elements:
             elements.append(naics_element.json)
 
-        naics_structures['naicsElements'] = elements
+        naics_structures["naicsElements"] = elements
         return naics_structures
 
     @classmethod
@@ -99,7 +99,7 @@ class NaicsStructure(db.Model):
     @classmethod
     def has_exact_match_class_title_match(cls, search_term: str, level=5) -> bool:
         """Return whether there is at least one exact match on class title exists."""
-        search_term = f'%{search_term}%'
+        search_term = f"%{search_term}%"
         naics_year, naics_version = cls.get_naics_config()
 
         query = \
@@ -123,7 +123,7 @@ class NaicsStructure(db.Model):
         examples where contains exact match in NaicsElement.element_description
         """
         naics_year, naics_version = cls.get_naics_config()
-        search_term = f'%{search_term}%'
+        search_term = f"%{search_term}%"
 
         # query used to retrieve query matching 6 digit NAICS codes along with relevant NAICS elements
         query = \
@@ -172,9 +172,9 @@ class NaicsStructure(db.Model):
         Return only elements where example desc matches one of the words in the search term.
         """
         naics_year, naics_version = cls.get_naics_config()
-        search_terms = search_term.split(' ')
-        search_terms = [f'%{x}%' for x in search_terms]
-        search_term = f'%{search_term}%'
+        search_terms = search_term.split(" ")
+        search_terms = [f"%{x}%" for x in search_terms]
+        search_term = f"%{search_term}%"
         naics_element_class_desc_ilike_filters = [NaicsElement.element_description.ilike(x) for x in search_terms]
 
         # query used to retrieve query matching 6 digit NAICS codes along with relevant NAICS elements
@@ -235,7 +235,7 @@ class NaicsStructure(db.Model):
     @classmethod
     def get_naics_config(cls):
         """Return NAICS config."""
-        naics_year = int(current_app.config.get('NAICS_YEAR'))
-        naics_version = int(current_app.config.get('NAICS_VERSION'))
+        naics_year = int(current_app.config.get("NAICS_YEAR"))
+        naics_version = int(current_app.config.get("NAICS_VERSION"))
 
         return naics_year, naics_version

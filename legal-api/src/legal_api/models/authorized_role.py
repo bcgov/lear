@@ -20,19 +20,19 @@ from .db import db
 class AuthorizedRole(db.Model):
     """This class manages all of the authorized roles."""
 
-    __tablename__ = 'authorized_roles'
+    __tablename__ = "authorized_roles"
 
     id = db.Column(db.Integer, primary_key=True)
-    role_name = db.Column('role_name', db.String(50), nullable=False, unique=True, default='public_user')
-    created_date = db.Column('created_date', db.DateTime(timezone=True), default=func.now())
-    last_modified = db.Column('last_modified', db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
+    role_name = db.Column("role_name", db.String(50), nullable=False, unique=True, default="public_user")
+    created_date = db.Column("created_date", db.DateTime(timezone=True), default=func.now())
+    last_modified = db.Column("last_modified", db.DateTime(timezone=True), onupdate=func.now(), default=func.now())
     created_by_id = db.Column(db.Integer, nullable=True)
     modified_by_id = db.Column(db.Integer, nullable=True)
 
     permissions = db.relationship(
-        'AuthorizedRolePermission',
-        back_populates='role',
-        cascade='all, delete-orphan'
+        "AuthorizedRolePermission",
+        back_populates="role",
+        cascade="all, delete-orphan"
     )
 
     def save(self):

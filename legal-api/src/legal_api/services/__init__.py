@@ -16,6 +16,15 @@ import uuid
 
 from gcp_queue import GcpQueue
 
+from .authz import (  # noqa: I001; noqa: I001;
+    ACCOUNT_IDENTITY,
+    BASIC_USER,
+    COLIN_SVC_ROLE,
+    STAFF_ROLE,
+    SYSTEM_ROLE,
+    authorized,
+    has_roles,
+)
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
@@ -32,17 +41,6 @@ from .namex import NameXService
 from .pdf_service import PdfService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
-
-
-from .authz import (  # noqa: I001; noqa: I001;
-    ACCOUNT_IDENTITY,
-    BASIC_USER,
-    COLIN_SVC_ROLE,
-    STAFF_ROLE,
-    SYSTEM_ROLE,
-    authorized,
-    has_roles,
-)
 
 flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
 gcp_queue = GcpQueue()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.

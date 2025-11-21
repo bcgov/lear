@@ -17,19 +17,20 @@
 import logging
 
 from flask import url_for
-from flask_script import Manager  # class for handling a set of commands
 from flask_migrate import Migrate, MigrateCommand
+from flask_script import Manager  # class for handling a set of commands
 
-from legal_api import create_app
-from legal_api.models import db
 # models included so that migrate can build the database migrations
-from legal_api import models  # pylint: disable=unused-import
+from legal_api import (
+    create_app,  # pylint: disable=unused-import
+)
+from legal_api.models import db
 
 APP = create_app()
 MIGRATE = Migrate(APP, db)
 MANAGER = Manager(APP)
 
-MANAGER.add_command('db', MigrateCommand)
+MANAGER.add_command("db", MigrateCommand)
 
 
 @MANAGER.command
@@ -39,17 +40,17 @@ def list_routes():
 
         options = {}
         for arg in rule.arguments:
-            options[arg] = "[{0}]".format(arg)
+            options[arg] = f"[{arg}]"
 
-        methods = ','.join(rule.methods)
+        methods = ",".join(rule.methods)
         url = url_for(rule.endpoint, **options)
-        line = ("{:50s} {:20s} {}".format(rule.endpoint, methods, url))
+        line = (f"{rule.endpoint:50s} {methods:20s} {url}")
         output.append(line)
 
     for line in sorted(output):
         print(line)
 
 
-if __name__ == '__main__':
-    logging.log(logging.INFO, 'Running the Manager')
+if __name__ == "__main__":
+    logging.log(logging.INFO, "Running the Manager")
     MANAGER.run()

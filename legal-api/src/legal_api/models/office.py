@@ -29,29 +29,29 @@ class Office(db.Model, Versioned):  # pylint: disable=too-few-public-methods
     """
 
     __versioned__ = {}
-    __tablename__ = 'offices'
+    __tablename__ = "offices"
 
     id = db.Column(db.Integer, primary_key=True)
-    office_type = db.Column('office_type', db.String(75), db.ForeignKey('office_types.identifier'))
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
-    addresses = db.relationship('Address', backref='office', lazy='dynamic', cascade='all, delete, delete-orphan')
-    deactivated_date = db.Column('deactivated_date', db.DateTime(timezone=True), default=None)
+    office_type = db.Column("office_type", db.String(75), db.ForeignKey("office_types.identifier"))
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
+    addresses = db.relationship("Address", backref="office", lazy="dynamic", cascade="all, delete, delete-orphan")
+    deactivated_date = db.Column("deactivated_date", db.DateTime(timezone=True), default=None)
 
     # relationships
-    business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
+    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
 
 
 class OfficeType(db.Model):  # pylint: disable=too-few-public-methods
     """Define the Office Types available for Legal Entities."""
 
-    __tablename__ = 'office_types'
+    __tablename__ = "office_types"
 
     identifier = db.Column(db.String(50), primary_key=True)
     description = db.Column(db.String(50))
 
     # Office Types Constants
-    REGISTERED = 'registeredOffice'
-    RECORDS = 'recordsOffice'
-    CUSTODIAL = 'custodialOffice'
-    BUSINESS = 'businessOffice'
-    LIQUIDATION = 'liquidationRecordsOffice'
+    REGISTERED = "registeredOffice"
+    RECORDS = "recordsOffice"
+    CUSTODIAL = "custodialOffice"
+    BUSINESS = "businessOffice"
+    LIQUIDATION = "liquidationRecordsOffice"

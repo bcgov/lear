@@ -28,5 +28,4 @@ from .business_tasks import TaskListResource
 from .filing_comments import CommentResource
 from .internal_services import InternalBusinessResource
 
-
-__all__ = ('API',)
+__all__ = ("API",)

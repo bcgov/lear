@@ -15,8 +15,8 @@
 from http import HTTPStatus
 from typing import Optional
 
-from flask import current_app, redirect, request, url_for, Flask  # noqa: I001
-from registry_schemas import __version__ as registry_schemas_version  # noqa: I005
+from flask import Flask, current_app, redirect, request, url_for
+from registry_schemas import __version__ as registry_schemas_version
 
 from legal_api import errorhandlers
 from legal_api.utils.run_version import get_run_version
@@ -42,7 +42,7 @@ class Endpoints:
         self._mount_endpoints()
 
     def _handler_setup(self):
-        @self.app.route('/')
+        @self.app.route("/")
         def be_nice_swagger_redirect():  # pylint: disable=unused-variable
             """Redirect / to the swagger app, until the REST extension is removed."""
             # TODO: remove this when the REST extension is removed.
@@ -51,22 +51,17 @@ class Endpoints:
         @self.app.before_request
         def before_request():
             """Before routing the request, check the Accept Version header to route to the correct API."""
-            if (version := request.headers.get('accept-version')) and request.endpoint:  # pylint: disable=R1705
-                if version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name + '.'):
-                    return self._redirect(
-                        url_for(
-                            request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
-                        ))
-                elif version == EndpointVersionEnum.V1 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V1.name + '.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
+            if (version := request.headers.get("accept-version")) and request.endpoint:  # pylint: disable=R1705
+                if (version == EndpointVersionEnum.V1 and request.endpoint.startswith(EndpointEnum.API.name + ".")) or (version == EndpointVersionEnum.V1 \
+                    and not request.endpoint.startswith(EndpointEnum.API_V1.name + ".") \
+                        and request.endpoint.startswith(EndpointEnum.API.name + ".")):
                     return self._redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V1.name, 1)
                         ))
                 elif version == EndpointVersionEnum.V2 \
-                    and not request.endpoint.startswith(EndpointEnum.API_V2.name + '.') \
-                        and request.endpoint.startswith(EndpointEnum.API.name + '.'):
+                    and not request.endpoint.startswith(EndpointEnum.API_V2.name + ".") \
+                        and request.endpoint.startswith(EndpointEnum.API.name + "."):
                     return self._redirect(
                         url_for(
                             request.endpoint.replace(EndpointEnum.API.name, EndpointEnum.API_V2.name, 1)
@@ -76,8 +71,8 @@ class Endpoints:
         @self.app.after_request
         def add_version(response):  # pylint: disable=unused-variable
             version = get_run_version()
-            response.headers['API'] = f'legal_api/{version}'
-            response.headers['SCHEMAS'] = f'registry_schemas/{registry_schemas_version}'
+            response.headers["API"] = f"legal_api/{version}"
+            response.headers["SCHEMAS"] = f"registry_schemas/{registry_schemas_version}"
             return response
 
         @self.app.errorhandler(404)
@@ -87,7 +82,7 @@ class Endpoints:
                 path = request.path.replace(EndpointEnum.API_V2.value, EndpointEnum.API_V1.value)
                 return self._redirect(path)
 
-            elif request.path.startswith(EndpointEnum.API.value) and not ('v1' in request.path or 'v2' in request.path):
+            elif request.path.startswith(EndpointEnum.API.value) and not ("v1" in request.path or "v2" in request.path):
                 path = request.path.replace(EndpointEnum.API.value, EndpointEnum.API_V1.value)
                 return self._redirect(path)
 
@@ -96,7 +91,7 @@ class Endpoints:
         errorhandlers.init_app(self.app)
 
     def _redirect(self, path, code=302):
-        if request.method == 'OPTIONS':
+        if request.method == "OPTIONS":
             options_resp = current_app.make_default_options_response()
             self._set_access_control_header(options_resp)
             return options_resp
@@ -106,8 +101,8 @@ class Endpoints:
         return resp
 
     def _set_access_control_header(self, response):  # pylint: disable=unused-variable
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Headers'] = 'Authorization, Content-Type, App-Name'
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, App-Name"
 
     def _mount_endpoints(self):
         """Mount the endpoints of the system."""

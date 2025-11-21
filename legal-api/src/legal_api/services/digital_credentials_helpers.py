@@ -31,7 +31,7 @@ def get_digital_credential_data(business_user: DCBusinessUser,
         business = business_user.business
         user = business_user.user
 
-        credential_id = f'{business_user.id:08}'
+        credential_id = f"{business_user.id:08}"
         business_type = get_business_type(business)
         registered_on_dateint = get_registered_on_dateint(business)
         company_status = get_company_status(business)
@@ -41,44 +41,44 @@ def get_digital_credential_data(business_user: DCBusinessUser,
 
         return [
             {
-                'name': 'credential_id',
-                'value':  credential_id or ''
+                "name": "credential_id",
+                "value":  credential_id or ""
             },
             {
-                'name': 'identifier',
-                'value': business.identifier or ''
+                "name": "identifier",
+                "value": business.identifier or ""
             },
             {
-                'name': 'business_name',
-                'value': business.legal_name or ''
+                "name": "business_name",
+                "value": business.legal_name or ""
             },
             {
-                'name': 'business_type',
-                'value': business_type or ''
+                "name": "business_type",
+                "value": business_type or ""
             },
             {
-                'name': 'cra_business_number',
-                'value': business.tax_id or ''
+                "name": "cra_business_number",
+                "value": business.tax_id or ""
             },
             {
-                'name': 'registered_on_dateint',
-                'value': registered_on_dateint or ''
+                "name": "registered_on_dateint",
+                "value": registered_on_dateint or ""
             },
             {
-                'name': 'company_status',
-                'value': company_status or ''
+                "name": "company_status",
+                "value": company_status or ""
             },
             {
-                'name': 'family_name',
-                'value': family_name or ''
+                "name": "family_name",
+                "value": family_name or ""
             },
             {
-                'name': 'given_names',
-                'value': given_names or ''
+                "name": "given_names",
+                "value": given_names or ""
             },
             {
-                'name': 'role',
-                'value': ', '.join(roles) or ''
+                "name": "role",
+                "value": ", ".join(roles) or ""
             }
         ]
 
@@ -110,20 +110,20 @@ def get_company_status(business: Business) -> str:
 def get_registered_on_dateint(business: Business) -> str:
     """Get registered on date in YYYYMMDD format."""
     return (
-        LegislationDatetime.as_legislation_timezone(business.founding_date).strftime('%Y%m%d')
+        LegislationDatetime.as_legislation_timezone(business.founding_date).strftime("%Y%m%d")
         if business.founding_date
-        else ''
+        else ""
     )
 
 
 def get_family_name(user: User) -> str:
     """Get family name in uppercase."""
-    return (user.lastname or '').strip().upper()
+    return (user.lastname or "").strip().upper()
 
 
 def get_given_names(user: User) -> str:
     """Get given names in uppercase."""
-    return ' '.join([x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
+    return " ".join([x.strip() for x in [user.firstname, user.middlename] if x and x.strip()]).upper()
 
 
 def get_roles(user: User,
@@ -155,13 +155,13 @@ def get_roles(user: User,
             # Ensures that the user cant attach roles that are not stated in the preconditions
             party_roles = list(filter(valid_party_role_filter, party_roles))
 
-    return list(map(lambda party_role: party_role.role.replace('_', ' ').title(), party_roles))
+    return list(map(lambda party_role: party_role.role.replace("_", " ").title(), party_roles))
 
 
 def extract_invitation_message_id(json_message: dict) -> str:
     """Extract the invitation message id from the json message."""
-    if 'invitation' in json_message and json_message['invitation'] is not None:
-        invitation_message_id = json_message['invitation']['@id']
+    if "invitation" in json_message and json_message["invitation"] is not None:
+        invitation_message_id = json_message["invitation"]["@id"]
     else:
-        invitation_message_id = json_message['invitation_msg_id']
+        invitation_message_id = json_message["invitation_msg_id"]
     return invitation_message_id

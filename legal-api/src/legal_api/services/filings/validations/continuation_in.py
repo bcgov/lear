@@ -15,7 +15,7 @@
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
+from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
@@ -24,8 +24,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
     validate_foreign_jurisdiction,
-    validate_name_translation,
     validate_name_request,
+    validate_name_translation,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
@@ -43,21 +43,21 @@ from legal_api.utils.datetime import datetime as dt
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
     """Validate the Continuation In filing."""
-    filing_type = 'continuationIn'
+    filing_type = "continuationIn"
     if not filing_json:
-        return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
+        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
     msg = []
 
-    legal_type_path = '/filing/continuationIn/nameRequest/legalType'
+    legal_type_path = "/filing/continuationIn/nameRequest/legalType"
     legal_type = get_str(filing_json, legal_type_path)
     if not legal_type:
-        msg.append({'error': babel('Legal type is required.'), 'path': legal_type_path})
+        msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    enabled_filings = flags.value('supported-continuation-in-entities').split()
+    enabled_filings = flags.value("supported-continuation-in-entities").split()
     if legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
-                     [{'error': babel(f'{legal_type} does not support continuation in filing.')}])
+                     [{"error": babel(f"{legal_type} does not support continuation in filing.")}])
 
     msg.extend(validate_business_in_colin(filing_json, filing_type))
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
@@ -65,7 +65,7 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
     msg.extend(validate_name_translation(filing_json, filing_type))
 
-    if get_bool(filing_json, '/filing/continuationIn/isApproved'):
+    if get_bool(filing_json, "/filing/continuationIn/isApproved"):
         msg.extend(validate_offices(filing_json, legal_type, filing_type))
         msg.extend(validate_offices_addresses(filing_json, filing_type))
         msg.extend(validate_roles(filing_json, legal_type, filing_type))
@@ -104,10 +104,10 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
     director_count = 0
     invalid_roles = set()
 
-    parties = filing_dict['filing'][filing_type]['parties']
-    for party in parties:  # pylint: disable=too-many-nested-blocks;  # noqa: E501
-        for role in party.get('roles', []):
-            role_type = role.get('roleType').lower().replace(' ', '_')
+    parties = filing_dict["filing"][filing_type]["parties"]
+    for party in parties:  # pylint: disable=too-many-nested-blocks;
+        for role in party.get("roles", []):
+            role_type = role.get("roleType").lower().replace(" ", "_")
             if role_type == PartyRole.RoleTypes.COMPLETING_PARTY.value:
                 completing_party_count += 1
             elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
@@ -116,23 +116,23 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
                 invalid_roles.add(role_type)  
 
     if invalid_roles:
-        err_path = f'/filing/{filing_type}/parties/roles'
+        err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
-            'error': f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
-            'path': err_path
+            "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
+            "path": err_path
         })      
 
     if completing_party_count == 0:
-        err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': 'Must have a minimum of one completing party.', 'path': err_path})
+        err_path = f"/filing/{filing_type}/parties/roles"
+        msg.append({"error": "Must have a minimum of one completing party.", "path": err_path})
     elif completing_party_count > 1:
-        err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': 'Must have a maximum of one completing party.', 'path': err_path})
+        err_path = f"/filing/{filing_type}/parties/roles"
+        msg.append({"error": "Must have a maximum of one completing party.", "path": err_path})
 
     min_director_count = min_director_count_info.get(legal_type, 0)
     if director_count < min_director_count:
-        err_path = f'/filing/{filing_type}/parties/roles'
-        msg.append({'error': f'Must have a minimum of {min_director_count} Director.', 'path': err_path})
+        err_path = f"/filing/{filing_type}/parties/roles"
+        msg.append({"error": f"Must have a minimum of {min_director_count} Director.", "path": err_path})
 
     return msg
 
@@ -140,22 +140,22 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
 def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate continuation in foreign jurisdiction."""
     msg = []
-    foreign_jurisdiction = filing_json['filing'][filing_type]['foreignJurisdiction']
-    incorporation_date = filing_json['filing'][filing_type]['foreignJurisdiction']['incorporationDate']
-    foreign_jurisdiction_path = f'/filing/{filing_type}/foreignJurisdiction'
-    incorporation_date_path = f'/filing/{filing_type}/foreignJurisdiction/incorporationDate'
+    foreign_jurisdiction = filing_json["filing"][filing_type]["foreignJurisdiction"]
+    incorporation_date = filing_json["filing"][filing_type]["foreignJurisdiction"]["incorporationDate"]
+    foreign_jurisdiction_path = f"/filing/{filing_type}/foreignJurisdiction"
+    incorporation_date_path = f"/filing/{filing_type}/foreignJurisdiction/incorporationDate"
 
     if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
     elif (legal_type == Business.LegalTypes.ULC_CONTINUE_IN.value and
-          foreign_jurisdiction['country'] == 'CA' and
-          ((region := foreign_jurisdiction.get('region')) and region == 'AB')):
-        affidavit_file_key_path = f'{foreign_jurisdiction_path}/affidavitFileKey'
-        if file_key := foreign_jurisdiction.get('affidavitFileKey'):
+          foreign_jurisdiction["country"] == "CA" and
+          ((region := foreign_jurisdiction.get("region")) and region == "AB")):
+        affidavit_file_key_path = f"{foreign_jurisdiction_path}/affidavitFileKey"
+        if file_key := foreign_jurisdiction.get("affidavitFileKey"):
             if err := validate_pdf(file_key, affidavit_file_key_path, False):
                 msg.extend(err)
         else:
-            msg.append({'error': 'Affidavit from the directors is required.', 'path': affidavit_file_key_path})
+            msg.append({"error": "Affidavit from the directors is required.", "path": affidavit_file_key_path})
     try:
         # Check the incorporation date is in valid format
         incorporation_date_formatted = dt.fromisoformat(incorporation_date)
@@ -163,13 +163,13 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
         # Check if the date is today or before
         if incorporation_date_formatted > dt.now():
             msg.append({
-                'error': 'Incorporation date cannot be in the future.',
-                'path': incorporation_date_path
+                "error": "Incorporation date cannot be in the future.",
+                "path": incorporation_date_path
             })
     except ValueError:
         msg.append({
-            'error': f'{incorporation_date} is an invalid ISO format for incorporation date.',
-            'path': incorporation_date_path
+            "error": f"{incorporation_date} is an invalid ISO format for incorporation date.",
+            "path": incorporation_date_path
         })
 
     return msg
@@ -178,16 +178,16 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
 def validate_continuation_in_authorization(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate continuation in authorization."""
     msg = []
-    authorization_path = f'/filing/{filing_type}/authorization'
-    file_list = filing_json['filing'][filing_type]['authorization']['files']
+    authorization_path = f"/filing/{filing_type}/authorization"
+    file_list = filing_json["filing"][filing_type]["authorization"]["files"]
 
     if legal_type in Business.CORPS and len(file_list) > 5:  # max 5 files
-        msg.append({'error': 'Too many files, maximum 5 authorization files', 'path': authorization_path})
+        msg.append({"error": "Too many files, maximum 5 authorization files", "path": authorization_path})
         return msg
 
     for index, file in enumerate(file_list):
-        file_key = file['fileKey']
-        file_key_path = f'{authorization_path}/files/{index}/fileKey'
+        file_key = file["fileKey"]
+        file_key_path = f"{authorization_path}/files/{index}/fileKey"
         if err := validate_pdf(file_key, file_key_path, False):
             msg.extend(err)
 
@@ -196,8 +196,8 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str, 
 
 def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
     """Validate court order."""
-    if court_order := filing.get('filing', {}).get(filing_type, {}).get('courtOrder', None):
-        court_order_path: Final = f'/filing/{filing_type}/courtOrder'
+    if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
+        court_order_path: Final = f"/filing/{filing_type}/courtOrder"
         err = validate_court_order(court_order_path, court_order)
         if err:
             return err
@@ -207,24 +207,24 @@ def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
 def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
     """Validate continuation EXPRO business by making a call to Colin API."""
     msg = []
-    business_identifier_path = f'/filing/{filing_type}/business/identifier'
-    business_legal_name_path = f'/filing/{filing_type}/business/legalName'
-    business_founding_date_path = f'/filing/{filing_type}/business/foundingDate'
+    business_identifier_path = f"/filing/{filing_type}/business/identifier"
+    business_legal_name_path = f"/filing/{filing_type}/business/legalName"
+    business_founding_date_path = f"/filing/{filing_type}/business/foundingDate"
 
-    if filing_json['filing'][filing_type].get('business'):
-        identifier = filing_json['filing'][filing_type]['business']['identifier']
-        legal_name = filing_json['filing'][filing_type]['business'].get('legalName')
-        founding_date = filing_json['filing'][filing_type]['business'].get('foundingDate')
+    if filing_json["filing"][filing_type].get("business"):
+        identifier = filing_json["filing"][filing_type]["business"]["identifier"]
+        legal_name = filing_json["filing"][filing_type]["business"].get("legalName")
+        founding_date = filing_json["filing"][filing_type]["business"].get("foundingDate")
         response = colin.query_business(identifier)
         response_json = response.json()
         if response.status_code != HTTPStatus.OK:
-            msg.append({'error': 'Could not fetch business data for company from Colin.',
-                        'path': business_identifier_path})
-        elif legal_name != response_json['business']['legalName']:
-            msg.append({'error': 'Legal name does not match with company legal name from Colin.',
-                        'path': business_legal_name_path})
-        elif founding_date != response_json['business']['foundingDate']:
-            msg.append({'error': 'Founding date does not match with founding date from Colin.',
-                        'path': business_founding_date_path})
+            msg.append({"error": "Could not fetch business data for company from Colin.",
+                        "path": business_identifier_path})
+        elif legal_name != response_json["business"]["legalName"]:
+            msg.append({"error": "Legal name does not match with company legal name from Colin.",
+                        "path": business_legal_name_path})
+        elif founding_date != response_json["business"]["foundingDate"]:
+            msg.append({"error": "Founding date does not match with founding date from Colin.",
+                        "path": business_founding_date_path})
 
     return msg
