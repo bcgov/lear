@@ -69,10 +69,49 @@ class Endpoints:
             return None
 
         @self.app.after_request
-        def add_version(response):  # pylint: disable=unused-variable
+        def after_request(response):  # pylint: disable=unused-variable
             version = get_run_version()
             response.headers["API"] = f"legal_api/{version}"
             response.headers["SCHEMAS"] = f"registry_schemas/{registry_schemas_version}"
+
+            # Log non-successful responses (not 2xx)
+            try:
+                status = response.status_code
+                if not (200 <= status <= 299):
+                    try:
+                        req_body = request.get_json(silent=True)
+                    except Exception:
+                        try:
+                            resp_body = response.get_data(as_text=True)
+                        except Exception:
+                            req_body = "no json reqest"
+
+                    try:
+                        resp_body = response.get_json(silent=True)
+                    except Exception:
+                        try:
+                            resp_body = response.get_data(as_text=True)
+                        except Exception:
+                            resp_body = "no json response"
+
+                    # only include App-Name and Account-Id from request headers
+                    header_info = {
+                        "App-Name": request.headers.get("App-Name"),
+                        "Account-Id": request.headers.get("Account-Id"),
+                    }
+
+                    current_app.logger.warning(
+                        "Non-successful: %s %s -> %s\nRequest headers: %s\nRequest body: %s\nResponse body: %s",
+                        request.method,
+                        request.path,
+                        status,
+                        header_info,
+                        req_body,
+                        resp_body,
+                    )
+            except Exception:
+                current_app.logger.exception("Failed to log non-successful response")
+
             return response
 
         @self.app.errorhandler(404)
