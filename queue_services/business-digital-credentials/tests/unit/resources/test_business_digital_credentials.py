@@ -235,6 +235,34 @@ def test_process_event_filing_message_change_of_registration(mock_find_filing, m
         mock_cor_process.assert_called_once_with(mock_business, mock_filing)
 
 
+@patch("business_digital_credentials.digital_credential_processors.change_of_directors.process", spec=True)
+@patch("business_model.models.Business.find_by_internal_id")
+@patch("business_model.models.Filing.find_by_id")
+def test_process_event_filing_message_change_of_directors(mock_find_filing, mock_find_business, mock_cor_process, app):
+    """Test process_event with filing message for change of directors."""
+    with app.app_context():
+        mock_filing = MagicMock()
+        mock_filing.filing_type = FilingTypes.CHANGEOFDIRECTORS.value
+        mock_filing.status = "COMPLETED"
+        mock_filing.business_id = 123
+        mock_find_filing.return_value = mock_filing
+        
+        mock_business = MagicMock()
+        mock_business.identifier = "BC1234567"
+        mock_business.legal_name = "Test Business"
+        mock_find_business.return_value = mock_business
+        
+        ce = MagicMock(spec=SimpleCloudEvent)
+        ce.type = "bc.registry.business.changeOfDirectors"
+        ce.data = {"filing": {"header": {"filingId": 999}}}
+        
+        process_event(ce)
+        
+        mock_find_filing.assert_called_once_with(999)
+        mock_find_business.assert_called_once_with(123)
+        mock_cor_process.assert_called_once_with(mock_business, mock_filing)
+
+
 @patch("business_digital_credentials.digital_credential_processors.dissolution.process", spec=True)
 @patch("business_model.models.Business.find_by_internal_id")
 @patch("business_model.models.Filing.find_by_id")
