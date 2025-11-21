@@ -573,6 +573,7 @@ def validate_effective_date(filing_json: dict) -> list:
 def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list:
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
+    is_dba = False
     if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
         role_type = PartyRole.RoleTypes.PROPRIETOR.value
     elif business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
@@ -588,7 +589,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
 
     for party in parties:
         roles = party.get("roles", [])
-        has_matching_role = any(role.get("roleType") == role_type for role in roles)
+        has_matching_role = any(role.get("roleType").lower() == role_type.lower() for role in roles)
         if not has_matching_role:
             continue
         officer = party.get("officer", {})
@@ -609,6 +610,8 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                         break
        
         if matched_db_party:
+            if role_type == Business.LegalTypes.SOLE_PROP.value and matched_db_party.organization_name:
+                is_dba = True
             changes = {}
             # Email comparison
             if not is_same_str(email, matched_db_party.email):
@@ -686,13 +689,13 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
 
             if not is_address_changed(old_delivery, new_delivery):
                 changes['deliveryAddress'] = {'old': old_delivery, 'new': new_delivery}
-
             if changes:
                 updated_keys.append({
                     'name_changed':changes.get('name', {}).get('changed', False),
                     'email_changed': 'email' in changes,
                     'address_changed': 'address' in changes,
-                    'delivery_address_changed': 'deliveryAddress' in changes
+                    'delivery_address_changed': 'deliveryAddress' in changes,
+                    'is_dba': is_dba
                 })
 
     return updated_keys

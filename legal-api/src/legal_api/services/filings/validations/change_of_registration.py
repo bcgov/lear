@@ -19,7 +19,9 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001, I003
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    find_updated_keys_for_firms,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -30,6 +32,7 @@ from legal_api.services.filings.validations.registration import (
     validate_party,
     validate_registration_court_order,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 
 
 def validate(business: Business, filing: Dict) -> Optional[Error]:
@@ -39,6 +42,27 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
         return Error(HTTPStatus.BAD_REQUEST, [{'error': babel('A valid filing is required.')}])
 
     msg = []
+    for item in find_updated_keys_for_firms(business, filing, filing_type):
+        if flags.is_on('enabled-deeper-permission-action'):
+            if (item.get('is_dba') and
+                (
+                    item.get('name_changed') or
+                    item.get('address_changed') or
+                    item.get('delivery_address_changed') or
+                    item.get('email_changed')
+                )
+            ):
+                required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
+                message = 'Permission Denied - You do not have permissions edit DBA in this filing.'
+                error = PermissionService.check_user_permission(required_permission, message=message)
+                if error:
+                    return error
+            elif not item.get('is_dba') and item.get('email_changed'):
+                required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
+                message = 'Permission Denied - You do not have permissions edit email in this filing.'
+                error = PermissionService.check_user_permission(required_permission, message=message)
+                if error:
+                    return error
     if filing.get('filing', {}).get('changeOfRegistration', {}).get('nameRequest', None):
         msg.extend(validate_name_request(filing, business.legal_type, filing_type))
     if filing.get('filing', {}).get('changeOfRegistration', {}).get('parties', None):
