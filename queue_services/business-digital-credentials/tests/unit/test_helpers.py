@@ -20,6 +20,8 @@ import pytest
 from business_model.models import DCBusinessUser, DCCredential, DCDefinition, DCRevocationReason, User
 
 from business_digital_credentials.digital_credential_processors.helpers import (
+    _does_officer_match_user,
+    does_officer_have_action,
     get_all_digital_credentials_for_business,
     issue_digital_credential,
     replace_digital_credential,
@@ -39,34 +41,27 @@ BUSINESS_IDENTIFIER = 'FM0000001'
 
 def test_get_all_issued_credentials_for_business_returns_empty_list_no_business_users(app, session):
     """Assert get_all_digital_credentials_for_business returns an empty list when no business users."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
 
-    # Act
     credentials = get_all_digital_credentials_for_business(business=business)
 
-    # Assert
     assert credentials == []
 
 
 def test_get_all_issued_credentials_for_business_returns_empty_list_no_active_connection(app, session):
     """Assert get_all_digital_credentials_for_business returns an empty list when no active connections."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     create_dc_connection(business_user=business_user, is_active=False)
 
-    # Act
     credentials = get_all_digital_credentials_for_business(business=business)
 
-    # Assert
     assert credentials == []
 
 
 def test_get_all_issued_credentials_for_business_returns_credentials(app, session):
     """Assert get_all_digital_credentials_for_business returns a list of credentials."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     user2 = create_user()
@@ -77,28 +72,23 @@ def test_get_all_issued_credentials_for_business_returns_credentials(app, sessio
     create_dc_credential(business_user=business_user2,
                          is_issued=True, is_revoked=False)
 
-    # Act
     credentials = get_all_digital_credentials_for_business(business=business)
 
-    # Assert
     assert len(credentials) == 2
 
 
 @patch('business_registry_digital_credentials.DigitalCredentialsService.revoke_credential')
 def test_issued_credential_not_issued_not_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is not revoked if is not yet issued."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     credential = create_dc_credential(
         business_user=business_user, is_issued=False)
 
-    # Act
     with pytest.raises(Exception) as excinfo:
         revoke_digital_credential(
             credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
-    # Assert
     assert 'Credential is not issued yet or is revoked already.' in str(
         excinfo)
     mock_revoke_credential.assert_not_called()
@@ -107,18 +97,15 @@ def test_issued_credential_not_issued_not_revoked(mock_revoke_credential, app, s
 @patch('business_registry_digital_credentials.DigitalCredentialsService.revoke_credential')
 def test_issued_credential_already_revoked_not_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is not revoked if already revoked."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=True)
 
-    # Act
     with pytest.raises(Exception) as excinfo:
         revoke_digital_credential(
             credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
-    # Assert
     assert 'Credential is not issued yet or is revoked already.' in str(
         excinfo)
     mock_revoke_credential.assert_not_called()
@@ -127,19 +114,16 @@ def test_issued_credential_already_revoked_not_revoked(mock_revoke_credential, a
 @patch('business_registry_digital_credentials.DigitalCredentialsService.revoke_credential')
 def test_issued_credential_no_credential_connection_not_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is not revoked if no credential connection found."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
-    # Act
     credential.connection = None
     with pytest.raises(Exception) as excinfo:
         revoke_digital_credential(
             credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
-    # Assert
     assert f'Active connection not found for credential with ID: {credential.credential_id}.' in str(
         excinfo)
     mock_revoke_credential.assert_not_called()
@@ -148,19 +132,16 @@ def test_issued_credential_no_credential_connection_not_revoked(mock_revoke_cred
 @patch('business_registry_digital_credentials.DigitalCredentialsService.revoke_credential')
 def test_issued_credential_no_active_credential_connection_not_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is not revoked if credential connection is not active."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
-    # Act
     credential.connection.is_active = False
     with pytest.raises(Exception) as excinfo:
         revoke_digital_credential(
             credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
-    # Assert
     assert f'Active connection not found for credential with ID: {credential.credential_id}.' in str(
         excinfo)
     mock_revoke_credential.assert_not_called()
@@ -169,19 +150,16 @@ def test_issued_credential_no_active_credential_connection_not_revoked(mock_revo
 @patch('business_registry_digital_credentials.DigitalCredentialsService.revoke_credential', return_value=None)
 def test_revoke_digital_credential_helper_throws_exception(mock_revoke_credential, app, session):
     """Assert that the revoke issued credential helper throws an exception if the service fails."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
-    # Act
     with pytest.raises(Exception) as excinfo:
         revoke_digital_credential(
             credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
 
-    # Assert
     assert 'Failed to revoke credential.' in str(excinfo)
     assert credential.is_revoked is False
 
@@ -189,18 +167,15 @@ def test_revoke_digital_credential_helper_throws_exception(mock_revoke_credentia
 @patch('business_registry_digital_credentials.DigitalCredentialsService.revoke_credential', return_value={})
 def test_issued_credential_revoked(mock_revoke_credential, app, session):
     """Assert that the issued credential is revoked."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
     credential = create_dc_credential(
         business_user=business_user, is_issued=True, is_revoked=False)
 
-    # Act
     revoke_digital_credential(
         credential=credential, reason=DCRevocationReason.UPDATED_INFORMATION)
 
-    # Assert
     assert credential.is_revoked is True
 
 
@@ -216,7 +191,6 @@ def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_digital_cred
                                                         mock_issue_digital_credential,
                                                         app, session):
     """Assert that the issued credential is revoked first if its not revoked before replacing."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
@@ -224,12 +198,10 @@ def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_digital_cred
         business_user=business_user, is_issued=True, is_revoked=False)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
-    # Act
     replace_digital_credential(credential=credential,
                                credential_type=DCDefinition.CredentialType.business.name,
                                reason=reason)
 
-    # Assert
     mock_revoke_digital_credential.assert_called_once_with(credential, reason)
 
 
@@ -245,7 +217,6 @@ def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
                                                         mock_issue_digital_credential,
                                                         app, session):
     """Assert that the issued credential is not revoked first if its already revoked before replacing."""
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
@@ -253,12 +224,10 @@ def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
         business_user=business_user, is_issued=True, is_revoked=True)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
-    # Act
     replace_digital_credential(credential=credential,
                                credential_type=DCDefinition.CredentialType.business.name,
                                reason=reason)
 
-    # Assert
     mock_revoke_credential.assert_not_called()
 
 
@@ -275,7 +244,6 @@ def test_replace_digital_credential_throws_cred_ex_id_exception(mock_remove_cred
 
     An exception should be thrown if the service fails to remove a credential exchange id.
     """
-    # Arrange
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     user = create_user()
     business_user = create_dc_business_user(business=business, user=user)
@@ -283,13 +251,11 @@ def test_replace_digital_credential_throws_cred_ex_id_exception(mock_remove_cred
         business_user=business_user, is_issued=True, is_revoked=True)
     reason = DCRevocationReason.UPDATED_INFORMATION
 
-    # Act
     with pytest.raises(Exception) as excinfo:
         replace_digital_credential(credential=credential,
                                    credential_type=DCDefinition.CredentialType.business.name,
                                    reason=reason)
 
-    # Assert
     assert 'Failed to remove credential exchange record.' in str(excinfo)
     mock_issue_digital_credential.assert_not_called()
 
@@ -300,7 +266,6 @@ def test_issued_credential_replaced(mock_fetch_credential_exchange_record,
                                     mock_issue_digital_credential,
                                     app, session):
     """Assert that the issued credential is deleted and replaced with a new one."""
-    # Arrange
     user = create_user()
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     business_user = create_dc_business_user(business=business, user=user)
@@ -309,12 +274,10 @@ def test_issued_credential_replaced(mock_fetch_credential_exchange_record,
     credential_type = DCDefinition.CredentialType.business.name
     reason = DCRevocationReason.UPDATED_INFORMATION
 
-    # Act
     replace_digital_credential(credential=credential,
                                credential_type=credential_type,
                                reason=reason)
 
-    # Assert
     assert DCCredential.find_by_id(credential.id) is None
     mock_issue_digital_credential.assert_called_once_with(
         business_user, credential_type)
@@ -323,18 +286,15 @@ def test_issued_credential_replaced(mock_fetch_credential_exchange_record,
 @patch('business_model.models.DCDefinition.find_by', return_value=None)
 def test_issue_digital_credential_throws_definition_not_found_error(mock_find_definition_by, app, session):
     """Assert that the issue_digital_credential helper throws an exception if the definition is not found."""
-    # Arrange
     user = create_user()
     business = create_business(identifier=BUSINESS_IDENTIFIER)
     business_user = create_dc_business_user(business=business, user=user)
     # Don't create a definition - the test expects find_by to return None
 
-    # Act
     with pytest.raises(Exception) as excinfo:
         issue_digital_credential(
             business_user=business_user, credential_type=DCDefinition.CredentialType.business.name)
 
-    # Assert
     assert 'Definition not found for credential type: business.' in str(
         excinfo)
 
@@ -345,7 +305,6 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
                                                                            mock_find_active_by,
                                                                            app, session):
     """Assert that the issue_digital_credential helper throws an exception if the definition is not found."""
-    # Arrange
     mock_digital_credentials.business_schema_id = 'test_schema_id'
     mock_digital_credentials.business_cred_def_id = 'test_credential_definition_id'
     
@@ -364,12 +323,10 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
         business = create_business(identifier='FM0000002')
         business_user = create_dc_business_user(business=business, user=user)
 
-        # Act
         with pytest.raises(Exception) as excinfo:
             issue_digital_credential(
                 business_user=business_user, credential_type=DCDefinition.CredentialType.business.name)
 
-        # Assert
         assert f'Active connection not found for business user with ID: {business_user.id}.' in str(
             excinfo)
 
@@ -383,7 +340,6 @@ def test_issue_digital_credential_throws_exception_on_failure(mock_digital_crede
                                                               mock_digital_credentials,
                                                               app, session):
     """Assert that the issue_digital_credential helper throws an exception if the service fails."""
-    # Arrange
     mock_digital_credentials.issue_credential.return_value = None
     mock_digital_credentials.business_schema_id = 'test_schema_id'
     mock_digital_credentials.business_cred_def_id = 'test_credential_definition_id'
@@ -404,12 +360,10 @@ def test_issue_digital_credential_throws_exception_on_failure(mock_digital_crede
         business_user = create_dc_business_user(business=business, user=user)
         create_dc_connection(business_user=business_user, is_active=True)
 
-        # Act
         with pytest.raises(Exception) as excinfo:
             issue_digital_credential(
                 business_user=business_user, credential_type=DCDefinition.CredentialType.business.name)
 
-        # Assert
         assert 'Failed to issue credential.' in str(excinfo)
 
 
@@ -422,7 +376,6 @@ def test_issue_digital_credential(mock_digital_credentials_helpers,
                                   mock_digital_credentials,
                                   app, session):
     """Assert that the issue_digital_credential helper issues a credential."""
-    # Arrange
     mock_digital_credentials.issue_credential.return_value = {
         'cred_ex_id': 'test_credential_exchange_id'}
     mock_digital_credentials.business_schema_id = 'test_schema_id'
@@ -444,12 +397,239 @@ def test_issue_digital_credential(mock_digital_credentials_helpers,
         business_user = create_dc_business_user(business=business, user=user)
         connection = create_dc_connection(business_user=business_user, is_active=True)
 
-        # Act
         issued_credential = issue_digital_credential(
             business_user=business_user, credential_type=DCDefinition.CredentialType.business.name)
 
-        # Assert
         assert issued_credential.credential_exchange_id == 'test_credential_exchange_id'
         assert issued_credential.credential_id == '00000001'
         assert issued_credential.definition_id == mock_definition.id
         assert issued_credential.connection_id == connection.id
+
+
+# Tests for is_user_in_officers function
+@pytest.mark.parametrize("user_first,user_last,officer_first,officer_last,role_type,search_role,expected", [
+    # Positive cases
+    ("John", "Doe", "John", "Doe", "Partner", "Partner", True),
+    ("john", "doe", "JOHN", "DOE", "Partner", "Partner", True),  # Case insensitive
+    ("john", "doe", "JOHN", "DOE", "Partner", "partner", True),  # Case insensitive
+    
+    # Negative cases - name mismatch
+    ("John", "Doe", "Jane", "Smith", "Partner", "Partner", False),
+    
+    # Negative cases - role mismatch
+    ("John", "Doe", "John", "Doe", "Director", "Partner", False),
+])
+def test_is_user_in_officers_basic_matching(user_first, user_last, officer_first, officer_last, role_type, search_role, expected, app, session):
+    """Test basic name and role matching scenarios."""
+    from business_digital_credentials.digital_credential_processors.helpers import is_user_in_officers
+    
+    user = create_user(firstname=user_first, lastname=user_last)
+    filing_data = {
+        'parties': [
+            {
+                'officer': {
+                    'firstName': officer_first,
+                    'lastName': officer_last
+                },
+                'roles': [
+                    {'roleType': role_type}
+                ]
+            }
+        ]
+    }
+    
+    result = is_user_in_officers(user, filing_data, search_role)
+    assert result is expected
+
+
+@pytest.mark.parametrize("filing_data,expected", [
+    ({'parties': []}, False),  # Empty parties
+    ({}, False),  # Missing parties key
+    ({'parties': [{'roles': [{'roleType': 'Partner'}]}]}, False),  # Missing officer data
+    ({'parties': [{'officer': {'firstName': 'John', 'lastName': 'Doe'}}]}, False),  # Missing roles
+])
+def test_is_user_in_officers_edge_cases(filing_data, expected, app, session):
+    """Test edge cases with malformed or missing data."""
+    from business_digital_credentials.digital_credential_processors.helpers import is_user_in_officers
+    
+    user = create_user(firstname='John', lastname='Doe')
+    result = is_user_in_officers(user, filing_data, 'Partner')
+    assert result is expected
+
+
+def test_is_user_in_officers_stops_at_first_match(app, session):
+    """Assert that is_user_in_officers stops at first match and returns True."""
+    from business_digital_credentials.digital_credential_processors.helpers import is_user_in_officers
+    
+    user = create_user(firstname='John', lastname='Doe')
+    filing_data = {
+        'parties': [
+            {
+                'officer': {
+                    'firstName': 'John',
+                    'lastName': 'Doe'
+                },
+                'roles': [
+                    {'roleType': 'Partner'}
+                ]
+            },
+            {
+                'officer': {
+                    'firstName': 'John',
+                    'lastName': 'Doe'
+                },
+                'roles': [
+                    {'roleType': 'Director'}
+                ]
+            }
+        ]
+    }
+    
+    result = is_user_in_officers(user, filing_data, 'Partner')
+    assert result is True
+
+
+# Tests for _does_officer_match_user function
+@pytest.mark.parametrize("user_first,user_last,officer_first,officer_last,expected", [
+    # Positive cases
+    ("John", "Doe", "John", "Doe", True),
+    ("John", "Doe", "JOHN", "DOE", True),  # Case insensitive
+    
+    # Negative cases
+    ("John", "Doe", "Jane", "Doe", False),  # Different first name
+    ("John", "Doe", "John", "Smith", False),  # Different last name
+])
+def test_does_officer_match_user_name_matching(user_first, user_last, officer_first, officer_last, expected, app, session):
+    """Test name matching scenarios."""
+    user = create_user(firstname=user_first, lastname=user_last)
+    officer = {
+        'firstName': officer_first,
+        'lastName': officer_last
+    }
+    
+    result = _does_officer_match_user(officer, user)
+    assert result is expected
+
+
+@pytest.mark.parametrize("officer,expected", [
+    ({'lastName': 'Doe'}, False),  # Missing firstName
+    ({'firstName': 'John'}, False),  # Missing lastName
+    ({}, False),  # Empty dict
+    ({'firstName': '', 'lastName': ''}, False),  # Empty names
+])
+def test_does_officer_match_user_missing_or_empty_data(officer, expected, app, session):
+    """Test handling of missing or empty officer data."""
+    user = create_user(firstname='John', lastname='Doe')
+    result = _does_officer_match_user(officer, user)
+    assert result is expected
+
+
+# Tests for does_officer_have_action function
+@pytest.mark.parametrize("officer_first,officer_last,actions,filing_officer_type,search_officer_type,search_action,expected", [
+    # Positive cases
+    ("John", "Doe", ["ceased", "appointed"], "directors", "directors", "ceased", True),
+    ("John", "Doe", ["CEASED"], "directors", "directors", "ceased", True),  # Case insensitive action
+    ("JOHN", "DOE", ["ceased"], "directors", "directors", "ceased", True),  # Case insensitive names
+    ("John", "Doe", ["ceased"], "partners", "partners", "ceased", True),  # Different officer type
+    
+    # Negative cases
+    ("John", "Doe", ["appointed"], "directors", "directors", "ceased", False),  # User doesn't have action
+    ("Jane", "Smith", ["ceased"], "directors", "directors", "ceased", False),  # User not found
+    ("John", "Doe", [], "directors", "directors", "ceased", False),  # Empty actions
+    ("John", "Doe", ["ceased"], "directors", "partners", "ceased", False),  # Wrong officer type (searching partners in directors filing)
+])
+def test_does_officer_have_action_basic_scenarios(officer_first, officer_last, actions, filing_officer_type, search_officer_type, search_action, expected, app, session):
+    """Test basic action checking scenarios."""
+    user = create_user(firstname='John', lastname='Doe')
+    filing_data = {
+        filing_officer_type: [
+            {
+                'officer': {
+                    'firstName': officer_first,
+                    'lastName': officer_last
+                },
+                'actions': actions
+            }
+        ]
+    }
+    
+    result = does_officer_have_action(user, filing_data, search_officer_type, search_action)
+    assert result is expected
+
+
+def test_does_officer_have_action_missing_actions_field(app, session):
+    """Assert does_officer_have_action returns False when actions field is missing."""
+    user = create_user(firstname='John', lastname='Doe')
+    filing_data = {
+        'directors': [
+            {
+                'officer': {
+                    'firstName': 'John',
+                    'lastName': 'Doe'
+                }
+                # actions field is missing
+            }
+        ]
+    }
+    
+    result = does_officer_have_action(user, filing_data, 'directors', 'ceased')
+    assert result is False
+
+
+def test_does_officer_have_action_multiple_officers_finds_correct_match(app, session):
+    """Assert does_officer_have_action finds the correct user among multiple officers."""
+    user = create_user(firstname='John', lastname='Doe')
+    filing_data = {
+        'directors': [
+            {
+                'officer': {
+                    'firstName': 'Jane',
+                    'lastName': 'Smith'
+                },
+                'actions': ['appointed']
+            },
+            {
+                'officer': {
+                    'firstName': 'John',
+                    'lastName': 'Doe'
+                },
+                'actions': ['ceased']
+            },
+            {
+                'officer': {
+                    'firstName': 'Bob',
+                    'lastName': 'Johnson'
+                },
+                'actions': ['appointed']
+            }
+        ]
+    }
+    
+    result = does_officer_have_action(user, filing_data, 'directors', 'ceased')
+    assert result is True
+
+
+def test_does_officer_have_action_stops_at_first_user_match(app, session):
+    """Assert does_officer_have_action stops processing after finding the user (doesn't check duplicates)."""
+    user = create_user(firstname='John', lastname='Doe')
+    filing_data = {
+        'directors': [
+            {
+                'officer': {
+                    'firstName': 'John',
+                    'lastName': 'Doe'
+                },
+                'actions': ['appointed']  # First occurrence doesn't have 'ceased'
+            },
+            {
+                'officer': {
+                    'firstName': 'John',
+                    'lastName': 'Doe'
+                },
+                'actions': ['ceased']  # Second occurrence has 'ceased' but should be ignored
+            }
+        ]
+    }
+    
+    result = does_officer_have_action(user, filing_data, 'directors', 'ceased')
+    assert result is False  # Should return False because it only checks the first match

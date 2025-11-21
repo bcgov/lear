@@ -17,11 +17,13 @@ from datetime import datetime
 from unittest.mock import patch
 from http import HTTPStatus
 
+from legal_api.errors import Error
+from legal_api.services.permissions import PermissionService
 import pytest
 from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGISTRATION
 
 from legal_api.models import Business
-from legal_api.services import NaicsService, NameXService
+from legal_api.services import NaicsService, NameXService, flags
 from legal_api.services.filings.validations.change_of_registration import validate
 
 from tests.unit.services.filings.validations import create_party, create_party_address
@@ -164,11 +166,11 @@ def test_invalid_nr_change_of_registration(session):
     'test_name, filing, expected_msg',
     [
         ('sp_invalid_party', copy.deepcopy(SP_CHANGE_OF_REGISTRATION),
-         '1 Proprietor and a Completing Party is required.'),
+         '1 Proprietor and a Completing Party are required.'),
         ('dba_invalid_party', copy.deepcopy(DBA_CHANGE_OF_REGISTRATION),
-         '1 Proprietor and a Completing Party is required.'),
+         '1 Proprietor and a Completing Party are required.'),
         ('gp_invalid_party', copy.deepcopy(GP_CHANGE_OF_REGISTRATION),
-         '2 Partners and a Completing Party is required.'),
+         '2 Partners and a Completing Party are required.'),
     ]
 )
 def test_change_of_registration_parties_missing_role(session, test_name, filing, expected_msg):
@@ -296,3 +298,41 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
         assert expected_msg == err.msg[0]['error']
     else:
         assert not err
+
+@patch.object(flags, 'is_on', return_value=True)
+@patch('legal_api.services.filings.validations.change_of_registration.find_updated_keys_for_firms')
+def test_change_of_registration_permission_checks(mock_flags,
+    mock_find_keys, session
+):
+    """Assert that permission checks are called during change of registration validation."""
+    filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
+    business = Business(identifier=filing['filing']['business']['identifier'],
+                        legal_type=filing['filing']['business']['legalType'])
+
+    mock_find_keys.return_value = [{
+        'is_dba': False,
+        'name_changed': False,
+        'address_changed': False,
+        'delivery_address_changed': False,
+        'email_changed': True
+    }]
+    error = Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission Denied - You do not have permissions edit DBA in this filing.'}])
+    with patch.object(PermissionService, 'check_user_permission', return_value=error):
+        err = validate(business, filing)
+    assert err
+    assert err.code == HTTPStatus.FORBIDDEN
+    assert 'DBA' in err.msg[0]['message']
+
+    mock_find_keys.return_value = [{
+        'is_dba': False,
+        'name_changed': False,
+        'address_changed': False,
+        'delivery_address_changed': False,
+        'email_changed': True
+    }]
+    error = Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission Denied - You do not have permissions edit email in this filing.'}])
+    with patch.object(PermissionService, 'check_user_permission', return_value=error):
+        err = validate(business, filing)
+    assert err
+    assert err.code == HTTPStatus.FORBIDDEN
+    assert 'email' in err.msg[0]['message']
