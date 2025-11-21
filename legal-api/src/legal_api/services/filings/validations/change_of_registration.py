@@ -43,15 +43,17 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
 
     msg = []
     for item in find_updated_keys_for_firms(business, filing, filing_type):
-        if flags.is_on('enabled-deeper-permission-action') and item.get('email_changed'):
-            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
-            message = 'Permission Denied - You do not have permissions edit email in this filing.'
+        if flags.is_on('enabled-deeper-permission-action') and item.get('is_dba') \
+            and (item.get('name_changed') or item.get('address_changed') \
+                 or item.get('delivery_address_changed') or item.get('email_changed')):
+            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
+            message = 'Permission Denied - You do not have permissions edit DBA in this filing.'
             error = PermissionService.check_user_permission(required_permission, message=message)
             if error:
                return error
-        if flags.is_on('enabled-deeper-permission-action') and item.get('is_dba') and (item.get('name_changed') or item.get('address_changed') or item.get('delivery_address_changed') or item.get('email_changed')):
-            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
-            message = 'Permission Denied - You do not have permissions edit DBA in this filing.'
+        if flags.is_on('enabled-deeper-permission-action') and item.get('email_changed'):
+            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
+            message = 'Permission Denied - You do not have permissions edit email in this filing.'
             error = PermissionService.check_user_permission(required_permission, message=message)
             if error:
                return error
