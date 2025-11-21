@@ -573,7 +573,7 @@ def validate_effective_date(filing_json: dict) -> list:
 def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list:
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
-    isDBA = False
+    is_dba = False
     if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
         role_type = PartyRole.RoleTypes.PROPRIETOR.value
     elif business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
@@ -611,7 +611,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
        
         if matched_db_party:
             if role_type == Business.LegalTypes.SOLE_PROP.value and matched_db_party.organization_name:
-                isDBA = True
+                is_dba = True
             changes = {}
             # Email comparison
             if not is_same_str(email, matched_db_party.email):
@@ -695,7 +695,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     'email_changed': 'email' in changes,
                     'address_changed': 'address' in changes,
                     'delivery_address_changed': 'deliveryAddress' in changes,
-                    'is_dba': isDBA
+                    'is_dba': is_dba
                 })
 
     return updated_keys
