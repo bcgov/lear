@@ -337,8 +337,10 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
         is_any_expro_a,
         amalgamating_businesses_path) -> list:
     msg = []
+    regular_amalgamation_minimum: Final = 2
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
-        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 2 and
+        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 
+             regular_amalgamation_minimum and
              amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 0 and
              amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 0)):
         msg.append({

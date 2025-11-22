@@ -15,7 +15,7 @@
 import io
 import re
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Final, Optional
 
 import pycountry
 import PyPDF2
@@ -201,10 +201,15 @@ def validate_court_order(court_order_path, court_order):
     msg = []
 
     # TODO remove it when the issue with schema validation is fixed
+    min_file_number_length: Final = 5
+    max_file_number_length: Final = 20
     if "fileNumber" not in court_order:
         err_path = court_order_path + "/fileNumber"
         msg.append({"error": "Court order file number is required.", "path": err_path})
-    elif len(court_order["fileNumber"]) < 5 or len(court_order["fileNumber"]) > 20:
+    elif (
+        len(court_order["fileNumber"]) < min_file_number_length or
+        len(court_order["fileNumber"]) > max_file_number_length
+    ):
         err_path = court_order_path + "/fileNumber"
         msg.append({"error": "Length of court order file number must be from 5 to 20 characters.",
                     "path": err_path})
@@ -238,15 +243,18 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
 
         # Check that all pages in the pdf are letter size and able to be processed.
+        width: Final = 612  # 8.5 inches
+        height: Final = 792  # 11 inches
         if (
             verify_paper_size and
-            any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages)
+            any(x.mediaBox.getWidth() != width or x.mediaBox.getHeight() != height for x in pdf_reader.pages)
         ):
             msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
                         "path": file_key_path})
 
         file_info = MinioService.get_file_info(file_key)
-        if file_info.size > 30000000:
+        max_file_size: Final = 30000000
+        if file_info.size > max_file_size:
             msg.append({"error": _("File exceeds maximum size."), "path": file_key_path})
 
         if pdf_reader.isEncrypted:
@@ -521,8 +529,9 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
     msg = []
     if phone_num := contact_point_dict.get("phone", None):
         # if pure digits (max 10)
+        phone_length: Final = 10
         if phone_num.isdigit():
-            if len(phone_num) != 10:
+            if len(phone_num) != phone_length:
                 msg.append({
                     "error": "Invalid phone number, maximum 10 digits in phone number format",
                     "path": f"{contact_point_path}/phone"})
@@ -535,7 +544,8 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
                     "error": "Invalid phone number, maximum 10 digits in phone number format",
                     "path": f"{contact_point_path}/phone"})
 
-    if (extension := contact_point_dict.get("extension")) and len(str(extension)) > 5:
+    max_extension_length: Final = 5
+    if (extension := contact_point_dict.get("extension")) and len(str(extension)) > max_extension_length:
         msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
 
     return msg

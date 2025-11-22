@@ -16,6 +16,7 @@
 
 from datetime import datetime, timezone
 from enum import Enum
+from http import HTTPStatus
 
 import requests
 from flask import current_app
@@ -88,7 +89,7 @@ class DigitalCredentialsRulesService:
             # Call Auth API to get org membership for the business
             auth_url = f"{current_app.config.get('AUTH_SVC_URL', '').rstrip('/')}/entities/{business.identifier}/authorizations"
             resp = requests.get(auth_url, headers={"Authorization": f"Bearer {jwt.get_token_auth_header()}"}, timeout=30)
-            if resp.status_code == 200:
+            if resp.status_code == HTTPStatus.OK:
                 return resp.json().get("orgMembership") in self.ALLOWED_DBC_ACCOUNT_ROLES
         except Exception as ex:
             current_app.logger.error(f"DBC Rules: Error checking account role: {ex}", exc_info=True)

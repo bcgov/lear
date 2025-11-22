@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Special Resolution filing."""
 from http import HTTPStatus
-from typing import Optional
+from typing import Final, Optional
 
 from flask_babel import _
 
@@ -57,7 +57,8 @@ def validate_resolution_content(filing_json, filing_type: str = "specialResoluti
                     "path": resolution_path})
         return msg
 
-    if len(resolution_content) > 2097152:
+    max_size_bytes: Final = 2097152  # 2MB
+    if len(resolution_content) > max_size_bytes:
         msg.append({"error": _("Resolution must be 2MB or less."),
                     "path": resolution_path})
     return msg

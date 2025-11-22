@@ -144,6 +144,7 @@ def validate_roles(filing_dict: dict, # noqa: PLR0912
                    filing_type: str = "incorporationApplication") -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
+        Business.LegalTypes.COOP.value: 3,
         Business.LegalTypes.BCOMP.value: 1,
         Business.LegalTypes.COMP.value: 1,
         Business.LegalTypes.BC_ULC_COMPANY.value: 1,
@@ -195,17 +196,17 @@ def validate_roles(filing_dict: dict, # noqa: PLR0912
         err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({"error": "Should not provide completing party when correction type is STAFF", "path": err_path})
 
+    min_director_count = min_director_count_info.get(legal_type, 0)
     if legal_type == Business.LegalTypes.COOP.value:
         if incorporator_count > 0:
             err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Incorporator is an invalid party role", "path": err_path})
 
-        if director_count < 3:
+        if director_count < min_director_count:
             err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Must have a minimum of three Directors", "path": err_path})
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
-        min_director_count = min_director_count_info.get(legal_type, 0)
         if filing_type == "incorporationApplication" and incorporator_count < 1:
             err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Must have a minimum of one Incorporator", "path": err_path})
@@ -245,8 +246,9 @@ def validate_coop_parties_mailing_address(incorporation_json: dict,
         err_path = f"/filing/{filing_type}/parties/mailingAddress"
         msg.append({"error": "Must have minimum of one BC mailing address", "path": err_path})
 
+    min_ca_percentage: Final = 50
     country_ca_percentage = country_ca_party_ma_count / country_total_ma_count * 100
-    if country_ca_percentage <= 50:
+    if country_ca_percentage <= min_ca_percentage:
         err_path = f"/filing/{filing_type}/parties/mailingAddress"
         msg.append({"error": "Must have majority of mailing addresses in Canada", "path": err_path})
 

@@ -16,7 +16,7 @@
 The RegistrationBoostrap class and Schema are held in this module
 """
 from datetime import datetime
-from typing import Optional
+from typing import Final, Optional
 
 from sqlalchemy.ext.hybrid import hybrid_property
 
@@ -87,4 +87,5 @@ class RegistrationBootstrap(db.Model):  # pylint: disable=too-many-instance-attr
     @staticmethod
     def validate_identifier(identifier: str) -> bool:
         """Validate the identifier is a temporary format."""
-        return bool(identifier[:1] == "T" and len(identifier) <= 10)
+        temorary_identifier_length: Final = 10
+        return bool(identifier[:1] == "T" and len(identifier) <= temorary_identifier_length)

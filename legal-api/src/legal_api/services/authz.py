@@ -768,7 +768,7 @@ def get_allowed_filings(business: Business,
     return allowable_filing_types
 
 
-def has_blocker(business: Business,
+def has_blocker(business: Business, # noqa: PLR0911
                 state_filing: Filing,
                 allowable_filing: dict,
                 business_blocker_dict: dict):

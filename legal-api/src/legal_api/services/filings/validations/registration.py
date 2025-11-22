@@ -77,9 +77,10 @@ def validate_business_type(filing: dict, legal_type: str) -> list:
 
 def validate_tax_id(filing: dict) -> list:
     """Validate tax id."""
+    bn15_length: Final = 15
     msg = []
     tax_id_path = "/filing/registration/business/taxId"
-    if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == 15:
+    if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == bn15_length:
         msg.append({"error": "Can only provide BN9 for SP/GP registration.", "path": tax_id_path})
 
     return msg
@@ -100,6 +101,7 @@ def validate_naics(filing: dict, filing_type="registration") -> list:
 
 def validate_party(filing: dict, legal_type: str, filing_type="registration") -> list: # noqa: PLR0912
     """Validate party."""
+    min_partners: Final = 2
     msg = []
     completing_parties = 0
     proprietor_parties = 0
@@ -134,7 +136,7 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         if proprietor_parties > 0:
             msg.append({"error": "Proprietor is not valid for a General Partnership.", "path": party_path})
-        if completing_parties < 1 or partner_parties < 2:
+        if completing_parties < 1 or partner_parties < min_partners:
             msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
 
     return msg

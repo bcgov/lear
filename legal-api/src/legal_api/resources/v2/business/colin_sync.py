@@ -42,7 +42,7 @@ from legal_api.models import (
 )
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.db import VersioningProxy
-from legal_api.services.business_details_version import VersionedBusinessDetailsService
+from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -309,7 +309,7 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     resolutions_query = (
         db.session.query(resolution_version.resolution_date)
         .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
-        .filter(resolution_version.operation_type != 2)  # Exclude deleted records
+        .filter(resolution_version.operation_type != OPERATION_TYPE_DELETE)  # Exclude deleted records
         .filter(resolution_version.business_id == primary_or_holding_business.id)
         .filter(or_(
             resolution_version.end_transaction_id.is_(None),  # Records not yet ended

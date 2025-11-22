@@ -276,6 +276,3 @@ def setup_versioning():
 # TODO: enable versioning switching
 # it should be called before data model initialized, otherwise, old versioning doesn't work properly
 setup_versioning()
-
-
-# make_versioned(user_cls=None, manager=versioning_manager)

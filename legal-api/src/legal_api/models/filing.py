@@ -796,9 +796,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         if self.locked or \
                 (self._payment_token and self._filing_json):
             self._payment_completion_date = value
-            # if self.effective_date is None or \
-            #         self.effective_date <= self._payment_completion_date:
-            #     self._status = Filing.Status.COMPLETED.value
         else:
             raise BusinessException(
                 error="Payment Dates cannot set for unlocked filings unless the filing hasn't been saved yet.",

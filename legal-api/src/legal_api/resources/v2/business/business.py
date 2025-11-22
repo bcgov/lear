@@ -105,7 +105,7 @@ def get_businesses(identifier: str):
         # AccountService.get_account_by_affiliated_identifier will fetch all of it
         # check one of it has `q_account`
         if (
-            orgs := account_response.get("orgs") and
+            (orgs := account_response.get("orgs")) and
             any(str(org.get("id")) == q_account for org in orgs)
         ):
             business_json["accountId"] = q_account

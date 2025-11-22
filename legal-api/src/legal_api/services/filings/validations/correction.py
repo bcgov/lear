@@ -189,15 +189,28 @@ def validate_party(filing: dict, legal_type: str) -> list: # noqa: PLR0912
 
     if legal_type == Business.LegalTypes.SOLE_PROP.value and partner_parties > 0:
         msg.append({"error": "Partner is not valid for a Sole Proprietorship.", "path": party_path})
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and proprietor_parties > 0:
+        msg.append({"error": "Proprietor is not valid for a General Partnership.", "path": party_path})
 
-    if legal_type == Business.LegalTypes.PARTNERSHIP.value and proprietor_parties > 0:
-        if legal_type == Business.LegalTypes.SOLE_PROP.value and proprietor_parties < 1:
-            msg.append({"error": "1 Proprietor is required.", "path": party_path})
-        elif legal_type == Business.LegalTypes.PARTNERSHIP.value and partner_parties < 2:
-            msg.append({"error": "2 Partners are required.", "path": party_path})
-    elif legal_type == Business.LegalTypes.SOLE_PROP.value and (completing_parties < 1 or proprietor_parties < 1):
+    min_partners: Final = 2
+    min_proprietors: Final = 1
+    min_completing_parties: Final = 1
+
+    correction_type = filing.get("filing").get("correction").get("type", "STAFF")
+    if correction_type == "STAFF":
+        if legal_type == Business.LegalTypes.PARTNERSHIP.value and proprietor_parties > 0:
+                msg.append({"error": "1 Proprietor is required.", "path": party_path})
+        elif legal_type == Business.LegalTypes.PARTNERSHIP.value and partner_parties < min_partners:
+                msg.append({"error": "2 Partners are required.", "path": party_path})
+    elif (
+        legal_type == Business.LegalTypes.SOLE_PROP.value and
+        (completing_parties < min_completing_parties or proprietor_parties < min_proprietors)
+    ):
         msg.append({"error": "1 Proprietor and a Completing Party are required.", "path": party_path})
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and (completing_parties < 1 or partner_parties < 2):
+    elif (
+        legal_type == Business.LegalTypes.PARTNERSHIP.value and
+        (completing_parties < min_completing_parties or partner_parties < min_partners)
+    ):
         msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
 
     return msg

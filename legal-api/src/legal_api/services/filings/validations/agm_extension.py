@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Agm Extension filing."""
 from http import HTTPStatus
-from typing import Optional
+from typing import Final, Optional
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
@@ -70,7 +70,11 @@ def first_agm_validation(business: Business, filing: dict) -> list:
         else:
             total_approved_ext = get_int(filing, f"{AGM_EXTENSION_PATH}/totalApprovedExt")
             extension_duration = get_int(filing, f"{AGM_EXTENSION_PATH}/extensionDuration")
-            if total_approved_ext != 6 or extension_duration != 6:
+            expected_extension_duration: Final = 6
+            if (
+                total_approved_ext != expected_extension_duration or
+                extension_duration != expected_extension_duration
+            ):
                 msg.append({"error": babel(GRANT_FAILURE)})
     else:
         # first AGM, second extension or more
@@ -125,7 +129,11 @@ def subsequent_agm_validation(filing: dict) -> list:
         else:
             total_approved_ext = get_int(filing, f"{AGM_EXTENSION_PATH}/totalApprovedExt")
             extension_duration = get_int(filing, f"{AGM_EXTENSION_PATH}/extensionDuration")
-            if total_approved_ext != 6 or extension_duration != 6:
+            expected_extension_duration: Final = 6
+            if (
+                total_approved_ext != expected_extension_duration or
+                extension_duration != expected_extension_duration
+            ):
                 msg.append({"error": babel(GRANT_FAILURE)})
     else:
         # subsequent AGM, second extension or more

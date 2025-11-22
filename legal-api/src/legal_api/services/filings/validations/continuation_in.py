@@ -180,8 +180,8 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str, 
     msg = []
     authorization_path = f"/filing/{filing_type}/authorization"
     file_list = filing_json["filing"][filing_type]["authorization"]["files"]
-
-    if legal_type in Business.CORPS and len(file_list) > 5:  # max 5 files
+    max_files: Final = 5
+    if legal_type in Business.CORPS and len(file_list) > max_files:  # max 5 files
         msg.append({"error": "Too many files, maximum 5 authorization files", "path": authorization_path})
         return msg
 

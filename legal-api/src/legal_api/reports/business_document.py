@@ -238,7 +238,7 @@ class BusinessDocument:
         business["entityShortDescription"] = description.get(self._business.legal_type, "Corporation")
         business["entityInformalDescription"] = business["entityShortDescription"].lower()
 
-    def _set_dates(self, business: dict):  # pylint: disable=too-many-branches
+    def _set_dates(self, business: dict):  # noqa: PLR0912
         """Set the business json with formatted dates."""
         # business dates
         if self._business.last_ar_date:

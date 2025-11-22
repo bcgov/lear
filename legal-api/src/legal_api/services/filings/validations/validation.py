@@ -82,11 +82,11 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
 
     # commenting out till certify stmt decision
     # if validate_certify_name(filing_json) and flags.is_on('enabled-deeper-permission-action'):
-    #     required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value
-    #     message = f'Permission Denied - You do not have permissions to change certified by in this filing.'
-    #     error = PermissionService.check_user_permission(required_permission, message)
+    #     required_permission = ListActionsPermissionsAllowed.EDITABLE_CERTIFY_NAME.value # noqa: ERA001
+    #     message = f'Permission Denied - You do not have permissions to change certified by in this filing.' # noqa: ERA001
+    #     error = PermissionService.check_user_permission(required_permission, message) # noqa: ERA001
     #     if error:
-    #         return error
+    #         return error # noqa: ERA001
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
     if "correction" in filing_json["filing"]:
