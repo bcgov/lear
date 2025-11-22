@@ -85,3 +85,76 @@ def test_validate_cod_basic(session, test_name, now,
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+@pytest.mark.parametrize(
+    "test_name, actions, cessation_date, expected_code, expected_msg",
+    [
+        (
+            "SUCCESS - appointed with null cessationDate",
+            ["appointed"],
+            None,
+            None,
+            None
+        ),
+        (
+            "SUCCESS - non-appointed director with cessationDate",
+            [],
+            "2025-01-01",
+            None,
+            None
+        ),
+        (
+            "FAIL - appointed with non-null cessationDate",
+            ["appointed"],
+            "2025-01-01",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "Appointed directors must not have a cessation date.",
+                    "path": "/filing/changeOfDirectors/directors/0/cessationDate"
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_cod_appointed_director_cessation_date(
+    session, test_name, actions, cessation_date, expected_code, expected_msg
+):
+    """Validate that appointed directors must not have a cessation date."""
+
+    # setup
+    now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    identifier = "CP7654321"
+    founding_date = now - datedelta.YEAR
+
+    business = Business(
+        identifier=identifier,
+        last_ledger_timestamp=founding_date,
+        founding_date=founding_date
+    )
+
+    f = copy.deepcopy(FILING_HEADER)
+    f["filing"]["header"]["date"] = now.date().isoformat()
+    f["filing"]["header"]["effectiveDate"] = now.isoformat()
+    f["filing"]["header"]["name"] = "changeOfDirectors"
+    f["filing"]["business"]["identifier"] = identifier
+
+    cod = copy.deepcopy(CHANGE_OF_DIRECTORS)
+
+    cod["directors"][0]["actions"] = actions
+    cod["directors"][0]["cessationDate"] = cessation_date
+
+    f["filing"]["changeOfDirectors"] = cod
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, f)
+        if err:
+            print(err.msg)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
