@@ -556,7 +556,6 @@ begin
 end;
 $$;
 
-
 --
 -- Tombstone corp current officers add an active officer.
 -- Inserts into addresses, addresses_version, parties, parties_version, party_roles, party_roles_version.
@@ -569,29 +568,38 @@ create or replace function public.colin_tombstone_officer(p_colin_event_id integ
 as $$
 declare
   cur_hist_party cursor(v_colin_event_id integer, v_corp_num character varying)
-     for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cp.appointment_dt, cp.cessation_dt,
-                'officer' as party_role,
+     for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cast('officer' as character varying) as party_role,
+                case when cp.appointment_dt is not null then
+                          cast((to_timestamp(to_char(cp.appointment_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     else cp.appointment_dt end as appointment_dt,
+                case when cp.cessation_dt is not null then
+                          cast((to_timestamp(to_char(cp.cessation_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     when cp.cessation_dt is null and cp.end_event_id is not null then
+                          (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                             from colin_extract.event e
+                            where e.event_id = cp.end_event_id)
+                     else cp.cessation_dt end as cessation_dt,
                 case when cp.last_name is not null and trim(cp.last_name) != '' then upper(cp.last_name) else null end as last_name,
                 case when cp.middle_name is not null and trim(cp.middle_name) != '' then upper(cp.middle_name) else null end as middle_name,
                 case when cp.first_name is not null and  trim(cp.first_name) != '' then upper(cp.first_name) else null end as first_name,
                 case when cp.business_name is not null and  trim(cp.business_name) != '' then upper(cp.business_name) else null end as business_name,
-                cp.email_address, cp.corp_party_id, cp.start_event_id, cp.end_event_id, null as party_role_id
+                cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id,
+                (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                   from colin_extract.event e
+                  where e.event_id = v_colin_event_id) as party_date
           from colin_extract.corp_party cp 
-         where cp.corp_num = v_corp_num
-           and cp.start_event_id = v_colin_event_id
-           and cp.party_typ_cd = 'OFF'
-           and cp.end_event_id is null
-      order by corp_party_id;
+        where cp.corp_num = v_corp_num
+          and cp.start_event_id = v_colin_event_id
+          and cp.party_typ_cd = 'OFF'
+          and not exists (select cp2.corp_party_id
+                            from colin_extract.corp_party cp2
+                           where cp2.corp_num = cp.corp_num
+                             and cp2.party_typ_cd = cp.party_typ_cd
+                             and cp2.prev_party_id is not null
+                             and cp2.prev_party_id = cp.corp_party_id)
+        order by corp_party_id;
   cur_hist_officer_offices cursor(v_party_id integer)
-    for select case when officer_typ_cd = 'PRE' then 'president'
-                    when officer_typ_cd = 'CFO' then 'cfo'
-                    when officer_typ_cd = 'CEO' then 'ceo'
-                    when officer_typ_cd = 'SEC' then 'secretary'
-                    when officer_typ_cd = 'VIP' then 'vice_president'
-                    when officer_typ_cd = 'TRE' then 'treasurer'
-                    when officer_typ_cd = 'CHR' then 'chair'
-                    when officer_typ_cd = 'ASC' then 'assistant_secretary'
-                    else 'other' end as party_role
+    for select to_officer_role(officer_typ_cd) as party_role
       from colin_extract.offices_held
      where corp_party_id = v_party_id;
   rec_hist_party record;
@@ -613,6 +621,9 @@ begin
       fetch cur_hist_officer_offices into rec_hist_officer_office;          
       exit when not found;
       party_role_id := nextval('party_roles_id_seq');
+      if rec_hist_party.appointment_dt is null then
+        rec_hist_party.appointment_dt := rec_hist_party.party_date;
+      end if;
       insert into party_roles_version 
         values(party_role_id, rec_hist_officer_office.party_role, rec_hist_party.appointment_dt, rec_hist_party.cessation_dt,
                p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
@@ -681,7 +692,6 @@ declare
             and cp.corp_num = p.corp_num
             and ce.colin_event_id = p.start_event_id
             and p.party_typ_cd = 'OFF'
-            and p.end_event_id is null
        order by cp.id, ce.colin_event_id;
   rec_cars record;
   rec_officer record;

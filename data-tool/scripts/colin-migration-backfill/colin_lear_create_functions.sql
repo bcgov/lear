@@ -1,4 +1,3 @@
--- GCP DEV
 CREATE TABLE public.mig_corp_processing_history (
   corp_processing_id INTEGER PRIMARY KEY,
   tombstone_trans_id INTEGER NOT NULL,
@@ -8,6 +7,7 @@ CREATE TABLE public.mig_corp_processing_history (
   history_migrated_ts TIMESTAMP NULL,
   officer_migrated_ts TIMESTAMP NULL
 );
+drop table mig_corp_processing_history;
 
 --
 -- During migration script development rollback historical data changes for an indiividual filing.
@@ -788,7 +788,7 @@ begin
   elsif p_update_type = 1 then
     -- party role edit is a party edit not a role change
     perform colin_hist_party_change(v_business_id, p_trans_id, rec_existing_role.party_id, p_update_type, p_rec_party, p_colin_filing_type);
-  elsif p_update_type = 2 and p_rec_party.party_role = 'director' then
+  elsif p_update_type = 2 and (p_rec_party.party_role = 'director' or p_rec_party.party_typ_cd = 'OFF') then
     update party_roles_version
        set end_transaction_id = p_trans_id
      where id = p_party_role_id
@@ -1599,6 +1599,40 @@ select colin_hist_filing_rollback(1579206); -- Ting 1
 
 -- COLIN only adds, no history.
 -- Insert into the jurisdictions and jurisdictions_version tables.
+CREATE OR REPLACE FUNCTION public.colin_hist_jurisdiction(p_colin_event_id integer,
+                                                          p_trans_id integer,
+                                                          p_business_id integer,
+                                                          p_corp_num character varying)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $$
+declare
+  rec_jur record;
+  jur_id integer := 0;
+begin
+  select j.*,
+         (select f.id from filings f where f.transaction_id = p_trans_id) as filing_id 
+    into rec_jur
+    from colin_extract.jurisdiction j
+   where j.corp_num = p_corp_num
+     and j.start_event_id = p_colin_event_id;
+  if FOUND then
+    jur_id := nextval('jurisdictions_id_seq');
+    insert into jurisdictions
+      values(jur_id, 'CA', rec_jur.can_jur_typ_cd, rec_jur.home_juris_num, rec_jur.home_company_nme, null, rec_jur.home_recogn_dt,
+             rec_jur.bc_xpro_num, null, p_business_id, rec_jur.filing_id);
+    insert into jurisdictions_version
+      values(jur_id, 'CA', rec_jur.can_jur_typ_cd, rec_jur.home_juris_num, rec_jur.home_company_nme, null, rec_jur.home_recogn_dt,
+             rec_jur.bc_xpro_num, null, p_business_id, rec_jur.filing_id, p_trans_id, null, 0);
+  end if;
+
+  return p_trans_id;
+end;
+$$
+
+--
+-- Create all records for the business's initial filing.
+--
 create or replace function public.colin_hist_first_filing(p_corp_num character varying) returns integer
   language plpgsql
 as $$
@@ -1662,71 +1696,6 @@ begin
   return trans_id;
 end;
 $$;
-
---
--- Create all records for the business's initial filing.
---
-create or replace function public.colin_hist_first_filing(p_corp_num character varying) returns integer
-  language plpgsql
-as $$
-declare
-  colin_event_id integer := 0;
-  trans_id integer := 0;
-  bus_id integer := 0;
-  resolution_dt timestamp with time zone;
-  alias_count integer := 0;
-  event_type varchar(20);
-  filing_type varchar(20);
-begin
-  select min(ce.colin_event_id), min(f.transaction_id), min(f.business_id)
-    into colin_event_id, trans_id, bus_id
-    from businesses b, filings f, colin_event_ids ce
-   where b.identifier = p_corp_num
-     and b.id = f.business_id
-     and f.source = 'COLIN'
-     and f.status = 'COMPLETED'
-     and f.id = ce.filing_id
-     and f.filing_type not in ('conversionLedger');
-
-  perform colin_hist_first_office(p_corp_num, colin_event_id, trans_id, bus_id);
-  perform colin_hist_first_party(p_corp_num, colin_event_id, trans_id, bus_id);
-  perform colin_hist_first_shares(p_corp_num, colin_event_id, trans_id, bus_id);
-  perform colin_hist_first_business(p_corp_num, colin_event_id, trans_id, bus_id);
-  select count(cn.start_event_id),
-         (select r.resolution_dt 
-           from colin_extract.resolution r
-           where r.corp_num = p_corp_num
-             and r.start_event_id = colin_event_id),
-         (select e.event_type_cd from colin_extract.event e where e.event_id = colin_event_id) as event_type_cd,
-         (select f.filing_type_cd from colin_extract.filing f where f.event_id = colin_event_id) as filing_type_cd
-    into alias_count, resolution_dt, event_type, filing_type
-    from colin_extract.corp_name cn
-   where cn.corp_num = p_corp_num
-     and cn.start_event_id = colin_event_id
-     and cn.corp_name_typ_cd not in ('CO', 'NB');
-
-  if resolution_dt is not null then
-    perform colin_hist_resolution_add(bus_id, trans_id, resolution_dt);  
-  end if;
-  if alias_count > 0 then
-    perform colin_hist_alias_add(p_corp_num, colin_event_id, bus_id, trans_id, null);  
-  end if;
-  if event_type in ('CONVICORP', 'CONVAMAL') then
-    perform colin_hist_officer(colin_event_id, bus_id, trans_id, p_corp_num);
-    if event_type in ('CONVAMAL') then
-      perform colin_hist_amalgamation(colin_event_id, trans_id, bus_id, event_type);
-      perform colin_hist_jurisdiction(colin_event_id, trans_id, bus_id, p_corp_num);
-    end if;
-  end if;
-  if filing_type is not null and filing_type in ('AMALH','AMALV','AMALR','AMLRU','AMLVU','AMLHU','AMLHC','AMLRC','AMLVC') then
-    perform colin_hist_amalgamation(colin_event_id, trans_id, bus_id, filing_type);
-  elsif filing_type is not null and filing_type in ('CONTI','CONTU','CONTC') then
-    perform colin_hist_jurisdiction(colin_event_id, trans_id, bus_id, p_corp_num);
-  end if;
-
-  return trans_id;
-end;
-$$;
 /*
 select public.colin_hist_first_filing('C1225717'); -- CONTI 78553
 select colin_hist_filing_rollback(1585244);
@@ -1736,7 +1705,167 @@ select colin_hist_filing_rollback(1585095);
 
 */
 
+-- Map colin officer_typ_cd to business officer role.
+create or replace function public.to_officer_role(p_officer_typ_cd character varying) returns character varying
+  language plpgsql
+as $$
+declare
+begin
+  return case when p_officer_typ_cd = 'PRE' then 'president'
+              when p_officer_typ_cd = 'CFO' then 'cfo'
+              when p_officer_typ_cd = 'CEO' then 'ceo'
+              when p_officer_typ_cd = 'SEC' then 'secretary'
+              when p_officer_typ_cd = 'VIP' then 'vice_president'
+              when p_officer_typ_cd = 'TRE' then 'treasurer'
+              when p_officer_typ_cd = 'CHR' then 'chair'
+              when p_officer_typ_cd = 'ASC' then 'assistant_secretary'
+              else 'other' end;
+end;
+$$;
+
+-- Historical update to edit a single officer for a single filing.
+-- And officer edit may update the offices held - the party roles.
+-- If the existing offices match the new offices the party roles are unchanged.
+-- Otherwise, if the existing offices count matches the new count, update the roles.
+-- Otherwise if the existing count > new count, remove offices using the event timestamp as the cessation date.
+-- Otherwise if the existing count < new count, add offices using the event timestamp as the appointment date.
+-- And edit may also modify the party name or addresses.
+-- Update party_roles, parties, party_roles_version, parties_version, addresses, addresses_version
+-- Update end_transaction_id on addresses_version, parties_version, party_roles_version
+create or replace function public.colin_hist_officer_edit(p_trans_id integer,
+                                                          p_business_id integer,
+                                                          p_rec_party record) returns integer
+  language plpgsql
+as $$
+declare
+  cur_party_role cursor(v_business_id integer, v_party_id integer)
+    for select pr.*
+          from party_roles_version pr
+         where pr.business_id = v_business_id
+           and pr.party_class_type = 'OFFICER'
+           and pr.party_id = v_party_id
+           and pr.end_transaction_id is null
+           and pr.operation_type in (0, 1);
+  rec_party_role record;
+  rec_colin_change record;
+  officer_role varchar(30);
+  counter integer := 0;
+  party_role_id integer := 0;
+begin
+  select string_agg(to_officer_role(officer_typ_cd), ',') as new_offices,
+         (select string_agg(to_officer_role(oh.officer_typ_cd), ',') 
+            from colin_extract.offices_held oh
+           where oh.corp_party_id = p_rec_party.prev_party_id) as existing_offices,
+         (select count(oh.corp_party_id) from colin_extract.offices_held oh where oh.corp_party_id = p_rec_party.corp_party_id) as new_count,
+         (select count(oh.corp_party_id) from colin_extract.offices_held oh where oh.corp_party_id = p_rec_party.prev_party_id) as existing_count,
+         (select string_agg(to_officer_role(oh.officer_typ_cd), ',') 
+            from colin_extract.offices_held oh
+           where oh.corp_party_id = p_rec_party.corp_party_id
+             and oh.officer_typ_cd not in (select oh2.officer_typ_cd 
+                                             from colin_extract.offices_held oh2 
+                                            where oh2.corp_party_id = p_rec_party.prev_party_id)) as added_offices,
+         (select string_agg(to_officer_role(oh.officer_typ_cd), ',') 
+            from colin_extract.offices_held oh
+           where oh.corp_party_id = p_rec_party.prev_party_id
+             and oh.officer_typ_cd not in (select oh2.officer_typ_cd 
+                                             from colin_extract.offices_held oh2 
+                                            where oh2.corp_party_id = p_rec_party.corp_party_id)) as removed_offices
+    into rec_colin_change
+    from colin_extract.offices_held
+   where corp_party_id = p_rec_party.corp_party_id;
+  perform colin_hist_party_change(p_business_id, p_trans_id, p_rec_party.party_id, 1, p_rec_party, null);
+
+  if rec_colin_change.added_offices is null and rec_colin_change.removed_offices is null then -- no change
+    officer_role := null;
+  elsif rec_colin_change.new_count = rec_colin_change.existing_count then -- replacing
+    counter := 0;
+    officer_role := SPLIT_PART(rec_colin_change.new_offices, ',', counter);
+    open cur_party_role(p_business_id, p_rec_party.party_id);
+    loop
+      fetch cur_party_role into rec_party_role;
+      exit when not found;
+      counter := counter + 1;
+      officer_role := SPLIT_PART(rec_colin_change.new_offices, ',', counter);
+      if rec_party_role.role != officer_role then
+        update party_roles
+           set role = officer_role
+         where business_id = p_business_id
+           and id = rec_party_role.id;
+        rec_party_role.end_transaction_id := p_trans_id;
+        insert into party_roles_version
+          values(rec_party_role.id,
+                 officer_role,
+                 rec_party_role.appointment_date,
+                 rec_party_role.cessation_date,
+                 rec_party_role.business_id,
+                 rec_party_role.party_id,
+                 p_trans_id,
+                 null,
+                 1,
+                 rec_party_role.filing_id,
+                 rec_party_role.party_class_type);
+      end if;
+      perform colin_hist_party_role_change(p_business_id, p_trans_id, rec_party_role.id, 2, p_rec_party, null);  
+    end loop;
+    close cur_party_role;
+  else
+    if rec_colin_change.added_offices is not null then
+      for i in 1 .. array_length(string_to_array(rec_colin_change.added_offices, ','))
+      loop
+        officer_role := SPLIT_PART(rec_colin_change.added_offices, ',', i);
+        party_role_id := nextval('party_roles_id_seq');
+        insert into party_roles_version 
+          values(party_role_id, officer_role, p_rec_party.party_date, null,
+                 p_business_id, p_rec_party.party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
+        insert into party_roles 
+          values(party_role_id, officer_role, p_rec_party.party_date, null, 
+                 p_business_id, p_rec_party.party_id, null, cast('OFFICER' as partyclasstype));
+      end loop;
+    end if;
+
+    if rec_colin_change.removed_offices is not null then
+      for i in 1 .. array_length(string_to_array(rec_colin_change.removed_offices, ','))
+      loop
+        officer_role := SPLIT_PART(rec_colin_change.removed_offices, ',', i);
+        select pr.*
+          from party_roles_version pr
+          into rec_party_role
+         where pr.business_id = p_business_id
+           and pr.party_class_type = 'OFFICER'
+           and pr.party_id = p_rec_party.party_id
+           and pr.role = officer_role
+           and pr.end_transaction_id is null
+           and pr.operation_type in (0, 1);
+        if found then
+          update party_roles
+             set cessation_date = p_rec_party.party_date
+           where business_id = p_business_id
+             and id = rec_party_role.id;
+          rec_party_role.end_transaction_id := p_trans_id;
+          insert into party_roles_version
+            values(rec_party_role.id,
+                   rec_party_role.role,
+                   rec_party_role.appointment_date,
+                   p_rec_party.party_date,
+                   rec_party_role.business_id,
+                   rec_party_role.party_id,
+                   p_trans_id,
+                   null,
+                   1,
+                   rec_party_role.filing_id,
+                   rec_party_role.party_class_type);
+        end if;
+      end loop;
+    end if;
+  end if;
+  return p_trans_id;
+end;
+$$;
+
 -- Historical update to remove a single officer for a single filing.
+-- Set the active party_roles record cessation date. Do not modify the parties record.
+-- Set the party_roles_version end transaction id and cessation date.
+-- Set the parties_version end transaction id.
 -- Update party_roles, parties, party_roles_version, parties_version, addresses, addresses_version
 -- Update end_transaction_id on addresses_version, parties_version, party_roles_version
 create or replace function public.colin_hist_officer_remove(p_existing_trans_id integer,
@@ -1765,34 +1894,13 @@ begin
   loop
     fetch cur_party_role into rec_party_role;
     exit when not found;
-    if party_id = 0 then
-      party_id := rec_party_role.party_id;
+    if p_rec_party.cessation_dt is null and p_rec_party.party_date is not null then
+      p_rec_party.cessation_dt := p_rec_party.party_date;
     end if;
-    update party_roles_version
-       set end_transaction_id = p_trans_id
-     where id = rec_party_role.id
-       and business_id = p_business_id
-       and end_transaction_id is null
-       and operation_type in (0, 1);
-    insert into party_roles_version
-      values(rec_party_role.id,
-             rec_party_role.role,
-             rec_party_role.appointment_date,
-             p_rec_party.cessation_dt,
-             rec_party_role.business_id,
-             rec_party_role.party_id,
-             p_trans_id,
-             null,
-             2,
-             rec_party_role.filing_id,
-             rec_party_role.party_class_type);
-    delete
-      from party_roles
-     where id = rec_party_role.id;
+    p_rec_party.party_role := rec_party_role.role; 
+    perform colin_hist_party_role_change(p_business_id, p_trans_id, rec_party_role.id, 2, p_rec_party, null);  
   end loop;
   close cur_party_role;
-
-  perform colin_hist_party_change(p_business_id, p_trans_id, party_id, 2, p_rec_party, null);
   return p_trans_id;
 end;
 $$;
@@ -2085,38 +2193,65 @@ create or replace function public.colin_hist_officer(p_colin_event_id integer,
 as $$
 declare
   cur_hist_party cursor(v_colin_event_id integer, v_corp_num character varying)
-     for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cp.appointment_dt, cp.cessation_dt,
+     for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cast('officer' as character varying) as party_role,
+                case when cp.appointment_dt is not null then
+                          cast((to_timestamp(to_char(cp.appointment_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     else cp.appointment_dt end as appointment_dt,
+                case when cp.cessation_dt is not null then
+                          cast((to_timestamp(to_char(cp.cessation_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     else cp.cessation_dt end as cessation_dt,
                 case when cp.last_name is not null and trim(cp.last_name) != '' then upper(cp.last_name) else null end as last_name,
                 case when cp.middle_name is not null and trim(cp.middle_name) != '' then upper(cp.middle_name) else null end as middle_name,
                 case when cp.first_name is not null and  trim(cp.first_name) != '' then upper(cp.first_name) else null end as first_name,
                 case when cp.business_name is not null and  trim(cp.business_name) != '' then upper(cp.business_name) else null end as business_name,
-                cp.email_address, cp.corp_party_id, cp.start_event_id, cp.end_event_id, null as party_role_id,
+                cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id,
                 case when cp.start_event_id != v_colin_event_id and cp.end_event_id is not null and cp.end_event_id = v_colin_event_id then
                           (select f.transaction_id 
                              from filings f, colin_event_ids ce
                             where ce.colin_event_id = cp.start_event_id
                               and ce.filing_id = f.id)
-                    else null end as end_trans_id
+                    else null end as end_trans_id,
+                case when cp.start_event_id != v_colin_event_id and cp.end_event_id is not null and cp.end_event_id = v_colin_event_id then
+                          (select count(cp2.corp_party_id) 
+                             from colin_extract.corp_party cp2
+                            where cp2.corp_num = cp.corp_num
+                              and cp2.start_event_id = cp.end_event_id
+                              and cp2.prev_party_id is not null
+                              and cp2.prev_party_id = cp.corp_party_id)
+                    else 0 end as link_count,
+                (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                   from colin_extract.event e
+                  where e.event_id = v_colin_event_id) as party_date,
+               case when cp.start_event_id = v_colin_event_id and cp.prev_party_id is not null then
+                         (select pr.party_id 
+                            from filings f, colin_event_ids ce, colin_extract.corp_party cp2, party_roles_version pr, parties_version p
+                           where cp2.corp_party_id = cp.prev_party_id
+                             and ce.colin_event_id = cp2.start_event_id
+                             and ce.filing_id = f.id
+                             and pr.business_id = f.business_id
+                             and pr.party_class_type is not null
+                             and pr.party_class_type = 'OFFICER'
+                             and pr.party_id = p.id
+                             and p.transaction_id = f.transaction_id
+                             and p.first_name = upper(cp2.first_name)
+                             and p.last_name = upper(cp2.last_name)
+                             and pr.operation_type in (0, 1)
+                             and pr.end_transaction_id is null
+                             fetch first 1 rows only)
+                   else null end as party_id
           from colin_extract.corp_party cp 
         where cp.corp_num = v_corp_num
           and (cp.start_event_id = v_colin_event_id or cp.end_event_id = v_colin_event_id)
           and cp.party_typ_cd = 'OFF'
         order by corp_party_id;
   cur_hist_officer_offices cursor(v_party_id integer)
-    for select case when officer_typ_cd = 'PRE' then 'president'
-                    when officer_typ_cd = 'CFO' then 'cfo'
-                    when officer_typ_cd = 'CEO' then 'ceo'
-                    when officer_typ_cd = 'SEC' then 'secretary'
-                    when officer_typ_cd = 'VIP' then 'vice_president'
-                    when officer_typ_cd = 'TRE' then 'treasurer'
-                    when officer_typ_cd = 'CHR' then 'chair'
-                    when officer_typ_cd = 'ASC' then 'assistant_secretary'
-                    else 'other' end as party_role
+    for select to_officer_role(officer_typ_cd) as party_role
       from colin_extract.offices_held
      where corp_party_id = v_party_id;
   rec_hist_party record;
   rec_hist_officer_office record;
   counter integer := 0;
+  update_type integer := 3;
   party_id integer := 0;
   party_role_id integer := 0;
 begin
@@ -2124,15 +2259,35 @@ begin
   loop
     fetch cur_hist_party into rec_hist_party;
     exit when not found;
+    update_type := 3; -- Do nothing
+    -- Removing if not linked, otherwise set up for update.
+    if rec_hist_party.start_event_id != p_colin_event_id and rec_hist_party.end_event_id is not null and 
+       rec_hist_party.end_event_id = p_colin_event_id and rec_hist_party.link_count = 0 then
+      update_type := 2;
+    elsif rec_hist_party.start_event_id = p_colin_event_id and rec_hist_party.prev_party_id is not null and rec_hist_party.prev_party_id > 0 then
+      update_type := 1;
+    elsif rec_hist_party.start_event_id = p_colin_event_id then
+      update_type := 0;
+    end if;
     -- Removing
-    if rec_hist_party.start_event_id != p_colin_event_id and rec_hist_party.end_event_id is not null and rec_hist_party.end_event_id = p_colin_event_id then
+    if update_type = 2 then
       counter := counter + 1;
       perform colin_hist_officer_remove(rec_hist_party.end_trans_id::integer, p_trans_id, p_business_id, rec_hist_party);
+    -- Editing: appointment date does not change.
+    elsif update_type = 1 then
+      rec_hist_party.appointment_dt := null;
+      rec_hist_party.cessation_dt := null;
+      counter := counter + 1;
+      perform colin_hist_officer_edit(p_trans_id, p_business_id, rec_hist_party);
     -- Adding
-    elsif rec_hist_party.start_event_id = p_colin_event_id then
+    elsif update_type = 0 then
       counter := counter + 1;
       party_id := nextval('parties_id_seq');
       perform colin_hist_party_change(p_business_id, p_trans_id, party_id, 0, rec_hist_party, null);
+      if rec_hist_party.appointment_dt is null and rec_hist_party.party_date is not null then
+        rec_hist_party.appointment_dt := rec_hist_party.party_date;
+      end if;
+      rec_hist_party.cessation_dt := null;
       open cur_hist_officer_offices(rec_hist_party.corp_party_id);
       loop
         fetch cur_hist_officer_offices into rec_hist_officer_office;          
@@ -3144,13 +3299,61 @@ $$;
 -- The last backfill migrated businesses_version record is always updated.
 -- Find any tombstone transaction id where the end_transaction_id is not null.
 -- Find the corresponding backfill migrated record and set the end_transaction_id to the tombstone record end_transaction_id.
--- Delete the active migrated record
+-- Manually inspect each table change and delete orphaned or duplicate records on a case by case basis.
+-- This step should only need to be performed once backfilling previously loaded corps.
+-- Afterward the backfill should occur immediately after the tombstone data is loaded.
 create or replace function public.colin_hist_post_migration(p_business_id integer,
                                                             p_tombstone_trans_id integer) returns integer
   language plpgsql
 as $$
 declare
+  cur_party_roles cursor(v_business_id integer, v_tombstone_trans_id integer)
+    for select pr.*, p.first_name, p.middle_initial, p.last_name, p.organization_name,
+               (select pr2.cessation_date 
+                  from party_roles_version pr2
+                 where pr2.id = pr.id
+                   and pr2.transaction_id = pr.end_transaction_id) as role_cessation_date
+          from party_roles_version pr, parties_version p
+         where pr.business_id = v_business_id
+           and pr.transaction_id = v_tombstone_trans_id
+           and pr.end_transaction_id is not null
+           and pr.party_id = p.id
+           and p.transaction_id = v_tombstone_trans_id;
+  cur_addresses cursor(v_tombstone_trans_id integer)
+    for select a2.*
+          from addresses_version a, addresses_version a2
+         where a.transaction_id = v_tombstone_trans_id
+           and a.end_transaction_id is not null
+           and a.operation_type != 2
+           and a.id = a2.id
+           and a.end_transaction_id = a2.transaction_id;
+  cur_share_classes cursor(v_business_id integer, v_tombstone_trans_id integer)
+    for select s2.*
+          from share_classes_version s, share_classes_version s2
+         where s.business_id = v_business_id
+           and s.transaction_id = v_tombstone_trans_id
+           and s.end_transaction_id is not null
+           and s.operation_type != 2
+           and s.id = s2.id
+           and s.end_transaction_id = s2.transaction_id;
+  cur_aliases cursor(v_business_id integer, v_tombstone_trans_id integer)
+    for select a2.*
+          from aliases_version a, aliases_version a2
+         where a.business_id = v_business_id
+           and a.transaction_id = v_tombstone_trans_id
+           and a.end_transaction_id is not null
+           and a.operation_type != 2
+           and a.id = a2.id
+           and a.end_transaction_id = a2.transaction_id;
   rec_change record;
+  rec_party_role record;
+  rec_address record;
+  rec_share_class record;
+  rec_alias record;
+  party_role_id integer := 0;
+  address_id integer := 0;
+  share_class_id integer := 0;
+  alias_id integer := 0;
   counter integer := 0;
 begin
   select max(f.transaction_id) as last_trans_id,
@@ -3178,7 +3381,159 @@ begin
      where id = p_business_id
        and transaction_id = rec_change.last_trans_id;
   end if;
-
+  if rec_change.bus_end_trans_id is not null and rec_change.role_count > 0 then
+    counter := counter + 1;
+    open cur_party_roles(p_business_id, p_tombstone_trans_id);
+    loop
+      fetch cur_party_roles into rec_party_role;
+      exit when not found;
+      party_role_id := 0;
+      select pr.id
+         into party_role_id
+         from party_roles_version pr, parties p
+        where pr.role = rec_party_role.role
+          and pr.business_id = p_business_id
+          and pr.transaction_id < p_tombstone_trans_id
+          and pr.end_transaction_id is null
+          and pr.operation_type in (0, 1)
+          and pr.party_id = p.id
+          and ((p.party_type = 'person'
+               and (p.first_name = rec_party_role.first_name
+                    and p.last_name = rec_party_role.last_name
+                    and (p.middle_initial = rec_party_role.middle_initial or p.middle_initial is null)))
+                or p.organization_name = rec_party_role.organization_name)
+         order by pr.id;
+      if FOUND and party_role_id > 0 then
+        update party_roles_version
+           set end_transaction_id = rec_party_role.end_transaction_id
+         where id = party_role_id;
+         insert into party_roles_version
+           values(party_role_id, rec_party_role.role, rec_party_role.appointment_dt,
+                  rec_party_role.role_cessation_date, rec_party_role.business_id, rec_party_role.party_id,
+                  rec_party_role.end_transaction_id, null, 1, rec_party_role.filing_id, rec_party_role.party_class_type);
+         if rec_party_role.role = 'director' and rec_party_role.role_cessation_date is not null then
+           update party_roles
+              set cessation_date = rec_party_role.role_cessation_date
+            where id = party_role_id;
+         end if;
+      end if;
+    end loop;
+    close cur_party_roles;
+  end if;
+  if rec_change.bus_end_trans_id is not null and rec_change.address_count > 0 then
+    counter := counter + 1;
+    open cur_addresses(p_tombstone_trans_id);
+    loop
+      fetch cur_addresses into rec_address;
+      exit when not found;
+      address_id := 0;
+      select a.id
+         into address_id
+         from addresses_version a
+        where (a.business_id = p_business_id
+               or (a.office_id is not null and exists (select o.id from offices_version o where o.business_id = p_business_id)))
+          and a.transaction_id < p_tombstone_trans_id
+          and a.end_transaction_id is null
+          and a.operation_type in (0, 1)
+          and a.address_type = rec_address.address_type
+          and a.street = rec_address.street
+          and a.city = rec_address.city
+          and a.region = rec_address.region
+          and a.country = rec_address.country
+          and a.postal_code = rec_address.postal_code
+          fetch first 1 rows only;
+      if FOUND and address_id > 0 then
+        update addresses_version
+           set end_transaction_id = rec_address.transaction_id
+         where id = address_id;
+        insert into addresses_version 
+          values(address_id, rec_address.address_type, rec_address.street, rec_address.street_additional,
+                 rec_address.city, rec_address.region, rec_address.country, rec_address.postal_code,
+                 rec_address.delivery_instructions, rec_address.business_id, rec_address.transaction_id, null, 1, rec_address.office_id, null);
+        update addresses
+           set street = rec_address.street,
+               street_additional = rec_address.street_additional, 
+               city = rec_address.city,
+               region = rec_address.region,
+               country = rec_address.country,
+               postal_code = rec_address.postal_code,
+               delivery_instructions = rec_address.delivery_instructions
+         where id = address_id;
+      end if;
+    end loop;
+    close cur_addresses;
+  end if;
+  if rec_change.bus_end_trans_id is not null and rec_change.share_class_count > 0 then
+    counter := counter + 1;
+    open cur_share_classes(p_business_id, p_tombstone_trans_id);
+    loop
+      fetch cur_share_classes into rec_share_class;
+      exit when not found;
+      share_class_id := 0;
+      select s.id
+         into share_class_id
+         from share_classes_version s
+        where s.business_id = p_business_id
+          and s.transaction_id < p_tombstone_trans_id
+          and s.end_transaction_id is null
+          and s.operation_type in (0, 1)
+          and s.name = rec_share_class.name
+          fetch first 1 rows only;
+      if FOUND and share_class_id > 0 then
+        update share_classes_version
+           set end_transaction_id = rec_share_class.transaction_id
+         where id = share_class_id;
+        insert into share_classes_version
+            values(share_class_id,
+                   rec_share_class.name,
+                   rec_share_class.priority,
+                   rec_share_class.max_share_flag,
+                   rec_share_class.max_shares,
+                   rec_share_class.par_value_flag,
+                   rec_share_class.par_value,
+                   rec_share_class.currency,
+                   rec_share_class.special_rights_flag,
+                   rec_share_class.business_id,
+                   rec_share_class.transaction_id,
+                   null,
+                   2,
+                   rec_share_class.currency_additional); 
+      end if;
+    end loop;
+    close cur_share_classes;
+  end if;
+  if rec_change.bus_end_trans_id is not null and rec_change.alias_count > 0 then
+    counter := counter + 1;
+    open cur_aliases(p_business_id, p_tombstone_trans_id);
+    loop
+      fetch cur_aliases into rec_alias;
+      exit when not found;
+      alias_id := 0;
+      select a.id
+         into alias_id
+         from aliases_version s
+        where a.business_id = p_business_id
+          and a.transaction_id < p_tombstone_trans_id
+          and a.end_transaction_id is null
+          and a.operation_type in (0, 1)
+          and a.alias = rec_alias.alias
+          and a.type = rec_alias.type
+          fetch first 1 rows only;
+      if FOUND and alias_id > 0 then
+        update aliases_version
+           set end_transaction_id = rec_alias.transaction_id
+         where id = alias_id;
+        insert into aliases_version
+            values(alias_id,rec_alias.alias,rec_alias.type,rec_alias.business_id,rec_alias.transaction_id,null,rec_alias.operation_type);
+        if rec_alias.operation_type = 1 then
+          update aliases
+             set alias = rec_alias.alias, type = rec_alias.type
+           where id = alias_id;
+        end if;
+      end if;
+    end loop;
+    close cur_aliases;
+  end if;
   return counter;
 end;
 $$;
