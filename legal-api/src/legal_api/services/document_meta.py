@@ -214,7 +214,7 @@ class DocumentMetaService:
         """Return correction meta object(s)."""
         reports = []
 
-        if Filing.FILINGS["incorporationApplication"].get("name") in filing["filing"].keys():
+        if Filing.FILINGS["incorporationApplication"].get("name") in filing["filing"]:
             reports = self.get_corrected_ia_reports(filing)
 
         return reports

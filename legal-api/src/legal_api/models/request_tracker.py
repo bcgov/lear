@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 from enum import auto
-from typing import List
 
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.datetime import datetime
@@ -87,13 +86,13 @@ class RequestTracker(db.Model):  # pylint: disable=too-many-instance-attributes
         return request_tracker
 
     @classmethod
-    def find_by(cls,  # pylint: disable=too-many-arguments
+    def find_by(cls,  # noqa: PLR0913
                 business_id: int,
                 service_name: ServiceName,
                 request_type: RequestType = None,
-                filing_id: int = None,
-                is_admin: bool = None,
-                message_id: str = None) -> List[RequestTracker]:
+                filing_id: int | None = None,
+                is_admin: bool | None = None,
+                message_id: str | None = None) -> list[RequestTracker]:
         """Return the request tracker matching."""
         query = db.session.query(RequestTracker). \
             filter(RequestTracker.business_id == business_id). \

@@ -13,7 +13,6 @@
 # limitations under the License.
 """Validation for the Change of Address filing."""
 from http import HTTPStatus
-from typing import Dict
 
 import pycountry
 from flask_babel import _
@@ -23,7 +22,7 @@ from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import validate_offices_addresses
 
 
-def validate(business: Business, coa: Dict) -> Error:
+def validate(business: Business, coa: dict) -> Error:
     """Validate the Change of Address filing."""
     if not business or not coa:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
@@ -35,15 +34,13 @@ def validate(business: Business, coa: Dict) -> Error:
 
     addresses = coa["filing"][filing_type]["offices"]
 
-    for item in addresses.keys():
+    for item in addresses:
         for k, v in addresses[item].items():
             region = v.get("addressRegion")
             country = v["addressCountry"]
 
             if region != "BC":
-                path = "/filing/changeOfAddress/offices/%s/%s/addressRegion" % (
-                    item, k
-                )
+                path = f"/filing/changeOfAddress/offices/{item}/{k}/addressRegion"
                 msg.append({"error": _("Address Region must be 'BC'."),
                             "path": path})
 
@@ -52,9 +49,7 @@ def validate(business: Business, coa: Dict) -> Error:
                 if country != "CA":
                     raise LookupError
             except LookupError:
-                err_path = "/filing/changeOfAddress/offices/%s/%s/addressCountry" % (
-                    item, k
-                )
+                err_path = f"/filing/changeOfAddress/offices/{item}/{k}/addressCountry"
                 msg.append({"error": _("Address Country must be 'CA'."),
                             "path": err_path})
     if msg:

@@ -169,7 +169,7 @@ class Flags:
         try:
             return bool(client.variation(flag, ctx, None))
         except Exception as err:
-            self.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
+            self.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
             return False
 
     def value(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> Any:
@@ -180,5 +180,5 @@ class Flags:
         try:
             return client.variation(flag, ctx, None)
         except Exception as err:
-            self.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
+            self.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
             return False

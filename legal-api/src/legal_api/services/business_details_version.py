@@ -499,7 +499,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return member
 
     @staticmethod
-    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:  # pylint: disable=too-many-branches
+    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:  # noqa: PLR0912
         """Return the party member as a json object."""
         member = VersionedBusinessDetailsService.party_revision_type_json(party, is_ia_or_after)
 

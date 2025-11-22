@@ -147,6 +147,7 @@ select = [
     "UP",  # pyupgrade
     "F", # pyflakes
 ]
+ignore = ["RUF012"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

@@ -127,9 +127,11 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
             if not self.organization_name or self.first_name or self.middle_initial or self.last_name:
                 return False
 
-        elif self.party_type == Party.PartyTypes.PERSON.value:
-            if self.organization_name or not (self.first_name or self.middle_initial or self.last_name):
-                return False
+        elif (
+            self.party_type == Party.PartyTypes.PERSON.value and
+            (self.organization_name or not (self.first_name or self.middle_initial or self.last_name))
+        ):
+            return False
         return True
 
     @classmethod

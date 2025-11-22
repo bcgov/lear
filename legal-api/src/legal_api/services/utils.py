@@ -13,12 +13,11 @@
 # limitations under the License.
 """Common utilities used by the services."""
 from datetime import date
-from typing import Dict
 
 import dpath.util
 
 
-def get_date(filing: Dict, path: str) -> date:
+def get_date(filing: dict, path: str) -> date:
     """Extract a date from the JSON filing, at the provided path.
 
     Args:
@@ -39,7 +38,7 @@ def get_date(filing: Dict, path: str) -> date:
         return None
 
 
-def get_str(filing: Dict, path: str) -> str:
+def get_str(filing: dict, path: str) -> str:
     """Extract a str from the JSON filing, at the provided path.
 
     Args:
@@ -60,7 +59,7 @@ def get_str(filing: Dict, path: str) -> str:
         return None
 
 
-def get_bool(filing: Dict, path: str) -> str:
+def get_bool(filing: dict, path: str) -> str:
     """Extract a boolean from the JSON filing, at the provided path.
 
     Args:
@@ -74,7 +73,7 @@ def get_bool(filing: Dict, path: str) -> str:
         return None
 
 
-def get_int(filing: Dict, path: str) -> str:
+def get_int(filing: dict, path: str) -> str:
     """Extract int from the JSON filing, at the provided path.
 
     Args:

@@ -14,7 +14,7 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Final, Tuple
+from typing import Final, Optional
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
@@ -57,7 +57,7 @@ class InvoluntaryDissolutionService:
     @classmethod
     def check_business_eligibility(
         cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters()
-    ) -> Tuple[bool, EligibilityDetails]:
+    ) -> tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
         Returns:
@@ -74,13 +74,10 @@ class InvoluntaryDissolutionService:
         return True, eligibility_details
 
     @classmethod
-    def get_businesses_eligible(cls, num_allowed: int = None):
+    def get_businesses_eligible(cls, num_allowed: Optional[int] = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query()
-        if num_allowed:
-            eligible_businesses = query.limit(num_allowed).all()
-        else:
-            eligible_businesses = query.all()
+        eligible_businesses = query.limit(num_allowed).all() if num_allowed else query.all()
 
         return eligible_businesses
 
@@ -322,7 +319,7 @@ def _get_filtered_entities(accounts):
 
         for entity in entities:
             identifier = entity.get("businessIdentifier")
-            if identifier and not (identifier.startswith("T") or identifier.startswith("NR")):
+            if identifier and not (identifier.startswith(("T", "NR"))):
                 filtered_entities.append(identifier)
 
     return filtered_entities

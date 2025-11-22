@@ -12,11 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Date time utilities."""
-# from datetime import datetime, timezone
 from datetime import date, datetime as _datetime, timedelta, timezone  # pylint: disable=unused-import # noqa: F401, I001
 
 
-class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
+class datetime(_datetime):  # noqa: N801
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
 
     @classmethod

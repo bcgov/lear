@@ -52,7 +52,7 @@ from .bp import bp
 @bp.route("/internal/filings", methods=["GET"])
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
-def get_completed_filings_for_colin():  # pylint: disable=too-many-branches
+def get_completed_filings_for_colin():  # noqa: PLR0912
     """Get filings by status formatted in json."""
     filings = []
 
@@ -247,10 +247,7 @@ def has_share_changed(filing: Filing) -> bool:
                           .filter(series_version.share_class_id.in_(
                               [share_class["id"] for share_class in share_classes]))
                           .exists())
-    if db.session.query(share_series_query).scalar():
-        return True
-
-    return False
+    return bool(db.session.query(share_series_query).scalar())
 
 
 def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
@@ -454,7 +451,7 @@ def set_tax_ids():
     if not json_input:
         return ({"message": "No identifiers in body of post."}, HTTPStatus.BAD_REQUEST)
 
-    for identifier in json_input.keys():
+    for identifier in json_input:
         # json input is a dict -> identifier: tax id
         business = Business.find_by_identifier(identifier)
         if business:

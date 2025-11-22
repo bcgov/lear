@@ -15,7 +15,7 @@
 """API endpoints for managing an Digital Credentials resource."""
 from datetime import datetime, timezone
 from http import HTTPStatus
-from typing import Tuple, Union
+from typing import Union
 
 from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
@@ -48,7 +48,7 @@ bp_dc = Blueprint("DIGITAL_CREDENTIALS", __name__,
 rules = DigitalCredentialsRulesService()
 
 
-def get_business_user(identifier) -> Tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
+def get_business_user(identifier) -> tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
     """Get the business, user, and business user if they exist and the user is authorized."""
     if not (business := Business.find_by_identifier(identifier)):
         return None, jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
@@ -222,7 +222,7 @@ def get_credentials(identifier):
 @cross_origin(origin="*")
 @jwt.requires_auth
 @can_access_digital_credentials
-def send_credential(identifier, credential_type):  # pylint: disable=too-many-locals
+def send_credential(identifier, credential_type):  # noqa: PLR0911
     """Issue a credential to the connection."""
     business_user, error_response, error_status = get_business_user(identifier)
     if error_response:
@@ -347,12 +347,11 @@ def webhook_notification(topic_name: str):
         if topic_name == "connections" and state in (
                 DCConnection.State.ACTIVE.value, DCConnection.State.COMPLETED.value):
             if (connection := DCConnection.find_by_connection_id(
-                    extract_invitation_message_id(json_input))):
-                if not connection.is_active:
-                    connection.connection_id = json_input["connection_id"]
-                    connection.connection_state = state
-                    connection.is_active = True
-                    connection.save()
+                    extract_invitation_message_id(json_input))) and not connection.is_active:
+                connection.connection_id = json_input["connection_id"]
+                connection.connection_state = state
+                connection.is_active = True
+                connection.save()
         elif topic_name == "issuer_cred_rev" and state == "issued":
             cred_ex_id = json_input.get("cred_ex_id", None)
             if cred_ex_id and (credential := DCCredential.find_by_credential_exchange_id(cred_ex_id)):

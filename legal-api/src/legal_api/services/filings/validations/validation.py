@@ -13,7 +13,6 @@
 # limitations under the License.
 """Common validation entry point for all filing submissions."""
 from http import HTTPStatus
-from typing import Dict
 
 from flask_babel import _ as babel
 
@@ -62,8 +61,8 @@ from .special_resolution import validate as special_resolution_validate
 from .transparency_register import validate as transparency_register_validate
 
 
-def validate(business: Business,  # pylint: disable=too-many-branches,too-many-statements
-             filing_json: Dict,
+def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
+             filing_json: dict,
              account_id=None) -> Error:
     """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
@@ -90,12 +89,12 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
     #         return error
     # check if this is a correction - if yes, ignore all other filing types in the filing since they will be validated
     # differently in a future version of corrections
-    if "correction" in filing_json["filing"].keys():
+    if "correction" in filing_json["filing"]:
         err = correction_validate(business, filing_json)
         if err:
             return err
 
-    elif "dissolution" in filing_json["filing"].keys() \
+    elif "dissolution" in filing_json["filing"] \
             and (dissolution_type := filing_json["filing"]["dissolution"].get("dissolutionType", None)) \
             and (dissolution_type in ["voluntary", "administrative"]):
         err = dissolution_validate(business, filing_json)
@@ -106,14 +105,14 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
         if (business.legal_type == Business.LegalTypes.COOP.value and
                 dissolution_type != DissolutionTypes.ADMINISTRATIVE):
-            if "specialResolution" in filing_json["filing"].keys():
+            if "specialResolution" in filing_json["filing"]:
                 err = special_resolution_validate(business, filing_json)
             else:
                 err = Error(HTTPStatus.BAD_REQUEST, [{"error": babel("Special Resolution is required."),
                                                       "path": "/filing/specialResolution"}])
         if err:
             return err
-    elif ("specialResolution" in filing_json["filing"].keys() and
+    elif ("specialResolution" in filing_json["filing"] and
           business.legal_type in [Business.LegalTypes.COOP.value]):
         err = special_resolution_validate(business, filing_json)
         if err:
@@ -121,10 +120,10 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
 
         either_con_or_alteration_flag = False
 
-        if "changeOfName" in filing_json["filing"].keys():
+        if "changeOfName" in filing_json["filing"]:
             either_con_or_alteration_flag = True
             err = con_validate(business, filing_json)
-        if "alteration" in filing_json["filing"].keys():
+        if "alteration" in filing_json["filing"]:
             either_con_or_alteration_flag = True
             err = alteration_validate(business, filing_json)
 
@@ -135,7 +134,7 @@ def validate(business: Business,  # pylint: disable=too-many-branches,too-many-s
             return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("Either Change of Name or Alteration is required."),
                                                   "path": "/filing"}])
     else:
-        for k in filing_json["filing"].keys():
+        for k in filing_json["filing"]:
             # Check if the JSON key exists in the FILINGS reference Dictionary
             if Filing.FILINGS.get(k, None):
                 # The type of this Filing exists in the JSON, determine which

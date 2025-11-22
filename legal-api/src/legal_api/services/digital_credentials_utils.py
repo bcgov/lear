@@ -14,7 +14,7 @@
 
 """This provides utility functions for specific actions related to digital credentials."""
 
-from typing import List, Union
+from typing import Union
 
 from flask import current_app
 
@@ -23,8 +23,8 @@ from legal_api.models import Party, User
 DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
 
 
-def determine_allowed_business_types(valid_registration_types: List[str],
-                                     valid_incorporation_types: List[str]) -> List[str]:
+def determine_allowed_business_types(valid_registration_types: list[str],
+                                     valid_incorporation_types: list[str]) -> list[str]:
     """Determine if the business type is allowed for digital credentials based on flags."""
     # Import inside function to avoid circular dependency and ensure app context is available
     from legal_api.services import flags

@@ -18,6 +18,7 @@ Provides all the search and retrieval from the business filings datastore.
 
 from datetime import datetime
 from http import HTTPStatus
+from typing import Optional
 
 import datedelta
 import requests
@@ -79,7 +80,7 @@ def get_tasks(identifier):
     return jsonify(tasks=rv)
 
 
-def construct_task_list(business: Business):  # pylint: disable=too-many-locals; only 2 extra
+def construct_task_list(business: Business):  # noqa: PLR0915
     """
     Return all current pending tasks to do.
 
@@ -176,29 +177,31 @@ def construct_task_list(business: Business):  # pylint: disable=too-many-locals;
 
     # Transition Application todo task appears below overdue Annual Reports before the restoration date causing the warning
     # and it does not affect the 'enabled' status of other todo items.
-    if any(x["code"] == BusinessWarningCodes.TRANSITION_NOT_FILED.value for x in warnings):
-        if not Filing.get_incomplete_filings_by_type(business.id, "transition"):
-            # Gets all completed restorations of the business (most recent first)
-            restorations = Filing.get_filings_by_types(business.id, ["restoration", "restorationApplication"])
-            if not restorations:
-                # Should never get here
-                current_app.logger.error(f"Error - Business id: {business.id}. TRANSITION_NOT_FILED warning and no restoration filing on record.")
-                return tasks
-            # Use the first restoration in the list for the most recent completed restoration date
-            last_restoration_date = restorations[0].effective_date
-            last_ar_date = business.last_ar_date or business.founding_date
-            # Get the transition application todo order based on the ar tasks, last restoration date, and ar date information
-            transition_order, transition_enabled = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
-            # Bump all the task orders by one that are at and above transition_order
-            tasks = _bump_task_order(tasks, transition_order)
-            # Append the TA task at with order: transition_order. Disable if there are any incomplete filings
-            tasks.append(create_transition_todo(business, transition_order, (transition_enabled and not pending_filings)))
-            order += 1
+    if (
+        any(x["code"] == BusinessWarningCodes.TRANSITION_NOT_FILED.value for x in warnings) and
+        not Filing.get_incomplete_filings_by_type(business.id, "transition")
+    ):
+        # Gets all completed restorations of the business (most recent first)
+        restorations = Filing.get_filings_by_types(business.id, ["restoration", "restorationApplication"])
+        if not restorations:
+            # Should never get here
+            current_app.logger.error(f"Error - Business id: {business.id}. TRANSITION_NOT_FILED warning and no restoration filing on record.")
+            return tasks
+        # Use the first restoration in the list for the most recent completed restoration date
+        last_restoration_date = restorations[0].effective_date
+        last_ar_date = business.last_ar_date or business.founding_date
+        # Get the transition application todo order based on the ar tasks, last restoration date, and ar date information
+        transition_order, transition_enabled = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
+        # Bump all the task orders by one that are at and above transition_order
+        tasks = _bump_task_order(tasks, transition_order)
+        # Append the TA task at with order: transition_order. Disable if there are any incomplete filings
+        tasks.append(create_transition_todo(business, transition_order, (transition_enabled and not pending_filings)))
+        order += 1
 
     return tasks
 
 
-def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: str = None):
+def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: Optional[str] = None):
     """Add Transparency Register tasks to the tasks list."""
     entity_types_no_tr = ["SP", "GP", "CP"]
     tr_required = business.state != Business.State.HISTORICAL.value and business.legal_type not in entity_types_no_tr
@@ -336,8 +339,8 @@ def _bump_task_order(tasks: list, bump_start_point: int) -> list:
     return tasks
 
 
-def _add_tr_task(tasks: list, order: int, enabled: bool,  # pylint: disable=too-many-arguments
-                 business: Business, sub_type: str, due_date: datetime, year: int = None):
+def _add_tr_task(tasks: list, order: int, enabled: bool,  # noqa: PLR0913
+                 business: Business, sub_type: str, due_date: datetime, year: Optional[int] = None):
     """Add a TR task to the list of tasks in the correct order."""
     tr_order = _find_task_order_for_tr(tasks, order, sub_type, year)
     # bump the order of all the tasks after the tr by 1
@@ -347,7 +350,7 @@ def _add_tr_task(tasks: list, order: int, enabled: bool,  # pylint: disable=too-
     return tasks, order
 
 
-def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
+def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # noqa: PLR0913
     """Return a to-do JSON object."""
     todo = {
         "task": {
@@ -422,8 +425,8 @@ def create_transition_todo(business, order, enabled):
     return todo
 
 
-def create_tr_todo(business: Business, order: int, enabled: bool,  # pylint: disable=too-many-arguments
-                   sub_type: str, due_date: datetime, year: int = None):
+def create_tr_todo(business: Business, order: int, enabled: bool,  # noqa: PLR0913
+                   sub_type: str, due_date: datetime, year: Optional[int] = None):
     """Return a to-do JSON object for a Tranparency Register todo item."""
     return {
         "task": {

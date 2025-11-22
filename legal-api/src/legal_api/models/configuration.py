@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List
 
 from croniter import croniter
 from sqlalchemy import event
@@ -66,7 +65,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         return configuration
 
     @classmethod
-    def all(cls) -> List[Configuration]:
+    def all(cls) -> list[Configuration]:
         """Return the configuration matching the id."""
         return cls.query.all()
 
@@ -87,7 +86,7 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         return configuration
 
     @classmethod
-    def find_by_names(cls, config_names: List[str]) -> List[Configuration]:
+    def find_by_names(cls, config_names: list[str]) -> list[Configuration]:
         """Return the configurations matching the names."""
         return cls.query.filter(cls.name.in_(config_names)).all()
 
@@ -118,9 +117,8 @@ class Configuration(db.Model):  # pylint: disable=too-many-instance-attributes
         elif name in bool_names:
             if val not in {"True", "False"}:
                 raise ValueError(f"Value for key {name} must be a boolean")
-        elif name in cron_names:
-            if not croniter.is_valid(val):
-                raise ValueError(f"Value for key {name} must be a cron string")
+        elif name in cron_names and not croniter.is_valid(val):
+            raise ValueError(f"Value for key {name} must be a cron string")
 
 
 # Listen to 'before_insert' and 'before_update' events

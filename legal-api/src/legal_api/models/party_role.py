@@ -16,13 +16,16 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
 
 from .db import db
-from .party import Party
 from .party_class import PartyClass
+
+if TYPE_CHECKING:
+    from .party import Party
 
 
 class PartyRole(db.Model, Versioned):
@@ -164,7 +167,7 @@ class PartyRole(db.Model, Versioned):
         return directors
 
     @staticmethod
-    def get_party_roles(business_id: int, end_date: datetime = None, role: str = None) -> list:
+    def get_party_roles(business_id: int, end_date: datetime | None = None, role: str | None = None) -> list:
         """Return the parties that match the filter conditions."""
         unsupported_roles = [
             PartyRole.RoleTypes.OFFICER.value,
@@ -198,7 +201,7 @@ class PartyRole(db.Model, Versioned):
         return party_roles
 
     @staticmethod
-    def get_party_roles_by_filing(filing_id: int, end_date: datetime, role: str = None) -> list:
+    def get_party_roles_by_filing(filing_id: int, end_date: datetime, role: str | None = None) -> list:
         """Return the parties that match the filter conditions."""
         party_roles = db.session.query(PartyRole). \
             filter(PartyRole.filing_id == filing_id). \

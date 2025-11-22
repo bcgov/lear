@@ -21,10 +21,9 @@ from flask_cors import cross_origin
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Furnishing, UserRoles
 from legal_api.reports.report_v2 import ReportTypes
+from legal_api.resources.v2.business.bp import bp
 from legal_api.services import FurnishingDocumentsService, authorized
 from legal_api.utils.auth import jwt
-
-from ..bp import bp
 
 FURNISHING_DOC_BASE_ROUTE: Final = "/<string:identifier>/furnishings/<string:furnishing_id>/document"
 
@@ -32,7 +31,7 @@ FURNISHING_DOC_BASE_ROUTE: Final = "/<string:identifier>/furnishings/<string:fur
 @bp.route(FURNISHING_DOC_BASE_ROUTE, methods=["GET", "OPTIONS"])
 @cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.system, UserRoles.staff])
-def get_furnishing_document(identifier: str, furnishing_id: int):
+def get_furnishing_document(identifier: str, furnishing_id: int): # noqa: PLR0911
     """Return a JSON object with meta information about the Service."""
     # basic checks
     if not authorized(identifier, jwt, ["view", ]):

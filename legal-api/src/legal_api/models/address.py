@@ -15,6 +15,8 @@
 
 Currently this only provides API versioning information
 """
+from typing import Optional
+
 import pycountry
 from sql_versioning import Versioned
 
@@ -96,7 +98,7 @@ class Address(db.Model, Versioned):  # pylint: disable=too-many-instance-attribu
         return address
 
     @classmethod
-    def find_by_id(cls, internal_id: int = None):
+    def find_by_id(cls, internal_id: Optional[int] = None):
         """Return the address by the internal id."""
         address = None
         if internal_id:
@@ -105,9 +107,9 @@ class Address(db.Model, Versioned):  # pylint: disable=too-many-instance-attribu
 
     @classmethod
     def find_by(cls,
-                business_id: int = None,
-                furnishings_id: int = None,
-                office_id: int = None) -> dict:
+                business_id: Optional[int] = None,
+                furnishings_id: Optional[int] = None,
+                office_id: Optional[int] = None) -> dict:
         """Return the address matching."""
         query = db.session.query(Address)
         addresses = []

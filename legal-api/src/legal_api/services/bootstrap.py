@@ -18,7 +18,7 @@ import json
 import secrets
 import string
 from http import HTTPStatus
-from typing import Dict, Union
+from typing import Optional, Union
 
 import requests
 from flask import current_app
@@ -34,7 +34,7 @@ class RegistrationBootstrapService:
     """Provides services to bootstrap the IA registration and account affiliation."""
 
     @staticmethod
-    def create_bootstrap(account: int) -> Union[Dict, RegistrationBootstrap]:
+    def create_bootstrap(account: int) -> Union[dict, RegistrationBootstrap]:
         """Return either a new bootstrap registration or an error struct."""
         if not account:
             return {"error": babel("An account number must be provided.")}
@@ -75,9 +75,9 @@ class RegistrationBootstrapService:
     @staticmethod
     def register_bootstrap(bootstrap: RegistrationBootstrap,
                            business_name: str,
-                           nr_number: str = None,
+                           nr_number: Optional[str] = None,
                            corp_type_code: str = "TMP",
-                           corp_sub_type_code: str = None) -> Union[HTTPStatus, Dict]:
+                           corp_sub_type_code: Optional[str] = None) -> Union[HTTPStatus, dict]:
         """Return either a new bootstrap registration or an error struct."""
         if not bootstrap:
             return {"error": babel("An account number must be provided.")}
@@ -148,15 +148,14 @@ class AccountService:
             return None
 
     @classmethod
-    # pylint: disable=too-many-arguments, too-many-locals disable=invalid-name, disable=redefined-outer-name;
-    def create_affiliation(cls, account: int,
+    def create_affiliation(cls, account: int, # noqa: PLR0913
                            business_registration: str,
-                           business_name: str = None,
+                           business_name: Optional[str] = None,
                            corp_type_code: str = "TMP",
-                           corp_sub_type_code: str = None,
+                           corp_sub_type_code: Optional[str] = None,
                            pass_code: str = "",
-                           details: dict = None,
-                           flags: any = None):
+                           details: Optional[dict] = None,
+                           flags: Optional[any] = None):
         """Affiliate a business to an account."""
         current_app.logger.info(f"Creating affiliation of {business_registration} for {account}")
         auth_url = current_app.config.get("AUTH_SVC_URL")
@@ -216,7 +215,7 @@ class AccountService:
                       business_registration: str,
                       business_name: str,
                       corp_type_code: str,
-                      state: str = None):
+                      state: Optional[str] = None):
         """Update an entity."""
         auth_url = current_app.config.get("AUTH_SVC_URL")
         account_svc_entity_url = f"{auth_url}/entities"
@@ -248,7 +247,7 @@ class AccountService:
         return HTTPStatus.OK
 
     @classmethod
-    def delete_affiliation(cls, account: int, business_registration: str) -> Dict:
+    def delete_affiliation(cls, account: int, business_registration: str) -> dict:
         """Affiliate a business to an account.
 
         @TODO Update this when account affiliation is changed next sprint.

@@ -96,14 +96,14 @@ def validate_offices(filing_json: dict, legal_type: str, filing_type: str = "inc
     addresses = offices_array
     msg = []
 
-    for item in addresses.keys():
+    for item in addresses:
         if item in ("registeredOffice", "recordsOffice"):
             msg.extend(_validate_address(addresses, item, filing_type))
         else:
             msg.append({"error": f"Invalid office {item}. Only registeredOffice and recordsOffice are allowed.",
                         "path": f"/filing/{filing_type}/offices"})
 
-        if legal_type in Business.CORPS and "recordsOffice" not in addresses.keys():
+        if legal_type in Business.CORPS and "recordsOffice" not in addresses:
             msg.append({"error": "recordsOffice is required",
                         "path": f"/filing/{filing_type}/offices"})
 
@@ -139,8 +139,9 @@ def _validate_address(addresses: dict, address_key: str, filing_type: str) -> li
     return msg
 
 
-# pylint: disable=too-many-branches
-def validate_roles(filing_dict: dict, legal_type: str, filing_type: str = "incorporationApplication") -> Error:
+def validate_roles(filing_dict: dict, # noqa: PLR0912
+                   legal_type: str,
+                   filing_type: str = "incorporationApplication") -> Error:
     """Validate the required completing party of the incorporation filing."""
     min_director_count_info = {
         Business.LegalTypes.BCOMP.value: 1,
@@ -264,11 +265,10 @@ def validate_parties_delivery_address(incorporation_json: dict, legal_type: str,
 
     for idx, party in enumerate(parties_array):
         is_director = any(role["roleType"].lower() == PartyRole.RoleTypes.DIRECTOR.value for role in party["roles"])
-        if is_director:
-            if "deliveryAddress" not in party:
-                msg.append({"error": babel("deliveryAddress is required."),
-                            "path": f"/filing/{filing_type}/parties/{idx}"})
-                continue
+        if is_director and "deliveryAddress" not in party:
+            msg.append({"error": babel("deliveryAddress is required."),
+                        "path": f"/filing/{filing_type}/parties/{idx}"})
+            continue
 
     if msg:
         return msg

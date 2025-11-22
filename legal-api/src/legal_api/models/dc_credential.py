@@ -14,7 +14,7 @@
 """This module holds data for digital credentials."""
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -125,7 +125,7 @@ class DCCredential(db.Model):  # pylint: disable=too-many-instance-attributes
         return dc_credential
 
     @classmethod
-    def find_by_filters(cls, filters: List[Any] = None) -> List[DCCredential]:
+    def find_by_filters(cls, filters: list[Any] | None = None) -> list[DCCredential]:
         """Return the digital credential matching any provided filter."""
         query = db.session.query(DCCredential)
 

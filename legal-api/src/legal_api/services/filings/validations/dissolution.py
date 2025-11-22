@@ -14,7 +14,7 @@
 """Validation for the Voluntary Dissolution filing."""
 from enum import Enum
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 import pycountry
 from flask_babel import _
@@ -59,7 +59,7 @@ DISSOLUTION_MAPPING = {
 }
 
 
-def validate(business: Business, dissolution: Dict) -> Optional[Error]:
+def validate(business: Business, dissolution: dict) -> Optional[Error]:
     """Validate the dissolution filing."""
     if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
@@ -170,7 +170,7 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
 
     return None
 
-def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type) -> Optional[list]:
+def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type) -> Optional[list]: # noqa: PLR0912
     """Validate that all party roles in the dissolution are valid.
 
     This needs not to be validated for administrative dissolution
@@ -230,9 +230,11 @@ def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type
             msg.append({"error": "Must have a minimum of one custodian or one liquidator.", "path": party_path})
         elif total > 1:
             msg.append({"error": "Must have a maximum of one custodian or one liquidator, not both.", "path": party_path})
-    elif legal_type in {Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value}:
-        if completing_party_count == 0:
-            msg.append({"error": "Must have a completing party.", "path": party_path})
+    elif (
+        legal_type in {Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value} and
+        completing_party_count == 0
+    ):
+        msg.append({"error": "Must have a completing party.", "path": party_path})
 
     return msg
 

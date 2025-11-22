@@ -114,9 +114,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         FINANCIAL = "FI"
         CONT_IN_SOCIETY = "CS"
         # *** The following are not yet supported by legal-api: ***
-        # DOING_BUSINESS_AS = 'DBA'
-        # XPRO_CORPORATION = 'XCR'
-        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
+        # DOING_BUSINESS_AS = 'DBA' # noqa: ERA001
+        # XPRO_CORPORATION = 'XCR' # noqa: ERA001
+        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL' # noqa: ERA001
 
     CORPS: Final = [
         LegalTypes.BCOMP.value,
@@ -721,7 +721,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         self._allowable_actions = value
 
     @classmethod
-    def find_by_legal_name(cls, legal_name: str = None):
+    def find_by_legal_name(cls, legal_name: Optional[str] = None):
         """Given a legal_name, this will return an Active Business."""
         business = None
         if legal_name:
@@ -735,7 +735,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return business
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):
+    def find_by_identifier(cls, identifier: Optional[str] = None):
         """Return a Business by the id assigned by the Registrar."""
         business = None
         if identifier:
@@ -743,7 +743,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return business
 
     @classmethod
-    def find_by_internal_id(cls, internal_id: int = None):
+    def find_by_internal_id(cls, internal_id: Optional[int] = None):
         """Return a Business by the internal id."""
         business = None
         if internal_id:

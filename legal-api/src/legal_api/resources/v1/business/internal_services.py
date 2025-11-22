@@ -63,7 +63,7 @@ class InternalBusinessResource(Resource):
         if not json_input:
             return ({"message": "No identifiers in body of post."}, HTTPStatus.BAD_REQUEST)
 
-        for identifier in json_input.keys():
+        for identifier in json_input:
             # json input is a dict -> identifier: tax id
             business = Business.find_by_identifier(identifier)
             if business:

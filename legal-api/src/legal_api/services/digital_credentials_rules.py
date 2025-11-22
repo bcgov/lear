@@ -16,7 +16,6 @@
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import List
 
 import requests
 from flask import current_app
@@ -56,7 +55,7 @@ class DigitalCredentialsRulesService:
         """Return True if the user is allowed to access digital credentials."""
         return self._has_general_access(user) and self._has_specific_access(user, business)
 
-    def get_preconditions(self, user: User, business: Business) -> List[str]:
+    def get_preconditions(self, user: User, business: Business) -> list[str]:
         """
         Return the preconditions for digital credentials.
 
@@ -68,7 +67,7 @@ class DigitalCredentialsRulesService:
                 preconditions += self.user_business_party_roles(user, business)
             if self.user_has_filing_party_role(user, business):
                 preconditions += self.user_filing_party_roles(user, business)
-        return list(map(lambda party_role: party_role.role, preconditions))
+        return [party_role.role for party_role in preconditions]
 
     def _has_general_access(self, user: User) -> bool:
         """Return True if general access rules are met."""
@@ -139,7 +138,7 @@ class DigitalCredentialsRulesService:
         """
         return len(self.user_business_party_roles(user, business)) > 0
 
-    def user_filing_party_roles(self, user: User, business: Business) -> List[PartyRole]:
+    def user_filing_party_roles(self, user: User, business: Business) -> list[PartyRole]:
         """Return the filing roles of the user for the business, if any."""
         if len(filings := self.valid_filings(business)) <= 0:
             current_app.logger.debug(
@@ -154,7 +153,7 @@ class DigitalCredentialsRulesService:
             PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value).all()
         return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
 
-    def user_business_party_roles(self, user: User, business: Business) -> List[PartyRole]:
+    def user_business_party_roles(self, user: User, business: Business) -> list[PartyRole]:
         """Return the party roles of the user for the business, if any."""
         roles = business.party_roles.all()
         return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
@@ -185,11 +184,11 @@ class DigitalCredentialsRulesService:
         p = FormattedUser(party)
         return u.first_name == p.first_name and u.last_name == p.last_name
 
-    def valid_filings(self, business: Business) -> List[Filing]:
+    def valid_filings(self, business: Business) -> list[Filing]:
         """Return the registration or incorporation filings for the business."""
         return Filing.get_filings_by_types(business.id, self.valid_filing_types)
 
-    def completing_party_roles(self, filing: Filing) -> List[PartyRole]:
+    def completing_party_roles(self, filing: Filing) -> list[PartyRole]:
         """Return the completing parties of a filing."""
         return PartyRole.get_party_roles_by_filing(
             filing.id,
@@ -197,7 +196,7 @@ class DigitalCredentialsRulesService:
             PartyRole.RoleTypes.COMPLETING_PARTY.value,
         )
 
-    def filing_party_roles(self, filing: Filing) -> List[PartyRole]:
+    def filing_party_roles(self, filing: Filing) -> list[PartyRole]:
         """Return the party roles of a filing."""
         return PartyRole.get_party_roles_by_filing(
             filing.id,

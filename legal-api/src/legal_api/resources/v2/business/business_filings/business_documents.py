@@ -16,7 +16,7 @@
 Provides all the search and retrieval from the business entity documents.
 """
 from http import HTTPStatus
-from typing import Final
+from typing import Final, Optional
 
 import requests
 from flask import current_app, jsonify, request
@@ -27,12 +27,11 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Document
 from legal_api.models import Filing as FilingModel
 from legal_api.reports import get_pdf
+from legal_api.resources.v2.business.bp import bp
 from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
-
-from ..bp import bp
 
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
@@ -46,8 +45,10 @@ DOCUMENTS_BASE_ROUTE: Final = "/<string:identifier>/filings/<int:filing_id>/docu
 @bp.route(DOCUMENTS_BASE_ROUTE + "/static/<string:file_key>", methods=["GET", "OPTIONS"])
 @cross_origin(origin="*")
 @jwt.requires_auth
-def get_documents(identifier: str, filing_id: int, legal_filing_name: str = None, file_key: str = None):
-    # pylint: disable=too-many-branches
+def get_documents(identifier: str, # noqa: PLR0911, PLR0912
+                  filing_id: int,
+                  legal_filing_name: Optional[str] = None,
+                  file_key: Optional[str] = None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
     if not authorized(identifier, jwt, ["view", ]):

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Annual Report filing."""
 from http import HTTPStatus
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 from flask_babel import _
 
@@ -30,7 +30,7 @@ def requires_agm(business: Business) -> bool:
     return business.legal_type in agm_arr
 
 
-def validate(business: Business, annual_report: Dict) -> Error:
+def validate(business: Business, annual_report: dict) -> Error:
     """Validate the annual report JSON."""
     if not business or not annual_report:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
@@ -55,7 +55,7 @@ def validate(business: Business, annual_report: Dict) -> Error:
     return None
 
 
-def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Error:
+def validate_ar_year(*, business: Business, current_annual_report: dict) -> Error:
     """Validate that the annual report year is valid."""
     ar_date = get_date(current_annual_report,
                        "filing/annualReport/annualReportDate")
@@ -89,7 +89,7 @@ def validate_ar_year(*, business: Business, current_annual_report: Dict) -> Erro
 
 
 # pylint: disable=too-many-return-statements,unused-argument; lots of rules to individually return from
-def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, List[Dict]]:
+def validate_agm_year(*, business: Business, annual_report: dict) -> tuple[int, list[dict]]:
     """Validate the AGM year."""
     ar_date = get_date(annual_report,
                        "filing/annualReport/annualReportDate")
@@ -139,7 +139,7 @@ def validate_agm_year(*, business: Business, annual_report: Dict) -> Tuple[int, 
     return None
 
 
-def validate_directors_addresses(annual_report: Dict, legal_type: str) -> Optional[Error]:
+def validate_directors_addresses(annual_report: dict, legal_type: str) -> Optional[Error]:
     """Validate directors contain both deliveryAddress and mailingAddress."""
     if legal_type not in Business.CORPS:
         return None

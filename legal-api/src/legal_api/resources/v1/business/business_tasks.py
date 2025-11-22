@@ -158,7 +158,7 @@ class TaskListResource(Resource):
         return tasks
 
     @staticmethod
-    def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # pylint: disable=too-many-arguments
+    def create_todo(business, ar_year, ar_min_date, ar_max_date, order, enabled):  # noqa: PLR0913
         """Return a to-do JSON object."""
         todo = {
             "task": {

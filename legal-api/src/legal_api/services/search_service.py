@@ -17,7 +17,7 @@
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from operator import and_
-from typing import Final, List, Optional, Tuple
+from typing import Final, Optional
 
 from requests import Request
 from sqlalchemy import func
@@ -30,9 +30,9 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
     """Used for filtering Identifiers based on filters passed."""
 
     identifier: Optional[str]
-    status: Optional[List[str]]
+    status: Optional[list[str]]
     name: Optional[str]
-    type: Optional[List[str]]
+    type: Optional[list[str]]
     page: int
     limit: int
 
@@ -43,7 +43,7 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
         def clean_str(value: Optional[str]) -> Optional[str]:
             return value.strip() if value and value.strip() else None
 
-        def clean_list(values: List[str]) -> List[str]:
+        def clean_list(values: list[str]) -> list[str]:
             return [v.strip() for v in values if v.strip()]
         return cls(
             identifier=clean_str(req.get("identifier", None)),
@@ -95,7 +95,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         }
 
     @classmethod
-    def separate_states_by_type(cls, states: List[str]) -> Tuple[List[str], List[str]]:
+    def separate_states_by_type(cls, states: list[str]) -> tuple[list[str], list[str]]:
         """
         Separates input states into business-eligible and filing-eligible states.
 
@@ -129,7 +129,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             return False
 
     @staticmethod
-    def separate_legal_types(legal_types: List[str]) -> Tuple[List[str], List[str]]:
+    def separate_legal_types(legal_types: list[str]) -> tuple[list[str], list[str]]:
         """Separates input legal types into valid and invalid based on the Business.LegalTypes enum."""
         input_normalized = [t.strip().upper() for t in legal_types]
 

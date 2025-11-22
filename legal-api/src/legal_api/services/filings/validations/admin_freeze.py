@@ -13,17 +13,18 @@
 # limitations under the License.
 """Validation for the Admin Freeze filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
 from legal_api.models import Business
+from legal_api.services.utils import (
+    get_bool,  # noqa: I003; needed as the linter gets confused from the babel override above.
+)
 
-from ...utils import get_bool  # noqa: I003; needed as the linter gets confused from the babel override above.
 
-
-def validate(business: Business, admin_freeze: Dict) -> Optional[Error]:
+def validate(business: Business, admin_freeze: dict) -> Optional[Error]:
     """Validate the Court Order filing."""
     if not business or not admin_freeze:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])

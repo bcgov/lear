@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validation entry point for all filing submissions."""
-from typing import Dict
 
 from legal_api.errors import Error
 
@@ -20,7 +19,7 @@ from .comment import validate as comment_validate
 from .schemas import validate_against_schema
 
 
-def validate(comment_json: Dict, is_filing: bool) -> Error:
+def validate(comment_json: dict, is_filing: bool) -> Error:
     """Validate the annual report JSON."""
     err = validate_against_schema(comment_json)
     if err:

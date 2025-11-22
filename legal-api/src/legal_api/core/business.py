@@ -26,10 +26,10 @@ from legal_api.models import Business
 class BaseMeta(EnumMeta):
     """Meta class for the enum."""
 
-    def __contains__(self, other):  # pylint: disable=C0203
+    def __contains__(cls, other):  # pylint: disable=C0203
         """Return True if 'in' the Enum."""
         try:
-            self(other)  # pylint: disable=no-value-for-parameter
+            cls(other)  # pylint: disable=no-value-for-parameter
         except ValueError:
             return False
         else:
@@ -46,7 +46,7 @@ class BusinessType(str, Enum, metaclass=BaseMeta):
     PARTNERSHIP_AND_SOLE_PROP = "FM"
     TRUST = "TRUST"
     OTHER = "OT"
-    DEFAULT = "OT"
+    DEFAULT = "OT" # noqa: PIE796
 
     @classmethod
     def get_enum_by_value(cls, value: str) -> Optional[str]:
@@ -68,10 +68,7 @@ class BusinessIdentifier:
         """Validate the business identifier."""
         legal_type = value[:re.search(r"\d", value).start()]
 
-        if legal_type not in BusinessType or (not value[value.find(legal_type) + len(legal_type):].isdigit()):
-            return False
-
-        return True
+        return not (legal_type not in BusinessType or not value[value.find(legal_type) + len(legal_type):].isdigit())
 
     @staticmethod
     def next_identifier(business_type: BusinessType) -> Optional[str]:

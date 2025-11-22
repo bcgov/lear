@@ -14,8 +14,6 @@
 """This module holds data for digitial credentials business users."""
 from __future__ import annotations
 
-from typing import List
-
 from .db import db
 
 
@@ -52,8 +50,8 @@ class DCBusinessUser(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by(cls,
-                business_id: int = None,
-                user_id: int = None) -> List[DCBusinessUser]:
+                business_id: int | None = None,
+                user_id: int | None = None) -> list[DCBusinessUser]:
         """Return the business user matching the user_id and buisness_id."""
         business_user = None
         if business_id and user_id:

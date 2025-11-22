@@ -705,10 +705,7 @@ class BusinessDocument:
         address["postalCode"] = address.get("postalCode") or ""
 
         country = address["addressCountry"]
-        if country:
-            country = pycountry.countries.search_fuzzy(country)[0].name
-        else:
-            country = ""
+        country = pycountry.countries.search_fuzzy(country)[0].name if country else ""
         address["addressCountry"] = country
         address["addressCountryDescription"] = country
         return address

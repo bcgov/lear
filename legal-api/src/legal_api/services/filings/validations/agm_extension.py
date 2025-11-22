@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Agm Extension filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Optional
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
@@ -21,16 +21,15 @@ from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcas
 from legal_api.errors import Error
 from legal_api.models import Business
 from legal_api.services import flags
+from legal_api.services.utils import get_bool, get_int, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
-from ...utils import get_bool, get_int, get_str
 
 AGM_EXTENSION_PATH = "/filing/agmExtension"
 EXPIRED_ERROR = "Allotted period to request extension has expired."
 GRANT_FAILURE = "Fail to grant extension."
 
 
-def validate(business: Business, filing: Dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Optional[Error]:
     """Validate the AGM Extension filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
@@ -54,7 +53,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     return None
 
 
-def first_agm_validation(business: Business, filing: Dict) -> list:
+def first_agm_validation(business: Business, filing: dict) -> list:
     """Validate filing for first AGM Extension."""
     msg = []
 
@@ -104,7 +103,7 @@ def first_agm_validation(business: Business, filing: Dict) -> list:
     return msg
 
 
-def subsequent_agm_validation(filing: Dict) -> list:
+def subsequent_agm_validation(filing: dict) -> list:
     """Validate filing for subsequent AGM Extension."""
     msg = []
 

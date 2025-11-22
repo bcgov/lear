@@ -15,7 +15,7 @@ from contextlib import suppress
 from datetime import date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
-from typing import Final, List
+from typing import Final, Optional
 
 from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select
 from sqlalchemy.dialects.postgresql import JSONB
@@ -900,10 +900,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         insp = inspect(self)
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
-        if (self._payment_token and not attr_state.history.added) or self.colin_event_ids:
-            return True
-
-        return False
+        return bool((self._payment_token and not attr_state.history.added) or self.colin_event_ids)
 
     def set_processed(self):
         """Assign the completion and effective dates, unless they are already set."""
@@ -940,24 +937,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def is_corrected(self):
         """Has this filing been corrected."""
-        if (
-                self.parent_filing and
-                self.parent_filing.filing_type == Filing.FILINGS["correction"].get("name") and
-                self.parent_filing.status == Filing.Status.COMPLETED.value
-        ):
-            return True
-        return False
+        return bool(self.parent_filing and
+                    self.parent_filing.filing_type == Filing.FILINGS["correction"].get("name") and
+                    self.parent_filing.status == Filing.Status.COMPLETED.value)
 
     @property
     def is_correction_pending(self):
         """Is there a pending correction for this filing."""
-        if (
-                self.parent_filing and
-                self.parent_filing.filing_type == Filing.FILINGS["correction"].get("name") and
-                self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value
-        ):
-            return True
-        return False
+        return bool(self.parent_filing and
+                    self.parent_filing.filing_type == Filing.FILINGS["correction"].get("name") and
+                    self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value)
 
     @property
     def is_amalgamation_application(self):
@@ -1022,7 +1011,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             raise KeyError from err
 
     @classmethod
-    def find_by_id(cls, filing_id: str = None):
+    def find_by_id(cls, filing_id: Optional[str] = None):
         """Return a Filing by the id."""
         filing = None
         if filing_id:
@@ -1030,7 +1019,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_temp_reg_filing(temp_reg_id: str, filing_id: str = None):
+    def get_temp_reg_filing(temp_reg_id: str, filing_id: Optional[str] = None):
         """Return a filing by the temp id and filing id (if applicable)."""
         if not filing_id:
             return db.session.query(Filing).filter(Filing.temp_reg == temp_reg_id).one_or_none()
@@ -1053,7 +1042,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             ).one_or_none())
 
     @staticmethod
-    def get_temp_reg_filing_by_withdrawn_filing(filing_id: str, withdrawn_filing_id: str, filing_type: str = None):
+    def get_temp_reg_filing_by_withdrawn_filing(filing_id: str, withdrawn_filing_id: str, filing_type: Optional[str] = None):
         """Return an temp reg Filing by withdrawn filing."""
         q = db.session.query(Filing). \
             filter(Filing.withdrawn_filing_id == withdrawn_filing_id). \
@@ -1074,7 +1063,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filing
 
     @staticmethod
-    def get_filings_by_status(business_id: int, status: list, after_date: date = None):
+    def get_filings_by_status(business_id: int, status: list, after_date: Optional[date] = None):
         """Return the filings with statuses in the status array input."""
         query = db.session.query(Filing). \
             filter(Filing.business_id == business_id). \
@@ -1127,7 +1116,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: list = None):
+    def get_incomplete_filings_by_types(business_id: int, filing_types: list, excluded_statuses: Optional[list] = None):
         """Return the filings of particular types and statuses.
 
         excluded_statuses is a list of filing statuses that will be excluded from the query for incomplete filings
@@ -1182,7 +1171,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_most_recent_filing(business_id: str, filing_type: str = None, filing_sub_type: str = None):
+    def get_most_recent_filing(business_id: str, filing_type: Optional[str] = None, filing_sub_type: Optional[str] = None):
         """Return the most recent filing.
 
         filing_type is required, if filing_sub_type is provided, it will be used to filter the query.
@@ -1199,7 +1188,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return query.first()
 
     @staticmethod
-    def get_most_recent_legal_filing(business_id: str, filing_type: str = None):
+    def get_most_recent_legal_filing(business_id: str, filing_type: Optional[str] = None):
         """Return the most recent filing containing the legal_filing type."""
         query = db.session.query(db.func.max(Filing._filing_date).label("last_filing_date")).\
             filter(Filing.business_id == business_id).\
@@ -1214,14 +1203,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(Filing.business_id == business_id). \
             filter(Filing._status == Filing.Status.COMPLETED.value). \
             order_by(Filing.id.desc())
-
-        # As the JSON query is new for most, leaving the debug stmnt
-        # that dumps the query for easier debugging.
-        # current_app.logger.debug(
-        #     str(filing.statement.compile(
-        #         dialect=dialect(),
-        #         compile_kwargs={'literal_binds': True}))
-        # )
 
         return filing.first()
 
@@ -1255,7 +1236,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return filings
 
     @staticmethod
-    def get_future_effective_filing_ids() -> List[int]:
+    def get_future_effective_filing_ids() -> list[int]:
         """Return filing ids which should be effective now."""
         filings = db.session.query(Filing.id). \
             filter(Filing._status == Filing.Status.PAID.value). \
@@ -1304,7 +1285,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         return None
 
     @staticmethod
-    def get_fee_code(legal_type: str, filing_type: str, filing_sub_type: str = None):
+    def get_fee_code(legal_type: str, filing_type: str, filing_sub_type: Optional[str] = None):
         """Return fee code for filing."""
         filing_dict = Filing.FILINGS.get(filing_type, None)
 
@@ -1368,7 +1349,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         self.resubmission_date = submission_date
         self.save()
 
-    def legal_filings(self) -> List:
+    def legal_filings(self) -> list:
         """Return a list of the filings extracted from this filing submission.
 
         Returns: {
@@ -1380,7 +1361,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
         legal_filings = []
         filing = self.filing_json
-        for k in filing["filing"].keys():  # pylint: disable=unsubscriptable-object
+        for k in filing["filing"]:  # pylint: disable=unsubscriptable-object
             if Filing.FILINGS.get(k, None):
                 legal_filings.append(
                     {k: copy.deepcopy(filing["filing"].get(k))})  # pylint: disable=unsubscriptable-object

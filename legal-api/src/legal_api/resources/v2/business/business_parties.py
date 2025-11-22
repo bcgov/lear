@@ -29,7 +29,7 @@ from .bp import bp
 @bp.route("/<string:identifier>/parties/<int:party_id>", methods=["GET", "OPTIONS"])
 @cross_origin(origin="*")
 @jwt.requires_auth
-def get_parties(identifier, party_id=None):  # pylint: disable=too-many-locals disable=too-many-branches
+def get_parties(identifier, party_id=None):  # noqa: PLR0912
     """Return a JSON of the parties."""
     business = Business.find_by_identifier(identifier)
 
@@ -87,7 +87,7 @@ def get_parties(identifier, party_id=None):  # pylint: disable=too-many-locals d
         party_role_dict.setdefault(party_role.party_id, []).append(role_dict)
 
     for key, value in party_role_dict.items():
-        party = [x for x in party_roles if x.party_id == key][0]
+        party = next(x for x in party_roles if x.party_id == key)
         party_json = party.json
         del party_json["role"]
         del party_json["appointmentDate"]

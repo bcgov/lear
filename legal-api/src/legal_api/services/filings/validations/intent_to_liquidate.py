@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Intent to Liquidate filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Optional
 
 from flask_babel import _ as babel
 
@@ -28,7 +28,7 @@ from legal_api.services.utils import get_date
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-def validate(business: Business, filing_json: Dict) -> Optional[Error]:
+def validate(business: Business, filing_json: dict) -> Optional[Error]:
     """Validate the Intent to Liquidate filing."""
     if not business or not filing_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
@@ -59,7 +59,7 @@ def validate(business: Business, filing_json: Dict) -> Optional[Error]:
     return None
 
 
-def validate_liquidation_date(filing_json: Dict, business: Business = None) -> Optional[list]:
+def validate_liquidation_date(filing_json: dict, business: Business = None) -> Optional[list]:
     """Validate the date of commencement of liquidation."""
     msg = []
     liquidation_date_path = "/filing/intentToLiquidate/dateOfCommencementOfLiquidation"
@@ -77,7 +77,7 @@ def validate_liquidation_date(filing_json: Dict, business: Business = None) -> O
     return msg if msg else None
 
 
-def validate_parties(filing_json: Dict) -> Optional[list]:
+def validate_parties(filing_json: dict) -> Optional[list]:
     """Validate the parties in the intent to liquidate filing."""
     msg = []
     parties_path = "/filing/intentToLiquidate/parties"
@@ -110,7 +110,7 @@ def validate_parties(filing_json: Dict) -> Optional[list]:
     return msg if msg else None
 
 
-def validate_offices(filing_json: Dict) -> Optional[list]:
+def validate_offices(filing_json: dict) -> Optional[list]:
     """Validate the liquidation office."""
     msg = []
     offices_path = "/filing/intentToLiquidate/offices"
@@ -137,7 +137,7 @@ def validate_offices(filing_json: Dict) -> Optional[list]:
     return msg if msg else None
 
 
-def validate_intent_court_order(filing_json: Dict) -> Optional[list]:
+def validate_intent_court_order(filing_json: dict) -> Optional[list]:
     """Validate the court order if present."""
     msg = []
     court_order = filing_json.get("filing", {}).get("intentToLiquidate", {}).get("courtOrder")

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Alteration filing."""
 from http import HTTPStatus
-from typing import Dict, Final
+from typing import Final
 
 from flask_babel import _ as babel
 
@@ -35,7 +35,7 @@ from .common_validations import (
 )
 
 
-def validate(business: Business, filing: Dict) -> Error:  # pylint: disable=too-many-branches
+def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-many-branches
     """Validate the Alteration filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
