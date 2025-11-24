@@ -33,6 +33,10 @@ def validate(business: Business, cod: dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
+    msg_cessation_date = validate_cessation_date(cod)
+    if msg_cessation_date:
+        msg += msg_cessation_date
+
     msg_directors_addresses = validate_directors_addresses(business, cod)
     if msg_directors_addresses:
         msg += msg_directors_addresses
@@ -44,6 +48,27 @@ def validate(business: Business, cod: dict) -> Error:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+def validate_cessation_date(cod: dict) -> list:
+    """Return an error message if the directors cessation date is invalid.
+
+    Cessation date must be null for newly appointed directors.
+    """
+    msg = []
+    filing_type = "changeOfDirectors"
+    directors = cod["filing"][filing_type]["directors"]
+
+    for idx, director in enumerate(directors):
+        actions = director.get("actions", [])
+        cessation_date = director.get("cessationDate")
+
+        if "appointed" in actions and cessation_date is not None:
+            msg.append({
+                "error": babel("Appointed directors must not have a cessation date."),
+                "path": f"/filing/changeOfDirectors/directors/{idx}/cessationDate"
+            })
+
+    return msg
 
 
 def validate_directors_addresses(business: Business, cod: dict) -> list:
