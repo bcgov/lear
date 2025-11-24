@@ -56,7 +56,7 @@ class InvoluntaryDissolutionService:
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, eligibility_filters: EligibilityFilters | None = None
+        cls, identifier: str, eligibility_filters: Optional[EligibilityFilters] = None
     ) -> tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -101,7 +101,7 @@ class InvoluntaryDissolutionService:
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters | None = None):
+    def _get_businesses_eligible_query(eligibility_filters: Optional[EligibilityFilters] = None):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:

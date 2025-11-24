@@ -42,8 +42,9 @@ from .jurisdiction import Jurisdiction
 from .naics_element import NaicsElement
 from .naics_structure import NaicsStructure
 from .office import Office, OfficeType
+from .party import Party
 from .party_class import PartyClass
-from .party_role import Party, PartyRole
+from .party_role import PartyRole
 from .permission import Permission
 from .registration_bootstrap import RegistrationBootstrap
 from .request_tracker import RequestTracker
