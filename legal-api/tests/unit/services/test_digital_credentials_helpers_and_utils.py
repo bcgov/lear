@@ -17,10 +17,21 @@ Test suite to ensure that helpers and utility functions for digital credentials 
 """
 
 from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 import pytest
-from legal_api.models import Business, Party, User
-from legal_api.services.digital_credentials_helpers import get_registered_on_dateint
+from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, Party, PartyRole, User
+from legal_api.services.digital_credentials_helpers import (
+    extract_invitation_message_id,
+    get_business_type,
+    get_company_status,
+    get_digital_credential_data,
+    get_family_name,
+    get_given_names,
+    get_or_create_business_user,
+    get_registered_on_dateint,
+    get_roles,
+)
 from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types, is_account_based_access_enabled
 
 
@@ -152,3 +163,215 @@ def test_get_registered_on_dateint(app, founding_date, expected_dateint):
     with app.app_context():
         result = get_registered_on_dateint(business)
         assert result == expected_dateint
+
+
+def test_get_business_type(app, session):
+    """Test get_business_type returns full description."""
+    business = Business(legal_type='SP')
+    
+    with app.app_context():
+        result = get_business_type(business)
+        assert result == 'BC Sole Proprietorship'
+
+
+def test_get_business_type_no_corp_type(app, session):
+    """Test get_business_type returns legal_type when no CorpType found."""
+    business = Business(legal_type='UNKNOWN')
+    
+    with app.app_context():
+        result = get_business_type(business)
+        assert result == 'UNKNOWN'
+
+
+def test_get_company_status(app):
+    """Test get_company_status returns state name."""
+    business = Business(state=Business.State.ACTIVE)
+    
+    with app.app_context():
+        result = get_company_status(business)
+        assert result == 'ACTIVE'
+
+
+def test_get_family_name(app):
+    """Test get_family_name returns uppercase last name."""
+    user = User(lastname='Smith')
+    
+    with app.app_context():
+        result = get_family_name(user)
+        assert result == 'SMITH'
+
+
+def test_get_family_name_empty(app):
+    """Test get_family_name returns empty string for None."""
+    user = User(lastname=None)
+    
+    with app.app_context():
+        result = get_family_name(user)
+        assert result == ''
+
+
+def test_get_given_names(app):
+    """Test get_given_names returns uppercase first and middle names."""
+    user = User(firstname='John', middlename='Michael')
+    
+    with app.app_context():
+        result = get_given_names(user)
+        assert result == 'JOHN MICHAEL'
+
+
+def test_get_given_names_first_only(app):
+    """Test get_given_names returns only first name when no middle."""
+    user = User(firstname='John', middlename=None)
+    
+    with app.app_context():
+        result = get_given_names(user)
+        assert result == 'JOHN'
+
+
+def test_get_given_names_empty(app):
+    """Test get_given_names returns empty string when no names."""
+    user = User(firstname=None, middlename=None)
+    
+    with app.app_context():
+        result = get_given_names(user)
+        assert result == ''
+
+
+@patch('legal_api.models.DCBusinessUser.find_by')
+def test_get_or_create_business_user_existing(mock_find, app, session):
+    """Test get_or_create_business_user returns existing user."""
+    user = User(id=1)
+    business = Business(id=1)
+    existing_bu = DCBusinessUser(id=1, business_id=1, user_id=1)
+    mock_find.return_value = existing_bu
+    
+    with app.app_context():
+        result = get_or_create_business_user(user, business)
+        assert result == existing_bu
+        mock_find.assert_called_once_with(business_id=1, user_id=1)
+
+
+@patch('legal_api.models.DCBusinessUser.find_by')
+@patch('legal_api.models.DCBusinessUser.save')
+def test_get_or_create_business_user_new(mock_save, mock_find, app, session):
+    """Test get_or_create_business_user creates new user."""
+    user = User(id=1)
+    business = Business(id=1)
+    mock_find.return_value = None
+    
+    with app.app_context():
+        result = get_or_create_business_user(user, business)
+        assert result.business_id == 1
+        assert result.user_id == 1
+        mock_find.assert_called_once_with(business_id=1, user_id=1)
+
+
+def test_extract_invitation_message_id_with_invitation(app):
+    """Test extract_invitation_message_id from invitation field."""
+    json_message = {
+        "invitation": {
+            "@id": "test-invitation-id-123"
+        }
+    }
+    
+    with app.app_context():
+        result = extract_invitation_message_id(json_message)
+        assert result == "test-invitation-id-123"
+
+
+def test_extract_invitation_message_id_with_msg_id(app):
+    """Test extract_invitation_message_id from invitation_msg_id field."""
+    json_message = {
+        "invitation_msg_id": "test-msg-id-456"
+    }
+    
+    with app.app_context():
+        result = extract_invitation_message_id(json_message)
+        assert result == "test-msg-id-456"
+
+
+def test_extract_invitation_message_id_with_null_invitation(app):
+    """Test extract_invitation_message_id with null invitation."""
+    json_message = {
+        "invitation": None,
+        "invitation_msg_id": "test-msg-id-789"
+    }
+    
+    with app.app_context():
+        result = extract_invitation_message_id(json_message)
+        assert result == "test-msg-id-789"
+
+
+@patch('legal_api.services.digital_credentials_helpers.DigitalCredentialsRulesService')
+def test_get_roles_no_preconditions(mock_rules_class, app):
+    """Test get_roles returns roles when no preconditions."""
+    user = User(id=1)
+    business = Business(id=1)
+    
+    mock_rules = MagicMock()
+    mock_rules.get_preconditions.return_value = []
+    mock_rules.user_has_business_party_role.return_value = True
+    mock_rules.user_has_filing_party_role.return_value = False
+    
+    mock_party_role = MagicMock()
+    mock_party_role.role = 'proprietor'
+    mock_rules.user_business_party_roles.return_value = [mock_party_role]
+    
+    with app.app_context():
+        result = get_roles(user, business, mock_rules, None)
+        assert result == ['Proprietor']
+
+
+@patch('legal_api.services.digital_credentials_helpers.DigitalCredentialsRulesService')
+def test_get_roles_with_self_attested(mock_rules_class, app):
+    """Test get_roles filters by self-attested roles."""
+    user = User(id=1)
+    business = Business(id=1)
+    
+    mock_rules = MagicMock()
+    mock_rules.get_preconditions.return_value = ['proprietor', 'director']
+    mock_rules.user_has_business_party_role.return_value = True
+    mock_rules.user_has_filing_party_role.return_value = False
+    
+    mock_party_role1 = MagicMock()
+    mock_party_role1.role = 'proprietor'
+    mock_party_role2 = MagicMock()
+    mock_party_role2.role = 'director'
+    mock_rules.user_business_party_roles.return_value = [mock_party_role1, mock_party_role2]
+    
+    with app.app_context():
+        result = get_roles(user, business, mock_rules, ['proprietor'])
+        assert result == ['Proprietor']
+
+
+@patch('legal_api.services.digital_credentials_helpers.DigitalCredentialsRulesService')
+def test_get_digital_credential_data(mock_rules_class, app, session):
+    """Test get_digital_credential_data returns complete credential data."""
+    user = User(id=1, firstname='John', lastname='Smith')
+    business = Business(id=1, identifier='FM1234567', legal_name='Test Business', legal_type='SP', tax_id='123456789', state=Business.State.ACTIVE)
+    business_user = DCBusinessUser(id=1, business_id=1, user_id=1, business=business, user=user)
+    
+    mock_rules = MagicMock()
+    mock_rules_class.return_value = mock_rules
+    mock_rules.get_preconditions.return_value = []
+    mock_rules.user_has_business_party_role.return_value = False
+    mock_rules.user_has_filing_party_role.return_value = False
+    
+    with app.app_context():
+        result = get_digital_credential_data(business_user, DCDefinition.CredentialType.business, None)
+        
+        assert len(result) == 10
+        assert result[0] == {"name": "credential_id", "value": "00000001"}
+        assert result[1] == {"name": "identifier", "value": "FM1234567"}
+        assert result[2] == {"name": "business_name", "value": "Test Business"}
+
+
+def test_get_digital_credential_data_non_business_type(app, session):
+    """Test get_digital_credential_data returns None for non-business type."""
+    user = User(id=1)
+    business = Business(id=1)
+    business_user = DCBusinessUser(id=1, business_id=1, user_id=1, business=business, user=user)
+    
+    with app.app_context():
+        result = get_digital_credential_data(business_user, 'other_type', None)
+        assert result is None

@@ -111,7 +111,11 @@ class DigitalCredentialsRulesService:
 
         allowed_business_types = determine_allowed_business_types(
             self.valid_registration_types, self.valid_incorporation_types)
-        current_app.logger.debug("DBC Allowed business types: %s", allowed_business_types)
+        current_app.logger.debug(
+            "DBC Allowed business types: %s. Account based access enabled: %s",
+            allowed_business_types,
+            is_account_based_access_enabled(),
+        )
 
         if business.legal_type in allowed_business_types:
             return (self.user_has_filing_party_role(user, business)
