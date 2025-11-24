@@ -21,7 +21,7 @@ from datetime import datetime, timezone
 import pytest
 from legal_api.models import Business, Party, User
 from legal_api.services.digital_credentials_helpers import get_registered_on_dateint
-from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
+from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types, is_account_based_access_enabled
 
 
 @pytest.mark.parametrize(
@@ -98,6 +98,39 @@ def test_determine_allowed_business_types_missing_flag(app, monkeypatch):
     with app.app_context():
         result = determine_allowed_business_types(['SP', 'GP'], ['BEN'])
         assert result == []
+
+
+def test_is_account_based_access_enabled_flag_on(app, monkeypatch):
+    """Test is_account_based_access_enabled returns True when flag is on."""
+    
+    # Mock flag to be on
+    monkeypatch.setattr('legal_api.services.flags.is_on', lambda flag: flag == 'dbc-enable-account-based-access')
+    
+    with app.app_context():
+        result = is_account_based_access_enabled()
+        assert result is True
+
+
+def test_is_account_based_access_enabled_flag_off(app, monkeypatch):
+    """Test is_account_based_access_enabled returns False when flag is off."""
+    
+    # Mock flag to be off
+    monkeypatch.setattr('legal_api.services.flags.is_on', lambda flag: False)
+    
+    with app.app_context():
+        result = is_account_based_access_enabled()
+        assert result is False
+
+
+def test_is_account_based_access_enabled_different_flag(app, monkeypatch):
+    """Test is_account_based_access_enabled handles different flag names correctly."""
+    
+    # Mock flag service to return True only for a different flag
+    monkeypatch.setattr('legal_api.services.flags.is_on', lambda flag: flag == 'some-other-flag')
+    
+    with app.app_context():
+        result = is_account_based_access_enabled()
+        assert result is False
 
 
 @pytest.mark.parametrize(
