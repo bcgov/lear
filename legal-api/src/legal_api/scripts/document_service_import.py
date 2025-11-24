@@ -15,6 +15,7 @@ Specific to colin ids in the system can be imported and put into the table.
 """
 
 import sys
+from http import HTTPStatus
 
 import click
 import requests
@@ -72,7 +73,7 @@ def import_documents(business_identifier):
                 "Authorization": "Bearer " + token
             }
             response = requests.get(url=req_url, headers=headers)
-            if response.status_code == 200:
+            if response.status_code == HTTPStatus.OK:
                 for report in response.json():
                     document = Document.find_one_by(
                         filing.business_id,
@@ -95,7 +96,7 @@ def import_documents(business_identifier):
                 current_app.logger.info(
                   f"Failed to import documents for filing {filing.id}, status"
                   + f" code: {response.status_code}, {req_url}")
-        count += 1
+        count += 1 # noqa: SIM113
         if count % 100 == 0:
             current_app.logger.info(f"Processed {count} of {num_filings}")
     summary = "Import documents completed"

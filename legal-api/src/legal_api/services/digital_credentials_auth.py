@@ -14,7 +14,6 @@
 
 """This provides auth functions for digital credentials."""
 
-from typing import Dict, List
 
 from flask import g
 
@@ -40,7 +39,7 @@ def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool
     return rules.are_digital_credentials_allowed(user, business)
 
 
-def get_digital_credentials_preconditions(business: Business) -> Dict[str, List[str]]:
+def get_digital_credentials_preconditions(business: Business) -> dict[str, list[str]]:
     """Return the preconditions for digital credentials."""
     if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
         return {}

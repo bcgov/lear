@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Amalgamation Application filing."""
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
@@ -41,7 +41,7 @@ from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
 
-def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
+def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
     """Validate the Amalgamation Application filing."""
     filing_type = "amalgamationApplication"
     if not amalgamation_json:
@@ -95,7 +95,7 @@ def validate(amalgamation_json: Dict, account_id) -> Optional[Error]:
     return None
 
 
-def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-many-statements,too-many-locals
+def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         amalgamation_json,
         filing_type,
         legal_type,
@@ -188,14 +188,18 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
         })
 
     name_request = amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {})
-    if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
-        if (not name_request.get("nrNumber") and
+    if (
+        amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
+        (
+            not name_request.get("nrNumber") and
             (adopted_name := name_request.get("legalName")) and
-                adopted_name not in adoptable_names):
-            msg.append({
-                "error": "Adopt a name that have the same business type as the resulting business.",
-                "path": f"/filing/{filing_type}/nameRequest/legalName"
-            })
+            adopted_name not in adoptable_names
+        )
+    ):
+        msg.append({
+            "error": "Adopt a name that have the same business type as the resulting business.",
+            "path": f"/filing/{filing_type}/nameRequest/legalName"
+        })
 
     if primary_or_holding_business:
         continued_types_map = {
@@ -235,7 +239,7 @@ def validate_amalgamating_businesses(  # pylint: disable=too-many-branches,too-m
     return msg
 
 
-def _validate_foreign_businesses(  # pylint: disable=too-many-arguments
+def _validate_foreign_businesses(  # noqa: PLR0913
         is_staff,
         is_any_bc_company,
         is_any_ulc,
@@ -333,8 +337,10 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
         is_any_expro_a,
         amalgamating_businesses_path) -> list:
     msg = []
+    regular_amalgamation_minimum: Final = 2
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
-        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 2 and
+        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 
+             regular_amalgamation_minimum and
              amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 0 and
              amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 0)):
         msg.append({
@@ -368,23 +374,21 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
 
 
 def _is_business_affliated(identifier, account_id):
-    if ((account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and
+    return bool(
+        (account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and
         (orgs := account_response.get("orgs")) and
-            any(str(org.get("id")) == account_id for org in orgs)):
-        return True
-    return False
+        any(str(org.get("id")) == account_id for org in orgs)
+    )
 
 
 def _has_pending_filing(amalgamating_business: Business):
-    if Filing.get_filings_by_status(amalgamating_business.id, [
-            Filing.Status.DRAFT.value,
-            Filing.Status.PENDING.value,
-            Filing.Status.PAID.value]):
-        return True
-    return False
+    return bool(Filing.get_filings_by_status(amalgamating_business.id, 
+                                             [Filing.Status.DRAFT.value,
+                                              Filing.Status.PENDING.value,
+                                              Filing.Status.PAID.value]))
 
 
-def validate_party(filing: Dict, amalgamation_type, filing_type) -> list:
+def validate_party(filing: dict, amalgamation_type, filing_type) -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
@@ -420,7 +424,7 @@ def validate_party(filing: Dict, amalgamation_type, filing_type) -> list:
     return msg
 
 
-def validate_amalgamation_court_order(filing: Dict, filing_type) -> list:
+def validate_amalgamation_court_order(filing: dict, filing_type) -> list:
     """Validate court order."""
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"

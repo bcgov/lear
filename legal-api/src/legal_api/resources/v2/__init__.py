@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Exposes all of the resource endpoints mounted in Flask-Blueprints."""
-from typing import Optional
-
-from flask import Flask
+from typing import TYPE_CHECKING, Optional
 
 from .admin import bp_admin as admin_bp
 from .business import bp as businesses_bp
@@ -27,6 +25,9 @@ from .naics import bp as naics_bp
 from .namerequest import bp as namerequest_bp
 from .permissions import bp as permissions_bp
 from .request_tracker import bp as request_tracker_bp
+
+if TYPE_CHECKING:
+    from flask import Flask
 
 
 class V2Endpoint:

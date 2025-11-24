@@ -13,18 +13,16 @@
 # limitations under the License.
 """Validation for the Special Resolution filing."""
 from http import HTTPStatus
-from typing import Dict
 
 from flask import current_app
 from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
+from legal_api.services.utils import get_str
 
-from ...utils import get_str
 
-
-def validate(comment: Dict, is_filing: bool) -> Error:
+def validate(comment: dict, is_filing: bool) -> Error:
     """Validate a standalone comment."""
     if not comment:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid comment is required.")}])

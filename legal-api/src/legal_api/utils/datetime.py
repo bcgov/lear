@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Date time utilities."""
-# from datetime import datetime, timezone
-from datetime import date, datetime as _datetime, timedelta, timezone  # pylint: disable=unused-import # noqa: F401, I001
+from datetime import date, datetime as _datetime, timedelta, timezone  # noqa: F401, I001
+from typing import Final
 
 
-class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha datetime is invalid??
+class datetime(_datetime):  # noqa: N801
     """Alternative to the built-in datetime that has a timezone on the UTC call."""
 
     @classmethod
@@ -32,13 +32,14 @@ class datetime(_datetime):  # pylint: disable=invalid-name; # noqa: N801; ha dat
     @classmethod
     def add_business_days(cls, from_date: _datetime, num_days: int):
         """Add business days to an initial date. Only accounts for weekends, not holidays."""
+        saturday: Final = 5
         current_date = from_date
         business_days_to_add = abs(num_days)
         inc = 1 if num_days > 0 else -1
         while business_days_to_add > 0:
             current_date += timedelta(days=inc)
             weekday = current_date.weekday()
-            if weekday >= 5:  # sunday = 6
+            if weekday >= saturday:  # sunday = 6
                 continue
             business_days_to_add -= 1
         return current_date

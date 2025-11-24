@@ -15,15 +15,16 @@
 """This provides the service for namex-api calls."""
 from datetime import datetime
 from enum import Enum
+from http import HTTPStatus
 
 import datedelta
 import pytz
 import requests
 from flask import current_app
 
+from legal_api.models import Filing
 from legal_api.services.bootstrap import AccountService
 
-from ..models import Filing
 from .utils import get_str
 
 
@@ -94,7 +95,7 @@ class NameXService:
             "Content-Type": "application/x-www-form-urlencoded"}, data={"grant_type": "client_credentials"})
 
         # Return the auth response if an error occurs
-        if auth.status_code != 200:
+        if auth.status_code != HTTPStatus.OK:
             return auth.json()
 
         token = dict(auth.json())["access_token"]
@@ -185,9 +186,7 @@ class NameXService:
         except ValueError:
             expiration_date = datetime.strptime(nr_json["expirationDate"], NameXService.DATE_FORMAT_WITH_MILLISECONDS)
         expiration_date = expiration_date.astimezone(pytz.timezone("GMT"))
-        if expiration_date < date_time:
-            return True
-        return False
+        return expiration_date < date_time
 
     @staticmethod
     def get_approved_name(nr_json) -> str:

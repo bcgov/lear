@@ -20,10 +20,10 @@ from typing import Optional
 class BaseMeta(EnumMeta):
     """Meta class for the enum."""
 
-    def __contains__(self, other):  # pylint: disable=C0203
+    def __contains__(cls, other):  # pylint: disable=C0203
         """Return True if 'in' the Enum."""
         try:
-            self(other)  # pylint: disable=no-value-for-parameter
+            cls(other)  # pylint: disable=no-value-for-parameter
         except ValueError:
             return False
         else:

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Restoration filing."""
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
@@ -36,7 +36,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 APPROVAL_TYPE_PATH = "/filing/restoration/approvalType"
 
 
-def validate(business: Business, restoration: Dict) -> Optional[Error]:
+def validate(business: Business, restoration: dict) -> Optional[Error]:
     """Validate the Restoration filing."""
     filing_type = "restoration"
     if not business or not restoration:
@@ -81,7 +81,7 @@ def validate(business: Business, restoration: Dict) -> Optional[Error]:
     return None
 
 
-def validate_expiry_date(business: Business, filing: Dict, restoration_type: str) -> list:
+def validate_expiry_date(business: Business, filing: dict, restoration_type: str) -> list:
     """Validate expiry date."""
     msg = []
     expiry_date_path = "/filing/restoration/expiry"
@@ -110,7 +110,7 @@ def validate_relationship(filing: dict) -> list:
     return msg
 
 
-def validate_party(filing: Dict) -> list:
+def validate_party(filing: dict) -> list:
     """Validate party."""
     msg = []
     roles = []

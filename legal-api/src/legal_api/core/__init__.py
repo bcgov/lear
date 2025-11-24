@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from collections.abc import MutableMapping, MutableSequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
 from .business import BusinessIdentifier, BusinessType
 from .filing import Filing

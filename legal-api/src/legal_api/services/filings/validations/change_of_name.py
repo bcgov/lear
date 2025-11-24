@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Change of Name filing."""
 from http import HTTPStatus
-from typing import Dict, Final
+from typing import Final
 
 from flask_babel import _ as babel
 
@@ -23,7 +23,7 @@ from legal_api.services import flags, namex
 from legal_api.services.utils import get_str
 
 
-def validate(business: Business, filing: Dict) -> Error:
+def validate(business: Business, filing: dict) -> Error:
     """Validate the Change of Name filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])

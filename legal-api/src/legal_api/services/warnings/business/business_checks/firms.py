@@ -13,6 +13,8 @@
 # limitations under the License.
 
 """Business checks for firms."""
+from typing import Final
+
 from legal_api.models import Address, Business, Filing, Office, Party, PartyRole
 
 from . import (
@@ -94,6 +96,7 @@ def check_parties(legal_type: str, business: Business) -> list:
 
 def check_firm_parties(legal_type: str, party_roles: list) -> list:
     """Check for missing firm parties data."""
+    min_partners: Final = 2
     result = []
 
     proprietor_parties = []
@@ -113,7 +116,7 @@ def check_firm_parties(legal_type: str, party_roles: list) -> list:
             "code": BusinessWarningCodes.NO_PROPRIETOR,
             "message": "A proprietor is required.",
         })
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and len(partner_parties) < 2:
+    elif legal_type == Business.LegalTypes.PARTNERSHIP.value and len(partner_parties) < min_partners:
         result.append({
             **WARNING_MESSAGE_BASE,
             "code": BusinessWarningCodes.NO_PARTNER,

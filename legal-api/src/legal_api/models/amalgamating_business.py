@@ -21,7 +21,8 @@ from enum import auto
 from sql_versioning import Versioned
 from sqlalchemy import or_
 
-from ..utils.base import BaseEnum
+from legal_api.utils.base import BaseEnum
+
 from .db import VersioningProxy, db
 
 

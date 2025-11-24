@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Special Resolution filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Final, Optional
 
 from flask_babel import _
 
@@ -23,7 +23,7 @@ from legal_api.services.utils import get_date, get_str
 from legal_api.utils.datetime import datetime
 
 
-def validate(business: Business, filing_json: Dict) -> Error:
+def validate(business: Business, filing_json: dict) -> Error:
     """Validate the Special Resolution filing."""
     if not business or not filing_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
@@ -57,13 +57,14 @@ def validate_resolution_content(filing_json, filing_type: str = "specialResoluti
                     "path": resolution_path})
         return msg
 
-    if len(resolution_content) > 2097152:
+    max_size_bytes: Final = 2097152  # 2MB
+    if len(resolution_content) > max_size_bytes:
         msg.append({"error": _("Resolution must be 2MB or less."),
                     "path": resolution_path})
     return msg
 
 
-def validate_resolution_date(business: Business, filing_json: Dict) -> Optional[list]:
+def validate_resolution_date(business: Business, filing_json: dict) -> Optional[list]:
     """Validate resolution date."""
     msg = []
     resolution_date_path = "/filing/specialResolution/resolutionDate"
@@ -86,7 +87,7 @@ def validate_resolution_date(business: Business, filing_json: Dict) -> Optional[
     return msg
 
 
-def validate_signing_date(filing_json: Dict, filing_type: str = "specialResolution") -> Optional[list]:
+def validate_signing_date(filing_json: dict, filing_type: str = "specialResolution") -> Optional[list]:
     """Validate signing date."""
     msg = []
     signing_date_path = f"/filing/{filing_type}/signingDate"
@@ -114,7 +115,7 @@ def validate_signing_date(filing_json: Dict, filing_type: str = "specialResoluti
     return msg
 
 
-def validate_signatory_name(filing_json: Dict, filing_type: str = "specialResolution") -> Optional[list]:
+def validate_signatory_name(filing_json: dict, filing_type: str = "specialResolution") -> Optional[list]:
     """Validate signatory name."""
     msg = []
     signatory_given_name_path = f"/filing/{filing_type}/signatory/givenName"

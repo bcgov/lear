@@ -37,9 +37,6 @@ class Office(db.Model, Versioned):  # pylint: disable=too-few-public-methods
     addresses = db.relationship("Address", backref="office", lazy="dynamic", cascade="all, delete, delete-orphan")
     deactivated_date = db.Column("deactivated_date", db.DateTime(timezone=True), default=None)
 
-    # relationships
-    business_id = db.Column("business_id", db.Integer, db.ForeignKey("businesses.id"), index=True)
-
 
 class OfficeType(db.Model):  # pylint: disable=too-few-public-methods
     """Define the Office Types available for Legal Entities."""

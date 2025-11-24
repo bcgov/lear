@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Change of Registration filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Dict, Optional
+from typing import Optional
 
 from flask_babel import _ as babel
 
@@ -35,7 +35,7 @@ from legal_api.services.filings.validations.registration import (
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 
 
-def validate(business: Business, filing: Dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Optional[Error]:
     """Validate the Change of Registration filing."""
     filing_type = "changeOfRegistration"
     if not filing:

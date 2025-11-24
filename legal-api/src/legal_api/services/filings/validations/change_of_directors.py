@@ -13,7 +13,6 @@
 # limitations under the License.
 """Validation for the Change of Directors filing."""
 from http import HTTPStatus
-from typing import Dict, List
 
 import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
@@ -28,7 +27,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, cod: Dict) -> Error:
+def validate(business: Business, cod: dict) -> Error:
     """Validate the Change of Directors filing."""
     if not business or not cod:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
@@ -50,7 +49,7 @@ def validate(business: Business, cod: Dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
-def validate_cessation_date(cod: Dict) -> List:
+def validate_cessation_date(cod: dict) -> list:
     """Return an error message if the directors cessation date is invalid.
 
     Cessation date must be null for newly appointed directors.
@@ -60,10 +59,10 @@ def validate_cessation_date(cod: Dict) -> List:
     directors = cod["filing"][filing_type]["directors"]
 
     for idx, director in enumerate(directors):
-        actions = director.get('actions', [])
-        cessation_date = director.get('cessationDate')
+        actions = director.get("actions", [])
+        cessation_date = director.get("cessationDate")
 
-        if 'appointed' in actions and cessation_date is not None:
+        if "appointed" in actions and cessation_date is not None:
             msg.append({
                 "error": babel("Appointed directors must not have a cessation date."),
                 "path": f"/filing/changeOfDirectors/directors/{idx}/cessationDate"
@@ -72,7 +71,7 @@ def validate_cessation_date(cod: Dict) -> List:
     return msg
 
 
-def validate_directors_addresses(business: Business, cod: Dict) -> List:
+def validate_directors_addresses(business: Business, cod: dict) -> list:
     """Return an error message if the directors address are invalid.
 
     Address must contain a valid ISO-2 valid country.
@@ -102,7 +101,7 @@ def validate_directors_addresses(business: Business, cod: Dict) -> List:
     return msg
 
 
-def validate_effective_date(business: Business, cod: Dict) -> List:
+def validate_effective_date(business: Business, cod: dict) -> list:
     """Return an error or warning message based on the effective date validation rules.
 
     Rules: (text from the BA rules document)

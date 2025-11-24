@@ -14,7 +14,7 @@
 
 """This provides helper functions for digital credentials."""
 
-from typing import List, Union
+from typing import Union
 
 from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
@@ -23,7 +23,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 
 def get_digital_credential_data(business_user: DCBusinessUser,
                                 credential_type: DCDefinition.CredentialType,
-                                self_attested_roles: Union[List[str], None] = None) -> List[str]:
+                                self_attested_roles: Union[list[str], None] = None) -> list[str]:
     """Get the data for a digital credential."""
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
@@ -129,7 +129,7 @@ def get_given_names(user: User) -> str:
 def get_roles(user: User,
               business: Business,
               rules: DigitalCredentialsRulesService,
-              self_attested_roles: Union[List[str], None]) -> List[str]:
+              self_attested_roles: Union[list[str], None]) -> list[str]:
     """Get roles for the user in the business."""
 
     def valid_party_role_filter(party_role) -> bool:
@@ -155,7 +155,7 @@ def get_roles(user: User,
             # Ensures that the user cant attach roles that are not stated in the preconditions
             party_roles = list(filter(valid_party_role_filter, party_roles))
 
-    return list(map(lambda party_role: party_role.role.replace("_", " ").title(), party_roles))
+    return [party_role.role.replace("_", " ").title() for party_role in party_roles]
 
 
 def extract_invitation_message_id(json_message: dict) -> str:

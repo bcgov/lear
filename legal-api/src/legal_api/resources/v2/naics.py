@@ -36,7 +36,8 @@ def get_naics_results():
     if not search_term:
         return jsonify({"message": "search_term query parameter is required."}), HTTPStatus.BAD_REQUEST
 
-    if len(search_term) < 3:
+    min_search_term_length = 3
+    if len(search_term) < min_search_term_length:
         return jsonify({"message": "search_term cannot be less than 3 characters."}), HTTPStatus.BAD_REQUEST
 
     if is_naics_code_format(search_term):

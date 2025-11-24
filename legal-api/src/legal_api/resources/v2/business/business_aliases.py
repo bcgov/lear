@@ -42,10 +42,7 @@ def get_aliases(identifier, alias_id=None):
     aliases_list = []
 
     alias_type = request.args.get("type")
-    if alias_type:
-        aliases = Alias.find_by_type(business.id, alias_type.upper())
-    else:
-        aliases = business.aliases.all()
+    aliases = Alias.find_by_type(business.id, alias_type.upper()) if alias_type else business.aliases.all()
 
     for alias in aliases:
         alias_json = alias.json

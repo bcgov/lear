@@ -114,9 +114,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         FINANCIAL = "FI"
         CONT_IN_SOCIETY = "CS"
         # *** The following are not yet supported by legal-api: ***
-        # DOING_BUSINESS_AS = 'DBA'
-        # XPRO_CORPORATION = 'XCR'
-        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL'
+        # DOING_BUSINESS_AS = 'DBA' # noqa: ERA001
+        # XPRO_CORPORATION = 'XCR' # noqa: ERA001
+        # XPRO_UNLIMITED_LIABILITY_COMPANY = 'XUL' # noqa: ERA001
 
     CORPS: Final = [
         LegalTypes.BCOMP.value,
@@ -324,8 +324,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
             parties = [party_role.party for party_role in parties_query.all()]
 
-            legal_names = ", ".join(party.name for party in parties[:2])
-            if len(parties) > 2:
+            max_names: Final = 2
+            legal_names = ", ".join(party.name for party in parties[:max_names])
+            if len(parties) > max_names:
                 legal_names += ", et al"
             return legal_names
 
@@ -428,7 +429,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if self.legal_type == self.LegalTypes.COOP.value:
             # This could extend by moving it into a table with start and end date against each year when extension
             # is required. We need more discussion to understand different scenario's which can come across in future.
-            if next_ar_year == 2020:
+            year_2020: Final = 2020
+            if next_ar_year == year_2020:
                 # For year 2020, set the max date as October 31th next year (COVID extension).
                 ar_max_date = datetime(next_ar_year + 1, 10, 31).date()
             else:
@@ -721,7 +723,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         self._allowable_actions = value
 
     @classmethod
-    def find_by_legal_name(cls, legal_name: str = None):
+    def find_by_legal_name(cls, legal_name: Optional[str] = None):
         """Given a legal_name, this will return an Active Business."""
         business = None
         if legal_name:
@@ -735,7 +737,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return business
 
     @classmethod
-    def find_by_identifier(cls, identifier: str = None):
+    def find_by_identifier(cls, identifier: Optional[str] = None):
         """Return a Business by the id assigned by the Registrar."""
         business = None
         if identifier:
@@ -743,7 +745,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return business
 
     @classmethod
-    def find_by_internal_id(cls, internal_id: int = None):
+    def find_by_internal_id(cls, internal_id: Optional[int] = None):
         """Return a Business by the internal id."""
         business = None
         if internal_id:

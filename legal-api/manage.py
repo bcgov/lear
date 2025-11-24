@@ -48,7 +48,7 @@ def list_routes():
         output.append(line)
 
     for line in sorted(output):
-        print(line)
+        print(line) # noqa: T201
 
 
 if __name__ == "__main__":

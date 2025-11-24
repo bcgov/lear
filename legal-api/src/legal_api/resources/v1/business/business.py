@@ -80,7 +80,7 @@ class BusinessResource(Resource):
         # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
         bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
         if not isinstance(bootstrap, RegistrationBootstrap):
-            return {"error": babel("Unable to create {0} Filing.".format(Filing.FILINGS[filing_type]["title"]))}, \
+            return {"error": babel("Unable to create {} Filing.".format(Filing.FILINGS[filing_type]["title"]))}, \
                 HTTPStatus.SERVICE_UNAVAILABLE
 
         try:
@@ -100,7 +100,7 @@ class BusinessResource(Resource):
         if not isinstance(rv, HTTPStatus):
             with suppress(Exception):
                 bootstrap.delete()
-            return {"error": babel("Unable to create {0} Filing.".format(Filing.FILINGS[filing_type]["title"]))}, \
+            return {"error": babel("Unable to create {} Filing.".format(Filing.FILINGS[filing_type]["title"]))}, \
                 HTTPStatus.SERVICE_UNAVAILABLE
 
         return ListFilingResource.put(bootstrap.identifier, None)

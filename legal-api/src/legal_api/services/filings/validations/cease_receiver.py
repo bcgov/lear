@@ -33,7 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Cease Receiver filing."""
 from http import HTTPStatus
-from typing import Dict, Optional
+from typing import Optional
 
 from flask_babel import _ as babel
 
@@ -42,7 +42,7 @@ from legal_api.models import Business, PartyRole
 from legal_api.utils.datetime import datetime, timezone
 
 
-def validate(business: Business, cease_receiver: Dict) -> Optional[Error]:
+def validate(business: Business, cease_receiver: dict) -> Optional[Error]:
     """Validate the Cease Receiver filing."""
     if not business or not cease_receiver:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
@@ -54,7 +54,7 @@ def validate(business: Business, cease_receiver: Dict) -> Optional[Error]:
     return None
 
 
-def validate_party(business: Business, filing: Dict) -> list:
+def validate_party(business: Business, filing: dict) -> list:
     """Validate party."""
     msg = []
     parties = filing["filing"]["ceaseReceiver"]["parties"]

@@ -64,11 +64,6 @@ class BusinessAccountSettings(db.Model):
             "arReminder": self.ar_reminder
         }
 
-    def delete(self):
-        """Delete the business account setting."""
-        db.session.delete(self)
-        db.session.commit()
-        
     def save(self):
         """Save and commit the object to the database."""
         db.session.add(self)
@@ -85,7 +80,7 @@ class BusinessAccountSettings(db.Model):
         return cls.query.filter_by(business_id=business_id, account_id=account_id).one_or_none()
 
     @classmethod
-    def find_all(cls, business_id: int = None, account_id: int = None) -> list[BusinessAccountSettings]:
+    def find_all(cls, business_id: int | None = None, account_id: int | None = None) -> list[BusinessAccountSettings]:
         """Return all the business account settings by the business id and/or the account id."""
         query = cls.query
         if business_id:

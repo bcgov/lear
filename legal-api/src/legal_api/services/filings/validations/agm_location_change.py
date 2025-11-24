@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Agm Location Change filing."""
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
@@ -24,7 +24,7 @@ from legal_api.services.utils import get_int, get_str
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-def validate(business: Business, filing: Dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Optional[Error]:
     """Validate the Agm Location Change filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])

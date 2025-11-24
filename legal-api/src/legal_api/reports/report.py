@@ -314,7 +314,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 if (par_value := share_class.get("parValue")) and isinstance(par_value, float):
                     share_class["parValue"] = float_to_str(par_value)
 
-    def _format_filing_json(self, filing):  # pylint: disable=too-many-branches, too-many-statements
+    def _format_filing_json(self, filing):  # noqa: PLR0912
         if self._report_key == "incorporationApplication":
             self._format_incorporation_data(filing)
         elif self._report_key in ["specialResolution", "specialResolutionApplication"]:
@@ -355,7 +355,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_intent_to_liquidate_data(filing)
         elif self._report_key == "noticeOfWithdrawal":
             self._format_notice_of_withdrawal_data(filing)
-        elif self._report_key == "appointReceiver" or self._report_key == "ceaseReceiver":
+        elif self._report_key in {"appointReceiver", "ceaseReceiver"}:
             self._format_receiver_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
@@ -922,7 +922,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._filing, ting_business.id)
         return ting_business
 
-    def _set_from_primary_or_holding_business_data(self, filing):  # pylint: disable=too-many-locals, too-many-branches
+    def _set_from_primary_or_holding_business_data(self, filing):  # noqa: PLR0912
         ting_business = next(x for x in filing["amalgamationApplication"]["amalgamatingBusinesses"]
                              if x["role"] in [AmalgamatingBusiness.Role.holding.name,
                                               AmalgamatingBusiness.Role.primary.name])
@@ -994,7 +994,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 resolutions.append({"date": resolution.resolution_date.strftime(OUTPUT_DATE_FORMAT)})
         filing["resolutions"] = resolutions
 
-    def _format_change_of_registration_data(self, filing, filing_type):  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def _format_change_of_registration_data(self, filing, filing_type):  # noqa: PLR0912, PLR0915
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         versioned_business = VersionedBusinessDetailsService.\
             get_business_revision_obj(prev_completed_filing, self._business.id)
@@ -1175,9 +1175,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     prev_officer.get("middleName", "").upper() != middle_name.upper() or \
                     prev_officer.get("lastName").upper() != officer.get("lastName").upper():
                 changed = True
-        elif officer.get("partyType") == "organization":
-            if prev_officer.get("organizationName").upper() != officer.get("organizationName").upper():
-                changed = True
+        elif (
+            officer.get("partyType") == "organization" and
+            prev_officer.get("organizationName").upper() != officer.get("organizationName").upper()
+        ):
+            changed = True
         return changed
 
     @staticmethod
@@ -1190,9 +1192,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         changed = False
         excluded_keys = ["addressCountryDescription", "addressType", "addressCountry"]
         for key in existing_address:
-            if key not in excluded_keys:
-                if (new_address.get(key, "") or "") != (existing_address.get(key) or ""):
-                    changed = True
+            if (
+                key not in excluded_keys and
+                (new_address.get(key, "") or "") != (existing_address.get(key) or "")
+            ):
+                changed = True
         return changed
 
     @staticmethod
@@ -1400,9 +1404,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         changed = False
         for key in existing_json:
-            if key not in excluded_keys:
-                if (new_json.get(key, "") or "") != (existing_json.get(key) or ""):
-                    changed = True
+            if key not in excluded_keys and (new_json.get(key, "") or "") != (existing_json.get(key) or ""):
+                changed = True
         return changed
 
     def _format_special_resolution(self, filing):
@@ -1452,11 +1455,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # Get source
         filing["source"] = self._filing.source
         # Appears in the Description section of the PDF Document Properties as Title.
-        if not (title := self._filing.FILINGS[self._filing.filing_type].get("title")):
-            if not (self._filing.filing_sub_type and (title := self._filing.FILINGS[self._filing.filing_type]
-                                                      .get(self._filing.filing_sub_type, {})
-                                                      .get("title"))):
-                title = self._filing.filing_type
+        if (
+            not (title := self._filing.FILINGS[self._filing.filing_type].get("title")) and
+            not (
+                self._filing.filing_sub_type and 
+                (title := self._filing.FILINGS[self._filing.filing_type]
+                 .get(self._filing.filing_sub_type, {})
+                 .get("title"))
+            )
+        ):
+            title = self._filing.filing_type
         filing["meta_title"] = "{} on {}".format(title, filing["filing_date_time"])
 
         # Appears in the Description section of the PDF Document Properties as Subject.

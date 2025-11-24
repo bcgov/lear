@@ -14,7 +14,7 @@
 """Validation for the Registration filing."""
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
@@ -34,7 +34,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-def validate(registration_json: Dict) -> Optional[Error]:
+def validate(registration_json: dict) -> Optional[Error]:
     """Validate the Registration filing."""
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
@@ -65,7 +65,7 @@ def validate(registration_json: Dict) -> Optional[Error]:
     return None
 
 
-def validate_business_type(filing: Dict, legal_type: str) -> list:
+def validate_business_type(filing: dict, legal_type: str) -> list:
     """Validate business type."""
     msg = []
     business_type_path = "/filing/registration/businessType"
@@ -75,17 +75,18 @@ def validate_business_type(filing: Dict, legal_type: str) -> list:
     return msg
 
 
-def validate_tax_id(filing: Dict) -> list:
+def validate_tax_id(filing: dict) -> list:
     """Validate tax id."""
+    bn15_length: Final = 15
     msg = []
     tax_id_path = "/filing/registration/business/taxId"
-    if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == 15:
+    if (tax_id := get_str(filing, tax_id_path)) and len(tax_id) == bn15_length:
         msg.append({"error": "Can only provide BN9 for SP/GP registration.", "path": tax_id_path})
 
     return msg
 
 
-def validate_naics(filing: Dict, filing_type="registration") -> list:
+def validate_naics(filing: dict, filing_type="registration") -> list:
     """Validate naics."""
     msg = []
     naics_code_path = f"/filing/{filing_type}/business/naics/naicsCode"
@@ -98,8 +99,9 @@ def validate_naics(filing: Dict, filing_type="registration") -> list:
     return msg
 
 
-def validate_party(filing: Dict, legal_type: str, filing_type="registration") -> list:
+def validate_party(filing: dict, legal_type: str, filing_type="registration") -> list: # noqa: PLR0912
     """Validate party."""
+    min_partners: Final = 2
     msg = []
     completing_parties = 0
     proprietor_parties = 0
@@ -134,13 +136,13 @@ def validate_party(filing: Dict, legal_type: str, filing_type="registration") ->
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         if proprietor_parties > 0:
             msg.append({"error": "Proprietor is not valid for a General Partnership.", "path": party_path})
-        if completing_parties < 1 or partner_parties < 2:
+        if completing_parties < 1 or partner_parties < min_partners:
             msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
 
     return msg
 
 
-def validate_start_date(filing: Dict) -> list:
+def validate_start_date(filing: dict) -> list:
     """Validate start date."""
     # Non-staff can go less than or equal to 10 years in the past, less than or equal to 90 days in the future
     # Staff can go back with an unlimited period of time
@@ -151,10 +153,9 @@ def validate_start_date(filing: Dict) -> list:
     greater = now + timedelta(days=90)
     lesser = now + relativedelta(years=-10)
 
-    if not jwt.validate_roles([STAFF_ROLE]):
-        if start_date < lesser:
-            msg.append({"error": "Start date must be less than or equal to 10 years.",
-                        "path": start_date_path})
+    if not jwt.validate_roles([STAFF_ROLE]) and start_date < lesser:
+        msg.append({"error": "Start date must be less than or equal to 10 years.",
+                    "path": start_date_path})
     if start_date > greater:
         msg.append({"error": "Start Date must be less than or equal to 90 days in the future.",
                     "path": start_date_path})
@@ -162,7 +163,7 @@ def validate_start_date(filing: Dict) -> list:
     return msg
 
 
-def validate_offices(filing: Dict, filing_type="registration") -> list:
+def validate_offices(filing: dict, filing_type="registration") -> list:
     """Validate the business address of registration filing."""
     offices = filing["filing"][filing_type]["offices"]
     msg = []
@@ -186,7 +187,7 @@ def validate_offices(filing: Dict, filing_type="registration") -> list:
     return msg
 
 
-def validate_registration_court_order(filing: Dict, filing_type="registration") -> list:
+def validate_registration_court_order(filing: dict, filing_type="registration") -> list:
     """Validate court order."""
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"

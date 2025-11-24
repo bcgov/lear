@@ -66,7 +66,7 @@ def print_versioning_info():
             current_app.logger.info(f"\033[31mService: {current_service}, db versioning={current_versioning}\033[0m")
     except Exception as err:
         # Don't crash if something goes wrong
-        current_app.logger.error("Unable to read flags: %s" % repr(err), exc_info=True)
+        current_app.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
 
 
 def init_db(app):
@@ -276,6 +276,3 @@ def setup_versioning():
 # TODO: enable versioning switching
 # it should be called before data model initialized, otherwise, old versioning doesn't work properly
 setup_versioning()
-
-
-# make_versioned(user_cls=None, manager=versioning_manager)

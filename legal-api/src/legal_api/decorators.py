@@ -65,7 +65,7 @@ def _get_traction_token():
                 }
             )
 
-            if check_response.status_code == 401:
+            if check_response.status_code == HTTPStatus.UNAUTHORIZED:
                 current_app.logger.warning(f"Attempt {attempt + 1}: Received 401 checking token. Retry.")
                 time.sleep(TOKEN_RETRY_WAIT)
                 continue

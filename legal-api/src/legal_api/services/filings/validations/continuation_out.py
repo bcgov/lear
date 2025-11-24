@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Continuation Out filing."""
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
@@ -30,7 +30,7 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 # noqa: I003;
 
 
-def validate(business: Business, filing: Dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Optional[Error]:
     """Validate the Continuation Out filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
@@ -69,7 +69,7 @@ def validate(business: Business, filing: Dict) -> Optional[Error]:
     return None
 
 
-def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> list:
+def validate_active_cco(business: Business, filing: dict, filing_type: str) -> list:
     """Validate active consent continuation out."""
     msg = []
     continuation_out_date_str = filing["filing"][filing_type]["continuationOutDate"]
@@ -97,7 +97,7 @@ def validate_active_cco(business: Business, filing: Dict, filing_type: str) -> l
     return msg
 
 
-def validate_continuation_out_date(filing: Dict, filing_type: str) -> list:
+def validate_continuation_out_date(filing: dict, filing_type: str) -> list:
     """Validate continuation out date."""
     msg = []
     continuation_out_date_path = f"/filing/{filing_type}/continuationOutDate"

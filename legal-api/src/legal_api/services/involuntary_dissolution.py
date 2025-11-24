@@ -14,7 +14,7 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Final, Tuple
+from typing import Final, Optional
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
@@ -56,14 +56,16 @@ class InvoluntaryDissolutionService:
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters()
-    ) -> Tuple[bool, EligibilityDetails]:
+        cls, identifier: str, eligibility_filters: Optional[EligibilityFilters] = None
+    ) -> tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
         Returns:
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
+        eligibility_filters = eligibility_filters or InvoluntaryDissolutionService.EligibilityFilters()
+
         query = cls._get_businesses_eligible_query(eligibility_filters).filter(Business.identifier == identifier)
         result = query.one_or_none()
 
@@ -74,13 +76,10 @@ class InvoluntaryDissolutionService:
         return True, eligibility_details
 
     @classmethod
-    def get_businesses_eligible(cls, num_allowed: int = None):
+    def get_businesses_eligible(cls, num_allowed: Optional[int] = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query()
-        if num_allowed:
-            eligible_businesses = query.limit(num_allowed).all()
-        else:
-            eligible_businesses = query.all()
+        eligible_businesses = query.limit(num_allowed).all() if num_allowed else query.all()
 
         return eligible_businesses
 
@@ -102,12 +101,13 @@ class InvoluntaryDissolutionService:
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters()):
+    def _get_businesses_eligible_query(eligibility_filters: Optional[EligibilityFilters] = None):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
             exclude_in_dissolution (bool): If True, exclude businesses already in dissolution.
         """
+        eligibility_filters = eligibility_filters or InvoluntaryDissolutionService.EligibilityFilters()
         in_dissolution = (
             exists().where(
                 BatchProcessing.business_id == Business.id,
@@ -322,7 +322,7 @@ def _get_filtered_entities(accounts):
 
         for entity in entities:
             identifier = entity.get("businessIdentifier")
-            if identifier and not (identifier.startswith("T") or identifier.startswith("NR")):
+            if identifier and not (identifier.startswith(("T", "NR"))):
                 filtered_entities.append(identifier)
 
     return filtered_entities

@@ -13,6 +13,7 @@
 # limitations under the License.
 """API endpoints for managing an Administrative BN resource."""
 from http import HTTPStatus
+from typing import Optional
 
 from flask import current_app
 from flask_cors import cross_origin
@@ -28,7 +29,7 @@ from .bp import bp_admin
 @bp_admin.route("bn/<string:identifier>/<string:business_number>", methods=["POST"])
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
-def create_bn_request(identifier: str, business_number: str = None):
+def create_bn_request(identifier: str, business_number: Optional[str] = None):
     """Create a bn request."""
     business = Business.find_by_identifier(identifier)
     if business is None:
@@ -39,9 +40,9 @@ def create_bn_request(identifier: str, business_number: str = None):
 
 
 def publish_entity_event(business: Business,
-                         request_name: str = None,
-                         message_id: str = None,
-                         business_number: str = None):
+                         request_name: Optional[str] = None,
+                         message_id: Optional[str] = None,
+                         business_number: Optional[str] = None):
     """Publish the admin message on to the queue events topic."""
     try:
         payload_data = {

@@ -16,7 +16,6 @@
 
 A simple decorator to add the options method to a Request Class.
 """
-# from functools import wraps
 
 
 def cors_preflight(methods: str = "GET"):
@@ -68,7 +67,7 @@ def filter_validation_errors(validation_errors, json_data):
         return validation_errors  # Return all errors if no specific filing items
 
     # Always include header and business sections for validation
-    sections_to_include = filing_items + ["header"]
+    sections_to_include = [*filing_items, "header"]
     if "business" in filing_keys:
         sections_to_include.append("business")
 

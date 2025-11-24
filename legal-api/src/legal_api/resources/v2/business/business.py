@@ -101,12 +101,14 @@ def get_businesses(identifier: str):
                                 g.jwt_oidc_token_info.get("preferred_username"),
                                 g.jwt_oidc_token_info,
                                 account_response)
-        if orgs := account_response.get("orgs"):
-            # A business can be affiliated in multiple accounts (in user account as well as in gov staff account's)
-            # AccountService.get_account_by_affiliated_identifier will fetch all of it
-            # check one of it has `q_account`
-            if any(str(org.get("id")) == q_account for org in orgs):
-                business_json["accountId"] = q_account
+        # A business can be affiliated in multiple accounts (in user account as well as in gov staff account's)
+        # AccountService.get_account_by_affiliated_identifier will fetch all of it
+        # check one of it has `q_account`
+        if (
+            (orgs := account_response.get("orgs")) and
+            any(str(org.get("id")) == q_account for org in orgs)
+        ):
+            business_json["accountId"] = q_account
 
     return jsonify(business=business_json)
 

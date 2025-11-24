@@ -77,7 +77,7 @@ class Endpoints:
             # Log non-successful responses (not 2xx)
             try:
                 status = response.status_code
-                if not (200 <= status <= 299):
+                if not (200 <= status <= 299): # noqa: PLR2004
                     try:
                         req_body = request.get_json(silent=True)
                     except Exception:

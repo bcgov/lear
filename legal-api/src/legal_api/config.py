@@ -79,7 +79,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     REPORT_API_GOTENBERG_URL = os.getenv("REPORT_API_GOTENBERG_URL", "https://")
 
     COLIN_URL = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
-    # LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses'
+    # LEGAL_API_BASE_URL = f'{BUSINESS_API_URL + BUSINESS_API_VERSION_2}/businesses' # noqa: ERA001
 
     # This is to use reverse proxy to make filingLink, commentLink, documentLink etc. work
     # Change to use BUSINESS API GW URL once the Migration to GCP is complete

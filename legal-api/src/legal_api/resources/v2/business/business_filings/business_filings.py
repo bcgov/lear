@@ -20,7 +20,7 @@ import copy
 from contextlib import suppress
 from datetime import datetime as _datetime
 from http import HTTPStatus
-from typing import Generic, Optional, Tuple, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
@@ -53,6 +53,7 @@ from legal_api.models import (
     db,
 )
 from legal_api.models.colin_event_id import ColinEventId
+from legal_api.resources.v2.business.bp import bp
 from legal_api.services import (
     STAFF_ROLE,
     SYSTEM_ROLE,
@@ -70,8 +71,6 @@ from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
-from ..bp import bp
 
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
@@ -124,7 +123,7 @@ def get_filings(identifier: str, filing_id: Optional[int] = None):
 @cross_origin(origin="*")
 @jwt.requires_auth
 @pydantic_validate()
-def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-statements,too-many-locals,too-many-branches
+def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
                    query: QueryModel,
                    identifier,
                    filing_id: Optional[int] = None):
@@ -171,7 +170,7 @@ def saving_filings(body: FilingModel,  # pylint: disable=too-many-return-stateme
             return jsonify(reply), err_code or \
                 (HTTPStatus.CREATED if (request.method == "POST") else HTTPStatus.ACCEPTED)
     except Exception as err:
-        print(err)
+        current_app.logger.error(f"Error saving filing for {identifier}: {err}")
 
     if (Filing.FILINGS[filing.filing_type].get("staffApprovalRequired", False)
             and filing.status in [Filing.Status.DRAFT.value, Filing.Status.CHANGE_REQUESTED.value]):
@@ -232,7 +231,7 @@ def delete_filings(identifier, filing_id=None):
             deregister_status = RegistrationBootstrapService.deregister_bootstrap(bootstrap)
             delete_status = RegistrationBootstrapService.delete_bootstrap(bootstrap)
             if deregister_status != HTTPStatus.OK or delete_status != HTTPStatus.OK:
-                current_app.logger.error("Unable to deregister and delete temp reg:", identifier)
+                current_app.logger.error(f"Unable to deregister and delete temp reg: {identifier}")
 
     return jsonify({"message": _("Filing deleted.")}), HTTPStatus.OK
 
@@ -325,8 +324,8 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         if filing.meta_data and (reason := filing.meta_data.get(filing_name, {}).get("reason")):
             filing_json[filing_name]["reason"] = reason
 
-        if filing.meta_data and (expiryDate := filing.meta_data.get(filing_name, {}).get("expiryDate")):
-            filing_json[filing_name]["expiryDate"] = expiryDate
+        if filing.meta_data and (expiry_date := filing.meta_data.get(filing_name, {}).get("expiryDate")):
+            filing_json[filing_name]["expiryDate"] = expiry_date
 
         return jsonify({"filing": filing_json})
 
@@ -481,7 +480,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                     namex.update_nr_as_future_effective(nr_response.json(), effective_date)
 
     @staticmethod
-    def complete_filing(business, filing, draft, payment_account_id) -> Tuple[dict, int]:
+    def complete_filing(business, filing, draft, payment_account_id) -> tuple[dict, int]:
         """Complete the filing, either to COLIN or by getting an invoice.
 
         Used for encapsulation of common functionality used in Filing and Business endpoints.
@@ -512,7 +511,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return None, None
 
     @staticmethod
-    def get_business_and_filing(identifier, filing_id=None) -> Tuple[Optional[Business], Optional[Filing]]:
+    def get_business_and_filing(identifier, filing_id=None) -> tuple[Optional[Business], Optional[Filing]]:
         """Retrieve business and filing."""
         business = None
         filing = None
@@ -527,7 +526,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return business, filing
 
     @staticmethod
-    def get_notice_of_withdrawal(filing_id: str = None):
+    def get_notice_of_withdrawal(filing_id: Optional[str] = None):
         """Return a NoW by the withdrawn filing id."""
         filing = db.session.query(Filing). \
             filter(Filing.withdrawn_filing_id == filing_id).one_or_none()
@@ -535,7 +534,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return filing
 
     @staticmethod
-    def put_basic_checks(identifier, filing, client_request, business) -> Tuple[dict, int]:
+    def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if not json_input:
@@ -552,7 +551,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         if not filing_type:
             return ({"message": "filing/header/name is a required property"}, HTTPStatus.BAD_REQUEST)
 
-        if filing_type not in CoreFiling.NEW_BUSINESS_FILING_TYPES + [CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
+        if filing_type not in [*CoreFiling.NEW_BUSINESS_FILING_TYPES, CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
            and business is None:
             return ({"message": "A valid business is required."}, HTTPStatus.BAD_REQUEST)
 
@@ -564,7 +563,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def check_authorization(identifier, filing_json: dict,
                             business: Business,
-                            filing: Filing = None) -> Tuple[dict, int]:
+                            filing: Filing = None) -> tuple[dict, int]:
         """Assert that the user can access the business."""
         filing_type = filing_json["filing"]["header"].get("name")
         filing_sub_type = Filing.get_filings_sub_type(filing_type, filing_json)
@@ -626,15 +625,12 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def is_historical_colin_filing(filing_json: str):
         """Is the filing a filing marked historical in COLIN."""
-        if (filing_header := filing_json.get("filing", {}).get("header")) \
-            and filing_header.get("source", None) == "COLIN" \
-                and filing_header.get("date") < BOB_DATE:
-            return True
-
-        return False
+        return bool((filing_header := filing_json.get("filing", {}).get("header")) and
+                    filing_header.get("source") == "COLIN" and
+                    filing_header.get("date") < BOB_DATE)
 
     @staticmethod
-    def process_colin_filing(identifier: str, filing: Filing, business: Business) -> Tuple[dict, int]:
+    def process_colin_filing(identifier: str, filing: Filing, business: Business) -> tuple[dict, int]:
         """Manage COLIN sourced filings."""
         try:
             if not filing.colin_event_ids:
@@ -670,10 +666,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             return {"errors": {"message": "unable to publish for post processing"}}, HTTPStatus.BAD_REQUEST
 
     @staticmethod
-    def save_filing(client_request: LocalProxy,  # pylint: disable=too-many-return-statements,too-many-branches
+    def save_filing(client_request: LocalProxy,  # noqa: PLR0912
                     business_identifier: str,
                     user: User,
-                    filing: Filing = None) -> Tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
+                    filing: Filing = None) -> tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -746,12 +742,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     def _hide_in_ledger(filing: Filing) -> bool:
         """Hide the filing in the ledger."""
         hide_in_ledger = str(request.headers.get("hide-in-ledger", None)).lower()
-        if (filing.filing_type == "adminFreeze" or
-            (filing.filing_type == "dissolution" and filing.filing_sub_type == "involuntary") or
-                (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true")):
-            return True
-
-        return False
+        return bool(filing.filing_type == "adminFreeze" or
+                    (filing.filing_type == "dissolution" and
+                     filing.filing_sub_type == "involuntary") or
+                    (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true"))
 
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
@@ -782,7 +776,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return filing_json
 
     @staticmethod
-    def get_filing_types(business: Business, filing_json: dict):  # pylint: disable=too-many-branches
+    def get_filing_types(business: Business, filing_json: dict):  # noqa: PLR0912
         """Get the filing type fee codes for the filing.
 
         Returns: {
@@ -802,7 +796,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         else:
             legal_type = business.legal_type
 
-        if any("correction" in x for x in filing_json["filing"].keys()):
+        if any("correction" in x for x in filing_json["filing"]):
             filing_type_code = Filing.FILINGS.get("correction", {}).get("codes", {}).get(legal_type)
             filing_types.append({
                 "filingTypeCode": filing_type_code,
@@ -822,7 +816,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 "filingDescription": filing_type
             })
         else:
-            for k in filing_json["filing"].keys():
+            for k in filing_json["filing"]:
                 filing_sub_type = Filing.get_filings_sub_type(k, filing_json)
                 priority = priority_flag
                 if filing_sub_type:
@@ -940,12 +934,12 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         withdrawn_filing.save()
 
     @staticmethod
-    def create_invoice(business: Business,  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
+    def create_invoice(business: Business,  # noqa: PLR0912, PLR0915
                        filing: Filing,
                        filing_types: list,
                        user_jwt: JwtManager,
-                       payment_account_id: str = None) \
-            -> Tuple[int, dict, int]:
+                       payment_account_id: Optional[str] = None) \
+            -> tuple[int, dict, int]:
         """Create the invoice for the filing submission.
 
         Returns: {

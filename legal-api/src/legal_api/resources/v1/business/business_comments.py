@@ -17,7 +17,6 @@ Provides all the search and retrieval from the business entity datastore.
 """
 import datetime
 from http import HTTPStatus
-from typing import Tuple
 
 from flask import g, jsonify, request
 from flask_restx import Resource, cors
@@ -109,7 +108,7 @@ class BusinessCommentResource(Resource):
         return jsonify(comment.json), HTTPStatus.CREATED
 
     @staticmethod
-    def _basic_checks(identifier: str, business: Business, client_request) -> Tuple[dict, int]:
+    def _basic_checks(identifier: str, business: Business, client_request) -> tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json()
         if client_request.method == "POST" and not json_input:

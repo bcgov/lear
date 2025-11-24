@@ -15,7 +15,6 @@
 from __future__ import annotations
 
 import uuid
-from typing import Optional
 
 from flask import current_app
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
@@ -35,13 +34,13 @@ def _get_source_and_time(identifier: str):
     return source, time
 
 
-def publish_to_queue(  # pylint: disable=too-many-arguments
+def publish_to_queue(  # noqa: PLR0913
     data: dict,  # Fixed E231
     subject: str,  # Fixed E231
-    event_type: Optional[str] = None,  # Fixed E231, E252
-    message_id: Optional[str] = None,  # Fixed E231, E252
-    identifier: Optional[str] = None,  # Fixed E231, E252
-    is_wrapped: Optional[bool] = True  # Fixed E231, E252
+    event_type: str | None = None,  # Fixed E231, E252
+    message_id: str | None = None,  # Fixed E231, E252
+    identifier: str | None = None,  # Fixed E231, E252
+    is_wrapped: bool | None = True  # Fixed E231, E252
 ) -> None:
     """Publish data to a message queue.
 
@@ -75,10 +74,7 @@ def publish_to_queue(  # pylint: disable=too-many-arguments
     try:
         source, time = _get_source_and_time(identifier)
 
-        if identifier is not None:  # Fixed E271
-            payload = {"identifier": identifier, **data}
-        else:
-            payload = data
+        payload = {"identifier": identifier, **data} if identifier is not None else data
 
         ce = SimpleCloudEvent(
             id=message_id or str(uuid.uuid4()),

@@ -42,7 +42,7 @@ from legal_api.models import (
 )
 from legal_api.models.colin_event_id import ColinEventId
 from legal_api.models.db import VersioningProxy
-from legal_api.services.business_details_version import VersionedBusinessDetailsService
+from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
@@ -52,7 +52,7 @@ from .bp import bp
 @bp.route("/internal/filings", methods=["GET"])
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
-def get_completed_filings_for_colin():  # pylint: disable=too-many-branches
+def get_completed_filings_for_colin():  # noqa: PLR0912
     """Get filings by status formatted in json."""
     filings = []
 
@@ -247,10 +247,7 @@ def has_share_changed(filing: Filing) -> bool:
                           .filter(series_version.share_class_id.in_(
                               [share_class["id"] for share_class in share_classes]))
                           .exists())
-    if db.session.query(share_series_query).scalar():
-        return True
-
-    return False
+    return bool(db.session.query(share_series_query).scalar())
 
 
 def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
@@ -312,7 +309,7 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     resolutions_query = (
         db.session.query(resolution_version.resolution_date)
         .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
-        .filter(resolution_version.operation_type != 2)  # Exclude deleted records
+        .filter(resolution_version.operation_type != OPERATION_TYPE_DELETE)  # Exclude deleted records
         .filter(resolution_version.business_id == primary_or_holding_business.id)
         .filter(or_(
             resolution_version.end_transaction_id.is_(None),  # Records not yet ended
@@ -454,7 +451,7 @@ def set_tax_ids():
     if not json_input:
         return ({"message": "No identifiers in body of post."}, HTTPStatus.BAD_REQUEST)
 
-    for identifier in json_input.keys():
+    for identifier in json_input:
         # json input is a dict -> identifier: tax id
         business = Business.find_by_identifier(identifier)
         if business:

@@ -17,7 +17,7 @@
 from datetime import datetime, timezone
 from enum import Enum
 from http import HTTPStatus
-from typing import List
+from typing import Optional
 
 from flask import Response, current_app, request
 from requests import Session, exceptions
@@ -98,8 +98,8 @@ def _call_auth_api(path: str, token: str) -> Response:
         return None
 
 
-def authorized(  # pylint: disable=too-many-return-statements
-        identifier: str, jwt: JwtManager, action: List[str]) -> bool:
+def authorized(  # noqa: PLR0911
+        identifier: str, jwt: JwtManager, action: list[str]) -> bool:
     """Assert that the user is authorized to create filings against the business identifier."""
     # if they are registry staff, they are always authorized
     if not action or not identifier or not jwt:
@@ -117,9 +117,14 @@ def authorized(  # pylint: disable=too-many-return-statements
         return True
 
     # allow IDIM and Competent Authorities view access on everything
-    if len(action) == 1 and action[0] == "view":
-        if jwt.validate_roles([ACCOUNT_IDENTITY]) or has_product("CA_SEARCH", jwt.get_token_auth_header()):
-            return True
+    if (
+        len(action) == 1 and action[0] == "view" and
+        (
+            jwt.validate_roles([ACCOUNT_IDENTITY]) or
+            has_product("CA_SEARCH", jwt.get_token_auth_header())
+        )
+    ):
+        return True
 
     if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
 
@@ -135,14 +140,12 @@ def authorized(  # pylint: disable=too-many-return-statements
     return False
 
 
-def has_roles(jwt: JwtManager, roles: List[str]) -> bool:
+def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
     """Assert the users JWT has the required role(s).
 
     Assumes the JWT is already validated.
     """
-    if jwt.validate_roles(roles):
-        return True
-    return False
+    return bool(jwt.validate_roles(roles))
 
 
 def get_allowable_filings_dict():
@@ -581,13 +584,12 @@ def get_allowable_filings_dict():
     }
 
 
-# pylint: disable=(too-many-arguments,too-many-locals
-def is_allowed(business: Business,
+def is_allowed(business: Business, # noqa: PLR0913
                state: Business.State,
                filing_type: str,
                legal_type: str,
                jwt: JwtManager,
-               sub_filing_type: str = None,
+               sub_filing_type: Optional[str] = None,
                filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
@@ -607,19 +609,18 @@ def is_allowed(business: Business,
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
 
     for allowable_filing in allowable_filings:
-        if allowable_filing["name"] == filing_type:
-            if not sub_filing_type or allowable_filing["type"] == sub_filing_type:
-                return True
+        if (
+            allowable_filing["name"] == filing_type and
+            (not sub_filing_type or allowable_filing["type"] == sub_filing_type)
+        ):
+            return True
 
     return False
 
 
 def get_could_files(jwt: JwtManager, business_type: str, business_state: str):
     """Get allowable actions."""
-    if is_competent_authority(jwt):
-        allowed_filings = []
-    else:
-        allowed_filings = get_could_file(business_type, business_state, jwt)
+    allowed_filings = [] if is_competent_authority(jwt) else get_could_file(business_type, business_state, jwt)
 
     result = {
         "filing": {
@@ -767,7 +768,10 @@ def get_allowed_filings(business: Business,
     return allowable_filing_types
 
 
-def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict, business_blocker_dict: dict):
+def has_blocker(business: Business, # noqa: PLR0911
+                state_filing: Filing,
+                allowable_filing: dict,
+                business_blocker_dict: dict):
     """Return True if allowable filing has a blocker."""
     if not business:
         return False
@@ -790,10 +794,7 @@ def has_blocker(business: Business, state_filing: Filing, allowable_filing: dict
     if has_blocker_future_effective_filing(business, blocker_checks):
         return True
 
-    if has_blocker_warning_filing(business.warnings, blocker_checks):
-        return True
-
-    return False
+    return bool(has_blocker_warning_filing(business.warnings, blocker_checks))
 
 
 def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
@@ -908,10 +909,7 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
                                                          [Filing.Status.COMPLETED.value],
                                                          True)
 
-    if len(completed_filings) == len(complete_filing_types):
-        return False
-
-    return True
+    return len(completed_filings) != len(complete_filing_types)
 
 
 def has_blocker_future_effective_filing(business: Business, blocker_checks: dict):
@@ -934,8 +932,8 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
 
 def has_filing_match(filing: Filing, filing_types: list):
     """Return if filing matches any filings provided in filing_types arg ."""
-    for filing_type in filing_types:
-        filing_type, filing_sub_type = parse_filing_info(filing_type)
+    for type in filing_types:
+        filing_type, filing_sub_type = parse_filing_info(type)
         if is_filing_type_match(filing, filing_type, filing_sub_type):
             return True
 
@@ -958,7 +956,7 @@ def parse_filing_info(filing_info: str):
     return filing_type, filing_sub_type
 
 
-def has_blocker_warning_filing(warnings: List, blocker_checks: dict):
+def has_blocker_warning_filing(warnings: list, blocker_checks: dict):
     """Return if business has a warning that blocks filing."""
     if not (blocker_warning_filings := blocker_checks.get("warningTypes", [])):
         return False
@@ -1013,8 +1011,8 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
 
 
 def add_allowable_filing_type(is_allowable: bool = False,
-                              allowable_filing_types: list = None,
-                              allowable_filing_type: dict = None):
+                              allowable_filing_types: Optional[list] = None,
+                              allowable_filing_type: Optional[dict] = None):
     """Append allowable filing type."""
     if is_allowable:
         allowable_filing_types.append(allowable_filing_type)
@@ -1022,13 +1020,13 @@ def add_allowable_filing_type(is_allowable: bool = False,
     return allowable_filing_types
 
 
-def get_account_id(_, account_id: str = None) -> str:
+def get_account_id(_, account_id: Optional[str] = None) -> str:
     """Return the account id."""
     return account_id or request.headers.get("Account-Id", None)
 
 
 @cache.cached(timeout=600, make_cache_key=get_account_id, cache_none=True)
-def get_account_products(token: str, account_id: str = None) -> list:
+def get_account_products(token: str, account_id: Optional[str] = None) -> list:
     """Return the account products of the org identified by the account id."""
     account_id = account_id or request.headers.get("Account-Id", None)
     resp = _call_auth_api(f"orgs/{account_id}/products?include_hidden=true", token)

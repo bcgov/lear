@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, List
+from typing import Any
 
 from .db import db
 
@@ -129,7 +129,7 @@ class DCConnection(db.Model):  # pylint: disable=too-many-instance-attributes
         return dc_connection
 
     @classmethod
-    def find_by_filters(cls, filters: List[Any] = None) -> List[DCConnection]:
+    def find_by_filters(cls, filters: list[Any] | None = None) -> list[DCConnection]:
         """Return the digital credential connection matching any provided filter."""
         query = db.session.query(DCConnection)
 

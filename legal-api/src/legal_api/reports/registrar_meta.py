@@ -73,10 +73,16 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
     def get_registrar_info(filing_effective_date) -> dict:
         """Return the registrar for a filing."""
         filing_effective_date = filing_effective_date.replace(tzinfo=None)
-        registrar = [x for x in RegistrarInfo.registrar_info if
-                     (filing_effective_date >= datetime.datetime.strptime(x["startDate"], "%Y-%m-%dT%H:%M:%S") and
-                      (x["endDate"] is None or
-                       filing_effective_date <= datetime.datetime.strptime(x["endDate"], "%Y-%m-%dT%H:%M:%S")))][0]
+        registrar = next(
+            x for x in RegistrarInfo.registrar_info if 
+            (
+                filing_effective_date >= datetime.datetime.strptime(x["startDate"], "%Y-%m-%dT%H:%M:%S") and
+                (
+                    x["endDate"] is None or
+                    filing_effective_date <= datetime.datetime.strptime(x["endDate"], "%Y-%m-%dT%H:%M:%S")
+                )
+            )
+        )
         signature = RegistrarInfo.encode_registrar_signature(registrar["signatureImage"])
         registrar["signature"] = f"data:image/png;base64,{signature}"
         if registrar["signatureImageAndText"]:

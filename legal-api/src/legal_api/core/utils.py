@@ -16,33 +16,33 @@ from __future__ import annotations
 
 from collections.abc import MutableMapping, MutableSequence
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable
 
 
 @dataclass
 class Node:
     """A valid diff element."""
 
-    path: List
+    path: list
     old_value: Any
     new_value: Any
 
     @property
-    def json(self) -> Optional[Dict]:
+    def json(self) -> dict | None:
         """Return the node in a json styled Dict."""
         return {
             "oldValue": self.old_value,
             "newValue": self.new_value,
-            "path": "/".join([""] + self.path)
+            "path": "/".join(["", *self.path])
         }
 
 
 def diff_dict(json1,
               json2,
-              path: List[str] = None,
-              ignore_keys: List[str] = None,
-              diff_list_callback: Callable[[dict, dict, List, List], Optional[List]] = None) \
-        -> Optional[List[Node]]:
+              path: list[str] | None = None,
+              ignore_keys: list[str] | None = None,
+              diff_list_callback: Callable[[dict, dict, list, list], list | None] | None = None) \
+        -> list[Node] | None:
     """Recursively create a diff record for a dict, based on the corrections JSONSchema definition."""
     diff = []
     path = path or []
@@ -53,39 +53,41 @@ def diff_dict(json1,
         if json2.get(key) is None and value is not None:
             diff.append(Node(old_value=None,
                              new_value=value,
-                             path=path + [key]))
+                             path=[*path, key]))
 
         elif isinstance(value, MutableMapping):
             if d := diff_dict(json1=json1[key],
                               json2=json2[key],
-                              path=path + [key],
+                              path=[*path, key],
                               ignore_keys=ignore_keys,
                               diff_list_callback=diff_list):
                 diff.extend(d)
 
         elif isinstance(value, MutableSequence):
-            if diff_list_callback:
-                if d := diff_list_callback(json1[key], json2[key], path + [key], ignore_keys):
-                    diff.extend(d)
+            if (
+                diff_list_callback and
+                (d := diff_list_callback(json1[key], json2[key], [*path, key], ignore_keys))
+            ):
+                diff.extend(d)
 
         elif value != json2.get(key):
             diff.append(Node(old_value=json2.get(key),
                              new_value=value,
-                             path=path + [key]))
+                             path=[*path, key]))
 
     for key in json2.keys() - json1.keys():
         diff.append(Node(old_value=json2.get(key),
                          new_value=None,
-                         path=path + [key]))
+                         path=[*path, key]))
 
     return diff
 
 
 def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := walrus
               json2,
-              path: List[str] = None,
-              ignore_keys: List[str] = None) \
-        -> Optional[List[Node]]:
+              path: list[str] | None = None,
+              ignore_keys: list[str] | None = None) \
+        -> list[Node] | None:
     """Return the differences nodes between json1 & json2, being a list of dicts.
 
     JSON1 Rows missing an "id" will be marked as additions.
@@ -99,7 +101,7 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
         return [Node(
             old_value=None,
             new_value=json1,
-            path=[""] if not path else path
+            path=path if path else [""]
         )]
 
     diff = []
@@ -109,7 +111,7 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
         if row1_id := row1.get("id"):
             for row2 in json2:
                 if row1_id == row2.get("id"):
-                    if d := diff_dict(row1, row2, path + [str(row1_id)], ignore_keys, diff_list_callback=diff_list):
+                    if d := diff_dict(row1, row2, [*path, str(row1_id)], ignore_keys, diff_list_callback=diff_list):
                         diff.extend(d)
                     memoize.append(row1_id)
                     add_row = False
@@ -118,7 +120,7 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
             diff.append(Node(
                 old_value=None,
                 new_value=row1,
-                path=[""] if not path else path
+                path=path if path else [""]
             ))
 
     json2_rows = [x.get("id") for x in json2]
@@ -129,7 +131,7 @@ def diff_list(json1,  # pylint: disable=too-many-branches; linter balking on := 
                 diff.append(Node(
                     old_value=row,
                     new_value=None,
-                    path=[""] if not path else path
+                    path=path if path else [""]
                 ))
 
     return diff

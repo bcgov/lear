@@ -1,7 +1,6 @@
 """Helper function for filings."""
 
 
-from typing import Dict
 
 
 def is_special_resolution_correction_by_meta_data(filing):
@@ -19,7 +18,7 @@ def is_special_resolution_correction_by_meta_data(filing):
     return False
 
 
-def is_special_resolution_correction_by_filing_json(filing: Dict):
+def is_special_resolution_correction_by_filing_json(filing: dict):
     """Check whether it is a special resolution correction."""
     # Note this relies on the filing data once. This is acceptable inside of the filer (which runs once)
     # and emailer (runs on PAID which is before the filer and runs on COMPLETED).
@@ -29,6 +28,4 @@ def is_special_resolution_correction_by_filing_json(filing: Dict):
     for key in sr_correction_keys:
         if key in filing.get("correction"):
             return True
-    if "requestType" in filing.get("correction", {}).get("nameRequest", {}):
-        return True
-    return False
+    return "requestType" in filing.get("correction", {}).get("nameRequest", {})

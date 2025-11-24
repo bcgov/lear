@@ -43,7 +43,7 @@ from .bp import bp
 @bp.route("/settings/<string:account_id>/<string:identifier>", methods=["GET"])
 @cross_origin(origin="*")
 @jwt.requires_auth
-def get_business_account_settings(account_id: str, identifier: str = None):
+def get_business_account_settings(account_id: str, identifier: str | None = None):
     """Return a JSON object containing the settings information for the business and account combination."""
     if identifier:
         if not authorized(identifier, jwt, action=["view"]):

@@ -13,6 +13,7 @@
 # limitations under the License.
 """This module holds data for batch processing."""
 from enum import auto
+from typing import Optional
 
 from sqlalchemy.dialects.postgresql import JSONB
 
@@ -77,9 +78,9 @@ class BatchProcessing(db.Model):  # pylint: disable=too-many-instance-attributes
 
     @classmethod
     def find_by(cls,  # pylint: disable=too-many-arguments
-                batch_id: int = None,
-                business_id: int = None,
-                filing_id: int = None,
+                batch_id: Optional[int] = None,
+                business_id: Optional[int] = None,
+                filing_id: Optional[int] = None,
                 step: BatchProcessingStep = None,
                 status: BatchProcessingStatus = None) -> dict:
         """Return the batch matching."""

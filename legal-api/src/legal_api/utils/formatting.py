@@ -14,6 +14,7 @@
 """Custom formatting."""
 import decimal
 import re
+from typing import Final
 
 
 def float_to_str(f, precision=17):
@@ -43,7 +44,8 @@ def normalize_phone(phone: str) -> str:
     # keep only digits
     digits = re.sub(r"\D", "", phone)
 
+    maximum_length: Final = 11
     # handle North America: allow 10 digits, or 11 with leading "1"
-    if len(digits) == 11 and digits.startswith("1"):
+    if len(digits) == maximum_length and digits.startswith("1"):
         digits = digits[1:]
     return digits

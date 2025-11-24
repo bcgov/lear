@@ -48,6 +48,8 @@ from legal_api.resources import endpoints
 from structured_logging import StructuredLogging
 
 from legal_api.scripts.document_service_import import document_service_bp  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
+from typing import Optional
+
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import digital_credentials, flags, gcp_queue
 from legal_api.services.authz import cache
@@ -59,8 +61,9 @@ from legal_api.utils.run_version import get_run_version
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
 
-def create_app(run_mode=os.getenv("FLASK_ENV", "production")):
+def create_app(run_mode: Optional[str] = None) -> Flask:
     """Return a configured Flask App using the Factory method."""
+    run_mode = run_mode or os.getenv("RUN_MODE", "production")
     app = Flask(__name__)
     app.register_blueprint(document_service_bp)
     app.config.from_object(config.CONFIGURATION[run_mode])

@@ -18,6 +18,7 @@ here as a convenience for audit and db reporting.
 """
 from datetime import datetime
 from enum import auto
+from typing import Optional
 
 from flask import current_app
 from sql_versioning import Versioned
@@ -88,7 +89,7 @@ class User(db.Model, Versioned):
         return self.username if self.username else None
 
     @classmethod
-    def find_by_id(cls, submitter_id: int = None):
+    def find_by_id(cls, submitter_id: Optional[int] = None):
         """Return a User if they exist and match the provided submitter id."""
         return cls.query.filter_by(id=submitter_id).one_or_none()
 

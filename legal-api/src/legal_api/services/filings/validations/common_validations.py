@@ -15,7 +15,7 @@
 import io
 import re
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Final, Optional
 
 import pycountry
 import PyPDF2
@@ -54,13 +54,17 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type) -> Opt
     """Has resolution date in share structure when hasRightsOrRestrictions is true."""
     share_structure = filing_json["filing"][filing_type].get("shareStructure", {})
     share_classes = share_structure.get("shareClasses", [])
-    if any(x.get("hasRightsOrRestrictions", False) for x in share_classes) or \
-            any(has_rights_or_restrictions_true_in_share_series(x) for x in share_classes):
-        if len(share_structure.get("resolutionDates", [])) == 0:
-            return {
-                "error": "Resolution date is required when hasRightsOrRestrictions is true in shareClasses.",
-                "path": f"/filing/{filing_type}/shareStructure/resolutionDates"
-            }
+    if (
+        (
+            any(x.get("hasRightsOrRestrictions", False) for x in share_classes) or
+            any(has_rights_or_restrictions_true_in_share_series(x) for x in share_classes)
+        ) and
+        len(share_structure.get("resolutionDates", [])) == 0
+    ):
+        return {
+            "error": "Resolution date is required when hasRightsOrRestrictions is true in shareClasses.",
+            "path": f"/filing/{filing_type}/shareStructure/resolutionDates"
+        }
     return None
 
 
@@ -110,7 +114,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
             })  
 
         elif series_name in memoize_names:
-            msg.append({"error": "Share series %s name already used in a share class or series." % series_name,
+            msg.append({"error": f"Share series {series_name} name already used in a share class or series.",
                         "path": err_path})
         else:
             memoize_names.append(series_name)
@@ -118,15 +122,14 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
         if series["hasMaximumShares"]:
             if not series.get("maxNumberOfShares", None):
                 msg.append({
-                    "error": "Share series %s must provide value for maximum number of shares" % series["name"],
-                    "path": "%s/maxNumberOfShares" % err_path
+                    "error": "Share series {} must provide value for maximum number of shares".format(series["name"]),
+                    "path": f"{err_path}/maxNumberOfShares"
                 })
             elif item["hasMaximumShares"] and item.get("maxNumberOfShares", None) and \
                     int(series["maxNumberOfShares"]) > int(item["maxNumberOfShares"]):
                 msg.append({
-                    "error": "Series %s share quantity must be less than or equal to that of its class %s"
-                             % (series["name"], item["name"]),
-                    "path": "%s/maxNumberOfShares" % err_path
+                    "error": "Series {} share quantity must be less than or equal to that of its class {}".format(series["name"], item["name"]),
+                    "path": f"{err_path}/maxNumberOfShares"
                 })
     return msg
 
@@ -154,22 +157,22 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
 
     elif share_name in memoize_names:
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-        msg.append({"error": "Share class %s name already used in a share class or series." % share_name,
+        msg.append({"error": f"Share class {share_name} name already used in a share class or series.",
                     "path": err_path})
     else:
         memoize_names.append(share_name)
 
     if item["hasMaximumShares"] and not item.get("maxNumberOfShares", None):
         err_path = f"/filing/{filing_type}/shareClasses/{index}/maxNumberOfShares/"
-        msg.append({"error": "Share class %s must provide value for maximum number of shares" % item["name"],
+        msg.append({"error": "Share class {} must provide value for maximum number of shares".format(item["name"]),
                     "path": err_path})
     if item["hasParValue"]:
         if not item.get("parValue", None):
             err_path = f"/filing/{filing_type}/shareClasses/{index}/parValue/"
-            msg.append({"error": "Share class %s must specify par value" % item["name"], "path": err_path})
+            msg.append({"error": "Share class {} must specify par value".format(item["name"]), "path": err_path})
         if not item.get("currency", None):
             err_path = f"/filing/{filing_type}/shareClasses/{index}/currency/"
-            msg.append({"error": "Share class %s must specify currency" % item["name"], "path": err_path})
+            msg.append({"error": "Share class {} must specify currency".format(item["name"]), "path": err_path})
 
     # Validate that corps type companies cannot have series in share classes when hasRightsOrRestrictions is false
     if legal_type in Business.CORPS:
@@ -181,7 +184,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
         if not item.get("hasRightsOrRestrictions", False) and has_series:
             err_path = f"/filing/{filing_type}/shareClasses/{index}/series/"
             msg.append({
-                "error": "Share class %s cannot have series when hasRightsOrRestrictions is false" % item["name"],
+                "error": "Share class {} cannot have series when hasRightsOrRestrictions is false".format(item["name"]),
                 "path": err_path
             })
             return msg
@@ -198,10 +201,15 @@ def validate_court_order(court_order_path, court_order):
     msg = []
 
     # TODO remove it when the issue with schema validation is fixed
+    min_file_number_length: Final = 5
+    max_file_number_length: Final = 20
     if "fileNumber" not in court_order:
         err_path = court_order_path + "/fileNumber"
         msg.append({"error": "Court order file number is required.", "path": err_path})
-    elif len(court_order["fileNumber"]) < 5 or len(court_order["fileNumber"]) > 20:
+    elif (
+        len(court_order["fileNumber"]) < min_file_number_length or
+        len(court_order["fileNumber"]) > max_file_number_length
+    ):
         err_path = court_order_path + "/fileNumber"
         msg.append({"error": "Length of court order file number must be from 5 to 20 characters.",
                     "path": err_path})
@@ -234,14 +242,19 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         open_pdf_file = io.BytesIO(file.data)
         pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
 
-        if verify_paper_size:
-            # Check that all pages in the pdf are letter size and able to be processed.
-            if any(x.mediaBox.getWidth() != 612 or x.mediaBox.getHeight() != 792 for x in pdf_reader.pages):
-                msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
-                            "path": file_key_path})
+        # Check that all pages in the pdf are letter size and able to be processed.
+        width: Final = 612  # 8.5 inches
+        height: Final = 792  # 11 inches
+        if (
+            verify_paper_size and
+            any(x.mediaBox.getWidth() != width or x.mediaBox.getHeight() != height for x in pdf_reader.pages)
+        ):
+            msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
+                        "path": file_key_path})
 
         file_info = MinioService.get_file_info(file_key)
-        if file_info.size > 30000000:
+        max_file_size: Final = 30000000
+        if file_info.size > max_file_size:
             msg.append({"error": _("File exceeds maximum size."), "path": file_key_path})
 
         if pdf_reader.isEncrypted:
@@ -271,7 +284,7 @@ def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str)
     return msg
 
 
-def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
+def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: # noqa: PLR0912, PLR0915
     """Validate party name."""
     msg = []
 
@@ -366,7 +379,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list:
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
-                          accepted_request_types: list = None) -> list:
+                          accepted_request_types: Optional[list] = None) -> list:
     """Validate name request section."""
     # This is added specifically for the sandbox environment.
     # i.e. NR check should only ever have feature flag disabled for sandbox environment.
@@ -505,7 +518,7 @@ def _validate_postal_code(
     return None
 
 
-def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) -> list:
+def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) -> list:
     """Validate phone number."""
     if legal_type not in Business.CORPS:
         return []
@@ -516,8 +529,9 @@ def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) 
     msg = []
     if phone_num := contact_point_dict.get("phone", None):
         # if pure digits (max 10)
+        phone_length: Final = 10
         if phone_num.isdigit():
-            if len(phone_num) != 10:
+            if len(phone_num) != phone_length:
                 msg.append({
                     "error": "Invalid phone number, maximum 10 digits in phone number format",
                     "path": f"{contact_point_path}/phone"})
@@ -530,9 +544,9 @@ def validate_phone_number(filing_json: Dict, legal_type: str, filing_type: str) 
                     "error": "Invalid phone number, maximum 10 digits in phone number format",
                     "path": f"{contact_point_path}/phone"})
 
-    if extension := contact_point_dict.get("extension"):
-        if len(str(extension)) > 5:
-            msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
+    max_extension_length: Final = 5
+    if (extension := contact_point_dict.get("extension")) and len(str(extension)) > max_extension_length:
+        msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
 
     return msg
 
@@ -567,7 +581,7 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
-def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list:
+def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list: # noqa: PLR0912
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
     is_dba = False
@@ -708,10 +722,7 @@ def is_same_str(str1: str, str2: str) -> bool:
 def is_name_changed(name1: dict, name2: dict) -> bool:
    """Check if two names are different."""
    name_keys = ["firstName", "middleName", "lastName", "organizationName"]
-   for key in name_keys:
-       if not is_same_str(name1.get(key), name2.get(key)):
-           return True
-   return False
+   return any(not is_same_str(name1.get(key), name2.get(key)) for key in name_keys)
 
 def is_address_changed(addr1: dict, addr2: dict) -> bool:
    """Check if two addresses are the same."""
@@ -720,23 +731,18 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
        "postalCode", "addressCountry",
        "deliveryInstructions", "streetAddressAdditional"
    ]
-   for key in keys:
-       if not is_same_str(addr1.get(key), addr2.get(key)):
-           return False
-   return True
+   return all(is_same_str(addr1.get(key), addr2.get(key)) for key in keys)
 
 def validate_staff_payment(filing_json: dict) -> bool:
     """Check staff specific headers are in the filing."""
     header = filing_json["filing"]["header"]
-    if (
+    return bool(
         "routingSlipNumber" in header or
         "bcolAccountNumber" in header or
         "datNumber" in header or
         "waiveFees" in header or
         "priority" in header
-    ):
-        return True
-    return False
+    )
 
 def validate_certify_name(filing_json) -> bool:
     """Check certify_by is modified."""

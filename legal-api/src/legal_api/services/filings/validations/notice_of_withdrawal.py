@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Notice of Withdrawal filing."""
 from http import HTTPStatus
-from typing import Dict, Final, Optional
+from typing import Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003;
 
@@ -24,7 +24,7 @@ from legal_api.services.utils import get_bool, get_int
 from legal_api.utils.datetime import datetime as dt
 
 
-def validate(filing: Dict) -> Optional[Error]:
+def validate(filing: dict) -> Optional[Error]:
     """Validate the Notice of Withdrawal filing."""
     if not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])

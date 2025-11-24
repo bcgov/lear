@@ -26,7 +26,7 @@ The 6th number = national industry (a zero indicates no national industry is nee
 from __future__ import annotations
 
 import uuid
-from typing import Optional
+from typing import Final
 
 from flask import current_app
 from sqlalchemy import and_, or_
@@ -35,6 +35,8 @@ from sqlalchemy.orm import contains_eager
 
 from .db import db
 from .naics_element import NaicsElement
+
+NAICS_LEVEL_5: Final = 5
 
 
 class NaicsStructure(db.Model):
@@ -149,7 +151,7 @@ class NaicsStructure(db.Model):
             .options(contains_eager(NaicsStructure.naics_elements)) \
             .filter(NaicsStructure.year == naics_year) \
             .filter(NaicsStructure.version == naics_version) \
-            .filter(NaicsStructure.level == 5) \
+            .filter(NaicsStructure.level == NAICS_LEVEL_5) \
             .filter(  # core logic to determine which NaicsStructure records to return in addition to year and level
                 or_(
                     or_(
@@ -191,7 +193,7 @@ class NaicsStructure(db.Model):
             .options(contains_eager(NaicsStructure.naics_elements)) \
             .filter(NaicsStructure.year == naics_year) \
             .filter(NaicsStructure.version == naics_version) \
-            .filter(NaicsStructure.level == 5) \
+            .filter(NaicsStructure.level == NAICS_LEVEL_5) \
             .filter(or_(*naics_element_class_desc_ilike_filters)) \
             .filter(NaicsStructure.class_title.notilike(search_term)) \
             .filter(NaicsElement.element_type.in_([NaicsElement.ElementType.ALL_EXAMPLES,
@@ -200,7 +202,7 @@ class NaicsStructure(db.Model):
         return query
 
     @classmethod
-    def find_by_code(cls, code: str, level=5) -> Optional[NaicsStructure]:
+    def find_by_code(cls, code: str, level=5) -> NaicsStructure | None:
         """Return NAICS Structure matching code and level."""
         naics_year, naics_version = cls.get_naics_config()
 
@@ -219,7 +221,7 @@ class NaicsStructure(db.Model):
         return result
 
     @classmethod
-    def find_by_naics_key(cls, naics_key: str) -> Optional[NaicsStructure]:
+    def find_by_naics_key(cls, naics_key: str) -> NaicsStructure | None:
         """Return NAICS Structure matching naics_key."""
         query = \
             db.session.query(NaicsStructure) \
