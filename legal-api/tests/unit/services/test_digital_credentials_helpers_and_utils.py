@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, Party, PartyRole, User
+from legal_api.models import Business, DCBusinessUser, DCDefinition, Party, User
 from legal_api.services.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_business_type,
