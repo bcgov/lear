@@ -1682,6 +1682,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
     temp_reg._identifier = identifier
     temp_reg.save()
     json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    del json_data['filing']['continuationIn']['parties'][1]
     filing = factory_filing(None, json_data)
     filing.temp_reg = identifier
     filing._status = filing_status
@@ -1941,8 +1942,9 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
         ('CP', Business.LegalTypes.COOP.value, 'CP1234567')
     ]
 )
-def test_coo(session, requests_mock, client, jwt, test_name, legal_type, identifier):
+def test_coo(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
     """Assert Change of Officers is submitted correctly for entity types."""
+    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
     coo = copy.deepcopy(FILING_HEADER)
     coo['filing']['header']['name'] = 'changeOfOfficers'
     coo['filing']['changeOfOfficers'] = CHANGE_OF_OFFICERS

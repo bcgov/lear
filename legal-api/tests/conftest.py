@@ -12,26 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
-import datetime
+from datetime import timezone
 import time
 from contextlib import contextmanager, suppress
 import re
 import pytest
+from unittest.mock import patch
 import json
 from http import HTTPStatus
 
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import event, text
-from sqlalchemy.schema import DropConstraint, MetaData
-from unittest import mock
+from sqlalchemy.schema import MetaData
 import requests_mock
-import os
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
 from legal_api.models import db as _db
-
-from . import FROZEN_DATETIME
 
 
 @contextmanager
@@ -46,16 +43,19 @@ def not_raises(exception):
         raise pytest.fail(f'DID RAISE {exception}')
 
 
-# fixture to freeze utcnow to a fixed date-time
 @pytest.fixture
-def freeze_datetime_utcnow(monkeypatch):
-    """Fixture to return a static time for utcnow()."""
-    class _Datetime:
-        @classmethod
-        def utcnow(cls):
-            return FROZEN_DATETIME
-
-    monkeypatch.setattr(datetime, 'datetime', _Datetime)
+def freeze_datetime_utcnow():
+    """Freeze time for testing.
+    
+    super().now(tz=timezone.utc) is not supported by freezegun.
+    So we mock datetime.utcnow() directly.
+    """
+    @contextmanager
+    def _freeze_time(frozen_datetime):
+        with patch('legal_api.utils.datetime.datetime') as mock_datetime:
+            mock_datetime.utcnow.return_value = frozen_datetime.replace(tzinfo=timezone.utc)
+            yield
+    return _freeze_time
 
 
 @pytest.fixture(scope='session')

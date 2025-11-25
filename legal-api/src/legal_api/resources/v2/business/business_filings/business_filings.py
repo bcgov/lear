@@ -274,7 +274,7 @@ def patch_filings(identifier, filing_id=None):
             filing.reset_filing_to_draft()
 
     except (exceptions.ConnectionError, exceptions.Timeout) as err:
-        current_app.logger.error(f"Payment connection failure for {identifier}: filing:{filing.id}", err)
+        current_app.logger.error(f"Payment connection failure for {identifier}: filing:{filing.id} err: {err}")
         return {"errors":
                 [{"message": "Unable to cancel payment for the filing."}]
                 }, HTTPStatus.INTERNAL_SERVER_ERROR
@@ -400,7 +400,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
             current_app.logger.error(
-                f"Payment connection failure for getting payment_token:{payment_token} filing payment details. ", err)
+                f"Payment connection failure for getting payment_token:{payment_token} filing payment details. {err}")
 
     @staticmethod
     def get_ledger_listing(identifier: str, user_jwt: JwtManager):
@@ -1046,7 +1046,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                                timeout=20.0)
             current_app.logger.debug(f"Pay api call - result: {rv}")
         except (exceptions.ConnectionError, exceptions.Timeout) as err:
-            current_app.logger.error(f"Payment connection failure for {business.identifier}: filing:{filing.id}", err)
+            current_app.logger.error(f"Payment connection failure for {business.identifier}: filing:{filing.id} err: {err}")
             return {"message": "unable to create invoice for payment."}, HTTPStatus.PAYMENT_REQUIRED
 
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
