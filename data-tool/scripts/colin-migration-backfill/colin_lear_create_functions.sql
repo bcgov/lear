@@ -1745,6 +1745,7 @@ declare
            and pr.party_class_type = 'OFFICER'
            and pr.party_id = v_party_id
            and pr.end_transaction_id is null
+           and pr.cessation_date is null
            and pr.operation_type in (0, 1);
   rec_party_role record;
   rec_colin_change record;
@@ -1779,7 +1780,6 @@ begin
     officer_role := null;
   elsif rec_colin_change.new_count = rec_colin_change.existing_count then -- replacing
     counter := 0;
-    officer_role := SPLIT_PART(rec_colin_change.new_offices, ',', counter);
     open cur_party_role(p_business_id, p_rec_party.party_id);
     loop
       fetch cur_party_role into rec_party_role;
@@ -1805,12 +1805,11 @@ begin
                  rec_party_role.filing_id,
                  rec_party_role.party_class_type);
       end if;
-      perform colin_hist_party_role_change(p_business_id, p_trans_id, rec_party_role.id, 2, p_rec_party, null);  
     end loop;
     close cur_party_role;
   else
     if rec_colin_change.added_offices is not null then
-      for i in 1 .. array_length(string_to_array(rec_colin_change.added_offices, ','))
+      for i in 1 .. array_length(string_to_array(rec_colin_change.added_offices, ','), 1)
       loop
         officer_role := SPLIT_PART(rec_colin_change.added_offices, ',', i);
         party_role_id := nextval('party_roles_id_seq');
@@ -1824,7 +1823,7 @@ begin
     end if;
 
     if rec_colin_change.removed_offices is not null then
-      for i in 1 .. array_length(string_to_array(rec_colin_change.removed_offices, ','))
+      for i in 1 .. array_length(string_to_array(rec_colin_change.removed_offices, ','), 1)
       loop
         officer_role := SPLIT_PART(rec_colin_change.removed_offices, ',', i);
         select pr.*
@@ -1835,6 +1834,7 @@ begin
            and pr.party_id = p_rec_party.party_id
            and pr.role = officer_role
            and pr.end_transaction_id is null
+           and pr.transaction_id != p_trans_id
            and pr.operation_type in (0, 1);
         if found then
           update party_roles
@@ -1861,6 +1861,7 @@ begin
   return p_trans_id;
 end;
 $$;
+
 
 -- Historical update to remove a single officer for a single filing.
 -- Set the active party_roles record cessation date. Do not modify the parties record.
@@ -2236,6 +2237,7 @@ declare
                              and p.first_name = upper(cp2.first_name)
                              and p.last_name = upper(cp2.last_name)
                              and pr.operation_type in (0, 1)
+                             and pr.cessation_date is null
                              and pr.end_transaction_id is null
                              fetch first 1 rows only)
                    else null end as party_id
@@ -2274,7 +2276,7 @@ begin
       counter := counter + 1;
       perform colin_hist_officer_remove(rec_hist_party.end_trans_id::integer, p_trans_id, p_business_id, rec_hist_party);
     -- Editing: appointment date does not change.
-    elsif update_type = 1 then
+    elsif update_type = 1 and rec_hist_party.party_id is not null then
       rec_hist_party.appointment_dt := null;
       rec_hist_party.cessation_dt := null;
       counter := counter + 1;
