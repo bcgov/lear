@@ -38,7 +38,8 @@ class FileDataSource(UpdateProcessor):
 
         The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
         """
-        return lambda config, store, ready: _FileDataSource(store, 
+        return lambda config, store, ready: _FileDataSource(store,
+                                                            data_source_update_sink=None,
                                                             ready=ready,
                                                             paths=kwargs.get("paths"),
                                                             auto_update=kwargs.get("auto_update", False),
