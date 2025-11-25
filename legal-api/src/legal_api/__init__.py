@@ -61,7 +61,7 @@ from legal_api.utils.run_version import get_run_version
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
 
-def create_app(run_mode: Optional[str] = None) -> Flask:
+def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     run_mode = run_mode or os.getenv("RUN_MODE", "production")
     app = Flask(__name__)
@@ -71,7 +71,7 @@ def create_app(run_mode: Optional[str] = None) -> Flask:
     app.logger = StructuredLogging(app).get_logger()
     init_db(app)
     rsbc_schemas.init_app(app)
-    flags.init_app(app)
+    flags.init_app(app, kwargs.get("ld_test_data"))
     gcp_queue.init_app(app)
     babel.init_app(app)
     endpoints.init_app(app)

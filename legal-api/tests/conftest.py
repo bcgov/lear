@@ -22,12 +22,14 @@ import json
 from http import HTTPStatus
 
 from flask_migrate import Migrate, upgrade
+from ldclient.integrations.test_data import TestData
 from sqlalchemy import event, text
 from sqlalchemy.schema import MetaData
 import requests_mock
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
+from legal_api.config import TestConfig
 from legal_api.models import db as _db
 
 
@@ -58,10 +60,27 @@ def freeze_datetime_utcnow():
     return _freeze_time
 
 
+@pytest.fixture(scope="session")
+def ld():
+    """LaunchDarkly TestData source."""
+    td = TestData.data_source()
+    with open("flags.json") as file:
+        data = file.read()
+        test_flags: dict[str, dict] = json.loads(data)
+        for flag_name, flag_value in test_flags["flagValues"].items():
+            # NOTE: should check if isinstance dict and if so, apply each variation
+            td.update(td.flag(flag_name).variation_for_all(flag_value))
+    yield td
+
+
 @pytest.fixture(scope='session')
-def app():
+def app(ld):
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    options = {
+        'ld_test_data':ld,
+    }
+    _app = create_app("testing", **options)
+
 
     return _app
 
