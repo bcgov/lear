@@ -30,6 +30,7 @@
     "dbc-enabled-business-types": {
       "types": ["SP"]
     },
+    "dbc-enable-account-based-access": false,
     "enable-officers-business-summary": false,
     "supported-change-of-officers-entities": false,
     "enabled-business-summary-entities": "CP BEN SP GP CBEN BC CC ULC C CCC CUL",

@@ -651,3 +651,82 @@ def test_user_has_account_role_empty_auth_url_false(mock_current_app, mock_reque
         headers={'Authorization': 'Bearer mock-jwt-token'},
         timeout=30
     )
+
+
+@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=False)
+@patch('legal_api.services.digital_credentials_rules.requests.get')
+@patch('legal_api.services.digital_credentials_rules.current_app')
+def test_user_has_account_role_feature_flag_disabled_false(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
+    """Test user_has_account_role returns False when account-based access feature flag is disabled."""
+    # Setup mocks
+    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
+    
+    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
+    
+    with app.test_request_context():
+        result = rules.user_has_account_role(business)
+    
+    assert result is False
+    # Verify that requests.get was never called because the feature flag is off
+    mock_requests_get.assert_not_called()
+    mock_is_account_based_access_enabled.assert_called_once()
+
+
+@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
+@patch('legal_api.services.digital_credentials_rules.requests.get')
+@patch('legal_api.services.digital_credentials_rules.current_app')
+def test_user_has_account_role_feature_flag_enabled_with_admin_role(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
+    """Test user_has_account_role returns True when feature flag is enabled and user has ADMIN role."""
+    # Setup mocks
+    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'orgMembership': 'ADMIN'}
+    mock_requests_get.return_value = mock_response
+    
+    # Mock JWT token
+    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
+    
+    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
+    
+    with app.test_request_context():
+        result = rules.user_has_account_role(business)
+    
+    assert result is True
+    # Verify that both the feature flag check and the API call were made
+    mock_is_account_based_access_enabled.assert_called_once()
+    mock_requests_get.assert_called_once_with(
+        f'https://auth-api.example.com/entities/{business.identifier}/authorizations',
+        headers={'Authorization': 'Bearer mock-jwt-token'},
+        timeout=30
+    )
+
+
+@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
+@patch('legal_api.services.digital_credentials_rules.requests.get')
+@patch('legal_api.services.digital_credentials_rules.current_app')
+def test_user_has_account_role_feature_flag_enabled_with_non_admin_role(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
+    """Test user_has_account_role returns False when feature flag is enabled but user has non-admin role."""
+    # Setup mocks
+    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {'orgMembership': 'USER'}
+    mock_requests_get.return_value = mock_response
+    
+    # Mock JWT token
+    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
+    
+    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
+    
+    with app.test_request_context():
+        result = rules.user_has_account_role(business)
+    
+    assert result is False
+    # Verify that both the feature flag check and the API call were made
+    mock_is_account_based_access_enabled.assert_called_once()
+    mock_requests_get.assert_called_once_with(
+        f'https://auth-api.example.com/entities/{business.identifier}/authorizations',
+        headers={'Authorization': 'Bearer mock-jwt-token'},
+        timeout=30
+    )

@@ -21,6 +21,7 @@ from flask import current_app
 from legal_api.models import Party, User
 
 DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
+DBC_ENABLE_ACCOUNT_BASED_ACCESS_FLAG = "dbc-enable-account-based-access"
 
 
 def determine_allowed_business_types(valid_registration_types: list[str],
@@ -43,6 +44,14 @@ def determine_allowed_business_types(valid_registration_types: list[str],
     supported_types = valid_registration_types + valid_incorporation_types
     valid_business_types = list(set(flag_obj["types"]) & set(supported_types))
     return valid_business_types
+
+
+def is_account_based_access_enabled() -> bool:
+    """Determine if account based access is enabled for digital credentials based on flags."""
+    # Import inside function to avoid circular dependency and ensure app context is available
+    from legal_api.services import flags
+
+    return flags.is_on(DBC_ENABLE_ACCOUNT_BASED_ACCESS_FLAG)
 
 
 class FormattedUser:

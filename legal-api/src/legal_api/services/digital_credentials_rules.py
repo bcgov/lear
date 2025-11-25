@@ -22,7 +22,11 @@ import requests
 from flask import current_app
 
 from legal_api.models import Business, Filing, Party, PartyRole, User
-from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
+from legal_api.services.digital_credentials_utils import (
+    FormattedUser,
+    determine_allowed_business_types,
+    is_account_based_access_enabled,
+)
 from legal_api.utils.auth import jwt
 
 
@@ -86,6 +90,10 @@ class DigitalCredentialsRulesService:
     def user_has_account_role(self, business: Business) -> bool:
         """Return True if the user has ADMIN or COORDINATOR org membership."""
         try:
+            # Check FF for account based access enablement
+            if not is_account_based_access_enabled():
+                return False
+
             # Call Auth API to get org membership for the business
             auth_url = f"{current_app.config.get('AUTH_SVC_URL', '').rstrip('/')}/entities/{business.identifier}/authorizations"
             resp = requests.get(auth_url, headers={"Authorization": f"Bearer {jwt.get_token_auth_header()}"}, timeout=30)
@@ -103,7 +111,11 @@ class DigitalCredentialsRulesService:
 
         allowed_business_types = determine_allowed_business_types(
             self.valid_registration_types, self.valid_incorporation_types)
-        current_app.logger.debug("DBC Allowed business types: %s", allowed_business_types)
+        current_app.logger.debug(
+            "DBC Allowed business types: %s. Account based access enabled: %s",
+            allowed_business_types,
+            is_account_based_access_enabled(),
+        )
 
         if business.legal_type in allowed_business_types:
             return (self.user_has_filing_party_role(user, business)
