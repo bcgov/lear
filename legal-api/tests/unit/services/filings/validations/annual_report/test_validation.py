@@ -14,6 +14,7 @@
 """Test suite to ensure the Annual Report is validated correctly."""
 import copy
 from datetime import date, datetime
+from unittest.mock import patch
 
 import datedelta
 import pytest
@@ -49,3 +50,116 @@ def test_validate(session, test_name, now, ar_date, agm_date,
 
     # validate outcomes
     assert not err
+
+
+@pytest.mark.parametrize(
+    "test_name, delivery_address, mailing_address, expected_errors",
+    [
+        (
+            "SUCCESS",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            None
+        ),
+        (
+            "missing_mailingAddress_streetAddress",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            [
+                {
+                    "error": "Mailing address must include streetAddress.",
+                    "path": "/filing/annualReport/directors/0/mailingAddress/streetAddress"
+                }
+            ]
+        ),
+        (
+            "missing_mailingAddress_addressCity",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            [
+                {
+                    "error": "Mailing address must include addressCity.",
+                    "path": "/filing/annualReport/directors/0/mailingAddress/addressCity"
+                }
+            ]
+        ),
+        (
+            "missing_mailingAddress_addressCountry",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "", "postalCode": "V5K0A1"},
+            [
+                {
+                    "error": "Mailing address must include addressCountry.",
+                    "path": "/filing/annualReport/directors/0/mailingAddress/addressCountry"
+                }
+            ]
+        ),
+        (
+            "missing_mailing_address",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            None,
+            [
+                {
+                    "error": "missing mailingAddress",
+                    "path": "/filing/annualReport/directors/0/mailingAddress"
+                }
+            ]
+        ),
+        (
+            "missing_delivery_address",
+            None,
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            [
+                {
+                    "error": "missing deliveryAddress",
+                    "path": "/filing/annualReport/directors/0/deliveryAddress"
+                }
+            ]
+        ),
+        (
+            "missing_both_addresses",
+            None,
+            None,
+            [
+                {
+                    "error": "missing mailingAddress",
+                    "path": "/filing/annualReport/directors/0/mailingAddress"
+                },
+                {
+                    "error": "missing deliveryAddress",
+                    "path": "/filing/annualReport/directors/0/deliveryAddress"
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_director_addresses(session, test_name, delivery_address, mailing_address, expected_errors):
+    identifier = "BC0000001"
+    founding_date = datetime(2000, 1, 1)
+    business = Business(identifier=identifier, founding_date=founding_date, legal_type='BC')
+
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar["filing"]["business"]["identifier"] = identifier
+    director = ar["filing"]["annualReport"]["directors"][0]
+
+    if delivery_address is not None:
+        director["deliveryAddress"] = delivery_address
+    else:
+        director.pop("deliveryAddress", None)
+
+    if mailing_address is not None:
+        director["mailingAddress"] = mailing_address
+    else:
+        director.pop("mailingAddress", None)
+
+    # perform test
+    with patch("legal_api.services.filings.validations.annual_report.validate_ar_year", return_value=None), \
+         patch("legal_api.services.filings.validations.annual_report.validate_agm_year", return_value=None):
+        err = validate(business, ar)
+
+    # validate outcomes
+    if expected_errors:
+        assert err is not None
+        assert err.msg == expected_errors
+    else:
+        assert err is None

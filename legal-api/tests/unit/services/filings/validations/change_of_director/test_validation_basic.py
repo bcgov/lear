@@ -29,24 +29,86 @@ from tests.unit.services.filings.validations import lists_are_equal
 
 
 @pytest.mark.parametrize(
-    'test_name, now, delivery_region_1, delivery_country_1, delivery_region_2, delivery_country_2,'
-    'expected_code, expected_msg',
+    'test_name, now, delivery_region_1, delivery_country_1, delivery_region_2, delivery_country_2, '
+    'mailing_address_1, mailing_address_2, expected_code, expected_msg',
     [
-        ('SUCCESS', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
-         'BC', 'CA', 'BC', 'CA',
-         None, None),
-        ('SUCCESS-NON_CA_COUNTRY', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
-         'AM', 'DE', 'AM', 'DE',
-         None, None),
-        ('Director[1] Nonsense Country', datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc),
-         'BC', 'CA', 'BC', 'nonsense',
-         HTTPStatus.BAD_REQUEST, [
-             {'error': 'Address Country must resolve to a valid ISO-2 country.',
-              'path': '/filing/changeOfDirectors/directors/1/deliveryAddress/addressCountry'}]),
-    ])
+        (
+            'SUCCESS',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'BC', 'CA', 'BC', 'CA',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            None, None
+        ),
+        (
+            'SUCCESS-NON_CA_COUNTRY',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'AM', 'DE', 'AM', 'DE',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            None, None
+        ),
+        (
+            'Director[1] Nonsense Country',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'BC', 'CA', 'BC', 'nonsense',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'Address Country must resolve to a valid ISO-2 country.',
+                 'path': '/filing/changeOfDirectors/directors/1/deliveryAddress/addressCountry'}
+            ]
+        ),
+        (
+            'Mailing Address missing streetAddress',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'BC', 'CA', 'BC', 'CA',
+            {"streetAddress": "", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'Mailing address must include streetAddress.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/streetAddress'}
+            ]
+        ),
+        (
+            'Mailing Address missing addressCity',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'BC', 'CA', 'BC', 'CA',
+            {"streetAddress": "123 A St", "addressCity": "", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'Mailing address must include addressCity.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCity'}
+            ]
+        ),
+        (
+            'Mailing Address missing addressCountry',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'BC', 'CA', 'BC', 'CA',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "", "postalCode": "V5K0A1"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'Mailing address must include addressCountry.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCountry'}
+            ]
+        ),
+        (
+            'Mailing Address missing postalCode',
+            datetime(2001, 8, 5, 12, 0, tzinfo=timezone.utc),
+            'BC', 'CA', 'BC', 'CA',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": ""},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'Postal code is required.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
+            ]
+        ),
+    ]
+)
 def test_validate_cod_basic(session, test_name, now,
                             delivery_region_1, delivery_country_1, delivery_region_2, delivery_country_2,
-                            expected_code, expected_msg):  # pylint: disable=too-many-arguments
+                            mailing_address_1, mailing_address_2,
+                            expected_code, expected_msg):
     """Assert that a basic COD can be validated."""
     # setup
     identifier = 'CP1234567'
@@ -71,6 +133,10 @@ def test_validate_cod_basic(session, test_name, now,
     cod['directors'][0]['deliveryAddress']['addressRegion'] = delivery_region_1
     cod['directors'][1]['deliveryAddress']['addressCountry'] = delivery_country_2
     cod['directors'][1]['deliveryAddress']['addressRegion'] = delivery_region_2
+
+    cod['directors'][0]['mailingAddress'] = mailing_address_1
+    cod['directors'][1]['mailingAddress'] = mailing_address_2
+
     f['filing']['changeOfDirectors'] = cod
 
     # perform test
