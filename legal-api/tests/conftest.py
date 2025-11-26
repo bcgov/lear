@@ -69,7 +69,7 @@ def ld():
         test_flags: dict[str, dict] = json.loads(data)
         for flag_name, flag_value in test_flags["flagValues"].items():
             # NOTE: should check if isinstance dict and if so, apply each variation
-            td.update(td.flag(flag_name).variation_for_all(flag_value))
+            td.update(td.flag(flag_name).variations(flag_value))
     yield td
 
 
