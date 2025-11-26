@@ -68,6 +68,11 @@ def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
     app.register_blueprint(document_service_bp)
     app.config.from_object(config.CONFIGURATION[run_mode])
 
+    if config := kwargs.get("config"):
+        app.config.from_object(config)
+    else:
+        app.config.from_object(config.CONFIGURATION[run_mode])
+
     app.logger = StructuredLogging(app).get_logger()
     init_db(app)
     rsbc_schemas.init_app(app)
