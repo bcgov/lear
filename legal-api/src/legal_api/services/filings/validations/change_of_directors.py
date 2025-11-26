@@ -85,7 +85,7 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
 
     # Note: 'postalCode' is intentionally excluded because postal code validation is handled separately
     # in the common validations via validate_parties_addresses.
-    MAILING_REQUIRED_FIELDS = [
+    mailing_required_fields = [
         "streetAddress",
         "addressCity",
         "addressCountry",
@@ -102,7 +102,7 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
                         "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}"
                     })
             elif address_type == Address.JSON_MAILING:
-                for field in MAILING_REQUIRED_FIELDS:
+                for field in mailing_required_fields:
                     if not address.get(field):
                         msg.append({
                             "error": babel(f"Mailing address must include {field}."),
