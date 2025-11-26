@@ -83,21 +83,42 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
 
     directors = cod["filing"][filing_type]["directors"]
 
+    # Note: 'postalCode' is intentionally excluded because postal code validation is handled separately
+    # in the common validations via validate_parties_addresses.
+    mailing_required_fields = [
+        "streetAddress",
+        "addressCity",
+        "addressCountry",
+    ]
+
     for idx, director in enumerate(directors):  # pylint: disable=too-many-nested-blocks;
         for address_type in Address.JSON_ADDRESS_TYPES:
+            address = director.get(address_type)
+
+            if not address:
+                if business.legal_type in Business.CORPS:
+                    msg.append({
+                        "error": f"missing {address_type}",
+                        "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}"
+                    })
+            elif address_type == Address.JSON_MAILING:
+                for field in mailing_required_fields:
+                    if not address.get(field):
+                        msg.append({
+                            "error": babel(f"Mailing address must include {field}."),
+                            "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/{field}"
+                        })
+
             if address_type in director:
                 try:
                     country = get_str(director, f"/{address_type}/addressCountry")
                     _ = pycountry.countries.search_fuzzy(country)[0].alpha_2
-
                 except LookupError:
-                    msg.append({"error": babel("Address Country must resolve to a valid ISO-2 country."),
-                                "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry"})
-            elif business.legal_type in Business.CORPS:
-                msg.append({
-                    "error": f"missing {address_type}",
-                    "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}"
-                })
+                    msg.append({
+                        "error": babel("Address Country must resolve to a valid ISO-2 country."),
+                        "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry"
+                    })
+
     return msg
 
 

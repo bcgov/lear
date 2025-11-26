@@ -30,3 +30,5 @@ class DCRevocationReason(Enum):
     SELF_REVOCATION = 'You chose to revoke your own credential.'
     CHANGE_OF_DIRECTORS = 'The directors of this business were changed.'
     CHANGE_OF_PARTNERS = 'The partners of this business were changed.'
+    AUTH_UNAFFILIATED = 'You no longer have an affiliation with this business. ' \
+        'Previously issued credentials have been revoked.'
