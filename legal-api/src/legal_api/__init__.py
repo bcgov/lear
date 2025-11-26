@@ -66,10 +66,9 @@ def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
     run_mode = run_mode or os.getenv("RUN_MODE", "production")
     app = Flask(__name__)
     app.register_blueprint(document_service_bp)
-    app.config.from_object(config.CONFIGURATION[run_mode])
 
-    if config := kwargs.get("config"):
-        app.config.from_object(config)
+    if _config := kwargs.get("config"):
+        app.config.from_object(_config)
     else:
         app.config.from_object(config.CONFIGURATION[run_mode])
 
