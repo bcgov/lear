@@ -75,8 +75,6 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
     """Return an error message if the directors address are invalid.
 
     Address must contain a valid ISO-2 valid country.
-    
-    Mailing address is required for all directors.
     """
     msg = []
 
