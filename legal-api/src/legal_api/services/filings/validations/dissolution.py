@@ -21,12 +21,14 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
 )
+from legal_api.services.permissions import ListFilingsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
@@ -68,6 +70,31 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
 
+    if flags.is_on('enabled-deeper-permission-action') and business.good_standing is False:
+        if dissolution_type in [DissolutionTypes.ADMINISTRATIVE.value]:
+            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value
+            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
+        if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_FIRM_FILING.value
+            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
+            error = PermissionService.check_user_permission(required_permission, message=message)
+
+        if dissolution_type == DissolutionTypes.VOLUNTARY.value:
+            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value
+            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
+        if dissolution_type == DissolutionTypes.INVOLUNTARY.value:
+            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value
+            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
+        
     err = validate_dissolution_type(dissolution, business.legal_type)
     if err:
         msg.extend(err)
