@@ -20,6 +20,7 @@ from simple_cloudevent import SimpleCloudEvent
 
 from business_digital_credentials.digital_credential_processors import (
     admin_revoke,
+    auth_unaffiliation,
     business_number,
     change_of_directors,
     change_of_registration,
@@ -41,6 +42,7 @@ bp = Blueprint("worker", __name__)
 
 # Prefix constants
 ADMIN_PREFIX = "bc.registry.admin"
+AUTH_PREFIX = "bc.registry.auth"
 BUSINESS_PREFIX = "bc.registry.business"
 
 
@@ -48,6 +50,13 @@ class AdminMessage(Enum):
     """Business Digital Credential admin message type."""
 
     REVOKE = f"{ADMIN_PREFIX}.revoke"
+
+
+class AuthMessageType(Enum):
+    """Relevant auth messages type subscribed from Auth system."""
+
+    BUSINESS_UNAFFILIATED = f"{AUTH_PREFIX}.businessUnaffiliated"
+    TEAM_MEMBER_REMOVED = f"{AUTH_PREFIX}.teamMemberRemoved"
 
 
 class BusinessMessageType(Enum):
@@ -66,8 +75,6 @@ class BusinessMessageType(Enum):
 def worker():
     """Use endpoint to process Queue Msg objects."""
     try:
-        current_app.logger.debug("Processing worker in DBC")
-
         if not request.data:
             return {}, HTTPStatus.OK
 
@@ -102,13 +109,11 @@ def worker():
         return {}, HTTPStatus.BAD_REQUEST
 
 
-def process_event(  # pylint: disable=too-many-branches, too-many-statements  # noqa: PLR0912
+def process_event(  # pylint: disable=too-many-branches, too-many-statements  # noqa: PLR0912, PLR0915
     ce: SimpleCloudEvent,
 ):
     """Process the digital credential-related message subscribed to."""
     etype = ce.type
-
-    current_app.logger.info(f"Processing event type: {etype}")
 
     if not ce.data or not isinstance(ce.data, dict):
         raise QueueException("Digital credential message is missing data.")
@@ -121,6 +126,8 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
         BusinessMessageType.RESTORATION.value,
         BusinessMessageType.BN.value,
         AdminMessage.REVOKE.value,
+        AuthMessageType.BUSINESS_UNAFFILIATED.value,
+        AuthMessageType.TEAM_MEMBER_REMOVED.value,
     ]:
         current_app.logger.debug(
             f"Unsupported event type: {etype} - message acknowledged"
@@ -149,8 +156,38 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
             business_number.process(business)
         elif etype == AdminMessage.REVOKE.value:
             admin_revoke.process(business)
+    
+    elif etype in (AuthMessageType.BUSINESS_UNAFFILIATED.value, AuthMessageType.TEAM_MEMBER_REMOVED.value):
+        # Handle changes from the auth system regarding affiliation changes
+        user_events = ce.data.get("userAffiliationEvents", [])
+        if not user_events:
+            raise QueueException(
+                "Digital credential message is missing or has empty user affiliation events."
+            ) from None
+    
+        # Process each user event
+        for event in user_events:
+            idp_userid = event.get("idpUserid")
+            login_source = event.get("loginSource")
+            unaffiliated_identifiers = event.get("unaffiliatedIdentifiers", [])
+            
+            if not idp_userid or not login_source:
+                current_app.logger.warning(
+                    f"Event missing IDP user data (idpUserid {idp_userid} or loginSource {login_source}), skipping."
+                )
+                continue
+            
+            if not unaffiliated_identifiers:
+                current_app.logger.info(
+                    f"No unaffiliated identifiers for user: {login_source} {idp_userid}, skipping."
+                )
+                continue
+
+            # Process unaffiliations to see about Digital Business Card usage
+            auth_unaffiliation.process(idp_userid, login_source, unaffiliated_identifiers)
 
     else:
+        # For filing-related events, we need to get the filing from the data object 
         try:
             filing_id = ce.data["filing"]["header"]["filingId"]
         except (KeyError, TypeError):
