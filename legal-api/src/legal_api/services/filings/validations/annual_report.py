@@ -152,13 +152,30 @@ def validate_directors_addresses(annual_report: dict, legal_type: str) -> Option
     msg = []
     directors = annual_report["filing"]["annualReport"].get("directors", [])
 
+     # Required fields for mailingAddress
+    MAILING_REQUIRED_FIELDS = [
+        "streetAddress",
+        "addressCity",
+        "addressCountry",
+        "postalCode"
+    ]
+
     for idx, director in enumerate(directors):
         for address_type in Address.JSON_ADDRESS_TYPES:
-            if address_type not in director:
+            address = director.get(address_type)
+
+            if not address:
                 msg.append({
                     "error": f"missing {address_type}",
                     "path": f"/filing/annualReport/directors/{idx}/{address_type}"
                 })
+            elif address_type == Address.JSON_MAILING:
+                for field in MAILING_REQUIRED_FIELDS:
+                    if not address.get(field):
+                        msg.append({
+                            "error": f"Mailing address must include {field}.",
+                            "path": f"/filing/annualReport/directors/{idx}/{address_type}/{field}"
+                        })
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
