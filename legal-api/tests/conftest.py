@@ -33,7 +33,6 @@ from legal_api import jwt as _jwt
 from legal_api.config import TestConfig
 from legal_api.models import db as _db
 
-postgres = PostgresContainer("postgres:16-alpine")
 
 @contextmanager
 def not_raises(exception):

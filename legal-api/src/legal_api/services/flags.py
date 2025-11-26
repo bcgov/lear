@@ -77,7 +77,10 @@ class Flags:
         """Destroy all objects created by this extension."""
         client = self.app.extensions.get("featureflags") if self.app else None
         if client:
-            client.close()
+            try:
+                client.close()
+            except Exception as err:
+                self.logger.error(f"Unable to close feature flag client: {err!r}", exc_info=True)
 
     def _get_client(self):
         if not self.app:
