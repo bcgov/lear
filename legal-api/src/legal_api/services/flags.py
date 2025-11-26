@@ -21,33 +21,9 @@ from ldclient import get as ldclient_get
 from ldclient import set_config as ldclient_set_config
 from ldclient.config import Config
 from ldclient.context import Context
-from ldclient.impl.integrations.files.file_data_source import _FileDataSource
 from ldclient.integrations.test_data import TestData
-from ldclient.interfaces import UpdateProcessor
 
 from legal_api.models import User
-
-
-class FileDataSource(UpdateProcessor):
-    """FileDataStore has been removed, so this provides similar functionality."""
-
-    @classmethod
-    def factory(cls, **kwargs):
-        """Provide a way to use local files as a source of feature flag state.
-
-        .. deprecated:: 6.8.0
-          This module and this implementation class are deprecated and may be changed or removed in the future.
-          Please use :func:`ldclient.integrations.Files.new_data_source()`.
-
-        The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
-        """
-        return lambda config, store, ready: _FileDataSource(store,
-                                                            data_source_update_sink=None,
-                                                            ready=ready,
-                                                            paths=kwargs.get("paths"),
-                                                            auto_update=kwargs.get("auto_update", False),
-                                                            poll_interval=kwargs.get("poll_interval", 1),
-                                                            force_polling=kwargs.get("force_polling", False))
 
 
 class Flags:

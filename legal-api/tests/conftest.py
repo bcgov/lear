@@ -78,10 +78,8 @@ def ld():
 @pytest.fixture(scope='session')
 def app(ld):
     """Return a session-wide application configured in TEST mode."""
-    TestConfig.SQLALCHEMY_DATABASE_URI = postgres.get_connection_url()
     options = {
         'ld_test_data':ld,
-        'config': TestConfig,
     }
     _app = create_app("testing", **options)
 
@@ -93,10 +91,8 @@ def app(ld):
 def app_ctx(ld, event_loop):
     # def app_ctx():
     """Return a session-wide application configured in TEST mode."""
-    TestConfig.SQLALCHEMY_DATABASE_URI = postgres.get_connection_url()
     options = {
         'ld_test_data':ld,
-        'config': TestConfig,
     }
     _app = create_app("testing", **options)
     with _app.app_context():
@@ -112,10 +108,8 @@ def config(app):
 @pytest.fixture(scope='function')
 def app_request(ld):
     """Return a session-wide application configured in TEST mode."""
-    TestConfig.SQLALCHEMY_DATABASE_URI = postgres.get_connection_url()
     options = {
         'ld_test_data':ld,
-        'config': TestConfig,
     }
     _app = create_app("testing", **options)
 
@@ -141,49 +135,95 @@ def client_ctx(app):  # pylint: disable=redefined-outer-name
         yield _client
 
 
-@pytest.fixture(scope="session")
-def database_service(request):
-    """Start up database."""
-    postgres.start()
+@pytest.fixture(scope='session')
+def db(app):  # pylint: disable=redefined-outer-name, invalid-name
+    """Return a session-wide initialised database.
 
-    def remove_container():
-        postgres.stop()
-    
-    request.addfinalizer(remove_container)
+    Drops all existing tables - Meta follows Postgres FKs
+    """
+    with app.app_context():
+        # Clear out any existing tables
+        metadata = MetaData(_db.engine)
+        metadata.reflect()
+        with suppress(Exception):
+            metadata.drop_all()
+        with suppress(Exception):
+            _db.drop_all()
 
+        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
+                          WHERE sequence_schema='public'
+                       """
 
-@pytest.fixture(scope="session", autouse=True)
-def database_setup(database_service, app):
-    """Start up database."""
-    Migrate(app, _db)
-    upgrade() 
+        sess = _db.session()
+        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
+            with suppress(Exception):
+                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
+                print('DROP SEQUENCE public.%s ' % seq)
+        sess.commit()
+
+        # drop enums
+        enum_type_sql = "SELECT typname FROM pg_type WHERE typcategory = 'E'"
+        for enum_name in [name for (name,) in sess.execute(text(enum_type_sql))]:
+            with suppress(Exception):
+                sess.execute(text('DROP TYPE %s ;' % enum_name))
+                print('DROP TYPE %s ' % enum_name)
+        sess.commit()
+
+        # For those who have local databases on bare metal in local time.
+        # Otherwise some of the returns will come back in local time and unit tests will fail.
+        # The current DEV database uses UTC.
+        sess.execute("SET TIME ZONE 'UTC';")
+        sess.commit()
+
+        # ############################################
+        # There are 2 approaches, an empty database, or the same one that the app will use
+        #     create the tables
+        #     _db.create_all()
+        # or
+        # Use Alembic to load all of the DB revisions including supporting lookup data
+        # This is the path we'll use in legal_api!!
+
+        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
+        Migrate(app, _db)
+        upgrade()
+
+        return _db
 
 
 @pytest.fixture(scope='function')
-def session(database_setup):
-    """DB and build tables"""
-   # Connect to the database
-    connection = _db.engine.connect()
+def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
+    """Return a function-scoped session."""
+    with app.app_context():
+        conn = db.engine.connect()
+        txn = conn.begin()
 
-    # Begin a non-ORM transaction
-    transaction = connection.begin()
-    
-    options = dict(bind=connection,
-                   join_transaction_mode="create_savepoint",
-                   binds={})
-    session = _db._make_scoped_session(options=options)
+        options = dict(bind=conn, binds={})
+        sess = db.create_scoped_session(options=options)
 
-    _db.session = session
+        # establish  a SAVEPOINT just before beginning the test
+        # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
+        sess.begin_nested()
 
-    # ping the connection
-    session.execute(text("SET TIME ZONE 'UTC';"))
+        @event.listens_for(sess(), 'after_transaction_end')
+        def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
+            # Detecting whether this is indeed the nested transaction of the test
+            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
+                # Handle where test DOESN'T session.commit(),
+                sess2.expire_all()
+                sess.begin_nested()
 
-    yield session  # this is where the test runs
+        db.session = sess
 
-    # Teardown: close session, rollback transaction, close connection
-    session.close()
-    transaction.rollback()
-    connection.close()
+        sql = text('select 1')
+        sess.execute(sql)
+
+        yield sess
+
+        # Cleanup
+        sess.remove()
+        # This instruction rollsback any commit that were executed in the tests.
+        txn.rollback()
+        conn.close()
 
 
 @pytest.fixture(scope='session')
