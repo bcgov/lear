@@ -75,6 +75,8 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
     """Return an error message if the directors address are invalid.
 
     Address must contain a valid ISO-2 valid country.
+    
+    Mailing address is required for all directors.
     """
     msg = []
 
@@ -83,7 +85,30 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
 
     directors = cod["filing"][filing_type]["directors"]
 
+    # Note: 'postalCode' is intentionally excluded because postal code validation is handled separately
+    # in the common validations via validate_parties_addresses.
+    MAILING_REQUIRED_FIELDS = [
+        "streetAddress",
+        "addressCity",
+        "addressCountry",
+    ]
+
     for idx, director in enumerate(directors):  # pylint: disable=too-many-nested-blocks;
+        address_type = Address.JSON_MAILING
+        mailing = director.get(address_type)
+        if not mailing:
+            msg.append({
+                "error": babel("Directors must have a mailing address."),
+                "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}"
+            })
+        else:
+            for field in MAILING_REQUIRED_FIELDS:
+                if not mailing.get(field):
+                    msg.append({
+                        "error": babel(f"Mailing address must include {field}."),
+                        "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/{field}"
+                    })
+
         for address_type in Address.JSON_ADDRESS_TYPES:
             if address_type in director:
                 try:
