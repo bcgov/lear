@@ -496,7 +496,6 @@ def test_process_event_auth_business_unaffiliated(mock_auth_process, app):
         
         mock_auth_process.assert_called_once_with(
             "BHGV525CAAO6UJJVQVC7RQHS2EEA2OD3",
-            "BCSC",
             ["FM1169745"]
         )
 
@@ -525,7 +524,6 @@ def test_process_event_auth_team_member_removed(mock_auth_process, app):
         
         mock_auth_process.assert_called_once_with(
             "Y4RKFRL6JKYN4JYGOU6X7AES7WZO2C7B",
-            "BCSC",
             ["FM1169757", "BC0888356", "FM1169770"]
         )
 
@@ -618,7 +616,7 @@ def test_process_event_auth_missing_unaffiliated_identifiers_logs_and_continues(
         
         process_event(ce)
         
-        assert "No unaffiliated identifiers for user" in caplog.text
+        assert "User is not BCSC or no unaffiliations for user" in caplog.text
         mock_auth_process.assert_not_called()
 
 
@@ -645,9 +643,8 @@ def test_process_event_auth_multiple_events_processes_all(mock_auth_process, app
         
         process_event(ce)
         
-        assert mock_auth_process.call_count == 2
-        mock_auth_process.assert_any_call("USER1", "BCSC", ["FM1169745"])
-        mock_auth_process.assert_any_call("USER2", "BCEID", ["BC0888356", "FM1169770"])
+        # Only BCSC users should be processed, so only 1 call
+        mock_auth_process.assert_called_once_with("USER1", ["FM1169745"])
 
 
 @patch("business_digital_credentials.digital_credential_processors.auth_unaffiliation.process", spec=True)
@@ -674,4 +671,59 @@ def test_process_event_auth_skips_invalid_and_processes_valid(mock_auth_process,
         process_event(ce)
         
         assert "Event missing IDP user data" in caplog.text
-        mock_auth_process.assert_called_once_with("USER2", "BCSC", ["BC0888356"])
+        mock_auth_process.assert_called_once_with("USER2", ["BC0888356"])
+
+
+@patch("business_digital_credentials.digital_credential_processors.auth_unaffiliation.process", spec=True)
+def test_process_event_auth_bcsc_case_insensitive(mock_auth_process, app):
+    """Test process_event accepts BCSC in various cases."""
+    with app.app_context():
+        ce = MagicMock(spec=SimpleCloudEvent)
+        ce.type = "bc.registry.auth.businessUnaffiliated"
+        ce.data = {
+            "userAffiliationEvents": [
+                {
+                    "idpUserid": "USER1",
+                    "loginSource": "bcsc",  # lowercase
+                    "unaffiliatedIdentifiers": ["FM1169745"]
+                },
+                {
+                    "idpUserid": "USER2",
+                    "loginSource": "Bcsc",  # mixed case
+                    "unaffiliatedIdentifiers": ["BC0888356"]
+                }
+            ]
+        }
+        
+        process_event(ce)
+        
+        assert mock_auth_process.call_count == 2
+        mock_auth_process.assert_any_call("USER1", ["FM1169745"])
+        mock_auth_process.assert_any_call("USER2", ["BC0888356"])
+
+
+@patch("business_digital_credentials.digital_credential_processors.auth_unaffiliation.process", spec=True)
+def test_process_event_auth_non_bcsc_filtered(mock_auth_process, app, caplog):
+    """Test process_event filters out non-BCSC login sources."""
+    with app.app_context():
+        ce = MagicMock(spec=SimpleCloudEvent)
+        ce.type = "bc.registry.auth.teamMemberRemoved"
+        ce.data = {
+            "userAffiliationEvents": [
+                {
+                    "idpUserid": "USER1",
+                    "loginSource": "BCEID",
+                    "unaffiliatedIdentifiers": ["FM1169745"]
+                },
+                {
+                    "idpUserid": "USER2",
+                    "loginSource": "IDIR",
+                    "unaffiliatedIdentifiers": ["BC0888356"]
+                }
+            ]
+        }
+        
+        process_event(ce)
+        
+        assert "User is not BCSC or no unaffiliations for user" in caplog.text
+        mock_auth_process.assert_not_called()

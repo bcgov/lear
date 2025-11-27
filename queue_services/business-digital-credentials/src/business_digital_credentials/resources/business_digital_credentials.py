@@ -177,14 +177,14 @@ def process_event(  # pylint: disable=too-many-branches, too-many-statements  # 
                 )
                 continue
             
-            if not unaffiliated_identifiers:
+            if not unaffiliated_identifiers or login_source.upper() != "BCSC":
                 current_app.logger.info(
-                    f"No unaffiliated identifiers for user: {login_source} {idp_userid}, skipping."
+                    f"User is not BCSC or no unaffiliations for user: {login_source} {idp_userid}, skipping."
                 )
                 continue
 
             # Process unaffiliations to see about Digital Business Card usage
-            auth_unaffiliation.process(idp_userid, login_source, unaffiliated_identifiers)
+            auth_unaffiliation.process(idp_userid, unaffiliated_identifiers)
 
     else:
         # For filing-related events, we need to get the filing from the data object 
