@@ -23,6 +23,8 @@ Note: The credential is not replaced, it is simply revoked.
 """
 from flask import current_app
 
+from business_model.models import DCRevocationReason
+
 
 def process(idp_userid: str, login_source: str, unaffiliated_identifiers: list) -> None:
     """Process auth actions."""
@@ -30,4 +32,4 @@ def process(idp_userid: str, login_source: str, unaffiliated_identifiers: list) 
     current_app.logger.debug(
         f"Process auth unaffiliation for user: {login_source} {idp_userid} from identifiers: {unaffiliated_identifiers}"
     )
-    current_app.logger.warning("Auth unaffiliation processing not implemented yet.")
+    current_app.logger.warning(f"Auth unaffiliation processing not implemented yet. {DCRevocationReason.AUTH_UNAFFILIATED}")
