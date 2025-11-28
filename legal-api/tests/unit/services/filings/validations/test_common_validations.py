@@ -42,7 +42,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_party_name,
     validate_party_role_firms,
-    validate_role_types,
     validate_staff_payment,
 )
 
