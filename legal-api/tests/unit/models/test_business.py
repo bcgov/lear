@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Business Model is working as expected.
 """
 import copy
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import patch
 
 import datedelta
@@ -595,7 +595,7 @@ def test_business_alternate_names(session, test_name, businesses_info, alternate
         business = Business(
             legal_name=business_info["legalName"],
             legal_type=business_info["legalType"],
-            founding_date=founding_date,
+            founding_date=founding_date.replace(tzinfo=timezone.utc),
             start_date=start_date,
             identifier=business_info["identifier"],
             state=Business.State.ACTIVE
@@ -606,7 +606,7 @@ def test_business_alternate_names(session, test_name, businesses_info, alternate
             business_alternate_name = Business(
                 legal_name=alternate_name_info["name"],
                 legal_type=alternate_name_info["entityType"],
-                founding_date=datetime.strptime(alternate_name_info["registeredDate"], "%Y-%m-%dT%H:%M:%S%z"),
+                founding_date=datetime.strptime(alternate_name_info["registeredDate"], "%Y-%m-%dT%H:%M:%S%z").replace(tzinfo=timezone.utc),
                 start_date=datetime.strptime(alternate_name_info["startDate"], "%Y-%m-%dT%H:%M:%S%z"),
                 identifier=alternate_name_info["identifier"],
                 state=Business.State.ACTIVE

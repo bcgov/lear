@@ -4248,7 +4248,11 @@ components:
               description: 'Fiscal Year covered in the annual report.'
             directors:
               type: array
-              description: Individual who is a member of the board of directors of the company as a result of having been elected or appointed to that position
+              description: |
+                Individual who is a member of the board of directors of the company as a result of having been elected or appointed to that position.
+                
+                **Note:** Directors are required to be submitted in the filing but are not used to update any director information.  
+                They are only there for review purposes.
               items:
                 type: object
                 properties:
@@ -4314,7 +4318,11 @@ components:
               required:
                 - registeredOffice
                 - recordsOffice
-              description: 'Addresses related to the business.'
+              description: |
+                Addresses related to the business.
+                
+                **Note:** Offices are required to be submitted in the filing but are not used to update any office information.  
+                They are only there for review purposes.
               properties:
                 registeredOffice:
                   $ref: '#/components/schemas/Office'

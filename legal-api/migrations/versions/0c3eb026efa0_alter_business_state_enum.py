@@ -17,21 +17,26 @@ branch_labels = None
 depends_on = None
 
 
+# changing this to fix github action db migration error
 def upgrade():
     bind = op.get_bind()
     inspector = sa.inspect(bind)
-    op.execute("ALTER TYPE state RENAME TO state_old")
 
-    state_new = postgresql.ENUM('ACTIVE', 'HISTORICAL', name='state')
+    state_new = postgresql.ENUM('ACTIVE', 'HISTORICAL', name='state_enum')
     state_new.create(bind, checkfirst=True)
+
+    op.execute("ALTER TABLE businesses ALTER COLUMN state TYPE state_enum USING state::text::state_enum")
+    op.execute("ALTER TABLE businesses_version ALTER COLUMN state TYPE state_enum USING state::text::state_enum")
+    if 'businesses_bak' in inspector.get_table_names():
+        op.execute("ALTER TABLE businesses_bak ALTER COLUMN state TYPE state_enum USING state::text::state_enum")
+
+
+def downgrade():
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
 
     op.execute("ALTER TABLE businesses ALTER COLUMN state TYPE state USING state::text::state")
     op.execute("ALTER TABLE businesses_version ALTER COLUMN state TYPE state USING state::text::state")
     if 'businesses_bak' in inspector.get_table_names():
         op.execute("ALTER TABLE businesses_bak ALTER COLUMN state TYPE state USING state::text::state")
 
-    op.execute("DROP TYPE state_old")
-
-
-def downgrade():
-    op.execute("ALTER TYPE state ADD VALUE 'LIQUIDATION'")
