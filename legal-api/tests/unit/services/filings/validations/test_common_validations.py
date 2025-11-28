@@ -41,6 +41,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
     validate_party_name,
+    validate_party_role_firms,
     validate_role_types,
     validate_staff_payment,
 )
@@ -445,5 +446,6 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
 
 def test_validate_party_role_firms(session, test_name, filing_json, filing_type, results):
     """Test that party name validation works as expected for firms."""
-    errors = validate_role_types(filing_json, filing_type)
-    assert errors is results
+    parties = filing_json['filing'][filing_type].get('parties', [])
+    error = validate_party_role_firms(parties)
+    assert error is results 
