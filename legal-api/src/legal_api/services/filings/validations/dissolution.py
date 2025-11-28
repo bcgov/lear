@@ -70,30 +70,10 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
 
-    if flags.is_on('enabled-deeper-permission-action') and business.good_standing is False:
-        if dissolution_type in [DissolutionTypes.ADMINISTRATIVE.value]:
-            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value
-            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
-            error = PermissionService.check_user_permission(required_permission, message=message)
-            if error:
-                return error
-        if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
-            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_FIRM_FILING.value
-            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
-            error = PermissionService.check_user_permission(required_permission, message=message)
-
-        if dissolution_type == DissolutionTypes.VOLUNTARY.value:
-            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value
-            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
-            error = PermissionService.check_user_permission(required_permission, message=message)
-            if error:
-                return error
-        if dissolution_type == DissolutionTypes.INVOLUNTARY.value:
-            required_permission = ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value
-            message = 'Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing.'
-            error = PermissionService.check_user_permission(required_permission, message=message)
-            if error:
-                return error
+    if flags.is_on("enabled-deeper-permission-action") and business.good_standing is False:
+        err = _validate_dissolution_permission(business, dissolution_type, filing_type)
+        if err:
+            return err
         
     err = validate_dissolution_type(dissolution, business.legal_type)
     if err:
@@ -436,3 +416,45 @@ def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Opti
                 "path": "/filing/dissolution/custodialOffice"}]
 
     return None
+
+def _check_dissolution_permission(required_permission: str, dissolution_type: str, filing_type: str) -> Optional[Error]:
+    """Check if the user has the required permission for the dissolution filing."""
+    message = "Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing."
+    return PermissionService.check_user_permission(required_permission, message=message)
+
+def _validate_dissolution_permission( business: Business, dissolution_type: str, filing_type: str) -> Optional[Error]:
+    """Validate dissolution permission based on business and dissolution type."""
+
+    if dissolution_type == DissolutionTypes.ADMINISTRATIVE.value:
+            error = _check_dissolution_permission(
+                ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value,
+                dissolution_type,
+                filing_type
+            )
+            if error:
+                return error
+    if dissolution_type == DissolutionTypes.INVOLUNTARY.value:
+        error = _check_dissolution_permission(
+            ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value,
+            dissolution_type,
+            filing_type
+        )
+        if error:
+            return error
+    if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+        error = _check_dissolution_permission(
+            ListFilingsPermissionsAllowed.DISSOLUTION_FIRM_FILING.value,
+            dissolution_type,
+            filing_type
+        )
+        if error:
+            return error
+    if dissolution_type == DissolutionTypes.VOLUNTARY.value:
+        error = _check_dissolution_permission(
+            ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
+            dissolution_type,
+            filing_type
+        )
+        if error:
+            return error
+    
