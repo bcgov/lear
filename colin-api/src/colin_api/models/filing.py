@@ -1351,7 +1351,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
     # pylint: disable=too-many-locals,too-many-statements,too-many-branches,too-many-nested-blocks;
     @classmethod
-    def add_filing(cls, con, filing: Filing, lear_identifier: str) -> int:
+    def add_filing(cls, con, filing: Filing) -> int:
         """Add new filing to COLIN tables."""
         try:
             if filing.filing_type not in ['agmExtension', 'agmLocationChange', 'alteration',
@@ -1425,15 +1425,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 ):
                     new_corp_type = to_type
                     Business.update_corp_type(cursor=cursor, corp_num=corp_num, corp_type=new_corp_type)
-                    
+
                     # Track early adopters when altering from BEN to BC or CBEN to C
                     if (
                         (
-                            filing.business.corp_type == Business.TypeCodes.BCOMP.value and 
+                            filing.business.corp_type == Business.TypeCodes.BCOMP.value and
                             new_corp_type == Business.TypeCodes.BC_COMP.value
                         ) or
                         (
-                            filing.business.corp_type == Business.TypeCodes.BCOMP_CONTINUE_IN.value and 
+                            filing.business.corp_type == Business.TypeCodes.BCOMP_CONTINUE_IN.value and
                             new_corp_type == Business.TypeCodes.CONTINUE_IN.value
                         )
                     ):
