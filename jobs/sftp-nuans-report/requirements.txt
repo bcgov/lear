@@ -1,7 +1,7 @@
 Flask==2.3.3
 paramiko==3.3.1
 papermill==2.6.0
-pg8000==1.31.4
+pg8000==1.31.5
 pandas==2.3.1
 pysftp==0.2.9
 python-dotenv==1.1.1
