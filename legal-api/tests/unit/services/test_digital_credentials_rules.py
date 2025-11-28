@@ -491,9 +491,10 @@ def test_user_has_filing_party_role_and_user_has_business_party_role_true(app, s
     assert rules.user_has_business_party_role(user, business) is True
 
 
+@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
 @patch('legal_api.services.digital_credentials_rules.requests.get')
 @patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_admin_true(mock_current_app, mock_requests_get, app, session, jwt, rules):
+def test_user_has_account_role_admin_true(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
     """Test user_has_account_role returns True when user has ADMIN role."""
     # Setup mocks
     mock_current_app.config.get.return_value = 'https://auth-api.example.com'
@@ -518,9 +519,10 @@ def test_user_has_account_role_admin_true(mock_current_app, mock_requests_get, a
     )
 
 
+@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
 @patch('legal_api.services.digital_credentials_rules.requests.get')
 @patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_coordinator_true(mock_current_app, mock_requests_get, app, session, jwt, rules):
+def test_user_has_account_role_coordinator_true(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
     """Test user_has_account_role returns True when user has COORDINATOR role."""
     # Setup mocks
     mock_current_app.config.get.return_value = 'https://auth-api.example.com/'  # Test trailing slash handling
@@ -629,9 +631,10 @@ def test_user_has_account_role_exception_false(mock_current_app, mock_requests_g
     assert result is False
 
 
+@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
 @patch('legal_api.services.digital_credentials_rules.requests.get')
 @patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_empty_auth_url_false(mock_current_app, mock_requests_get, app, session, jwt, rules):
+def test_user_has_account_role_empty_auth_url_false(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
     """Test user_has_account_role returns False when AUTH_SVC_URL is empty."""
     # Setup mocks
     mock_current_app.config.get.return_value = ''  # Empty AUTH_SVC_URL
