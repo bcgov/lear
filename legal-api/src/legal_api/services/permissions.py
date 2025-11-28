@@ -25,7 +25,6 @@ from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services import authz, flags
 from legal_api.services.cache import cache
-from legal_api.services.filings.validations.dissolution import DissolutionTypes
 
 
 class ListFilingsPermissionsAllowed(str, Enum):
@@ -122,6 +121,7 @@ class PermissionService:
     def get_filing_permission_mapping(legal_type: str, filing_sub_type: str) -> dict:
         """Return dictionary containing rules for filings are allowed for different roles."""
         def get_dissolution_mapping():
+            from legal_api.services.filings.validations.dissolution import DissolutionTypes
             permission_granted = ""
             dissolution_mapping = {
                 DissolutionTypes.VOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
