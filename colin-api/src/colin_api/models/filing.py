@@ -46,7 +46,6 @@ from colin_api.models import (  # noqa: I001
     ShareObject,  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
-from colin_api.services import flags
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
 
 
@@ -1388,6 +1387,20 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # create new filing
             cls._insert_filing(cursor=cursor, filing=filing, ar_date=ar_date, agm_date=agm_date)
 
+            # Freeze all entities except CP if business exists in lear and
+            if (
+                business['business']['legalType'] != Business.TypeCodes.COOP.value and
+                filing_source == cls.FilingSource.LEAR.value
+            ):
+                Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
+
+            # Track early adopters for new corporations (excluding COOP)
+            if (
+                filing.filing_type in ['incorporationApplication', 'amalgamationApplication', 'continuationIn'] and
+                business['business']['legalType'] != Business.TypeCodes.COOP.value
+            ):
+                Business.insert_corp_early_adopter(cursor=cursor, corp_num=corp_num)
+
             new_corp_type = None
 
             if filing.filing_type == 'amalgamationApplication':
@@ -1412,6 +1425,19 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 ):
                     new_corp_type = to_type
                     Business.update_corp_type(cursor=cursor, corp_num=corp_num, corp_type=new_corp_type)
+                    
+                    # Track early adopters when altering from BEN to BC or CBEN to C
+                    if (
+                        (
+                            filing.business.corp_type == Business.TypeCodes.BCOMP.value and 
+                            new_corp_type == Business.TypeCodes.BC_COMP.value
+                        ) or
+                        (
+                            filing.business.corp_type == Business.TypeCodes.BCOMP_CONTINUE_IN.value and 
+                            new_corp_type == Business.TypeCodes.CONTINUE_IN.value
+                        )
+                    ):
+                        Business.insert_corp_early_adopter(cursor=cursor, corp_num=corp_num)
 
             cls._process_ar(cursor, filing, corp_num, ar_date, filing_source)
             dir_text = cls._process_directors(cursor, filing, business, corp_num)
@@ -1513,30 +1539,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.update_corporation(
                 cursor=cursor, corp_num=corp_num, date=agm_date, annual_report=is_annual_report,
                 last_ar_filed_dt=last_ar_filed_dt)
-
-            is_new_ben = (filing.filing_type in ['incorporationApplication', 'amalgamationApplication'] and
-                          business['business']['legalType'] == Business.TypeCodes.BCOMP.value)
-            is_new_cben = (filing.filing_type == 'continuationIn' and
-                           business['business']['legalType'] == Business.TypeCodes.BCOMP_CONTINUE_IN.value)
-            is_alteration_to_ben_or_cben = (filing.filing_type == 'alteration' and
-                                            new_corp_type in [
-                                                Business.TypeCodes.BCOMP.value,
-                                                Business.TypeCodes.BCOMP_CONTINUE_IN.value,
-                                            ])
-
-            # Freeze all entities except CP if business exists in lear and
-            # 'enable-bc-ccc-ulc' flag is on else just freeze BEN
-            is_frozen_condition = (
-                flags.is_on('enable-bc-ccc-ulc') and
-                business['business']['legalType'] != Business.TypeCodes.COOP.value and
-                filing_source == cls.FilingSource.LEAR.value
-            )
-            current_app.logger.debug(f'Business {lear_identifier}, is_frozen_condition:{is_frozen_condition}')
-
-            is_new_or_altered_ben = is_new_ben or is_new_cben or is_alteration_to_ben_or_cben
-
-            if is_frozen_condition or is_new_or_altered_ben:
-                Business.update_corp_frozen_type(cursor, corp_num, Business.CorpFrozenTypes.COMPANY_FROZEN.value)
 
             # process transition (post restoration transition in COLIN)
             if filing.filing_type == 'transition':

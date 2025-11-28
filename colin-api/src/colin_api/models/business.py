@@ -612,6 +612,25 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             raise err
 
     @classmethod
+    def insert_corp_early_adopter(cls, cursor, corp_num: str):
+        """Insert record into corp_early_adopters table if not exists."""
+        try:
+            cursor.execute(
+                """
+                MERGE INTO corp_early_adopters cea
+                USING (SELECT :corp_num AS corp_num FROM dual) src
+                ON (cea.corp_num = src.corp_num)
+                WHEN NOT MATCHED THEN
+                    INSERT (corp_num, start_date)
+                    VALUES (src.corp_num, SYSDATE)
+                """,
+                corp_num=corp_num
+            )
+        except Exception as err:
+            current_app.logger.error(f'Error inserting into corp_early_adopters for {corp_num}: {err}')
+            raise err
+
+    @classmethod
     def update_corp_frozen_type(cls, cursor, corp_num: str, corp_frozen_type_code: str):
         """Update corp frozen type code in corporations table."""
         try:
