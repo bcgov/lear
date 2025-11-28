@@ -12,26 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
-import datetime
+from datetime import timezone
 import time
 from contextlib import contextmanager, suppress
 import re
 import pytest
+from unittest.mock import patch
 import json
 from http import HTTPStatus
 
 from flask_migrate import Migrate, upgrade
+from ldclient.integrations.test_data import TestData
+from testcontainers.postgres import PostgresContainer
 from sqlalchemy import event, text
-from sqlalchemy.schema import DropConstraint, MetaData
-from unittest import mock
+from sqlalchemy.schema import MetaData
 import requests_mock
-import os
 
 from legal_api import create_app
 from legal_api import jwt as _jwt
+from legal_api.config import TestConfig
 from legal_api.models import db as _db
-
-from . import FROZEN_DATETIME
 
 
 @contextmanager
@@ -46,31 +46,54 @@ def not_raises(exception):
         raise pytest.fail(f'DID RAISE {exception}')
 
 
-# fixture to freeze utcnow to a fixed date-time
 @pytest.fixture
-def freeze_datetime_utcnow(monkeypatch):
-    """Fixture to return a static time for utcnow()."""
-    class _Datetime:
-        @classmethod
-        def utcnow(cls):
-            return FROZEN_DATETIME
+def freeze_datetime_utcnow():
+    """Freeze time for testing.
+    
+    super().now(tz=timezone.utc) is not supported by freezegun.
+    So we mock datetime.utcnow() directly.
+    """
+    @contextmanager
+    def _freeze_time(frozen_datetime):
+        with patch('legal_api.utils.datetime.datetime') as mock_datetime:
+            mock_datetime.utcnow.return_value = frozen_datetime.replace(tzinfo=timezone.utc)
+            yield
+    return _freeze_time
 
-    monkeypatch.setattr(datetime, 'datetime', _Datetime)
+
+@pytest.fixture(scope="session")
+def ld():
+    """LaunchDarkly TestData source."""
+    td = TestData.data_source()
+    with open("flags.json") as file:
+        data = file.read()
+        test_flags: dict[str, dict] = json.loads(data)
+        for flag_name, flag_value in test_flags["flagValues"].items():
+            # NOTE: should check if isinstance dict and if so, apply each variation
+            td.update(td.flag(flag_name).variations(flag_value))
+    yield td
 
 
 @pytest.fixture(scope='session')
-def app():
+def app(ld):
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    options = {
+        'ld_test_data':ld,
+    }
+    _app = create_app("testing", **options)
+
 
     return _app
 
 
 @pytest.fixture(scope='function')
-def app_ctx(event_loop):
+def app_ctx(ld, event_loop):
     # def app_ctx():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    options = {
+        'ld_test_data':ld,
+    }
+    _app = create_app("testing", **options)
     with _app.app_context():
         yield _app
 
@@ -82,9 +105,12 @@ def config(app):
 
 
 @pytest.fixture(scope='function')
-def app_request():
+def app_request(ld):
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    options = {
+        'ld_test_data':ld,
+    }
+    _app = create_app("testing", **options)
 
     return _app
 
