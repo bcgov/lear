@@ -369,7 +369,7 @@ def get_colin_event_id(colin_id=None):
                 return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
             return {"colinId": colin_id_obj.colin_event_id}, HTTPStatus.OK
     except Exception as err:
-        current_app.logger.Error(f"Failed to get last updated colin event id: {err}")
+        current_app.logger.Error(f"Failed to get last updated colin event id: {err!r}")
         raise err
 
     query = db.session.execute(
