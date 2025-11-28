@@ -794,8 +794,8 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
 
     return msg
 
-def validate_role_types(filing_json: dict, filing_type: str) -> list:
-    """Validate party role types."""
+def validate_party_role_firms(filing_json: dict, filing_type: str) -> list:
+    """Validate party role types for firms"""
     parties = filing_json["filing"][filing_type].get("parties", [])
 
     for party in parties:
