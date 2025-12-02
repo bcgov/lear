@@ -24,6 +24,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
+from legal_api.models.party import Party
 from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -793,3 +794,16 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
             })
 
     return msg
+
+def validate_officer_proprietor_replace(business: Business, filing_json: dict, filing_type) -> Optional[str]:
+    """Find party identifier by role type."""
+    parties = filing_json["filing"][filing_type].get("parties", [])
+
+    for party in parties:
+        officer_identifier = party.get("officer", {}).get("identifier")
+        roles = party.get("roles", [])
+        has_matching_role = any(role.get("roleType").lower() == PartyRole.RoleTypes.PROPRIETOR.value for role in roles)
+        existing_proprietor = Party.find_by_identifier(officer_identifier)
+        if business.legal_type == Business.LegalTypes.SOLE_PROP.value and has_matching_role and existing_proprietor == officer_identifier:
+            return False
+    return True
