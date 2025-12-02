@@ -795,7 +795,7 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
 
     return msg
 
-def validate_officer_proprietor_replace(business: Business, filing_json: dict, filing_type) -> Optional[str]:
+def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> Optional[str]:
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
         # Validation only for sole proprietorships
