@@ -806,4 +806,14 @@ def validate_officer_proprietor_replace(business: Business, filing_json: dict, f
         existing_proprietor = Party.find_by_identifier(officer_identifier)
         if business.legal_type == Business.LegalTypes.SOLE_PROP.value and has_matching_role and existing_proprietor == officer_identifier:
             return False
+def validate_party_role_firms(parties: list) -> list:
+    """Validate party role types for firms"""
+
+    for party in parties:
+        roles = party.get("roles", [])
+        for role in roles:
+            role_type = role.get("roleType")
+            if role_type in [PartyRole.RoleTypes.PARTNER.value,
+                             PartyRole.RoleTypes.PROPRIETOR.value]:
+                return False
     return True

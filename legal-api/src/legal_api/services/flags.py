@@ -15,34 +15,15 @@
 import logging
 from typing import Any, Optional
 
+from flask import Flask
+from ldclient import LDClient
 from ldclient import get as ldclient_get
 from ldclient import set_config as ldclient_set_config
 from ldclient.config import Config
 from ldclient.context import Context
-from ldclient.impl.integrations.files.file_data_source import _FileDataSource
-from ldclient.interfaces import UpdateProcessor
+from ldclient.integrations.test_data import TestData
 
 from legal_api.models import User
-
-
-class FileDataSource(UpdateProcessor):
-    """FileDataStore has been removed, so this provides similar functionality."""
-
-    @classmethod
-    def factory(cls, **kwargs):
-        """Provide a way to use local files as a source of feature flag state.
-
-        .. deprecated:: 6.8.0
-          This module and this implementation class are deprecated and may be changed or removed in the future.
-          Please use :func:`ldclient.integrations.Files.new_data_source()`.
-
-        The keyword arguments are the same as the arguments to :func:`ldclient.integrations.Files.new_data_source()`.
-        """
-        return lambda config, store, ready: _FileDataSource(store, ready,
-                                                            paths=kwargs.get("paths"),
-                                                            auto_update=kwargs.get("auto_update", False),
-                                                            poll_interval=kwargs.get("poll_interval", 1),
-                                                            force_polling=kwargs.get("force_polling", False))
 
 
 class Flags:
@@ -67,8 +48,10 @@ class Flags:
         if app:
             self.init_app(app)
 
-    def init_app(self, app):
-        """Initialize the Feature Flag environment."""
+    def init_app(self, app: Flask, td: TestData = None):
+        """Initialize the Feature Flag environment.
+        Provide TD for TestData.
+        """
         self.app = app
         self.sdk_key = app.config.get("LD_SDK_KEY")
         # Switch to Flask's logger once we have the app.
@@ -76,28 +59,28 @@ class Flags:
 
         self.logger.info("starting feature flags init; has sdk key: %s, env: %s", bool(self.sdk_key), app.env)
 
-        if self.sdk_key or app.env != "production":
-            self.logger.debug("sdk key used: %s", self.sdk_key)
+        if td:
+            client = LDClient(config=Config("testing", update_processor_class=td))
 
-            if app.env == "production":
-                config = Config(sdk_key=self.sdk_key)
-            else:
-                factory = FileDataSource.factory(paths=["flags.json"],
-                                                 auto_update=True)
-                config = Config(sdk_key=self.sdk_key,
-                                update_processor_class=factory,
-                                send_events=False)
-
-            ldclient_set_config(config)
+        elif self.sdk_key:
+            ldclient_set_config(Config(self.sdk_key))
             client = ldclient_get()
 
-            app.extensions["featureflags"] = client
+        try:
+            if client and client.is_initialized():
+                app.extensions["featureflags"] = client
+                app.teardown_appcontext(self.teardown)
+        except Exception as err:
+            app.logger.warning("Issue registering flag service %s", err)
 
     def teardown(self, exception):  # pylint: disable=unused-argument; flask method signature
         """Destroy all objects created by this extension."""
         client = self.app.extensions.get("featureflags") if self.app else None
         if client:
-            client.close()
+            try:
+                client.close()
+            except Exception as err:
+                self.logger.error(f"Unable to close feature flag client: {err!r}", exc_info=True)
 
     def _get_client(self):
         if not self.app:

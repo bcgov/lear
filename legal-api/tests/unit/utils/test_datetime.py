@@ -16,25 +16,24 @@
 from datetime import date, datetime, timezone
 
 import pytest
-from freezegun import freeze_time
 
 
-def test_datetime_utcnow():
+def test_datetime_utcnow(freeze_datetime_utcnow):
     """Assert that datetime.utcnow returns a non-naive datetime object."""
     import legal_api.utils.datetime as _datetime
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
-    with freeze_time(now):
+    with freeze_datetime_utcnow(now):
         d = _datetime.datetime.utcnow()
         assert d == now.replace(tzinfo=timezone.utc)
 
 
-def test_datetime_isoformat():
+def test_datetime_isoformat(freeze_datetime_utcnow):
     """Assert that the isoformat has the tzinfo set to +00:00."""
     import legal_api.utils.datetime as _datetime
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
-    with freeze_time(now):
+    with freeze_datetime_utcnow(now):
         d = _datetime.datetime.utcnow()
         iso = d.isoformat()
         tz = iso[iso.find('+'):]

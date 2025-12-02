@@ -101,12 +101,18 @@ class Endpoints:
                     }
 
                     current_app.logger.warning(
-                        "Non-successful: %s %s -> %s\nRequest headers: %s\nRequest body: %s\nResponse body: %s",
+                        "Non-successful: %s %s -> %s\nRequest headers: %s\nRequest body: %s",
                         request.method,
                         request.path,
                         status,
                         header_info,
                         req_body,
+                    )
+                    current_app.logger.warning(
+                        "Non-successful: %s %s -> %s\nResponse body: %s",
+                        request.method,
+                        request.path,
+                        status,
                         resp_body,
                     )
             except Exception:

@@ -41,6 +41,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
     validate_party_name,
+    validate_party_role_firms,
     validate_staff_payment,
 )
 
@@ -375,3 +376,75 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
         assert expected_errors in [error['error'] for error in errors]
     else:
         assert errors == []
+
+@pytest.mark.parametrize('test_name, filing_json, filing_type, results', [
+    (
+        'partner',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'firstName': 'First',
+                                'lastName': 'Last',
+                                'organizationName': ''
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False
+    ),
+    (
+        'proprietor',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'proprietor'}],
+                            'officer': {
+                                'firstName': 'First',
+                                'lastName': 'Last',
+                                'organizationName': ''
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False
+    ),
+    (
+        'firm with org name',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'firstName': '',
+                                'lastName': '',
+                                'organizationName': 'Firm Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False
+    )
+])
+
+def test_validate_party_role_firms(session, test_name, filing_json, filing_type, results):
+    """Test that party name validation works as expected for firms."""
+    parties = filing_json['filing'][filing_type].get('parties', [])
+    error = validate_party_role_firms(parties)
+    assert error is results 
