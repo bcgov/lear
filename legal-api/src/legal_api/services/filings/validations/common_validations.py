@@ -798,7 +798,8 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
 def validate_officer_proprietor_replace(business: Business, filing_json: dict, filing_type) -> Optional[str]:
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
-        return True
+        # Validation only for sole proprietorships
+        return False 
     
     # Existing proprietor in DB
     existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now().date())
@@ -809,6 +810,7 @@ def validate_officer_proprietor_replace(business: Business, filing_json: dict, f
             break
     
     if not existing_proprietor:
+        # No existing proprietor found, nothing to validate
         return False
     
 
@@ -820,6 +822,7 @@ def validate_officer_proprietor_replace(business: Business, filing_json: dict, f
         has_proprietor_role = any(role.get("roleType").lower() == PartyRole.RoleTypes.PROPRIETOR.value for role in roles)
         if has_proprietor_role and officer_identifier:
             if existing_proprietor and existing_proprietor.identifier != officer_identifier:
+                # Proprietor is being replaced check for respective permissions
                 return True
     return False
 
