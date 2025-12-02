@@ -319,7 +319,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
 -----END RSA PRIVATE KEY-----"""
 
     # Minio variables
-    MINIO_ENDPOINT = "localhost:9000"
+    MINIO_ENDPOINT = "http://dummy-minio-url"
     MINIO_ACCESS_KEY = "minio"
     MINIO_ACCESS_SECRET = "minio123"
     MINIO_BUCKET_BUSINESSES = "businesses"
