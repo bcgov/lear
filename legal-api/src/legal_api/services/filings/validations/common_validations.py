@@ -14,7 +14,7 @@
 """Common validations share through the different filings."""
 import io
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Final, Optional
 
 import pycountry
@@ -793,6 +793,35 @@ def validate_name_translation(filing_json: dict, filing_type: str) -> list:
             })
 
     return msg
+
+def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> Optional[str]:
+    """Validate that sole proprietor is not being replaced with another sole proprietor."""
+    if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
+        # Validation only for sole proprietorships
+        return False 
+    
+    # Existing proprietor in DB
+    existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
+    existing_proprietor = None
+    for role in existing_party_roles:
+        existing_proprietor = role.party
+        break
+    
+    if not existing_proprietor:
+        # No existing proprietor found, nothing to validate
+        return False
+    
+
+    parties = filing_json["filing"][filing_type].get("parties", [])
+
+    for party in parties:
+        officer_identifier = party.get("officer", {}).get("identifier")
+        roles = party.get("roles", [])
+        has_proprietor_role = any(role.get("roleType").lower() == PartyRole.RoleTypes.PROPRIETOR.value for role in roles)
+        if has_proprietor_role and officer_identifier and  existing_proprietor and existing_proprietor.identifier != officer_identifier:
+            # Proprietor is being replaced check for respective permissions
+            return True
+    return False
 
 def validate_party_role_firms(parties: list) -> list:
     """Validate party role types for firms"""
