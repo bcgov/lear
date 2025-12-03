@@ -141,14 +141,6 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
         if party_id:
             party = cls.query.filter_by(id=party_id).one_or_none()
         return party
-    
-    @classmethod
-    def find_by_identifier(cls, identifier: str) -> Party:
-        """Return a party by the identifier."""
-        party = None
-        if identifier:
-            party = cls.query.filter_by(identifier=identifier).first()
-        return party
 
 
 @event.listens_for(Party, "before_insert")

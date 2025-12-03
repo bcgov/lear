@@ -805,9 +805,8 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
     existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
     existing_proprietor = None
     for role in existing_party_roles:
-        if role.role_type == PartyRole.RoleTypes.PROPRIETOR.value:
-            existing_proprietor = role.party
-            break
+        existing_proprietor = role.party
+        break
     
     if not existing_proprietor:
         # No existing proprietor found, nothing to validate
