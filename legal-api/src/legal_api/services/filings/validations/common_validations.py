@@ -14,7 +14,7 @@
 """Common validations share through the different filings."""
 import io
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Final, Optional
 
 import pycountry
@@ -24,7 +24,6 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
-from legal_api.models.party import Party
 from legal_api.services import MinioService, flags, namex
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -819,10 +818,9 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
         officer_identifier = party.get("officer", {}).get("identifier")
         roles = party.get("roles", [])
         has_proprietor_role = any(role.get("roleType").lower() == PartyRole.RoleTypes.PROPRIETOR.value for role in roles)
-        if has_proprietor_role and officer_identifier:
-            if existing_proprietor and existing_proprietor.identifier != officer_identifier:
-                # Proprietor is being replaced check for respective permissions
-                return True
+        if has_proprietor_role and officer_identifier and  existing_proprietor and existing_proprietor.identifier != officer_identifier:
+            # Proprietor is being replaced check for respective permissions
+            return True
     return False
 
 def validate_party_role_firms(parties: list) -> list:
