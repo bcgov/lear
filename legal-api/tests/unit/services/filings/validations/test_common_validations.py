@@ -13,8 +13,11 @@
 # limitations under the License.
 """Test Suite for common validations sharing through the different filings."""
 import copy
+from datetime import datetime
 from unittest.mock import patch
 
+from legal_api.models.party import Party
+from legal_api.models.party_role import PartyRole
 import pytest
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
@@ -23,6 +26,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_REGISTRATION,
+    CHANGE_OF_REGISTRATION_TEMPLATE,
     CONTINUATION_IN,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
@@ -34,8 +38,11 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
+from tests.unit.models import factory_business, factory_party_role
+
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,
+    is_officer_proprietor_replace_valid,
     validate_certify_name,
     validate_certified_by,
     validate_offices_addresses,
@@ -448,3 +455,65 @@ def test_validate_party_role_firms(session, test_name, filing_json, filing_type,
     parties = filing_json['filing'][filing_type].get('parties', [])
     error = validate_party_role_firms(parties)
     assert error is results 
+
+
+@pytest.mark.parametrize('test_name, legal_type, existing_identifier, filing_identifier, expected_result', [
+    (
+        'not sole proprietor',
+        'GP',
+        'BC1234567',
+        'BC7654321',
+        False # no validation needed
+    ),
+    (
+        'no existing proprietor',
+        'SP',
+        None,
+        'BC7654321',
+        False # no existing proprietor to compare
+    ),
+    (
+        'same proprietor',
+        'SP',
+        'BC1234567',
+        'BC1234567',
+        False # same proprietor, valid
+    ),
+    (
+        'different proprietor',
+        'SP',
+        'BC1234567',
+        'BC7654321',
+        True # different proprietor, invalid
+    )
+])
+def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, existing_identifier, filing_identifier, expected_result):
+    """Test that party name validation works as expected for firms."""
+    business = factory_business(identifier='BC1234567', entity_type=legal_type)
+
+    if existing_identifier:
+        party = Party(
+            party_type=Party.PartyTypes.ORGANIZATION.value,
+            organization_name='Proprietor Name',
+            identifier=existing_identifier,
+            )
+        party.save()
+        party_role = PartyRole(
+            role=PartyRole.RoleTypes.PROPRIETOR.value,
+            appointment_date=datetime.now().date(),
+            cessation_date=None,
+            business_id=business.id,
+            party_id=party.id )
+        party_role.save()
+
+
+        filing_json = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
+
+        filing_json['filing']['changeOfRegistration']['parties'][0]['roles'] = [{'roleType': 'proprietor'}]
+
+        if filing_identifier is not None:
+            filing_json['filing']['changeOfRegistration']['parties'][0]['officer']['identifier'] = filing_identifier
+        else:
+            filing_json['filing']['changeOfRegistration']['parties'][0]['officer'].pop(['identifier'], None)
+        result = is_officer_proprietor_replace_valid(business, filing_json, 'changeOfRegistration')
+        assert result is expected_result
