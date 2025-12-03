@@ -733,6 +733,7 @@ def test_continuation_in_court_orders(mocker, app, session,
         court_order['fileNumber'] = file_number
     filing['filing']['continuationIn']['courtOrder'] = court_order
 
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])

@@ -874,7 +874,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -986,7 +986,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
             return None
 
         return Business(identifier=identifier,
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -1028,7 +1028,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
-                        founding_date=datetime.datetime.utcfromtimestamp(0),
+                        founding_date=datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',

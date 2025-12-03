@@ -131,9 +131,9 @@ def test_invalid_nr_conversion(session):
     'test_name, legal_type, filing, expected_msg',
     [
         ('sp_invalid_party', 'SP', copy.deepcopy(SP_CONVERSION),
-         '1 Proprietor and a Completing Party is required.'),
+         '1 Proprietor and a Completing Party are required.'),
         ('gp_invalid_party', 'GP', copy.deepcopy(GP_CONVERSION),
-         '2 Partners and a Completing Party is required.'),
+         '2 Partners and a Completing Party are required.'),
     ]
 )
 def test_conversion_parties_missing_role(session, test_name, legal_type, filing, expected_msg):

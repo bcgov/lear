@@ -110,8 +110,8 @@ def test_valid_firms_correction(mocker, app, session, jwt, test_name, filing):
 @pytest.mark.parametrize(
     'test_name, filing, expected_msg',
     [
-        ('sp_invalid_party', SP_CORRECTION_REGISTRATION_APPLICATION, '1 Proprietor and a Completing Party is required.'),
-        ('gp_invalid_party', GP_CORRECTION_REGISTRATION_APPLICATION, '2 Partners and a Completing Party is required.'),
+        ('sp_invalid_party', SP_CORRECTION_REGISTRATION_APPLICATION, '1 Proprietor and a Completing Party are required.'),
+        ('gp_invalid_party', GP_CORRECTION_REGISTRATION_APPLICATION, '2 Partners and a Completing Party are required.'),
     ]
 )
 def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, filing, expected_msg):
