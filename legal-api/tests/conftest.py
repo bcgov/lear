@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
-from datetime import timezone
+from datetime import datetime, timezone
 import time
 from contextlib import contextmanager, suppress
 import re
@@ -75,14 +75,26 @@ def ld():
     yield td
 
 
+@pytest.fixture(scope="session")
+def monkey_session():
+    """Return a session-wide monkeypatching fixture."""
+    mp = pytest.MonkeyPatch()
+    yield mp
+    mp.undo()
+
+
 @pytest.fixture(scope='session')
-def app(ld):
+def app(monkey_session, ld):
     """Return a session-wide application configured in TEST mode."""
     options = {
         'ld_test_data':ld,
     }
     _app = create_app("testing", **options)
 
+    def _utcnow_side_effect():
+        """super().now(tz=timezone.utc) is not supported by freezegun, so we mock datetime.utcnow() directly."""
+        return datetime.now(tz=timezone.utc)
+    monkey_session.setattr('legal_api.utils.datetime.datetime.utcnow', _utcnow_side_effect)
 
     return _app
 
