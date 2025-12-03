@@ -79,6 +79,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         CHANGEOFDIRECTORS = "changeOfDirectors"
         CHANGEOFNAME = "changeOfName"
         CHANGEOFOFFICERS = "changeOfOfficers"
+        CHANGEOFRECEIVERS = "changeOfReceivers"
         CHANGEOFREGISTRATION = "changeOfRegistration"
         CONSENTAMALGAMATIONOUT = "consentAmalgamationOut"
         CONSENTCONTINUATIONOUT = "consentContinuationOut"
@@ -107,6 +108,10 @@ class Filing:  # pylint: disable=too-many-public-methods
     class FilingTypesCompact(str, Enum):
         """Render enum for filing types with sub-types."""
 
+        CHANGEOFRECEIVERS_AMMEND_RECEIVER = "changeOfReceivers.ammendReceiver"
+        CHANGEOFRECEIVERS_APPOINT_RECEIVER = "changeOfReceivers.appointReceiver"
+        CHANGEOFRECEIVERS_CEASE_RECEIVER = "changeOfReceivers.ceaseReceiver"
+        CHANGEOFRECEIVERS_CHANGE_ADDRESS_RECEIVER = "changeOfReceivers.changeAddressReceiver"
         DISSOLUTION_VOLUNTARY = "dissolution.voluntary"
         DISSOLUTION_ADMINISTRATIVE = "dissolution.administrative"
         DISSOLUTION_INVOLUNTARY = "dissolution.involuntary"
