@@ -172,9 +172,9 @@ def test_validate_certify(session, monkeypatch, certified_value, expected):
         assert result == expected
 
 @patch('legal_api.services.filings.validations.common_validations.PartyRole')
-@patch('legal_api.services.filings.validations.common_validations.Party')
+# @patch('legal_api.services.filings.validations.common_validations.Party')
 @patch('legal_api.services.filings.validations.common_validations.Address')
-def test_find_updated_keys_for_firms(mock_address, mock_party, mock_party_role):
+def test_find_updated_keys_for_firms(mock_address, mock_party_role):
     """Test find updated keys for firms."""
     business = type('Business', (), {'id': 1, 'legal_type': 'GP'})()
 

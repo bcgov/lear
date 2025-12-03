@@ -25,48 +25,21 @@ from legal_api.services import Flags
 def test_flags_init():
     """Ensure that extension can be initialized."""
     app = Flask(__name__)
-    app.env = 'development'
 
     with app.app_context():
-        flags = Flags(app)
+        flags = Flags()
 
     assert flags
-    assert app.extensions['featureflags']
+    assert 'featureflags' not in app.extensions
 
 
-def test_flags_init_app():
+def test_flags_init_app(ld):
     """Ensure that extension can be initialized."""
     app = Flask(__name__)
-    app.env = 'development'
-    app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     with app.app_context():
         flags = Flags()
-        flags.init_app(app)
-    assert app.extensions['featureflags']
-
-
-def test_flags_init_app_production():
-    """Ensure that extension can be initialized."""
-    app = Flask(__name__)
-    app.env = 'production'
-    app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
-
-    with app.app_context():
-        flags = Flags()
-        flags.init_app(app)
-    assert app.extensions['featureflags']
-
-
-def test_flags_init_app_no_key_dev():
-    """Assert that the extension is setup with a KEY, but in non-production mode."""
-    app = Flask(__name__)
-    app.config['LD_SDK_KEY'] = None
-    app.env = 'development'
-
-    with app.app_context():
-        flags = Flags()
-        flags.init_app(app)
+        flags.init_app(app, ld)
     assert app.extensions['featureflags']
 
 
@@ -74,7 +47,6 @@ def test_flags_init_app_no_key_prod():
     """Assert that prod with no key initializes, but does not setup the extension."""
     app = Flask(__name__)
     app.config['LD_SDK_KEY'] = None
-    app.env = 'production'
 
     with app.app_context():
         flags = Flags()
@@ -88,7 +60,6 @@ def test_flags_bool_no_key_prod():
     """Assert that prod with no key initializes, but does not setup the extension."""
     app = Flask(__name__)
     app.config['LD_SDK_KEY'] = None
-    app.env = 'production'
 
     with app.app_context():
         flags = Flags()
@@ -98,15 +69,14 @@ def test_flags_bool_no_key_prod():
     assert not on
 
 
-def test_flags_bool():
+def test_flags_bool(ld):
     """Assert that a boolean (True) is returned, when using the local Flag.json file."""
     app = Flask(__name__)
-    app.env = 'development'
     app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     with app.app_context():
         flags = Flags()
-        flags.init_app(app)
+        flags.init_app(app, ld)
         flag_on = flags.is_on('bool-flag')
 
         assert flag_on
@@ -128,28 +98,14 @@ def test_flags_bool_missing_flag(app):
         app.env = app_env
 
 
-def test_flags_bool_using_current_app():
-    """Assert that a boolean (True) is returned, when using the local Flag.json file."""
-    from legal_api import flags
-    app = Flask(__name__)
-    app.env = 'development'
-
-    with app.app_context():
-        flag_on = flags.is_on('bool-flag')
-
-    assert flag_on
-
-
 @pytest.mark.parametrize('test_name,flag_name,expected', [
     ('boolean flag', 'bool-flag', True),
     ('string flag', 'string-flag', 'a string value'),
     ('integer flag', 'integer-flag', 10),
 ])
-def test_flags_bool_value(test_name, flag_name, expected):
+def test_flags_bool_value(app, test_name, flag_name, expected):
     """Assert that a boolean (True) is returned, when using the local Flag.json file."""
     from legal_api import flags
-    app = Flask(__name__)
-    app.env = 'development'
 
     with app.app_context():
         val = flags.value(flag_name)
@@ -157,10 +113,9 @@ def test_flags_bool_value(test_name, flag_name, expected):
     assert val == expected
 
 
-def test_flag_bool_unique_user():
+def test_flag_bool_unique_user(ld):
     """Assert that a unique user can retrieve a flag, when using the local Flag.json file."""
     app = Flask(__name__)
-    app.env = 'development'
     app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
@@ -169,8 +124,7 @@ def test_flag_bool_unique_user():
     try:
         with app.app_context():
             flags = Flags()
-            flags.init_app(app)
-            app.env = 'development'
+            flags.init_app(app, ld)
             val = flags.value('bool-flag', user)
             flag_on = flags.is_on('bool-flag', user)
 
