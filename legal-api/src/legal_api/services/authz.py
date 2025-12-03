@@ -26,6 +26,7 @@ from urllib3.util.retry import Retry
 
 from flask_jwt_oidc import JwtManager
 from legal_api.models import Business, Filing
+from legal_api.services import flags
 from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
@@ -155,8 +156,7 @@ def get_allowable_filings_dict():
     from legal_api.core.filing import Filing as CoreFiling
 
     filing_types_compact = CoreFiling.FilingTypesCompact
-
-    return {
+    allowable_filings_dict = {
         "staff": {
             Business.State.ACTIVE: {
                 "adminFreeze": {
@@ -228,18 +228,6 @@ def get_allowable_filings_dict():
                         "business": [BusinessBlocker.DEFAULT]
                     }
                 },
-                "appointReceiver": {
-                    "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT]
-                    }
-                },
-                "ceaseReceiver": {
-                    "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT]
-                    }
-                },
                 "changeOfAddress": {
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
@@ -256,6 +244,32 @@ def get_allowable_filings_dict():
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
                         "business": [BusinessBlocker.DEFAULT]
+                    }
+                },
+                "changeOfReceivers": {
+                    "ammendReceiver": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
+                    },
+                    "appointReceiver": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
+                    },
+                    "ceaseReceiver": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
+                    },
+                    "changeAddressReceiver": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
                     }
                 },
                 "changeOfRegistration": {
@@ -582,6 +596,12 @@ def get_allowable_filings_dict():
             Business.State.HISTORICAL: {}
         }
     }
+
+    if not flags.is_on("enable-unloved-filings"):
+        # These ones are only allowed if the flag is on
+        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfReceivers"]
+
+    return allowable_filings_dict
 
 
 def is_allowed(business: Business, # noqa: PLR0913
