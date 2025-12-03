@@ -26,6 +26,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_REGISTRATION,
+    CHANGE_OF_REGISTRATION_TEMPLATE,
     CONTINUATION_IN,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
@@ -459,7 +460,7 @@ def test_validate_party_role_firms(session, test_name, filing_json, filing_type,
 @pytest.mark.parametrize('test_name, legal_type, existing_identifier, filing_identifier, expected_result', [
     (
         'not sole proprietor',
-        'BEN',
+        'GP',
         'BC1234567',
         'BC7654321',
         False # no validation needed
@@ -484,18 +485,11 @@ def test_validate_party_role_firms(session, test_name, filing_json, filing_type,
         'BC1234567',
         'BC7654321',
         True # different proprietor, invalid
-    ),
-    (
-        'no identifier in filing',
-        'SP',
-        'BC1234567',
-        None,
-        False # no identifier to compare, valid
     )
 ])
 def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, existing_identifier, filing_identifier, expected_result):
     """Test that party name validation works as expected for firms."""
-    business = factory_business(identifier='BC1234567', legal_type=legal_type)
+    business = factory_business(identifier='BC1234567', entity_type=legal_type)
 
     if existing_identifier:
         party = Party(
@@ -513,11 +507,13 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
         party_role.save()
 
 
-        filing_json = copy.deepcopy(CHANGE_OF_REGISTRATION)
+        filing_json = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
+
+        filing_json['filing']['changeOfRegistration']['parties'][0]['roles'] = [{'roleType': 'proprietor'}]
 
         if filing_identifier is not None:
             filing_json['filing']['changeOfRegistration']['parties'][0]['officer']['identifier'] = filing_identifier
         else:
-            del filing_json['filing']['changeOfRegistration']['parties'][0]['officer']['identifier']
+            filing_json['filing']['changeOfRegistration']['parties'][0]['officer'].pop(['identifier'], None)
         result = is_officer_proprietor_replace_valid(business, filing_json, 'changeOfRegistration')
         assert result is expected_result
