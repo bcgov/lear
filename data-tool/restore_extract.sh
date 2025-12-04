@@ -20,7 +20,7 @@ PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
 ##############################################################################
 
 # -- Tables to restore ------------------------------------------------------------
-RESTORE=(corp_processing colin_tracking mig_group mig_batch mig_corp_batch mig_corp_account corps_with_third_party email_domain_groups)
+RESTORE=(corp_processing colin_tracking mig_group mig_batch mig_corp_batch mig_corp_account corps_with_third_party email_domain_groups bar_corps)
 
 # -- Runtime options -----------------------------------------------------------
 DUMP="${DUMP}"

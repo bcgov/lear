@@ -6,10 +6,7 @@ select distinct cp.corp_num
 from corporation c
          join event e on c.corp_num = e.corp_num
          join corp_party cp on cp.start_event_id = e.event_id
-         join corp_state cs on cs.corp_num = c.corp_num
 where 1 = 1
-  and cs.end_event_id is null
-  and cs.op_state_type_cd = 'ACT'
   and cp.party_typ_cd = 'OFF'
 WITH NO DATA
 ;
@@ -621,6 +618,7 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(ar_unfiled_over_1yr as boolean) as ar_unfiled_over_1yr,
         CAST(file_cnt_last_2yrs as integer) as file_cnt_last_2yrs,
         CAST(last_file_event_ts as timestamp) as last_file_event_ts,
+        CAST(last_event_ts as timestamp) as last_event_ts,
         event_file_types,
         CAST(has_officers as boolean) as has_officers,
         CAST(has_3rd_party as boolean) as has_3rd_party,
@@ -630,7 +628,14 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(send_ar_ind as boolean) as send_ar_ind,
         address_all_any_bad_count,
         office_all_any_bad_count,
-        party_all_any_bad_count
+        party_all_any_bad_count,
+        CAST(has_bar_filing as boolean) as has_bar_filing,
+        CAST(last_bar_fiscal_year as integer) as last_bar_fiscal_year,
+        CAST(last_bar_filing_date as timestamp) as last_bar_filing_date,
+        CAST(months_since_last_bar_filing as integer) as months_since_last_bar_filing,
+        bar_keycloak_guid,
+        bar_idp_userid,
+        bar_account_id
 FROM (
     SELECT
            LOWER(SPLIT_PART(c.admin_email, '@', 2)) as email_domain,
@@ -683,6 +688,7 @@ FROM (
                AND e.event_timerstamp >= CURRENT_DATE - INTERVAL '2 years'
                THEN 1 ELSE 0 END) AS file_cnt_last_2yrs,
            MAX(CASE WHEN e.event_type_cd = 'FILE' THEN e.event_timerstamp END) AS last_file_event_ts,
+           MAX(e.event_timerstamp) AS last_event_ts,
            STRING_AGG(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ',' ORDER BY e.event_id) AS event_file_types,
            COALESCE(cprt_dir.director_count, 0) AS director_count,
            CASE WHEN cow.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_officers,
@@ -692,7 +698,19 @@ FROM (
            c.send_ar_ind,
            mvaqc.address_all_any_bad_count,
            mvaqc.office_all_any_bad_count,
-           mvaqc.party_all_any_bad_count
+           mvaqc.party_all_any_bad_count,
+           CASE WHEN bc.identifier IS NOT NULL THEN 'Y' ELSE 'N' END AS has_bar_filing,
+           bc.latest_fiscal_year AS last_bar_fiscal_year,
+           bc.last_ar_filing_date AS last_bar_filing_date,
+           CASE
+               WHEN bc.last_ar_filing_date IS NOT NULL THEN
+                   EXTRACT(MONTH FROM AGE(CURRENT_DATE::TIMESTAMP, bc.last_ar_filing_date::TIMESTAMP)) +
+                   EXTRACT(YEAR FROM AGE(CURRENT_DATE::TIMESTAMP, bc.last_ar_filing_date::TIMESTAMP)) * 12
+               ELSE NULL
+           END AS months_since_last_bar_filing,
+           bc.sub as bar_keycloak_guid,
+           bc.idp_userid as bar_idp_userid,
+           bc.payment_account as bar_account_id
     FROM event e
     JOIN corporation c ON c.corp_num = e.corp_num
     INNER JOIN corp_state cs
@@ -715,6 +733,7 @@ FROM (
     ) cprt_dir ON cprt_dir.corp_num = c.corp_num
     LEFT OUTER JOIN mv_admin_email_count aec ON c.admin_email = aec.admin_email
     LEFT OUTER JOIN mv_addr_quality_by_corp mvaqc ON c.corp_num = mvaqc.corp_num
+    LEFT OUTER JOIN bar_corps bc ON c.corp_num = bc.identifier
     WHERE 1 = 1
     GROUP BY e.corp_num, cn.corp_name, c.corp_type_cd, c.corp_frozen_type_cd, c.recognition_dts, c.last_ar_filed_dt,
              LOWER(SPLIT_PART(c.admin_email, '@', 2)), c.admin_email, cow.corp_num,
@@ -730,7 +749,8 @@ FROM (
            mvaqc.party_all_any_bad_count,
            mvaqc.party_all_stub_count,
            mvaqc.party_all_any_bad_key_fields_count,
-           mvaqc.party_all_null_count
+           mvaqc.party_all_null_count,
+           bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account
 ) tblFe
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
 where 1=1
