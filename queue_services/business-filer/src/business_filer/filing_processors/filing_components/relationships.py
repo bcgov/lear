@@ -117,14 +117,17 @@ def _str_to_upper(str: str | None) -> str:
 
 
 def create_relationsips(relationships: list[dict], business: Business, filing: Filing) -> list | None:
-    """Create new the party and party roles for a business.
+    """Create new party and party roles for a business.
 
     Assumption: The structure has already been validated, upon submission.
 
     Other errors are recorded and will be managed out of band.
+    Relationships with existing records will be ignored.
     """
     err = []
 
+    # Only create new records for relationships without an existing id
+    relationships = [relationship for relationship in relationships if not relationship_info.get("entity").get("identifier")]
     if relationships:
         try:
             for relationship_info in relationships:
@@ -160,12 +163,21 @@ def cease_relationships(
     
     Assumption: The structure has already been validated, upon submission.
     """
+    def has_ceased_role(roles: list[dict]):
+        return any([
+            ceased_role for ceased_role in roles
+            if ceased_role.get("roleType") == role.value and
+            ceased_role.get("roleType").get("cessationDate")
+        ])
     cease_party_ids = [
         _str_to_int(relationship["entity"]["identifier"])
         for relationship in relationships
-        if relationship.get("entity", {}).get("identifier") is not None
+        # Only include existing relationships with a cessation date set for the given role type
+        if relationship.get("entity", {}).get("identifier") is not None and
+        # NOTE: cessationDate must be set in the role of the submission, but it will be overriden below by the date_time
+        has_ceased_role(relationship.get("roles", []), role)
     ]
-    party_roles = PartyRole.get_party_roles(business.id, date_time.date(), role.value)
+    party_roles = PartyRole.get_party_roles(business.id, date_time.date())
     for party_role in party_roles:
         if party_role.party_id in cease_party_ids:
             party_role.cessation_date = date_time
