@@ -383,9 +383,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 self._format_address(filing["completingParty"]["mailingAddress"])
 
     def _set_registrar_info(self, filing):
-        if filing.get("annualReport"):
+        if self._filing.filing_type in ["annualReport", "changeOfDirectors"]:
             # effective_date in annualReport will be ar_date or agm_date, which could be in past.
-            filing["registrarInfo"] = {**RegistrarInfo.get_registrar_info(self._filing.filing_date)}
+            # effective_date in changeOfDirectors could be in past.
+            filing["registrarInfo"] = {**RegistrarInfo.get_registrar_info(
+                self._filing.payment_completion_date or self._filing.filing_date)}
         else:
             filing["registrarInfo"] = {**RegistrarInfo.get_registrar_info(self._filing.effective_date)}
 
@@ -466,7 +468,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if filing.get("correction"):
             original_filing = Filing.find_by_id(filing.get("correction").get("correctedFilingId"))
-            original_filing_datetime = LegislationDatetime.as_legislation_timezone(original_filing.filing_date)
+            original_filing_datetime = LegislationDatetime.as_legislation_timezone(
+                original_filing.payment_completion_date or original_filing.filing_date)
             filing["original_filing_date_time"] = LegislationDatetime.format_as_report_string(original_filing_datetime)
         filing["report_date_time"] = LegislationDatetime.format_as_report_string(self._report_date_time)
         filing["report_date"] = self._report_date_time.strftime(OUTPUT_DATE_FORMAT)
@@ -639,7 +642,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_type == "correction":
             from_legal_name = meta_data.get("correction", {}).get("fromLegalName")
             to_legal_name = meta_data.get("correction", {}).get("toLegalName")
-            corrected_on = LegislationDatetime.as_legislation_timezone(self._filing.filing_date)
+            corrected_on = LegislationDatetime.as_legislation_timezone(
+                self._filing.payment_completion_date or self._filing.filing_date)
             filing["correctedOn"] = corrected_on.strftime(OUTPUT_DATE_FORMAT)
         if self._filing.filing_type == "specialResolution" and "changeOfName" in meta_data.get("legalFilings", []):
             from_legal_name = meta_data.get("changeOfName", {}).get("fromLegalName")

@@ -448,7 +448,7 @@ class BusinessDocument:
                 filing_changes = filing_meta.get(filing.filing_type, {})
                 if filing.filing_type == "alteration":
                     change_info = {}
-                    change_info["filingDateTime"] = filing.filing_date.isoformat()
+                    change_info["filingDateTime"] = (filing.payment_completion_date or filing.filing_date).isoformat()
                     if filing_changes.get("fromLegalType") != filing_changes.get("toLegalType"):
                         change_info["fromLegalType"] = BusinessDocument.\
                             _get_legal_type_description(filing_changes["fromLegalType"])
@@ -469,7 +469,8 @@ class BusinessDocument:
                     name_change_info = {}
                     name_change_info["fromLegalName"] = filing_changes.get("fromLegalName", "Not Available")
                     name_change_info["toLegalName"] = filing_changes.get("toLegalName", "Not Available")
-                    name_change_info["filingDateTime"] = filing.filing_date.isoformat()
+                    name_change_info["filingDateTime"] = (
+                        filing.payment_completion_date or filing.filing_date).isoformat()
                     name_changes.append(name_change_info)
                 elif filing_meta.get("changeOfName"):  # For compound filing like CP special resolution
                     name_change_info = {}
@@ -477,7 +478,8 @@ class BusinessDocument:
                                                                                             "Not Available")
                     name_change_info["toLegalName"] = filing_meta.get("changeOfName").get("toLegalName",
                                                                                           "Not Available")
-                    name_change_info["filingDateTime"] = filing.filing_date.isoformat()
+                    name_change_info["filingDateTime"] = (
+                        filing.payment_completion_date or filing.filing_date).isoformat()
                     name_changes.append(name_change_info)
 
         # get name change info from conversion filing
@@ -488,7 +490,7 @@ class BusinessDocument:
                                                                                     "Not Available")
             name_change_info["toLegalName"] = filing_meta.get("changeOfName").get("toLegalName",
                                                                                   "Not Available")
-            name_change_info["filingDateTime"] = filing.filing_date.isoformat()
+            name_change_info["filingDateTime"] = (filing.payment_completion_date or filing.filing_date).isoformat()
             name_changes.append(name_change_info)
 
         business["nameChanges"] = name_changes
@@ -507,7 +509,7 @@ class BusinessDocument:
 
         filing_info["filingType"] = filing_type
         filing_info["filingSubType"] = filing_sub_type
-        filing_info["filingDateTime"] = filing.filing_date.isoformat()
+        filing_info["filingDateTime"] = (filing.payment_completion_date or filing.filing_date).isoformat()
         filing_info["effectiveDateTime"] = filing.effective_date.isoformat()
 
         if filing_type == "dissolution":
@@ -635,9 +637,11 @@ class BusinessDocument:
     def _set_liquidation_details(self, business: dict):
         """Set partial liquidation filing data."""
         liquidation_info = {}
-        liquidation = Filing.get_filings_by_types(self._business.id, ["voluntaryLiquidation"])
-        if liquidation:
-            liquidation_info["filingDateTime"] = liquidation[0].filing_date.isoformat()
+        liquidations = Filing.get_filings_by_types(self._business.id, ["voluntaryLiquidation"])
+        if liquidations:
+            liquidation = liquidations[0]
+            liquidation_info["filingDateTime"] = (
+                liquidation.payment_completion_date or liquidation.filing_date).isoformat()
             business["business"]["state"] = "LIQUIDATION"
             if self._epoch_filing_date and liquidation[0].effective_date < self._epoch_filing_date:
                 liquidation_info["custodian"] = "Not Available"
