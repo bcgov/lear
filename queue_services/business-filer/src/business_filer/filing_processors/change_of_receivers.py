@@ -41,29 +41,19 @@ from business_filer.filing_processors.filing_components.relationships import cea
 
 def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfReceivers onto the business model objects."""
-    ammend_receiver_filing = filing.get("changeOfReceivers", {}).get("ammendReceiver", {})
-    appoint_receiver_filing = filing.get("changeOfReceivers", {}).get("appointReceiver", {})
-    cease_receiver_filing = filing.get("changeOfReceivers", {}).get("ceaseReceiver", {})
-    change_address_receiver_filing = filing.get("changeOfReceivers", {}).get("changeAddressReceiver", {})
-
+    relationships = filing.get("relationships")
     # TODO: maybe need to db.session.add parties?
-    if ammend_parties := ammend_receiver_filing.get("relationships"):
-        appointed_parties = [party for party in ammend_parties if "ADDED" in party["actions"]]
-        ceased_parties = [party for party in ammend_parties if "REMOVED" in party["actions"]]
-        change_address_parties = [party for party in ammend_parties if "ADDRESS_CHANGED" in party["actions"]]
-        info_changed_entities = [party["entity"] for party in ammend_parties
-                                      if any(action in party["actions"] for action in ["EMAIL_CHANGED", "NAME_CHANGED"])]
+    if filing_rec._filing_sub_type == "ammendReceiver":
+        create_relationsips(relationships, business, filing_rec)
+        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
+        update_relationship_addresses(relationships)
+        update_entity_info(relationships)
 
-        create_relationsips(appointed_parties, business, filing_rec)
-        cease_relationships(ceased_parties, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
-        update_relationship_addresses(change_address_parties)
-        update_entity_info(info_changed_entities)
-
-    if appointed_parties := appoint_receiver_filing.get("relationships"):
-        create_relationsips(appointed_parties, business, filing_rec)
+    elif filing_rec._filing_sub_type == "appointReceiver":
+        create_relationsips(relationships, business, filing_rec)
     
-    if ceased_parties := cease_receiver_filing.get("relationships"):
-        cease_relationships(ceased_parties, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
+    elif filing_rec._filing_sub_type == "ceaseReceiver":
+        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
     
-    if change_address_parties := change_address_receiver_filing.get("relationships"):
-        update_relationship_addresses(change_address_parties)
+    elif filing_rec._filing_sub_type == "changeAddressReceiver":
+        update_relationship_addresses(relationships)
