@@ -132,7 +132,7 @@ def set_correction_flags(filing_json, filing: Filing):
     if filing.meta_data.get("commentOnly", False):
         return
 
-    if filing.meta_data.get("toLegalName"):
+    if filing.meta_data.get("correction", {}).get("toLegalName"):
         filing_json["filing"]["correction"]["nameChanged"] = True
 
     if has_alias_changed(filing):
