@@ -966,6 +966,19 @@ create table if not exists corps_with_third_party
 alter table corps_with_third_party
     owner to postgres;
 
+create table if not exists bar_corps
+(
+    identifier          varchar,
+    latest_fiscal_year  integer,
+    last_ar_filing_date timestamp with time zone,
+    sub                 varchar(36),
+    idp_userid          varchar(256),
+    payment_account     integer
+);
+
+alter table bar_corps
+    owner to postgres;
+
 
 -- helper so that `is_blank(text)` returns TRUE for '' (but NULL stays NULL)
 create or replace function is_blank(t text)
