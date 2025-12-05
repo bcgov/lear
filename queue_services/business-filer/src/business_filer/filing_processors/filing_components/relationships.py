@@ -38,9 +38,7 @@ import datetime
 
 from business_model.models import Address, Business, Filing, Party, PartyRole
 
-from business_filer.filing_processors.filing_components import create_address, create_party, create_role, update_address
-
-
+from business_filer.filing_processors.filing_components import create_address, update_address
 
 RELATIONSHIP_ROLE_CONVERTER = {
     "custodian": PartyRole.RoleTypes.CUSTODIAN.value,
@@ -159,17 +157,19 @@ def cease_relationships(
     relationships: dict,
     business: Business,
     role: PartyRole.RoleTypes,
-    date_time = datetime.datetime.now(datetime.UTC)):
+    date_time: datetime.datetime | None = None):
     """Cease the party role types for the given parties for a business.
     
     Assumption: The structure has already been validated, upon submission.
     """
+    date_time = date_time or datetime.datetime.now(datetime.UTC)
+
     def has_ceased_role(roles: list[dict]):
-        return any([
+        return any(
             ceased_role for ceased_role in roles
             if ceased_role.get("roleType") == role.value and
             ceased_role.get("cessationDate")
-        ])
+        )
     cease_party_ids = [
         _str_to_int(relationship["entity"]["identifier"])
         for relationship in relationships

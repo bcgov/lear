@@ -37,7 +37,12 @@ import copy
 from business_model.models import Business, Filing, PartyRole
 
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components.relationships import cease_relationships, create_relationsips, update_relationship_addresses, update_relationship_entity_info
+from business_filer.filing_processors.filing_components.relationships import (
+    cease_relationships,
+    create_relationsips,
+    update_relationship_addresses,
+    update_relationship_entity_info,
+)
 
 
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
