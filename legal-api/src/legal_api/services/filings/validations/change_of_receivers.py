@@ -43,12 +43,13 @@ from legal_api.services.filings.validations.common_validations import validate_p
 def validate(business: Business, filing_json: dict) -> Optional[Error]:
     """Validate the Appoint Receiver filing."""
     filing_type = "changeOfReceivers"
-    filing_sub_type = filing_json["filiing"]["changeOfReceivers"]["type"]
+    filing_sub_type = filing_json["filing"][filing_type]["type"]
+
     msg = []
     if filing_sub_type in ["appointReceiver", "changeAddressReceiver", "ammendReceiver"]:
         msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
     elif filing_sub_type == "ceaseReceiver":
-        msg.extend(validate_ceased_relationships(business, filing_json["filiing"]["changeOfReceivers"]["relationships"]))
+        msg.extend(validate_ceased_relationships(business, filing_json["filing"][filing_type]["relationships"]))
     return msg
 
 def validate_ceased_relationships(business: Business, ceased_relationships: list[dict]) -> list:
