@@ -713,6 +713,11 @@ def test_get_could_file(session, client, jwt):
             "name": "changeOfOfficers"
         },
         {
+            "displayName": "Ammend Receiver Information",
+            "name": "changeOfReceivers",
+            "type": "ammendReceiver"
+        },
+        {
             "displayName": "Notice of Appointment of Receiver or Receiver Manager",
             "name": "changeOfReceivers",
             "type": "appointReceiver"
@@ -726,11 +731,6 @@ def test_get_could_file(session, client, jwt):
             "displayName": "Notice of Receiver Change of Address Filing",
             "name": "changeOfReceivers",
             "type": "changeAddressReceiver"
-        },
-        {
-            "displayName": "Ammend Receiver Information",
-            "name": "changeOfReceivers",
-            "type": "ammendReceiver"
         },
         {
             "displayName": "6-Month Consent to Amalgamate Out",
