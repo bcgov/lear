@@ -30,12 +30,11 @@ from .alteration import validate as alteration_validate
 from .amalgamation_application import validate as amalgamation_application_validate
 from .amalgamation_out import validate as amalgamation_out_validate
 from .annual_report import validate as annual_report_validate
-from .appoint_receiver import validate as appoint_receiver_validate
-from .cease_receiver import validate as cease_receiver_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
 from .change_of_name import validate as con_validate
 from .change_of_officers import validate as coo_validate
+from .change_of_receivers import validate as cor_validate
 from .change_of_registration import validate as change_of_registration_validate
 from .common_validations import validate_certified_by
 from .consent_amalgamation_out import validate as consent_amalgamation_out_validate
@@ -156,6 +155,9 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
                 elif k == Filing.FILINGS["changeOfOfficers"].get("name"):
                     err = coo_validate(business, filing_json)
 
+                elif k == Filing.FILINGS["changeOfReceivers"].get("name"):
+                    err = cor_validate(business, filing_json)
+
                 elif k == Filing.FILINGS["dissolution"].get("name"):
                     err = dissolution_validate(business, filing_json)
 
@@ -230,12 +232,6 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
 
                 elif k == Filing.FILINGS["transparencyRegister"].get("name"):
                     err = transparency_register_validate(filing_json)  # pylint: disable=assignment-from-none
-
-                elif k == Filing.FILINGS["appointReceiver"].get("name"):
-                    err = appoint_receiver_validate(filing_json)  # pylint: disable=assignment-from-none
-
-                elif k == Filing.FILINGS["ceaseReceiver"].get("name"):
-                    err = cease_receiver_validate(business, filing_json)  # pylint: disable=assignment-from-none
 
                 if err:
                     return err

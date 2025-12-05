@@ -51,12 +51,11 @@ from business_filer.filing_processors import (
     amalgamation_application,
     amalgamation_out,
     annual_report,
-    appoint_receiver,
-    cease_receiver,
     change_of_address,
     change_of_directors,
     change_of_name,
     change_of_officers,
+    change_of_receivers,
     change_of_registration,
     consent_amalgamation_out,
     consent_continuation_out,
@@ -117,7 +116,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
     # convenience flag to set that the envelope is a correction
     is_correction = filing_submission.filing_type == FilingTypes.CORRECTION
-
     if legal_filings := filing_submission.legal_filings():
         transaction_id = VersioningProxy.get_transaction_id(db.session())
 
@@ -135,7 +133,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
         for filing in legal_filings:
             filing_type = next(iter(filing))
-
             match filing_type:
                 case "adminFreeze":
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
@@ -164,12 +161,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     current_app.logger.debug("enable-involuntary-dissolution flag on: %s", flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
-                case "appointReceiver":
-                    appoint_receiver.process(business, filing, filing_submission, filing_meta)
- 
-                case "ceaseReceiver":
-                    cease_receiver.process(business, filing, filing_submission, filing_meta)
-
                 case "changeOfAddress":
                     flag_on = Flags.is_on("enable-involuntary-dissolution")
                     change_of_address.process(business, filing, filing_meta, flag_on)
@@ -182,6 +173,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
                 case "changeOfOfficers":
                     change_of_officers.process(business, filing_submission, filing_meta)
+                
+                case "changeOfReceivers":
+                    change_of_receivers.process(business, filing_submission, filing_meta)
 
                 case "changeOfRegistration":
                     change_of_registration.process(business, filing_submission, filing, filing_meta)
