@@ -32,9 +32,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Change of Receivers filing."""
-from typing import Optional
-
 from datetime import datetime, timezone
+from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
