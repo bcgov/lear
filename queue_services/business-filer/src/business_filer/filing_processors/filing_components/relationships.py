@@ -97,6 +97,9 @@ def _create_role(party: Party, role_info: dict) -> PartyRole:
         cessation_date=role_info["cessationDate"],
         party=party
     )
+    if role_class := role_info.get("roleClass"):
+        party_role.party_class_type = role_class
+
     return party_role
 
 

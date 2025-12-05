@@ -53,7 +53,7 @@ from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
-from tests.unit.services.utils import create_business, helper_create_jwt
+from tests.unit.services.utils import create_business, create_header, helper_create_jwt
 
 
 def test_jwt_manager_initialized(jwt):
