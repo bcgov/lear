@@ -26,12 +26,12 @@ from urllib3.util.retry import Retry
 
 from flask_jwt_oidc import JwtManager
 from legal_api.models import Business, Filing
-from legal_api.services.flags import Flags
 from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
+from legal_api.services.flags import Flags
 from legal_api.services.warnings.business.business_checks import WarningType
 
 SYSTEM_ROLE = "system"
