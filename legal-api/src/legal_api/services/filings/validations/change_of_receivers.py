@@ -31,16 +31,40 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Validation for the Appoint Receiver filing."""
+"""Validation for the Change of Receivers filing."""
 from typing import Optional
 
+from datetime import datetime, timezone
+
 from legal_api.errors import Error
+from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import validate_parties_addresses
 
 
-def validate(filing_json: dict) -> Optional[Error]:
+def validate(business: Business, filing_json: dict) -> Optional[Error]:
     """Validate the Appoint Receiver filing."""
-    filing_type = "appointReceiver"
+    filing_type = "changeOfReceivers"
+    filing_sub_type = filing_json["filiing"]["changeOfReceivers"]["type"]
     msg = []
-    msg.extend(validate_parties_addresses(filing_json, filing_type))
+    if filing_sub_type in ["appointReceiver", "changeAddressReceiver", "ammendReceiver"]:
+        msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
+    elif filing_sub_type == "ceaseReceiver":
+        msg.extend(validate_ceased_relationships(business, filing_json["filiing"]["changeOfReceivers"]["relationships"]))
+    return msg
+
+def validate_ceased_relationships(business: Business, ceased_relationships: list[dict]) -> list:
+    """Validate party."""
+    msg = []
+
+    # get Receivers for the business
+    receivers = PartyRole.get_party_roles(business.id,
+                                          datetime.now(tz=timezone.utc).date(),
+                                          PartyRole.RoleTypes.RECEIVER.value)
+    receiver_party_ids = [receiver_party_role.party_id for receiver_party_role in receivers]
+
+    # Check if party is a valid party of receiver role
+    for relationship in ceased_relationships:
+        if relationship.get("entity").get("identifier") not in receiver_party_ids:
+            msg.append({"error": "Must be a valid Receiver party.", "path": "/filing/ceaseReceiver/parties"})
+
     return msg
