@@ -21,10 +21,10 @@ from legal_api.models.party_role import PartyRole
 import pytest
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
-    APPOINT_RECEIVER,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_OFFICERS,
+    CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
     CHANGE_OF_REGISTRATION_TEMPLATE,
     CONTINUATION_IN,
@@ -105,9 +105,9 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
 
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'parties'),
-    ('appointReceiver', APPOINT_RECEIVER, 'parties'),
     ('changeOfDirectors', CHANGE_OF_DIRECTORS, 'directors'),
     ('changeOfOfficers', CHANGE_OF_OFFICERS, 'relationships'),
+    ('changeOfReceivers', CHANGE_OF_RECEIVERS, 'relationships'),
     ('changeOfRegistration', CHANGE_OF_REGISTRATION, 'parties'),
     ('continuationIn', CONTINUATION_IN, 'parties'),
     ('conversion', FIRMS_CONVERSION, 'parties'),

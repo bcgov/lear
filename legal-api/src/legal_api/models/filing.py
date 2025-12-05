@@ -261,15 +261,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "ammendReceiver": {
                 "name": "ammendReceiver",
                 "title": "Ammend Receiver Filing",
-                "displayName": "Ammend Receiver",
+                "displayName": "Ammend Receiver Information",
                 "codes": {
-                    # TODO: TBD
+                    # FUTURE: this will change
+                    "BEN": "NOCRM",
+                    "BC": "NOCRM",
+                    "ULC": "NOCRM",
+                    "CC": "NOCRM",
+                    "CBEN": "NOCRM",
+                    "C": "NOCRM",
+                    "CUL": "NOCRM",
+                    "CCC": "NOCRM"
                 }
             },
             "appointReceiver": {
                 "name": "appointReceiver",
-                "title": "Appoint Receiver Filing",
-                "displayName": "Appoint Receiver",
+                "title": "Notice of Appointment of Receiver or Receiver Manager",
+                "displayName": "Notice of Appointment of Receiver or Receiver Manager",
                 "codes": {
                     "BEN": "NOARM",
                     "BC": "NOARM",
@@ -283,8 +291,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             "ceaseReceiver": {
                 "name": "ceaseReceiver",
-                "title": "Cease Receiver Filing",
-                "displayName": "Cease Receiver",
+                "title": "Notice of Ceasing to Act as Receiver or Receiver Manager",
+                "displayName": "Notice of Ceasing to Act as Receiver or Receiver Manager",
                 "codes": {
                     "BEN": "NOCER",
                     "BC": "NOCER",
@@ -299,9 +307,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "changeAddressReceiver": {
                 "name": "changeAddressReceiver",
                 "title": "Notice of Receiver Change of Address Filing",
-                "displayName": "Notice of Receiver Change of Address",
+                "displayName": "Notice of Receiver Change of Address Filing",
                 "codes": {
-                    # TODO: TBD
+                    "BEN": "NOCRM",
+                    "BC": "NOCRM",
+                    "ULC": "NOCRM",
+                    "CC": "NOCRM",
+                    "CBEN": "NOCRM",
+                    "C": "NOCRM",
+                    "CUL": "NOCRM",
+                    "CCC": "NOCRM"
                 }
             },
         },

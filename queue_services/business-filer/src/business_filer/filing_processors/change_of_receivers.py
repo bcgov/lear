@@ -32,28 +32,29 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for change of receivers filings."""
+import copy
 
 from business_model.models import Business, Filing, PartyRole
 
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components.relationships import cease_relationships, create_relationsips, update_entity_info, update_relationship_addresses
+from business_filer.filing_processors.filing_components.relationships import cease_relationships, create_relationsips, update_relationship_addresses, update_relationship_entity_info
 
 
-def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfReceivers onto the business model objects."""
-    relationships = filing.get("relationships")
-    # TODO: maybe need to db.session.add parties?
-    if filing_rec._filing_sub_type == "ammendReceiver":
+    filing_json = copy.deepcopy(filing_rec.filing_json)
+    relationships = filing_json["filing"]["changeOfReceivers"].get("relationships")
+    if filing_rec.filing_sub_type == "ammendReceiver":
         create_relationsips(relationships, business, filing_rec)
         cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
         update_relationship_addresses(relationships)
-        update_entity_info(relationships)
+        update_relationship_entity_info(relationships)
 
-    elif filing_rec._filing_sub_type == "appointReceiver":
+    elif filing_rec.filing_sub_type == "appointReceiver":
         create_relationsips(relationships, business, filing_rec)
     
-    elif filing_rec._filing_sub_type == "ceaseReceiver":
+    elif filing_rec.filing_sub_type == "ceaseReceiver":
         cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
     
-    elif filing_rec._filing_sub_type == "changeAddressReceiver":
+    elif filing_rec.filing_sub_type == "changeAddressReceiver":
         update_relationship_addresses(relationships)

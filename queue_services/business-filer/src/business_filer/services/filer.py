@@ -99,15 +99,16 @@ def get_filing_types(legal_filings: dict):
 
 def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
     """Render the filings contained in the submission."""
+    print('process_filing')
     if not (filing_submission := Filing.find_by_id(filing_message.filing_identifier)):
         current_app.logger.error(f"No filing found for: {filing_message}")
         raise DefaultError(error_text=f"filing not found for {filing_message.filing_identifier}")
-
+    print('process_filing 1')
     if filing_submission.status in [Filing.Status.COMPLETED, Filing.Status.WITHDRAWN]:
         current_app.logger.warning("QueueFiler: Attempting to reprocess business.id=%s, filing.id=%s filing=%s",
                                     filing_submission.business_id, filing_submission.id, filing_message)
         return None, None
-
+    print('process_filing 2')
     if filing_submission.withdrawal_pending:
         # TODO: set this better
         current_app.logger.warning("QueueFiler: NoW pending for this filing business.id=%s, filing.id=%s filing=%s",
@@ -116,8 +117,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
     # convenience flag to set that the envelope is a correction
     is_correction = filing_submission.filing_type == FilingTypes.CORRECTION
-
+    print('process_filing 3')
     if legal_filings := filing_submission.legal_filings():
+        print('process_filing 4')
         transaction_id = VersioningProxy.get_transaction_id(db.session())
 
         business = Business.find_by_internal_id(filing_submission.business_id)
@@ -132,9 +134,10 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         if is_correction:
             filing_meta.correction = {}
 
+        print('process_filing 5')
         for filing in legal_filings:
             filing_type = next(iter(filing))
-
+            print(f'process_filing {filing_type}')
             match filing_type:
                 case "adminFreeze":
                     admin_freeze.process(business, filing, filing_submission, filing_meta)
@@ -163,9 +166,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     current_app.logger.debug("enable-involuntary-dissolution flag on: %s", flag_on)
                     annual_report.process(business, filing, filing_meta, flag_on)
 
-                case "changeOfReceivers":
-                    change_of_receivers.process(business, filing, filing_submission, filing_meta)
-
                 case "changeOfAddress":
                     flag_on = Flags.is_on("enable-involuntary-dissolution")
                     change_of_address.process(business, filing, filing_meta, flag_on)
@@ -178,6 +178,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
                 case "changeOfOfficers":
                     change_of_officers.process(business, filing_submission, filing_meta)
+                
+                case "changeOfReceivers":
+                    change_of_receivers.process(business, filing_submission, filing_meta)
 
                 case "changeOfRegistration":
                     change_of_registration.process(business, filing_submission, filing, filing_meta)

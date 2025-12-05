@@ -34,7 +34,7 @@
 """Manages the parties and party role filing processing using the relationships schema."""
 from __future__ import annotations
 
-from datetime import datetime
+import datetime
 
 from business_model.models import Address, Business, Filing, Party, PartyRole
 
@@ -64,8 +64,9 @@ RELATIONSHIP_ROLE_CONVERTER = {
 }
 
 
-def _create_party(entity: dict):
+def _create_party(relationship: dict):
     """Create a new party."""
+    entity = relationship.get("entity", {})
     org_name = _str_to_upper(entity.get("businessName", ""))
     party_type = Party.PartyTypes.ORGANIZATION.value if org_name else Party.PartyTypes.PERSON.value
     party = Party(
@@ -80,11 +81,11 @@ def _create_party(entity: dict):
     )
 
     # add addresses to party
-    if entity.get("deliveryAddress"):
-        address = create_address(entity["deliveryAddress"], Address.DELIVERY)
+    if relationship.get("deliveryAddress"):
+        address = create_address(relationship["deliveryAddress"], Address.DELIVERY)
         party.delivery_address = address
-    if entity.get("mailingAddress"):
-        mailing_address = create_address(entity["mailingAddress"], Address.MAILING)
+    if relationship.get("mailingAddress"):
+        mailing_address = create_address(relationship["mailingAddress"], Address.MAILING)
         party.mailing_address = mailing_address
 
     return party
@@ -127,11 +128,11 @@ def create_relationsips(relationships: list[dict], business: Business, filing: F
     err = []
 
     # Only create new records for relationships without an existing id
-    relationships = [relationship for relationship in relationships if not relationship_info.get("entity").get("identifier")]
+    relationships = [relationship for relationship in relationships if not relationship.get("entity").get("identifier")]
     if relationships:
         try:
             for relationship_info in relationships:
-                party = _create_party(entity=relationship_info.get("entity"))
+                party = _create_party(relationship_info)
                 for role_type in relationship_info.get("roles"):
                     role_str = role_type.get("roleType", "").lower()
                     role = {
@@ -167,7 +168,7 @@ def cease_relationships(
         return any([
             ceased_role for ceased_role in roles
             if ceased_role.get("roleType") == role.value and
-            ceased_role.get("roleType").get("cessationDate")
+            ceased_role.get("cessationDate")
         ])
     cease_party_ids = [
         _str_to_int(relationship["entity"]["identifier"])
@@ -175,9 +176,9 @@ def cease_relationships(
         # Only include existing relationships with a cessation date set for the given role type
         if relationship.get("entity", {}).get("identifier") is not None and
         # NOTE: cessationDate must be set in the role of the submission, but it will be overriden below by the date_time
-        has_ceased_role(relationship.get("roles", []), role)
+        has_ceased_role(relationship.get("roles", []))
     ]
-    party_roles = PartyRole.get_party_roles(business.id, date_time.date())
+    party_roles = PartyRole.get_party_roles(business.id, date_time.date(), role.value)
     for party_role in party_roles:
         if party_role.party_id in cease_party_ids:
             party_role.cessation_date = date_time
@@ -190,7 +191,7 @@ def update_relationship_addresses(relationships: list[dict]) -> None:
     """
     for relationship in relationships:
         if (
-            (existing_party_id := _str_to_int(party.get("entity", {}).get("identifier"))) and
+            (existing_party_id := _str_to_int(relationship.get("entity", {}).get("identifier"))) and
             (party := Party.find_by_id(existing_party_id))
         ):
             if new_delivery_address := relationship.get("deliveryAddress"):
@@ -208,21 +209,21 @@ def update_relationship_addresses(relationships: list[dict]) -> None:
                     party.mailing_address = new_address
 
 
-def update_entity_info(entities: list[dict]) -> None:
-    """Update the party info for existing parties.
+def update_relationship_entity_info(relationships: list[dict]) -> None:
+    """Update the party info for existing relationships.
     
     Assumption: The structure has already been validated, upon submission.
     """
-    for entity in entities:
+    for relationship in relationships:
         if (
-            (existing_party_id := _str_to_int(entity.get("identifier"))) and
+            (existing_party_id := _str_to_int(relationship.get("entity", {}).get("identifier"))) and
             (party := Party.find_by_id(existing_party_id))
         ):
-            party.first_name=_str_to_upper(entity.get("givenName", "")),
-            party.last_name=_str_to_upper(entity.get("familyName", "")),
-            party.middle_initial=_str_to_upper(entity.get("middleInitial", "")),
-            party.alternate_name=_str_to_upper(entity.get("alternateName", "")),
-            party.organization_name=_str_to_upper(entity.get("businessName", "")),
-            party.identifier=_str_to_upper(entity.get("businessIdentifier", "")),
-            party.email=_str_to_upper(entity.get("email", "")),
+            party.first_name=_str_to_upper(relationship["entity"].get("givenName", ""))
+            party.last_name=_str_to_upper(relationship["entity"].get("familyName", ""))
+            party.middle_initial=_str_to_upper(relationship["entity"].get("middleInitial", ""))
+            party.alternate_name=_str_to_upper(relationship["entity"].get("alternateName", ""))
+            party.organization_name=_str_to_upper(relationship["entity"].get("businessName", ""))
+            party.identifier=_str_to_upper(relationship["entity"].get("businessIdentifier", ""))
+            party.email=_str_to_upper(relationship["entity"].get("email", ""))
             
