@@ -26,7 +26,7 @@ from urllib3.util.retry import Retry
 
 from flask_jwt_oidc import JwtManager
 from legal_api.models import Business, Filing
-from legal_api.services import flags
+from legal_api.services.flags import Flags
 from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
@@ -597,9 +597,7 @@ def get_allowable_filings_dict():
         }
     }
 
-    # Having issues with flags here in the tests. This is a temporary flag check
-    is_testing = current_app.config.get("TESTING")
-    if not is_testing and not flags.is_on("enable-unloved-filings"):
+    if not Flags(current_app).is_on("enable-unloved-filings"):
         # These ones are only allowed if the flag is on
         del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfReceivers"]
 
