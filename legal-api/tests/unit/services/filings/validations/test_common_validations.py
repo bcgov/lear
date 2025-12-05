@@ -54,6 +54,7 @@ from legal_api.services.filings.validations.common_validations import (
 
 
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION['filing']['correction'])
+CHANGE_OF_RECEIVERS['type'] = 'appointReceiver'
 
 
 INVALID_ADDRESS_NO_POSTAL_CODE = {

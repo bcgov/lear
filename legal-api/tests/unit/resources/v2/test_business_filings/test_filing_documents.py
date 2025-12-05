@@ -61,6 +61,7 @@ from tests.unit.services.utils import create_header, helper_create_jwt
 
 ADMIN_DISSOLUTION = copy.deepcopy(DISSOLUTION)
 ADMIN_DISSOLUTION['dissolutionType'] = 'administrative'
+CHANGE_OF_RECEIVERS['type'] = 'appointReceiver'
 
 
 def basic_test_helper():
