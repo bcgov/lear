@@ -666,13 +666,19 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('bc_change_of_receivers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+         'legalFilings': [
+             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfReceivers'},
+         ]
      }},
      HTTPStatus.OK, '2020-10-01'
      ),
     ('bc_change_of_receivers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.PAID,
-     {'documents': {}},
+     {'documents': {
+         'legalFilings': [
+             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfReceivers'},
+         ]}},
      HTTPStatus.OK, None
      ),
     ('sp_dissolution_completed', 'FM7654321', 'SP',
