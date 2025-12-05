@@ -17,7 +17,7 @@ python-dotenv==0.17.1
 requests==2.25.1
 sentry-sdk==1.20.0
 six==1.15.0
-urllib3==1.26.11
+urllib3==2.6.0
 Werkzeug==1.0.1
 git+https://github.com/bcgov/business-schemas.git@2.18.15#egg=registry_schemas
 git+https://github.com/bcgov/lear.git#egg=entity_queue_common&subdirectory=queue_services/common
