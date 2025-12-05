@@ -60,7 +60,7 @@ def test_get_permissions_with_staff_role(client, jwt, setup_permissions):
         headers=create_header(jwt, [STAFF_ROLE], 'user')
     )
     assert rv.status_code == HTTPStatus.OK
-    assert 'STAFF_ONLY_PERMISSION' in rv.json['authorizedPermissions']
+    assert 'STAFF_FILINGS' in rv.json['authorizedPermissions']
 
 def test_get_permissions_with_public_user_role(client, jwt, setup_permissions):
     """Should not return newly added permission in the authorizedPermissions for a public user."""
@@ -69,4 +69,4 @@ def test_get_permissions_with_public_user_role(client, jwt, setup_permissions):
         headers=create_header(jwt, [PUBLIC_USER], 'user')
     )
     assert rv.status_code == HTTPStatus.OK
-    assert 'STAFF_ONLY_PERMISSION' not in rv.json['authorizedPermissions']
+    assert 'STAFF_FILINGS' not in rv.json['authorizedPermissions']

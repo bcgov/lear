@@ -244,6 +244,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     DEBUG = True
     TESTING = True
+    
+    GO_LIVE_DATE = os.getenv("GO_LIVE_DATE", "2019-08-12")
+
     # POSTGRESQL
     DB_USER = os.getenv("DATABASE_TEST_USERNAME", "")
     DB_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD", "")

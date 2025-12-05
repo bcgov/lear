@@ -65,13 +65,14 @@ def validate_with_contact_info(identifier): # noqa: PLR0911
             return make_response(jsonify(message="The request must include email or phone number."), 403)
 
         # If NR is not affiliated, validate the email and phone
-        nr_phone = nr_json.get("applicants").get("phoneNumber")
-        nr_email = nr_json.get("applicants").get("emailAddress")
+        nr_phone = nr_json.get("applicants", {}).get("phoneNumber")
+        nr_email = nr_json.get("applicants", {}).get("emailAddress")
         if (phone and normalize_phone(phone) != normalize_phone(nr_phone)) or (email and email != nr_email):
             return make_response(jsonify(message="Invalid email or phone number."), 400)
 
         return jsonify(nr_json)
     except Exception as err:
         current_app.logger.error(err)
-        abort(500)
-        return {}, 500  # to appease the linter
+        return jsonify(
+            message=f"Unable to get namerequest."
+        ), HTTPStatus.INTERNAL_SERVER_ERROR

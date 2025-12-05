@@ -15,7 +15,7 @@
 
 Test suite to ensure that helpers and utility functions for digital credentials are working as expected
 """
-
+import pytz
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
@@ -147,8 +147,8 @@ def test_is_account_based_access_enabled_different_flag(app, monkeypatch):
 @pytest.mark.parametrize(
     'founding_date, expected_dateint',
     [
-        (datetime(2023, 1, 15), '20230115'),
-        (datetime(2020, 2, 29), '20200229'),
+        (datetime(2023, 1, 15, tzinfo=pytz.timezone('America/Vancouver')), '20230115'),
+        (datetime(2020, 2, 29, tzinfo=pytz.timezone('America/Vancouver')), '20200229'),
         (datetime(2026, 1, 1, 4, 16, 35, 986357, tzinfo=timezone.utc), '20251231'),
         (datetime(2025, 9, 4, 4, 16, 35, 986357, tzinfo=timezone.utc), '20250903'),
         (datetime(2025, 9, 4, 14, 16, 35, 986357, tzinfo=timezone.utc), '20250904'),

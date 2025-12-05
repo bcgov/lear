@@ -518,7 +518,7 @@ def test_transition_application_task(session, client, jwt, test_name, business_r
     identifier = 'BC1234567'
     business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
     if business_restored:
-        factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration')
+        factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration', filing_sub_type='fullRestoration')
     if transition_completed:
         factory_completed_filing(business, TRANSITION_FILING_TEMPLATE, filing_type='transition')
     

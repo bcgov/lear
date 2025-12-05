@@ -421,7 +421,7 @@ def test_nr_not_found_staff_role(client, jwt):
         assert rv.json == {'message': 'NR 1234567 not found.'}   
 
 
-def test_nr_success_public_user(mocker, client, jwt):
+def test_nr_success_public_user(session, mocker, client, jwt):
     """Test NR for public user role, NR affiliated."""
     with patch.object(namex,
                       'query_nr_number',
@@ -434,7 +434,7 @@ def test_nr_success_public_user(mocker, client, jwt):
         assert rv.status_code == 200
 
 
-def test_nr_not_affiliated_public_user(mocker, client, jwt):
+def test_nr_not_affiliated_public_user(session, mocker, client, jwt):
     """Test NR for public user role, NR not affiliated, email or phone is required."""
     with patch.object(namex,
                       'query_nr_number',
@@ -447,7 +447,7 @@ def test_nr_not_affiliated_public_user(mocker, client, jwt):
         assert rv.status_code == 403
         assert rv.json == {'message': 'The request must include email or phone number.'}
         
-def test_nr_valid_contact_public_user(mocker, client, jwt):
+def test_nr_valid_contact_public_user(session, mocker, client, jwt):
     """Test NR for public user role, NR not affiliated, valid email or phone."""
     with patch.object(namex,
                       'query_nr_number',

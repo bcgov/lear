@@ -732,9 +732,12 @@ def test_alteration_good_standing(session, good_standing, has_permission, should
             HTTPStatus.FORBIDDEN,
             [{'error': 'Permission Denied - You do not have permissions send not in gpod standing businesss in this filing.'}],
         ))
-    with patch.object(Business, 'good_standing', new_callable =lambda: good_standing):
-        with patch.object(PermissionService, 'check_user_permission', mock_check_user_permission):
-            err = validate(business, f)
+    with (
+        patch.object(flags, 'is_on', return_value=True),
+        patch.object(Business, 'good_standing', new_callable =lambda: good_standing),
+        patch.object(PermissionService, 'check_user_permission', mock_check_user_permission)
+    ):
+        err = validate(business, f)
     if should_pass:
         # check that validation passed
         assert None is err

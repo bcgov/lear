@@ -301,16 +301,14 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
 
 @patch.object(flags, 'is_on', return_value=True)
 @patch('legal_api.services.filings.validations.change_of_registration.find_updated_keys_for_firms')
-def test_change_of_registration_permission_checks(mock_flags,
-    mock_find_keys, session
-):
+def test_change_of_registration_permission_checks(mock_find_keys, mock_flags, session):
     """Assert that permission checks are called during change of registration validation."""
     filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
     business = Business(identifier=filing['filing']['business']['identifier'],
                         legal_type=filing['filing']['business']['legalType'])
 
     mock_find_keys.return_value = [{
-        'is_dba': False,
+        'is_dba': True,
         'name_changed': False,
         'address_changed': False,
         'delivery_address_changed': False,
@@ -321,7 +319,7 @@ def test_change_of_registration_permission_checks(mock_flags,
         err = validate(business, filing)
     assert err
     assert err.code == HTTPStatus.FORBIDDEN
-    assert 'DBA' in err.msg[0]['message']
+    assert 'DBA' in err.msg[0]['error']
 
     mock_find_keys.return_value = [{
         'is_dba': False,
@@ -335,4 +333,4 @@ def test_change_of_registration_permission_checks(mock_flags,
         err = validate(business, filing)
     assert err
     assert err.code == HTTPStatus.FORBIDDEN
-    assert 'email' in err.msg[0]['message']
+    assert 'email' in err.msg[0]['error']

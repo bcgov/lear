@@ -21,6 +21,7 @@ from registry_schemas.example_data import FILING_HEADER, INTENT_TO_LIQUIDATE, CO
 
 from legal_api.models import Business
 from legal_api.services.filings.validations.intent_to_liquidate import validate
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.models import factory_business
 
 
@@ -89,7 +90,7 @@ def test_liquidation_date_validation(session, test_status, founding_date_offset,
     filing['filing']['header']['name'] = 'intentToLiquidate'
     filing['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
 
-    liquidation_date = datetime.utcnow() + timedelta(days=liquidation_date_offset)
+    liquidation_date = LegislationDatetime.now() + timedelta(days=liquidation_date_offset)
     filing['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = liquidation_date.strftime('%Y-%m-%d')
 
     # Test
