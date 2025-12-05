@@ -54,7 +54,7 @@ semver==2.13.0
 sentry-sdk[flask]
 six==1.15.0
 strict-rfc3339==0.7
-urllib3==1.26.11
+urllib3==2.6.0
 minio==7.0.2
 PyPDF2==1.26.0
 reportlab==3.6.12
