@@ -17,7 +17,7 @@ Provides a proxy endpoint to retrieve name request data.
 """
 from http import HTTPStatus
 
-from flask import Blueprint, abort, current_app, jsonify, make_response, request
+from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
 from legal_api.services import namex
@@ -74,5 +74,5 @@ def validate_with_contact_info(identifier): # noqa: PLR0911
     except Exception as err:
         current_app.logger.error(err)
         return jsonify(
-            message=f"Unable to get namerequest."
+            message="Unable to get namerequest."
         ), HTTPStatus.INTERNAL_SERVER_ERROR
