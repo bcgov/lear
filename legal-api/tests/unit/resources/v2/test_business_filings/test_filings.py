@@ -130,7 +130,7 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
         (UserRoles.public_user, 'Registry Staff'),
     ]
 )
-def test_get_withdrawn_temp_business_filing(session, client, jwt, jwt_role, expected):
+def test_get_withdrawn_temp_business_filing(app, session, client, requests_mock, jwt, jwt_role, expected):
     """Assert that a withdrawn FE temp business returns the filing with the NoW embedded once available."""
     user = factory_user('idir/staff-person')
 
@@ -188,6 +188,10 @@ def test_get_withdrawn_temp_business_filing(session, client, jwt, jwt_role, expe
     new_business_filing._status = Filing.Status.WITHDRAWN.value
     new_business_filing.withdrawal_pending = False
     new_business_filing.save()
+
+    if jwt_role == UserRoles.public_user:        
+        # mock response from auth to give view access
+        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
     # fetch filings after the bootstrap filing has been withdrawn
     rv = client.get(f'/api/v2/businesses/{identifier}/filings',
@@ -1538,7 +1542,7 @@ def test_coa_future_effective(session, client, jwt):
         ('unknown-public', None, UserRoles.public_user, 'some-user', 'some-user'),
     ]
 )
-def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, expected):
+def test_filing_redaction(app, session, client, requests_mock, jwt, test_name, submitter_role, jwt_role, username, expected):
     """Assert that the core filing is saved to the backing store."""
     from legal_api.core.filing import Filing as CoreFiling
     try:
@@ -1562,6 +1566,10 @@ def test_filing_redaction(session, client, jwt, test_name, submitter_role, jwt_r
         filing._storage.submitter_roles = submitter_role
         filing.save()
         filing_id = filing.id
+
+        if jwt_role == UserRoles.public_user:        
+            # mock response from auth to give view access
+            requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
         rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing_id}',
                         headers=create_header(jwt, [jwt_role], identifier))

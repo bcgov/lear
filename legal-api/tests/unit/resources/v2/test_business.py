@@ -262,7 +262,7 @@ def test_get_business_slim_info(app, session, client, jwt, requests_mock, test_n
     ('regular business request', False, True),
     ('regular business request with the auth-check flag turned off', False, False)
 ])
-def test_get_business_with_unauthoized_role(app, session, client, jwt, requests_mock, test_name, slim_version, auth_check_on):
+def test_get_business_with_unauthoized_role(app, session, client, jwt, monkeypatch, requests_mock, test_name, slim_version, auth_check_on):
     """
     Assert that the public users with no 'view' role cannot access the full business info.
     But they can access the slim data.
@@ -277,8 +277,7 @@ def test_get_business_with_unauthoized_role(app, session, client, jwt, requests_
             return auth_check_on
         else:
             return is_feature_flag_on(flag_name)
-
-    flags.is_on = MagicMock(side_effect=check_feature_flag)
+    monkeypatch.setattr(flags, "is_on", check_feature_flag)
 
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'

@@ -15,6 +15,7 @@
 
 Test suite to ensure that the Digital Credentials service is working as expected.
 """
+import pytz
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
@@ -33,7 +34,7 @@ schema_id = 'test_schema_id'
 cred_def_id = 'test_credential_definition_id'
 
 identifier = 'FM1234567'
-founding_date = '2010-01-01'
+founding_date = datetime(2010, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone('America/Vancouver')).isoformat()
 active_state = 'ACTIVE'
 
 business = {
@@ -66,7 +67,7 @@ sp_business = {
 
 sp_business_historical = {
     **sp_business,
-    'founding_date': '1970-01-01',
+    'founding_date': datetime(1970, 1, 1, 0, 0, 0, 0, tzinfo=pytz.timezone('America/Vancouver')).isoformat(),
     'state': 'HISTORICAL',
 }
 
