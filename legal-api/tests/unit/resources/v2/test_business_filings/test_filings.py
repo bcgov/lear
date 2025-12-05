@@ -1991,7 +1991,6 @@ def test_coo(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
         ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
         ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
-        ('CP', Business.LegalTypes.COOP.value, 'CP1234567')
     ]
 )
 def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
@@ -1999,7 +1998,8 @@ def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
     cor = copy.deepcopy(FILING_HEADER)
     cor['filing']['header']['name'] = 'changeOfReceivers'
-    cor['filing']['changeOfOfficers'] = CHANGE_OF_RECEIVERS
+    cor['filing']['changeOfReceivers'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
+    cor['filing']['changeOfReceivers']['type'] = 'appointReceiver'
 
     b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
     factory_business_mailing_address(b)

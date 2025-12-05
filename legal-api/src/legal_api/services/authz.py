@@ -615,7 +615,7 @@ def is_allowed(business: Business, # noqa: PLR0913
                filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
-
+    print(1)
     if filing:
         if filing.status not in [Filing.Status.DRAFT.value,
                                  Filing.Status.CHANGE_REQUESTED.value,
@@ -628,9 +628,13 @@ def is_allowed(business: Business, # noqa: PLR0913
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == "amalgamationApplication" and legal_type in ["C", "CBEN", "CUL", "CCC"]:
         return False
+    print(2)
     allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
-
+    print(3)
+    print(filing_type)
+    print(sub_filing_type)
     for allowable_filing in allowable_filings:
+        print(allowable_filing["name"])
         if (
             allowable_filing["name"] == filing_type and
             (not sub_filing_type or allowable_filing["type"] == sub_filing_type)
