@@ -13,6 +13,7 @@
     "enable-auth-v2-filing": true,
     "enable-permissions-for-action": false,
     "enabled-deeper-permission-action": false,
+    "enable-unloved-filings": true,
     "involuntary-dissolution-filter": {
       "include-accounts": [],
       "exclude-accounts": []
