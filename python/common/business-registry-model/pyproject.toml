@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.9,<4"
 dependencies = [
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning-alt",
-    "registry-schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.50",
+    "registry-schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.53",
     "flask-migrate (>=4.1.0,<5.0.0)",
     "pg8000 (>=1.31.2,<2.0.0)",
     "pydantic (>=2.10.6,<3.0.0)",
