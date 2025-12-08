@@ -47,6 +47,10 @@ def load_ledger(business, founding_date):
                 'type': 'initial',
                 'ledgerReferenceNumber': '123ewd2'
             }
+        elif filing_meta['name'] == 'changeOfReceivers':
+            filing['filing']['changeOfReceivers'] = {
+                'type': 'appointReceiver'
+            }
         f = factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=i))
         for c in range(i):
             comment = Comment()

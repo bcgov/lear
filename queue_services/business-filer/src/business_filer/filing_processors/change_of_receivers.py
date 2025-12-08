@@ -31,43 +31,35 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Validation for the Cease Receiver filing."""
-from http import HTTPStatus
-from typing import Optional
+"""File processing rules and actions for change of receivers filings."""
+import copy
 
-from flask_babel import _ as babel
+from business_model.models import Business, Filing, PartyRole
 
-from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
-from legal_api.utils.datetime import datetime, timezone
-
-
-def validate(business: Business, cease_receiver: dict) -> Optional[Error]:
-    """Validate the Cease Receiver filing."""
-    if not business or not cease_receiver:
-        return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
-    msg = []
-    msg.extend(validate_party(business, cease_receiver))
-
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
-    return None
+from business_filer.filing_meta import FilingMeta
+from business_filer.filing_processors.filing_components.relationships import (
+    cease_relationships,
+    create_relationsips,
+    update_relationship_addresses,
+    update_relationship_entity_info,
+)
 
 
-def validate_party(business: Business, filing: dict) -> list:
-    """Validate party."""
-    msg = []
-    parties = filing["filing"]["ceaseReceiver"]["parties"]
+def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
+    """Render the changeOfReceivers onto the business model objects."""
+    filing_json = copy.deepcopy(filing_rec.filing_json)
+    relationships = filing_json["filing"]["changeOfReceivers"].get("relationships")
+    if filing_rec.filing_sub_type == "ammendReceiver":
+        create_relationsips(relationships, business, filing_rec)
+        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
+        update_relationship_addresses(relationships)
+        update_relationship_entity_info(relationships)
 
-    # get Receivers for the business
-    receivers = PartyRole.get_party_roles(business.id,
-                                          datetime.now(tz=timezone.utc).date(),
-                                          PartyRole.RoleTypes.RECEIVER.value)
-    receiver_party_ids = [receiver_party_role.party_id for receiver_party_role in receivers]
-
-    # Check if party is a valid party of receiver role
-    for party in parties:
-        if party.get("officer").get("id") not in receiver_party_ids:
-            msg.append({"error": "Must be a valid Receiver party.", "path": "/filing/ceaseReceiver/parties"})
-
-    return msg
+    elif filing_rec.filing_sub_type == "appointReceiver":
+        create_relationsips(relationships, business, filing_rec)
+    
+    elif filing_rec.filing_sub_type == "ceaseReceiver":
+        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
+    
+    elif filing_rec.filing_sub_type == "changeAddressReceiver":
+        update_relationship_addresses(relationships)

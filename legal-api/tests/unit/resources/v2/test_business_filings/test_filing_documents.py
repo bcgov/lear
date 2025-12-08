@@ -32,6 +32,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_OFFICERS,
+    CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
     CONTINUATION_IN,
     CONTINUATION_OUT,
@@ -60,6 +61,7 @@ from tests.unit.services.utils import create_header, helper_create_jwt
 
 ADMIN_DISSOLUTION = copy.deepcopy(DISSOLUTION)
 ADMIN_DISSOLUTION['dissolutionType'] = 'administrative'
+CHANGE_OF_RECEIVERS['type'] = 'appointReceiver'
 
 
 def basic_test_helper():
@@ -659,6 +661,24 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      ('bc_change_of_officers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.PAID,
      {'documents': {}},
+     HTTPStatus.OK, None
+     ),
+    ('bc_change_of_receivers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+         'legalFilings': [
+             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfReceivers'},
+         ]
+     }},
+     HTTPStatus.OK, '2020-10-01'
+     ),
+    ('bc_change_of_receivers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.PAID,
+     {'documents': {
+         'legalFilings': [
+             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfReceivers'},
+         ]}},
      HTTPStatus.OK, None
      ),
     ('sp_dissolution_completed', 'FM7654321', 'SP',

@@ -701,14 +701,6 @@ def test_get_could_file(session, client, jwt):
             "name": "annualReport"
         },
         {
-            "displayName": "Appoint Receiver",
-            "name": "appointReceiver"
-        },
-        {
-            "displayName": "Cease Receiver",
-            "name": "ceaseReceiver"
-        },
-        {
             "displayName": "Address Change",
             "name": "changeOfAddress"
         },
@@ -719,6 +711,26 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "Officer Change",
             "name": "changeOfOfficers"
+        },
+        {
+            "displayName": "Ammend Receiver Information",
+            "name": "changeOfReceivers",
+            "type": "ammendReceiver"
+        },
+        {
+            "displayName": "Notice of Appointment of Receiver or Receiver Manager",
+            "name": "changeOfReceivers",
+            "type": "appointReceiver"
+        },
+        {
+            "displayName": "Notice of Ceasing to Act as Receiver or Receiver Manager",
+            "name": "changeOfReceivers",
+            "type": "ceaseReceiver"
+        },
+        {
+            "displayName": "Notice of Receiver Change of Address Filing",
+            "name": "changeOfReceivers",
+            "type": "changeAddressReceiver"
         },
         {
             "displayName": "6-Month Consent to Amalgamate Out",

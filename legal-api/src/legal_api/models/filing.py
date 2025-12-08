@@ -191,35 +191,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 "CCC": "BCANN"
             }
         },
-        "appointReceiver": {
-            "name": "appointReceiver",
-            "title": "Appoint Receiver Filing",
-            "codes": {
-                "BEN": "NOARM",
-                "BC": "NOARM",
-                "ULC": "NOARM",
-                "CC": "NOARM",
-                "CBEN": "NOARM",
-                "C": "NOARM",
-                "CUL": "NOARM",
-                "CCC": "NOARM"
-            }
-        },
-        "ceaseReceiver": {
-            "name": "ceaseReceiver",
-            "title": "Cease Receiver Filing",
-            "displayName": "Cease Receiver",
-            "codes": {
-                "BEN": "NOCER",
-                "BC": "NOCER",
-                "ULC": "NOCER",
-                "CC": "NOCER",
-                "CBEN": "NOCER",
-                "C": "NOCER",
-                "CUL": "NOCER",
-                "CCC": "NOCER"
-            }
-        },
         "changeOfAddress": {
             "name": "changeOfAddress",
             "title": "Change of Address Filing",
@@ -284,6 +255,70 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 "CUL": "NOCOI",
                 "CCC": "NOCOI"
             }
+        },
+        "changeOfReceivers": {
+            "name": "changeOfReceivers",
+            "ammendReceiver": {
+                "name": "ammendReceiver",
+                "title": "Ammend Receiver Filing",
+                "displayName": "Ammend Receiver Information",
+                "codes": {
+                    # FUTURE: this will change
+                    "BEN": "NOCRM",
+                    "BC": "NOCRM",
+                    "ULC": "NOCRM",
+                    "CC": "NOCRM",
+                    "CBEN": "NOCRM",
+                    "C": "NOCRM",
+                    "CUL": "NOCRM",
+                    "CCC": "NOCRM"
+                }
+            },
+            "appointReceiver": {
+                "name": "appointReceiver",
+                "title": "Notice of Appointment of Receiver or Receiver Manager",
+                "displayName": "Notice of Appointment of Receiver or Receiver Manager",
+                "codes": {
+                    "BEN": "NOARM",
+                    "BC": "NOARM",
+                    "ULC": "NOARM",
+                    "CC": "NOARM",
+                    "CBEN": "NOARM",
+                    "C": "NOARM",
+                    "CUL": "NOARM",
+                    "CCC": "NOARM"
+                }
+            },
+            "ceaseReceiver": {
+                "name": "ceaseReceiver",
+                "title": "Notice of Ceasing to Act as Receiver or Receiver Manager",
+                "displayName": "Notice of Ceasing to Act as Receiver or Receiver Manager",
+                "codes": {
+                    "BEN": "NOCER",
+                    "BC": "NOCER",
+                    "ULC": "NOCER",
+                    "CC": "NOCER",
+                    "CBEN": "NOCER",
+                    "C": "NOCER",
+                    "CUL": "NOCER",
+                    "CCC": "NOCER"
+                }
+            },
+            "changeAddressReceiver": {
+                "name": "changeAddressReceiver",
+                "title": "Notice of Receiver Change of Address Filing",
+                "displayName": "Notice of Receiver Change of Address Filing",
+                "codes": {
+                    "BEN": "NOCRM",
+                    "BC": "NOCRM",
+                    "ULC": "NOCRM",
+                    "CC": "NOCRM",
+                    "CBEN": "NOCRM",
+                    "C": "NOCRM",
+                    "CUL": "NOCRM",
+                    "CCC": "NOCRM"
+                }
+            },
         },
         "changeOfRegistration": {
             "name": "changeOfRegistration",
@@ -620,6 +655,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         "dissolution": "dissolutionType",
         "restoration": "type",
         "amalgamationApplication": "type",
+        "changeOfReceivers": "type",
         "transparencyRegister": "type"
     }
 
@@ -1210,9 +1246,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         excluded_filings = [
             "lear_epoch",
             "adminFreeze",
-            "appointReceiver",
-            "ceaseReceiver",
             "changeOfOfficers",
+            "changeOfReceivers",
             "courtOrder",
             "noticeOfWithdrawal",
             "registrarsNotation",
