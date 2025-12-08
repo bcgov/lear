@@ -814,7 +814,7 @@ class BusinessDocument:
             "treasurer": "Treasurer",
             "secretary": "Secretary",
             "assistant_secretary": "Assistant Secretary",
-            "other": "Other"
+            "other": "Other Officer(s)"
         }
 
         role_key = role_type.lower()
