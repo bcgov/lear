@@ -37,7 +37,7 @@ from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services.filings.validations.common_validations import validate_parties_addresses
+from legal_api.services.filings.validations.common_validations import validate_parties_addresses, validate_relationships
 
 
 def validate(business: Business, filing_json: dict) -> Optional[Error]:
@@ -50,6 +50,7 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
         msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
     elif filing_sub_type == "ceaseReceiver":
         msg.extend(validate_ceased_relationships(business, filing_json["filing"][filing_type]["relationships"]))
+    msg.extend(validate_relationships(filing_json, filing_type))
     return msg
 
 def validate_ceased_relationships(business: Business, ceased_relationships: list[dict]) -> list:
