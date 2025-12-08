@@ -89,12 +89,12 @@ def _create_party(relationship: dict):
     return party
 
 
-def _create_role(party: Party, role_info: dict) -> PartyRole:
+def _create_role(party: Party, role_info: dict, default_appointment: datetime.datetime) -> PartyRole:
     """Create a new party role and link to party."""
     party_role = PartyRole(
         role=RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType").lower(), ""),
-        appointment_date=role_info["appointmentDate"],
-        cessation_date=role_info["cessationDate"],
+        appointment_date=role_info.get("appointmentDate") or default_appointment,
+        cessation_date=role_info.get("cessationDate"),
         party=party
     )
     if role_class := role_info.get("roleClass"):
@@ -135,13 +135,7 @@ def create_relationsips(relationships: list[dict], business: Business, filing: F
             for relationship_info in relationships:
                 party = _create_party(relationship_info)
                 for role_type in relationship_info.get("roles"):
-                    role_str = role_type.get("roleType", "").lower()
-                    role = {
-                        "roleType": role_str,
-                        "appointmentDate": role_type.get("appointmentDate", None) or filing.effective_date,
-                        "cessationDate": role_type.get("cessationDate", None)
-                    }
-                    party_role = _create_role(party=party, role_info=role)
+                    party_role = _create_role(party=party, role_info=role_type, default_appointment=filing.effective_date)
                     if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value,
                                            PartyRole.RoleTypes.INCORPORATOR.value,
                                            PartyRole.RoleTypes.APPLICANT.value]:
