@@ -173,7 +173,6 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-addopts = "--ignore=tests/unit/resources/v1"
 ## addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
 python_files = [
    "test*.py"
