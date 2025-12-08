@@ -1533,11 +1533,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-<<<<<<< HEAD
 version = "2.18.53"
-=======
-version = "2.18.52"
->>>>>>> 91b2d7710 (Fix flags import issue)
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -1555,13 +1551,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-<<<<<<< HEAD
 reference = "2.18.53"
 resolved_reference = "a59f1e94726aa61913f4090ea1aa4d4ff8906fb6"
-=======
-reference = "2.18.52"
-resolved_reference = "7f99184ef96a1dd18644f0453b4def9e65672193"
->>>>>>> 91b2d7710 (Fix flags import issue)
 
 [[package]]
 name = "requests"
@@ -2219,8 +2210,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4"
-<<<<<<< HEAD
 content-hash = "40e119137497caf9a810a128d871dd32e1a2757e20bf5e291fc21421f8efdf31"
-=======
-content-hash = "fb54a62287d89d6469179e17efd4ecd13c15e0f29f31b1989e4a81c8768c2a59"
->>>>>>> 91b2d7710 (Fix flags import issue)
