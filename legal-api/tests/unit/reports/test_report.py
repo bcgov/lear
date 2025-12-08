@@ -211,7 +211,8 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     assert template
 
 
-def test_alteration_name_change(session):
+@patch('legal_api.services.flags.is_on', return_value=False)
+def test_alteration_name_change(mock_flags, session):
     """Assert alteration name change filings can be returned as a PDF."""
     numbered_company_name = '1234567 B.C. Ltd.'
     named_company_name = 'New Name Ltd.'
