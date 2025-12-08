@@ -31,9 +31,9 @@ from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
 from .digital_credentials_rules import DigitalCredentialsRulesService
 from .flags import Flags
+from .minio import MinioService  # Moving above the furnishing documents import to avoid circular import issues
 from .furnishing_documents_service import FurnishingDocumentsService
 from .involuntary_dissolution import InvoluntaryDissolutionService
-from .minio import MinioService
 from .mras_service import MrasService
 from .naics import NaicsService
 from .namex import NameXService
