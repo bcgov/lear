@@ -22,6 +22,8 @@
       <!-- add other cases here -->
       <div class="value">Unknown</div>
       {% endif %}
+    {% elif business.businessName %}
+      <div class="value">{{ business.businessName }}</div>
     {% elif business.legalName %}
     <!-- try to get legal name from Business object -->
     <div class="value">{{ business.legalName }}</div>
