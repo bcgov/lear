@@ -235,7 +235,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     if not subject:  # fallback case - should never happen
         subject = "Notification from the BC Business Registry"
 
-    legal_name = business.get("legalName", None)
+    legal_name = business.get("businessName") or business.get("legalName", None)
     subject = f"{legal_name} - {subject}" if legal_name else subject
 
     return {
