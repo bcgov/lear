@@ -211,9 +211,16 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     assert template
 
 
-@patch('legal_api.services.flags.is_on', return_value=False)
-def test_alteration_name_change(mock_flags, session):
+def test_alteration_name_change(session, monkeypatch):
     """Assert alteration name change filings can be returned as a PDF."""
+    # Create a mock flags object with is_on method
+    from unittest.mock import Mock
+    mock_flags = Mock()
+    mock_flags.is_on.return_value = False
+    
+    # Patch the flags instance in the report module
+    import legal_api.reports.report
+    monkeypatch.setattr(legal_api.reports.report, 'flags', mock_flags)
     numbered_company_name = '1234567 B.C. Ltd.'
     named_company_name = 'New Name Ltd.'
     identifier = 'BC1234567'
