@@ -102,12 +102,13 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
                         "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}"
                     })
             elif address_type == Address.JSON_MAILING:
-                for field in mailing_required_fields:
-                    if not address.get(field):
-                        msg.append({
-                            "error": babel(f"Mailing address must include {field}."),
-                            "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/{field}"
-                        })
+                if business.legal_type in Business.CORPS:
+                    for field in mailing_required_fields:
+                        if not address.get(field):
+                            msg.append({
+                                "error": babel(f"Mailing address must include {field}."),
+                                "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/{field}"
+                            })
 
             if address_type in director:
                 try:
