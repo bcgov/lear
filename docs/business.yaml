@@ -6,25 +6,28 @@ info:
     The Business Registry is a centralized electronic register of all business in British Columbia. This encompasses all types of businesses authorized to do business by the Registrar. The Business API provides a secure means of integrating your business systems with the Registry.
     <br/>
     <br/>This API supports the following filings:
-    - Incorporation Application
-    - Amalgamation Regular
-    - Amalgamation Short Form Horizontal 
-    - Amalgamation Short Form Vertical 
-    - Continuation In 
-    - Registration 
-    - AGM Extension Information 
-    - AGM Location Change Information 
-    - Alteration 
-    - Annual Report 
-    - Change of Address
-    - Change of Directors
-    - Change of Registration 
-    - Consent Continuation Out 
-    - Conversion
-    - Dissolution
-    - Notice of Withdrawal
-    - Registration (Sole Proprietorship, General Partnership)
-    - Special Resolution
+
+    | Filing | Supported Business Types |
+    | :--- | :--- |
+    | Incorporation Application | BC, BEN, CC, CP, ULC |
+    | Amalgamation Regular | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Amalgamation Short Form Horizontal | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Amalgamation Short Form Vertical | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Continuation In | C, CBEN, CCC, CUL |
+    | Registration | GP, SP |
+    | AGM Extension Information | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | AGM Location Change Information | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Alteration | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Annual Report | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
+    | Change of Address | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
+    | Change of Directors | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
+    | Change of Registration | GP, SP |
+    | Consent Continuation Out | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Conversion | GP, SP |
+    | Dissolution | BC, BEN, C, CBEN, CC, CCC, CP, CUL, GP, SP, ULC |
+    | Notice of Withdrawal | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
+    | Registration (Sole Proprietorship, General Partnership) | GP, SP |
+    | Special Resolution | CP |
 
     All API requests must include a BC Registries issued API key and an Account ID.
   contact:
@@ -69,7 +72,7 @@ paths:
         '404':
           description: Not Found
       operationId: get-business
-      description: '<p>Retrieve a set of information  about a business.</p> <p>Access to a business and its information is dependent on the user being linked to that business, the API will return a 401 response if the user does not have access to that business.</p><p>The API will also return a 404 response if the business cannot be found.</p>'
+      description: '<p>Retrieve a set of information about a business.</p> <p>Access to a business and its information is dependent on the user being linked to that business, the API will return a 401 response if the user does not have access to that business.</p><p>The API will also return a 404 response if the business cannot be found.</p>'
       parameters:
         - $ref: '#/components/parameters/accountId'
       tags:
@@ -639,7 +642,7 @@ paths:
                         certifiedBy: Sample Certified Person
                         colinIds: []
                         comments: []
-                        data: '2024-12-18T00:10:47.042797+00:00'
+                        date: '2024-12-18T00:10:47.042797+00:00'
                         email: api.specs@example.com
                         filingId: 654321
                         inColinOnly: false
@@ -3165,7 +3168,7 @@ paths:
                             hasRightsOrRestrictions: false
                             series: []
                 registration-sucess-response:
-                  summary: Registartion Response
+                  summary: Registration Response
                   value:
                     filing:
                       business:
@@ -5607,7 +5610,7 @@ components:
         - dissolution
     filing_header:
       type: object
-      description: 'Information identigying the filing. '
+      description: 'Information identifying the filing. '
       x-examples:
         Example 1:
           header:
@@ -5683,7 +5686,7 @@ components:
           description: 'Filing name. '
         availableOnPaperOnly:
           type: boolean
-          description: 'If filing results(ouputs) available only on paper: Yes/No. '
+          description: 'If filing results(outputs) available only on paper: Yes/No. '
         inColinOnly:
           type: boolean
           description: 'Filing information stored in COLIN only: Yes/No.'
@@ -5772,7 +5775,7 @@ components:
           title: A dat number used for payment tracking purposes.
           maxLength: 10
           pattern: '^[A-Z]{1}[0-9]{7,9}$'
-          description: Payment identifyer (9 digits) for FAS payments.
+          description: Payment identifier (9 digits) for FAS payments.
           example: C234567890
         bcolAccountNumber:
           type: string
@@ -5791,7 +5794,7 @@ components:
           title: payment org account identifier.
           maxLength: 30
           pattern: ^(.*)$
-          description: 'Payment identifyer from where the payment will be debited. '
+          description: 'Payment identifier from where the payment will be debited. '
           example: '180670'
         paymentMethod:
           type: string
@@ -6388,7 +6391,7 @@ components:
         businessIdentifier:
           type: string
           minLength: 1
-          description: 'Business idetifier eg: BC123456 or business number (BN9) BN123456789. '
+          description: 'Business identifier eg: BC123456 or business number (BN9) BN123456789. '
         commentsCount:
           type: number
           description: 'Number of comments/notes posted for the ledger item. '
@@ -6592,7 +6595,7 @@ components:
         properties:
           id:
             type: string
-            description: 'Name unique identifyer eg: 1234.'
+            description: 'Name unique identifier eg: 1234.'
             example: '1234'
           name:
             type: string
@@ -7232,7 +7235,7 @@ components:
         priority:
           type: integer
           title: 'The display order of the shares that indicates priority. '
-          description: 'The display order that indicates priority eg: 2. with value 2, the share class will be displayed the second, after share class with priority 1. '
+          description: 'The display order that indicates priority eg: 2. With value 2, the share class will be displayed the second, after share class with priority 1. '
           example: 2
         maxNumberOfShares:
           type: number
@@ -7458,7 +7461,7 @@ components:
                   addressRegion: 'BC for British Columbia '
                   addressCountry: Canada
                   postalCode: V8R 2P1
-                  deliveryInstructions: '"Receptopn is on 2nd floor."'
+                  deliveryInstructions: '"Reception is on 2nd floor."'
             parties:
               - party:
                   roles:
