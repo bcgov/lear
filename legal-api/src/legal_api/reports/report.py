@@ -38,7 +38,7 @@ from legal_api.models import (
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.services import MinioService, VersionedBusinessDetailsService, flags  # pylint: disable=line-too-long
+from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 from legal_api.utils.formatting import float_to_str
@@ -69,6 +69,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_static_report(self):
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
+        from legal_api.services import MinioService
         response = MinioService.get_file(document.file_key)
         return current_app.response_class(
             response=response.data,

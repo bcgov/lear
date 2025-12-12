@@ -16,7 +16,7 @@ import uuid
 
 from gcp_queue import GcpQueue
 
-from .authz import (  # noqa: I001; noqa: I001;
+from .authz import (
     ACCOUNT_IDENTITY,
     BASIC_USER,
     COLIN_SVC_ROLE,
@@ -30,7 +30,6 @@ from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
 from .digital_credentials_rules import DigitalCredentialsRulesService
-from .document_meta import DocumentMetaService
 from .flags import Flags
 from .furnishing_documents_service import FurnishingDocumentsService
 from .involuntary_dissolution import InvoluntaryDissolutionService
