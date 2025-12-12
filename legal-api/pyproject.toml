@@ -50,7 +50,6 @@ dependencies = [
     "itsdangerous (==1.1.0)",
     "werkzeug (==1.0.0)",
     "blinker (==1.4)",
-    "flask-restx (==0.3.0)",
     "pyjwt (==2.8.0)",
 
     "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.53#egg=registry_schemas",

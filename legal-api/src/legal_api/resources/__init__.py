@@ -13,8 +13,6 @@
 # limitations under the License.
 """Exposes all of the resource endpoints mounted in Flask-Blueprint style.
 
-Uses restx namespaces to mount individual api/v2 endpoints into the service.
-
 All services have 2 defaults sets of endpoints:
  - ops
  - meta
