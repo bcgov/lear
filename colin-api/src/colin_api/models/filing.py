@@ -1417,6 +1417,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 cls._process_put_back_on(cursor, filing)
             elif filing.filing_type == 'putBackOff':
                 cls._process_put_back_off(cursor, filing)
+            elif filing.filing_type == 'dissolution':
+                cls._process_dissolution(cursor, filing)
             elif filing.filing_type == 'alteration':
                 # alter corp type
                 if (
@@ -1449,9 +1451,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                             party=party,
                                             business=business,
                                             event_id=filing.event_id)
-
-            if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
-                cls._create_submitting_party(cursor=cursor, filing=filing, corp_num=corp_num)
 
             # add shares if not coop
             cls._process_share_structure(cursor, filing, corp_num)
@@ -1521,13 +1520,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                        if region_code
                                        else country_code)
                 cls._insert_ledger_text(cursor, filing, authorization_text)
-
-            # process voluntary dissolution
-            if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
-                Business.update_corp_state(cursor,
-                                           filing.event_id,
-                                           corp_num,
-                                           Business.CorpStateTypes.VOLUNTARY_DISSOLUTION.value)
 
             # update corporation record
             is_annual_report = filing.filing_type == 'annualReport'
@@ -1602,6 +1594,38 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def is_filing_type_match(cls, filing: Filing, filing_type: str, filing_sub_type: str):
         """Return whether filing has specificed filing type and filing sub-type."""
         return filing.filing_type == filing_type and filing.filing_sub_type == filing_sub_type
+
+    @classmethod
+    def _process_dissolution(cls, cursor, filing):
+        """Process dissolution."""
+        corp_num = filing.get_corp_num()
+        if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
+            office = None
+            for party in filing.body.get('parties', []):
+                for role in party.get('roles', []):
+                    if role.get('roleType') == 'Custodian':
+                        office = {
+                            'mailingAddress': party.get('mailingAddress'),
+                            'deliveryAddress': party.get('deliveryAddress')
+                        }
+                        break
+                if office:
+                    break
+            Office.create_new_office(
+                cursor=cursor,
+                addresses=office,
+                event_id=filing.event_id,
+                corp_num=corp_num,
+                office_type='custodialOffice'
+            )
+
+            cls._create_submitting_party(cursor=cursor, filing=filing, corp_num=corp_num)
+
+            Business.update_corp_state(cursor,
+                                       filing.event_id,
+                                       corp_num,
+                                       Business.CorpStateTypes.VOLUNTARY_DISSOLUTION.value)
+
 
     @classmethod
     def _process_restoration(cls, cursor, filing):
@@ -1834,18 +1858,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             return ''
 
         corp_num = filing.get_corp_num()
-        if Filing.is_filing_type_match(filing, 'dissolution', 'voluntary'):
-            office = filing.body.get('custodialOffice')
-            office_type = 'custodialOffice'
-            Office.create_new_office(
-                cursor=cursor,
-                addresses=office,
-                event_id=filing.event_id,
-                corp_num=corp_num,
-                office_type=office_type
-            )
-            return ''
-
         for office_type in filing.body.get('offices', []):
             Office.create_new_office(
                 cursor=cursor,
