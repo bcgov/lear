@@ -1626,7 +1626,6 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                        corp_num,
                                        Business.CorpStateTypes.VOLUNTARY_DISSOLUTION.value)
 
-
     @classmethod
     def _process_restoration(cls, cursor, filing):
         """Process restoration."""
