@@ -1747,71 +1747,130 @@ declare
            and pr.end_transaction_id is null
            and pr.cessation_date is null
            and pr.operation_type in (0, 1);
+  cur_office_edit cursor(v_corp_party_id integer, v_prev_party_id integer)
+    for select oh.officer_typ_cd, to_officer_role(oh.officer_typ_cd) as officer_role, cp.corp_party_id, cp.prev_party_id,
+               cp.start_event_id
+      from colin_extract.corp_party cp, colin_extract.offices_held oh
+     where cp.corp_party_id in (v_prev_party_id, v_corp_party_id)
+       and cp.corp_party_id = oh.corp_party_id
+    order by cp.corp_party_id desc, oh.officer_typ_cd;
+
   rec_party_role record;
   rec_colin_change record;
   officer_role varchar(30);
-  counter integer := 0;
   party_role_id integer := 0;
+  new_count integer := 0;
+  existing_count integer := 0;
+  new_offices varchar(100);
+  existing_offices varchar(100);
+  remove_offices varchar(100);
+  add_offices varchar(100);
+  previous_party_id integer;
 begin
-  select string_agg(to_officer_role(officer_typ_cd), ',') as new_offices,
-         (select string_agg(to_officer_role(oh.officer_typ_cd), ',') 
-            from colin_extract.offices_held oh
-           where oh.corp_party_id = p_rec_party.prev_party_id) as existing_offices,
-         (select count(oh.corp_party_id) from colin_extract.offices_held oh where oh.corp_party_id = p_rec_party.corp_party_id) as new_count,
-         (select count(oh.corp_party_id) from colin_extract.offices_held oh where oh.corp_party_id = p_rec_party.prev_party_id) as existing_count,
-         (select string_agg(to_officer_role(oh.officer_typ_cd), ',') 
-            from colin_extract.offices_held oh
-           where oh.corp_party_id = p_rec_party.corp_party_id
-             and oh.officer_typ_cd not in (select oh2.officer_typ_cd 
-                                             from colin_extract.offices_held oh2 
-                                            where oh2.corp_party_id = p_rec_party.prev_party_id)) as added_offices,
-         (select string_agg(to_officer_role(oh.officer_typ_cd), ',') 
-            from colin_extract.offices_held oh
-           where oh.corp_party_id = p_rec_party.prev_party_id
-             and oh.officer_typ_cd not in (select oh2.officer_typ_cd 
-                                             from colin_extract.offices_held oh2 
-                                            where oh2.corp_party_id = p_rec_party.corp_party_id)) as removed_offices
-    into rec_colin_change
-    from colin_extract.offices_held
-   where corp_party_id = p_rec_party.corp_party_id;
+  new_offices := '';
+  existing_offices := '';
+  remove_offices := '';
+  add_offices := '';
+  new_count := 0;
+  existing_count := 0;
+  
+  select max(corp_party_id)
+    into previous_party_id
+    from colin_extract.corp_party
+   where corp_num = p_rec_party.corp_num
+     and party_typ_cd = 'OFF'
+     and prev_party_id = p_rec_party.prev_party_id
+     and corp_party_id < p_rec_party.corp_party_id;
+  if previous_party_id is null then
+    previous_party_id := p_rec_party.prev_party_id;
+  end if;
+   
+  open cur_office_edit(p_rec_party.corp_party_id, previous_party_id);
+  loop
+    fetch cur_office_edit into rec_colin_change;
+    exit when not found;
+    if rec_colin_change.start_event_id = p_rec_party.start_event_id then
+      if new_offices = '' then
+        new_offices := rec_colin_change.officer_role;
+      else
+        new_offices := new_offices || ',' || rec_colin_change.officer_role;
+      end if;
+      new_count := new_count + 1;
+    else
+      if existing_offices = '' then
+        existing_offices := rec_colin_change.officer_role;
+      else
+        existing_offices := existing_offices || ',' || rec_colin_change.officer_role;
+      end if;
+      existing_count := existing_count + 1;
+      if position(rec_colin_change.officer_role in new_offices) < 1 then
+        if remove_offices = '' then
+          remove_offices := rec_colin_change.officer_role;
+        else
+          remove_offices := remove_offices || ',' || rec_colin_change.officer_role;
+        end if;
+      end if;
+    end if;
+  end loop;
+  close cur_office_edit;
+  for i in 1 .. array_length(string_to_array(new_offices, ','), 1)
+  loop
+    officer_role := SPLIT_PART(new_offices, ',', i);
+    if position(officer_role in existing_offices) < 1 then
+      if add_offices = '' then
+        add_offices := officer_role;
+      else
+        add_offices := add_offices || ',' || officer_role;
+      end if;
+    end if;
+  end loop;
+
   perform colin_hist_party_change(p_business_id, p_trans_id, p_rec_party.party_id, 1, p_rec_party, null);
 
-  if rec_colin_change.added_offices is null and rec_colin_change.removed_offices is null then -- no change
+  if new_offices = existing_offices then -- no change
     officer_role := null;
-  elsif rec_colin_change.new_count = rec_colin_change.existing_count then -- replacing
-    counter := 0;
+  elsif new_count = existing_count then -- replacing
     open cur_party_role(p_business_id, p_rec_party.party_id);
     loop
       fetch cur_party_role into rec_party_role;
       exit when not found;
-      counter := counter + 1;
-      officer_role := SPLIT_PART(rec_colin_change.new_offices, ',', counter);
-      if rec_party_role.role != officer_role then
-        update party_roles
-           set role = officer_role
-         where business_id = p_business_id
-           and id = rec_party_role.id;
-        rec_party_role.end_transaction_id := p_trans_id;
-        insert into party_roles_version
-          values(rec_party_role.id,
-                 officer_role,
-                 rec_party_role.appointment_date,
-                 rec_party_role.cessation_date,
-                 rec_party_role.business_id,
-                 rec_party_role.party_id,
-                 p_trans_id,
-                 null,
-                 1,
-                 rec_party_role.filing_id,
-                 rec_party_role.party_class_type);
+      if position(rec_party_role.role in remove_offices) > 0 then
+        officer_role := SPLIT_PART(add_offices, ',', 1);
+        if officer_role is not null and length(officer_role) >= 3 then
+          add_offices := replace(add_offices, officer_role, '');
+          if left(add_offices, 1) = ',' and length(add_offices) > 1 then
+            add_offices := substr(add_offices, 2);
+          end if;
+          update party_roles
+             set role = officer_role
+           where business_id = p_business_id
+             and id = rec_party_role.id;
+          update party_roles_version
+             set end_transaction_id = p_trans_id
+           where id = rec_party_role.id
+             and end_transaction_id is null
+             and cessation_date is null;
+          insert into party_roles_version
+            values(rec_party_role.id,
+                   officer_role,
+                   rec_party_role.appointment_date,
+                   rec_party_role.cessation_date,
+                   rec_party_role.business_id,
+                   rec_party_role.party_id,
+                   p_trans_id,
+                   null,
+                   1,
+                   rec_party_role.filing_id,
+                   rec_party_role.party_class_type);
+        end if;
       end if;
     end loop;
     close cur_party_role;
   else
-    if rec_colin_change.added_offices is not null then
-      for i in 1 .. array_length(string_to_array(rec_colin_change.added_offices, ','), 1)
+    if add_offices != '' then
+      for i in 1 .. array_length(string_to_array(add_offices, ','), 1)
       loop
-        officer_role := SPLIT_PART(rec_colin_change.added_offices, ',', i);
+        officer_role := SPLIT_PART(add_offices, ',', i);
         party_role_id := nextval('party_roles_id_seq');
         insert into party_roles_version 
           values(party_role_id, officer_role, p_rec_party.party_date, null,
@@ -1822,10 +1881,10 @@ begin
       end loop;
     end if;
 
-    if rec_colin_change.removed_offices is not null then
-      for i in 1 .. array_length(string_to_array(rec_colin_change.removed_offices, ','), 1)
+    if remove_offices != '' then
+      for i in 1 .. array_length(string_to_array(remove_offices, ','), 1)
       loop
-        officer_role := SPLIT_PART(rec_colin_change.removed_offices, ',', i);
+        officer_role := SPLIT_PART(remove_offices, ',', i);
         select pr.*
           from party_roles_version pr
           into rec_party_role
@@ -1861,7 +1920,6 @@ begin
   return p_trans_id;
 end;
 $$;
-
 
 -- Historical update to remove a single officer for a single filing.
 -- Set the active party_roles record cessation date. Do not modify the parties record.
@@ -2206,7 +2264,15 @@ declare
                 case when cp.first_name is not null and  trim(cp.first_name) != '' then upper(cp.first_name) else null end as first_name,
                 case when cp.business_name is not null and  trim(cp.business_name) != '' then upper(cp.business_name) else null end as business_name,
                 cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id,
-                case when cp.start_event_id != v_colin_event_id and cp.end_event_id is not null and cp.end_event_id = v_colin_event_id then
+                case when cp.start_event_id != v_colin_event_id and cp.end_event_id is not null and cp.end_event_id = v_colin_event_id
+                          and cp.prev_party_id > 0 and cp.cessation_dt is not null then
+                          (select f.transaction_id 
+                             from filings f, colin_event_ids ce, colin_extract.corp_party cp2
+                            where cp2.corp_party_id = cp.prev_party_id
+                              and cp2.corp_num = cp.corp_num
+                              and ce.colin_event_id = cp2.start_event_id
+                              and ce.filing_id = f.id)
+                     when cp.start_event_id != v_colin_event_id and cp.end_event_id is not null and cp.end_event_id = v_colin_event_id then
                           (select f.transaction_id 
                              from filings f, colin_event_ids ce
                             where ce.colin_event_id = cp.start_event_id
@@ -2218,7 +2284,7 @@ declare
                             where cp2.corp_num = cp.corp_num
                               and cp2.start_event_id = cp.end_event_id
                               and cp2.prev_party_id is not null
-                              and cp2.prev_party_id = cp.corp_party_id)
+                              and (cp2.prev_party_id = cp.corp_party_id or cp2.prev_party_id = cp.prev_party_id))
                     else 0 end as link_count,
                 (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
                    from colin_extract.event e
@@ -2240,7 +2306,8 @@ declare
                              and pr.cessation_date is null
                              and pr.end_transaction_id is null
                              fetch first 1 rows only)
-                   else null end as party_id
+                   else null end as party_id,
+                   cp.corp_num
           from colin_extract.corp_party cp 
         where cp.corp_num = v_corp_num
           and (cp.start_event_id = v_colin_event_id or cp.end_event_id = v_colin_event_id)
@@ -2265,6 +2332,9 @@ begin
     -- Removing if not linked, otherwise set up for update.
     if rec_hist_party.start_event_id != p_colin_event_id and rec_hist_party.end_event_id is not null and 
        rec_hist_party.end_event_id = p_colin_event_id and rec_hist_party.link_count = 0 then
+      update_type := 2;
+    elsif rec_hist_party.start_event_id != p_colin_event_id and rec_hist_party.end_event_id is not null and 
+       rec_hist_party.end_event_id = p_colin_event_id and rec_hist_party.cessation_dt is not null then
       update_type := 2;
     elsif rec_hist_party.start_event_id = p_colin_event_id and rec_hist_party.prev_party_id is not null and rec_hist_party.prev_party_id > 0 then
       update_type := 1;
