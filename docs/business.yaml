@@ -4231,7 +4231,9 @@ components:
     Annual_report:
       type: object
       title: Annual Report Filing
-      description: To file any change or confirm the information shown in the Corporate Register. Must be filed within two months of the anniversary date of incorporation.
+      description: |
+        To file any change or confirm the information shown in the Corporate Register. Must be filed within two months of the anniversary date of incorporation.
+        **Note:** Officers are not required as part of the annual report filing.
       properties:
         annualReport:
           type: object
@@ -4261,7 +4263,7 @@ components:
                 properties:
                   officer:
                     type: object
-                    description: Person responsible for the management and day-to-day operations of the company.
+                    description: Personal information about the director.
                     required:
                       - firstName
                       - lastName
@@ -4631,52 +4633,62 @@ components:
           properties:
             legalType:
               type: string
-              example: Mailing address
-              description: 'Type of address to be changed eg: delivery address.   '
-            registeredOffice:
-              $ref: '#/components/schemas/Office'
-            recordsOffice:
-              $ref: '#/components/schemas/Office'
+              example: BC
+              description: 'The legal type of the business.   '
+            offices:
+              type: object
+              description: 'Offices related to the business.   '
+              properties:  
+                registeredOffice:
+                  $ref: '#/components/schemas/Office'
+                recordsOffice:
+                  $ref: '#/components/schemas/Office'
+              required:
+                - registeredOffice        
+          required:
+            - legalType
+            - offices        
       x-examples:
         Example 1:
           changeOfAddress:
             legalType: Mailing address
-            registeredOffice:
-              officeType: 'Head office '
-              mailingAddress:
-                streetAddress: 5-4761 Bay Street
-                streetAddressAdditional: Building A
-                addressCity: Victoria
-                addressRegion: 'BC for British Columbia '
-                addressCountry: Canada
-                postalCode: V8R 2P1
-                deliveryInstructions: '"Our unit is located at the back of the building."'
-              deliveryAddress:
-                streetAddress: 5-4761 Bay Street
-                streetAddressAdditional: Building A
-                addressCity: Victoria
-                addressRegion: 'BC for British Columbia '
-                addressCountry: Canada
-                postalCode: V8R 2P1
-                deliveryInstructions: '"Our unit is located at the back of the building."'
-            recordsOffice:
-              officeType: Head office
-              mailingAddress:
-                streetAddress: 5-4761 Bay Street
-                streetAddressAdditional: Buillding A
-                addressCity: Victoria
-                addressRegion: 'BC for British Columbia '
-                addressCountry: Canada
-                postalCode: V8R 2P1
-                deliveryInstructions: '"Our unit is located at the back of the building."'
-              deliveryAddress:
-                streetAddress: 5-4761 Bay Street
-                streetAddressAdditional: Building A
-                addressCity: Victoria
-                addressRegion: 'BC for British Columbia '
-                addressCountry: Canada
-                postalCode: V8R 2P1
-                deliveryInstructions: '"Our unit is located at the back of the building."'
+            offices:
+              registeredOffice:
+                officeType: 'Head office '
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+              recordsOffice:
+                officeType: Head office
+                mailingAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Buillding A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
+                deliveryAddress:
+                  streetAddress: 5-4761 Bay Street
+                  streetAddressAdditional: Building A
+                  addressCity: Victoria
+                  addressRegion: 'BC for British Columbia '
+                  addressCountry: Canada
+                  postalCode: V8R 2P1
+                  deliveryInstructions: '"Our unit is located at the back of the building."'
     Change_of_directors:
       type: object
       title: Change of Directors Filing
@@ -4684,7 +4696,7 @@ components:
       properties:
         changeOfDirectors:
           type: object
-          description: This section contains all the changes you want to make to your company''s directors.
+          description: This section contains all the changes you want to make to your company's directors.
           required:
             - directors
           properties:
