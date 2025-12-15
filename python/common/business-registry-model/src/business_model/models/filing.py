@@ -259,12 +259,19 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         },
         'changeOfReceivers': {
             'name': 'changeOfReceivers',
-            'ammendReceiver': {
-                'name': 'ammendReceiver',
-                'title': 'Ammend Receiver Filing',
-                'displayName': 'Ammend Receiver',
+            'amendReceiver': {
+                'name': 'amendReceiver',
+                'title': 'Amend Receiver Filing',
+                'displayName': 'Amend Receiver',
                 'codes': {
-                    # TODO: TBD
+                    "BEN": "AMEND",
+                    "BC": "AMEND",
+                    "ULC": "AMEND",
+                    "CC": "AMEND",
+                    "CBEN": "AMEND",
+                    "C": "AMEND",
+                    "CUL": "AMEND",
+                    "CCC": "AMEND"
                 }
             },
             'appointReceiver': {

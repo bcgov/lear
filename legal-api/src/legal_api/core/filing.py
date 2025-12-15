@@ -106,7 +106,7 @@ class Filing:  # pylint: disable=too-many-public-methods
     class FilingTypesCompact(str, Enum):
         """Render enum for filing types with sub-types."""
 
-        CHANGEOFRECEIVERS_AMMEND_RECEIVER = "changeOfReceivers.ammendReceiver"
+        CHANGEOFRECEIVERS_AMEND_RECEIVER = "changeOfReceivers.amendReceiver"
         CHANGEOFRECEIVERS_APPOINT_RECEIVER = "changeOfReceivers.appointReceiver"
         CHANGEOFRECEIVERS_CEASE_RECEIVER = "changeOfReceivers.ceaseReceiver"
         CHANGEOFRECEIVERS_CHANGE_ADDRESS_RECEIVER = "changeOfReceivers.changeAddressReceiver"

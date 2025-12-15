@@ -304,10 +304,10 @@ FILINGS: Final = {
     },
     "changeOfReceivers": {
         "name": "changeOfReceivers",
-        "ammendReceiver": {
-            "name": "ammendReceiver",
-            "title": "Ammend Receiver Filing",
-            "displayName": "Ammend Receiver Information",
+        "amendReceiver": {
+            "name": "amendReceiver",
+            "title": "Amend Receiver Filing",
+            "displayName": "Amend Receiver Information",
             "codes": {
                 # FUTURE: this will change
                 "BEN": "NOCRM",
