@@ -795,10 +795,6 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "Notice of Withdrawal",
             "name": "noticeOfWithdrawal"
-        },
-        {
-            "displayName": "Statement of Intent to Liquidate",
-            "name": "intentToLiquidate",
         }
     ]
 

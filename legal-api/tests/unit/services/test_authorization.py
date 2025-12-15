@@ -254,7 +254,7 @@ EXPECTED_DATA = {
     FilingKey.CHANGE_OF_RECEIVERS_APPOINT: {'name': 'changeOfReceivers', 'type': 'appointReceiver', 'displayName': 'Notice of Appointment of Receiver or Receiver Manager', 'feeCode': 'NOARM'},
     FilingKey.CHANGE_OF_RECEIVERS_CEASE: {'name': 'changeOfReceivers', 'type': 'ceaseReceiver', 'displayName': 'Notice of Ceasing to Act as Receiver or Receiver Manager', 'feeCode': 'NOCER'},
     FilingKey.CHANGE_OF_RECEIVERS_ADDRESS: {'name': 'changeOfReceivers', 'type': 'changeAddressReceiver', 'displayName': 'Notice of Receiver Change of Address Filing', 'feeCode': 'NOCRM'},
-    FilingKey.CHANGE_OF_RECEIVERS_AMEND: {'name': 'changeOfReceivers', 'type': 'amendReceiver', 'displayName': 'Amend Receiver Information', 'feeCode': 'NOCRM'},
+    FilingKey.CHANGE_OF_RECEIVERS_AMEND: {'name': 'changeOfReceivers', 'type': 'amendReceiver', 'displayName': 'Amend Receiver Information', 'feeCode': 'AMEND'},
 }
 
 EXPECTED_DATA_CONT_IN = {
@@ -346,7 +346,7 @@ EXPECTED_DATA_CONT_IN = {
     FilingKey.CHANGE_OF_RECEIVERS_APPOINT: {'name': 'changeOfReceivers', 'type': 'appointReceiver', 'displayName': 'Notice of Appointment of Receiver or Receiver Manager', 'feeCode': 'NOARM'},
     FilingKey.CHANGE_OF_RECEIVERS_CEASE: {'name': 'changeOfReceivers', 'type': 'ceaseReceiver', 'displayName': 'Notice of Ceasing to Act as Receiver or Receiver Manager', 'feeCode': 'NOCER'},
     FilingKey.CHANGE_OF_RECEIVERS_ADDRESS: {'name': 'changeOfReceivers', 'type': 'changeAddressReceiver', 'displayName': 'Notice of Receiver Change of Address Filing', 'feeCode': 'NOCRM'},
-    FilingKey.CHANGE_OF_RECEIVERS_AMEND: {'name': 'changeOfReceivers', 'type': 'amendReceiver', 'displayName': 'Amend Receiver Information', 'feeCode': 'NOCRM'}
+    FilingKey.CHANGE_OF_RECEIVERS_AMEND: {'name': 'changeOfReceivers', 'type': 'amendReceiver', 'displayName': 'Amend Receiver Information', 'feeCode': 'AMEND'}
 }
 
 BLOCKER_FILING_STATUSES = factory_incomplete_statuses()
@@ -608,7 +608,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'consentAmalgamationOut', 'consentContinuationOut', 'continuationOut',
           'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
           'incorporationApplication', 'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
-          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal', 'intentToLiquidate']),
+          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
           {'amalgamationApplication': ['regular', 'vertical', 'horizontal']}, 'amalgamationOut', 'annualReport',
@@ -616,7 +616,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'continuationIn', 'consentAmalgamationOut', 'consentContinuationOut',
           'continuationOut', 'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
           'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
-          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal', 'intentToLiquidate']),
+          {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
         ('staff_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'changeOfRegistration', 'conversion', 'correction', 'courtOrder',
