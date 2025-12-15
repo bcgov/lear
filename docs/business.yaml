@@ -4233,6 +4233,7 @@ components:
       title: Annual Report Filing
       description: |
         To file any change or confirm the information shown in the Corporate Register. Must be filed within two months of the anniversary date of incorporation.
+
         **Note:** Officers are not required as part of the annual report filing.
       properties:
         annualReport:
@@ -4651,7 +4652,7 @@ components:
       x-examples:
         Example 1:
           changeOfAddress:
-            legalType: Mailing address
+            legalType: BC
             offices:
               registeredOffice:
                 officeType: 'Head office '
