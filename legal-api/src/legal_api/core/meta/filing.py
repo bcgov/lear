@@ -621,21 +621,6 @@ FILINGS: Final = {
             },
         ]
     },
-    "intentToLiquidate": {
-        "name": "intentToLiquidate",
-        "title": "Statement of Intent to Liquidate",
-        "displayName": "Statement of Intent to Liquidate",
-        "codes": {
-            "BC": "LQSIN",
-            "BEN": "LQSIN",
-            "ULC": "LQSIN",
-            "CC": "LQSIN",
-            "C": "LQSIN",
-            "CBEN": "LQSIN",
-            "CUL": "LQSIN",
-            "CCC": "LQSIN"
-        }
-    },
     "noticeOfWithdrawal": {
         "name": "noticeOfWithdrawal",
         "title": "Notice of Withdrawal",

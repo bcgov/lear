@@ -90,7 +90,6 @@ class Filing:  # pylint: disable=too-many-public-methods
         DISSOLUTION = "dissolution"
         DISSOLVED = "dissolved"
         INCORPORATIONAPPLICATION = "incorporationApplication"
-        INTENTTOLIQUIDATE = "intentToLiquidate"
         NOTICEOFWITHDRAWAL = "noticeOfWithdrawal"
         PUTBACKOFF = "putBackOff"
         PUTBACKON = "putBackOn"
