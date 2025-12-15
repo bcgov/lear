@@ -25,9 +25,8 @@ from flask import current_app
 from flask_babel import _ as babel
 from sqlalchemy.orm.exc import FlushError
 
-from legal_api.models import RegistrationBootstrap  # noqa: D204, I003, I001;# due to babel cast above
-from legal_api.services import flags  # noqa: D204, I003, I001;# due to babel cast above
-from legal_api.services.flags import Flags
+from legal_api.models import RegistrationBootstrap
+from legal_api.services import Flags, flags
 
 
 class RegistrationBootstrapService:

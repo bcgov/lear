@@ -16,6 +16,14 @@ import uuid
 
 from gcp_queue import GcpQueue
 
+# Import Flags class first
+from .flags import Flags
+
+# Create flags instance BEFORE importing modules that depend on it
+# This prevents circular import issues with authz and bootstrap
+flags = Flags()
+
+# Now import modules that may reference the flags instance
 from .authz import (
     ACCOUNT_IDENTITY,
     BASIC_USER,
@@ -30,7 +38,6 @@ from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
 from .digital_credentials_rules import DigitalCredentialsRulesService
-from .flags import Flags
 from .furnishing_documents_service import FurnishingDocumentsService
 from .involuntary_dissolution import InvoluntaryDissolutionService
 from .minio import MinioService
@@ -41,8 +48,42 @@ from .pdf_service import PdfService
 from .warnings.business import check_business
 from .warnings.warning import check_warnings
 
-flags = Flags()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-gcp_queue = GcpQueue()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-namex = NameXService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
-colin = ColinService()  # pylint: disable=invalid-name; shared variables are lower case by Flask convention.
+# Create other service instances
+gcp_queue = GcpQueue()
+namex = NameXService()
+colin = ColinService()
 digital_credentials = DigitalCredentialsService()
+
+__all__ = [  # noqa: RUF022
+    # Authorization
+    "ACCOUNT_IDENTITY",
+    "BASIC_USER",
+    "COLIN_SVC_ROLE",
+    "STAFF_ROLE",
+    "SYSTEM_ROLE",
+    "authorized",
+    "has_roles",
+    # Services
+    "AccountService",
+    "RegistrationBootstrapService",
+    "VersionedBusinessDetailsService",
+    "ColinService",
+    "DigitalCredentialsService",
+    "DigitalCredentialsRulesService",
+    "Flags",
+    "FurnishingDocumentsService",
+    "InvoluntaryDissolutionService",
+    "MinioService",
+    "MrasService",
+    "NaicsService",
+    "NameXService",
+    "PdfService",
+    "check_business",
+    "check_warnings",
+    # Service instances (not modules)
+    "flags",
+    "gcp_queue",
+    "namex",
+    "colin",
+    "digital_credentials",
+]
