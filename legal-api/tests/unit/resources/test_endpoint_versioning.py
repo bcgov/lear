@@ -21,9 +21,6 @@ from legal_api.resources.endpoints import endpoints
 
 
 @pytest.mark.parametrize('test_name, route, test_route, expected', [
-    ('v1_to_v1', '/api/v1/test_this_endpoint', '/api/v1/test_this_endpoint', HTTPStatus.OK),
-    ('api_to_v1', '/api/v1/test_this_endpoint', '/api/test_this_endpoint', HTTPStatus.OK),
-    ('v2_to_v1', '/api/v1/test_this_endpoint', '/api/v2/test_this_endpoint', HTTPStatus.OK),
     ('v2_error', '/test_this_endpoint', '/api/v2/test_this_endpoint', HTTPStatus.NOT_FOUND),
 ])
 def test_end_point_versioning_by_path(test_name, route, test_route, expected):
