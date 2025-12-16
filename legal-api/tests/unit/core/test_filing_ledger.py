@@ -47,6 +47,10 @@ def load_ledger(business, founding_date):
                 'type': 'initial',
                 'ledgerReferenceNumber': '123ewd2'
             }
+        elif filing_meta['name'] == 'changeOfLiquidators':
+            filing['filing']['changeOfLiquidators'] = {
+                'type': 'intentToLiquidate'
+            }
         elif filing_meta['name'] == 'changeOfReceivers':
             filing['filing']['changeOfReceivers'] = {
                 'type': 'appointReceiver'

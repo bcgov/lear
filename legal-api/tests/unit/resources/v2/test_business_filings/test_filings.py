@@ -36,6 +36,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
     CONTINUATION_IN,
@@ -2017,6 +2018,48 @@ def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     rv = client.post(
         f'/api/v2/businesses/{identifier}/filings',
         json=cor,
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier',
+    [
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+    ]
+)
+def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+    """Assert Change of Liquidators is submitted correctly for entity types."""
+    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    col = copy.deepcopy(FILING_HEADER)
+    col['filing']['header']['name'] = 'changeOfLiquidators'
+    col['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+
+    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    factory_business_mailing_address(b)
+    col['filing']['business']['identifier'] = identifier
+
+    requests_mock.post(
+        current_app.config.get('PAYMENT_SVC_URL'),
+        json={
+            'id': 21322,
+            'statusCode': 'COMPLETED',
+            'isPaymentActionRequired': False
+        },
+        status_code=HTTPStatus.CREATED
+    )
+    rv = client.post(
+        f'/api/v2/businesses/{identifier}/filings',
+        json=col,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 

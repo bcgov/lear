@@ -75,6 +75,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         ANNUALREPORT = "annualReport"
         CHANGEOFADDRESS = "changeOfAddress"
         CHANGEOFDIRECTORS = "changeOfDirectors"
+        CHANGEOFLIQUIDATORS = "changeOfLiquidators"
         CHANGEOFNAME = "changeOfName"
         CHANGEOFOFFICERS = "changeOfOfficers"
         CHANGEOFRECEIVERS = "changeOfReceivers"
@@ -105,6 +106,11 @@ class Filing:  # pylint: disable=too-many-public-methods
     class FilingTypesCompact(str, Enum):
         """Render enum for filing types with sub-types."""
 
+        CHANGEOFLIQUIDATORS_APPOINT_LIQUIDATOR = "changeOfLiquidators.appointLiquidator"
+        CHANGEOFLIQUIDATORS_CEASE_LIQUIDATOR = "changeOfLiquidators.ceaseLiquidator"
+        CHANGEOFLIQUIDATORS_CHANGE_ADDRESS_LIQUIDATOR = "changeOfLiquidators.changeAddressLiquidator"
+        CHANGEOFLIQUIDATORS_INTENT_TO_LIQUIDATE = "changeOfLiquidators.intentToLiquidate"
+        CHANGEOFLIQUIDATORS_LIQUIDATION_REPORT = "changeOfLiquidators.liquidationReport"
         CHANGEOFRECEIVERS_AMEND_RECEIVER = "changeOfReceivers.amendReceiver"
         CHANGEOFRECEIVERS_APPOINT_RECEIVER = "changeOfReceivers.appointReceiver"
         CHANGEOFRECEIVERS_CEASE_RECEIVER = "changeOfReceivers.ceaseReceiver"

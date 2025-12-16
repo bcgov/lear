@@ -32,6 +32,7 @@ from .amalgamation_out import validate as amalgamation_out_validate
 from .annual_report import validate as annual_report_validate
 from .change_of_address import validate as coa_validate
 from .change_of_directors import validate as cod_validate
+from .change_of_liquidators import validate as col_validate
 from .change_of_name import validate as con_validate
 from .change_of_officers import validate as coo_validate
 from .change_of_receivers import validate as cor_validate
@@ -147,6 +148,9 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
 
                 elif k == Filing.FILINGS["changeOfDirectors"].get("name"):
                     err = cod_validate(business, filing_json)
+                
+                elif k == Filing.FILINGS["changeOfLiquidators"].get("name"):
+                    err = col_validate(business, filing_json)
 
                 elif k == Filing.FILINGS["changeOfName"].get("name"):
                     err = con_validate(business, filing_json)

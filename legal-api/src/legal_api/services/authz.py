@@ -240,6 +240,29 @@ def get_allowable_filings_dict():
                         "business": [BusinessBlocker.DEFAULT]
                     }
                 },
+                "changeOfLiquidators": {
+                    # FUTURE: narrow down blocker checks, needs BA / design input - will be done in #31714
+                    "appointLiquidator": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "business": [BusinessBlocker.DEFAULT]
+                    },
+                    "ceaseLiquidator": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "business": [BusinessBlocker.DEFAULT]
+                    },
+                    "changeAddressLiquidator": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "business": [BusinessBlocker.DEFAULT]
+                    },
+                    "intentToLiquidate": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "business": [BusinessBlocker.DEFAULT]
+                    },
+                    "liquidationReport": {
+                        "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "business": [BusinessBlocker.DEFAULT]
+                    },
+                },
                 "changeOfOfficers": {
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
@@ -389,16 +412,6 @@ def get_allowable_filings_dict():
                     },
                     "businessRequirement": BusinessRequirement.NO_RESTRICTION
                 }
-                # FUTURE: will move this as a sub type into changeOfLiquidators as part of #31233
-                # "intentToLiquidate": {  # noqa: ERA001
-                #     "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],  # noqa: ERA001
-                #     "blockerChecks": {  # noqa: ERA001
-                #         "business": [BusinessBlocker.DEFAULT,  # noqa: ERA001
-                #                      BusinessBlocker.NOT_IN_GOOD_STANDING,
-                #                      BusinessBlocker.IN_DISSOLUTION,
-                #                      BusinessBlocker.IN_LIQUIDATION],
-                #     } # noqa: ERA001, RUF100
-                # } # noqa: ERA001, RUF100
             },
             Business.State.HISTORICAL: {
                 "courtOrder": {
@@ -600,6 +613,7 @@ def get_allowable_filings_dict():
 
     if not flags.is_on("enable-unloved-filings"):
         # These ones are only allowed if the flag is on
+        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfLiquidators"]
         del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfReceivers"]
 
     return allowable_filings_dict

@@ -31,6 +31,7 @@ from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
@@ -649,6 +650,24 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('gp_ia_completed', 'FM7654321', Business.LegalTypes.PARTNERSHIP.value,
      'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
      {'documents': {}},
+     HTTPStatus.OK, None
+     ),
+    ('bc_change_of_liquidators_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+         'legalFilings': [
+             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfLiquidators'},
+         ]
+     }},
+     HTTPStatus.OK, '2020-10-01'
+     ),
+    ('bc_change_of_liquidators_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.PAID,
+     {'documents': {
+         'legalFilings': [
+             {'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfLiquidators'},
+         ]}},
      HTTPStatus.OK, None
      ),
      ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,

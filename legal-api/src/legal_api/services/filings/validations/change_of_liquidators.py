@@ -31,30 +31,34 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Validation for the Change of Receivers filing."""
+"""Validation for the Change of Liquidators filing."""
 from http import HTTPStatus
 from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services.filings.validations.common_validations import validate_relationships
+from legal_api.services.filings.validations.common_validations import validate_offices_addresses, validate_relationships
 
 
 def validate(business: Business, filing_json: dict) -> Optional[Error]:
-    """Validate the Change of Receiver filing."""
-    filing_type = "changeOfReceivers"
+    """Validate the Change of Liquidators filing."""
+    filing_type = "changeOfLiquidators"
     filing_sub_type = filing_json["filing"][filing_type]["type"]
 
     msg = []
 
-    msg.extend(validate_relationships(
-        business,
-        filing_json,
-        filing_type,
-        PartyRole.RoleTypes.RECEIVER,
-        filing_sub_type in ["amendReceiver", "appointReceiver"],
-        filing_sub_type in ["amendReceiver", "ceaseReceiver", "changeAddressReceiver"]
-    ))
+    if filing_json["filing"][filing_type].get('relationships'):
+        msg.extend(validate_relationships(
+            business,
+            filing_json,
+            filing_type,
+            PartyRole.RoleTypes.LIQUIDATOR,
+            filing_sub_type in ["appointLiquidator", "intentToLiquidate"],
+            filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
+        ))
+
+    if filing_json["filing"][filing_type].get('offices'):
+        msg.extend(validate_offices_addresses(filing_json, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
