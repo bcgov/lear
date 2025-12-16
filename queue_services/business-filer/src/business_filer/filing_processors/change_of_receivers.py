@@ -49,7 +49,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfReceivers onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     relationships = filing_json["filing"]["changeOfReceivers"].get("relationships")
-    if filing_rec.filing_sub_type == "ammendReceiver":
+    if filing_rec.filing_sub_type == "amendReceiver":
         create_relationsips(relationships, business, filing_rec)
         cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
         update_relationship_addresses(relationships)

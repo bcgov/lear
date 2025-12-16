@@ -190,7 +190,7 @@ def test_process_cor_filing(app, session):
                 },
                 'roles': [
                     {
-                        'roleType': PartyRole.RoleTypes.RECEIVER.value,
+                        'roleType': 'Receiver',
                         # NOTE: will be overriden by filing effective date
                         'cessationDate': '2025-03-04'
                     }
@@ -297,10 +297,10 @@ def test_process_cor_filing(app, session):
             assert mailing_address.street == new_address_mailing['streetAddress']
     
     
-    # Test ammend receivers
+    # Test amend receivers
 
-    new_address_delivery_ammend = {
-        'streetAddress': 'Changed Delivery ammend',
+    new_address_delivery_amend = {
+        'streetAddress': 'Changed Delivery amend',
         'streetAddressAdditional': '',
         'addressCity': 'Vancouver',
         'addressRegion': 'BC',
@@ -340,21 +340,21 @@ def test_process_cor_filing(app, session):
         ]
     }
     filing['filing']['changeOfReceivers'] = {
-        'type': 'ammendReceiver',
+        'type': 'amendReceiver',
         'relationships': [
             {
                 'entity': {
                     'identifier': party_id_2,
                     'businessName': 'Test Business'
                 },
-                'deliveryAddress': new_address_delivery_ammend
+                'deliveryAddress': new_address_delivery_amend
             },
             {
                 'entity': {
                     'identifier': party_id_3,
                     **new_name
                 },
-                'deliveryAddress': new_address_delivery_ammend
+                'deliveryAddress': new_address_delivery_amend
             },
             new_relationship
         ]
@@ -372,13 +372,13 @@ def test_process_cor_filing(app, session):
     process_filing(filing_msg)
 
     # Get modified data
-    ammend_filing: Filing = Filing.find_by_id(filing_rec.id)
+    amend_filing: Filing = Filing.find_by_id(filing_rec.id)
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert ammend_filing.transaction_id
-    assert ammend_filing.business_id == business.id
-    assert ammend_filing.status == Filing.Status.COMPLETED.value
+    assert amend_filing.transaction_id
+    assert amend_filing.business_id == business.id
+    assert amend_filing.status == Filing.Status.COMPLETED.value
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
@@ -390,7 +390,7 @@ def test_process_cor_filing(app, session):
         mailing_address: Address = role.party.mailing_address
         if role.party_id == party_id_2:
             assert delivery_address.address_type == 'delivery'
-            assert delivery_address.street == new_address_delivery_ammend['streetAddress']
+            assert delivery_address.street == new_address_delivery_amend['streetAddress']
             # mailing should be unchanged
             assert mailing_address.address_type == 'mailing'
             assert mailing_address.street == new_address_mailing['streetAddress']

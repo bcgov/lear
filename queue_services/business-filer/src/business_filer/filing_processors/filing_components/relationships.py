@@ -164,7 +164,7 @@ def cease_relationships(
     def has_ceased_role(roles: list[dict]):
         return any(
             ceased_role for ceased_role in roles
-            if ceased_role.get("roleType") == role.value and
+            if RELATIONSHIP_ROLE_CONVERTER.get(ceased_role.get("roleType", "").lower(), "") == role.value and
             ceased_role.get("cessationDate")
         )
     cease_party_ids = [
@@ -175,7 +175,7 @@ def cease_relationships(
         # NOTE: cessationDate must be set in the role of the submission, but it will be overriden below by the date_time
         has_ceased_role(relationship.get("roles", []))
     ]
-    party_roles = PartyRole.get_party_roles(business.id, date_time.date(), role.value)
+    party_roles: list[PartyRole] = PartyRole.get_party_roles(business.id, date_time.date(), role.value)
     for party_role in party_roles:
         if party_role.party_id in cease_party_ids:
             party_role.cessation_date = date_time
