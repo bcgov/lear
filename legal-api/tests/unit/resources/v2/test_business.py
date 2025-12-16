@@ -713,9 +713,9 @@ def test_get_could_file(session, client, jwt):
             "name": "changeOfOfficers"
         },
         {
-            "displayName": "Ammend Receiver Information",
+            "displayName": "Amend Receiver Information",
             "name": "changeOfReceivers",
-            "type": "ammendReceiver"
+            "type": "amendReceiver"
         },
         {
             "displayName": "Notice of Appointment of Receiver or Receiver Manager",
@@ -795,10 +795,6 @@ def test_get_could_file(session, client, jwt):
         {
             "displayName": "Notice of Withdrawal",
             "name": "noticeOfWithdrawal"
-        },
-        {
-            "displayName": "Statement of Intent to Liquidate",
-            "name": "intentToLiquidate",
         }
     ]
 

@@ -247,7 +247,7 @@ def get_allowable_filings_dict():
                     }
                 },
                 "changeOfReceivers": {
-                    "ammendReceiver": {
+                    "amendReceiver": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.DEFAULT]
@@ -388,16 +388,17 @@ def get_allowable_filings_dict():
                         "business": [BusinessBlocker.FILING_WITHDRAWAL]
                     },
                     "businessRequirement": BusinessRequirement.NO_RESTRICTION
-                },
-                "intentToLiquidate": {
-                    "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
-                    "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT,
-                                     BusinessBlocker.NOT_IN_GOOD_STANDING,
-                                     BusinessBlocker.IN_DISSOLUTION,
-                                     BusinessBlocker.IN_LIQUIDATION],
-                    }
                 }
+                # FUTURE: will move this as a sub type into changeOfLiquidators as part of #31233
+                # "intentToLiquidate": {  # noqa: ERA001
+                #     "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],  # noqa: ERA001
+                #     "blockerChecks": {  # noqa: ERA001
+                #         "business": [BusinessBlocker.DEFAULT,  # noqa: ERA001
+                #                      BusinessBlocker.NOT_IN_GOOD_STANDING,
+                #                      BusinessBlocker.IN_DISSOLUTION,
+                #                      BusinessBlocker.IN_LIQUIDATION],
+                #     } # noqa: ERA001, RUF100
+                # } # noqa: ERA001, RUF100
             },
             Business.State.HISTORICAL: {
                 "courtOrder": {

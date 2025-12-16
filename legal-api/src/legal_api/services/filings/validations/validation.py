@@ -47,7 +47,6 @@ from .court_order import validate as court_order_validate
 from .dissolution import DissolutionTypes
 from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
-from .intent_to_liquidate import validate as intent_to_liquidate_validate
 from .notice_of_withdrawal import validate as notice_of_withdrawal_validate
 from .put_back_off import validate as put_back_off_validate
 from .put_back_on import validate as put_back_on_validate
@@ -220,9 +219,6 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
 
                 elif k == Filing.FILINGS["continuationIn"].get("name"):
                     err = continuation_in_validate(filing_json)
-
-                elif k == Filing.FILINGS["intentToLiquidate"].get("name"):
-                    err = intent_to_liquidate_validate(business, filing_json)
 
                 elif k == Filing.FILINGS["noticeOfWithdrawal"].get("name"):
                     err = notice_of_withdrawal_validate(filing_json)

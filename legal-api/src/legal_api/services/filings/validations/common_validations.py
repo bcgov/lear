@@ -435,7 +435,7 @@ def validate_relationship_entity_name(party: dict, party_path: str) -> list:
         if entity.get("fullName") not in (None, ""):
             err_msg = f"{party_roles_str} fullName should not be set for an organization relationship entity"
             msg.append({"error": err_msg, "path": party_path})
-        
+
     return msg 
 
 

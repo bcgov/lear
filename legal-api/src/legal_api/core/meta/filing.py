@@ -304,10 +304,10 @@ FILINGS: Final = {
     },
     "changeOfReceivers": {
         "name": "changeOfReceivers",
-        "ammendReceiver": {
-            "name": "ammendReceiver",
-            "title": "Ammend Receiver Filing",
-            "displayName": "Ammend Receiver Information",
+        "amendReceiver": {
+            "name": "amendReceiver",
+            "title": "Amend Receiver Filing",
+            "displayName": "Amend Receiver Information",
             "codes": {
                 # FUTURE: this will change
                 "BEN": "NOCRM",
@@ -620,21 +620,6 @@ FILINGS: Final = {
                 "outputs": ["noticeOfArticles", "certificateOfIncorporation"]
             },
         ]
-    },
-    "intentToLiquidate": {
-        "name": "intentToLiquidate",
-        "title": "Statement of Intent to Liquidate",
-        "displayName": "Statement of Intent to Liquidate",
-        "codes": {
-            "BC": "LQSIN",
-            "BEN": "LQSIN",
-            "ULC": "LQSIN",
-            "CC": "LQSIN",
-            "C": "LQSIN",
-            "CBEN": "LQSIN",
-            "CUL": "LQSIN",
-            "CCC": "LQSIN"
-        }
     },
     "noticeOfWithdrawal": {
         "name": "noticeOfWithdrawal",

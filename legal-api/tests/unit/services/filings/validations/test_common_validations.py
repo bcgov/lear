@@ -33,7 +33,6 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     FIRMS_CONVERSION,
     INCORPORATION,
-    INTENT_TO_LIQUIDATE,
     REGISTRATION,
     RESTORATION,
 )
@@ -83,8 +82,7 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     ('correction', CORRECTION, 'registeredOffice'),
     ('incorporationApplication', INCORPORATION, 'registeredOffice'),
     ('registration', REGISTRATION, 'businessOffice'),
-    ('restoration', RESTORATION, 'registeredOffice'),
-    ('intentToLiquidate', INTENT_TO_LIQUIDATE, 'liquidationOffice')
+    ('restoration', RESTORATION, 'registeredOffice')
 ])
 def test_validate_offices_addresses_postal_code(session, filing_type, filing_data, office_type):
     """Test postal code of office address can be validated."""
@@ -116,8 +114,7 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
     ('dissolution', DISSOLUTION, 'parties'),
     ('incorporationApplication', INCORPORATION, 'parties'),
     ('registration', REGISTRATION, 'parties'),
-    ('restoration', RESTORATION, 'parties'),
-    ('intentToLiquidate', INTENT_TO_LIQUIDATE, 'parties')
+    ('restoration', RESTORATION, 'parties')
 ])
 def test_validate_parties_addresses_postal_code(session, filing_type, filing_data, party_key):
     """Test postal code of party address can be validated."""
