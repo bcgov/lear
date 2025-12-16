@@ -47,7 +47,7 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
 
     msg = []
 
-    if filing_json["filing"][filing_type].get('relationships'):
+    if filing_json["filing"][filing_type].get("relationships"):
         msg.extend(validate_relationships(
             business,
             filing_json,
@@ -57,7 +57,7 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
             filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
         ))
 
-    if filing_json["filing"][filing_type].get('offices'):
+    if filing_json["filing"][filing_type].get("offices"):
         msg.extend(validate_offices_addresses(filing_json, filing_type))
 
     if msg:

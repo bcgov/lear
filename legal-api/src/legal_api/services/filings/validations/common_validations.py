@@ -376,7 +376,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
     return msg 
 
 
-def validate_relationships(
+def validate_relationships( # noqa: PLR0913
     business: Business,
     filing_json: dict,
     filing_type: str,
