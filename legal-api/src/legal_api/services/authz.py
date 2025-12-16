@@ -244,23 +244,33 @@ def get_allowable_filings_dict():
                     # FUTURE: narrow down blocker checks, needs BA / design input - will be done in #31714
                     "appointLiquidator": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                        "business": [BusinessBlocker.DEFAULT]
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
                     },
                     "ceaseLiquidator": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                        "business": [BusinessBlocker.DEFAULT]
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
                     },
                     "changeAddressLiquidator": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                        "business": [BusinessBlocker.DEFAULT]
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
                     },
                     "intentToLiquidate": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                        "business": [BusinessBlocker.DEFAULT]
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
                     },
                     "liquidationReport": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
-                        "business": [BusinessBlocker.DEFAULT]
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT]
+                        }
                     },
                 },
                 "changeOfOfficers": {
