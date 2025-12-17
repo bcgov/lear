@@ -657,7 +657,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
          'legalFilings': [
-             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfLiquidators'},
+             {'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfLiquidators'},
          ]
      }},
      HTTPStatus.OK, '2020-10-01'
