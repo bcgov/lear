@@ -897,3 +897,61 @@ def validate_party_role_firms(parties: list) -> list:
                              PartyRole.RoleTypes.PROPRIETOR.value]:
                 return False
     return True
+
+def validate_completing_party(filing_json: dict, filing_type: str, business=None) -> list:
+    """Validate completing party edited."""
+    msg = []
+    parties = filing_json["filing"][filing_type].get("parties", {})
+
+    officer = None
+    for party in parties:
+        roles = party.get("roles", [])
+        if any(role.get("roleType").lower() == PartyRole.RoleTypes.COMPLETING_PARTY.value for role in roles):
+            officer = party.get("officer", {})
+            break
+    if not officer:
+        msg.append({
+            "error": "Completing party is required.",
+            "path": f"/filing/{filing_type}/parties"
+        })
+        return msg
+    
+    is_party_changed = True
+    if business:
+        existing_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.COMPLETING_PARTY.value)
+        if existing_roles:
+            existing_party = existing_roles[0].party
+            filing_identifier = officer.get("identifier")
+
+            if filing_identifier and existing_party and existing_party.identifier == filing_identifier:
+                is_party_changed = False
+            else:
+                filing_party_type = officer.get("partyType", "").lower()
+                existing_party_type = (existing_party_type.party_type or "").lower()
+
+                if filing_party_type == existing_party_type:
+                    if filing_party_type == "person":
+                        if is_name_changed(
+                            {
+                                "firstName": existing_party.first_name,
+                                "middleName": existing_party.middle_initial,
+                                "lastName": existing_party.last_name,
+                                "organizationName": existing_party.organization_name
+                            },
+                            {
+                                "firstName": officer.get("firstName"),
+                                "middleName": officer.get("middleName"),
+                                "lastName": officer.get("lastName"),
+                                "organizationName": officer.get("organizationName")
+                            }
+                        ):
+                            is_party_changed = True
+                        else:
+                            is_party_changed = False
+                    elif filing_party_type == "organization":
+                        if not is_same_str(existing_party.organization_name, officer.get("organizationName")):
+                            is_party_changed = True
+                        else:
+                            is_party_changed = False
+    if is_party_changed:
+        return msg
