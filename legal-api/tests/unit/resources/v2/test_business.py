@@ -709,6 +709,31 @@ def test_get_could_file(session, client, jwt):
             "name": "changeOfDirectors"
         },
         {
+            "displayName": "Notice of Appointment of Liquidator",
+            "name": "changeOfLiquidators",
+            "type": "appointLiquidator"
+        },
+        {
+            "displayName": "Notice of Ceasing to Act as Liquidator",
+            "name": "changeOfLiquidators",
+            "type": "ceaseLiquidator"
+        },
+        {
+            "displayName": "Notice of Change of Address of Liquidator and/or Liquidation Records Office",
+            "name": "changeOfLiquidators",
+            "type": "changeAddressLiquidator"
+        },
+        {
+            "displayName": "Statement of Intent to Liquidate",
+            "name": "changeOfLiquidators",
+            "type": "intentToLiquidate"
+        },
+        {
+            "displayName": "Liquidation Report",
+            "name": "changeOfLiquidators",
+            "type": "liquidationReport"
+        },
+        {
             "displayName": "Officer Change",
             "name": "changeOfOfficers"
         },

@@ -234,6 +234,84 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 }
             }
         },
+        "changeOfLiquidators": {
+            "name": "changeOfLiquidators",
+            "appointLiquidator": {
+                "name": "appointLiquidator",
+                "title": "Notice of Appointment of Liquidator",
+                "displayName": "Notice of Appointment of Liquidator",
+                "codes": {
+                    "BEN": "NOAPL",
+                    "BC": "NOAPL",
+                    "ULC": "NOAPL",
+                    "CC": "NOAPL",
+                    "CBEN": "NOAPL",
+                    "C": "NOAPL",
+                    "CUL": "NOAPL",
+                    "CCC": "NOAPL"
+                }
+            },
+            "ceaseLiquidator": {
+                "name": "ceaseLiquidator",
+                "title": "Notice of Ceasing to Act as Liquidator",
+                "displayName": "Notice of Ceasing to Act as Liquidator",
+                "codes": {
+                    "BEN": "NOCEL",
+                    "BC": "NOCEL",
+                    "ULC": "NOCEL",
+                    "CC": "NOCEL",
+                    "CBEN": "NOCEL",
+                    "C": "NOCEL",
+                    "CUL": "NOCEL",
+                    "CCC": "NOCEL"
+                }
+            },
+            "changeAddressLiquidator": {
+                "name": "changeAddressLiquidator",
+                "title": "Notice of Change of Address of Liquidator and/or Liquidation Records Office",
+                "displayName": "Notice of Change of Address of Liquidator and/or Liquidation Records Office",
+                "codes": {
+                    "BEN": "NOCAL",
+                    "BC": "NOCAL",
+                    "ULC": "NOCAL",
+                    "CC": "NOCAL",
+                    "CBEN": "NOCAL",
+                    "C": "NOCAL",
+                    "CUL": "NOCAL",
+                    "CCC": "NOCAL"
+                }
+            },
+            "intentToLiquidate": {
+                "name": "intentToLiquidate",
+                "title": "Statement of Intent to Liquidate",
+                "displayName": "Statement of Intent to Liquidate",
+                "codes": {
+                    "BEN": "LQSIN",
+                    "BC": "LQSIN",
+                    "ULC": "LQSIN",
+                    "CC": "LQSIN",
+                    "CBEN": "LQSIN",
+                    "C": "LQSIN",
+                    "CUL": "LQSIN",
+                    "CCC": "LQSIN"
+                }
+            },
+            "liquidationReport": {
+                "name": "liquidationReport",
+                "title": "Liquidation Report",
+                "displayName": "Liquidation Report",
+                "codes": {
+                    "BEN": "LIQUR",
+                    "BC": "LIQUR",
+                    "ULC": "LIQUR",
+                    "CC": "LIQUR",
+                    "CBEN": "LIQUR",
+                    "C": "LIQUR",
+                    "CUL": "LIQUR",
+                    "CCC": "LIQUR"
+                }
+            },
+        },
         "changeOfName": {
             "name": "changeOfName",
             "title": "Change of Name Filing",
@@ -640,6 +718,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         "dissolution": "dissolutionType",
         "restoration": "type",
         "amalgamationApplication": "type",
+        "changeOfLiquidators": "type",
         "changeOfReceivers": "type",
         "transparencyRegister": "type"
     }
@@ -1231,6 +1310,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         excluded_filings = [
             "lear_epoch",
             "adminFreeze",
+            "changeOfLiquidators",
             "changeOfOfficers",
             "changeOfReceivers",
             "courtOrder",
