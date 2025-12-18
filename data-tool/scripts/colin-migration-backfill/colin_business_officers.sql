@@ -556,7 +556,6 @@ begin
 end;
 $$;
 
-
 --
 -- Tombstone corp current officers add an active officer.
 -- Inserts into addresses, addresses_version, parties, parties_version, party_roles, party_roles_version.
@@ -569,29 +568,41 @@ create or replace function public.colin_tombstone_officer(p_colin_event_id integ
 as $$
 declare
   cur_hist_party cursor(v_colin_event_id integer, v_corp_num character varying)
-     for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cp.appointment_dt, cp.cessation_dt,
-                'officer' as party_role,
+     for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cast('officer' as character varying) as party_role,
+                case when cp.appointment_dt is not null then
+                          cast((to_timestamp(to_char(cp.appointment_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     else cp.appointment_dt end as appointment_dt,
+                case when cp.cessation_dt is not null then
+                          cast((to_timestamp(to_char(cp.cessation_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     when cp.cessation_dt is null and (cp.prev_party_id is null or cp.prev_party_id < 1) and cp.end_event_id is not null then
+                          (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                             from colin_extract.event e
+                            where e.event_id = cp.end_event_id)
+                     else cp.cessation_dt end as cessation_dt,
                 case when cp.last_name is not null and trim(cp.last_name) != '' then upper(cp.last_name) else null end as last_name,
                 case when cp.middle_name is not null and trim(cp.middle_name) != '' then upper(cp.middle_name) else null end as middle_name,
                 case when cp.first_name is not null and  trim(cp.first_name) != '' then upper(cp.first_name) else null end as first_name,
                 case when cp.business_name is not null and  trim(cp.business_name) != '' then upper(cp.business_name) else null end as business_name,
-                cp.email_address, cp.corp_party_id, cp.start_event_id, cp.end_event_id, null as party_role_id
+                cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id,
+                (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                   from colin_extract.event e
+                  where e.event_id = v_colin_event_id) as party_date
           from colin_extract.corp_party cp 
-         where cp.corp_num = v_corp_num
-           and cp.start_event_id = v_colin_event_id
-           and cp.party_typ_cd = 'OFF'
-           and cp.end_event_id is null
-      order by corp_party_id;
+        where cp.corp_num = v_corp_num
+          and cp.start_event_id = v_colin_event_id
+          and cp.party_typ_cd = 'OFF'
+          and (cp.end_event_id is null or cp.cessation_dt is not null)
+/*
+          and not exists (select cp2.corp_party_id
+                            from colin_extract.corp_party cp2
+                           where cp2.corp_num = cp.corp_num
+                             and cp2.party_typ_cd = cp.party_typ_cd
+                             and cp2.prev_party_id is not null
+                             and cp2.prev_party_id = cp.corp_party_id)
+*/
+        order by corp_party_id;
   cur_hist_officer_offices cursor(v_party_id integer)
-    for select case when officer_typ_cd = 'PRE' then 'president'
-                    when officer_typ_cd = 'CFO' then 'cfo'
-                    when officer_typ_cd = 'CEO' then 'ceo'
-                    when officer_typ_cd = 'SEC' then 'secretary'
-                    when officer_typ_cd = 'VIP' then 'vice_president'
-                    when officer_typ_cd = 'TRE' then 'treasurer'
-                    when officer_typ_cd = 'CHR' then 'chair'
-                    when officer_typ_cd = 'ASC' then 'assistant_secretary'
-                    else 'other' end as party_role
+    for select to_officer_role(officer_typ_cd) as party_role
       from colin_extract.offices_held
      where corp_party_id = v_party_id;
   rec_hist_party record;
@@ -613,6 +624,9 @@ begin
       fetch cur_hist_officer_offices into rec_hist_officer_office;          
       exit when not found;
       party_role_id := nextval('party_roles_id_seq');
+      if rec_hist_party.appointment_dt is null then
+        rec_hist_party.appointment_dt := rec_hist_party.party_date;
+      end if;
       insert into party_roles_version 
         values(party_role_id, rec_hist_officer_office.party_role, rec_hist_party.appointment_dt, rec_hist_party.cessation_dt,
                p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
@@ -634,11 +648,11 @@ $$;
 -- colin_extract.corp_processing and mig_corp_processing_history tables and rerun.
 -- On success, mig_corp_processing_history.officer_tombstone_migrated is set to true for the corp.
 -- Note: to reload a corp's active officers manually delete, including the mig_corp_processing_history table.
-create or replace function public.colin_tombstone_officers() returns integer
+create or replace function public.colin_tombstone_officers(p_env character varying) returns integer
   language plpgsql
 as $$
 declare
-  cur_outstanding_cars cursor
+  cur_outstanding_cars cursor(v_env character varying)
      for select distinct cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, e.event_id as colin_event_id, 
                 (select f2.transaction_id from filings f2 where f2.business_id = b.id and f2.status = 'TOMBSTONE') as transaction_id,
                 (select count(cp2.corp_party_id)
@@ -655,6 +669,7 @@ declare
             and f.business_id = b.id
             and b.identifier = e.corp_num
             and b.identifier = cp.corp_num
+            and cp.environment = v_env
             and f.source = 'COLIN'
             and f.status = 'COMPLETED'
             and not exists (select mcph.corp_processing_id from mig_corp_processing_history mcph where mcph.corp_processing_id = cp.id)
@@ -666,7 +681,7 @@ declare
                                and cp.last_name = ci.surname
                                and cp.first_name = ci.firname)
          order by b.identifier, e.event_id;
-  cur_outstanding cursor
+  cur_outstanding cursor(v_env character varying)
      for select distinct cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, ce.colin_event_id,
                 (select f2.transaction_id from filings f2 where f2.business_id = b.id and f2.status = 'TOMBSTONE') as transaction_id
            from businesses b, filings f, colin_event_ids ce, colin_extract.corp_processing cp, colin_extract.corp_party p
@@ -681,22 +696,22 @@ declare
             and cp.corp_num = p.corp_num
             and ce.colin_event_id = p.start_event_id
             and p.party_typ_cd = 'OFF'
-            and p.end_event_id is null
+            and cp.environment = v_env
        order by cp.id, ce.colin_event_id;
   rec_cars record;
   rec_officer record;
   update_counter integer := 0;
   previous_id integer := 0;
 begin
-  open cur_outstanding_cars;
+  open cur_outstanding_cars(p_env);
   loop
     fetch cur_outstanding_cars into rec_cars;
     exit when not found;
     update_counter := update_counter + 1;
-    perform colin_tombstone_officer_cars(rec_cars.colin_event_id,
-                                         rec_cars.business_id,
+    perform colin_tombstone_cars_officer(cast(rec_cars.colin_event_id as integer),
+                                         cast(rec_cars.business_id as integer),
                                          cast(rec_cars.transaction_id as integer),
-                                         rec_cars.corp_num);
+                                         cast(rec_cars.corp_num as character varying));
     if previous_id != rec_cars.corp_processing_id then
       previous_id := rec_cars.corp_processing_id;
       if rec_cars.exists_count = 0 then
@@ -708,7 +723,7 @@ begin
   close cur_outstanding_cars;
   previous_id := 0;
 
-  open cur_outstanding;
+  open cur_outstanding(p_env);
   loop
     fetch cur_outstanding into rec_officer;
     exit when not found;
@@ -726,57 +741,5 @@ begin
   close cur_outstanding;
 
   return update_counter;
-end;
-$$;
-
--- Remove all existing tombstone officer data that uses the offices_held table
-create or replace function public.colin_tombstone_officers_cleanup() returns integer
-  language plpgsql
-as $$
-declare
-  cur_outstanding cursor
-     for select distinct b.id as business_id, pr.id as party_role_id, p.id as party_id, p.mailing_address_id, p.delivery_address_id,
-                (select count(oh.id) from offices_held_version oh where oh.party_role_id = pr.id) as oh_count,
-                (select count(pr2.id) from party_roles pr2 where pr2.party_id = pr.party_id and lower(pr2.role) != 'officer') as party_role_count
-           from businesses b, filings f, colin_extract.corp_processing cp, party_roles pr, parties p
-          where b.identifier = cp.corp_num
-            and b.id = f.business_id
-            and cp.processed_status = 'COMPLETED'
-            and f.source = 'COLIN'
-            and f.status = 'COMPLETED'
-            and f.business_id = pr.business_id
-            and lower(pr.role) = 'officer'
-            and pr.party_id = p.id
-       order by pr.id;
-  rec_officer record;
-  counter integer := 0;
-begin
-  open cur_outstanding;
-  loop
-    fetch cur_outstanding into rec_officer;
-    exit when not found;
-    counter := counter + 1;
-    if rec_officer.oh_count > 0 then
-      delete from offices_held_version where party_role_id = rec_officer.party_role_id;
-      delete from offices_held where party_role_id = rec_officer.party_role_id;
-    end if;
-    delete
-      from party_roles_version
-     where business_id = rec_officer.business_id 
-       and party_id = rec_officer.party_id
-       and lower(role) = 'officer'; 
-    delete from party_roles 
-     where business_id = rec_officer.business_id 
-       and party_id = rec_officer.party_id
-       and lower(role) = 'officer';
-    if rec_officer.party_role_count = 0 then
-      delete from parties_version where id = rec_officer.party_id;
-      delete from parties where id = rec_officer.party_id;
-      delete from addresses_version where id in (rec_officer.mailing_address_id, rec_officer.delivery_address_id);
-      delete from addresses where id in (rec_officer.mailing_address_id, rec_officer.delivery_address_id);    
-    end if;
-  end loop;
-  close cur_outstanding;
-  return counter;
 end;
 $$;
