@@ -64,7 +64,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
 
             for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
                 current_director_name = (current_director.party.first_name +
-                                         current_director.party.middle_initial +
+                                         current_director.party.middle_initial or "" +
                                          current_director.party.last_name)
                 if current_director_name.upper() == director_name.upper():
                     # Creates a new director record in Lear if a matching ceased director exists in Lear
@@ -104,7 +104,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
             for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
                 # get name of director in database for comparison *
                 current_director_name = (current_director.party.first_name +
-                                         current_director.party.middle_initial +
+                                         current_director.party.middle_initial or "" +
                                          current_director.party.last_name)
                 # Update only an active director
                 if current_director_name.upper() == director_name.upper() and current_director.cessation_date is None:
@@ -126,7 +126,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
         for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
             # get name of director in database for comparison *
             current_director_name = (current_director.party.first_name +
-                                     current_director.party.middle_initial +
+                                     current_director.party.middle_initial or "" +
                                      current_director.party.last_name)
             if current_director_name.upper() not in colin_director_names and current_director.cessation_date is None:
                 current_director.cessation_date = datetime.now(UTC)
