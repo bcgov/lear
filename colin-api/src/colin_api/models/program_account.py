@@ -117,3 +117,46 @@ class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all 
             current_app.logger.error(f'Error in ProgramAccount: Failed to collect program_account@{bni_db_link} ' +
                                      f'for {transaction_id or cross_reference_program_no}')
             raise err
+
+    @classmethod
+    def get_bn15s(cls, identifiers: list = None, con=None) -> list:
+        """Get BN15s."""
+        if not identifiers:
+            return []
+
+        try:
+            bni_db_link = current_app.config.get('ORACLE_BNI_DB_LINK')
+            if not con:
+                con = DB.connection
+
+            identifiers_str = "', '".join(identifiers)
+
+            cursor = con.cursor()
+            cursor.execute(
+                f"""SELECT
+                  business_no,
+                  business_program_id,
+                  program_account_ref_no,
+                  sbn_program_type,
+                  cross_reference_program_no,
+                  transaction_tmstmp,
+                  transaction_id
+                FROM program_account@{bni_db_link}
+                WHERE cross_reference_program_no in ('{identifiers_str}')
+                """
+            )
+            data = cursor.fetchall()
+
+            results = []
+            for row in data:
+                row = dict(zip([x[0].lower() for x in cursor.description], row))
+                program_account_ref_no = str(row['program_account_ref_no']).zfill(4)
+                bn15 = f"{row['business_no']}{row['business_program_id']}{program_account_ref_no}"
+                results.append({row['cross_reference_program_no']: bn15})
+
+            return results
+
+        except Exception as err:
+            current_app.logger.error(f'Error in ProgramAccount: Failed to collect program_account@{bni_db_link} ' +
+                                     f'for {identifiers}')
+            raise err
