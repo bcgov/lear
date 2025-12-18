@@ -17,6 +17,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Final, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
 from flask import current_app, g
@@ -910,14 +911,23 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
             return True
     return False
 
-def validate_party_role_firms(parties: list) -> list:
+def validate_party_role_firms(parties: list, filing_type: str) -> list:
     """Validate party role types for firms"""
 
+    msg = []
     for party in parties:
         roles = party.get("roles", [])
         for role in roles:
-            role_type = role.get("roleType")
+            role_type = role.get("roleType", "").lower()
             if role_type in [PartyRole.RoleTypes.PARTNER.value,
                              PartyRole.RoleTypes.PROPRIETOR.value]:
-                return False
-    return True
+                if err := PermissionService.check_user_permission(
+                    ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
+                    message=f"Permission Denied: You do not have permission to add a {role_type} to firm in registration filing."
+                ):
+                    msg.append({
+                        "error": err.error[0]["error"],
+                        "path": f"/filing/{filing_type}/parties"
+                    })
+                break
+    return msg

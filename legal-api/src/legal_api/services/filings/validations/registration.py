@@ -28,6 +28,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
+    validate_party_role_firms,
 )
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
@@ -108,6 +109,7 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
     partner_parties = 0
     invalid_roles = set()
     parties = filing["filing"][filing_type]["parties"]
+    msg.extend(validate_party_role_firms(parties, filing_type))
     for party in parties:  # pylint: disable=too-many-nested-blocks;
         for role in party.get("roles", []):
             role_type = role.get("roleType").lower().replace(" ", "_")

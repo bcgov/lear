@@ -14,8 +14,10 @@
 """Test Suite for common validations sharing through the different filings."""
 import copy
 from datetime import datetime
+from http import HTTPStatus
 from unittest.mock import patch
 
+from legal_api.errors import Error
 from legal_api.models.party import Party
 from legal_api.models.party_role import PartyRole
 import pytest
@@ -451,10 +453,24 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
     )
 ])
 
-def test_validate_party_role_firms(session, test_name, filing_json, filing_type, results):
+@patch('legal_api.services.filings.validations.common_validations.PermissionService')
+def test_validate_party_role_firms(mock_permission_service, session, test_name, filing_json, filing_type, has_permission, results):
     """Test that party name validation works as expected for firms."""
     parties = filing_json['filing'][filing_type].get('parties', [])
-    error = validate_party_role_firms(parties)
+
+    if has_permission:
+        mock_permission_service.check_user_permission.return_value = None
+    else:
+        mock_permission_service.check_user_permission.return_value = Error(
+            HTTPStatus.FORBIDDEN,
+            [{"message": "Permission Denied: You do not have permission to add {role_type} to firm in registration filing."}]
+        )
+    error = validate_party_role_firms(parties, filing_type)
+    if isinstance(results, int):
+        if results > 0:
+            assert error[0].get('path') == f'/filing/{filing_type}/parties'
+        else:
+            assert error == []
     assert error is results 
 
 
