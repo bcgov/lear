@@ -659,9 +659,9 @@ FROM (
                                   'FILE_NOCAD', 'FILE_APTRA', 'FILE_NOERA', 'FILE_AM_DO', 'FILE_AM_RR', -- CoA
                                   'FILE_NOCDR', 'FILE_AM_DI', -- CoD
                                   'FILE_NOALA', 'FILE_NOALB', 'FILE_NOALU', 'FILE_NOALC', 'FILE_AM_BC', 'FILE_AM_LI', 'FILE_AM_RM', 'FILE_AM_SS', -- Alteration
-                                  'FILE_COGS1',
                                   'ADCORP_NULL',
-                                  'FILE_CHGJU', 'FILE_NWPTA', 'FILE_PARES', 'FILE_TILAT', 'FILE_TILHO', 'FILE_TILMA',
+                                  -- Skipped events/filing types
+                                  'FILE_COGS1', 'FILE_CHGJU', 'FILE_NWPTA', 'FILE_PARES', 'FILE_TILAT', 'FILE_TILHO', 'FILE_TILMA',
                                   'SYST_CANPS', 'SYST_CHGJU', 'SYST_CHGPN', 'SYST_CO_PN', 'SYST_LNKPS', 'SYST_NWPTA',
                                   'SYST_PARES', 'SYST_RIPFL', 'SYST_TILAT', 'SYST_TILHO', 'SYST_NULL',
                                   'TRESP_NULL', 'TRESP_COUTI'
