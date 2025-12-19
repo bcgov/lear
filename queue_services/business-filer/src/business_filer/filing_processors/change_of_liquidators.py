@@ -42,7 +42,7 @@ from business_filer.filing_processors.filing_components.offices import update_or
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
     create_relationsips,
-    update_relationship_addresses
+    update_relationship_addresses,
 )
 
 
