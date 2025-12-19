@@ -26,3 +26,17 @@ def test_get_program_account_no_results(client):
 
     assert 404 == rv.status_code
     assert None is not rv.json['message']
+
+
+@oracle_integration
+def test_get_bn15s(client):
+    """Assert that the get BN15s endpoint works."""
+    # Test with no identifiers
+    rv = client.post('/api/v1/programAccount/check-bn15s', json={'identifiers': []})
+    assert 400 == rv.status_code
+    assert 'Identifiers required' == rv.json['message']
+
+    rv = client.post('/api/v1/programAccount/check-bn15s', json={'identifiers': ['FM0000001']})
+    assert 200 == rv.status_code
+    assert 'bn15s' in rv.json
+    assert isinstance(rv.json['bn15s'], list)
