@@ -45,6 +45,7 @@ RELATIONSHIP_ROLE_CONVERTER = {
     "completing party": PartyRole.RoleTypes.COMPLETING_PARTY.value,
     "director": PartyRole.RoleTypes.DIRECTOR.value,
     "incorporator": PartyRole.RoleTypes.INCORPORATOR.value,
+    "liquidator": PartyRole.RoleTypes.LIQUIDATOR.value,
     "proprietor": PartyRole.RoleTypes.PROPRIETOR.value,
     "partner": PartyRole.RoleTypes.PARTNER.value,
     "applicant": PartyRole.RoleTypes.APPLICANT.value,

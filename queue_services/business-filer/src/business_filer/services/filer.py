@@ -53,6 +53,7 @@ from business_filer.filing_processors import (
     annual_report,
     change_of_address,
     change_of_directors,
+    change_of_liquidators,
     change_of_name,
     change_of_officers,
     change_of_receivers,
@@ -167,6 +168,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
                 case "changeOfDirectors":
                     change_of_directors.process(business, filing_submission, filing_meta)
+                
+                case "changeOfLiquidators":
+                    change_of_liquidators.process(business, filing_submission, filing_meta)
 
                 case "changeOfName":
                     change_of_name.process(business, filing, filing_meta)
