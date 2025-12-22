@@ -1,0 +1,52 @@
+# Copyright © 2025 Province of British Columbia
+#
+# Licensed under the BSD 3 Clause License, (the "License");
+# you may not use this file except in compliance with the License.
+# The template for the license can be found here
+#    https://opensource.org/license/bsd-3-clause/
+
+apiVersion: deploy.cloud.google.com/v1
+kind: DeliveryPipeline
+metadata:
+  name: bn-retry
+  labels:
+    app: bn-retry
+spec:
+  serialPipeline:
+    stages:
+      - targetId: dev
+        profiles: [dev]
+      - targetId: test
+        profiles: [test]
+      - targetId: prod
+        profiles: [prod]
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: dev
+  labels:
+    app: bn-retry
+spec:
+  run:
+    location: projects/a083gt-dev/locations/northamerica-northeast1
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: test
+  labels:
+    app: bn-retry
+spec:
+  run:
+    location: projects/a083gt-test/locations/northamerica-northeast1
+---
+apiVersion: deploy.cloud.google.com/v1
+kind: Target
+metadata:
+  name: prod
+  labels:
+    app: bn-retry
+spec:
+  run:
+    location: projects/a083gt-prod/locations/northamerica-northeast1
