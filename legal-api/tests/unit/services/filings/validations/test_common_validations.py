@@ -387,7 +387,7 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
     else:
         assert errors == []
 
-@pytest.mark.parametrize('test_name, filing_json, filing_type, business_lear, business_in_colin, has_permission, results', [
+@pytest.mark.parametrize('test_name, filing_json, filing_type, business_in_lear, business_in_colin, has_permission, results', [
     (
         'organization with identifier in lear',
         {
@@ -410,7 +410,7 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
         True,
         False,
         False,
-        []
+        [{'error': 'Permission Denied: You do not have permission to add a business or corporation which is not registered in BC.', 'path': '/filing/registration/parties'}]
     ),
     (
         'organization with identifier in colin',
@@ -543,6 +543,7 @@ def test_validate_party_role_firms(mock_permission_service, mock_business, mock_
 
     if business_in_lear:
         mock_business.find_by_identifier.return_value = type('Business', (), {})()
+    else:
         mock_business.find_by_identifier.return_value = None
     
     mock_response = type('Response', (), {'status_code': HTTPStatus.OK if business_in_colin else HTTPStatus.NOT_FOUND})()
@@ -559,6 +560,7 @@ def test_validate_party_role_firms(mock_permission_service, mock_business, mock_
     
     assert len(error) == len(results)
     if results:
+        assert error[0].get('path') == f'/filing/{filing_type}/parties'
         assert 'Permission Denied' in error[0].get('error', '')
 
 
