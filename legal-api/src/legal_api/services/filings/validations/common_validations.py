@@ -924,19 +924,19 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
             business_identifier = officer.get("identifier", None)
             business_found = False
 
-        if business_identifier:
-            business_found = Business.find_by_identifier(business_identifier) is not None
-            if not business_found:
-                colin_business = colin.query_business(business_identifier)
-                business_found = colin_business.status_code == HTTPStatus.OK
+            if business_identifier:
+                business_found = Business.find_by_identifier(business_identifier) is not None
+                if not business_found:
+                    colin_business = colin.query_business(business_identifier)
+                    business_found = colin_business.status_code == HTTPStatus.OK
 
-        if not business_identifier or not business_found:
-            if err_msg := PermissionService.check_user_permission(
-                ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
-                message="Permission Denied: You do not have permission to add business for firm party outside of BC."
-                ):
-                msg.append({"error": err_msg.msg[0].get("message"), 
-                            "path": f"/filing/{filing_type}/parties"
-                            })
+            if not business_identifier or not business_found:
+                if err_msg := PermissionService.check_user_permission(
+                    ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
+                    message="Permission Denied: You do not have permission to add business for firm party outside of BC."
+                    ):
+                    msg.append({"error": err_msg.msg[0].get("message"), 
+                                "path": f"/filing/{filing_type}/parties"
+                                })
             
     return msg
