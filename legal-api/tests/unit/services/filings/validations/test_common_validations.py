@@ -410,7 +410,7 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
         True,
         False,
         False,
-        [{'error': 'Permission Denied: You do not have permission to add a business or corporation which is not registered in BC.', 'path': '/filing/registration/parties'}]
+        []
     ),
     (
         'organization with identifier in colin',
@@ -458,7 +458,7 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
         False,
         False,
         False,
-        []
+        [{'error': 'Permission Denied: You do not have permission to add a business or corporation which is not registered in BC.', 'path': '/filing/registration/parties'}]
     ),
     (
         'organization with identifier not found, has permission',
@@ -506,7 +506,7 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
         False,
         False,
         False,
-        []
+        [{'error': 'Permission Denied: You do not have permission to add a business or corporation which is not registered in BC.', 'path': '/filing/registration/parties'}]
     ),
     (
         'person party type',
