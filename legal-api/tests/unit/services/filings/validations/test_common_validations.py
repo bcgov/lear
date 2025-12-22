@@ -387,9 +387,9 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
     else:
         assert errors == []
 
-@pytest.mark.parametrize('test_name, filing_json, filing_type, results', [
+@pytest.mark.parametrize('test_name, filing_json, filing_type, business_lear, business_in_colin, has_permission, results', [
     (
-        'partner',
+        'organization with identifier in lear',
         {
             'filing': {
                 'registration': {
@@ -397,9 +397,9 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
                         {
                             'roles': [{'roleType': 'partner'}],
                             'officer': {
-                                'firstName': 'First',
-                                'lastName': 'Last',
-                                'organizationName': ''
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
                             }
                         }
                     ]
@@ -407,31 +407,13 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
             }
         },
         'registration',
-        False
+        True,
+        False,
+        False,
+        []
     ),
     (
-        'proprietor',
-        {
-            'filing': {
-                'registration': {
-                    'parties': [
-                        {
-                            'roles': [{'roleType': 'proprietor'}],
-                            'officer': {
-                                'firstName': 'First',
-                                'lastName': 'Last',
-                                'organizationName': ''
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-        'registration',
-        False
-    ),
-    (
-        'firm with org name',
+        'organization with identifier in colin',
         {
             'filing': {
                 'registration': {
@@ -439,9 +421,9 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
                         {
                             'roles': [{'roleType': 'partner'}],
                             'officer': {
-                                'firstName': '',
-                                'lastName': '',
-                                'organizationName': 'Firm Name'
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
                             }
                         }
                     ]
@@ -449,29 +431,135 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
             }
         },
         'registration',
-        False
-    )
+        False,
+        True,
+        False,
+        []
+    ),
+    (
+        'organization with identifier not found, no permission',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        False,
+        []
+    ),
+    (
+        'organization with identifier not found, has permission',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        True,
+        []
+    ),
+    (
+        'organization without identifier, no permission',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        False,
+        []
+    ),
+    (
+        'person party type',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'person',
+                                'firstName': 'First',
+                                'lastName': 'Last'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        False,
+        []
+    ),
 ])
 
+@patch('legal_api.services.filings.validations.common_validations.colin')
+@patch('legal_api.services.filings.validations.common_validations.Business')
 @patch('legal_api.services.filings.validations.common_validations.PermissionService')
-def test_validate_party_role_firms(mock_permission_service, session, test_name, filing_json, filing_type, has_permission, results):
+def test_validate_party_role_firms(mock_permission_service, mock_business, mock_colin, session, test_name, filing_json, filing_type, business_in_lear, business_in_colin, has_permission, results):
     """Test that party name validation works as expected for firms."""
     parties = filing_json['filing'][filing_type].get('parties', [])
+
+    if business_in_lear:
+        mock_business.find_by_identifier.return_value = type('Business', (), {})()
+        mock_business.find_by_identifier.return_value = None
+    
+    mock_response = type('Response', (), {'status_code': HTTPStatus.OK if business_in_colin else HTTPStatus.NOT_FOUND})()
+    mock_colin.query_business.return_value = mock_response
 
     if has_permission:
         mock_permission_service.check_user_permission.return_value = None
     else:
         mock_permission_service.check_user_permission.return_value = Error(
             HTTPStatus.FORBIDDEN,
-            [{"message": "Permission Denied: You do not have permission to add {role_type} to firm in registration filing."}]
+            [{"message": "Permission Denied: You do not have permission to add a business or corporation which is not registered in BC."}]
         )
     error = validate_party_role_firms(parties, filing_type)
-    if isinstance(results, int):
-        if results > 0:
-            assert error[0].get('path') == f'/filing/{filing_type}/parties'
-        else:
-            assert error == []
-    assert error is results 
+    
+    assert len(error) == len(results)
+    if results:
+        assert 'Permission Denied' in error[0].get('error', '')
 
 
 @pytest.mark.parametrize('test_name, legal_type, existing_identifier, filing_identifier, expected_result', [
