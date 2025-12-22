@@ -710,7 +710,7 @@ paths:
                                 email: api.specs@example.com
                                 firstName: First
                                 lastName: Last
-                                middleName: ''
+                                middleInitial: ''
                                 organizationName: ''
                                 partyType: person
                               roles:
@@ -1436,7 +1436,7 @@ paths:
                               email: api.specs@example.com
                               firstName: First
                               lastName: Last
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -1556,7 +1556,7 @@ paths:
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ""
+                            middleInitial: ""
                             organizationName: ""
                             partyType: "person"
                             email: "apiSpec@example.com"
@@ -1684,7 +1684,7 @@ paths:
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ""
+                            middleInitial: ""
                             organizationName: ""
                             partyType: "person"
                             email: "apiSpec@example.com"
@@ -2704,7 +2704,7 @@ paths:
                               firstName: First
                               lastName: Last
                               partyType: person
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
@@ -2726,7 +2726,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Director
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -2833,7 +2833,7 @@ paths:
                               firstName: First
                               lastName: Last
                               partyType: person
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
@@ -2855,7 +2855,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Director
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -2962,7 +2962,7 @@ paths:
                               firstName: First
                               lastName: Last
                               partyType: person
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                             roles:
                               - appointmentDate: '2024-07-24'
@@ -2984,7 +2984,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Director
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -3138,7 +3138,7 @@ paths:
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ""
+                            middleInitial: ""
                             organizationName: ""
                             partyType: "person"
                             email: "apiSpec@example.com"
@@ -3234,7 +3234,7 @@ paths:
                             officer: 
                               firstName: Joe
                               lastName: Swanson
-                              middleName: P
+                              middleInitial: P
                               email: joe@email.com
                               organizationName: 
                               partyType: person
@@ -3345,7 +3345,7 @@ paths:
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ''
+                            middleInitial: ''
                             organizationName: ''
                             partyType: person
                           roles:
@@ -3368,7 +3368,7 @@ paths:
                           officer:
                             firstName: First
                             lastName: Director
-                            middleName: ''
+                            middleInitial: ''
                             organizationName: ''
                             partyType: person
                           roles:
@@ -3456,7 +3456,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Last
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -3479,7 +3479,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Director
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -3567,7 +3567,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Last
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -3590,7 +3590,7 @@ paths:
                             officer:
                               firstName: First
                               lastName: Director
-                              middleName: ''
+                              middleInitial: ''
                               organizationName: ''
                               partyType: person
                             roles:
@@ -3688,7 +3688,7 @@ paths:
                           officer:
                             firstName: First
                             lastName: Last
-                            middleName: ""
+                            middleInitial: ""
                             organizationName: ""
                             partyType: "person"
                             email: "apiSpec@example.com"
@@ -3772,7 +3772,7 @@ paths:
                           officer: 
                             firstName: Joe
                             lastName: Swanson
-                            middleName: P
+                            middleInitial: P
                             email: joe@email.com
                             organizationName: 
                             partyType: person

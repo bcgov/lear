@@ -31,42 +31,48 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""File processing rules and actions for change of receivers filings."""
+"""File processing rules and actions for change of liquidators filings."""
 import copy
 
 from business_model.models import Business, Filing, PartyRole
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.filings import update_filing_court_order
+from business_filer.filing_processors.filing_components.offices import update_or_create_offices
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
     create_relationsips,
     update_relationship_addresses,
-    update_relationship_entity_info,
 )
 
 
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
-    """Render the changeOfReceivers onto the business model objects."""
+    """Render the changeOfLiquidators onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
-    relationships = filing_json["filing"]["changeOfReceivers"].get("relationships")
-    if filing_rec.filing_sub_type == "amendReceiver":
-        create_relationsips(relationships, business, filing_rec)
-        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
-        update_relationship_addresses(relationships)
-        update_relationship_entity_info(relationships)
+    relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships")
+    offices = filing_json["filing"]["changeOfLiquidators"].get("offices")
 
-    elif filing_rec.filing_sub_type == "appointReceiver":
+    if filing_rec.filing_sub_type == "intentToLiquidate":
+        create_relationsips(relationships, business, filing_rec)
+        update_or_create_offices(business, offices)
+        business.in_liquidation = True
+
+    elif filing_rec.filing_sub_type == "appointLiquidator":
         create_relationsips(relationships, business, filing_rec)
     
-    elif filing_rec.filing_sub_type == "ceaseReceiver":
-        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
+    elif filing_rec.filing_sub_type == "ceaseLiquidator":
+        cease_relationships(relationships, business, PartyRole.RoleTypes.LIQUIDATOR, filing_meta.application_date)
     
-    elif filing_rec.filing_sub_type == "changeAddressReceiver":
+    elif filing_rec.filing_sub_type == "changeAddressLiquidator":
         update_relationship_addresses(relationships)
+        update_or_create_offices(business, offices)
+    
+    elif filing_rec.filing_sub_type == "liquidationReport":
+        # FUTURE: updates for this will be made as part of #31714
+        pass
 
     # update court order, if any is present
-    if court_order := filing_json["filing"]["changeOfReceivers"].get("courtOrder"):
+    if court_order := filing_json["filing"]["changeOfLiquidators"].get("courtOrder"):
         update_filing_court_order(filing_rec, court_order)
     
     # FUTURE: DRS integration with document id
