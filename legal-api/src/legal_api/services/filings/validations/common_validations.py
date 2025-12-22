@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common validations share through the different filings."""
+from http import HTTPStatus
 import io
 import re
 from datetime import datetime, timedelta, timezone
@@ -25,7 +26,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
-from legal_api.services import MinioService, flags, namex
+from legal_api.services import MinioService, flags, namex, colin
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -921,19 +922,21 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
 
         if party_type == "organization":
             business_identifier = officer.get("identifier", None)
-            organization_name = officer.get("organizationName", None)
-            is_business_lookup = officer.get("isBusinessLookup", False)
             business_found = False
 
         if business_identifier:
             business_found = Business.find_by_identifier(business_identifier) is not None
-        if business_found  and organization_name:
-            business_found = Business.find_by_legal_name(organization_name) is not None
-        
-        if not business_found and is_business_lookup:
+            if not business_found:
+                colin_business = colin.query_business(business_identifier)
+                business_found = colin_business.status_code == HTTPStatus.OK
+
+        if not business_identifier or not business_found:
             if err_msg := PermissionService.check_user_permission(
                 ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
                 message="Permission Denied: You do not have permission to add business for firm party outside of BC."
-            ):
-                msg.append({"error": err_msg[0].get("message"), "path": f"/filing/{filing_type}/parties"})
+                ):
+                msg.append({"error": err_msg.msg[0].get("message"), 
+                            "path": f"/filing/{filing_type}/parties"
+                            })
+            
     return msg
