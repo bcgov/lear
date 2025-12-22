@@ -916,18 +916,24 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
 
     msg = []
     for party in parties:
-        roles = party.get("roles", [])
-        for role in roles:
-            role_type = role.get("roleType", "").lower()
-            if role_type in [PartyRole.RoleTypes.PARTNER.value,
-                             PartyRole.RoleTypes.PROPRIETOR.value]:
-                if err := PermissionService.check_user_permission(
-                    ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
-                    message=f"Permission Denied: You do not have permission to add a {role_type} to firm in registration filing."
-                ):
-                    msg.append({
-                        "error": err.error[0]["error"],
-                        "path": f"/filing/{filing_type}/parties"
-                    })
-                break
+        officer = party.get("officer", {})
+        party_type = officer.get("partyType", "")
+
+        if party_type == "organization":
+            business_identifier = officer.get("identifier", None)
+            organization_name = officer.get("organizationName", None)
+            is_business_lookup = officer.get("isBusinessLookup", False)
+            business_found = False
+
+        if business_identifier:
+            business_found = Business.find_by_identifier(business_identifier) is not None
+        if business_found  and organization_name:
+            business_found = Business.find_by_legal_name(organization_name) is not None
+        
+        if not business_found and is_business_lookup:
+            if err_msg := PermissionService.check_user_permission(
+                ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
+                message="Permission Denied: You do not have permission to add business for firm party outside of BC."
+            ):
+                msg.append({"error": err_msg[0].get("message"), "path": f"/filing/{filing_type}/parties"})
     return msg
