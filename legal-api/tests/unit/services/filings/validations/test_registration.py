@@ -160,7 +160,7 @@ def test_dba_registration(mocker, app, session, jwt):
                 with patch('legal_api.services.filings.validations.common_validations.colin.query_business') as mock_colin:
                     mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
                     mock_colin.return_value = mock_response
-                    with patch.object('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
+                    with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
                         err = validate(None, DBA_REGISTRATION)
 
     assert not err
@@ -342,7 +342,7 @@ def test_invalid_business_address(mocker, app, session, jwt, test_name, filing):
                 with patch('legal_api.services.filings.validations.common_validations.colin.query_business') as mock_colin:
                     mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
                     mock_colin.return_value = mock_response
-                    with patch.object('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
+                    with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
                         err = validate(None, filing)
 
     assert err

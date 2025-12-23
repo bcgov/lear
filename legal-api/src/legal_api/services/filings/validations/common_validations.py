@@ -930,7 +930,7 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
                     colin_business = colin.query_business(business_identifier)
                     business_found = colin_business.status_code == HTTPStatus.OK
 
-            if not business_identifier or not business_found:
+            if business_found:
                 continue
             
             if err_msg := PermissionService.check_user_permission(
