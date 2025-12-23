@@ -156,7 +156,12 @@ def test_dba_registration(mocker, app, session, jwt):
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(None, DBA_REGISTRATION)
+            with patch('legal_api.services.filings.validations.common_validations.Business.find_by_identifier', return_value=None):
+                with patch('legal_api.services.filings.validations.common_validations.colin.query_business') as mock_colin:
+                    mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
+                    mock_colin.return_value = mock_response
+                    with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
+                        err = validate(None, DBA_REGISTRATION)
 
     assert not err
 
@@ -333,7 +338,12 @@ def test_invalid_business_address(mocker, app, session, jwt, test_name, filing):
     legal_type = filing['filing']['registration']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(None, filing)
+            with patch('legal_api.services.filings.validations.common_validations.Business.find_by_identifier', return_value=None):
+                with patch('legal_api.services.filings.validations.common_validations.colin.query_business') as mock_colin:
+                    mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
+                    mock_colin.return_value = mock_response
+                    with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
+                        err = validate(None, filing)
 
     assert err
     assert err.msg[0]['error'] == "Address Region must be 'BC'."

@@ -15,6 +15,7 @@
 import io
 import re
 from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 from typing import Final, Optional
 
 import pycountry
@@ -24,7 +25,8 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
-from legal_api.services import MinioService, flags, namex
+from legal_api.services import MinioService, colin, flags, namex
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -910,14 +912,33 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
             return True
     return False
 
-def validate_party_role_firms(parties: list) -> list:
+def validate_party_role_firms(parties: list, filing_type: str) -> list:
     """Validate party role types for firms"""
 
+    msg = []
     for party in parties:
-        roles = party.get("roles", [])
-        for role in roles:
-            role_type = role.get("roleType")
-            if role_type in [PartyRole.RoleTypes.PARTNER.value,
-                             PartyRole.RoleTypes.PROPRIETOR.value]:
-                return False
-    return True
+        officer = party.get("officer", {})
+        party_type = officer.get("partyType", "")
+
+        if party_type == "organization":
+            business_identifier = officer.get("identifier", None)
+            business_found = False
+
+            if business_identifier:
+                business_found = Business.find_by_identifier(business_identifier) is not None
+                if not business_found:
+                    colin_business = colin.query_business(business_identifier)
+                    business_found = colin_business.status_code == HTTPStatus.OK
+
+            if business_found:
+                continue
+            
+            if err_msg := PermissionService.check_user_permission(
+                ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
+                message="Permission Denied: You do not have permission to add a business or corporation which is not registered in BC."
+                ):
+                msg.append({"error": err_msg.msg[0].get("message"), 
+                            "path": f"/filing/{filing_type}/parties"
+                            })
+            
+    return msg
