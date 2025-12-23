@@ -919,7 +919,10 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         return msg
     
     filing_completing_party_mailing_address = officer.get("mailingAddress", {})
-
+    filing_firstname = officer.get("firstName", "")
+    filing_lastname = officer.get("lastName", "")
+    filing_email = officer.get("email", "")
+    
     contacts_response = AccountService.get_contacts(current_app.config, org_id)
     if contacts_response is None:
         msg.append({
@@ -938,8 +941,26 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         "deliveryInstructions": contact.get("deliveryInstructions", ""),
         "streetAddressAdditional": contact.get("streetAdditional", "")
     }
-    
-    if is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address):
+    existing_firstname = contact.get("firstName", "")
+    existing_lastname = contact.get("lastName", "")
+    existing_email = contact.get("email", "")
+
+    address_changed = is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
+
+    existing_name = {
+        "firstName": existing_firstname,
+        "lastName": existing_lastname
+    }
+    filing_name = {
+        "firstName": filing_firstname,
+        "lastName": filing_lastname
+    }
+
+    name_changed = is_name_changed(existing_name, filing_name)
+
+    email_changed = not is_same_str(existing_email, filing_email)
+
+    if address_changed or name_changed or email_changed:
         permission_error = PermissionService.check_user_permission(
             ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
             message="Permission Denied - You do not have rights to edit completing address."
