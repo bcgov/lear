@@ -320,3 +320,24 @@ class AccountService:
             return affiliates.json().get("entities")
 
         return None
+    
+    @classmethod
+    def get_contacts(cls, config, org_id: str):
+        """Get contacts for the business."""
+        token = cls.get_bearer_token(config)
+        auth_url = config.AUTH_SVC_URL
+
+        if not token:
+            return HTTPStatus.UNAUTHORIZED
+
+        rv = requests.get(
+            url=f'{auth_url}/{org_id}/contacts',
+            headers={**cls.CONTENT_TYPE_JSON,
+                     'Authorization': cls.BEARER + token},
+            timeout=cls.timeout
+        )
+
+        if rv.status_code == HTTPStatus.OK:
+            return rv.json()
+
+        return None

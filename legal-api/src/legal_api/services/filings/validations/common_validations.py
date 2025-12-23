@@ -17,6 +17,8 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Final, Optional
 
+from legal_api.services.bootstrap import AccountService
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 import PyPDF2
 from flask import current_app, g
@@ -898,7 +900,7 @@ def validate_party_role_firms(parties: list) -> list:
                 return False
     return True
 
-def validate_completing_party(filing_json: dict, filing_type: str, business=None) -> list:
+def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> list:
     """Validate completing party edited."""
     msg = []
     parties = filing_json["filing"][filing_type].get("parties", {})
@@ -916,42 +918,36 @@ def validate_completing_party(filing_json: dict, filing_type: str, business=None
         })
         return msg
     
-    is_party_changed = True
-    if business:
-        existing_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.COMPLETING_PARTY.value)
-        if existing_roles:
-            existing_party = existing_roles[0].party
-            filing_identifier = officer.get("identifier")
+    filing_completing_party_mailing_address = officer.get("mailingAddress", {})
 
-            if filing_identifier and existing_party and existing_party.identifier == filing_identifier:
-                is_party_changed = False
-            else:
-                filing_party_type = officer.get("partyType", "").lower()
-                existing_party_type = (existing_party_type.party_type or "").lower()
-
-                if filing_party_type == existing_party_type:
-                    if filing_party_type == "person":
-                        if is_name_changed(
-                            {
-                                "firstName": existing_party.first_name,
-                                "middleName": existing_party.middle_initial,
-                                "lastName": existing_party.last_name,
-                                "organizationName": existing_party.organization_name
-                            },
-                            {
-                                "firstName": officer.get("firstName"),
-                                "middleName": officer.get("middleName"),
-                                "lastName": officer.get("lastName"),
-                                "organizationName": officer.get("organizationName")
-                            }
-                        ):
-                            is_party_changed = True
-                        else:
-                            is_party_changed = False
-                    elif filing_party_type == "organization":
-                        if not is_same_str(existing_party.organization_name, officer.get("organizationName")):
-                            is_party_changed = True
-                        else:
-                            is_party_changed = False
-    if is_party_changed:
+    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+    if contacts_response is None:
+        msg.append({
+            "error": "Unable to verify completing party against account contacts.",
+            "path": f"/filing/{filing_type}/parties"
+        })
         return msg
+    
+    contact = contacts_response["contacts"][0]
+    existing_cp_mailing_address = {
+        "streetAddress": contact.get("street", ""),
+        "addressCity": contact.get("city", ""),
+        "addressRegion": contact.get("region", ""),
+        "postalCode": contact.get("postalCode", ""),
+        "addressCountry": contact.get("country", ""),
+        "deliveryInstructions": contact.get("deliveryInstructions", ""),
+        "streetAddressAdditional": contact.get("streetAdditional", "")
+    }
+    
+    if is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address):
+        permission_error = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
+            message="Permission Denied - You do not have rights to edit completing address."
+        )
+        if permission_error:
+            error_msg = permission_error.message[0]["message"] if permission_error.message else "You do not have rights to edit completing address."
+            msg.append({
+                "error": error_msg,
+                "path": f"/filing/{filing_type}/parties"
+            })
+    return msg
