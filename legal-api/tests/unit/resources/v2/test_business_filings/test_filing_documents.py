@@ -63,6 +63,10 @@ from tests.unit.services.utils import create_header, helper_create_jwt
 ADMIN_DISSOLUTION = copy.deepcopy(DISSOLUTION)
 ADMIN_DISSOLUTION['dissolutionType'] = 'administrative'
 CHANGE_OF_RECEIVERS['type'] = 'appointReceiver'
+DELAY_DISSOLUTION = {
+    'dissolutionType': 'delay',
+    'delayType': 'default'
+}
 
 
 def basic_test_helper():
@@ -544,6 +548,24 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      },
      HTTPStatus.OK, '2017-10-01'
      ),
+    ('bc_delay_dissolution_completed', 'BC7654321', 'BC',
+     'dissolution', DELAY_DISSOLUTION, None, None, Filing.Status.COMPLETED,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('bc_delay_dissolution_paid', 'BC7654321', 'BC',
+     'dissolution', DELAY_DISSOLUTION, None, None, Filing.Status.PAID,
+     {
+         'documents': {
+             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+         }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
     ('sp_registration_paid', 'FM7654321', 'SP',
      'registration', REGISTRATION, None, None, Filing.Status.PAID,
      {
@@ -655,19 +677,13 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('bc_change_of_liquidators_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'legalFilings': [
-             {'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfLiquidators'},
-         ]
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }},
      HTTPStatus.OK, '2020-10-01'
      ),
     ('bc_change_of_liquidators_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.PAID,
-     {'documents': {
-         'legalFilings': [
-             {'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfLiquidators'},
-         ]}},
+     {'documents': {}},
      HTTPStatus.OK, None
      ),
      ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
@@ -685,19 +701,13 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
     ('bc_change_of_receivers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'legalFilings': [
-             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfReceivers'},
-         ]
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }},
      HTTPStatus.OK, '2020-10-01'
      ),
     ('bc_change_of_receivers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.PAID,
-     {'documents': {
-         'legalFilings': [
-             {'changeOfReceivers': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/documents/changeOfReceivers'},
-         ]}},
+     {'documents': {}},
      HTTPStatus.OK, None
      ),
     ('sp_dissolution_completed', 'FM7654321', 'SP',

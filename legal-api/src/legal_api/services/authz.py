@@ -364,6 +364,13 @@ def get_allowable_filings_dict():
                             "warningTypes": [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
                             "business": [BusinessBlocker.DRAFT_PENDING]
                         }
+                    },
+                    "delay": {
+                        "legalTypes": ["CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                        "blockerChecks": {
+                            "business": [BusinessBlocker.DEFAULT],
+                            "validBusiness": [BusinessBlocker.IN_DISSOLUTION]
+                        }
                     }
                 },
                 "incorporationApplication": {
@@ -569,6 +576,14 @@ def get_allowable_filings_dict():
                                          BusinessBlocker.IN_DISSOLUTION]
                         }
                     },
+                    "delay": {
+                        "legalTypes": ["CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                        "blockerChecks": {
+                            "maxFilings": {"dissolution.delay": 2},
+                            "business": [BusinessBlocker.DEFAULT],
+                            "validBusiness": [BusinessBlocker.IN_DISSOLUTION]
+                        }
+                    }
                 },
                 "incorporationApplication": {
                     "legalTypes": ["CP", "BC", "BEN", "ULC", "CC"],
@@ -625,6 +640,8 @@ def get_allowable_filings_dict():
         # These ones are only allowed if the flag is on
         del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfLiquidators"]
         del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfReceivers"]
+        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["dissolution"]["delay"]
+        del allowable_filings_dict["general"][Business.State.ACTIVE.value]["dissolution"]["delay"]
 
     return allowable_filings_dict
 
@@ -835,6 +852,9 @@ def has_blocker(business: Business, # noqa: PLR0911
 
     if has_blocker_completed_filing(business, blocker_checks):
         return True
+    
+    if has_blocker_max_filing(business, blocker_checks):
+        return True
 
     if has_blocker_future_effective_filing(business, blocker_checks):
         return True
@@ -844,11 +864,17 @@ def has_blocker(business: Business, # noqa: PLR0911
 
 def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     """Return True if the business has a default blocker."""
-    if not (business_blocker_checks := blocker_checks.get("business", [])):
+    invalid_business_blocker_checks = blocker_checks.get("business", [])
+    valid_business_blocker_checks = blocker_checks.get("validBusiness", [])
+    if not (invalid_business_blocker_checks or valid_business_blocker_checks):
         return False
 
-    for business_blocker_check_type in business_blocker_checks:
+    for business_blocker_check_type in invalid_business_blocker_checks:
         if business_blocker_dict[business_blocker_check_type]:
+            return True
+    
+    for valid_business_blocker_check_type in valid_business_blocker_checks:
+        if not business_blocker_dict[valid_business_blocker_check_type]:
             return True
 
     return False
@@ -955,6 +981,21 @@ def has_blocker_completed_filing(business: Business, blocker_checks: dict):
                                                          True)
 
     return len(completed_filings) != len(complete_filing_types)
+
+
+def has_blocker_max_filing(business: Business, blocker_checks: dict):
+    """Check if business has too many of the filing."""
+    for filing_type_pair_info, max in blocker_checks.get("maxFilings", {}).items():
+        filing_type_pair = parse_filing_info(filing_type_pair_info)
+        filings = Filing.get_filings_by_type_pairs(business.id,
+                                                             [filing_type_pair],
+                                                             [Filing.Status.COMPLETED.value,
+                                                              Filing.Status.PAID.value,
+                                                              Filing.Status.PENDING.value])
+        if len(filings) >= max:
+            return True
+
+    return False
 
 
 def has_blocker_future_effective_filing(business: Business, blocker_checks: dict):
