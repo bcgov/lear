@@ -539,6 +539,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     "CUL": "DIS_ADM",
                     "CCC": "DIS_ADM",
                 }
+            },
+            "delay": {
+                "name": "delay",
+                "title": "Delay of Dissolution",
+                "displayName": "Delay of Dissolution",
+                "codes": {
+                    "CP": "DISDE",
+                    "BC": "DISDE",
+                    "BEN": "DISDE",
+                    "ULC": "DISDE",
+                    "CC": "DISDE",
+                    "LLC": "DISDE",
+                    "C": "DISDE",
+                    "CBEN": "DISDE",
+                    "CUL": "DISDE",
+                    "CCC": "DISDE"
+                }
             }
         },
         "incorporationApplication": {
@@ -1324,6 +1341,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
+                ~and_(Filing._filing_type == 'dissolution', Filing._filing_sub_type == 'delay'),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
