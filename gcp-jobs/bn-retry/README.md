@@ -6,7 +6,7 @@ BN15 retry GCP job for firms created in LEAR.
 
 This job checks BN15 status for businesses firms:
 - Queries businesses with identifiers not starting with 'FM0' that don't have a valid BN15 (FM0's are old, created in colin)
-- Checks BN15 status via Colin API `/program_account/<identifier>` endpoint
+- Checks BN15 status via Colin API `/program_account/check-bn15s` endpoint
 - Updates LEAR database with BN15 when received
 - Sends email notification via BUSINESS_EMAILER_TOPIC
 - Publishes business change event to BUSINESS_EVENTS_TOPIC
@@ -47,9 +47,3 @@ ruff check
 ```
 pytest
 ```
-
-## Deployment
-
-The job is deployed to GCP Cloud Run and scheduled to run daily at 6AM via Cloud Scheduler.
-
-See `devops/gcp-cloudbuild.yaml` for build configuration and `schedules/bn-retry-schedule.yaml` for scheduler configuration.
