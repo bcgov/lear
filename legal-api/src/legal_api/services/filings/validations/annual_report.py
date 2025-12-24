@@ -19,9 +19,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business
-from legal_api.services.filings.validations.common_validations import (
-    _validate_postal_code
-)
+from legal_api.services.filings.validations.common_validations import _validate_postal_code
 from legal_api.services.utils import get_date
 from legal_api.utils.datetime import datetime
 
