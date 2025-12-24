@@ -30,6 +30,8 @@ from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
+    CHANGE_OF_RECEIVERS,
     CORRECTION_AR,
     COURT_ORDER,
     FILING_HEADER,
@@ -49,6 +51,12 @@ from tests.unit.models import (
     factory_filing,
     factory_user,
 )
+
+
+DELAY_DISSOLUTION = {
+    "dissolutionType": "delay",
+    "delayType": "default"
+}
 
 
 def test_minimal_filing_json(session):
@@ -551,6 +559,29 @@ def test_get_completed_filings_for_colin(session, client, jwt):
     filing.save()
     assert filing.status != Filing.Status.COMPLETED.value
     filings = Filing.get_completed_filings_for_colin()
+    assert len(filings) == 0
+
+
+@pytest.mark.parametrize('filing_type, inner_json', [
+    ('dissolution', DELAY_DISSOLUTION),
+    ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS),
+    ('changeOfReceivers', CHANGE_OF_RECEIVERS)
+])
+def test_get_completed_filings_skipped_for_colin(session, client, jwt, filing_type, inner_json):
+    """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
+    # setup
+    identifier = "BC7654321"
+    b = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json["filing"]["header"]["name"] = filing_type
+    filing_json["filing"][filing_type] = inner_json
+    filing = factory_completed_filing(b, filing_json)
+    assert filing.status == Filing.Status.COMPLETED.value
+    filing.save()
+    filings = Filing.get_completed_filings_for_colin()
+
+    # test method
+    # assert doesn't return completed filing for colin sync
     assert len(filings) == 0
 
 
