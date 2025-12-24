@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
 
-cd /code || exit
+echo 'run bn-retry job'
 python run.py
+echo 'run bn-retry job done'

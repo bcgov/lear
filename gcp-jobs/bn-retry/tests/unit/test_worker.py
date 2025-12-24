@@ -146,9 +146,9 @@ def test_run_job_success_batch(app, mock_business):
         run_job()
 
         assert mock_get.call_count == 2
-        mock_get.assert_any_call(limit=20, skip=0)
+        mock_get.assert_any_call(limit=50, skip=0)
         # offset remains 0 because we updated all items returned
-        mock_get.assert_any_call(limit=20, skip=0)
+        mock_get.assert_any_call(limit=50, skip=0)
 
         mock_check.assert_called_once_with(["FM1234567"])
         mock_update.assert_called_once_with(mock_business, "BN12345")
@@ -172,8 +172,8 @@ def test_run_job_no_matches(app, mock_business):
         run_job()
 
         assert mock_get.call_count == 2
-        mock_get.assert_any_call(limit=20, skip=0)
-        mock_get.assert_any_call(limit=20, skip=1)
+        mock_get.assert_any_call(limit=50, skip=0)
+        mock_get.assert_any_call(limit=50, skip=1)
         mock_check.assert_called_once()
 
 
