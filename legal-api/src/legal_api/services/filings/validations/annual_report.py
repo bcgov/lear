@@ -19,6 +19,9 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business
+from legal_api.services.filings.validations.common_validations import (
+    _validate_postal_code
+)
 from legal_api.services.utils import get_date
 from legal_api.utils.datetime import datetime
 
@@ -152,12 +155,11 @@ def validate_directors_addresses(annual_report: dict, legal_type: str) -> Option
     msg = []
     directors = annual_report["filing"]["annualReport"].get("directors", [])
 
-     # Required fields for mailingAddress
+    # Required fields for mailingAddress
     mailing_required_fields = [
         "streetAddress",
         "addressCity",
-        "addressCountry",
-        "postalCode"
+        "addressCountry"
     ]
 
     for idx, director in enumerate(directors):
@@ -176,6 +178,10 @@ def validate_directors_addresses(annual_report: dict, legal_type: str) -> Option
                             "error": f"Mailing address must include {field}.",
                             "path": f"/filing/annualReport/directors/{idx}/{address_type}/{field}"
                         })
+
+                postal_error = _validate_postal_code(address,f"/filing/annualReport/directors/{idx}/{address_type}")
+                if postal_error:
+                    msg.append(postal_error)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
