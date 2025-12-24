@@ -81,7 +81,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC")
 
-    BATCH_SIZE = os.getenv("BATCH_SIZE", "50")
+    BATCH_SIZE = int(os.getenv("BATCH_SIZE", "50"))
 
     SECRET_KEY = "a secret"
 
