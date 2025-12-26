@@ -30,7 +30,7 @@ from sqlalchemy.sql import and_, exists, func, not_
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
-from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .address import Address
