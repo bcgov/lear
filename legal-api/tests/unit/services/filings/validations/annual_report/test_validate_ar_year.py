@@ -138,10 +138,10 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
          '2020-01-01', '2021-10-31', None, 2020, '2022-07-14'),
     ])
 def test_ar_dates(
-        app, session, test_name, founding_date, previous_ar_date, legal_type, expected_ar_min_date,
-        expected_ar_max_date, previous_ar_year, next_year, today):
+        app, session, test_name, founding_date, previous_ar_date, legal_type,
+        expected_ar_min_date, expected_ar_max_date, previous_ar_year, next_year, today):
     """Assert min and max dates for Annual Report are correct."""
-    now = datetime.fromisoformat(today)
+    now = datetime.fromisoformat(today + 'T12:00:00+00:00')
     with freeze_time(now):
         # setup
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None

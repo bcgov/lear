@@ -30,7 +30,7 @@ from sqlalchemy.sql import and_, exists, func, not_
 
 from legal_api.exceptions import BusinessException
 from legal_api.utils.base import BaseEnum
-from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.datetime import datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .address import Address
@@ -335,13 +335,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
-        if not self.founding_date and not self.last_ar_date:
-            return None
-        last_anniversary = self.founding_date
-        if self.last_ar_date:
-            last_anniversary = self.last_ar_date
-
-        return last_anniversary + datedelta.datedelta(years=1)
+        _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
+        next_ar_year = (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        no_of_years_to_add = next_ar_year - _founding_date.year
+        return _founding_date + datedelta.datedelta(years=no_of_years_to_add)
 
     @property
     def next_annual_tr_due_datetime(self) -> datetime:
@@ -443,7 +440,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             ar_min_date = _founding_date.date() + datedelta.datedelta(years=no_of_years_to_add)
             ar_max_date = ar_min_date + datedelta.datedelta(days=60)
 
-        ar_max_date = min(ar_max_date, datetime.utcnow().date())  # ar_max_date cannot be in future
+        ar_max_date = min(ar_max_date, LegislationDatetime.datenow())  # ar_max_date cannot be in future
 
         return ar_min_date, ar_max_date
 
@@ -610,9 +607,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             "naicsKey": self.naics_key,
             "naicsCode": self.naics_code,
             "naicsDescription": self.naics_description,
-            "nextAnnualReport": LegislationDatetime.as_legislation_timezone_from_date(
-                self.next_anniversary
-            ).astimezone(timezone.utc).isoformat() if self.next_anniversary else "",
+            "nextAnnualReport": self.next_anniversary.isoformat(),
             "noDissolution": self.no_dissolution,
             "associationType": self.association_type,
             "allowedActions": self.allowable_actions,
