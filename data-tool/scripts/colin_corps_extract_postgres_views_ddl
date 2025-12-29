@@ -635,7 +635,8 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(months_since_last_bar_filing as integer) as months_since_last_bar_filing,
         bar_keycloak_guid,
         bar_idp_userid,
-        bar_account_id
+        bar_account_id,
+        tings_corps
 FROM (
     SELECT
            LOWER(SPLIT_PART(c.admin_email, '@', 2)) as email_domain,
@@ -714,7 +715,8 @@ FROM (
            END AS months_since_last_bar_filing,
            bc.sub as bar_keycloak_guid,
            bc.idp_userid as bar_idp_userid,
-           bc.payment_account as bar_account_id
+           bc.payment_account as 
+           ciaml.ting_corps as ting_corps
     FROM event e
     JOIN corporation c ON c.corp_num = e.corp_num
     INNER JOIN corp_state cs
@@ -738,6 +740,11 @@ FROM (
     LEFT OUTER JOIN mv_admin_email_count aec ON c.admin_email = aec.admin_email
     LEFT OUTER JOIN mv_addr_quality_by_corp mvaqc ON c.corp_num = mvaqc.corp_num
     LEFT OUTER JOIN bar_corps bc ON c.corp_num = bc.identifier
+    LEFT OUTER JOIN (
+      SELECT ted_corp_num, array_agg(ting_corp_num) AS ting_corps
+      FROM corp_involved_amalgamating
+      GROUP BY ted_corp_num
+    ) ciaml ON c.corp_num = ciaml.ted_corp_num
     WHERE 1 = 1
     GROUP BY e.corp_num, cn.corp_name, c.corp_type_cd, c.corp_frozen_type_cd, c.recognition_dts, c.last_ar_filed_dt,
              LOWER(SPLIT_PART(c.admin_email, '@', 2)), c.admin_email, cow.corp_num,
@@ -754,7 +761,8 @@ FROM (
            mvaqc.party_all_stub_count,
            mvaqc.party_all_any_bad_key_fields_count,
            mvaqc.party_all_null_count,
-           bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account
+           bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account,
+           ciaml.ting_corps
 ) tblFe
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
 where 1=1
