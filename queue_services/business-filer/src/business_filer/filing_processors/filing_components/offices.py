@@ -37,9 +37,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from business_model.models import Business
+    from business_model.models import Business, Office
 
-from business_filer.filing_processors.filing_components import create_office
+from business_filer.filing_processors.filing_components import create_address, create_office, update_address
 
 
 def update_offices(business: Business, offices_structure: dict) -> list | None:
@@ -82,3 +82,38 @@ def delete_existing_offices(business: Business):
     if existing_offices := business.offices.all():
         for office in existing_offices:
             business.offices.remove(office)
+
+
+def update_or_create_offices(business: Business, offices: dict[str, dict[str, dict[str, str]]]) -> list | None:
+    """Update existing or create offices for a business.
+
+    Assumption: The structure has already been validated, upon submission.
+
+    Other errors are recorded and will be managed out of band.
+    """
+
+    err = []
+
+    try:
+        for office_type, addresses in offices.items():
+            office: Office = business.offices.filter_by(office_type=office_type).one_or_none()
+            if office:
+                for key, new_address in addresses.items():
+                    address_type = key.replace("Address", "")
+                    address = office.addresses.filter_by(address_type=address_type).one_or_none()
+                    if address:
+                        update_address(address, new_address)
+                    else:
+                        address = create_address(new_address, address_type)
+                        office.addresses.append(address)
+            else:
+                office = create_office(business, office_type, addresses)
+
+            business.offices.append(office)
+
+    except KeyError:
+        err.append(
+            {"error_code": "FILER_UNABLE_TO_SAVE_OFFICES",
+                "error_message": f"Filer: unable to save new offices for :'{business.identifier}'"}
+        )
+    return err

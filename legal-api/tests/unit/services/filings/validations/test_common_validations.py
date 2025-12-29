@@ -14,8 +14,10 @@
 """Test Suite for common validations sharing through the different filings."""
 import copy
 from datetime import datetime
+from http import HTTPStatus
 from unittest.mock import patch
 
+from legal_api.errors import Error
 from legal_api.models.party import Party
 from legal_api.models.party_role import PartyRole
 import pytest
@@ -23,6 +25,7 @@ from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
@@ -76,6 +79,7 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
 @pytest.mark.parametrize('filing_type, filing_data, office_type', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'registeredOffice'),
     ('changeOfAddress', CHANGE_OF_ADDRESS, 'registeredOffice'),
+    ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, 'liquidationRecordsOffice'),
     ('changeOfRegistration', CHANGE_OF_REGISTRATION, 'businessOffice'),
     ('continuationIn', CONTINUATION_IN, 'registeredOffice'),
     ('conversion', FIRMS_CONVERSION, 'businessOffice'),
@@ -105,6 +109,7 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'parties'),
     ('changeOfDirectors', CHANGE_OF_DIRECTORS, 'directors'),
+    ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, 'relationships'),
     ('changeOfOfficers', CHANGE_OF_OFFICERS, 'relationships'),
     ('changeOfReceivers', CHANGE_OF_RECEIVERS, 'relationships'),
     ('changeOfRegistration', CHANGE_OF_REGISTRATION, 'parties'),
@@ -382,9 +387,9 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
     else:
         assert errors == []
 
-@pytest.mark.parametrize('test_name, filing_json, filing_type, results', [
+@pytest.mark.parametrize('test_name, filing_json, filing_type, business_in_lear, business_in_colin, has_permission, results', [
     (
-        'partner',
+        'organization with identifier in lear',
         {
             'filing': {
                 'registration': {
@@ -392,9 +397,9 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
                         {
                             'roles': [{'roleType': 'partner'}],
                             'officer': {
-                                'firstName': 'First',
-                                'lastName': 'Last',
-                                'organizationName': ''
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
                             }
                         }
                     ]
@@ -402,31 +407,13 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
             }
         },
         'registration',
-        False
+        True,
+        False,
+        False,
+        []
     ),
     (
-        'proprietor',
-        {
-            'filing': {
-                'registration': {
-                    'parties': [
-                        {
-                            'roles': [{'roleType': 'proprietor'}],
-                            'officer': {
-                                'firstName': 'First',
-                                'lastName': 'Last',
-                                'organizationName': ''
-                            }
-                        }
-                    ]
-                }
-            }
-        },
-        'registration',
-        False
-    ),
-    (
-        'firm with org name',
+        'organization with identifier in colin',
         {
             'filing': {
                 'registration': {
@@ -434,9 +421,9 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
                         {
                             'roles': [{'roleType': 'partner'}],
                             'officer': {
-                                'firstName': '',
-                                'lastName': '',
-                                'organizationName': 'Firm Name'
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
                             }
                         }
                     ]
@@ -444,15 +431,137 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
             }
         },
         'registration',
-        False
-    )
+        False,
+        True,
+        False,
+        []
+    ),
+    (
+        'organization with identifier not found, no permission',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        False,
+        [{'error': 'Permission Denied: You do not have permission to add a business or corporation which is not registered in BC.', 'path': '/filing/registration/parties'}]
+    ),
+    (
+        'organization with identifier not found, has permission',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        True,
+        []
+    ),
+    (
+        'organization without identifier, no permission',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'organization',
+                                'identifier': 'BC1234567',
+                                'organizationName': 'Org Name'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        False,
+        [{'error': 'Permission Denied: You do not have permission to add a business or corporation which is not registered in BC.', 'path': '/filing/registration/parties'}]
+    ),
+    (
+        'person party type',
+        {
+            'filing': {
+                'registration': {
+                    'parties': [
+                        {
+                            'roles': [{'roleType': 'partner'}],
+                            'officer': {
+                                'partyType': 'person',
+                                'firstName': 'First',
+                                'lastName': 'Last'
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        'registration',
+        False,
+        False,
+        False,
+        []
+    ),
 ])
 
-def test_validate_party_role_firms(session, test_name, filing_json, filing_type, results):
+@patch('legal_api.services.filings.validations.common_validations.colin')
+@patch('legal_api.services.filings.validations.common_validations.Business')
+@patch('legal_api.services.filings.validations.common_validations.PermissionService')
+def test_validate_party_role_firms(mock_permission_service, mock_business, mock_colin, session, test_name, filing_json, filing_type, business_in_lear, business_in_colin, has_permission, results):
     """Test that party name validation works as expected for firms."""
     parties = filing_json['filing'][filing_type].get('parties', [])
-    error = validate_party_role_firms(parties)
-    assert error is results 
+
+    if business_in_lear:
+        mock_business.find_by_identifier.return_value = type('Business', (), {})()
+    else:
+        mock_business.find_by_identifier.return_value = None
+    
+    mock_response = type('Response', (), {'status_code': HTTPStatus.OK if business_in_colin else HTTPStatus.NOT_FOUND})()
+    mock_colin.query_business.return_value = mock_response
+
+    if has_permission:
+        mock_permission_service.check_user_permission.return_value = None
+    else:
+        mock_permission_service.check_user_permission.return_value = Error(
+            HTTPStatus.FORBIDDEN,
+            [{"message": "Permission Denied: You do not have permission to add a business or corporation which is not registered in BC."}]
+        )
+    error = validate_party_role_firms(parties, filing_type)
+    
+    assert len(error) == len(results)
+    if results:
+        assert error[0].get('path') == f'/filing/{filing_type}/parties'
+        assert 'Permission Denied' in error[0].get('error', '')
 
 
 @pytest.mark.parametrize('test_name, legal_type, existing_identifier, filing_identifier, expected_result', [

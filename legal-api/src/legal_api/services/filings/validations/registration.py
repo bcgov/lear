@@ -22,12 +22,13 @@ from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services import STAFF_ROLE, NaicsService
+from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
+    validate_party_role_firms,
 )
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
@@ -108,6 +109,8 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
     partner_parties = 0
     invalid_roles = set()
     parties = filing["filing"][filing_type]["parties"]
+    if flags.is_on("enabled-deeper-permission-action"):
+        msg.extend(validate_party_role_firms(parties, filing_type))
     for party in parties:  # pylint: disable=too-many-nested-blocks;
         for role in party.get("roles", []):
             role_type = role.get("roleType").lower().replace(" ", "_")

@@ -95,6 +95,29 @@ def test_validate(session, test_name, now, ar_date, agm_date,
             ]
         ),
         (
+            "missing_mailingAddress_postalCode_required",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": ""},
+            [
+                {
+                    "error": "Postal code is required.",
+                    "path": "/filing/annualReport/directors/0/mailingAddress/postalCode"
+                }
+            ]
+        ),
+        (
+            "SUCCESS_missing_mailingAddress_postalCode_not_required",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "HK", "postalCode": ""},
+            None
+        ),
+        (
+            "SUCCESS_no_validation_on_postalCode_for_deliveryAddress",
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": ""},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            None
+        ),
+        (
             "missing_mailing_address",
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
             None,

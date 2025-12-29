@@ -37,6 +37,7 @@ import copy
 from business_model.models import Business, Filing, PartyRole
 
 from business_filer.filing_meta import FilingMeta
+from business_filer.filing_processors.filing_components.filings import update_filing_court_order
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
     create_relationsips,
@@ -63,3 +64,9 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     
     elif filing_rec.filing_sub_type == "changeAddressReceiver":
         update_relationship_addresses(relationships)
+
+    # update court order, if any is present
+    if court_order := filing_json["filing"]["changeOfReceivers"].get("courtOrder"):
+        update_filing_court_order(filing_rec, court_order)
+    
+    # FUTURE: DRS integration with document id

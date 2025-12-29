@@ -14,7 +14,7 @@
 """Program account details from BNIT link."""
 from http import HTTPStatus
 
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 from flask_restx import Namespace, Resource, cors
 
 from colin_api.exceptions import GenericException
@@ -24,6 +24,33 @@ from colin_api.utils.util import cors_preflight
 
 
 API = Namespace('ProgramAccount', description='ProgramAccount endpoint to get BNI DB link data.')
+
+
+@cors_preflight('POST')
+@API.route('/check-bn15s')
+class ProgramAccountList(Resource):
+    """Program Account List."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def post():
+        """Check for program accounts."""
+        json_input = request.get_json()
+        identifiers = json_input.get('identifiers')
+        if not identifiers:
+            return jsonify({'message': 'Identifiers required'}), HTTPStatus.BAD_REQUEST
+
+        try:
+            bn15s = ProgramAccount.get_bn15s(identifiers=identifiers)
+            return jsonify({'bn15s': bn15s}), HTTPStatus.OK
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch any exception here
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': 'Error when trying to check program accounts from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @cors_preflight('GET')

@@ -15,6 +15,7 @@
 import io
 import re
 from datetime import datetime, timedelta, timezone
+from http import HTTPStatus
 from typing import Final, Optional
 
 from legal_api.services.bootstrap import AccountService
@@ -26,7 +27,8 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
-from legal_api.services import MinioService, flags, namex
+from legal_api.services import MinioService, colin, flags, namex
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -378,19 +380,43 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
     return msg 
 
 
-def validate_relationships(filing_json: dict, filing_type: str) -> list:
+def validate_relationships( # noqa: PLR0913
+    business: Business,
+    filing_json: dict,
+    filing_type: str,
+    role_type: PartyRole.RoleTypes,
+    allow_new: bool,
+    allow_edits: bool
+) -> list:
     """Validate the relationships information."""
     msg = []
-    relationships_array = filing_json["filing"][filing_type]["relationships"]
+    relationships = filing_json["filing"][filing_type]["relationships"]
     party_path = f"/filing/{filing_type}/relationships"
 
-    for item in relationships_array:
-        msg.extend(validate_relationship_entity_name(item, party_path))
+    # get relevant parties for the business
+    party_roles: list[PartyRole] = PartyRole.get_party_roles(business.id,
+                                                             datetime.now(tz=timezone.utc).date(),
+                                                             role_type.value)
+    party_ids = [str(party_role.party_id) for party_role in party_roles]
+
+    # Check if party is a valid party of the given role
+    for index, relationship in enumerate(relationships):
+        identifier = relationship.get("entity", {}).get("identifier")
+        if identifier and not allow_edits:
+            msg.append({"error": "Relationship edits are not allowed in this filing.", "path": f"{party_path}/{index}/entity"})
+        elif identifier and identifier not in party_ids:
+            msg.append({"error": "Relationship with this identifier does not exist.", "path": f"{party_path}/{index}/entity/identifier"})
+        elif not identifier and not allow_new:
+            msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{party_path}/{index}/entity"})
+
+        msg.extend(validate_relationship_entity_name(relationship, party_path, index))
+
+    msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
 
     return msg
 
 
-def validate_relationship_entity_name(party: dict, party_path: str) -> list:
+def validate_relationship_entity_name(party: dict, party_path: str, index: int) -> list:
     """Validate relationship entity name."""
     msg = []
 
@@ -404,41 +430,41 @@ def validate_relationship_entity_name(party: dict, party_path: str) -> list:
     if party_type == "person":
         # Only familyName is required
         if not family_name or not family_name.strip():
-            msg.append({"error": f"{party_roles_str} familyName is required", "path": party_path})
+            msg.append({"error": f"{party_roles_str} familyName is required", "path": f"{party_path}/{index}/entity/familyName"})
 
         if organization_name:
             err_msg = f"{party_roles_str} businessName should not be set for a person relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/businessName"})
         
         if entity.get("businessIdentifier"):
             err_msg = f"{party_roles_str} businessIdentifier should not be set for a person relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/businessIdentifier"})
 
     elif party_type == "organization":
         if not organization_name or not organization_name.strip():
-            msg.append({"error": f"{party_roles_str} businessName is required", "path": party_path})
+            msg.append({"error": f"{party_roles_str} businessName is required", "path": f"{party_path}/{index}/entity/businessName"})
         
         if entity.get("givenName") not in (None, ""):
             err_msg = f"{party_roles_str} givenName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/givenName"})
 
         if entity.get("middleInitial") not in (None, ""):
             err_msg = f"{party_roles_str} middleInitial should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/middleInitial"})
         
         if entity.get("additionalName") not in (None, ""):
             err_msg = f"{party_roles_str} additionalName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/additionalName"})
 
         if entity.get("alternateName") not in (None, ""):
-            err_msg = f"{party_roles_str} additionalName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            err_msg = f"{party_roles_str} alternateName should not be set for an organization relationship entity"
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/alternateName"})
     
         if entity.get("fullName") not in (None, ""):
             err_msg = f"{party_roles_str} fullName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": party_path})
+            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/fullName"})
 
-    return msg 
+    return msg
 
 
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
@@ -888,9 +914,10 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
             return True
     return False
 
-def validate_party_role_firms(parties: list) -> list:
+def validate_party_role_firms(parties: list, filing_type: str) -> list:
     """Validate party role types for firms"""
 
+    msg = []
     for party in parties:
         roles = party.get("roles", [])
         for role in roles:
@@ -971,4 +998,29 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
                 "error": error_msg,
                 "path": f"/filing/{filing_type}/parties"
             })
+    return msg
+        officer = party.get("officer", {})
+        party_type = officer.get("partyType", "")
+
+        if party_type == "organization":
+            business_identifier = officer.get("identifier", None)
+            business_found = False
+
+            if business_identifier:
+                business_found = Business.find_by_identifier(business_identifier) is not None
+                if not business_found:
+                    colin_business = colin.query_business(business_identifier)
+                    business_found = colin_business.status_code == HTTPStatus.OK
+
+            if business_found:
+                continue
+            
+            if err_msg := PermissionService.check_user_permission(
+                ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
+                message="Permission Denied: You do not have permission to add a business or corporation which is not registered in BC."
+                ):
+                msg.append({"error": err_msg.msg[0].get("message"), 
+                            "path": f"/filing/{filing_type}/parties"
+                            })
+            
     return msg

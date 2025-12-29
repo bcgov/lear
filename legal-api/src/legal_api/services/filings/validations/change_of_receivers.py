@@ -32,44 +32,30 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Change of Receivers filing."""
-from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services.filings.validations.common_validations import validate_parties_addresses, validate_relationships
+from legal_api.services.filings.validations.common_validations import validate_relationships
 
 
 def validate(business: Business, filing_json: dict) -> Optional[Error]:
-    """Validate the Appoint Receiver filing."""
+    """Validate the Change of Receiver filing."""
     filing_type = "changeOfReceivers"
     filing_sub_type = filing_json["filing"][filing_type]["type"]
 
     msg = []
-    if filing_sub_type in ["appointReceiver", "changeAddressReceiver", "amendReceiver"]:
-        msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
-    elif filing_sub_type == "ceaseReceiver":
-        msg.extend(validate_ceased_relationships(business, filing_json["filing"][filing_type]["relationships"]))
-    msg.extend(validate_relationships(filing_json, filing_type))
+
+    msg.extend(validate_relationships(
+        business,
+        filing_json,
+        filing_type,
+        PartyRole.RoleTypes.RECEIVER,
+        filing_sub_type in ["amendReceiver", "appointReceiver"],
+        filing_sub_type in ["amendReceiver", "ceaseReceiver", "changeAddressReceiver"]
+    ))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
-
-def validate_ceased_relationships(business: Business, ceased_relationships: list[dict]) -> list:
-    """Validate party."""
-    msg = []
-
-    # get Receivers for the business
-    receivers = PartyRole.get_party_roles(business.id,
-                                          datetime.now(tz=timezone.utc).date(),
-                                          PartyRole.RoleTypes.RECEIVER.value)
-    receiver_party_ids = [str(receiver_party_role.party_id) for receiver_party_role in receivers]
-
-    # Check if party is a valid party of receiver role
-    for relationship in ceased_relationships:
-        if relationship.get("entity").get("identifier") not in receiver_party_ids:
-            msg.append({"error": "Must be a valid Receiver relationship.", "path": "/filing/ceaseReceiver/relationships"})
-
-    return msg
