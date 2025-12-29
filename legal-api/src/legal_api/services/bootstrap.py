@@ -335,16 +335,16 @@ class AccountService:
             return HTTPStatus.UNAUTHORIZED
 
         membership_response = requests.get(
-            url=f'{auth_url}/{org_id}/memberships',
+            url=f"{auth_url}/{org_id}/memberships",
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             timeout=cls.timeout
         )
 
         org_info_response = requests.get(
-            url=f'{auth_url}/orgs/{org_id}',
+            url=f"{auth_url}/orgs/{org_id}",
             headers={**cls.CONTENT_TYPE_JSON,
-                     'Authorization': cls.BEARER + token},
+                     "Authorization": cls.BEARER + token},
             timeout=cls.timeout
         )
 
