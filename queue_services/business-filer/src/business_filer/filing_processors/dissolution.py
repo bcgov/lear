@@ -80,16 +80,6 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
     if parties := dissolution_filing.get("parties"):
         update_parties(business, parties, filing_rec, False)
 
-    # add custodial office if provided
-    if custodial_office := dissolution_filing.get("custodialOffice"):
-        if office := create_office(business, "custodialOffice", custodial_office):
-            business.offices.append(office)
-        else:
-            current_app.logger.error("Could not create custodial office for Dissolution in: %s", filing)
-            current_app.logger.info(
-                f"Queue Error: Could not create custodial office for Dissolution filing:{filing.id}",
-                level="error")
-
     filing_rec.order_details = dissolution_filing.get("details")
 
     # update court order, if any is present
