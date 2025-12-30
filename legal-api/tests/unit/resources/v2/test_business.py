@@ -788,6 +788,11 @@ def test_get_could_file(session, client, jwt):
             "type": "administrative"
         },
         {
+            "displayName": "Delay of Dissolution",
+            "name": "dissolution",
+            "type": "delay"
+        },
+        {
             "displayName": "BC Limited Company Incorporation Application",
             "name": "incorporationApplication"
         },
