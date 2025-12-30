@@ -43,7 +43,7 @@ from business_filer.common.filing import DissolutionTypes
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import create_office, filings
+from business_filer.filing_processors.filing_components import filings
 from business_filer.filing_processors.filing_components.parties import update_parties
 
 
