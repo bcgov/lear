@@ -38,11 +38,7 @@ puts a message onto the Filers queue to process the file.
 """
 from __future__ import annotations
 
-import asyncio
-
-import sentry_sdk
 from flask import Flask
-from sentry_sdk.integrations.flask import FlaskIntegration
 
 from .config import Config, ProdConfig
 from .database.db import db
@@ -54,14 +50,6 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(environment)
-
-    # Configure Sentry
-    if dsn := app.config.get("SENTRY_DSN", None):
-        sentry_sdk.init(
-            dsn=dsn,
-            integrations=[FlaskIntegration()],
-            send_default_pii=False,
-        )
 
     # Configure LaunchDarkly
     if app.config.get("LD_SDK_KEY", None):

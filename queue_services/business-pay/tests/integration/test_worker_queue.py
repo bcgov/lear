@@ -81,7 +81,7 @@ async def test_not_message(app, client):
 
 @pytest.mark.asyncio
 async def test_no_message(
-    app, session, client, client_id, future, stan_server
+    app, session, client, client_id, future
 ):  # , event_loop):
     """Return a 4xx when an no JSON present."""
 
@@ -131,7 +131,7 @@ def create_test_envelope(ce: SimpleCloudEvent):
     return envelope
 
 
-def test_complete_worker(app, session, stan_server, mocker):
+def test_complete_worker(app, session, mocker):
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
     filing_id = 12
     filing_type = "annualReport"
@@ -143,6 +143,8 @@ def test_complete_worker(app, session, stan_server, mocker):
         "email": app.config.get("SUB_SERVICE_ACCOUNT"),
     }
     mocker.patch("google.oauth2.id_token.verify_oauth2_token", return_value=claim)
+    mocker.patch("business_pay.resources.pay_filer.publish_to_filer")
+    mocker.patch("business_pay.resources.pay_filer.publish_to_emailer")
 
     #
     # TEST - Call the Flask endpoint with a GCP type message
