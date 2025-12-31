@@ -36,17 +36,9 @@ from gcp_queue import GcpQueue
 
 from .flags import Flags
 from .gcp_auth import verify_gcp_jwt
-from .queue import QueueService
 
 flags = Flags()
 gcp_queue = GcpQueue()
-queue = QueueService()
-
-
-def create_filing_msg(identifier):
-    """Create the filing payload."""
-    filing_msg = {"filing": {"id": identifier}}
-    return filing_msg
 
 
 def create_gcp_filing_msg(identifier):
