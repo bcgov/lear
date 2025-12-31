@@ -133,46 +133,6 @@ def create_test_envelope(ce: SimpleCloudEvent):
 
 def test_complete_worker(app, session, stan_server, mocker):
     """Assert that payment tokens can be retrieved and decoded from the Queue."""
-    # SETUP
-    # lots of setup ...
-    from business_pay.services import queue
-
-    msgs = []
-    messages_expected = 2  # 1 - filer & 1 - email == 2 messages
-
-    # Override the app.config for the NATS/STAN configuration
-    test_subject_name = "test-subject"
-    app.config["NATS_QUEUE"] = test_subject_name
-    app.config["NATS_FILER_SUBJECT"] = test_subject_name
-    app.config["NATS_EMAILER_SUBJECT"] = test_subject_name
-    app.config["FILER_PUBLISH_OPTIONS"] = {"subject": test_subject_name}
-    app.config["EMAIL_PUBLISH_OPTIONS"] = {"subject": test_subject_name}
-
-    # setup loop
-    this_loop = asyncio.get_event_loop()
-    future = asyncio.Future(loop=this_loop)
-    queue.init_app(app, loop=this_loop)
-    this_loop.run_until_complete(queue.connect())
-
-    # Define the Callback to get the posted Queue messages
-    async def cb(msg):
-        nonlocal msgs
-        nonlocal future
-        msgs.append(msg)
-        if len(msgs) == messages_expected:
-            future.set_result(True)
-
-    # Subscribe to the Queue
-    queue_name = app.config.get("NATS_QUEUE")
-    this_loop.run_until_complete(
-        queue.stan.subscribe(
-            subject=test_subject_name,
-            queue=queue_name,
-            durable_name=test_subject_name,
-            cb=cb,
-        )
-    )
-
     filing_id = 12
     filing_type = "annualReport"
     payment_token = random.SystemRandom().getrandbits(0x58)
@@ -196,7 +156,7 @@ def test_complete_worker(app, session, stan_server, mocker):
         )
         envelope = create_test_envelope(ce)
         headers = {
-            "Authorization": f"Bearer doesn't matter",
+            "Authorization": "Bearer doesn't matter",
             "Content-Type": "application/json",
         }
 
@@ -204,24 +164,3 @@ def test_complete_worker(app, session, stan_server, mocker):
 
         # CHECK the call completed
         assert rv.status_code == HTTPStatus.OK
-
-    # Get the messages from the Queue, 2s timeout
-    try:
-        this_loop.run_until_complete(asyncio.wait_for(future, 2, loop=this_loop))
-    except Exception as err:
-        print(err)
-        raise err
-
-    # CHECK the NATS message were retrieved from the queue
-    assert len(msgs) == messages_expected
-    for msg in msgs:
-        if msg.data == b'{"filing": {"id": 12}}':
-            found_filing_msg = True
-        elif (
-            msg.data
-            == b'{"email": {"filingId": 12, "type": "annualReport", "option": "PAID"}}'
-        ):
-            found_email_msg = True
-
-    assert found_filing_msg
-    assert found_email_msg

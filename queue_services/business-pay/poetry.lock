@@ -29,33 +29,6 @@ files = [
 ]
 
 [[package]]
-name = "asyncio-nats-client"
-version = "0.11.5"
-description = "NATS client for Python Asyncio"
-optional = false
-python-versions = "*"
-files = [
-    {file = "asyncio-nats-client-0.11.5.tar.gz", hash = "sha256:c6a2855a63db68289bb270240670ff30514ba0082a8b4f759b8e9955ac84c575"},
-]
-
-[package.extras]
-nkeys = ["nkeys"]
-
-[[package]]
-name = "asyncio-nats-streaming"
-version = "0.4.0"
-description = "NATS Streaming client for Python Asyncio"
-optional = false
-python-versions = "*"
-files = [
-    {file = "asyncio-nats-streaming-0.4.0.tar.gz", hash = "sha256:1fecb125917b438028e6eb753cdc1689dd1c7c86df8a9808534d9fc1711b0aa6"},
-]
-
-[package.dependencies]
-asyncio-nats-client = ">=0.7.0"
-protobuf = ">=3.7"
-
-[[package]]
 name = "attrs"
 version = "25.3.0"
 description = "Classes Without Boilerplate"
