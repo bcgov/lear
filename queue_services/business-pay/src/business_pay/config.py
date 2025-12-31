@@ -147,7 +147,7 @@ class TestConfig(Config):  # pylint: disable=too-few-public-methods
             f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    SUB_SERVICE_ACCOUNT = 'test'
+    SUB_SERVICE_ACCOUNT = "test"
 
 
 class ProdConfig(Config):  # pylint: disable=too-few-public-methods

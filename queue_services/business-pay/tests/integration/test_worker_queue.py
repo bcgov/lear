@@ -80,9 +80,7 @@ async def test_not_message(app, client):
 
 
 @pytest.mark.asyncio
-async def test_no_message(
-    app, session, client, client_id, future
-):  # , event_loop):
+async def test_no_message(app, session, client, client_id, future):  # , event_loop):
     """Return a 4xx when an no JSON present."""
 
     ##-# using test_client()
