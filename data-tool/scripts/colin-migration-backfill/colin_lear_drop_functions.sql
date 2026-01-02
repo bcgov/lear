@@ -1,11 +1,19 @@
+-- Active officers begin 
 drop function colin_tombstone_officers_cleanup;
 drop function colin_tombstone_officers;
+drop function colin_tombstone_single_officer;
 drop function colin_tombstone_officer;
 drop function colin_tombstone_cars_officer;
 drop function colin_hist_cars_address;
 drop function colin_hist_cars_country;
 drop function colin_hist_cars_region;
+drop function colin_hist_party_change;
+drop function colin_hist_party_address_edit;
+drop function colin_hist_address_change;
+drop function to_officer_role;
+-- Active officers end 
 
+-- V1 backfill begin
 drop function colin_hist_backfill_corp;
 drop procedure colin_hist_backfill_range;
 drop procedure colin_hist_backfill;
@@ -49,5 +57,28 @@ drop function colin_hist_address_change;
 drop function colin_hist_version_cleanup;
 drop function colin_hist_corp_rollback;
 drop function colin_hist_filing_rollback;
+-- V1 backfill end
+
+-- V2 backfill begin
+drop function colin_hist_backfill_corp;
+drop function colin_hist_backfill_range;
+drop function colin_hist_backfill;
+drop function colin_hist_post_migration;
+drop function colin_hist_version_cleanup;
+drop function colin_hist_corp_v2;
+drop function colin_hist_corp_amalgamations;
+drop function colin_hist_corp_jurisdictions;
+drop function colin_hist_corp_aliases;
+drop function colin_hist_corp_resolutions;
+drop function colin_hist_corp_officers;
+drop function colin_hist_corp_parties;
+drop function colin_hist_corp_offices;
+drop function colin_hist_corp_shares;
+drop function colin_hist_corp_businesses;
+drop function colin_hist_corp_setup;
+drop function to_officer_role;
+drop function colin_hist_corp_rollback;
+drop function colin_hist_filing_rollback;
+-- V2 backfill end
 
 drop table mig_corp_processing_history;
