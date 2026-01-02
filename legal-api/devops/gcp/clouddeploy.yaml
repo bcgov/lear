@@ -54,7 +54,7 @@ serialPipeline:
       verify: false
    deployParameters:
    - values:
-      deploy-env: "production"
+      deploy-env: "sandbox"
       deploy-project-id: "a083gt-integration"
       service-name: "business-api-sandbox"
       container-name: "business-api-sandbox"

@@ -43,7 +43,7 @@ from business_filer.common.filing import DissolutionTypes
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import create_office, filings
+from business_filer.filing_processors.filing_components import filings
 from business_filer.filing_processors.filing_components.parties import update_parties
 
 
@@ -79,16 +79,6 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
     # add custodial party if in filing
     if parties := dissolution_filing.get("parties"):
         update_parties(business, parties, filing_rec, False)
-
-    # add custodial office if provided
-    if custodial_office := dissolution_filing.get("custodialOffice"):
-        if office := create_office(business, "custodialOffice", custodial_office):
-            business.offices.append(office)
-        else:
-            current_app.logger.error("Could not create custodial office for Dissolution in: %s", filing)
-            current_app.logger.info(
-                f"Queue Error: Could not create custodial office for Dissolution filing:{filing.id}",
-                level="error")
 
     filing_rec.order_details = dissolution_filing.get("details")
 

@@ -5,8 +5,6 @@ from flask import Blueprint
 from flask import current_app
 from structured_logging import StructuredLogging
 
-from business_pay.services import queue
-
 
 logger = StructuredLogging.get_logger()
 

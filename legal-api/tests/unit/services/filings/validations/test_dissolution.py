@@ -519,56 +519,6 @@ def test_dissolution_custodian_org_name(session, test_status, legal_type, dissol
     else:
         assert err is None
 
-
-
-@pytest.mark.parametrize(
-    'test_status, legal_type, dissolution_type, has_custodial_office, expected_code, expected_msg',
-    [
-        ('FAIL', 'BC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-        'Custodial office is required for voluntary dissolution.'),
-        ('FAIL', 'BEN', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-        'Custodial office is required for voluntary dissolution.'),
-        ('FAIL', 'CC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-        'Custodial office is required for voluntary dissolution.'),
-        ('FAIL', 'ULC', 'voluntary', False, HTTPStatus.BAD_REQUEST,
-        'Custodial office is required for voluntary dissolution.'),
-        ('SUCCESS', 'CP', 'voluntary', False, None, None),
-        ('SUCCESS', 'BC', 'voluntary', True, None, None),
-        ('SUCCESS', 'BEN', 'voluntary', True, None, None),
-        ('SUCCESS', 'CC', 'voluntary', True, None, None),
-        ('SUCCESS', 'ULC', 'voluntary', True, None, None),
-        ('SUCCESS', 'BC', 'administrative', False, None, None),
-    ]
-)
-def test_dissolution_custodial_office(session, test_status, legal_type, dissolution_type, has_custodial_office,
-                                      expected_code, expected_msg):
-    """Test custodial office validation in voluntary dissolution."""
-    business = Business(identifier='BC1234567', legal_type=legal_type)
-    filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['header']['name'] = 'dissolution'
-    filing['filing']['business']['legalType'] = legal_type
-    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
-    filing['filing']['dissolution']['dissolutionType'] = dissolution_type
-    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
-        filing['filing']['dissolution']['parties'][1]['mailingAddress']
-
-    if not has_custodial_office:
-        del filing['filing']['dissolution']['custodialOffice']
-
-    if dissolution_type == 'administrative':
-        filing['filing']['dissolution']['details'] = "Some Details"
-        del filing['filing']['dissolution']['affidavitFileKey']
-
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
-         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
-        err = validate(business, filing)
-
-    if test_status == 'FAIL':
-        assert err.code == expected_code
-        assert any(expected_msg in msg['error'] for msg in err.msg)
-    else:
-        assert err is None
-
 #setup
 now = date(2020, 9, 17)
 

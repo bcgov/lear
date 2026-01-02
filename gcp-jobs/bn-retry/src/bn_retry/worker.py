@@ -136,7 +136,7 @@ def run_job():
     try:
         current_app.logger.info("Starting BN retry job")
 
-        batch_size = 20
+        batch_size = current_app.config.get("BATCH_SIZE")
         skip_count = 0
         total_processed = 0
         total_updated = 0

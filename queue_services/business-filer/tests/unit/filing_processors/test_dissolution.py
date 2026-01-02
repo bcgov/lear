@@ -151,13 +151,6 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
     assert len(business.party_roles.all()) == 2
     assert len(filing.filing_party_roles.all()) == 1
 
-    custodial_office = session.query(Business, Office). \
-        filter(Business.id == Office.business_id). \
-        filter(Business.id == business_id). \
-        filter(Office.office_type == OfficeType.CUSTODIAL). \
-        one_or_none()
-    assert custodial_office
-
     if business.legal_type == Business.LegalTypes.COOP.value:
         documents = business.documents.all()
         assert len(documents) == 1
@@ -240,13 +233,6 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
     assert business.state_filing_id == filing.id
     assert len(business.party_roles.all()) == 2
     assert len(filing.filing_party_roles.all()) == 1
-
-    custodial_office = session.query(Business, Office). \
-        filter(Business.id == Office.business_id). \
-        filter(Business.id == business_id). \
-        filter(Office.office_type == OfficeType.CUSTODIAL). \
-        one_or_none()
-    assert custodial_office
 
     if filing_json['filing']['business']['legalType'] == Business.LegalTypes.COOP.value:
         documents = business.documents.all()

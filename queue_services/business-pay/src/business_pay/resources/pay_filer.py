@@ -50,11 +50,9 @@ from structured_logging import StructuredLogging
 from business_pay.database import Filing
 from business_pay.services import (
     create_email_msg,
-    create_filing_msg,
     create_gcp_filing_msg,
     flags,
     gcp_queue,
-    queue,
     verify_gcp_jwt,
 )
 
@@ -184,27 +182,19 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
     logger.debug(f"checking filer for pay-id: {payment_token.id} on filing: {filing}")
     try:
         if filing.effective_date <= filing.payment_completion_date:
-            # use Pub/Sub if in GCP, otherwise NATS
-            if current_app.config["DEPLOYMENT_PLATFORM"] == "GCP":
-                data = create_gcp_filing_msg(filing.id)
+            data = create_gcp_filing_msg(filing.id)
 
-                ce = SimpleCloudEvent(
-                    id=str(uuid.uuid4()),
-                    source="business_pay",
-                    subject="filing",
-                    time=datetime.now(timezone.utc),
-                    type="filingMessage",
-                    data=data,
-                )
-                topic = current_app.config.get("BUSINESS_FILER_TOPIC")
-                gcp_queue.publish(topic, to_queue_message(ce))
-                logger.debug(f"Filer pub/sub message: {str(ce)}")
-            else:
-                filer_topic = current_app.config["FILER_PUBLISH_OPTIONS"]["subject"]
-                queue_message = create_filing_msg(filing.id)
-                logger.debug(f"Filer NATS message: {queue_message}")
-                # await queue.publish(subject=filer_topic, msg=queue_message)
-                queue.publish_json(subject=filer_topic, payload=queue_message)
+            ce = SimpleCloudEvent(
+                id=str(uuid.uuid4()),
+                source="business_pay",
+                subject="filing",
+                time=datetime.now(timezone.utc),
+                type="filingMessage",
+                data=data,
+            )
+            topic = current_app.config.get("BUSINESS_FILER_TOPIC")
+            gcp_queue.publish(topic, to_queue_message(ce))
+            logger.debug(f"Filer pub/sub message: {str(ce)}")
 
         logger.info(f"publish to filer for pay-id: {payment_token.id}")
     except Exception as err:
@@ -216,29 +206,23 @@ def publish_to_filer(filing: Filing, payment_token: PaymentToken):
 def publish_to_emailer(filing: Filing):
     """Publish a queue message to entity-emailer once the filing has been marked as PAID."""
     try:
-        # skip publishing NATS message
+        # skip publishing queue message
         if flags.is_on("enable-sandbox"):
             logger.debug("Skip publishing to emailer.")
             return
 
         email_msg = create_email_msg(filing.id, filing.filing_type)
 
-        if current_app.config["DEPLOYMENT_PLATFORM"] == "GCP":
-            ce = SimpleCloudEvent(
-                id=str(uuid.uuid4()),
-                source="business_pay",
-                subject="filing",
-                time=datetime.now(timezone.utc),
-                data=email_msg,
-            )
-            topic = current_app.config.get("BUSINESS_EMAILER_TOPIC")
-            gcp_queue.publish(topic, to_queue_message(ce))
-            logger.debug(f"Emailer pub/sub message: {str(ce)}")
-        else:
-            mail_topic = current_app.config["EMAIL_PUBLISH_OPTIONS"]["subject"]
-            # await queue.publish(subject=mail_topic, msg=email_msg)
-            queue.publish_json(subject=mail_topic, payload=email_msg)
-            logger.info(f"published to emailer for filing-id: {filing.id}")
+        ce = SimpleCloudEvent(
+            id=str(uuid.uuid4()),
+            source="business_pay",
+            subject="filing",
+            time=datetime.now(timezone.utc),
+            data=email_msg,
+        )
+        topic = current_app.config.get("BUSINESS_EMAILER_TOPIC")
+        gcp_queue.publish(topic, to_queue_message(ce))
+        logger.debug(f"Emailer pub/sub message: {str(ce)}")
     except Exception as err:
         logger.debug(f"Publish to emailer error: {err}, for filing-id: {filing.id}")
 

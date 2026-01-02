@@ -26,6 +26,7 @@ from flask_babel import _
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.services import MinioService, colin, flags, namex
+from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
@@ -941,4 +942,77 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
                             "path": f"/filing/{filing_type}/parties"
                             })
             
+    return msg
+
+def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> list:
+    """Validate completing party edited."""
+    msg = []
+    parties = filing_json["filing"][filing_type].get("parties", {})
+
+    officer = None
+    for party in parties:
+        roles = party.get("roles", [])
+        if any(role.get("roleType").lower() == PartyRole.RoleTypes.COMPLETING_PARTY.value for role in roles):
+            officer = party.get("officer", {})
+            break
+    if not officer:
+        msg.append({
+            "error": "Completing party is required.",
+            "path": f"/filing/{filing_type}/parties"
+        })
+        return msg
+    
+    filing_completing_party_mailing_address = officer.get("mailingAddress", {})
+    filing_firstname = officer.get("firstName", "")
+    filing_lastname = officer.get("lastName", "")
+    filing_email = officer.get("email", "")
+    
+    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+    if contacts_response is None:
+        msg.append({
+            "error": "Unable to verify completing party against account contacts.",
+            "path": f"/filing/{filing_type}/parties"
+        })
+        return msg
+    
+    contact = contacts_response["contacts"][0]
+    existing_cp_mailing_address = {
+        "streetAddress": contact.get("street", ""),
+        "addressCity": contact.get("city", ""),
+        "addressRegion": contact.get("region", ""),
+        "postalCode": contact.get("postalCode", ""),
+        "addressCountry": contact.get("country", ""),
+        "deliveryInstructions": contact.get("deliveryInstructions", ""),
+        "streetAddressAdditional": contact.get("streetAdditional", "")
+    }
+    existing_firstname = contact.get("firstName", "")
+    existing_lastname = contact.get("lastName", "")
+    existing_email = contact.get("email", "")
+
+    address_changed = is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
+
+    existing_name = {
+        "firstName": existing_firstname,
+        "lastName": existing_lastname
+    }
+    filing_name = {
+        "firstName": filing_firstname,
+        "lastName": filing_lastname
+    }
+
+    name_changed = is_name_changed(existing_name, filing_name)
+
+    email_changed = not is_same_str(existing_email, filing_email)
+
+    if address_changed or name_changed or email_changed:
+        permission_error = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
+            message="Permission Denied - You do not have rights to edit completing address."
+        )
+        if permission_error:
+            error_msg = permission_error.message[0]["message"] if permission_error.message else "You do not have rights to edit completing address."
+            msg.append({
+                "error": error_msg,
+                "path": f"/filing/{filing_type}/parties"
+            })
     return msg
