@@ -636,7 +636,7 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         bar_keycloak_guid,
         bar_idp_userid,
         bar_account_id,
-        tings_corps
+        ting_corps
 FROM (
     SELECT
            LOWER(SPLIT_PART(c.admin_email, '@', 2)) as email_domain,
@@ -715,7 +715,7 @@ FROM (
            END AS months_since_last_bar_filing,
            bc.sub as bar_keycloak_guid,
            bc.idp_userid as bar_idp_userid,
-           bc.payment_account as 
+           bc.payment_account as bar_account_id,
            ciaml.ting_corps as ting_corps
     FROM event e
     JOIN corporation c ON c.corp_num = e.corp_num
