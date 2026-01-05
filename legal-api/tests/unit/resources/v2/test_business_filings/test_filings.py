@@ -2080,15 +2080,18 @@ def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     ]
 )
 def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
-    """Assert Change of Liquidators is submitted correctly for entity types."""
+    """Assert Delay of Dissolution is submitted correctly for entity types."""
     mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
-    col = copy.deepcopy(FILING_HEADER)
-    col['filing']['header']['name'] = 'changeOfLiquidators'
-    col['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    dod = copy.deepcopy(FILING_HEADER)
+    dod['filing']['header']['name'] = 'dissolution'
+    dod['filing']['dissolution'] = {
+        'dissolutionType': 'delay',
+        'delayType': 'custom'
+    }
 
     b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
     factory_business_mailing_address(b)
-    col['filing']['business']['identifier'] = identifier
+    dod['filing']['business']['identifier'] = identifier
 
     requests_mock.post(
         current_app.config.get('PAYMENT_SVC_URL'),
@@ -2101,7 +2104,7 @@ def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     )
     rv = client.post(
         f'/api/v2/businesses/{identifier}/filings',
-        json=col,
+        json=dod,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 
