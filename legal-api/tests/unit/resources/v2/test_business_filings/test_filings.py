@@ -2086,7 +2086,7 @@ def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     dod['filing']['header']['name'] = 'dissolution'
     dod['filing']['dissolution'] = {
         'dissolutionType': 'delay',
-        'delayType': 'custom'
+        'delayType': 'default'
     }
 
     b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
