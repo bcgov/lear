@@ -52,7 +52,7 @@ dependencies = [
     "blinker (==1.4)",
     "pyjwt (==2.8.0)",
 
-    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.55#egg=registry_schemas",
+    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.56#egg=registry_schemas",
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging"

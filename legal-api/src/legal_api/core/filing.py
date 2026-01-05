@@ -118,6 +118,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         DISSOLUTION_VOLUNTARY = "dissolution.voluntary"
         DISSOLUTION_ADMINISTRATIVE = "dissolution.administrative"
         DISSOLUTION_INVOLUNTARY = "dissolution.involuntary"
+        DISSOLUTION_DELAY = "dissolution.delay"
         RESTORATION_FULL_RESTORATION = "restoration.fullRestoration"
         RESTORATION_LIMITED_RESTORATION = "restoration.limitedRestoration"
         RESTORATION_LIMITED_RESTORATION_EXT = "restoration.limitedRestorationExtension"
@@ -530,7 +531,11 @@ class Filing:  # pylint: disable=too-many-public-methods
                 documents["documents"]["uploadedCourtOrder"] = f"{base_url}{doc_url}/uploadedCourtOrder"
             documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
-        no_legal_filings_in_paid_withdrawn_status = [
+        no_outputs_except_receipt = filing.filing_type in [
+            Filing.FilingTypes.CHANGEOFLIQUIDATORS.value,
+            Filing.FilingTypes.CHANGEOFRECEIVERS.value
+        ]
+        no_legal_filings_in_paid_withdrawn_status = no_outputs_except_receipt or filing.filing_type in [
             Filing.FilingTypes.AMALGAMATIONOUT.value,
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
@@ -542,15 +547,20 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
             Filing.FilingTypes.CHANGEOFOFFICERS.value
         ]
-        if (filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
+        no_outputs_except_receipt_dissolution = filing.storage.filing_sub_type == "delay"
+        no_legal_filings_in_paid_withdrawn_status_dissolution = (
+            filing.filing_type == Filing.FilingTypes.DISSOLUTION.value
+            and (business.legal_type in [Business.LegalTypes.SOLE_PROP.value,
+                                         Business.LegalTypes.PARTNERSHIP.value]
+                 or no_outputs_except_receipt_dissolution
+            )
+        )
+        if ((filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
                 (filing.status == Filing.Status.COMPLETED and
-                    filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value)) and \
-            not (filing.filing_type in no_legal_filings_in_paid_withdrawn_status
-                 or (filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
-                     business.legal_type in [
-                         Business.LegalTypes.SOLE_PROP.value,
-                         Business.LegalTypes.PARTNERSHIP.value])
-                 ):
+                    filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value))
+            and not (no_legal_filings_in_paid_withdrawn_status
+                      or no_legal_filings_in_paid_withdrawn_status_dissolution)
+        ):
             documents["documents"]["legalFilings"] = \
                 [{filing.filing_type: f"{base_url}{doc_url}/{filing.filing_type}"}, ]
             if user_is_ca:
@@ -561,6 +571,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED) and
             filing.storage.meta_data and
             (legal_filings := filing.storage.meta_data.get("legalFilings"))
+            and not (no_outputs_except_receipt or no_outputs_except_receipt_dissolution)
         ):
             legal_filings_copy = copy.deepcopy(legal_filings)
             if (

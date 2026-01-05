@@ -1551,8 +1551,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.54"
-resolved_reference = "be9cf4995e213d185ca2bd4e5f600e878661e734"
+reference = "2.18.56"
+resolved_reference = "f08dd570ad603705c3e0312367543452de3a8b63"
 
 [[package]]
 name = "requests"
@@ -2210,4 +2210,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4"
-content-hash = "d7884767f9a73a700bb493f794f14ca39ddafe3c46885b33c3dc0494dec8c7e6"
+content-hash = "d39f25591b550096c6ed4c1f15e8071f201556cd250a60e01dc6732ab91bf246"

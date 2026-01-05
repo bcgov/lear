@@ -55,6 +55,11 @@ from tests.unit.models import factory_business, factory_filing, factory_incomple
 from tests.unit.services.utils import create_business, create_header, helper_create_jwt
 
 
+DELAY_DISSOLUTION = {
+    "dissolutionType": "delay",
+    "delayType": "default"
+}
+
 def test_jwt_manager_initialized(jwt):
     """Assert that the jwt_manager is created as part of the fixtures."""
     assert jwt
@@ -136,6 +141,7 @@ class FilingKey(str, Enum):
     ADM_DISS = 'ADM_DISS'
     VOL_DISS_FIRMS = 'VOL_DISS_FIRMS'
     ADM_DISS_FIRMS = 'ADM_DISS_FIRMS'
+    DELAY_DISS = 'DELAY_DISS'
     AMALGAMATION_OUT = 'AMALGAMATION_OUT'
     REGISTRARS_NOTATION = 'REGISTRARS_NOTATION'
     REGISTRARS_ORDER = 'REGISTRARS_ORDER'
@@ -196,6 +202,8 @@ EXPECTED_DATA = {
                                'name': 'dissolution', 'type': 'voluntary'},
     FilingKey.ADM_DISS_FIRMS: {'displayName': 'Statement of Dissolution', 'feeCode': 'DIS_ADM',
                                'name': 'dissolution', 'type': 'administrative'},
+    FilingKey.DELAY_DISS: {'displayName': 'Delay of Dissolution', 'feeCode': 'DISDE',
+                               'name': 'dissolution', 'type': 'delay'},
     FilingKey.AMALGAMATION_OUT: {'displayName': 'Amalgamation Out', 'feeCode': 'AMALO', 'name': 'amalgamationOut'},
     FilingKey.REGISTRARS_NOTATION: {'displayName': "Registrar's Notation", 'feeCode': 'NOFEE',
                                     'name': 'registrarsNotation'},
@@ -614,7 +622,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
         # active business
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'correction', 'courtOrder',
-          {'dissolution': ['voluntary', 'administrative']}, 'incorporationApplication',
+          {'dissolution': ['voluntary', 'administrative', 'delay']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
          ['adminFreeze', 'agmExtension', 'agmLocationChange', 'alteration',
@@ -622,7 +630,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'changeOfAddress', 'changeOfDirectors', {'changeOfLiquidators': ['appointLiquidator', 'ceaseLiquidator', 'changeAddressLiquidator', 'intentToLiquidate', 'liquidationReport']},
           'changeOfOfficers', {'changeOfReceivers': ['amendReceiver', 'appointReceiver', 'ceaseReceiver', 'changeAddressReceiver']},
           'consentAmalgamationOut', 'consentContinuationOut', 'continuationOut',
-          'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
+          'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative', 'delay']},
           'incorporationApplication', 'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
           {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'staff', [STAFF_ROLE],
@@ -631,7 +639,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
           'changeOfAddress', 'changeOfDirectors', {'changeOfLiquidators': ['appointLiquidator', 'ceaseLiquidator', 'changeAddressLiquidator', 'intentToLiquidate', 'liquidationReport']},
           'changeOfOfficers', {'changeOfReceivers': ['amendReceiver', 'appointReceiver', 'ceaseReceiver', 'changeAddressReceiver']},
           'continuationIn', 'consentAmalgamationOut', 'consentContinuationOut',
-          'continuationOut', 'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative']},
+          'continuationOut', 'correction', 'courtOrder', {'dissolution': ['voluntary', 'administrative', 'delay']},
           'putBackOff', 'registrarsNotation', 'registrarsOrder', 'transition',
           {'restoration': ['limitedRestorationExtension', 'limitedRestorationToFull']}, 'noticeOfWithdrawal']),
         ('staff_active_llc', Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
@@ -642,15 +650,15 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 
         ('user_active_cp', Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
          ['annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers',
-          {'dissolution': ['voluntary']}, 'incorporationApplication', 'specialResolution']),
+          {'dissolution': ['voluntary', 'delay']}, 'incorporationApplication', 'specialResolution']),
         ('user_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
          ['agmExtension', 'agmLocationChange', 'alteration', {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
           'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'consentAmalgamationOut', 'consentContinuationOut',
-          {'dissolution': ['voluntary']}, 'incorporationApplication', 'transition', {'transparencyRegister': ['annual', 'change', 'initial']}]),
+          {'dissolution': ['voluntary', 'delay']}, 'incorporationApplication', 'transition', {'transparencyRegister': ['annual', 'change', 'initial']}]),
         ('user_active_continue_in_corps', Business.State.ACTIVE, ['C', 'CBEN', 'CUL', 'CCC'], 'general', [BASIC_USER],
          ['agmExtension', 'agmLocationChange', 'alteration', {'amalgamationApplication': ['regular', 'vertical', 'horizontal']},
           'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'consentAmalgamationOut', 'consentContinuationOut', 'continuationIn',
-          {'dissolution': ['voluntary']}, 'transition', {'transparencyRegister': ['annual', 'change', 'initial']}]),
+          {'dissolution': ['voluntary', 'delay']}, 'transition', {'transparencyRegister': ['annual', 'change', 'initial']}]),
         ('user_active_llc', Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
         ('user_active_firms', Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
          ['changeOfRegistration', {'dissolution': ['voluntary']}, 'registration']),
@@ -2996,10 +3004,10 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
 
 
 @pytest.mark.parametrize(
-    'test_name,business_exists,state,legal_types,username,roles,expected',
+    'test_name,business_exists,state,legal_types,username,roles,num_dods,expected',
     [
         # active business - staff user
-        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE], 0,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
@@ -3008,10 +3016,11 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.ADM_DISS,
+                          FilingKey.DELAY_DISS,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.SPECIAL_RESOLUTION])),
-        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 0,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
@@ -3029,13 +3038,38 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.CORRCTN,
                           FilingKey.COURT_ORDER,
                           FilingKey.ADM_DISS,
+                          FilingKey.DELAY_DISS,
                           FilingKey.PUT_BACK_OFF,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.TRANSITION,
                           ])),
-        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_active_corps_2_dods', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 2,
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_REPORT,
+                          FilingKey.COO_CORPS,
+                          FilingKey.CHANGE_OF_RECEIVERS_AMEND,
+                          FilingKey.CHANGE_OF_RECEIVERS_APPOINT,
+                          FilingKey.CHANGE_OF_RECEIVERS_CEASE,
+                          FilingKey.CHANGE_OF_RECEIVERS_ADDRESS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION,
+                          ])),
+        ('staff_active_llc', True, Business.State.ACTIVE, ['LLC'], 'staff', [STAFF_ROLE], 0, []),
+        ('staff_active_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'staff', [STAFF_ROLE], 0,
          expected_lookup([FilingKey.ADMN_FRZE,
                           FilingKey.CHANGE_OF_REGISTRATION,
                           FilingKey.CONV_FIRMS,
@@ -3046,12 +3080,33 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.REGISTRARS_ORDER])),
 
         # active business - general user
-        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER],
+        ('general_user_cp', True, Business.State.ACTIVE, ['CP'], 'general', [BASIC_USER], 0,
          expected_lookup([FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
-                          FilingKey.COO_CORPS])),
-        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER],
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS])),
+        ('general_user_corps', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], 0,
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+        ('general_user_corps_1_dod', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], 1,
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+        ('general_user_corps_2_dods', True, Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'general', [BASIC_USER], 2,
          expected_lookup([FilingKey.AR_CORPS,
                           FilingKey.COA_CORPS,
                           FilingKey.COD_CORPS,
@@ -3060,40 +3115,40 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
                           FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
                           FilingKey.TRANSPARENCY_REGISTER_CHANGE,
                           FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
-        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER],
+        ('general_user_llc', True, Business.State.ACTIVE, ['LLC'], 'general', [BASIC_USER], 0, []),
+        ('general_user_firms', True, Business.State.ACTIVE, ['SP', 'GP'], 'general', [BASIC_USER], 0,
          expected_lookup([FilingKey.CHANGE_OF_REGISTRATION])),
 
         # historical business - staff user
-        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'staff', [STAFF_ROLE], 0,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
-        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
+        ('staff_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 0,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER,
                           FilingKey.RESTRN_FULL_CORPS,
                           FilingKey.RESTRN_LTD_CORPS])),
-        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], []),
-        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE],
+        ('staff_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'staff', [STAFF_ROLE], 0, []),
+        ('staff_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'staff', [STAFF_ROLE], 0,
          expected_lookup([FilingKey.COURT_ORDER,
                           FilingKey.PUT_BACK_ON,
                           FilingKey.REGISTRARS_NOTATION,
                           FilingKey.REGISTRARS_ORDER])),
 
         # historical business - general user
-        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], []),
+        ('general_user_historical_cp', True, Business.State.HISTORICAL, ['CP'], 'general', [BASIC_USER], 0, []),
         ('general_user_historical_corps', True, Business.State.HISTORICAL, ['BC', 'BEN', 'CC', 'ULC'], 'general',
-         [BASIC_USER], []),
-        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], []),
-        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], []),
+         [BASIC_USER], 0, []),
+        ('general_user_historical_llc', True, Business.State.HISTORICAL, ['LLC'], 'general', [BASIC_USER], 0, []),
+        ('general_user_historical_firms', True, Business.State.HISTORICAL, ['SP', 'GP'], 'general', [BASIC_USER], 0, []),
     ]
 )
 def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, jwt, test_name, business_exists, state,
-                                                    legal_types, username, roles, expected):
+                                                    legal_types, username, roles, num_dods, expected):
     """Assert that get allowed returns valid filings when business is in dissolution."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
     headers = {'Authorization': 'Bearer ' + token}
@@ -3110,6 +3165,11 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
             business = factory_business(identifier=identifier,
                                         entity_type=legal_type,
                                         state=state)
+            for _ in range(num_dods):
+                dod_filing_json = copy.deepcopy(FILING_TEMPLATE)
+                dod_filing_json["filing"]["header"]["name"] = "dissolution"
+                dod_filing_json["filing"]["dissolution"] = DELAY_DISSOLUTION
+                factory_completed_filing(business, dod_filing_json)
             with patch.object(type(business), 'in_dissolution', new_callable=PropertyMock) as mock_in_dissolution:
                 mock_in_dissolution.return_value = True
                 filing_types = get_allowed_filings(business, state, legal_type, jwt)
