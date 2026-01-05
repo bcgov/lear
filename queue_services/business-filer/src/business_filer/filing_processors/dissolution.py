@@ -127,7 +127,7 @@ def _process_delay(business: Business, filing: dict, filing_rec: Filing, filing_
                 if delay_type == "default":
                     batch_processing.trigger_date = batch_processing.trigger_date + datedelta(months=6)
                 else:
-                    # delay_type == "custom"
+                    # delay_type == "custom", noqa:ERA001
                     extend_date = dpath.get(filing, "/dissolution/dissolutionDate")
                     batch_processing.trigger_date = LegislationDatetime.as_legislation_timezone_from_date_str(extend_date)
 
