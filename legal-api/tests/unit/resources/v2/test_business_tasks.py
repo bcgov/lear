@@ -321,13 +321,12 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
     from legal_api.resources.v2.business.business_tasks import construct_task_list
 
     # tests expect current date to be in 2025. Adjust accordingly for the current year (freezetime only works for some things)
-    year_offset = (datetime.now()).year - 2025
-    founding_date += datedelta.datedelta(years=year_offset)
-    if last_ar_date:
-        last_ar_date += datedelta.datedelta(years=year_offset)
-    for todo in expected:
-        if todo.get('ARFilingYear'):
-            todo['ARFilingYear'] += year_offset
+    year_offset = 0
+    now = datetime.now()
+    if now > (founding_date + datedelta.datedelta(years=(now.year - founding_date.year))):
+        year_offset = (now).year - 2025
+    for i in range(year_offset):
+        expected.append({'order': len(expected) + 1, 'name': 'annualReport', 'ARFilingYear': 2025+1+i, 'enabled': not any([x for x in expected if x.get('name') == 'annualReport'])})
 
     with patch('legal_api.services.warnings.business.business_checks.business.involuntary_dissolution_check', return_value=[]):
         business = factory_business(identifier, founding_date, last_ar_date, legal_type)
@@ -353,7 +352,6 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
         tasks = construct_task_list(business)
 
         # check number of tasks
-        # assert tasks == expected
         assert len(tasks) == len(expected)
         if tasks:
             # check order and values
@@ -398,18 +396,13 @@ def test_construct_task_list_tr(app, session, client, jwt, test_name, identifier
     from legal_api.resources.v2.business.business_tasks import construct_task_list
 
     # tests expect current date to be in 2025. Adjust accordingly for the current year (freezetime only works for some things)
-    year_offset = (datetime.now()).year - 2025
-    founding_date += datedelta.datedelta(years=year_offset)
-    tr_start_date += datedelta.datedelta(years=year_offset)
-    if last_ar_date:
-        last_ar_date += datedelta.datedelta(years=year_offset)
-    if last_tr_date:
-        last_tr_date += datedelta.datedelta(years=year_offset)
-    for todo in expected:
-        if todo.get('ARFilingYear'):
-            todo['ARFilingYear'] += year_offset
-        if todo.get('TRFilingYear'):
-            todo['TRFilingYear'] += year_offset
+    year_offset = 0
+    now = datetime.now()
+    if now > (founding_date + datedelta.datedelta(years=(now.year - founding_date.year))):
+        year_offset = (now).year - 2025
+    for i in range(year_offset):
+        expected.append({'order': len(expected) + 1, 'name': 'annualReport', 'ARFilingYear': 2025+1+i, 'enabled': not any([x for x in expected if x.get('name') == 'annualReport'])})
+        expected.append({'order': len(expected) + 1, 'name': 'tranparencyRegister', 'subType': 'annual', 'TRFilingYear': 2025+1+i, 'enabled': not any([x for x in expected if x.get('name') == 'tranparencyRegister'])})
 
     app.config['TR_START_DATE'] = tr_start_date.isoformat()
     with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):

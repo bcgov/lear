@@ -59,6 +59,8 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import (
+    Batch,
+    BatchProcessing,
     Business,
     Filing,
     RegistrationBootstrap,
@@ -75,6 +77,8 @@ from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
+    factory_batch,
+    factory_batch_processing,
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
@@ -2088,10 +2092,14 @@ def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         'dissolutionType': 'delay',
         'delayType': 'default'
     }
+    dod['filing']['business']['identifier'] = identifier
+    dod['filing']['business']['legalType'] = legal_type
 
     b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
     factory_business_mailing_address(b)
-    dod['filing']['business']['identifier'] = identifier
+    batch = factory_batch(Batch.BatchType.INVOLUNTARY_DISSOLUTION, Batch.BatchStatus.PROCESSING, 1, '')
+
+    factory_batch_processing(batch.id, b.id, b.identifier)
 
     requests_mock.post(
         current_app.config.get('PAYMENT_SVC_URL'),
