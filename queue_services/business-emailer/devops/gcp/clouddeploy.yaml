@@ -56,7 +56,7 @@ serialPipeline:
       deploy-project-id: "a083gt-integration"
       service-name: "business-emailer-sandbox"
       container-name: "business-emailer-sandbox"
-      cloudsql-instances: "a083gt-integration:northamerica-northeast1:lear-db-sandbox"
+      cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-integration"
       service-account: "sa-api@a083gt-integration.iam.gserviceaccount.com"
  - targetId: a083gt-prod
    profiles: [prod]

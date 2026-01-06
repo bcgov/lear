@@ -55,7 +55,7 @@ serialPipeline:
       deploy-env: "production"
       deploy-project-id: "a083gt-integration"
       job-name: "business-email-reminder-sandbox"
-      cloudsql-instances: "a083gt-integration:northamerica-northeast1:lear-db-sandbox"
+      cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-integration"
       run-command: "./run.sh"
       service-account: "sa-job@a083gt-integration.iam.gserviceaccount.com"
  - targetId: a083gt-prod
