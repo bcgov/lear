@@ -22,6 +22,7 @@ from legal_api.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,
+    is_officer_proprietor_replace_valid,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -63,6 +64,13 @@ def validate(business: Business, filing: dict) -> Optional[Error]:
                 error = PermissionService.check_user_permission(required_permission, message=message)
                 if error:
                     return error
+    
+    if flags.is_on("enabled-deeper-permission-action") and is_officer_proprietor_replace_valid(business, filing, filing_type):
+            required_permission = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value
+            message = "Permission Denied - You do not have permissions to replace proprietor in this filing."
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
     if filing.get("filing", {}).get("changeOfRegistration", {}).get("nameRequest", None):
         msg.extend(validate_name_request(filing, business.legal_type, filing_type))
     if filing.get("filing", {}).get("changeOfRegistration", {}).get("parties", None):
