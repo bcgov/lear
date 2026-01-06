@@ -343,7 +343,7 @@ def test_delay_dissolution(app, session, test_name, delay_type, dissolution_date
     expected_date = TRIGGER_DATE + datedelta(months=6)
     if dissolution_date:
         filing_json['filing']['dissolution']['dissolutionDate'] = dissolution_date
-        expected_date = LegislationDatetime.as_legislation_timezone_from_date_str(dissolution_date)
+        expected_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date)
 
     business = create_business('BC1234567', legal_type='BC')
 
