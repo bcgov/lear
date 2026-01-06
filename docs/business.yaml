@@ -670,23 +670,6 @@ paths:
                       dissolution:
                         courtOrder:
                           fileNumber: '12345'
-                        custodialOffice:
-                          deliveryAddress:
-                            addressCity: delivery_address city
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: H0H 0H0
-                            streetAddress: delivery_address - address line one
-                            streetAddressAdditional: ''
-                          mailingAddress:
-                            addressCity: mailing_address city
-                            addressCountry: CA
-                            addressRegion: BC
-                            deliveryInstructions: ''
-                            postalCode: H0H 0H0
-                            streetAddress: mailing_address - address line one
-                            streetAddressAdditional: ''
                         dissolutionDate: '2025-03-25'
                         dissolutionType: voluntary
                         parties:
@@ -1397,23 +1380,6 @@ paths:
                       legalType: BC
                     dissolution:
                       dissolutionDate: '2025-03-25'
-                      custodialOffice:
-                        deliveryAddress:
-                          addressCity: delivery_address city
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          postalCode: H0H 0H0
-                          streetAddress: delivery_address - address line one
-                          streetAddressAdditional: ''
-                        mailingAddress:
-                          addressCity: mailing_address city
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          postalCode: H0H 0H0
-                          streetAddress: mailing_address - address line one
-                          streetAddressAdditional: ''
                       dissolutionType: voluntary
                       parties:
                         - party:
@@ -1913,25 +1879,6 @@ paths:
                         fromLegalName: 0870884 B.C. LTD.
                         toLegalName: LM LOGISTICS INC.
                     offices:
-                      custodialOffice:
-                        deliveryAddress:
-                          addressCity: Victoria
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          id: 2334725
-                          postalCode: V8Z 5C5
-                          streetAddress: 3950 Helen Rd
-                          streetAddressAdditional: ''
-                        mailingAddress:
-                          addressCity: Victoria
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          id: 2334724
-                          postalCode: V8Z 5C5
-                          streetAddress: 3950 Helen Rd
-                          streetAddressAdditional: ''
                       recordsOffice:
                         deliveryAddress:
                           addressCity: Victoria
@@ -2160,8 +2107,6 @@ paths:
                             $ref: '#/components/schemas/Office'
                           registeredOffice:
                             $ref: '#/components/schemas/Office'
-                          custodialOffice:
-                            $ref: '#/components/schemas/Office'
                         required:
                           - registeredOffice
                       - properties:
@@ -2278,25 +2223,6 @@ paths:
                         fromLegalName: 0870884 B.C. LTD.
                         toLegalName: LM LOGISTICS INC.
                     offices:
-                      custodialOffice:
-                        deliveryAddress:
-                          addressCity: Victoria
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          id: 2334725
-                          postalCode: V8Z 5C5
-                          streetAddress: 3950 Helen Rd
-                          streetAddressAdditional: ''
-                        mailingAddress:
-                          addressCity: Victoria
-                          addressCountry: CA
-                          addressRegion: BC
-                          deliveryInstructions: ''
-                          id: 2334724
-                          postalCode: V8Z 5C5
-                          streetAddress: 3950 Helen Rd
-                          streetAddressAdditional: ''
                       recordsOffice:
                         deliveryAddress:
                           addressCity: Victoria
@@ -5549,24 +5475,6 @@ components:
                 orderDate: '2019-08-24T14:15:22Z'
                 effectOfOrder: The Company will cease operations
                 orderDetails: The Company is ordered to dissolve
-            custodialOffice:
-              officeType: 'Head office '
-              mailingAddress:
-                streetAddress: 5-4761 Bay Street
-                streetAddressAdditional: Building C
-                addressCity: Victoria
-                addressRegion: BC for British Columbia
-                addressCountry: Canada
-                postalCode: V8R 2P1
-                deliveryInstructions: '"Our unit is located at the back of the building."'
-              deliveryAddress:
-                streetAddress: 5-4761 Bay Street
-                streetAddressAdditional: Building C
-                addressCity: Victoria
-                addressRegion: 'BC for British Columbia '
-                addressCountry: Canada
-                postalCode: V8R 2P1
-                deliveryInstructions: '"Our unit is located at the back of the building."'
             affidavitFileKey: 011e332d-1b8e-4218-8710-ad8ac1fbc592.pdf
             affidavitFileName: Field not used
       properties:
@@ -5601,15 +5509,17 @@ components:
               description: 'Whether the company has liability or not: Yes/No.'
             parties:
               type: array
-              description: Can be the company directors or applicant of the filing. This field is required for voluntary dissolution filings.
+              description: >
+                Persons associated with the dissolution filing eg: custodian.
+                This field is required for voluntary dissolution filings.
+                Allowed party roles depend on the business type:
+                  - Corporations must include exactly one custodian
+                  - Cooperative Associations must include either one custodian or one liquidator
+                  - Sole Proprietorships and General Partnerships must include a completing party
               items:
                 $ref: '#/components/schemas/party'
             courtOrder:
               $ref: '#/components/schemas/Court_order'
-            custodialOffice:
-              description: 'Corporations required custodial office when applying for voluntary dissolution.'
-              allOf:
-                - $ref: '#/components/schemas/Office'
             affidavitFileKey:
               type: string
               title: The Identifier for affidavit file in file server
