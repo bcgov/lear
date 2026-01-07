@@ -36,41 +36,51 @@ from legal_api.services.filings.validations.registration import (
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 
 
+def _check_permission_for_change_of_registration(business: Business, filing: dict, filing_type: str) -> Optional[Error]:
+    """Check permissions for Change of Registration filing."""
+    if not flags.is_on("enabled-deeper-permission-action"):
+        return None
+
+    for item in find_updated_keys_for_firms(business, filing, filing_type):
+        if (item.get("is_dba") and
+            (
+                item.get("name_changed") or
+                item.get("address_changed") or
+                item.get("delivery_address_changed") or
+                item.get("email_changed")
+            )
+        ):
+            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
+            message = "Permission Denied - You do not have permissions edit DBA in this filing."
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
+        elif not item.get("is_dba") and item.get("email_changed"):
+            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
+            message = "Permission Denied - You do not have permissions edit email in this filing."
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
+        
+    if is_officer_proprietor_replace_valid(business, filing, filing_type):
+            required_permission = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value
+            message = "Permission Denied - You do not have permissions to replace proprietor in this filing."
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            if error:
+                return error
+    return None
+
 def validate(business: Business, filing: dict) -> Optional[Error]:
     """Validate the Change of Registration filing."""
     filing_type = "changeOfRegistration"
     if not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
 
-    msg = []
-    for item in find_updated_keys_for_firms(business, filing, filing_type):
-        if flags.is_on("enabled-deeper-permission-action"):
-            if (item.get("is_dba") and
-                (
-                    item.get("name_changed") or
-                    item.get("address_changed") or
-                    item.get("delivery_address_changed") or
-                    item.get("email_changed")
-                )
-            ):
-                required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_DBA.value
-                message = "Permission Denied - You do not have permissions edit DBA in this filing."
-                error = PermissionService.check_user_permission(required_permission, message=message)
-                if error:
-                    return error
-            elif not item.get("is_dba") and item.get("email_changed"):
-                required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
-                message = "Permission Denied - You do not have permissions edit email in this filing."
-                error = PermissionService.check_user_permission(required_permission, message=message)
-                if error:
-                    return error
+    if error := _check_permission_for_change_of_registration(business, filing, filing_type):
+        return error
     
-    if flags.is_on("enabled-deeper-permission-action") and is_officer_proprietor_replace_valid(business, filing, filing_type):
-            required_permission = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value
-            message = "Permission Denied - You do not have permissions to replace proprietor in this filing."
-            error = PermissionService.check_user_permission(required_permission, message=message)
-            if error:
-                return error
+    msg = []
+
     if filing.get("filing", {}).get("changeOfRegistration", {}).get("nameRequest", None):
         msg.extend(validate_name_request(filing, business.legal_type, filing_type))
     if filing.get("filing", {}).get("changeOfRegistration", {}).get("parties", None):
