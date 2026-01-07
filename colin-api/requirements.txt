@@ -30,5 +30,5 @@ requests==2.25.1
 rsa==4.7.2
 SQLAlchemy==1.4.44
 six==1.15.0
-urllib3==1.26.11
+urllib3==2.6.3
 git+https://github.com/bcgov/business-schemas.git#egg=registry_schemas
