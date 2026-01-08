@@ -39,7 +39,6 @@ from typing import TYPE_CHECKING
 
 from business_model.models import Address, Business, Filing, Party, PartyRole, db
 
-from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_processors.filing_components import create_address, update_address
 
 if TYPE_CHECKING:
@@ -101,17 +100,11 @@ def _create_role(party: Party,
                  default_appointment: datetime.datetime,
                  role_class: PartyClassType | None) -> PartyRole:
     """Create a new party role and link to party."""
-    # FUTURE: use appointmentDate instead of default when given (api validation needs to be updated first for officers, receivers, liquidators)
-    appointment_date = default_appointment or (
-        LegislationDatetime.as_utc_timezone_from_legislation_date_str(role_info.get["appointmentDate"])
-        if role_info.get("appointmentDate")
-        else None
-    )
-    cessation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(role_info.get["cessationDate"]) if role_info.get("cessationDate") else None
     party_role = PartyRole(
         role=RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType").lower(), ""),
-        appointment_date=appointment_date,
-        cessation_date=cessation_date,
+        # FUTURE: use appointmentDate instead of default when given (api validation needs to be updated first for officers, receivers, liquidators)
+        appointment_date=default_appointment or role_info.get("appointmentDate"),
+        cessation_date=role_info.get("cessationDate"),
         party=party
     )
     if role_class:
@@ -209,7 +202,7 @@ def cease_relationships(
         if relationship.get("entity", {}).get("identifier") is not None
     ]
     for relationship in existing_relationships:
-        party_id = _str_to_int(_str_to_int(relationship["entity"]["identifier"]))
+        party_id = _str_to_int(relationship["entity"]["identifier"])
         party_roles: list[PartyRole] = PartyRole.get_party_roles_by_party_id(business.id, party_id)
 
         for party_role in party_roles:
