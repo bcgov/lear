@@ -15,12 +15,14 @@
 from http import HTTPStatus
 from typing import Final, Optional
 
+from flask import request
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
 from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    validate_completing_party,
     validate_court_order,
     validate_foreign_jurisdiction,
 )
@@ -63,7 +65,15 @@ def validate(business: Business, filing: dict) -> Optional[Error]:
         err = validate_court_order(court_order_path, court_order)
         if err:
             msg.extend(err)
-
+    
+    if flags.is_on("enabled-deeper-permission-action"):
+        account_id = None
+        if hasattr(request, "headers"):
+            account_id = request.headers.get("account-id")
+        if account_id and filing.get("filing", {}).get(filing_type, {}).get("parties"):
+            completing_party_errors = validate_completing_party(filing, filing_type, int(account_id))
+            if completing_party_errors:
+                msg.extend(completing_party_errors)
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

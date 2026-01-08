@@ -1007,10 +1007,10 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     if address_changed or name_changed or email_changed:
         permission_error = PermissionService.check_user_permission(
             ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
-            message="Permission Denied - You do not have rights to edit completing address."
+            message="Permission Denied - You do not have rights to edit completing party."
         )
         if permission_error:
-            error_msg = permission_error.message[0]["message"] if permission_error.message else "You do not have rights to edit completing address."
+            error_msg = permission_error.message[0]["message"] if permission_error.message else "You do not have rights to edit completing party."
             msg.append({
                 "error": error_msg,
                 "path": f"/filing/{filing_type}/parties"
