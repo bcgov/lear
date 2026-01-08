@@ -25,6 +25,7 @@ from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services import authz, flags
 from legal_api.services.cache import cache
+from legal_api.services.request_context import get_request_context
 
 
 class ListFilingsPermissionsAllowed(str, Enum):
@@ -215,18 +216,34 @@ class PermissionService:
         return None
     
     @staticmethod
-    def check_filing_enabled(filing_type: str, identifier: str) -> Error:
+    def check_filing_enabled(filing_type: str, filing_sub_type: str) -> Error:
         """Check if a filing type is enabled via FF."""
-        filings_feature_flag = {
-            "changeOfOfficers": "supported-change-of-officers-entities"
-        }
-        flag_name = filings_feature_flag.get(filing_type)
-        if flag_name and not flags.is_on(flag_name):
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{
-                    "message": f"Permission Denied - {filing_type} filing is currently not available for: {identifier}."
-                }]
-            )
+        filings_to_check = [
+            "changeOfLiquidators.appointLiquidator",
+            "changeOfLiquidators.ceaseLiquidator",
+            "changeOfLiquidators.changeAddressLiquidator",
+            "changeOfLiquidators.intentToLiquidate",
+            "changeOfLiquidators.liquidationReport",
+            "changeOfReceivers.amendReceiver",
+            "changeOfReceivers.appointReceiver",
+            "changeOfReceivers.ceaseReceiver",
+            "changeOfReceivers.changeAddressReceiver",
+            "dissolution.delay"
+        ]
+        filing_key = f"{filing_type}.{filing_sub_type}" if filing_sub_type else filing_type
+
+        if filing_key in filings_to_check:
+            request_context = get_request_context()
+            enabled_filings_str: str = flags.value("enabled-specific-filings",
+                                                   request_context.user,
+                                                   request_context.account_id)
+
+            if not filing_key in enabled_filings_str.split(','):
+                return Error(
+                    HTTPStatus.FORBIDDEN,
+                    [{
+                        "message": f"Permission Denied - {filing_key} filing is currently not available for this user and/or account."
+                    }]
+                )
         return None
     

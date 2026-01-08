@@ -32,6 +32,7 @@ from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
+from legal_api.services.request_context import get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
 
 SYSTEM_ROLE = "system"
@@ -636,12 +637,31 @@ def get_allowable_filings_dict():
         }
     }
 
-    if not flags.is_on("enable-unloved-filings"):
-        # These ones are only allowed if the flag is on
-        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfLiquidators"]
-        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfReceivers"]
-        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["dissolution"]["delay"]
-        del allowable_filings_dict["general"][Business.State.ACTIVE.value]["dissolution"]["delay"]
+    request_context = get_request_context()
+    enabled_filings: list[str] = (flags.value("enabled-specific-filings",
+                                              request_context.user,
+                                              request_context.account_id)).split()
+
+    filings_to_check = [
+        ("changeOfLiquidators", "appointLiquidator", "staff"),
+        ("changeOfLiquidators", "ceaseLiquidator", "staff"),
+        ("changeOfLiquidators", "changeAddressLiquidator", "staff"),
+        ("changeOfLiquidators", "intentToLiquidate", "staff"),
+        ("changeOfLiquidators", "liquidationReport", "staff"),
+        ("changeOfReceivers", "amendReceiver", "staff"),
+        ("changeOfReceivers", "appointReceiver", "staff"),
+        ("changeOfReceivers", "ceaseReceiver", "staff"),
+        ("changeOfReceivers", "changeAddressReceiver", "staff"),
+        ("dissolution", "delay", "staff"),
+        ("dissolution", "delay", "general"),
+    ]
+    for filing_type, filing_sub_type, user_type in filings_to_check:
+        filing_key = f"{filing_type}.{filing_sub_type}" if filing_sub_type else filing_type
+        if filing_key not in enabled_filings:
+            if filing_sub_type:
+                del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type][filing_sub_type]
+            else:
+                del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type]
 
     return allowable_filings_dict
 
