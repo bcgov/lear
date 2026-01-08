@@ -35,12 +35,15 @@
 from __future__ import annotations
 
 import datetime
+from typing import TYPE_CHECKING
 
 from business_model.models import Address, Business, Filing, Party, PartyRole, db
-from business_model.models.types.party_class_type import PartyClassType
 
-from business_filer.filing_processors.filing_components import create_address, update_address
 from business_filer.common.legislation_datetime import LegislationDatetime
+from business_filer.filing_processors.filing_components import create_address, update_address
+
+if TYPE_CHECKING:
+    from business_model.models.types.party_class_type import PartyClassType
 
 RELATIONSHIP_ROLE_CONVERTER = {
     "custodian": PartyRole.RoleTypes.CUSTODIAN.value,
@@ -70,7 +73,7 @@ def _create_party(relationship: dict):
     entity = relationship.get("entity", {})
     org_name = _str_to_upper(entity.get("businessName", ""))
     party_type = Party.PartyTypes.ORGANIZATION.value if org_name else Party.PartyTypes.PERSON.value
-    party = party = Party(
+    party = Party(
         first_name=_str_to_upper(entity.get("givenName", "")),
         last_name=_str_to_upper(entity.get("familyName", "")),
         middle_initial=_str_to_upper(entity.get("middleInitial", "")),
