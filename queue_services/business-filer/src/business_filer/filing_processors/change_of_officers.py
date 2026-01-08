@@ -40,7 +40,7 @@ from business_model.models.types.party_class_type import PartyClassType
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
-    create_relationsips,
+    create_relationships,
     update_relationship_addresses,
     update_relationship_entity_info,
 )
@@ -50,7 +50,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the change_of_officers onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     relationships = filing_json["filing"]["changeOfOfficers"].get("relationships")
-    create_relationsips(relationships, business, filing_rec, PartyClassType.OFFICER)
+    create_relationships(relationships, business, filing_rec, PartyClassType.OFFICER)
     update_relationship_entity_info(relationships, business)
     update_relationship_addresses(relationships, business)
 

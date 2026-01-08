@@ -41,7 +41,7 @@ from business_filer.filing_processors.filing_components.filings import update_fi
 from business_filer.filing_processors.filing_components.offices import update_or_create_offices
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
-    create_relationsips,
+    create_relationships,
     update_relationship_addresses,
 )
 
@@ -53,12 +53,12 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     offices = filing_json["filing"]["changeOfLiquidators"].get("offices")
 
     if filing_rec.filing_sub_type == "intentToLiquidate":
-        create_relationsips(relationships, business, filing_rec)
+        create_relationships(relationships, business, filing_rec)
         update_or_create_offices(business, offices)
         business.in_liquidation = True
 
     elif filing_rec.filing_sub_type == "appointLiquidator":
-        create_relationsips(relationships, business, filing_rec)
+        create_relationships(relationships, business, filing_rec)
     
     elif filing_rec.filing_sub_type == "ceaseLiquidator":
         cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)

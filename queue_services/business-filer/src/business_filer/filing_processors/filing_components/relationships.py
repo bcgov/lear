@@ -135,7 +135,7 @@ def _str_to_upper(str: str | None) -> str:
     return None
 
 
-def create_relationsips(relationships: list[dict],
+def create_relationships(relationships: list[dict],
                         business: Business,
                         filing: Filing,
                         role_class: PartyClassType | None = None) -> list | None:
