@@ -127,17 +127,6 @@ def get_corp_event_filing_data_query(corp_num: str, event_id: int):
         where 1 = 1
           and e.corp_num = '{corp_num}'
           and e.event_id = {event_id}
-          and not (
-            (select corp_name
-            from corp_name
-            where corp_num = '{corp_num}'
-              and start_event_id < {event_id}
-              and (end_event_id is null or end_event_id >= {event_id})
-                and corp_name_typ_cd in ('CO', 'NB')
-                order by start_event_id desc
-                limit 1) = null
-                and (cn.corp_name is null or cn.corp_name = '')
-          )
         order by e.event_id
         ;
         """
