@@ -61,10 +61,10 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
         create_relationsips(relationships, business, filing_rec)
     
     elif filing_rec.filing_sub_type == "ceaseLiquidator":
-        cease_relationships(relationships, business, PartyRole.RoleTypes.LIQUIDATOR, filing_meta.application_date)
+        cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)
     
     elif filing_rec.filing_sub_type == "changeAddressLiquidator":
-        update_relationship_addresses(relationships)
+        update_relationship_addresses(relationships, business)
         update_or_create_offices(business, offices)
     
     elif filing_rec.filing_sub_type == "liquidationReport":
