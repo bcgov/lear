@@ -59,6 +59,8 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import (
+    Batch,
+    BatchProcessing,
     Business,
     Filing,
     RegistrationBootstrap,
@@ -75,6 +77,8 @@ from legal_api.services.minio import MinioService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
+    factory_batch,
+    factory_batch_processing,
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
@@ -2060,6 +2064,55 @@ def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     rv = client.post(
         f'/api/v2/businesses/{identifier}/filings',
         json=col,
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier',
+    [
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+    ]
+)
+def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+    """Assert Delay of Dissolution is submitted correctly for entity types."""
+    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    dod = copy.deepcopy(FILING_HEADER)
+    dod['filing']['header']['name'] = 'dissolution'
+    dod['filing']['dissolution'] = {
+        'dissolutionType': 'delay',
+        'delayType': 'default'
+    }
+    dod['filing']['business']['identifier'] = identifier
+    dod['filing']['business']['legalType'] = legal_type
+
+    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    factory_business_mailing_address(b)
+    batch = factory_batch(Batch.BatchType.INVOLUNTARY_DISSOLUTION, Batch.BatchStatus.PROCESSING, 1, '')
+
+    factory_batch_processing(batch.id, b.id, b.identifier)
+
+    requests_mock.post(
+        current_app.config.get('PAYMENT_SVC_URL'),
+        json={
+            'id': 21322,
+            'statusCode': 'COMPLETED',
+            'isPaymentActionRequired': False
+        },
+        status_code=HTTPStatus.CREATED
+    )
+    rv = client.post(
+        f'/api/v2/businesses/{identifier}/filings',
+        json=dod,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 

@@ -151,13 +151,6 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
     assert len(business.party_roles.all()) == 2
     assert len(filing.filing_party_roles.all()) == 1
 
-    custodial_office = session.query(Business, Office). \
-        filter(Business.id == Office.business_id). \
-        filter(Business.id == business_id). \
-        filter(Office.office_type == OfficeType.CUSTODIAL). \
-        one_or_none()
-    assert custodial_office
-
     if business.legal_type == Business.LegalTypes.COOP.value:
         documents = business.documents.all()
         assert len(documents) == 1
@@ -240,13 +233,6 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
     assert business.state_filing_id == filing.id
     assert len(business.party_roles.all()) == 2
     assert len(filing.filing_party_roles.all()) == 1
-
-    custodial_office = session.query(Business, Office). \
-        filter(Business.id == Office.business_id). \
-        filter(Business.id == business_id). \
-        filter(Office.office_type == OfficeType.CUSTODIAL). \
-        one_or_none()
-    assert custodial_office
 
     if filing_json['filing']['business']['legalType'] == Business.LegalTypes.COOP.value:
         documents = business.documents.all()
@@ -333,3 +319,72 @@ def test_amalgamation_administrative_dissolution(app, session, mocker, dissoluti
         amalgamation = business.amalgamation.one_or_none()
         assert amalgamation
         assert amalgamation.amalgamating_businesses.all()
+
+
+TRIGGER_DATE = datetime.now(timezone.utc) + datedelta(days=4)
+CUSTOM_DATE_1 = (TRIGGER_DATE + datedelta(days=20)).date().isoformat()
+CUSTOM_DATE_2 = (TRIGGER_DATE + datedelta(years=4)).date().isoformat()
+@pytest.mark.parametrize('test_name,delay_type,dissolution_date', [
+    ('default', 'default', None),
+    ('custom_under_6_months', 'custom', CUSTOM_DATE_1),
+    ('custom_over_6_months', 'custom', CUSTOM_DATE_2),
+])
+def test_delay_dissolution(app, session, test_name, delay_type, dissolution_date):
+    """Assert that the delay of dissolution is processed."""
+    # setup
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['identifier'] = 'BC1234567'
+    filing_json['filing']['business']['legalType'] = 'BC'
+    filing_json['filing']['dissolution'] = {
+        'dissolutionType': 'delay',
+        'delayType': delay_type
+    }
+    expected_date = TRIGGER_DATE + datedelta(months=6)
+    if dissolution_date:
+        filing_json['filing']['dissolution']['dissolutionDate'] = dissolution_date
+        expected_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(dissolution_date)
+
+    business = create_business('BC1234567', legal_type='BC')
+
+    business.dissolution_date = None
+
+    filing_meta = FilingMeta()
+    filing = create_filing('123', filing_json)
+
+    batch = Batch(
+        batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
+        status=Batch.BatchStatus.PROCESSING,
+        size=1,
+    )
+    batch.save()
+    batch_processing = BatchProcessing(
+        batch_id=batch.id,
+        business_id=business.id,
+        filing_id=filing.id,
+        business_identifier=business.identifier,
+        step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        status=BatchProcessing.BatchProcessingStatus.QUEUED,
+        created_date=datetime.now(timezone.utc)-datedelta(days=42),
+        trigger_date=TRIGGER_DATE,
+        last_modified=datetime.now(timezone.utc)
+    )
+    batch_processing.save()
+
+    # test
+    dissolution.process(business, filing_json['filing'], filing, filing_meta, True)
+    business.save()
+
+    # validate
+    assert batch.status == Batch.BatchStatus.PROCESSING
+    assert batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED
+
+    assert batch_processing.trigger_date == expected_date
+
+    assert f"dod-{filing.id}" in batch_processing.meta_data
+    assert batch_processing.meta_data[f"dod-{filing.id}"] == expected_date.isoformat()
+
+    assert "batchProcessingId" in filing_meta.dissolution
+    assert filing_meta.dissolution["batchProcessingId"] == batch_processing.id
+    assert "extendedDate" in filing_meta.dissolution
+    assert filing_meta.dissolution["extendedDate"] == expected_date.isoformat()

@@ -540,6 +540,23 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'CUL': 'DIS_ADM',
                     'CCC': 'DIS_ADM',
                 }
+            },
+            'delay': {
+                'name': 'delay',
+                'title': 'Delay of Dissolution',
+                'displayName': 'Delay of Dissolution',
+                'codes': {
+                    'CP': 'DISDE',
+                    'BC': 'DISDE',
+                    'BEN': 'DISDE',
+                    'ULC': 'DISDE',
+                    'CC': 'DISDE',
+                    'LLC': 'DISDE',
+                    'C': 'DISDE',
+                    'CBEN': 'DISDE',
+                    'CUL': 'DISDE',
+                    'CCC': 'DISDE'
+                }
             }
         },
         'incorporationApplication': {

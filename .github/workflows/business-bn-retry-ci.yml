@@ -1,0 +1,24 @@
+name: Business BN Retry Job CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature*
+      - hotfix*
+    paths:
+      - "gcp-jobs/bn-retry/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./gcp-jobs/bn-retry
+
+jobs:
+  business-bn-retry-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-bn-retry"
+      working_directory: "./gcp-jobs/bn-retry"
+      codecov_flag: "business-bn-retry"

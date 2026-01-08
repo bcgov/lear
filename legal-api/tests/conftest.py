@@ -96,6 +96,12 @@ def app(monkey_session, ld):
         return datetime.now(tz=timezone.utc)
     monkey_session.setattr('legal_api.utils.datetime.datetime.utcnow', _utcnow_side_effect)
 
+
+    def _now_side_effect():
+        """super().now() is not supported by freezegun, so we mock datetime.now() directly."""
+        return datetime.now()
+    monkey_session.setattr('legal_api.utils.datetime.datetime.now', _now_side_effect)
+
     return _app
 
 

@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2025 Province of British Columbia
 #
 # Licensed under the BSD 3 Clause License, (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 #    may be used to endorse or promote products derived from this software
 #    without specific prior written permission.
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS”
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 # THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
@@ -31,49 +31,16 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Utilities used by the integration tests."""
-import json
-from typing import Callable
+"""BN retry GCP job."""
 
-import stan
+from bn_retry import create_app
+from bn_retry.worker import run_job
 
-
-async def helper_add_payment_to_queue(
-    stan_client: stan.aio.client.Client, subject: str, payment_id: str, status_code: str
-):
-    """Add a payment token to the Queue."""
-    payload = {
-        "paymentToken": {
-            "id": payment_id,
-            "statusCode": status_code,
-            "corpTypeCode": "BC",
-        }
-    }
-    await stan_client.publish(
-        subject=subject, payload=json.dumps(payload).encode("utf-8")
-    )
-
-
-async def subscribe_to_queue(
-    stan_client: stan.aio.client.Client,
-    subject: str,
-    queue: str,
-    durable_name: str,
-    call_back: Callable[[stan.aio.client.Msg], None],
-) -> str:
-    """Subscribe to the Queue using the environment setup.
-
-    Args:
-        stan_client: the stan connection
-        call_back: a callback function that accepts 1 parameter, a Msg
-    Returns:
-       str: the name of the queue
-    """
-    # entity_subject = os.getenv('LEGAL_FILING_STAN_SUBJECT')
-    # entity_queue = os.getenv('LEGAL_FILING_STAN_QUEUE')
-    # entity_durable_name = os.getenv('LEGAL_FILING_STAN_DURABLE_NAME')
-
-    await stan_client.subscribe(
-        subject=subject, queue=queue, durable_name=durable_name, cb=call_back
-    )
-    return subject
+if __name__ == "__main__":
+    application = create_app()
+    with application.app_context():
+        try:
+            run_job()
+        except Exception as err:
+            application.logger.error(err)
+            raise err

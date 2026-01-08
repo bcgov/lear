@@ -320,3 +320,67 @@ class AccountService:
             return affiliates.json().get("entities")
 
         return None
+    
+    @classmethod
+    def get_contacts(cls, config, org_id: str):
+        """Get contacts for the business.
+        Fetch Compelting Party Details from Auth API.
+        - GET /orgs/{org_id}/memeberships for user contacts details
+        - GET /orgs/{org_id} for org contacts details
+        """
+        token = cls.get_bearer_token(config)
+        auth_url = config.AUTH_SVC_URL
+
+        if not token:
+            return HTTPStatus.UNAUTHORIZED
+
+        membership_response = requests.get(
+            url=f"{auth_url}/{org_id}/memberships",
+            headers={**cls.CONTENT_TYPE_JSON,
+                     "Authorization": cls.BEARER + token},
+            timeout=cls.timeout
+        )
+
+        org_info_response = requests.get(
+            url=f"{auth_url}/orgs/{org_id}",
+            headers={**cls.CONTENT_TYPE_JSON,
+                     "Authorization": cls.BEARER + token},
+            timeout=cls.timeout
+        )
+
+        if membership_response.status_code == HTTPStatus.OK and org_info_response.status_code == HTTPStatus.OK:
+            return None
+        
+        try:
+            membership_data = membership_response.json()
+            org_info = org_info_response.json()
+
+            user_info = membership_data.get("user", {})
+            first_name = user_info.get("firstName", "")
+            last_name = user_info.get("lastName", "")
+
+            user_contacts = user_info.get("contacts", [])
+            user_contact = user_contacts[0] if user_contacts else {}
+            email = user_contact.get("email", "")
+            phone = user_contact.get("phone", "")
+
+            org_contacts = org_info.get("contacts", [])
+            org_contact = org_contacts[0] if org_contacts else {}
+
+            contact = {
+                "street": org_contact.get("street", ""),
+                "city": org_contact.get("city", ""),
+                "region": org_contact.get("region", ""),
+                "country": org_contact.get("country", ""),
+                "postalCode": org_contact.get("postalCode", ""),
+                "firstName": first_name,
+                "lastName": last_name,
+                "email": email,
+                "phone": phone,
+                "streetAdditional": org_contact.get("streetAdditional", ""),
+                "delieveryInstructions": org_contact.get("deliveryInstructions", "")
+            }
+            return {"contact": [contact]}
+        except Exception as e:
+            current_app.logger.error(f"Error fetching contacts: {e}")
+        return None

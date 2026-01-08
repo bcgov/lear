@@ -33,9 +33,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for Dissolution and Liquidation filings."""
 from contextlib import suppress
+from datetime import UTC
 
 import dpath
 from business_model.models import BatchProcessing, Business, Document, DocumentType, Filing, db
+from datedelta import datedelta
 from flask import current_app
 
 from business_filer.common.datetime import datetime, timezone
@@ -43,7 +45,7 @@ from business_filer.common.filing import DissolutionTypes
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import create_office, filings
+from business_filer.filing_processors.filing_components import filings
 from business_filer.filing_processors.filing_components.parties import update_parties
 
 
@@ -58,6 +60,10 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
 
     filing_meta.dissolution = {}
     dissolution_type = dpath.get(filing, "/dissolution/dissolutionType")
+    
+    if dissolution_type == "delay":
+        _process_delay(business, filing, filing_rec, filing_meta)
+        return
 
     dissolution_date = filing_rec.effective_date
     if dissolution_type == DissolutionTypes.VOLUNTARY and \
@@ -79,16 +85,6 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
     # add custodial party if in filing
     if parties := dissolution_filing.get("parties"):
         update_parties(business, parties, filing_rec, False)
-
-    # add custodial office if provided
-    if custodial_office := dissolution_filing.get("custodialOffice"):
-        if office := create_office(business, "custodialOffice", custodial_office):
-            business.offices.append(office)
-        else:
-            current_app.logger.error("Could not create custodial office for Dissolution in: %s", filing)
-            current_app.logger.info(
-                f"Queue Error: Could not create custodial office for Dissolution filing:{filing.id}",
-                level="error")
 
     filing_rec.order_details = dissolution_filing.get("details")
 
@@ -115,6 +111,36 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
                 batch_processing.last_modified = datetime.now(timezone.utc)
                 batch_processing.save()
+
+
+def _process_delay(business: Business, filing: dict, filing_rec: Filing, filing_meta: FilingMeta):
+    """Process a delay of dissolution filing."""
+    if business.in_dissolution:
+        delay_type = dpath.get(filing, "/dissolution/delayType")
+        batch_processings: list[BatchProcessing] = BatchProcessing.find_by(business_id=business.id)
+        for batch_processing in batch_processings:
+            if batch_processing.status not in [
+                BatchProcessing.BatchProcessingStatus.COMPLETED,
+                BatchProcessing.BatchProcessingStatus.WITHDRAWN
+            ]:
+                # extend trigger date
+                if delay_type == "default":
+                    batch_processing.trigger_date = batch_processing.trigger_date + datedelta(months=6)
+                else:
+                    # delay_type == "custom", noqa:ERA001
+                    extend_date = dpath.get(filing, "/dissolution/dissolutionDate")
+                    batch_processing.trigger_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(extend_date)
+
+                batch_processing.meta_data = {
+                    **(batch_processing.meta_data or {}),
+                    f"dod-{filing_rec.id}": batch_processing.trigger_date.isoformat()
+                }
+                batch_processing.last_modified = datetime.now(UTC)
+                filing_meta.dissolution = {
+                    **(filing_meta.dissolution or {}),
+                    "batchProcessingId": batch_processing.id,
+                    "extendedDate": batch_processing.trigger_date.isoformat()
+                }
 
 
 def _update_cooperative(dissolution_filing: dict, business: Business, filing: Filing, dissolution_type):

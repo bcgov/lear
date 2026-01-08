@@ -37,6 +37,7 @@ class DissolutionTypes(str, Enum):
 
     ADMINISTRATIVE = "administrative"
     COURT_ORDERED_LIQUIDATION = "courtOrderedLiquidation"
+    DELAY = "delay"
     INVOLUNTARY = "involuntary"
     VOLUNTARY = "voluntary"
     VOLUNTARY_LIQUIDATION = "voluntaryLiquidation"
@@ -55,8 +56,8 @@ class DissolutionStatementTypes(str, Enum):
 
 
 DISSOLUTION_MAPPING = {
-    "COOP": [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION, DissolutionTypes.ADMINISTRATIVE],
-    "CORP": [DissolutionTypes.VOLUNTARY, DissolutionTypes.ADMINISTRATIVE],
+    "COOP": [DissolutionTypes.VOLUNTARY, DissolutionTypes.VOLUNTARY_LIQUIDATION, DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY],
+    "CORP": [DissolutionTypes.VOLUNTARY, DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY],
     "FIRMS": [DissolutionTypes.VOLUNTARY, DissolutionTypes.ADMINISTRATIVE]
 }
 
@@ -104,9 +105,6 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     if err:
         msg.extend(err)
 
-    err = validate_custodial_office(dissolution, business.legal_type, dissolution_type)
-    if err:
-        msg.extend(err)
 
     msg.extend(_validate_court_order(dissolution))
 
@@ -158,7 +156,7 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
 
     This needs not to be validated for administrative dissolution
     """
-    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+    if dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY]:
         return None
 
     msg = []
@@ -182,7 +180,7 @@ def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type
 
     This needs not to be validated for administrative dissolution
     """
-    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+    if dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY]:
         return None
 
     if "parties" not in filing_json["filing"]["dissolution"]:
@@ -253,7 +251,7 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
     This needs not to be validated for SP and GP
     This needs not to be validated for administrative dissolution
     """
-    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+    if dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY]:
         return None
 
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
@@ -331,7 +329,7 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[li
 
     This needs not to be validated for administrative dissolution
     """
-    if dissolution_type == DissolutionTypes.ADMINISTRATIVE:
+    if dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY]:
         return None
 
     if legal_type == Business.LegalTypes.COOP.value:
@@ -405,24 +403,12 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
 
     return msg
 
-def validate_custodial_office(filing_json, legal_type, dissolution_type) -> Optional[list]:
-    """Validate custodial office of the dissolution filing."""
-    # Only validate for CORP voluntary dissolution
-    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
-        return None
-
-    if "custodialOffice" not in filing_json["filing"]["dissolution"]:
-        return [{"error": "Custodial office is required for voluntary dissolution.",
-                "path": "/filing/dissolution/custodialOffice"}]
-
-    return None
-
 def _check_dissolution_permission(required_permission: str, dissolution_type: str, filing_type: str) -> Optional[Error]:
     """Check if the user has the required permission for the dissolution filing."""
     message = "Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing."
     return PermissionService.check_user_permission(required_permission, message=message)
 
-def _validate_dissolution_permission( business: Business, dissolution_type: str, filing_type: str) -> Optional[Error]:
+def _validate_dissolution_permission(business: Business, dissolution_type: str, filing_type: str) -> Optional[Error]:
     """Validate dissolution permission based on business and dissolution type."""
 
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE.value:
@@ -458,3 +444,11 @@ def _validate_dissolution_permission( business: Business, dissolution_type: str,
         if error:
             return error
     
+    if dissolution_type == DissolutionTypes.DELAY.value:
+        error = _check_dissolution_permission(
+            ListFilingsPermissionsAllowed.DISSOLUTION_DELAY_FILING.value,
+            dissolution_type,
+            filing_type
+        )
+        if error:
+            return error

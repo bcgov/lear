@@ -150,7 +150,6 @@ class InvoluntaryDissolutionService:
             filter(
                 ~or_(
                     future_effective_filing,
-                    _has_delay_of_dissolution_filing(),
                     _is_limited_restored(),
                     _is_xpro_from_nwpta()
                 )
@@ -245,15 +244,6 @@ def _has_future_effective_filing():
         filter(Filing.business_id == Business.id). \
         filter(Filing._status.in_([Filing.Status.PENDING.value, Filing.Status.PAID.value])). \
         exists()
-
-
-def _has_delay_of_dissolution_filing():
-    """Return SQLAlchemy clause for Delay of Dissolution filing check.
-
-    Check if the business has Delay of Dissolution filing.
-    """
-    # TODO to implement in the future
-    return False
 
 
 def _is_limited_restored():

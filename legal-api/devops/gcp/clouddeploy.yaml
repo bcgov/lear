@@ -59,7 +59,7 @@ serialPipeline:
       service-name: "business-api-sandbox"
       container-name: "business-api-sandbox"
       resources-memory: "2Gi"
-      cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-sandbox"
+      cloudsql-instances: "a083gt-integration:northamerica-northeast1:businesses-db-integration"
       service-account: "sa-api@a083gt-integration.iam.gserviceaccount.com"
  - targetId: a083gt-prod
    profiles: [prod]

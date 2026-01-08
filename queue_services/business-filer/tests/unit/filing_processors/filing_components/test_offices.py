@@ -35,54 +35,85 @@
 import random
 
 import pytest
-from business_model.models import Business
+from business_model.models import Address, Business, Office
 
-from business_filer.filing_processors.filing_components.offices import update_offices
+from business_filer.filing_processors.filing_components.offices import update_offices, update_or_create_offices
 from tests import strip_keys_from_dict
+
+LIQUIDATION_RECORDS_OFFICE = {
+    'liquidationRecordsOffice': {
+        'mailingAddress': {
+            'postalCode': 'L6M 4M6',
+            'addressCity': 'Oakville',
+            'addressRegion': 'BC',
+            'streetAddress': 'liquidation records office mailing street',
+            'addressCountry': 'CA',
+            'deliveryInstructions': '',
+            'streetAddressAdditional': ''
+        },
+        'deliveryAddress': {
+            'postalCode': 'L6M 4M6',
+            'addressCity': 'Oakville',
+            'addressRegion': 'BC',
+            'streetAddress': 'liquidation records office delivery street',
+            'addressCountry': 'CA',
+            'deliveryInstructions': '',
+            'streetAddressAdditional': ''
+        }
+    }
+}
+
+RECORDS_OFFICE = {
+    'recordsOffice': {
+        'mailingAddress': {
+            'postalCode': 'L6M 4M6',
+            'addressCity': 'Oakville',
+            'addressRegion': 'BC',
+            'streetAddress': 'records office mailing street',
+            'addressCountry': 'CA',
+            'deliveryInstructions': '',
+            'streetAddressAdditional': ''
+        },
+        'deliveryAddress': {
+            'postalCode': 'L6M 4M6',
+            'addressCity': 'Oakville',
+            'addressRegion': 'BC',
+            'streetAddress': 'records office delivery street',
+            'addressCountry': 'CA',
+            'deliveryInstructions': '',
+            'streetAddressAdditional': ''
+        }
+    }
+}
+
+REGISTERED_OFFICE = {
+    'registeredOffice': {
+        'mailingAddress': {
+            'postalCode': 'L6M 4M6',
+            'addressCity': 'Oakville',
+            'addressRegion': 'BC',
+            'streetAddress': 'registered office mailing street',
+            'addressCountry': 'CA',
+            'deliveryInstructions': '',
+            'streetAddressAdditional': ''
+        },
+        'deliveryAddress': {
+            'postalCode': 'L6M 4M6',
+            'addressCity': 'Oakville',
+            'addressRegion': 'BC',
+            'streetAddress': 'registered office delivery street',
+            'addressCountry': 'CA',
+            'deliveryInstructions': '',
+            'streetAddressAdditional': ''
+        }
+    }
+}
 
 
 OFFICE_STRUCTURE = {
     'offices': {
-        'recordsOffice': {
-            'mailingAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
-            },
-            'deliveryAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
-            }
-        },
-        'registeredOffice': {
-            'mailingAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
-            },
-            'deliveryAddress': {
-                'postalCode': 'L6M 4M6',
-                'addressCity': 'Oakville',
-                'addressRegion': 'BC',
-                'streetAddress': '23-1489 Heritage Way',
-                'addressCountry': 'CA',
-                'deliveryInstructions': '',
-                'streetAddressAdditional': ''
-            }
-        }
+        **RECORDS_OFFICE,
+        **REGISTERED_OFFICE
     }
 }
 
@@ -131,3 +162,77 @@ def update_and_validate_office(business, office_structure):
     stripped_dict = strip_keys_from_dict(check_office_structure, ['id', 'addressType'])
     assert stripped_dict == office_structure
     assert not err
+
+
+def create_offices(business: Business, offices: dict[str,dict[str,dict[str,str]]]):
+    """Create offices and link to business."""
+    for office_type, addresses in offices.items():
+        office = Office(office_type=office_type)
+        for address_key, address in addresses.items():
+            address = Address(
+                city=address['addressCity'],
+                street=address['streetAddress'],
+                postal_code=address['postalCode'],
+                country=address['addressCountry'],
+                region=address['addressRegion'],
+                address_type=address_key.replace('Address', '')
+            )
+            office.addresses.append(address)
+        business.offices.append(office)
+    business.save()
+
+
+@pytest.mark.parametrize('test_name,existing_offices,new_offices,expected_offices',[
+    ('create_new_none_exist', None, {**LIQUIDATION_RECORDS_OFFICE}, {**LIQUIDATION_RECORDS_OFFICE}),
+    ('create_new_different_type_exists', {**REGISTERED_OFFICE}, {**LIQUIDATION_RECORDS_OFFICE}, {**REGISTERED_OFFICE, **LIQUIDATION_RECORDS_OFFICE}),
+    (
+        'update_existing',
+        {**LIQUIDATION_RECORDS_OFFICE},
+        {
+            'liquidationRecordsOffice': {
+                'mailingAddress': {
+                    **LIQUIDATION_RECORDS_OFFICE['liquidationRecordsOffice']['mailingAddress'],
+                    'streetAddress': 'changed liquidation mailing street'
+                },
+                'deliveryAddress': {
+                    **LIQUIDATION_RECORDS_OFFICE['liquidationRecordsOffice']['deliveryAddress'],
+                    'streetAddress': 'changed liquidation delivery street'
+                }
+            }
+        },
+        {
+            'liquidationRecordsOffice': {
+                'mailingAddress': {
+                    **LIQUIDATION_RECORDS_OFFICE['liquidationRecordsOffice']['mailingAddress'],
+                    'streetAddress': 'changed liquidation mailing street'
+                },
+                'deliveryAddress': {
+                    **LIQUIDATION_RECORDS_OFFICE['liquidationRecordsOffice']['deliveryAddress'],
+                    'streetAddress': 'changed liquidation delivery street'
+                }
+            }
+        }),
+])
+def update_or_create_offices(test_name: str, existing_offices: dict | None, new_offices: dict, expected_offices: dict):
+    """Validate that office gets created or updated."""
+    # setup
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = Business(identifier=identifier)
+    business.save()
+    if existing_offices:
+        create_offices(business, existing_offices)
+    # test
+    update_or_create_offices(business, new_offices)
+    # verify
+    check_business: Business = Business.find_by_internal_id(business.id)
+    check_offices: list[Office] = check_business.offices.all()
+    assert len(check_offices) == len(expected_offices.keys())
+    for office in check_offices:
+        assert office.office_type in expected_offices
+        addresses: list[Address] = office.addresses
+        expected_addresses = expected_offices[office.office_type]
+        assert len(addresses) == len(expected_addresses.keys())
+        for address in addresses:
+            addressKey = address.address_type + 'Address'
+            assert addressKey in expected_addresses
+            assert address.street == expected_addresses[addressKey]['streetAddress']

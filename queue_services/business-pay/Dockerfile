@@ -1,4 +1,4 @@
-FROM python:3.9.19-bullseye AS development_build
+FROM python:3.13.3-bullseye AS development_build
 
 USER root
 
@@ -87,4 +87,4 @@ COPY --chown=web:web . /code
 
 # ENV PYTHONPATH=/opt/app-root/src
 
-CMD gunicorn --bind 0.0.0.0:${PORT} --config /code/gunicorn_config.py wsgi:app
+CMD gunicorn --bind 0.0.0.0:${PORT} --preload --config /code/gunicorn_config.py wsgi:app
