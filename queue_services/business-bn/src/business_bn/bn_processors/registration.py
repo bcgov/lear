@@ -26,6 +26,7 @@ from sqlalchemy import func
 
 from business_account.AccountService import AccountService
 from business_bn.bn_processors import (
+    sanitize_address,
     build_input_xml,
     get_business_type_and_sub_type_code,
     get_owners_legal_type,
@@ -228,8 +229,8 @@ def _inform_cra(
                 "foundingDate": founding_date,
                 "legalNames": legal_names,
                 "parties": [party.json for party in parties[:5]],
-                "deliveryAddress": business.delivery_address.one_or_none().json,
-                "mailingAddress": business.mailing_address.one_or_none().json,
+                "deliveryAddress": sanitize_address(business.delivery_address.one_or_none().json),
+                "mailingAddress": sanitize_address(business.mailing_address.one_or_none().json),
                 "businessOwned": business_owned,
                 "isFirms": is_firms,
                 "isCorps": is_corps,

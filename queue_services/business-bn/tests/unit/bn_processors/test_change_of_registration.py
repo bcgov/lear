@@ -16,11 +16,10 @@ import xml.etree.ElementTree as Et
 
 import pytest
 from simple_cloudevent import SimpleCloudEvent
-from business_model.models import RequestTracker
-
 from business_bn.bn_processors import bn_note
 from business_bn.exceptions import BNException, BNRetryExceededException
 from business_bn.resources.business_bn import process_event
+from business_model.models import Address, Business, RequestTracker
 from tests.unit import create_filing, create_registration_data
 
 
@@ -264,3 +263,70 @@ def test_retry_change_of_registration(app, session, mocker, request_type, data):
     assert len(request_trackers) == 1
     assert request_trackers[0].is_processed is False
     assert request_trackers[0].retry_number == 9
+
+
+def test_change_of_registration_address_sanitization(app, session, mocker):
+    """Test change of registration with # and new lines in address is sanitized."""
+    filing_id, business_id = create_registration_data('SP', tax_id='993775204BC0001')
+    business = Business.find_by_internal_id(business_id)
+    
+    # Update address to have # and \n
+    address = business.delivery_address.one()
+    address.street = "123 #456\nStreet"
+    address.save()
+    
+    sanitized_street = "123  456 Street"
+
+    json_filing = {
+        'filing': {
+            'header': {
+                'name': 'changeOfRegistration'
+            },
+            'changeOfRegistration': {
+                'offices': {
+                    'businessOffice': {
+                        'deliveryAddress': {}
+                    }
+                }
+            }
+        }
+    }
+    filing = create_filing(json_filing=json_filing, business_id=business_id)
+    filing.save()
+    filing_id = filing.id
+    
+    acknowledgement_response = """<?xml version="1.0"?>
+        <SBNAcknowledgement>
+            <header></header>
+            <body>A Valid Document Type was received.</body>
+        </SBNAcknowledgement>"""
+
+    def side_effect(input_xml):
+        root = Et.fromstring(input_xml)
+        if root.tag == 'SBNChangeAddress':
+            xml_str = Et.tostring(root, encoding='unicode')
+            assert sanitized_street in xml_str
+            assert "123 #456\nStreet" not in xml_str
+            return 200, acknowledgement_response
+
+    mocker.patch('business_bn.bn_processors.change_of_registration.request_bn_hub', side_effect=side_effect)
+    mocker.patch('business_bn.bn_processors.change_of_registration.has_previous_address', return_value=True)
+
+    process_event(
+        SimpleCloudEvent(
+            type = 'bc.registry.business.changeOfRegistration',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
+            }
+        )
+    )
+
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.CHANGE_DELIVERY_ADDRESS,
+                                              filing_id=filing_id)
+    assert request_trackers
+    assert request_trackers[0].is_processed
+

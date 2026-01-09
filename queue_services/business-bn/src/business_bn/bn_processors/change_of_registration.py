@@ -22,6 +22,7 @@ from flask import current_app
 from sqlalchemy import and_, func
 
 from business_bn.bn_processors import (
+    sanitize_address,
     bn_note,
     build_input_xml,
     document_sub_type,
@@ -199,7 +200,7 @@ def change_address(
             "documentSubType": document_sub_type[address_type],
             "addressTypeCode": address_type_code[address_type],
             "effectiveDate": effective_date,
-            "address": address.one_or_none().json,
+            "address": sanitize_address(address.one_or_none().json),
             **get_splitted_business_number(business.tax_id),
         },
     )
