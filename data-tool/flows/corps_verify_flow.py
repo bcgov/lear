@@ -131,57 +131,54 @@ def verify_flow():
         colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
 
-        # Determine mode
+        # Validate configuration
+        if config.VERIFY_BATCHES <= 0 or config.VERIFY_BATCH_SIZE <= 0:
+            raise ValueError('VERIFY_BATCHES and VERIFY_BATCH_SIZE must be positive integers')
+
+        batch_size = config.VERIFY_BATCH_SIZE
         mig_mode = bool(config.USE_MIGRATION_FILTER)
-        mig_corp_candidates: List[str] = []
+
+        # Get migration candidates if in MIG mode
+        mig_corp_candidates = (
+            get_mig_corp_candidates(config, colin_engine)
+            if mig_mode else []
+        )
         if mig_mode:
-            mig_corp_candidates = get_mig_corp_candidates(config, colin_engine)
             print(f'👷 Using MIG filter mode with {len(mig_corp_candidates)} candidates')
 
-        # Get total count based on mode (config.USE_MIGRATION_FILTER)
-        if config.USE_MIGRATION_FILTER and mig_corp_candidates is not None:
-            total = len(mig_corp_candidates)
-        else:
-            total = get_verify_count(colin_engine)
+        # Determine total count
+        total = (
+            len(mig_corp_candidates)
+            if mig_mode else get_verify_count(colin_engine)
+        )
 
-        if config.VERIFY_BATCHES <= 0:
-            raise ValueError('VERIFY_BATCHES must be explicitly set to a positive integer')
-        if config.VERIFY_BATCH_SIZE <= 0:
-            raise ValueError('VERIFY_BATCH_SIZE must be explicitly set to a positive integer')
-        batch_size = config.VERIFY_BATCH_SIZE
+        # Calculate number of batches
+        batches = (
+            min(math.ceil(total / batch_size), config.VERIFY_BATCHES)
+            if mig_mode else math.ceil(total / batch_size)
+        )
 
-        # Determine number of batches based on mode (config.USE_MIGRATION_FILTER)
-        if mig_mode:
-            batches = min(math.ceil(total/batch_size), config.VERIFY_BATCHES)
-        else:
-            batches = math.ceil(total/batch_size)
+        print(f'🚀 Verifying {total} businesses...')
 
-        print(f'🚀 Verifying {total} busiesses...')
-
-        cnt = 0
-        offset = 0
+        # Process batches
         results = []
-        futures = []
-        while cnt < batches:
-            print(f'🚀 Running {cnt} round...')
-            futures.append(verify.submit(colin_engine, lear_engine,
-                                         mig_corp_candidates, batch_size,
-                                         offset))
-            offset += batch_size
-            cnt += 1
+        for cnt in range(batches):
+            offset = cnt * batch_size
+            print(f'🚀 Running batch {cnt + 1}...')
+            batch_results = verify(
+                colin_engine, lear_engine, mig_corp_candidates, batch_size, offset
+            )
+            results.extend(batch_results)
 
-        for f in futures:
-            r = f.result()
-            results.extend(r)
+        print(f'🌟 Verification complete. Processed {batches} batches.')
 
-        print(f'🌟 Complete round {cnt}')
-
-        if summary_path:=config.VERIFY_SUMMARY_PATH:
+        # Save or display results
+        if summary_path := config.VERIFY_SUMMARY_PATH:
             df = pd.DataFrame(results, columns=['identifier'])
             df.to_csv(summary_path, index=False)
-            print(f"🌰 Save {len(results)} corps which meet the selection criteria but don't exsit in LEAR to {summary_path}")
+            print(f"🌰 Saved {len(results)} missing corps to {summary_path}")
         else:
-            print(f"🌰 {len(results)} corps which meet the selection criteria don't exsit in LEAR: {results}")
+            print(f"🌰 {len(results)} missing corps: {results}")
 
     except Exception as e:
         raise e
