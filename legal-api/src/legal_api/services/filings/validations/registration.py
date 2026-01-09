@@ -18,8 +18,8 @@ from typing import Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
+from flask import has_request_context, request
 from flask_babel import _ as babel
-from flask import request, has_request_context
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
