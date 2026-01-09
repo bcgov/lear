@@ -1687,10 +1687,13 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
 )
 def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, filing_status, review_status, monkeypatch):
     """Assert that the a filing can be submitted/resubmitted."""
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
-    )
+    def mockFlagsValue(flag, _user=None, _account_id=None):
+        if flag == 'supported-continuation-in-entities':
+            return 'C CBEN CCC CUL'
+        elif flag == 'enabled-specific-filings':
+            return ''
+        return {}
+    monkeypatch.setattr('legal_api.services.flags.value', mockFlagsValue)
     identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
@@ -2054,7 +2057,7 @@ def test_cor(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
 )
 def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
     """Assert Change of Liquidators is submitted correctly for entity types."""
-    enabled_filings = 'changeOfLiquidators.appointLiquidator' if enabled else ''
+    enabled_filings = 'changeOfLiquidators.intentToLiquidate' if enabled else ''
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag, _user, _account_id: enabled_filings
@@ -2087,7 +2090,7 @@ def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         assert rv.status_code == HTTPStatus.CREATED
     else:
         assert rv.status_code == HTTPStatus.FORBIDDEN
-        assert rv.json[0]['message'] == 'Permission Denied - changeOfLiquidators.appointLiquidator filing is currently not available for this user and/or account.'
+        assert rv.json[0]['message'] == 'Permission Denied - changeOfLiquidators.intentToLiquidate filing is currently not available for this user and/or account.'
 
 
 @pytest.mark.parametrize(

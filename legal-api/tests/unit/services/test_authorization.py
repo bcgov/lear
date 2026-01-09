@@ -1237,6 +1237,10 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
             if flag == 'enabled-specific-filings' else {}
         )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         account_products_mock = []
         if is_comp_auth:
