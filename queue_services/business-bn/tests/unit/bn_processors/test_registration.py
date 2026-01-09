@@ -17,7 +17,7 @@ import xml.etree.ElementTree as Et
 from flask import current_app
 import pytest
 from simple_cloudevent import SimpleCloudEvent
-from business_model.models import RequestTracker, Business
+from business_model.models import RequestTracker, Business, Address
 
 from business_bn.exceptions import BNException, BNRetryExceededException
 from business_bn.resources.business_bn import process_event
@@ -163,3 +163,54 @@ def test_retry_registration(app, session, mocker, request_type):
         assert len(request_trackers) == 1
         assert request_trackers[0].is_processed is False
         assert request_trackers[0].retry_number == 9
+
+
+def test_registration_address_sanitization(app, session, mocker):
+    """Test registration with # and new lines in address is sanitized."""
+    filing_id, business_id = create_registration_data('SP')
+    business = Business.find_by_internal_id(business_id)
+    
+    # Update address to have # and \n
+    address = business.delivery_address.one()
+    address.street = "123 #456\nStreet"
+    address.save()
+    
+    sanitized_street = "123  456 Street"
+
+    def mock_request_bn_hub(input_xml):
+        root = Et.fromstring(input_xml)
+        if root.tag == 'SBNCreateProgramAccountRequest':
+            # Check if # and \n is removed in deliveryAddress
+            # Note: address structure in XML depends on template. 
+            # Assuming standard structure where deliveryAddress has fields.
+            # But simpler check: check if sanitized string is present and # is not.
+            xml_str = Et.tostring(root, encoding='unicode')
+            assert sanitized_street in xml_str
+            assert "123 #456\nStreet" not in xml_str
+            return 200, acknowledgement_response
+
+    mocker.patch('business_bn.bn_processors.registration.request_bn_hub', side_effect=mock_request_bn_hub)
+    mocker.patch('business_bn.bn_processors.registration.gcp_queue.publish')
+    mocker.patch('business_bn.bn_processors.registration._get_program_account', return_value=(200, {
+        'business_no': '993775204',
+        'business_program_id': 'BC',
+        'cross_reference_program_no': 'FM1234567',
+        'program_account_ref_no': 1})
+    )
+
+    process_event(
+        SimpleCloudEvent(
+            type = 'bc.registry.business.registration',
+            data = {
+                'filing': {
+                    'header': {'filingId': filing_id}
+                }
+            }
+        )
+    )
+    
+    request_trackers = RequestTracker.find_by(business_id,
+                                              RequestTracker.ServiceName.BN_HUB,
+                                              RequestTracker.RequestType.INFORM_CRA)
+    assert request_trackers[0].is_processed
+

@@ -165,3 +165,20 @@ def get_owners_legal_type(identifier):
     except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as err:
         current_app.logger.error(err, exc_info=True)
         return None, None
+
+
+def sanitize_address(address: dict):
+    """Remove # and new lines from address."""
+    if not address:
+        return address
+
+    for key, value in address.items():
+        if isinstance(value, str):
+            address[key] = (
+                value.replace("#", " ")
+                .replace("\r\n", " ")
+                .replace("\n", " ")
+                .replace("\r", " ")
+                .strip()
+            )
+    return address
