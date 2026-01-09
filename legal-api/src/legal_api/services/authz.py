@@ -640,7 +640,7 @@ def get_allowable_filings_dict():
     request_context = get_request_context()
     enabled_filings: list[str] = (flags.value("enabled-specific-filings",
                                               request_context.user,
-                                              request_context.account_id)).split(',')
+                                              request_context.account_id)).split(",")
 
     filings_to_check = [
         ("changeOfLiquidators", "appointLiquidator", "staff"),

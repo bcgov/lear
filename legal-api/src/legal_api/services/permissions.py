@@ -239,7 +239,7 @@ class PermissionService:
                                                    request_context.user,
                                                    request_context.account_id)
 
-            if not filing_key in enabled_filings_str.split(','):
+            if not filing_key in enabled_filings_str.split(","):
                 return Error(
                     HTTPStatus.FORBIDDEN,
                     [{
