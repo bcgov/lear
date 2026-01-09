@@ -78,13 +78,13 @@ def test_jwt_manager_correct_test_config(app_request, jwt):
 
     # assert that JWT is setup correctly for a known role
     token = helper_create_jwt(jwt, [STAFF_ROLE])
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
     rv = app_request.test_client().get(protected_route, headers=headers)
     assert rv.status_code == HTTPStatus.OK
 
     # assert the JWT fails for an unknown role
     token = helper_create_jwt(jwt, ['SHOULD-FAIL'])
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
     rv = app_request.test_client().get(protected_route, headers=headers)
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
@@ -480,7 +480,7 @@ def test_authorized_user(monkeypatch, app_request, jwt,
         return jsonify(message='success'), HTTPStatus.OK
 
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     # test it
     rv = app_request.test_client().get(f'/fake_jwt_route/{identifier}', headers=headers)
@@ -519,7 +519,7 @@ def test_authorized_user_integ(monkeypatch, app, jwt,
     import flask  # noqa: F401; import actually used in mock
     # setup
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers['Authorization']
@@ -689,6 +689,11 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
         for legal_type in legal_types:
             filing_types = get_allowed(state, legal_type, jwt)
             assert filing_types == expected
@@ -1013,13 +1018,18 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
                     legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
         for legal_type in legal_types:
             business = create_business(legal_type, state)
             filing_types = is_allowed(business, state, filing_type, legal_type, jwt, sub_filing_type, None)
@@ -1222,6 +1232,11 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
     with app.test_request_context():
         app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
 
         account_products_mock = []
         if is_comp_auth:
@@ -1531,13 +1546,22 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
 def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             business = None
@@ -1632,13 +1656,22 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
                                                   legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is frozen."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             business = None
@@ -1695,13 +1728,22 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
                                                                legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is not in good standing."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             business = None
@@ -1864,13 +1906,22 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
                                                           legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is not in good standing."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             business = None
@@ -1983,13 +2034,22 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
        ERROR or PAID.
     """
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             for filing_status in filing_statuses:
@@ -2107,13 +2167,22 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
        correction.  Note that this should also test unexpected incomplete status values.
     """
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             for filing_status in filing_statuses:
@@ -2169,13 +2238,22 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
        A blocker filing in this instance is a pending future effective dissolution filing.
     """
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             for filing_status in filing_statuses:
@@ -2375,13 +2453,22 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
 def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business has warnings."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
         for legal_type in legal_types:
             business = create_business(legal_type, state)
             if legal_type in ('SP', 'GP') and state == Business.State.ACTIVE:
@@ -2731,13 +2818,22 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
        not match one of the state filing types defined in invalidStateFiling.
     """
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             for idx, state_filing_type in enumerate(state_filing_types):
@@ -2779,13 +2875,22 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
                                         legal_types, username, roles, filing_status, expected):
     """Assert that get allowed returns valid filings when filing status is draft."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
         for legal_type in legal_types:
             business = create_business(legal_type, state)
             filing_dict = FILING_DATA.get(filing_type, None)
@@ -2815,13 +2920,22 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
 def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, expected):
     """Assert that a filing can be resubmitted."""
     token = helper_create_jwt(jwt, roles=[BASIC_USER], username='username')
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
         filing_type = 'continuationIn'
         filing_dict = FILING_DATA.get(filing_type, None)
         filing = create_incomplete_filing(business=None,
@@ -2975,13 +3089,27 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
        one of the state filing types defined in completedFiling.
     """
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             business = create_business(legal_type, state)
@@ -3151,13 +3279,22 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
                                                     legal_types, username, roles, num_dods, expected):
     """Assert that get allowed returns valid filings when business is in dissolution."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             business = None
@@ -3341,13 +3478,22 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
                                               roles, blocker_status, expected):
     """Assert that get allowed returns valid filings for notice of withdrawal."""
     token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token}
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
 
         for legal_type in legal_types:
             identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
@@ -3370,6 +3516,91 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
                                          filing_status='PAID',
                                          is_future_effective=True)
 
+            allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            assert allowed_filing_types == expected
+
+
+@pytest.mark.parametrize(
+    'test_name,state,legal_types,username,roles,enabled_filings,expected',
+    [
+        # active business - staff user
+        ('staff_active_corps_none_enabled', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], '',
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,])),
+        ('staff_active_corps_receivers_enabled', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver',
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.CHANGE_OF_RECEIVERS_AMEND,
+                          FilingKey.CHANGE_OF_RECEIVERS_APPOINT,
+                          FilingKey.CHANGE_OF_RECEIVERS_CEASE,
+                          FilingKey.CHANGE_OF_RECEIVERS_ADDRESS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,])),
+        ('staff_active_corps_liquidators_partial_enabled', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE], 'changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate',
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.ALTERATION,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          FilingKey.COO_CORPS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.VOL_DISS,
+                          FilingKey.ADM_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,])),
+    ]
+)
+def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
+                                           test_name, state, legal_types, username, roles, enabled_filings, expected):
+    """Assert that filings requiring the enabled-specific-filings flag are not allowed when the flag doesn't specifiy them."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: enabled_filings
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
+        for legal_type in legal_types:
+            identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+            business = factory_business(identifier=identifier,
+                                        entity_type=legal_type,
+                                        state=state)
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
 

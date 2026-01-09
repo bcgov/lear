@@ -1986,21 +1986,27 @@ def test_coo(session, requests_mock, mocker, client, jwt, test_name, legal_type,
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier',
+    'test_name, legal_type, identifier, enabled',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115', True),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116', True),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117', True),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118', True),
+        ('disabled', Business.LegalTypes.BCOMP.value, 'BC1111111', False),
     ]
 )
-def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+def test_cor(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
     """Assert Change of Receivers is submitted correctly for entity types."""
-    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    enabled_filings = 'changeOfReceivers.appointReceiver' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
     cor = copy.deepcopy(FILING_HEADER)
     cor['filing']['header']['name'] = 'changeOfReceivers'
     cor['filing']['changeOfReceivers'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
@@ -2025,25 +2031,35 @@ def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 
-    assert rv.status_code == HTTPStatus.CREATED
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - changeOfReceivers.appointReceiver filing is currently not available for this user and/or account.'
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier',
+    'test_name, legal_type, identifier, enabled',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115', True),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116', True),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117', True),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118', True),
+        ('disabled', Business.LegalTypes.BCOMP.value, 'BC1111111', False),
     ]
 )
-def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
     """Assert Change of Liquidators is submitted correctly for entity types."""
-    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    enabled_filings = 'changeOfLiquidators.appointLiquidator' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
     col = copy.deepcopy(FILING_HEADER)
     col['filing']['header']['name'] = 'changeOfLiquidators'
     col['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
@@ -2067,25 +2083,35 @@ def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 
-    assert rv.status_code == HTTPStatus.CREATED
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - changeOfLiquidators.appointLiquidator filing is currently not available for this user and/or account.'
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier',
+    'test_name, legal_type, identifier, enabled',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115', True),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116', True),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117', True),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118', True),
+        ('disabled', Business.LegalTypes.BCOMP.value, 'BC1111119', False),
     ]
 )
-def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
     """Assert Delay of Dissolution is submitted correctly for entity types."""
-    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    enabled_filings = 'dissolution.delay' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
     dod = copy.deepcopy(FILING_HEADER)
     dod['filing']['header']['name'] = 'dissolution'
     dod['filing']['dissolution'] = {
@@ -2116,4 +2142,9 @@ def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 
-    assert rv.status_code == HTTPStatus.CREATED
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - dissolution.delay filing is currently not available for this user and/or account.'
+    

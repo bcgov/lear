@@ -228,7 +228,8 @@ class PermissionService:
             "changeOfReceivers.appointReceiver",
             "changeOfReceivers.ceaseReceiver",
             "changeOfReceivers.changeAddressReceiver",
-            "dissolution.delay"
+            "dissolution.delay",
+            "transition"
         ]
         filing_key = f"{filing_type}.{filing_sub_type}" if filing_sub_type else filing_type
 

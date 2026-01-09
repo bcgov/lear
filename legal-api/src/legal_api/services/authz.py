@@ -640,7 +640,7 @@ def get_allowable_filings_dict():
     request_context = get_request_context()
     enabled_filings: list[str] = (flags.value("enabled-specific-filings",
                                               request_context.user,
-                                              request_context.account_id)).split()
+                                              request_context.account_id)).split(',')
 
     filings_to_check = [
         ("changeOfLiquidators", "appointLiquidator", "staff"),
@@ -654,10 +654,13 @@ def get_allowable_filings_dict():
         ("changeOfReceivers", "changeAddressReceiver", "staff"),
         ("dissolution", "delay", "staff"),
         ("dissolution", "delay", "general"),
+        ("transition", None, "staff"),
+        ("transition", None, "general")
     ]
     for filing_type, filing_sub_type, user_type in filings_to_check:
         filing_key = f"{filing_type}.{filing_sub_type}" if filing_sub_type else filing_type
         if filing_key not in enabled_filings:
+            # the filing is not enabled so remove the filing information from the allowable filings dict
             if filing_sub_type:
                 del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type][filing_sub_type]
             else:
