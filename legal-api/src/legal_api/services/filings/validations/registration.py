@@ -19,11 +19,13 @@ from typing import Final, Optional
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel
+from flask import request, has_request_context
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
+    validate_completing_party,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
@@ -61,6 +63,14 @@ def validate(registration_json: dict) -> Optional[Error]:
     msg.extend(validate_offices_addresses(registration_json, filing_type))
     msg.extend(validate_registration_court_order(registration_json))
 
+    if flags.is_on("enabled-deeper-permission-action"):
+        account_id = None
+        if has_request_context() and hasattr(request, "headers"):
+            account_id = request.headers.get("account-id")
+        if account_id and registration_json.get("filing", {}).get(filing_type, {}).get("parties"):
+            completing_party_errors = validate_completing_party(registration_json, filing_type, int(account_id))
+            if completing_party_errors:
+                msg.extend(completing_party_errors)
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
