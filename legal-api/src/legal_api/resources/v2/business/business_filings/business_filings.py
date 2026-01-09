@@ -579,7 +579,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         else:
             legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
 
-        if err := PermissionService.check_filing_enabled(filing_type, identifier):
+        if err := PermissionService.check_filing_enabled(filing_type, filing_sub_type):
             return jsonify(err.msg), err.code
 
         if (

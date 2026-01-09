@@ -654,8 +654,17 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
     assert rv.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_get_could_file(session, client, jwt):
+def test_get_could_file(session, client, jwt, monkeypatch):
     """Assert that the cold file is returned."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+        if flag == 'enabled-specific-filings' else {}
+    )
+    monkeypatch.setattr(
+        'legal_api.models.User.get_or_create_user_by_jwt',
+        lambda _: None
+    )
     identifier = 'BC0000001'
     rv = client.get('/api/v2/businesses/allowable/BC/ACTIVE',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
