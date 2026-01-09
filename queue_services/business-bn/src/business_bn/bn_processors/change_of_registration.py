@@ -22,12 +22,12 @@ from flask import current_app
 from sqlalchemy import and_, func
 
 from business_bn.bn_processors import (
-    sanitize_address,
     bn_note,
     build_input_xml,
     document_sub_type,
     get_splitted_business_number,
     request_bn_hub,
+    sanitize_address,
 )
 from business_bn.exceptions import BNException, BNRetryExceededException
 from business_common.utils.datetime import datetime

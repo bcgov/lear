@@ -26,12 +26,12 @@ from sqlalchemy import func
 
 from business_account.AccountService import AccountService
 from business_bn.bn_processors import (
-    sanitize_address,
     build_input_xml,
     get_business_type_and_sub_type_code,
     get_owners_legal_type,
     program_type_code,
     request_bn_hub,
+    sanitize_address,
 )
 from business_bn.exceptions import BNException, BNRetryExceededException, QueueException
 from business_bn.services import gcp_queue
