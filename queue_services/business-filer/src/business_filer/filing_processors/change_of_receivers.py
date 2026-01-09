@@ -40,7 +40,7 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.filings import update_filing_court_order
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
-    create_relationsips,
+    create_relationships,
     update_relationship_addresses,
     update_relationship_entity_info,
 )
@@ -51,19 +51,19 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     filing_json = copy.deepcopy(filing_rec.filing_json)
     relationships = filing_json["filing"]["changeOfReceivers"].get("relationships")
     if filing_rec.filing_sub_type == "amendReceiver":
-        create_relationsips(relationships, business, filing_rec)
-        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
-        update_relationship_addresses(relationships)
-        update_relationship_entity_info(relationships)
+        create_relationships(relationships, business, filing_rec)
+        cease_relationships(relationships, business, [PartyRole.RoleTypes.RECEIVER.value], filing_meta.application_date)
+        update_relationship_addresses(relationships, business)
+        update_relationship_entity_info(relationships, business)
 
     elif filing_rec.filing_sub_type == "appointReceiver":
-        create_relationsips(relationships, business, filing_rec)
+        create_relationships(relationships, business, filing_rec)
     
     elif filing_rec.filing_sub_type == "ceaseReceiver":
-        cease_relationships(relationships, business, PartyRole.RoleTypes.RECEIVER, filing_meta.application_date)
+        cease_relationships(relationships, business, [PartyRole.RoleTypes.RECEIVER.value], filing_meta.application_date)
     
     elif filing_rec.filing_sub_type == "changeAddressReceiver":
-        update_relationship_addresses(relationships)
+        update_relationship_addresses(relationships, business)
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfReceivers"].get("courtOrder"):
