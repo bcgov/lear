@@ -944,36 +944,46 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
             
     return msg
 
-def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> list:
+def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> dict:
     """Validate completing party edited."""
     msg = []
     parties = filing_json["filing"][filing_type].get("parties", {})
 
     officer = None
+    mailingAddress = None
     for party in parties:
         roles = party.get("roles", [])
-        if any(role.get("roleType").lower() == PartyRole.RoleTypes.COMPLETING_PARTY.value for role in roles):
+        if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
             officer = party.get("officer", {})
+            mailingAddress = party.get("mailingAddress", {})
             break
     if not officer:
-        msg.append({
-            "error": "Completing party is required.",
-            "path": f"/filing/{filing_type}/parties"
-        })
-        return msg
+        return {
+            "error":[{
+                "error": "Completing party is required.",
+                "path": f"/filing/{filing_type}/parties"
+            }],
+            "email_changed": False,
+            "name_changed": False,
+            "address_changed": False
+        }
     
-    filing_completing_party_mailing_address = officer.get("mailingAddress", {})
+    filing_completing_party_mailing_address = mailingAddress or {}
     filing_firstname = officer.get("firstName", "")
     filing_lastname = officer.get("lastName", "")
     filing_email = officer.get("email", "")
     
     contacts_response = AccountService.get_contacts(current_app.config, org_id)
     if contacts_response is None:
-        msg.append({
+        return {
+            "error":[{
             "error": "Unable to verify completing party against account contacts.",
             "path": f"/filing/{filing_type}/parties"
-        })
-        return msg
+        }],
+        "email_changed": False,
+        "name_changed": False,
+        "address_changed": False
+        }
     
     contact = contacts_response["contacts"][0]
     existing_cp_mailing_address = {
@@ -989,7 +999,7 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     existing_lastname = contact.get("lastName", "")
     existing_email = contact.get("email", "")
 
-    address_changed = is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
+    address_changed = not is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
 
     existing_name = {
         "firstName": existing_firstname,
@@ -1004,15 +1014,9 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
 
     email_changed = not is_same_str(existing_email, filing_email)
 
-    if address_changed or name_changed or email_changed:
-        permission_error = PermissionService.check_user_permission(
-            ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
-            message="Permission Denied - You do not have rights to edit completing address."
-        )
-        if permission_error:
-            error_msg = permission_error.message[0]["message"] if permission_error.message else "You do not have rights to edit completing address."
-            msg.append({
-                "error": error_msg,
-                "path": f"/filing/{filing_type}/parties"
-            })
-    return msg
+    return {
+        "error": msg,
+        "email_changed": email_changed,
+        "name_changed": name_changed,
+        "address_changed": address_changed
+    }

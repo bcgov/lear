@@ -16,6 +16,7 @@ from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask import has_request_context, request
@@ -52,6 +53,24 @@ def validate(registration_json: dict) -> Optional[Error]:
 
     filing_type = "registration"
     msg = []
+    if flags.is_on("enabled-deeper-permission-action"):
+        account_id = None
+        if has_request_context() and hasattr(request, "headers"):
+            account_id = request.headers.get("account-id")
+        if account_id and registration_json.get("filing", {}).get(filing_type, {}).get("parties"):
+            completing_party_result = validate_completing_party(registration_json, filing_type, int(account_id))
+            if completing_party_result.get("error"):
+                msg.extend(completing_party_result["error"])
+            if (completing_party_result.get("email_changed") or
+                completing_party_result.get("name_changed")
+            ):
+                required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
+                permission_error = PermissionService.check_user_permission(
+                    required_permission,
+                    message="Permission Denied - You do not have permissions edit Completing Party in this filing."
+                )
+                if permission_error:
+                    return permission_error
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
     msg.extend(validate_naics(registration_json))

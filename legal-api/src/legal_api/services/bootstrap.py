@@ -21,13 +21,13 @@ from http import HTTPStatus
 from typing import Optional, Union
 
 import requests
-from flask import current_app
+from flask import current_app, has_request_context
 from flask_babel import _ as babel
 from sqlalchemy.orm.exc import FlushError
 
 from legal_api.models import RegistrationBootstrap
 from legal_api.services import Flags, flags
-
+from legal_api.utils.auth import jwt
 
 class RegistrationBootstrapService:
     """Provides services to bootstrap the IA registration and account affiliation."""
@@ -322,20 +322,29 @@ class AccountService:
         return None
     
     @classmethod
-    def get_contacts(cls, config, org_id: str):
+    def get_contacts(cls, config, org_id: str, user_token: Optional[str] = None):
         """Get contacts for the business.
         Fetch Compelting Party Details from Auth API.
         - GET /orgs/{org_id}/memeberships for user contacts details
         - GET /orgs/{org_id} for org contacts details
         """
-        token = cls.get_bearer_token(config)
-        auth_url = config.AUTH_SVC_URL
+        token = cls.get_bearer_token()
+        auth_url = current_app.config.get("AUTH_SVC_URL")
 
-        if not token:
-            return HTTPStatus.UNAUTHORIZED
+
+        if user_token:
+            token = user_token
+        elif has_request_context():
+            try:
+                token = jwt.get_token_auth_header()
+            except Exception as e:
+                token = cls.get_bearer_token()
+
+        else:
+            token = cls.get_bearer_token()
 
         membership_response = requests.get(
-            url=f"{auth_url}/{org_id}/memberships",
+            url=f"{auth_url}/users/orgs/{org_id}/membership",
             headers={**cls.CONTENT_TYPE_JSON,
                      "Authorization": cls.BEARER + token},
             timeout=cls.timeout
@@ -348,7 +357,7 @@ class AccountService:
             timeout=cls.timeout
         )
 
-        if membership_response.status_code == HTTPStatus.OK and org_info_response.status_code == HTTPStatus.OK:
+        if membership_response.status_code != HTTPStatus.OK and org_info_response.status_code != HTTPStatus.OK:
             return None
         
         try:
@@ -356,8 +365,8 @@ class AccountService:
             org_info = org_info_response.json()
 
             user_info = membership_data.get("user", {})
-            first_name = user_info.get("firstName", "")
-            last_name = user_info.get("lastName", "")
+            first_name = user_info.get("firstname", "")
+            last_name = user_info.get("lastname", "")
 
             user_contacts = user_info.get("contacts", [])
             user_contact = user_contacts[0] if user_contacts else {}
@@ -380,7 +389,7 @@ class AccountService:
                 "streetAdditional": org_contact.get("streetAdditional", ""),
                 "delieveryInstructions": org_contact.get("deliveryInstructions", "")
             }
-            return {"contact": [contact]}
+            return {"contacts": [contact]}
         except Exception as e:
             current_app.logger.error(f"Error fetching contacts: {e}")
         return None
