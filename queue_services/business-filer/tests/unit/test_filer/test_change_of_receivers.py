@@ -127,6 +127,31 @@ CHANGE_OF_RECEIVERS_APPOINT = {
                     'roleType': 'Receiver'
                 }
             ]
+        },
+        {
+            'entity': {
+                'givenName': 'Another Test',
+                'familyName': 'Tester'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'roles': [
+                {
+                    'roleType': 'Receiver'
+                }
+            ]
         }
     ]
 }
@@ -168,7 +193,7 @@ def test_process_cor_filing(app, session):
     assert appoint_filing.status == Filing.Status.COMPLETED.value
 
     party_roles: list[PartyRole] = business.party_roles.all()
-    assert len(party_roles) == 3
+    assert len(party_roles) == 4
     for role in party_roles:
         assert role.appointment_date
         assert not role.cessation_date
@@ -180,6 +205,7 @@ def test_process_cor_filing(app, session):
     party_id_1 = party_roles[0].party_id
     party_id_2 = party_roles[1].party_id
     party_id_3 = party_roles[2].party_id
+    party_id_4 = party_roles[3].party_id
 
     filing['filing']['changeOfReceivers'] = {
         'type': 'ceaseReceiver',
@@ -221,13 +247,13 @@ def test_process_cor_filing(app, session):
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
-    assert len(party_roles) == 3
+    assert len(party_roles) == 4
 
     for role in party_roles:
         if role.party_id == party_id_1:
             assert role.cessation_date == cease_filing.effective_date
         else:
-            assert role.party_id in [party_id_2, party_id_3]
+            assert role.party_id in [party_id_2, party_id_3, party_id_4]
             assert role.cessation_date is None
     
     # Test change address receivers
@@ -285,7 +311,7 @@ def test_process_cor_filing(app, session):
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
-    assert len(party_roles) == 3
+    assert len(party_roles) == 4
 
     for role in party_roles:
         if role.party_id == party_id_2:
@@ -308,11 +334,14 @@ def test_process_cor_filing(app, session):
         'postalCode': 'V0N4Y8',
         'deliveryInstructions': ''
     }
-    new_name = {
+    new_name_1 = {
         'givenName': 'Changed',
         'middleInitial': 'Tandy',
         'familyName': 'Miller',
         'alternateName': 'Phil Mills'
+    }
+    new_name_2 = {
+        'businessName': 'Changed to business'
     }
     new_relationship = {
         'entity': {
@@ -352,7 +381,14 @@ def test_process_cor_filing(app, session):
             {
                 'entity': {
                     'identifier': party_id_3,
-                    **new_name
+                    **new_name_1
+                },
+                'deliveryAddress': new_address_delivery_amend
+            },
+            {
+                'entity': {
+                    'identifier': party_id_4,
+                    **new_name_2
                 },
                 'deliveryAddress': new_address_delivery_amend
             },
@@ -382,7 +418,7 @@ def test_process_cor_filing(app, session):
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
-    assert len(party_roles) == 4
+    assert len(party_roles) == 5
 
     for role in party_roles:
         party: Party = role.party
@@ -395,10 +431,14 @@ def test_process_cor_filing(app, session):
             assert mailing_address.address_type == 'mailing'
             assert mailing_address.street == new_address_mailing['streetAddress']
         elif role.party_id == party_id_3:
-            assert party.first_name == new_name['givenName'].upper()
-            assert party.last_name == new_name['familyName'].upper()
-            assert party.middle_initial == new_name['middleInitial'].upper()
-            assert party.alternate_name == new_name['alternateName'].upper()
+            assert party.first_name == new_name_1['givenName'].upper()
+            assert party.last_name == new_name_1['familyName'].upper()
+            assert party.middle_initial == new_name_1['middleInitial'].upper()
+            assert party.alternate_name == new_name_1['alternateName'].upper()
+        elif role.party_id == party_id_4:
+            assert party.first_name == None
+            assert party.organization_name == new_name_2['businessName'].upper()
+            assert party.party_type == 'organization'
         elif role.party_id != party_id_1:
             # new relationship
             assert party.first_name == new_relationship['entity']['givenName'].upper()
