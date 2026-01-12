@@ -37,6 +37,7 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
     validate_parties_delivery_address,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
@@ -317,10 +318,22 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
                 })
 
             if not amalgamating_business.good_standing:
-                msg.append({
-                    "error": f"{identifier} is not in good standing.",
-                    "path": amalgamating_business_path
-                })
+                if flags.is_on("enabled-deeper-permission-action"):
+                    permission_error = PermissionService.check_user_permission(
+                        ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+                        message="Permission Denied - You do not have permissions to amalgamate this business."
+                    )
+                    if permission_error:
+                        msg.append({
+                            "error": permission_error.msg[0].get("message"),
+                            "path": amalgamating_business_path
+                        })
+                        return msg
+                else:
+                    msg.append({
+                        "error": f"{identifier} is not in good standing.",
+                        "path": amalgamating_business_path
+                    })
     else:
         msg.append({
             "error": f"A business with identifier:{identifier} not found.",
