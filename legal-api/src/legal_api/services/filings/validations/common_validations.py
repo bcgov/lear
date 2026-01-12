@@ -823,6 +823,19 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
    ]
    return all(is_same_str(addr1.get(key), addr2.get(key)) for key in keys)
 
+def check_completing_party_permission(msg: list, filing_type:str) -> None:
+    """Check completing party permission and append error message if not allowed."""
+    permision_error = PermissionService.check_user_permission(
+        ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
+        message="Permission Denied: You do not have permission to edit the completing party."
+    )
+    if permision_error:
+        msg.append({
+            "error": permision_error.msg[0].get("message"),
+            "path": f"/filing/{filing_type}/parties"
+        })
+
+
 def validate_staff_payment(filing_json: dict) -> bool:
     """Check staff specific headers are in the filing."""
     header = filing_json["filing"]["header"]

@@ -358,7 +358,7 @@ class AccountService:
             timeout=cls.timeout
         )
 
-        if membership_response.status_code != HTTPStatus.OK and org_info_response.status_code != HTTPStatus.OK:
+        if membership_response.status_code != HTTPStatus.OK or org_info_response.status_code != HTTPStatus.OK:
             return None
         
         try:

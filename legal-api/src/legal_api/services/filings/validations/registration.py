@@ -25,6 +25,7 @@ from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
+    check_completing_party_permission,
     validate_completing_party,
     validate_court_order,
     validate_name_request,
@@ -32,7 +33,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_party_role_firms,
 )
-from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -64,13 +64,8 @@ def validate(registration_json: dict) -> Optional[Error]:
             if (completing_party_result.get("email_changed") or
                 completing_party_result.get("name_changed")
             ):
-                required_permission = ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value
-                permission_error = PermissionService.check_user_permission(
-                    required_permission,
-                    message="Permission Denied - You do not have permissions edit Completing Party in this filing."
-                )
-                if permission_error:
-                    return permission_error
+                check_completing_party_permission(msg, filing_type)
+    
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
     msg.extend(validate_naics(registration_json))
@@ -82,14 +77,6 @@ def validate(registration_json: dict) -> Optional[Error]:
     msg.extend(validate_offices_addresses(registration_json, filing_type))
     msg.extend(validate_registration_court_order(registration_json))
 
-    if flags.is_on("enabled-deeper-permission-action"):
-        account_id = None
-        if has_request_context() and hasattr(request, "headers"):
-            account_id = request.headers.get("account-id")
-        if account_id and registration_json.get("filing", {}).get(filing_type, {}).get("parties"):
-            completing_party_errors = validate_completing_party(registration_json, filing_type, int(account_id))
-            if completing_party_errors:
-                msg.extend(completing_party_errors)
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
