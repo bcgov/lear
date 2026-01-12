@@ -28,7 +28,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.permissions import ListFilingsPermissionsAllowed, PermissionService
+from legal_api.services.permissions import ListActionsPermissionsAllowed, ListFilingsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
@@ -71,7 +71,13 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
 
-    if flags.is_on("enabled-deeper-permission-action") and business.good_standing is False:
+    if flags.is_on("enabled-deeper-permission-action"):
+        if not business.good_standing:
+            required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+            message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
+            error = PermissionService.check_user_permission(required_permission, message=message)
+            return error
+        
         err = _validate_dissolution_permission(business, dissolution_type, filing_type)
         if err:
             return err
