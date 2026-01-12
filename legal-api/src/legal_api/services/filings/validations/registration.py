@@ -16,7 +16,6 @@ from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
-from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask import has_request_context, request
@@ -33,6 +32,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_party_role_firms,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime

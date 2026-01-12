@@ -950,12 +950,12 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     parties = filing_json["filing"][filing_type].get("parties", {})
 
     officer = None
-    mailingAddress = None
+    mailing_address = None
     for party in parties:
         roles = party.get("roles", [])
         if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
             officer = party.get("officer", {})
-            mailingAddress = party.get("mailingAddress", {})
+            mailing_address = party.get("mailingAddress", {})
             break
     if not officer:
         return {
@@ -968,7 +968,7 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
             "address_changed": False
         }
     
-    filing_completing_party_mailing_address = mailingAddress or {}
+    filing_completing_party_mailing_address = mailing_address or {}
     filing_firstname = officer.get("firstName", "")
     filing_lastname = officer.get("lastName", "")
     filing_email = officer.get("email", "")

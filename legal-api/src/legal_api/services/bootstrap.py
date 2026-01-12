@@ -29,6 +29,7 @@ from legal_api.models import RegistrationBootstrap
 from legal_api.services import Flags, flags
 from legal_api.utils.auth import jwt
 
+
 class RegistrationBootstrapService:
     """Provides services to bootstrap the IA registration and account affiliation."""
 
@@ -337,7 +338,7 @@ class AccountService:
         elif has_request_context():
             try:
                 token = jwt.get_token_auth_header()
-            except Exception as e:
+            except Exception:
                 token = cls.get_bearer_token()
 
         else:
