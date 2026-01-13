@@ -831,7 +831,7 @@ def check_completing_party_permission(msg: list, filing_type:str) -> None:
     )
     if permission_error:
         msg.append({
-            "error": permision_error.msg[0].get("message"),
+            "error": permission_error.msg[0].get("message"),
             "path": f"/filing/{filing_type}/parties"
         })
 
