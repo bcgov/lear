@@ -80,7 +80,8 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
             required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
             message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
             error = PermissionService.check_user_permission(required_permission, message=message)
-            return error
+            if error:
+                return error
         
         err = _validate_dissolution_permission(business, dissolution_type, filing_type)
         if err:

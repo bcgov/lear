@@ -609,7 +609,7 @@ def test_dissolution_good_standing_permission(session, test_name, good_standing,
         assert err is not None
         assert err.code == expected_code
         if expected_msg:
-            assert lists_are_equal(err.msg, [{'error': expected_msg}])
+            assert lists_are_equal(err.msg, [{'message': expected_msg}])
     else:
         assert err is None
         
