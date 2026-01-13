@@ -325,7 +325,7 @@ class AccountService:
     @classmethod
     def get_contacts(cls, config, org_id: str, user_token: Optional[str] = None):
         """Get contacts for the business.
-        Fetch Compelting Party Details from Auth API.
+        Fetch Completing Party Details from Auth API.
         - GET /orgs/{org_id}/memeberships for user contacts details
         - GET /orgs/{org_id} for org contacts details
         """

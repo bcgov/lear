@@ -825,11 +825,11 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
 
 def check_completing_party_permission(msg: list, filing_type:str) -> None:
     """Check completing party permission and append error message if not allowed."""
-    permision_error = PermissionService.check_user_permission(
+    permission_error = PermissionService.check_user_permission(
         ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
         message="Permission Denied: You do not have permission to edit the completing party."
     )
-    if permision_error:
+    if permission_error:
         msg.append({
             "error": permision_error.msg[0].get("message"),
             "path": f"/filing/{filing_type}/parties"
