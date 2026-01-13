@@ -23,13 +23,13 @@ from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    check_good_standing_permission,
     validate_court_order,
     validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
 )
 from legal_api.services.permissions import (
-    ListActionsPermissionsAllowed,
     ListFilingsPermissionsAllowed,
     PermissionService,
 )
@@ -74,15 +74,12 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     filing_type = "dissolution"
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
-
+    # Check good standing permission
+    err = check_good_standing_permission(business)
+    if err:
+        return err
+    
     if flags.is_on("enabled-deeper-permission-action"):
-        if not business.good_standing:
-            required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
-            message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
-            error = PermissionService.check_user_permission(required_permission, message=message)
-            if error:
-                return error
-        
         err = _validate_dissolution_permission(business, dissolution_type, filing_type)
         if err:
             return err
