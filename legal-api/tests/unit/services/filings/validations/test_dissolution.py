@@ -567,3 +567,34 @@ def test_dissolution_effective_date(session, test_name,
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, good_standing, has_permission, flag_Enabled, expected_code, expected_msg',
+    [
+        ('SUCCESS_GOOD_STANDING_WITH_FLAG', True, False, True, None, None),
+        ('SUCCESS_NOT_GOOD_STANDING_WITH_PERMISSION', False, True, True, None, None),
+        ('FAIL_NOT_GOOD_STANDING_NO_PERMISSION_WITH_FLAG', False, False, True,
+         HTTPStatus.FORBIDDEN, 'Permission Denied - You do not have permissions send not in good standing business in this filing.')
+         ])
+def test_dissolution_good_standing_permission(session, test_name, good_standing, has_permission, flag_Enabled, expected_code, expected_msg):
+    """Test good standing validation in voluntary dissolution."""
+    business = Business(identifier='BC1234567', legal_type='BC')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['dissolutionType'] = 'voluntary'
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+
+    with patch('legal_api.services.filings.validations.dissolution.GOOD_STANDING_VALIDATION_ENABLED',
+               flag_Enabled), \
+         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
+      err = validate(business, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
