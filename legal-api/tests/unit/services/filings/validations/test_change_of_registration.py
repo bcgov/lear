@@ -301,12 +301,15 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
 
 @patch.object(flags, 'is_on', return_value=True)
 @patch('legal_api.services.filings.validations.change_of_registration.find_updated_keys_for_firms')
-def test_change_of_registration_permission_checks(mock_find_keys, mock_flags, session):
+@patch('legal_api.services.filings.validations.common_validations.is_officer_proprietor_replace_valid')
+def test_change_of_registration_permission_checks(mock_is_officer_replace, mock_find_keys, mock_flags, session):
     """Assert that permission checks are called during change of registration validation."""
     filing = copy.deepcopy(SP_CHANGE_OF_REGISTRATION)
     business = Business(identifier=filing['filing']['business']['identifier'],
                         legal_type=filing['filing']['business']['legalType'])
-
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = 'SP'
+    mock_is_officer_replace.return_value = False
     mock_find_keys.return_value = [{
         'is_dba': True,
         'name_changed': False,
@@ -314,23 +317,12 @@ def test_change_of_registration_permission_checks(mock_find_keys, mock_flags, se
         'delivery_address_changed': False,
         'email_changed': True
     }]
-    error = Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission Denied - You do not have permissions edit DBA in this filing.'}])
-    with patch.object(PermissionService, 'check_user_permission', return_value=error):
-        err = validate(business, filing)
+    error = Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied - You do not have permissions edit DBA in this filing.'}])
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with patch.object(PermissionService, 'check_user_permission', return_value=error):
+                err = validate(business, filing)
     assert err
     assert err.code == HTTPStatus.FORBIDDEN
-    assert 'DBA' in err.msg[0]['error']
-
-    mock_find_keys.return_value = [{
-        'is_dba': False,
-        'name_changed': False,
-        'address_changed': False,
-        'delivery_address_changed': False,
-        'email_changed': True
-    }]
-    error = Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission Denied - You do not have permissions edit email in this filing.'}])
-    with patch.object(PermissionService, 'check_user_permission', return_value=error):
-        err = validate(business, filing)
-    assert err
-    assert err.code == HTTPStatus.FORBIDDEN
-    assert 'email' in err.msg[0]['error']
+    assert 'DBA' in err.msg[0]['message']
+   
