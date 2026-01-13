@@ -982,9 +982,9 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         }
     
     filing_completing_party_mailing_address = mailing_address or {}
-    filing_firstname = officer.get("firstName", "")
-    filing_lastname = officer.get("lastName", "")
-    filing_email = officer.get("email", "")
+    filing_firstname = officer.get("firstName")
+    filing_lastname = officer.get("lastName")
+    filing_email = officer.get("email")
     
     contacts_response = AccountService.get_contacts(current_app.config, org_id)
     if contacts_response is None:
@@ -1012,7 +1012,9 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     existing_lastname = contact.get("lastName", "")
     existing_email = contact.get("email", "")
 
-    address_changed = not is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
+    address_changed = False
+    if filing_completing_party_mailing_address:
+        address_changed = not is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
 
     existing_name = {
         "firstName": existing_firstname,
@@ -1023,9 +1025,13 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         "lastName": filing_lastname
     }
 
-    name_changed = is_name_changed(existing_name, filing_name)
+    name_changed = False
+    if filing_firstname or filing_lastname:
+        name_changed = is_name_changed(existing_name, filing_name)
 
-    email_changed = not is_same_str(existing_email, filing_email)
+    email_changed = False
+    if filing_email:
+        email_changed = not is_same_str(existing_email, filing_email)
 
     return {
         "error": msg,
@@ -1033,3 +1039,37 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         "name_changed": name_changed,
         "address_changed": address_changed
     }
+
+def has_completing_party(filing_json: dict, filing_type: str) -> bool:
+    """Check if completing party is present in the filing."""
+    parties = filing_json.get("filing", {}).get(filing_type, {}).get("parties", [])
+    for party in parties:
+        roles = party.get("roles", [])
+        if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
+            return True
+    return False
+
+def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
+    """Validate document delivery email changed."""
+    result = {
+        "errors": [],
+        "email_changed": False
+    }
+
+    if not email:
+        return result
+
+    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+    if contacts_response is None:
+        result["errors"].append({
+            "error": "Unable to verify document delivery email against account contacts."
+        })
+        return result
+    
+    contact = contacts_response["contacts"][0]
+    existing_email = contact.get("email", "")
+
+    email_changed = not is_same_str(existing_email, email)
+    result["email_changed"] = email_changed
+
+    return result
