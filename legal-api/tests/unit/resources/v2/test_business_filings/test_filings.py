@@ -18,6 +18,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 import json
+import random
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
@@ -2094,21 +2095,25 @@ def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier, enabled',
+    'test_name, legal_type, roles, enabled, hide_ledger',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115', True),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116', True),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117', True),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118', True),
-        ('disabled', Business.LegalTypes.BCOMP.value, 'BC1111119', False),
+        ('BEN_staff', Business.LegalTypes.BCOMP.value, [STAFF_ROLE], True, False),
+        ('BEN_user', Business.LegalTypes.BCOMP.value, [PUBLIC_USER], True, False),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, [STAFF_ROLE], True, False),
+        ('CC', Business.LegalTypes.BC_CCC.value, [STAFF_ROLE], True, False),
+        ('BC', Business.LegalTypes.COMP.value, [STAFF_ROLE], True, False),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('hidden_ledger_staff', Business.LegalTypes.BCOMP.value, [STAFF_ROLE], True, True),
+        ('hidden_ledger_user', Business.LegalTypes.BCOMP.value, [PUBLIC_USER], True, True),
+        ('disabled', Business.LegalTypes.BCOMP.value, [STAFF_ROLE], False, False),
     ]
 )
-def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
+def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, roles, enabled, hide_ledger):
     """Assert Delay of Dissolution is submitted correctly for entity types."""
+    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
     enabled_filings = 'dissolution.delay' if enabled else ''
     monkeypatch.setattr(
         'legal_api.services.flags.value',
@@ -2130,6 +2135,10 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
 
     factory_batch_processing(batch.id, b.id, b.identifier)
 
+    if PUBLIC_USER in roles:        
+        # mock response from auth to give edit access
+        requests_mock.get(f"{current_app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                            json={'roles': ['edit']})
     requests_mock.post(
         current_app.config.get('PAYMENT_SVC_URL'),
         json={
@@ -2139,14 +2148,24 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         },
         status_code=HTTPStatus.CREATED
     )
+    headers = {
+        **create_header(jwt, roles, identifier),
+        'hide-in-ledger': hide_ledger
+    }
     rv = client.post(
         f'/api/v2/businesses/{identifier}/filings',
         json=dod,
-        headers=create_header(jwt, [STAFF_ROLE], identifier)
+        headers=headers
     )
 
     if enabled:
         assert rv.status_code == HTTPStatus.CREATED
+        # assert ledger display hidden or not as expected
+        expected_ledger_hidden = hide_ledger and STAFF_ROLE in roles
+        filing_id = rv.json['filing']['header']['filingId']
+        dod_filing: Filing = Filing.find_by_id(filing_id)
+        assert dod_filing.hide_in_ledger == expected_ledger_hidden
+
     else:
         assert rv.status_code == HTTPStatus.FORBIDDEN
         assert rv.json[0]['message'] == 'Permission Denied - dissolution.delay filing is currently not available for this user and/or account.'
