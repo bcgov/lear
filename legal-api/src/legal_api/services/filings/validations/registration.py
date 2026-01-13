@@ -18,7 +18,7 @@ from typing import Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
-from flask import has_request_context, request
+from flask import current_app, has_request_context, request
 from flask_babel import _ as babel
 
 from legal_api.errors import Error
@@ -58,13 +58,20 @@ def validate(registration_json: dict) -> Optional[Error]:
         if has_request_context() and hasattr(request, "headers"):
             account_id = request.headers.get("account-id")
         if account_id and registration_json.get("filing", {}).get(filing_type, {}).get("parties"):
-            completing_party_result = validate_completing_party(registration_json, filing_type, int(account_id))
-            if completing_party_result.get("error"):
-                msg.extend(completing_party_result["error"])
-            if (completing_party_result.get("email_changed") or
-                completing_party_result.get("name_changed")
-            ):
-                check_completing_party_permission(msg, filing_type)
+            try:
+                completing_party_result = validate_completing_party(registration_json, filing_type, int(account_id))
+                if completing_party_result.get("error"):
+                    msg.extend(completing_party_result["error"])
+                if (completing_party_result.get("email_changed") or
+                    completing_party_result.get("name_changed")
+                ):
+                    check_completing_party_permission(msg, filing_type)
+            except (ValueError, TypeError):
+                current_app.logger.error("Error Validating Completing Party {e}")
+                msg.append({
+                    "error": "Error validating completing party.",
+                    "path": f"/filing/{filing_type}/parties"
+                })
     
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
