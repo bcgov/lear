@@ -15,16 +15,18 @@
 import copy
 from datetime import datetime, timedelta
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from datetime import date
 
+from legal_api.errors import Error
+from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter
 
 from legal_api.models import Business
-from legal_api.services import MinioService
+from legal_api.services import MinioService, flags
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
 from tests.unit.services.filings.test_utils import _upload_file
@@ -570,14 +572,14 @@ def test_dissolution_effective_date(session, test_name,
 
 
 @pytest.mark.parametrize(
-    'test_name, good_standing, has_permission, flag_Enabled, expected_code, expected_msg',
+    'test_name, good_standing, has_permission, flag_enabled, expected_code, expected_msg',
     [
         ('SUCCESS_GOOD_STANDING_WITH_FLAG', True, False, True, None, None),
         ('SUCCESS_NOT_GOOD_STANDING_WITH_PERMISSION', False, True, True, None, None),
         ('FAIL_NOT_GOOD_STANDING_NO_PERMISSION_WITH_FLAG', False, False, True,
          HTTPStatus.FORBIDDEN, 'Permission Denied - You do not have permissions send not in good standing business in this filing.')
          ])
-def test_dissolution_good_standing_permission(session, test_name, good_standing, has_permission, flag_Enabled, expected_code, expected_msg):
+def test_dissolution_good_standing_permission(session, test_name, good_standing, has_permission, flag_enabled, expected_code, expected_msg):
     """Test good standing validation in voluntary dissolution."""
     business = Business(identifier='BC1234567', legal_type='BC')
     filing = copy.deepcopy(FILING_HEADER)
@@ -588,13 +590,26 @@ def test_dissolution_good_standing_permission(session, test_name, good_standing,
     filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
         filing['filing']['dissolution']['parties'][1]['mailingAddress']
 
-    with patch('legal_api.services.filings.validations.dissolution.GOOD_STANDING_VALIDATION_ENABLED',
-               flag_Enabled), \
-         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None):
-      err = validate(business, filing)
+    permission_error = None if has_permission else Error(
+        HTTPStatus.FORBIDDEN, 
+        [{'message': 'Permission Denied - You do not have permissions send not in good standing business in this filing.'}],
+    )
+
+    with (
+        patch.object(flags, 'is_on', return_value=flag_enabled),
+        patch.object(Business, 'good_standing', new_callable=lambda: good_standing),
+        patch.object(PermissionService, 'check_user_permission', return_value=permission_error),
+        patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None),
+        patch.object(dissolution, 'validate_affidavit', return_value=None),
+        patch.object(dissolution, '_validate_dissolution_permission', return_value=None)
+    ):
+        err = validate(business, filing)
 
     if expected_code:
+        assert err is not None
         assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
+        if expected_msg:
+            assert lists_are_equal(err.msg, [{'error': expected_msg}])
     else:
         assert err is None
+        
