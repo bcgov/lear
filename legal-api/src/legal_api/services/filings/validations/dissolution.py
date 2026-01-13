@@ -15,7 +15,9 @@
 from enum import Enum
 from http import HTTPStatus
 from typing import Final, Optional
+from flask import request
 
+from legal_api.services.request_context import get_request_context
 import pycountry
 from flask_babel import _
 
@@ -23,7 +25,11 @@ from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    check_completing_party_permission,
+    has_completing_party,
+    validate_completing_party,
     validate_court_order,
+    validate_document_delivery_email_changed,
     validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
@@ -75,7 +81,32 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
         err = _validate_dissolution_permission(business, dissolution_type, filing_type)
         if err:
             return err
-        
+         #check if comeplting party is entered
+        completing_party_exists = has_completing_party(dissolution, filing_type)
+        completing_party_result = None
+        account_id = None
+        if get_request_context() and hasattr(request, "headers"):
+            account_id = request.headers.get("account-id",
+                                             request.headers.get("accountId", None))
+        if account_id and completing_party_exists and dissolution.get("filing", {}).get(filing_type, {}).get("parties"):
+            completing_party_result = validate_completing_party(dissolution, filing_type, int(account_id))
+            if completing_party_result.get("error"):
+                msg.extend(completing_party_result["error"])
+            should_check_permission = (completing_party_result.get("email_changed") or
+                completing_party_result.get("name_changed") or completing_party_result.get("address_changed"))
+            if should_check_permission and business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+                error = check_completing_party_permission(msg, filing_type)
+                if error:
+                    return error
+        document_optional_email =  dissolution.get("filing", {}).get("header", {}).get("documentOptionalEmail")
+        if document_optional_email and account_id:
+            email_validation_result = validate_document_delivery_email_changed(document_optional_email, int(account_id))
+            if email_validation_result.get("error"):
+                msg.extend(email_validation_result["error"])
+            if email_validation_result.get("email_changed"):
+                error = check_completing_party_permission(msg, filing_type)
+                if error:
+                    return error
     err = validate_dissolution_type(dissolution, business.legal_type)
     if err:
         msg.extend(err)

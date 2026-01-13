@@ -1016,3 +1016,49 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
                 "path": f"/filing/{filing_type}/parties"
             })
     return msg
+
+def has_completing_party(filing_json: dict, filing_type: str) -> bool:
+    """Check if completing party is present in the filing."""
+    parties = filing_json.get("filing", {}).get(filing_type, {}).get("parties", [])
+    for party in parties:
+        roles = party.get("roles", [])
+        if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
+            return True
+    return False
+
+def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
+    """Validate document delivery email changed."""
+    result = {
+        "errors": [],
+        "email_changed": False
+    }
+
+    if not email:
+        return result
+
+    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+    if contacts_response is None:
+        result["errors"].append({
+            "error": "Unable to verify document delivery email against account contacts."
+        })
+        return result
+    
+    contact = contacts_response["contacts"][0]
+    existing_email = contact.get("email", "")
+
+    email_changed = not is_same_str(existing_email, email)
+    result["email_changed"] = email_changed
+
+    return result
+
+def check_completing_party_permission(msg: list, filing_type:str) -> None:
+    """Check completing party permission and append error message if not allowed."""
+    permision_error = PermissionService.check_user_permission(
+        ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
+        message="Permission Denied: You do not have permission to edit the completing party."
+    )
+    if permision_error:
+        msg.append({
+            "error": permision_error.msg[0].get("message"),
+            "path": f"/filing/{filing_type}/parties"
+        })
