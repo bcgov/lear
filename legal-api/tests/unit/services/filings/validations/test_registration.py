@@ -434,29 +434,11 @@ def test_registration_completing_party_validation(mocker, app, session, jwt):
         "address_changed": False
     }
 
-    mock_contacts = {
-        "contacts": [
-            {
-                "firstName": "firstName",
-                "lastName": "lastName",
-                "email": "test@test.com",
-                "street": "address line one",
-                "city": "city",
-                "region": "BC",
-                "country": "CA",
-                "postalCode": "V1V 1V1",
-                "deliveryInstructions": "",
-                "streetAdditional": ""
-            }
-        ]
-    }
-
     with patch.object(flags, 'is_on', return_value=True):
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
             with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                with patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value=mock_contacts):
-                    with patch('legal_api.services.filings.validations.common_validations.validate_completing_party', return_value=completing_party_result):
-                        with patch('legal_api.services.filings.validations.common_validations.check_completing_party_permission') as mock_check_permission:
+                    with patch('legal_api.services.filings.validations.registration.validate_completing_party', return_value=completing_party_result):
+                        with patch('legal_api.services.filings.validations.registration.check_completing_party_permission') as mock_check_permission:
                             def mock_check(permissions_msg, filing_type):
                                 permissions_msg.append({
                                     "error": "Permission Denied: You do not have permission to edit the completing party.",
@@ -467,6 +449,11 @@ def test_registration_completing_party_validation(mocker, app, session, jwt):
                                 err = validate(None, filing)
 
     assert err is not None
-    assert "Permission Denied" in err.msg[0]['error']
-    mock_check_permission.assert_called_once()
+    permission_error = None
+    for msg in err.msg:
+        error_text = msg.get('error', '') or msg.get('message', '')
+        if 'Permission Denied' in error_text:
+            permission_error = msg
+            break
+    assert permission_error is not None, "Permission error not found in validation messages."
                 

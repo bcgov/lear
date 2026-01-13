@@ -60,9 +60,9 @@ def validate(registration_json: dict) -> Optional[Error]:
         if account_id and registration_json.get("filing", {}).get(filing_type, {}).get("parties"):
             try:
                 completing_party_result = validate_completing_party(registration_json, filing_type, int(account_id))
-                if completing_party_result.get("error"):
-                    msg.extend(completing_party_result["error"])
-                if (completing_party_result.get("email_changed") or
+                if completing_party_result and completing_party_result.get("error"):
+                    msg.extend(completing_party_result.get("error", []))
+                if completing_party_result and (completing_party_result.get("email_changed") or
                     completing_party_result.get("name_changed")
                 ):
                     check_completing_party_permission(msg, filing_type)
