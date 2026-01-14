@@ -18,7 +18,7 @@ import pycountry
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business, Filing
+from legal_api.models import Address, Business
 from legal_api.services.filings.validations.common_validations import validate_parties_addresses
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime
@@ -159,13 +159,5 @@ def validate_effective_date(business: Business, cod: dict) -> list:
     founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
     if effective_date_leg < founding_date_leg:
         msg.append({"error": babel("Effective date cannot be before businesses founding date.")})
-
-    # check if effective date is before their most recent COD or AR date
-    last_cod_filing = Filing.get_most_recent_legal_filing(business.id,
-                                                          Filing.FILINGS["changeOfDirectors"]["name"])
-    if last_cod_filing:
-        last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
-        if effective_date_leg < last_cod_date_leg:
-            msg.append({"error": babel("Effective date cannot be before another Change of Director filing.")})
 
     return msg

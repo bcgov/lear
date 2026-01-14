@@ -16,6 +16,7 @@ import copy
 
 import datedelta
 from freezegun import freeze_time
+import pytest
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER
 
 from legal_api.models import Business
@@ -121,7 +122,7 @@ def test_validate_effective_date_not_before_founding(session):
         err = validate_effective_date(business, filing)
     assert not err
 
-
+@pytest.mark.skip(reason="Temporarily skip test while ignoring COD date comparison")
 def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; COD is an acronym
     """Assert that the effective date of change cannot be before a previous COD filing."""
     # setup
@@ -165,7 +166,7 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
         err = validate_effective_date(business, filing_cod)
     assert not err
 
-
+@pytest.mark.skip(reason="Temporarily skip test while ignoring COD date comparison")
 def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa: N802; COD is an acronym
     """Assert that the effective date of change cannot be before a previous AR filing."""
     # setup
