@@ -18,12 +18,15 @@ from typing import Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
+from flask import current_app, has_request_context, request
 from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
+    check_completing_party_permission,
+    validate_completing_party,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
@@ -50,6 +53,26 @@ def validate(registration_json: dict) -> Optional[Error]:
 
     filing_type = "registration"
     msg = []
+    if flags.is_on("enabled-deeper-permission-action"):
+        account_id = None
+        if has_request_context() and hasattr(request, "headers"):
+            account_id = request.headers.get("account-id")
+        if account_id and registration_json.get("filing", {}).get(filing_type, {}).get("parties"):
+            try:
+                completing_party_result = validate_completing_party(registration_json, filing_type, int(account_id))
+                if completing_party_result and completing_party_result.get("error"):
+                    msg.extend(completing_party_result.get("error", []))
+                if completing_party_result and (completing_party_result.get("email_changed") or
+                    completing_party_result.get("name_changed")
+                ):
+                    check_completing_party_permission(msg, filing_type)
+            except (ValueError, TypeError):
+                current_app.logger.error("Error Validating Completing Party {e}")
+                msg.append({
+                    "error": "Error validating completing party.",
+                    "path": f"/filing/{filing_type}/parties"
+                })
+    
     msg.extend(validate_name_request(registration_json, legal_type, filing_type))
     msg.extend(validate_tax_id(registration_json))
     msg.extend(validate_naics(registration_json))
