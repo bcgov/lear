@@ -711,7 +711,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                         break
        
         if matched_db_party:
-            if role_type == Business.LegalTypes.SOLE_PROP.value and matched_db_party.organization_name:
+            if role_type == PartyRole.RoleTypes.PROPRIETOR.value and matched_db_party.organization_name:
                 is_dba = True
             changes = {}
             # Email comparison

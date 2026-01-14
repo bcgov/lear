@@ -745,7 +745,11 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return bool(filing.filing_type == "adminFreeze" or
                     (filing.filing_type == "dissolution" and
                      filing.filing_sub_type == "involuntary") or
-                    (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true"))
+                    (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true") or
+                    (jwt.validate_roles([STAFF_ROLE]) and
+                     hide_in_ledger == "true" and
+                     filing.filing_type == "dissolution" and
+                     filing.filing_sub_type == "delay"))
 
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
