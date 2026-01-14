@@ -195,6 +195,23 @@ class PermissionService:
         if not authorized_permissions or not isinstance(authorized_permissions, list):
             current_app.logger.error("No authorized permissions found for user.")
             return False
+        staff_filing_types = [
+            CoreFiling.FilingTypes.AMALGAMATIONOUT.value,
+            CoreFiling.FilingTypes.CONTINUATIONOUT.value,
+            CoreFiling.FilingTypes.COURTORDER.value,
+            CoreFiling.FilingTypes.PUTBACKON.value,
+            CoreFiling.FilingTypes.PUTBACKOFF.value,
+            CoreFiling.FilingTypes.ADMIN_FREEZE.value,
+            CoreFiling.FilingTypes.REGISTRARSNOTATION.value,
+            CoreFiling.FilingTypes.REGISTRARSORDER.value
+        ]
+
+        if filing_type in staff_filing_types:
+            if ListFilingsPermissionsAllowed.STAFF_FILINGS.value not in authorized_permissions:
+                current_app.logger.warning(f"User does not have permission for staff filing type: {filing_type}")
+                return False
+            return True
+        
         roles_in_filings = PermissionService.find_roles_for_filing_type(filing_type, legal_type, filing_sub_type)
         if roles_in_filings in authorized_permissions:
             return True
