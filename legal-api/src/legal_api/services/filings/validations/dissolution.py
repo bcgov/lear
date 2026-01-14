@@ -25,20 +25,20 @@ from legal_api.models import Address, Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     check_completing_party_permission,
+    check_good_standing_permission,
     has_completing_party,
     validate_completing_party,
-    check_good_standing_permission,
     validate_court_order,
     validate_document_delivery_email_changed,
     validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.request_context import get_request_context
 from legal_api.services.permissions import (
     ListFilingsPermissionsAllowed,
     PermissionService,
 )
+from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
