@@ -298,7 +298,7 @@ create table if not exists share_struct_cls
     share_quantity  numeric(20),
     spec_rights_ind boolean,
     par_value_ind   boolean,
-    par_value_amt   numeric(38, 2),
+    par_value_amt   numeric,
     other_currency  varchar(40),
     start_event_id  numeric(9)  not null,
     constraint pk_share_struct_cls
@@ -991,6 +991,24 @@ select btrim(t) = ''
 $$;
 
 alter function is_blank
+    owner to postgres;
+
+
+-- helper to count significant decimal places (ignoring trailing zeros)
+create or replace function significant_decimal_places(val numeric)
+    returns integer
+    language sql
+    immutable
+as
+$$
+select case
+    when val is null then null
+    when val = trunc(val) then 0
+    else length(regexp_replace(split_part(val::text, '.', 2), '0+$', ''))
+end
+$$;
+
+alter function significant_decimal_places
     owner to postgres;
 
 
