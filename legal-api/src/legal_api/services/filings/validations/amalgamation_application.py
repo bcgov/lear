@@ -16,7 +16,6 @@ from http import HTTPStatus
 from typing import Final, Optional
 
 from flask import request
-
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
