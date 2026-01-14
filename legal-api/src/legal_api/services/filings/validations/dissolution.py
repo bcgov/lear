@@ -90,11 +90,7 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
         err = _validate_permission_and_completing_party(business, dissolution, dissolution_type, filing_type, msg)
         if err:
             return err
-    
-    if flags.is_on("enabled-deeper-permission-action"):
-        err = _validate_dissolution_permission(business, dissolution_type, filing_type)
-        if err:
-            return err
+
     err = validate_dissolution_type(dissolution, business.legal_type)
     if err:
         msg.extend(err)
