@@ -241,7 +241,7 @@ def check_good_standing_permission(business: Business) -> Optional[Error]:
     if business.good_standing:
         return None
     
-    if not flags.is_on("enable-list-actions-permissions"):
+    if not flags.is_on("enabled-deeper-permission-action"):
         return None
     
     required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
