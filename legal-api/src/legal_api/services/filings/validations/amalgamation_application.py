@@ -344,7 +344,7 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
                 if flags.is_on("enabled-deeper-permission-action"):
                     permission_error = PermissionService.check_user_permission(
                         ListActionsPermissionsAllowed.AML_OVERRIDES.value,
-                        message="Permission Denied - You do not have permissions to amalgamate this business."
+                        message="Permission Denied - You do not have permissions to amalgamate business which is not in good standing."
                     )
                     if permission_error:
                         msg.append({
