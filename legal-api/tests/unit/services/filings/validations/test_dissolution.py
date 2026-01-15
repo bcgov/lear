@@ -20,7 +20,6 @@ from unittest.mock import MagicMock, patch
 from datetime import date
 
 from legal_api.errors import Error
-from legal_api.services.filings.validations.common_validations import validate_permission_and_completing_party
 from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
