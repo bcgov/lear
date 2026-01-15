@@ -499,3 +499,5 @@ def _validate_permission_and_completing_party(business: Business, dissolution: d
             error = check_completing_party_permission(msg, filing_type)
             if error:
                 return error
+            
+    return None
