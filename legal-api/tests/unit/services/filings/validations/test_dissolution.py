@@ -14,6 +14,7 @@
 """Test suite to ensure Voluntary Dissolution is validated correctly."""
 import copy
 from datetime import datetime, timedelta
+from email.policy import default
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 from datetime import date
@@ -663,8 +664,14 @@ def test_dissolution_validate_dissolution_permission_and_completing_party(
     
     mock_request = MagicMock()
     if account_id:
+        def mock_get(key, default=None):
+            if key in ('account-id', 'accountId'):
+                return account_id
+            return None
         mock_request.headers = MagicMock()
-        mock_request.headers.get = {'Account-ID': account_id}
+        mock_request.headers.get = MagicMock(side_effect=mock_get)
+    else:
+        mock_request.headers.get = MagicMock(return_value=None)
     with (
         patch.object(dissolution, '_validate_dissolution_permission', return_value=dissolution_permission_error),
         patch('legal_api.services.filings.validations.dissolution.has_completing_party', return_value=completing_party_exists),
