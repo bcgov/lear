@@ -849,13 +849,15 @@ def test_in_future_effective_amalgamation_filing(mocker, app, session, jwt,
 
 
 @pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
+    'test_status, flag_enabled, has_permission, expected_code, expected_msg',
     [
-        ('FAIL', HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
-        ('SUCCESS', None, None)
+        ('FAIL_FLAG_OFF', False, False, HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
+         ('SUCCESS_AFFILIATED', False, False, None, None),
+         ('FAIL_FLAG_ON_WITH_PERMISSION', True, False, HTTPStatus.BAD_REQUEST, 'BC1234567'),
+        ('SUCCESS_FLAG_ON_WITH_PERMISSION', True, True, None, None)
     ]
 )
-def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enabled, has_permission, expected_code, expected_msg):
     """Assert valid amalgamating businesses is affliated."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -885,21 +887,30 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
                  return_value=False)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
     mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
-                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
+                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS_AFFILIATED' else {})
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+
+    permission_error = None if has_permission else Error(
+        HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.'}])
+    mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if expected_code is None:
         assert not err
     else:
         assert expected_code == err.code
-        assert (f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' ==
-                err.msg[0]['error'])
-        assert (f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' ==
-                err.msg[1]['error'])
+        if isinstance(expected_msg, list):
+            assert (f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' ==
+                    err.msg[0]['error'])
+            assert (f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' ==
+                    err.msg[1]['error'])
+        else:
+            assert 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.' == err.msg[0]['error']
 
 
 @pytest.mark.parametrize(
