@@ -944,11 +944,12 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
 
     def mock_find_by_identifier(identifier):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
+        is_good_standing = test_status in ( 'SUCCESS_GOOD_STANDING', 'SUCCESS_FLAG_ON_WITH_PERMISSION')
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value,
                         state=Business.State.ACTIVE,
                         founding_date=utc_now,
-                        restoration_expiry_date=utc_now if test_status != 'SUCCESS_GOOD_STANDING' else None)
+                        restoration_expiry_date=utc_now if not is_good_standing else None)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -960,13 +961,14 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
-    err = validate(None, filing, account_id)
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
 
     permission_error = None if has_permission else Error(
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+
+    err = validate(None, filing, account_id)
 
     # validate outcomes
     if expected_code is None:
