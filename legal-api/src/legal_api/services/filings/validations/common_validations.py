@@ -20,7 +20,7 @@ from typing import Final, Optional
 
 import pycountry
 import PyPDF2
-from flask import current_app, g
+from flask import current_app, g, request
 from flask_babel import _
 
 from legal_api.errors import Error
@@ -28,6 +28,7 @@ from legal_api.models import Address, Business, PartyRole
 from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
+from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -834,17 +835,15 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
    ]
    return all(is_same_str(addr1.get(key), addr2.get(key)) for key in keys)
 
-def check_completing_party_permission(msg: list, filing_type:str) -> None:
+def check_completing_party_permission(msg: list, filing_type:str) -> Optional[Error]:
     """Check completing party permission and append error message if not allowed."""
     permission_error = PermissionService.check_user_permission(
         ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
         message="Permission Denied: You do not have permission to edit the completing party."
     )
     if permission_error:
-        msg.append({
-            "error": permission_error.msg[0].get("message"),
-            "path": f"/filing/{filing_type}/parties"
-        })
+       return permission_error
+    return None
 
 
 def validate_staff_payment(filing_json: dict) -> bool:
@@ -1084,3 +1083,59 @@ def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
     result["email_changed"] = email_changed
 
     return result
+
+def validate_permission_and_completing_party(business: Optional[Business], filing_json: dict, filing_type: str, msg: list, check_options: Optional[dict] = None
+) -> Optional[Error]:
+    """Validate completing party permission and changes."""
+    if check_options is None:
+        check_options = {}
+    check_name = check_options.get("check_name", True)
+    check_email = check_options.get("check_email", True)
+    check_address = check_options.get("check_address", True)
+    check_document_email = check_options.get("check_document_email", True)
+    # check if completing party is entered
+    completing_party_exists = has_completing_party(filing_json, filing_type)
+    completing_party_result = None
+    account_id = None
+    if get_request_context() and hasattr(request, "headers"):
+        account_id = request.headers.get("account-id",
+                                            request.headers.get("accountId", None))
+    if account_id and completing_party_exists and filing_json.get("filing", {}).get(filing_type, {}).get("parties"):
+        completing_party_result = validate_completing_party(filing_json, filing_type, account_id)
+        if completing_party_result.get("error"):
+            msg.extend(completing_party_result["error"])
+        
+        # Check if any relevant fields changed
+        should_check_permission = (
+            (check_email and completing_party_result.get("email_changed")) or
+            (check_name and completing_party_result.get("name_changed")) or
+            (check_address and completing_party_result.get("address_changed"))
+            )
+        if should_check_permission:
+            error = check_completing_party_permission(msg, filing_type)
+            if error:
+                return error
+
+    if check_document_email:
+        return check_document_email_changes(filing_json, filing_type, account_id, msg)
+            
+    return None
+
+def check_document_email_changes(
+        filing_json: dict,
+        filing_type: str,
+        account_id: int,
+        msg: list
+) -> Optional[Error]:
+    """Check if document delivery email has changed."""
+    document_optional_email =  filing_json.get("filing", {}).get("header", {}).get("documentOptionalEmail")
+    if not (document_optional_email and account_id):
+        return None
+    
+    email_validation_result = validate_document_delivery_email_changed(document_optional_email, int(account_id))
+    if email_validation_result.get("error"):
+        msg.extend(email_validation_result["error"])
+    if email_validation_result.get("email_changed"):
+        return check_completing_party_permission(msg, filing_type)
+
+    return None
