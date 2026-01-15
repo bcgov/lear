@@ -1128,7 +1128,7 @@ def check_document_email_changes(
         msg: list
 ) -> Optional[Error]:
     """Check if document delivery email has changed."""
-    document_optional_email =  filing_json.get("filing", {}).get("header", {}).get("documentOptionalEmail")
+    document_optional_email = filing_json.get("filing", {}).get("header", {}).get("documentOptionalEmail")
     if not (document_optional_email and account_id):
         return None
     
