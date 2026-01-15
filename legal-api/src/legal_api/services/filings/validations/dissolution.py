@@ -23,12 +23,17 @@ from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    check_good_standing_permission,
     validate_court_order,
     validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
+    validate_permission_and_completing_party,
 )
-from legal_api.services.permissions import ListFilingsPermissionsAllowed, PermissionService
+from legal_api.services.permissions import (
+    ListFilingsPermissionsAllowed,
+    PermissionService,
+)
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
@@ -70,12 +75,12 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     filing_type = "dissolution"
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
-
-    if flags.is_on("enabled-deeper-permission-action") and business.good_standing is False:
-        err = _validate_dissolution_permission(business, dissolution_type, filing_type)
+     
+    if flags.is_on("enabled-deeper-permission-action"):        
+        err = _validate_dissolution_permission(business, dissolution, dissolution_type, filing_type, msg)
         if err:
             return err
-        
+
     err = validate_dissolution_type(dissolution, business.legal_type)
     if err:
         msg.extend(err)
@@ -408,25 +413,28 @@ def _check_dissolution_permission(required_permission: str, dissolution_type: st
     message = "Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing."
     return PermissionService.check_user_permission(required_permission, message=message)
 
-def _validate_dissolution_permission(business: Business, dissolution_type: str, filing_type: str) -> Optional[Error]:
+def _validate_dissolution_permission(business: Business, dissolution: dict, dissolution_type: str, filing_type: str, msg: list) -> Optional[Error]:
     """Validate dissolution permission based on business and dissolution type."""
 
-    if dissolution_type == DissolutionTypes.ADMINISTRATIVE.value:
+    err = check_good_standing_permission(business)
+    if err:
+        return err
+    
+    permission_mapping = {
+        DissolutionTypes.ADMINISTRATIVE.value: ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value,
+        DissolutionTypes.INVOLUNTARY.value: ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value,
+        DissolutionTypes.VOLUNTARY.value: ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
+        DissolutionTypes.DELAY.value: ListFilingsPermissionsAllowed.DISSOLUTION_DELAY_FILING.value
+    }
+    if dissolution_type in permission_mapping:
             error = _check_dissolution_permission(
-                ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value,
+                permission_mapping[dissolution_type],
                 dissolution_type,
                 filing_type
             )
             if error:
                 return error
-    if dissolution_type == DissolutionTypes.INVOLUNTARY.value:
-        error = _check_dissolution_permission(
-            ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value,
-            dissolution_type,
-            filing_type
-        )
-        if error:
-            return error
+
     if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
         error = _check_dissolution_permission(
             ListFilingsPermissionsAllowed.DISSOLUTION_FIRM_FILING.value,
@@ -435,20 +443,14 @@ def _validate_dissolution_permission(business: Business, dissolution_type: str, 
         )
         if error:
             return error
-    if dissolution_type == DissolutionTypes.VOLUNTARY.value:
-        error = _check_dissolution_permission(
-            ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
-            dissolution_type,
-            filing_type
-        )
-        if error:
-            return error
-    
-    if dissolution_type == DissolutionTypes.DELAY.value:
-        error = _check_dissolution_permission(
-            ListFilingsPermissionsAllowed.DISSOLUTION_DELAY_FILING.value,
-            dissolution_type,
-            filing_type
-        )
-        if error:
-            return error
+
+    return validate_permission_and_completing_party(
+            None,
+            dissolution,
+            filing_type,
+            msg,
+            {"check_name":True,
+            "check_email":True,
+            "check_address":True,
+            "check_document_email":True}
+                            )
