@@ -599,6 +599,55 @@ create unique index on mv_addr_quality_by_corp (corp_num);
 ALTER MATERIALIZED VIEW mv_addr_quality_by_corp
     owner to postgres;
 
+/* ---------------------------------------------------------------------
+   Share class eligibility issue flags (1 row per corp_num)
+
+   - Uses CURRENT share structure only: share_struct.end_event_id IS NULL
+   - Decimal-place checks use scale(par_value_amt) and therefore count
+     trailing zeros exactly as persisted.
+   --------------------------------------------------------------------- */
+CREATE MATERIALIZED VIEW mv_share_class_issue_flags AS
+SELECT
+  ss.corp_num,
+
+  /* 1) Currency type = OTHER (currency_typ_cd='OTH' OR other_currency populated) */
+  bool_or(
+    (ssc.currency_typ_cd IS NOT NULL AND upper(btrim(ssc.currency_typ_cd)) = 'OTH')
+    OR (ssc.other_currency IS NOT NULL AND NOT is_blank(ssc.other_currency))
+  ) AS has_other_currency,
+
+  /* 2) Par value < 1 and more than 6 decimal places */
+  bool_or(
+    ssc.par_value_ind IS TRUE
+    AND ssc.par_value_amt IS NOT NULL
+    AND ssc.par_value_amt < 1
+    AND significant_decimal_places(ssc.par_value_amt) > 6
+  ) AS has_par_value_lt1_gt6dp,
+
+  /* 3) Par value > 1 and more than 2 decimal places */
+  bool_or(
+    ssc.par_value_ind IS TRUE
+    AND ssc.par_value_amt IS NOT NULL
+    AND ssc.par_value_amt > 1
+    AND significant_decimal_places(ssc.par_value_amt) > 2
+  ) AS has_par_value_gt1_gt2dp
+
+FROM share_struct ss
+JOIN share_struct_cls ssc
+  ON ssc.corp_num = ss.corp_num
+ AND ssc.start_event_id = ss.start_event_id
+WHERE ss.end_event_id IS NULL
+GROUP BY ss.corp_num
+WITH NO DATA
+;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_share_class_issue_flags_corpnum
+  ON mv_share_class_issue_flags (corp_num);
+
+ALTER MATERIALIZED VIEW mv_share_class_issue_flags
+    owner to postgres;
+
+
 CREATE MATERIALIZED VIEW mv_legacy_corps_data AS
 SELECT COALESCE(edg.group_name, NULL) AS group_name,
         tblFe.email_domain,
@@ -625,6 +674,16 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         vendor,
         CAST(migrated as boolean) as migrated,
         CAST(has_password as boolean) as has_password,
+        CAST(COALESCE(sif.has_other_currency, false) as boolean) as has_other_share_currency,
+        CAST(COALESCE(sif.has_par_value_lt1_gt6dp, false) as boolean) as has_share_par_value_lt1_gt6dp,
+        CAST(COALESCE(sif.has_par_value_gt1_gt2dp, false) as boolean) as has_share_par_value_gt1_gt2dp,
+        CAST(
+          NOT (
+            COALESCE(sif.has_other_currency, false)
+            OR COALESCE(sif.has_par_value_lt1_gt6dp, false)
+            OR COALESCE(sif.has_par_value_gt1_gt2dp, false)
+          )
+        as boolean) as meets_share_criteria,
         CAST(send_ar_ind as boolean) as send_ar_ind,
         address_all_any_bad_count,
         office_all_any_bad_count,
@@ -765,6 +824,7 @@ FROM (
            ciaml.ting_corps
 ) tblFe
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
+LEFT JOIN mv_share_class_issue_flags sif USING (corp_num)
 where 1=1
 ORDER BY email_domain, filing_cnt desc
 WITH NO DATA
@@ -1141,6 +1201,7 @@ REFRESH MATERIALIZED VIEW mv_corps_party_role_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_domain_count;
 REFRESH MATERIALIZED VIEW mv_addr_quality_by_corp;
+REFRESH MATERIALIZED VIEW mv_share_class_issue_flags;
 REFRESH MATERIALIZED VIEW mv_legacy_corps_data;
 REFRESH MATERIALIZED VIEW mv_corp_issue_flags;
 REFRESH MATERIALIZED VIEW mv_issue_counts_by_corp_type;
@@ -1150,6 +1211,7 @@ ANALYZE mv_corps_party_role_count;
 ANALYZE mv_admin_email_count;
 ANALYZE mv_admin_email_domain_count;
 ANALYZE mv_addr_quality_by_corp;
+ANALYZE mv_share_class_issue_flags;
 ANALYZE mv_legacy_corps_data;
 ANALYZE mv_corp_issue_flags;
 ANALYZE mv_issue_counts_by_corp_type;

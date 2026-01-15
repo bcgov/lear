@@ -23,12 +23,16 @@ from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
+    check_good_standing_permission,
     validate_court_order,
     validate_effective_date,
     validate_parties_addresses,
     validate_pdf,
 )
-from legal_api.services.permissions import ListFilingsPermissionsAllowed, PermissionService
+from legal_api.services.permissions import (
+    ListFilingsPermissionsAllowed,
+    PermissionService,
+)
 from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
 
 
@@ -70,8 +74,12 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     filing_type = "dissolution"
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
-
-    if flags.is_on("enabled-deeper-permission-action") and business.good_standing is False:
+    # Check good standing permission
+    err = check_good_standing_permission(business)
+    if err:
+        return err
+    
+    if flags.is_on("enabled-deeper-permission-action"):
         err = _validate_dissolution_permission(business, dissolution_type, filing_type)
         if err:
             return err

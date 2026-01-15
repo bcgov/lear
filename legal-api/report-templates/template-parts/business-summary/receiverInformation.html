@@ -3,12 +3,19 @@
     <div class="separator mt-4"></div>
     <div class="section-title mt-4">Receiver Information</div>
   </div>
-  {% for party in receivers | sort(attribute='officer.lastName') %}
+  {% for party in (receivers| selectattr("officer.partyType", "equalto", "person")|sort(attribute='officer.lastName') + receivers| selectattr("officer.partyType", "equalto", "organization")|sort(attribute='officer.organizationName')) %}
     <table class="section-data section-data-table mt-4">
       <div class="section-data mt-4">
         <div class="title">
-          <span class="upper-text section-sub-title">{{ party.officer.lastName }}</span>,
-          <span class="upper-text section-sub-title">{{ party.officer.firstName }}</span>
+          {% if party.officer.partyType == 'organization' %}
+            <span class="upper-text section-sub-title">{{ party.officer.organizationName }}</span>
+          {% else %}
+            <span class="upper-text section-sub-title">{{ party.officer.lastName }}</span>,
+            <span class="upper-text section-sub-title">{{ party.officer.firstName }}</span>
+            {% if party.officer.middleInitial %}
+              <span class="upper-text section-sub-title">{{ party.officer.middleInitial }}</span>
+            {% endif %}
+          {% endif %}
         </div>
       </div>
       <tr class="no-page-break">

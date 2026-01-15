@@ -275,10 +275,21 @@ def _validate_foreign_businesses(  # noqa: PLR0913
                 "error": f"A {foreign_legal_name} foreign corporation cannot be marked as Primary or Holding.",
                 "path": amalgamating_business_path
             })
+    elif flags.is_on("enabled-deeper-permission-action"):
+        permission_error = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+            message="Permission Denied - You do not have permissions to amalgamate a foreign corporation."
+        )
+        if permission_error:
+            msg.append({
+                "error": permission_error.msg[0].get("message"),
+                "path": amalgamating_business_path
+            })
+            return msg
     else:
         msg.append({
             "error": (f"{foreign_legal_name} foreign corporation cannot "
-                      "be amalgamated except by Registries staff."),
+                    "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
 
@@ -311,11 +322,23 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
 
         if not is_staff:
             if not _is_business_affliated(identifier, account_id):
-                msg.append({
-                    "error": (f"{identifier} is not affiliated with the currently "
-                              "selected BC Registries account."),
-                    "path": amalgamating_business_path
-                })
+                if flags.is_on("enabled-deeper-permission-action"):
+                    permission_error = PermissionService.check_user_permission(
+                        ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+                        message="Permission Denied - You do not have permissions to amalgamate an unaffiliated business."
+                    )
+                    if permission_error:
+                        msg.append({
+                            "error": permission_error.msg[0].get("message"),
+                            "path": amalgamating_business_path
+                        })
+                        return msg
+                else:
+                    msg.append({
+                        "error": (f"{identifier} is not affiliated with the currently "
+                                "selected BC Registries account."),
+                        "path": amalgamating_business_path
+                    })
 
             if not amalgamating_business.good_standing:
                 if flags.is_on("enabled-deeper-permission-action"):
