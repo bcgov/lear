@@ -79,7 +79,22 @@ class ListActionsPermissionsAllowed(str, Enum):
 
 class PermissionService:
     """Service to manage permissions for user roles."""
-
+    
+    STAFF_FILING_TYPES = [
+            CoreFiling.FilingTypes.AMALGAMATIONOUT.value,
+            CoreFiling.FilingTypes.CONTINUATIONOUT.value,
+            CoreFiling.FilingTypes.COURTORDER.value,
+            CoreFiling.FilingTypes.PUTBACKON.value,
+            CoreFiling.FilingTypes.PUTBACKOFF.value,
+            CoreFiling.FilingTypes.ADMIN_FREEZE.value,
+            CoreFiling.FilingTypes.REGISTRARSNOTATION.value,
+            CoreFiling.FilingTypes.REGISTRARSORDER.value,
+            CoreFiling.FilingTypes.CHANGEOFLIQUIDATORS.value,
+            CoreFiling.FilingTypes.CHANGEOFRECEIVERS.value,
+            CoreFiling.FilingTypes.CONVERSION.value,
+            CoreFiling.FilingTypes.CORRECTION.value
+        ]
+    
     @staticmethod
     def get_authorized_permissions_for_user():
         """Return a JSON response containing the authorized permissions for the current user."""
@@ -195,22 +210,8 @@ class PermissionService:
         if not authorized_permissions or not isinstance(authorized_permissions, list):
             current_app.logger.error("No authorized permissions found for user.")
             return False
-        staff_filing_types = [
-            CoreFiling.FilingTypes.AMALGAMATIONOUT.value,
-            CoreFiling.FilingTypes.CONTINUATIONOUT.value,
-            CoreFiling.FilingTypes.COURTORDER.value,
-            CoreFiling.FilingTypes.PUTBACKON.value,
-            CoreFiling.FilingTypes.PUTBACKOFF.value,
-            CoreFiling.FilingTypes.ADMIN_FREEZE.value,
-            CoreFiling.FilingTypes.REGISTRARSNOTATION.value,
-            CoreFiling.FilingTypes.REGISTRARSORDER.value,
-            CoreFiling.FilingTypes.CHANGEOFLIQUIDATORS.value,
-            CoreFiling.FilingTypes.CHANGEOFRECEIVERS.value,
-            CoreFiling.FilingTypes.CONVERSION.value,
-            CoreFiling.FilingTypes.CORRECTION.value
-        ]
-
-        if filing_type in staff_filing_types:
+  
+        if filing_type in PermissionService.STAFF_FILING_TYPES:
             if ListFilingsPermissionsAllowed.STAFF_FILINGS.value not in authorized_permissions:
                 current_app.logger.warning(f"User does not have permission for staff filing type: {filing_type}")
                 return False
