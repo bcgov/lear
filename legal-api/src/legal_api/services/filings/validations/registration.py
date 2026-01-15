@@ -33,6 +33,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_party_role_firms,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -180,7 +181,19 @@ def validate_start_date(filing: dict) -> list:
     lesser = now + relativedelta(years=-10)
 
     if not jwt.validate_roles([STAFF_ROLE]) and start_date < lesser:
-        msg.append({"error": "Start date must be less than or equal to 10 years.",
+        if flags.is_on("enabled-deeper-permission-action"):
+            permission_error = PermissionService.check_user_permission(
+                ListActionsPermissionsAllowed.FIRM_NO_MIN_START_DATE.value,
+                message="Permission Denied - You do not have permissions to set Start Date more than 10 years in the past."
+            )
+            if permission_error:
+                msg.append({
+                    "error": permission_error.msg[0].get("message"),
+                    "path": start_date_path
+                })
+                return msg
+        else:
+            msg.append({"error": "Start date must be less than or equal to 10 years.",
                     "path": start_date_path})
     if start_date > greater:
         msg.append({"error": "Start Date must be less than or equal to 90 days in the future.",
