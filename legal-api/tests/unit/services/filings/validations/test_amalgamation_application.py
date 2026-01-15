@@ -17,13 +17,15 @@ from unittest.mock import patch
 from http import HTTPStatus
 from datetime import date
 
+from legal_api.errors import Error
+from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
 import datetime
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing
-from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER
+from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
 from legal_api.services.filings.validations.validation import validate
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
@@ -1010,14 +1012,17 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
 
 
 @pytest.mark.parametrize(
-    'test_status, role, expected_code, expected_msg',
+    'test_status, role, flag_enabled, has_permission, expected_code, expected_msg',
     [
-        ('FAIL', BASIC_USER, HTTPStatus.BAD_REQUEST,
+        ('FAIL_FLAG_OFF', BASIC_USER, False, False, HTTPStatus.BAD_REQUEST,
          'Foreign Co. foreign corporation cannot be amalgamated except by Registries staff.'),
-        ('SUCCESS', STAFF_ROLE, None, None)
+        ('SUCCESS', STAFF_ROLE, False, False, None, None),
+        ('FAIL_FLAG_ON_NO_PERMISSION', BASIC_USER, True, False, HTTPStatus.BAD_REQUEST,
+         'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'),
+        ('SUCCESS_FLAG_ON_WITH_PERMISSION', BASIC_USER, True, True, None, None)
     ]
 )
-def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, role, expected_code, expected_msg):
+def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, role, flag_enabled, has_permission, expected_code, expected_msg):
     """Assert valid amalgamating foreign business."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -1045,10 +1050,16 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         return False
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
 
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+
+    permission_error = None if has_permission else Error(
+        HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'}])
+    mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+    
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if expected_code is None:
         assert not err
     else:
         assert expected_code == err.code

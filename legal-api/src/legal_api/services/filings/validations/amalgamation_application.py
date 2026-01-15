@@ -275,10 +275,21 @@ def _validate_foreign_businesses(  # noqa: PLR0913
                 "error": f"A {foreign_legal_name} foreign corporation cannot be marked as Primary or Holding.",
                 "path": amalgamating_business_path
             })
+    elif flags.is_on("enabled-deeper-permission-action"):
+        permission_error = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+            message="Permission Denied - You do not have permissions to amalgamate a foreign corporation."
+        )
+        if permission_error:
+            msg.append({
+                "error": permission_error.msg[0].get("message"),
+                "path": amalgamating_business_path
+            })
+            return msg
     else:
         msg.append({
             "error": (f"{foreign_legal_name} foreign corporation cannot "
-                      "be amalgamated except by Registries staff."),
+                    "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
 
