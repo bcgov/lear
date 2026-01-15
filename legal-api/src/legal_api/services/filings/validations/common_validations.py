@@ -236,6 +236,17 @@ def validate_court_order(court_order_path, court_order):
 
     return None
 
+def check_good_standing_permission(business: Business) -> Optional[Error]:
+    """Check if user has permission to file for a business not in good standing."""
+    if business.good_standing:
+        return None
+    
+    if not flags.is_on("enable-list-actions-permissions"):
+        return None
+    
+    required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+    message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
+    return PermissionService.check_user_permission(required_permission, message=message)
 
 def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> Optional[list]:
     """Validate the PDF file."""
