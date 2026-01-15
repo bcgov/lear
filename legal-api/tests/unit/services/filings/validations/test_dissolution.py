@@ -630,7 +630,7 @@ def test_dissolution_good_standing_permission(session, test_name, good_standing,
     [
         ('SUCCESS_NO_ERRORS', None, False, None, False, None, 'BC', None, None, None, None),
         ('FAIL_DISSOLUTION_PERMISSION_ERROR', Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied'}]), False, None, False, None, 'BC', None, None, None, Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied'}])),
-        ('SUCCESS_COMPLETING_PARTY_NO_CHANGES', None, True, '123', True, {'error': [], 'email_changed': False, 'name_changed': False, 'address_changed': False}, 'SP', None, None, None),
+        ('SUCCESS_COMPLETING_PARTY_NO_CHANGES', None, True, '123', True, {'error': [], 'email_changed': False, 'name_changed': False, 'address_changed': False}, 'SP', None, None, None, None),
         ('FAIL_COMPLETING_PARTY_PERMISSION_ERROR_SP', None, True, '123', True, {'error': [], 'email_changed': True, 'name_changed': False, 'address_changed': False}, 'SP', None, None, Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied'}]), Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied'}])),
        ( 'FAIL_DOCUMENT_EMAIL_PERMISSION_ERROR', None, False, '123', False, None, 'BC', 'test@example.com', {'error': [], 'email_changed': True}, Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied'}]), Error(HTTPStatus.FORBIDDEN, [{'message': 'Permission Denied'}])),
     ]
