@@ -639,8 +639,8 @@ def test_dissolution_good_standing_permission(session, test_name, good_standing,
     ]
 )
 def test_dissolution_validate_dissolution_permission_and_completing_party(
-    session,test_name,dissolution_permission_error,completing_party_exists,account_id,has_parties,completing_party_result,legal_type,
-document_optional_email,email_validation_result,completing_party_permission_error,expected_error):
+    session, test_name, dissolution_permission_error, completing_party_exists, account_id, has_parties, completing_party_result, legal_type,
+    document_optional_email, email_validation_result, completing_party_permission_error, expected_error):
     """Test _validate_dissolution_permission and validate_completing_party_permission methods."""
     business = Business(identifier='BC1234567', legal_type=legal_type)
     filing = copy.deepcopy(FILING_HEADER)
