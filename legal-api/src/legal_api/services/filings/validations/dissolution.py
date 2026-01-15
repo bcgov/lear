@@ -473,7 +473,7 @@ def _validate_permission_and_completing_party(business: Business, dissolution: d
     err = _validate_dissolution_permission(business, dissolution_type, filing_type)
     if err:
         return err
-    #check if comeplting party is entered
+    # check if completing party is entered
     completing_party_exists = has_completing_party(dissolution, filing_type)
     completing_party_result = None
     account_id = None
