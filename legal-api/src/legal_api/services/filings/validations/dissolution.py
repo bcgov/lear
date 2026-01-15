@@ -428,7 +428,7 @@ def _validate_dissolution_permission(business: Business, dissolution: dict, diss
     }
     if dissolution_type in permission_mapping:
             error = _check_dissolution_permission(
-                permission_mapping,
+                permission_mapping[dissolution_type],
                 dissolution_type,
                 filing_type
             )
