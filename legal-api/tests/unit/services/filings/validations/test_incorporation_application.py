@@ -1749,6 +1749,67 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
 
+
+@pytest.mark.parametrize('should_pass, email', [
+    # Valid email
+    (True, 'test@example.com'),
+    (True, 'user.name@domain.com'),
+    (True, 'user+tag@example.com'),
+    (True, 'test@subdomain.example.com'),
+    (True, 'test@example.co.uk'),
+    (True, 'user@[192.168.1.1]'),
+    (True, 'no_one@never.get'),
+    (True, '"quoted"@example.com'),
+    # Invalid email
+    (False, 'no_one@never.'),
+    (False, '@invalid.com'),
+    (False, 'test@.com'),
+    (False, 'test@'),
+    (False, 'test@domain'),
+    (False, 'test @example.com'),
+    (False, 'test@ example.com'),
+])
+def test_ia_email_validation(session, should_pass, email):
+    """Test validate email format if provided."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = email
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    if should_pass:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert any('Invalid email address format' in msg['error'] for msg in err.msg)
+
+
+@pytest.mark.parametrize('email', [
+    '',
+    None,
+    '   ',  # whitespace only
+])
+def test_ia_email_required_validation(session, email):
+    """Test validate email is a required field."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = email
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    assert err
+
 @pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
     ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),

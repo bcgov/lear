@@ -23,6 +23,7 @@ from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
+    validate_email,
     validate_name_request,
     validate_name_translation,
     validate_offices_addresses,
@@ -83,7 +84,11 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     if err:
         msg.extend(err)
 
-    msg.extend(validate_name_translation(incorporation_json, filing_type))    
+    err = validate_email(incorporation_json, "incorporationApplication")
+    if err:
+        msg.extend(err)
+
+    msg.extend(validate_name_translation(incorporation_json, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

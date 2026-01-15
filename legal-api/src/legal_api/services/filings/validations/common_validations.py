@@ -25,6 +25,7 @@ from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
+from legal_api.models.configuration import EMAIL_PATTERN
 from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
@@ -39,7 +40,6 @@ NO_POSTAL_CODE_COUNTRY_CODES = {
     "AN", "NU", "QA", "RW", "KN", "ST", "SC", "SL", "SX", "SB", "SO", "SR", "SY",
     "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
 }
-
 
 def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure that share structure contain at least 1 class by the end of the alteration or IA Correction filing."""
@@ -650,6 +650,22 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
         msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
 
     return msg
+
+
+def validate_email(filing_json: dict, filing_type: str) -> list:
+    """Validate email address format."""
+    contact_point_path = f"/filing/{filing_type}/contactPoint"
+    contact_point_dict = filing_json["filing"][filing_type].get("contactPoint", {})
+
+    msg = []
+    if (email := contact_point_dict.get("email", None)) and not re.match(EMAIL_PATTERN, email):
+        msg.append({
+            "error": "Invalid email address format.",
+            "path": f"{contact_point_path}/email"
+        })
+
+    return msg
+
 
 def validate_effective_date(filing_json: dict) -> list:
     """Validate effective date"""
