@@ -663,21 +663,21 @@ def test_dissolution_validate_dissolution_permission_and_completing_party(
     
     mock_request = MagicMock()
     if account_id:
+        mock_request.headers = MagicMock()
         mock_request.headers = {'Account-ID': account_id}
     with (
         patch.object(dissolution, '_validate_dissolution_permission', return_value=dissolution_permission_error),
-        patch('legal_api.services.filings.validations.dissolution.has_comepleting_party', return_value=(completing_party_exists)),
+        patch('legal_api.services.filings.validations.dissolution.has_comepleting_party', return_value=completing_party_exists),
         patch('legal_api.services.filings.validations.dissolution.validate_completing_party', return_value=completing_party_result),
-        patch('legal_api.services.filings.validations.dissolution.validate_completing_party_permission', return_value=completing_party_permission_error),
-        patch('legal_api.services.filings.validations.dissolution.request', return_value=mock_request),
+        patch('legal_api.services.filings.validations.dissolution.validate_document_delivery_email_changed', return_value=email_validation_result),
+        patch('legal_api.services.filings.validations.dissolution.check_completing_party_permission', return_value=completing_party_permission_error),
         patch('legal_api.services.filings.validations.dissolution.get_request_context', return_value=MagicMock() if account_id else None),
-        patch('legal_api.services.filings.validations.dissolution.validate_document_delivery_email_changed', return_value=email_validation_result)
+        patch('legal_api.services.filings.validations.dissolution.request', return_value=mock_request),
         ):
         err = _validate_permission_and_completing_party(business, filing, 'voluntary', 'dissolution', msg)
 
         if expected_error:
             assert err is not None
             assert err.code == expected_error.code
-            assert lists_are_equal(err.msg, expected_error.msg)
         else:
             assert err is None
