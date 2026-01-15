@@ -203,7 +203,11 @@ class PermissionService:
             CoreFiling.FilingTypes.PUTBACKOFF.value,
             CoreFiling.FilingTypes.ADMIN_FREEZE.value,
             CoreFiling.FilingTypes.REGISTRARSNOTATION.value,
-            CoreFiling.FilingTypes.REGISTRARSORDER.value
+            CoreFiling.FilingTypes.REGISTRARSORDER.value,
+            CoreFiling.FilingTypes.CHANGEOFLIQUIDATORS.value,
+            CoreFiling.FilingTypes.CHANGEOFRECEIVERS.value,
+            CoreFiling.FilingTypes.CONVERSION.value,
+            CoreFiling.FilingTypes.CORRECTION.value
         ]
 
         if filing_type in staff_filing_types:
