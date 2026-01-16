@@ -15,7 +15,6 @@
 from http import HTTPStatus
 from typing import Final, Optional
 
-from flask import request
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
 from legal_api.errors import Error
@@ -23,11 +22,7 @@ from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filin
 from legal_api.services import STAFF_ROLE, flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
-    check_completing_party_permission,
-    has_completing_party,
-    validate_completing_party,
     validate_court_order,
-    validate_document_delivery_email_changed,
     validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
@@ -43,7 +38,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
     validate_parties_delivery_address,
 )
-from legal_api.services.request_context import get_request_context
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
