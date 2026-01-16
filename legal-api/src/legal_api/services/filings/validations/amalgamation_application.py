@@ -35,6 +35,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
+    validate_permission_and_completing_party,
     validate_phone_number,
     validate_share_structure,
 )
@@ -66,9 +67,18 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
     if amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         # Adopt from one of the amalgamating businesses contains name not nrNumber
         msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
-
+    
     if flags.is_on("enabled-deeper-permission-action"):
-        err = _validate_amalgamation_permission_for_completing_party(amalgamation_json, filing_type, msg)
+        err = validate_permission_and_completing_party(
+            None,
+            amalgamation_json,
+            filing_type,
+            msg,
+            check_name=False,
+            check_email=True,
+            check_address=False,
+            check_document_email=True
+                            )
         if err:
             return err
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
@@ -483,30 +493,3 @@ def validate_amalgamation_court_order(filing: dict, filing_type) -> list:
         if err:
             return err
     return []
-
-def _validate_amalgamation_permission_for_completing_party(dissolution: dict, filing_type:str, msg: list) -> Optional[Error]:
-    """Validate permissions and completing party for dissolution filing."""
-    #check if comeplting party is entered
-    completing_party_exists = has_completing_party(dissolution, filing_type)
-    completing_party_result = None
-    account_id = None
-    if get_request_context() and hasattr(request, "headers"):
-        account_id = request.headers.get("account-id",
-                                            request.headers.get("accountId", None))
-    if account_id and completing_party_exists and dissolution.get("filing", {}).get(filing_type, {}).get("parties"):
-        completing_party_result = validate_completing_party(dissolution, filing_type, int(account_id))
-        if completing_party_result.get("error"):
-            msg.extend(completing_party_result["error"])
-        if completing_party_result.get("email_changed"):
-            error = check_completing_party_permission(msg, filing_type)
-            if error:
-                return error
-    document_optional_email =  dissolution.get("filing", {}).get("header", {}).get("documentOptionalEmail")
-    if document_optional_email and account_id:
-        email_validation_result = validate_document_delivery_email_changed(document_optional_email, int(account_id))
-        if email_validation_result.get("error"):
-            msg.extend(email_validation_result["error"])
-        if email_validation_result.get("email_changed"):
-            error = check_completing_party_permission(msg, filing_type)
-            if error:
-                return error
