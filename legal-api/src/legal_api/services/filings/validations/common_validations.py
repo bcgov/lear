@@ -42,6 +42,14 @@ NO_POSTAL_CODE_COUNTRY_CODES = {
     "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
 }
 
+WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
+    "streetAddress",
+    "addressCity",
+    "addressCountry",
+    "postalCode",
+)
+
+
 def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
     """Ensure that share structure contain at least 1 class by the end of the alteration or IA Correction filing."""
     if filing_type in filing_json["filing"] and "shareStructure" in filing_json["filing"][filing_type]:
@@ -593,9 +601,20 @@ def validate_addresses(
     msg = []
     for address_type in Address.JSON_ADDRESS_TYPES:
         if address := addresses.get(address_type):
-            err = _validate_postal_code(address, f"{addresses_path}/{address_type}")
+
+            address_type_path = f"{addresses_path}/{address_type}"
+            err = _validate_postal_code(address, address_type_path)
             if err:
                 msg.append(err)
+
+            for field in WHITESPACE_VALIDATED_ADDRESS_FIELDS:
+                if field in address and address[field] is not None:
+                    field_value = address[field]
+                    if field_value != field_value.strip():
+                        msg.append({
+                            "error": _(f"{field} cannot start or end with whitespace."),
+                            "path": f"{address_type_path}/{field}"
+                        })    
     return msg
 
 
@@ -652,21 +671,29 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
 
     return msg
 
-
 def validate_email(filing_json: dict, filing_type: str) -> list:
     """Validate email address format."""
     contact_point_path = f"/filing/{filing_type}/contactPoint"
     contact_point_dict = filing_json["filing"][filing_type].get("contactPoint", {})
 
     msg = []
-    if (email := contact_point_dict.get("email", None)) and not re.match(EMAIL_PATTERN, email):
-        msg.append({
-            "error": "Invalid email address format.",
-            "path": f"{contact_point_path}/email"
-        })
+
+    if email := contact_point_dict.get("email", None):
+        # Validate leading/trailing whitespace
+        if email != email.strip():
+            msg.append({
+                "error": "Email cannot start or end with whitespace.",
+                "path": f"{contact_point_path}/email"
+            })
+
+        # Validate format
+        if not re.match(EMAIL_PATTERN, email):
+            msg.append({
+                "error": "Invalid email address format.",
+                "path": f"{contact_point_path}/email"
+            })
 
     return msg
-
 
 def validate_effective_date(filing_json: dict) -> list:
     """Validate effective date"""

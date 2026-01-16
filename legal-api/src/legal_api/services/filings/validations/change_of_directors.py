@@ -41,6 +41,10 @@ def validate(business: Business, cod: dict) -> Error:
     if msg_directors_addresses:
         msg += msg_directors_addresses
 
+    msg_directors_names = validate_directors_names(cod)
+    if msg_directors_names:
+        msg += msg_directors_names
+
     msg_effective_date = validate_effective_date(business, cod)
     if msg_effective_date:
         msg += msg_effective_date
@@ -118,6 +122,30 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
                         "error": babel("Address Country must resolve to a valid ISO-2 country."),
                         "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}/addressCountry"
                     })
+
+    return msg
+
+
+def validate_directors_names(cod: dict) -> list:
+    """Return an error message if the directors' officer names contain invalid whitespace."""
+
+    msg = []
+    filing_type = "changeOfDirectors"
+
+    directors = cod["filing"][filing_type]["directors"]
+
+    for idx, director in enumerate(directors):
+        director_path = f"/filing/{filing_type}/directors/{idx}"
+        officer = director.get("officer", {})
+
+        for field in ("firstName", "middleInitial", "lastName"):
+            value = officer.get(field)
+
+            if value is not None and value != value.strip():
+                msg.append({
+                    "error": f"{field} cannot start or end with whitespace.",
+                    "path": f"{director_path}/officer/{field}"
+                })
 
     return msg
 

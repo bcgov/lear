@@ -153,6 +153,159 @@ def test_validate_cod_basic(session, test_name, now,
         assert err is None
 
 @pytest.mark.parametrize(
+    'test_name, delivery_address, mailing_address, expected_code, expected_msg',
+    [
+        (
+            'SUCCESS',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
+            None, None
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with leading whitespace',
+            {"streetAddress": " 123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with trailing whitespace',
+            {"streetAddress": "123 A St ", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with only whitespace',
+            {"streetAddress": "   ", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress addressCity with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": " Vancouver ", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCity cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/addressCity'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress addressCountry with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": " CA ", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCountry cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/addressCountry'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress postalCode with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": " V8W1C2 "},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress streetAddress with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": " 456 B St ", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress addressCity with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": " Victoria ", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCity cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCity'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress addressCountry with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": " CA ", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCountry cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCountry'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress postalCode with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": " V8W1C2 "},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
+            ]
+        ),
+        (
+            'FAIL - multiple fields with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": " V8W1C2 "},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": " V8W1C2 "},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'},
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
+            ]
+        ),
+    ]
+)
+def test_validate_whitespace_cod_address_fields(session, test_name,
+                            delivery_address, mailing_address,
+                            expected_code, expected_msg):
+    """Validate that directors' address fields cannot contain leading or trailing whitespace."""
+    # setup
+    now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    identifier = "CP7654321"
+    founding_date = now - datedelta.YEAR
+
+    business = Business(
+        identifier=identifier,
+        last_ledger_timestamp=founding_date,
+        founding_date=founding_date
+    )
+
+    f = copy.deepcopy(FILING_HEADER)
+    f["filing"]["header"]["date"] = now.date().isoformat()
+    f["filing"]["header"]["effectiveDate"] = now.isoformat()
+    f["filing"]["header"]["name"] = "changeOfDirectors"
+    f["filing"]["business"]["identifier"] = identifier
+
+    cod = copy.deepcopy(CHANGE_OF_DIRECTORS)
+
+    cod['directors'][0]['deliveryAddress'] = delivery_address
+    cod['directors'][0]['mailingAddress'] = mailing_address
+
+    f['filing']['changeOfDirectors'] = cod
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, f)
+        if err:
+            print(err.msg)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+@pytest.mark.parametrize(
     "test_name, actions, cessation_date, expected_code, expected_msg",
     [
         (
@@ -209,6 +362,148 @@ def test_validate_cod_appointed_director_cessation_date(
 
     cod["directors"][0]["actions"] = actions
     cod["directors"][0]["cessationDate"] = cessation_date
+
+    f["filing"]["changeOfDirectors"] = cod
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, f)
+        if err:
+            print(err.msg)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+@pytest.mark.parametrize(
+    "test_name, first_name, middle_initial, last_name, expected_code, expected_msg",
+    [
+        (
+            "SUCCESS - all name fields are valid",
+            "John",
+            "D",
+            "Smith",
+            None,
+            None
+        ),
+        (
+            "FAIL - firstName with leading whitespace",
+            " John",
+            "D",
+            "Smith",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "firstName cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/firstName"
+                }
+            ]
+        ),
+        (
+            "FAIL - firstName with trailing whitespace",
+            "John ",
+            "D",
+            "Smith",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "firstName cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/firstName"
+                }
+            ]
+        ),
+        (
+            "FAIL - firstName with only whitespace",
+            "  ",
+            "D",
+            "Smith",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "firstName cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/firstName"
+                }
+            ]
+        ),
+        (
+            "FAIL - middleInitial with leading/trailing whitespace",
+            "John",
+            " D ",
+            "Smith",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "middleInitial cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/middleInitial"
+                }
+            ]
+        ),
+        (
+            "FAIL - lastName with leading/trailing whitespace",
+            "John",
+            "D",
+            " Smith ",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "lastName cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/lastName"
+                }
+            ]
+        ),
+        (
+            "FAIL - all name fields with leading/trailing whitespace",
+            " John",
+            " D ",
+            " Smith ",
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    "error": "firstName cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/firstName"
+                },
+                {
+                    "error": "middleInitial cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/middleInitial"
+                },
+                {
+                    "error": "lastName cannot start or end with whitespace.",
+                    "path": "/filing/changeOfDirectors/directors/0/officer/lastName"
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_cod_director_names(
+    session, test_name, first_name, middle_initial, last_name, expected_code, expected_msg
+):
+    """Validate that directors' names have no leading/trailing whitespace."""
+
+    # setup
+    now = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    identifier = "CP7654321"
+    founding_date = now - datedelta.YEAR
+
+    business = Business(
+        identifier=identifier,
+        last_ledger_timestamp=founding_date,
+        founding_date=founding_date
+    )
+
+    f = copy.deepcopy(FILING_HEADER)
+    f["filing"]["header"]["date"] = now.date().isoformat()
+    f["filing"]["header"]["effectiveDate"] = now.isoformat()
+    f["filing"]["header"]["name"] = "changeOfDirectors"
+    f["filing"]["business"]["identifier"] = identifier
+
+    cod = copy.deepcopy(CHANGE_OF_DIRECTORS)
+
+    cod["directors"][0]["officer"]["firstName"] = first_name
+    cod["directors"][0]["officer"]["middleInitial"] = middle_initial
+    cod["directors"][0]["officer"]["lastName"] = last_name
 
     f["filing"]["changeOfDirectors"] = cod
 

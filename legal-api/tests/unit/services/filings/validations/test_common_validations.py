@@ -76,6 +76,31 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     'addressRegion': ''
 }
 
+INVALID_ADDRESS_WHITESPACE = {
+    'streetAddress': ' 123 Main St ',
+    'streetAddressAdditional': ' Suite 200 ',
+    'addressCity': 'Vancouver ',
+    'addressRegion': ' BC',
+    'postalCode': ' V6B 1A1 ',
+    'addressCountry': ' CA'
+}
+
+VALID_ADDRESS_WHITESPACE = {
+    'streetAddress': '123 Main St',
+    'streetAddressAdditional': 'Suite 200  ',
+    'addressCity': 'Vancouver',
+    'addressRegion': 'BC',
+    'postalCode': 'V6B 1A1',
+    'addressCountry': 'CA'
+}
+
+WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
+    'streetAddress',
+    'addressCity',
+    'addressCountry',
+    'postalCode',
+)
+
 
 @pytest.mark.parametrize('filing_type, filing_data, office_type', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'registeredOffice'),
@@ -89,14 +114,15 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     ('registration', REGISTRATION, 'businessOffice'),
     ('restoration', RESTORATION, 'registeredOffice')
 ])
-def test_validate_offices_addresses_postal_code(session, filing_type, filing_data, office_type):
-    """Test postal code of office address can be validated."""
+def test_validate_offices_addresses(session, filing_type, filing_data, office_type):
+    """Test office addresses can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'][filing_type] = copy.deepcopy(filing_data)
 
     err1 = validate_offices_addresses(filing, filing_type)
     assert err1 == []
 
+    # --- Postal code validation ---
     filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = INVALID_ADDRESS_NO_POSTAL_CODE
     err2 = validate_offices_addresses(filing, filing_type)
     assert err2
@@ -105,6 +131,18 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_offices_addresses(filing, filing_type)
     assert err3 == []
+
+    # --- Whitespace validation ---
+    filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = VALID_ADDRESS_WHITESPACE
+    err3 = validate_offices_addresses(filing, filing_type)
+    assert err3 == []
+
+    filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = INVALID_ADDRESS_WHITESPACE
+    err4 = validate_offices_addresses(filing, filing_type)
+    assert err4
+    error_fields = {e['path'].split('/')[-1] for e in err4}
+    assert error_fields == set(WHITESPACE_VALIDATED_ADDRESS_FIELDS)
+
     
 
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
@@ -122,14 +160,15 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
     ('registration', REGISTRATION, 'parties'),
     ('restoration', RESTORATION, 'parties')
 ])
-def test_validate_parties_addresses_postal_code(session, filing_type, filing_data, party_key):
-    """Test postal code of party address can be validated."""
+def test_validate_parties_addresses(session, filing_type, filing_data, party_key):
+    """Test party addresses can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'][filing_type] = copy.deepcopy(filing_data)
 
     err1 = validate_parties_addresses(filing, filing_type, party_key)
     assert err1 == []
 
+    # --- Postal code validation ---
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = INVALID_ADDRESS_NO_POSTAL_CODE
     err2 = validate_parties_addresses(filing, filing_type, party_key)
     assert err2
@@ -138,6 +177,17 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
+
+    # --- Whitespace validation ---
+    filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_WHITESPACE
+    err3 = validate_parties_addresses(filing, filing_type, party_key)
+    assert err3 == []
+
+    filing['filing'][filing_type][party_key][0]['deliveryAddress'] = INVALID_ADDRESS_WHITESPACE
+    err4 = validate_parties_addresses(filing, filing_type, party_key)
+    assert err4
+    error_fields = {e['path'].split('/')[-1] for e in err4}
+    assert error_fields == set(WHITESPACE_VALIDATED_ADDRESS_FIELDS)
 
 @pytest.mark.parametrize('payment_type, expected', [
     ({}, False),
