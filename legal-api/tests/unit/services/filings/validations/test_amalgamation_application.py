@@ -977,8 +977,6 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
     with app.test_request_context(headers={'account-id': account_id}):
         err = validate(None, filing, account_id)
 
-    err = validate(None, filing, account_id)
-
     # validate outcomes
     if expected_code is None:
         assert not err
@@ -1095,8 +1093,6 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
 
     with app.test_request_context(headers={'account-id': account_id}):
         err = validate(None, filing, account_id)
-
-    err = validate(None, filing, account_id)
 
     # validate outcomes
     if expected_code is None:
@@ -1802,3 +1798,67 @@ def test_validate_amalgamation_name_translation(mocker, session, test_name, amal
         if err:
             print(err, err.code, err.msg)
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_name, flag_enabled, permission_error, expected_code, expected_msg',
+    [
+        ('SUCCESS_FLAG_ON', True, None, None, None),
+        ('SUCCESS_FLAG_OFF', False, None, None, None),
+        ('FAIL_PERMISSION_ERROR', True, Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission denied.'}]),
+            HTTPStatus.FORBIDDEN, 'Permission denied.'),
+    ]
+)
+def test_amalgamation_permission_and_completing_party_flag(mocker, app, session, test_name, flag_enabled, permission_error, expected_code, expected_msg):
+    """Test validate_permission_and_completing_party is called when flag is enabled."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'date': '2019-04-08',
+        'certifiedBy': 'fname mname lname',
+        'email': 'test@email.com',
+        'filingId': 1
+    }
+
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.regular.name
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_party', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_parties_names', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_parties_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_offices', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_offices_addresses', return_value=[])
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+    mock_validate_permission = mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_permission_and_completing_party', return_value=permission_error)
+    
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
+
+    if flag_enabled:
+        mock_validate_permission.assert_called_once()
+        call_args = mock_validate_permission.call_args
+        assert call_args[0][0] is None 
+        assert call_args[0][1] == filing 
+        assert call_args[0][2] == 'amalgamationApplication' 
+        check_options = call_args[0][4] 
+
+        assert check_options.get('check_name') is False
+        assert check_options.get('check_email') is True
+        assert check_options.get('check_address') is False
+        assert check_options.get('check_document_email') is True
+    else:
+        # When flag is off
+        mock_validate_permission.assert_not_called()
+    if expected_code:
+        assert err is not None
+        assert err.code == expected_code
+        assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
+    else:
+        assert err is None
+ 
