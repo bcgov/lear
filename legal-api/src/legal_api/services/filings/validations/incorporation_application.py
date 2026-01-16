@@ -15,6 +15,7 @@
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final
 
+from legal_api.services import flags
 import pycountry
 from flask_babel import _ as babel
 
@@ -30,6 +31,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
+    validate_permission_and_completing_party,
     validate_phone_number,
     validate_share_structure,
 )
@@ -49,6 +51,20 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
+    if flags.is_on("enabled-deeper-permission-action"):
+        err = validate_permission_and_completing_party(
+            None,
+            incorporation_json,
+            filing_type,
+            msg,
+            check_name=False,
+            check_email=True,
+            check_address=False,
+            check_document_email=True
+                            )
+        if err:
+            return err
+        
     msg.extend(validate_offices(incorporation_json, legal_type))
     msg.extend(validate_offices_addresses(incorporation_json, filing_type))
 
