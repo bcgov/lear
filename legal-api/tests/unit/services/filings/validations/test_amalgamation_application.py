@@ -887,7 +887,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
                  return_value=False)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
     mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
-                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS_AFFILIATED' else {})
+                 return_value={'orgs': [{'id': account_id}]} if test_status in  'SUCCESS_AFFILIATED' else {})
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 

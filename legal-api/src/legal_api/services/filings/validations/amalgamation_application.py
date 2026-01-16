@@ -295,6 +295,12 @@ def _validate_foreign_businesses(  # noqa: PLR0913
 
     return msg
 
+def _check_aml_permission(message: str) -> Optional[Error]:
+    if flags.is_on("enabled-deeper-permission-action"):
+        return PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+            message=message)
+    return None
 
 def _validate_lear_businesses(  # pylint: disable=too-many-arguments
         identifier,
@@ -322,17 +328,14 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
 
         if not is_staff:
             if not _is_business_affliated(identifier, account_id):
-                if flags.is_on("enabled-deeper-permission-action"):
-                    permission_error = PermissionService.check_user_permission(
-                        ListActionsPermissionsAllowed.AML_OVERRIDES.value,
-                        message="Permission Denied - You do not have permissions to amalgamate an unaffiliated business."
-                    )
-                    if permission_error:
-                        msg.append({
-                            "error": permission_error.msg[0].get("message"),
-                            "path": amalgamating_business_path
-                        })
-                        return msg
+                permission_error =_check_aml_permission(
+                message="Permission Denied - You do not have permissions to amalgamate an unaffiliated business.")
+                if permission_error:
+                    msg.append({
+                        "error": permission_error.msg[0].get("message"),
+                        "path": amalgamating_business_path
+                    })
+                    return msg
                 else:
                     msg.append({
                         "error": (f"{identifier} is not affiliated with the currently "
@@ -341,17 +344,15 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
                     })
 
             if not amalgamating_business.good_standing:
-                if flags.is_on("enabled-deeper-permission-action"):
-                    permission_error = PermissionService.check_user_permission(
-                        ListActionsPermissionsAllowed.AML_OVERRIDES.value,
-                        message="Permission Denied - You do not have permissions to amalgamate business which is not in good standing."
-                    )
-                    if permission_error:
-                        msg.append({
-                            "error": permission_error.msg[0].get("message"),
-                            "path": amalgamating_business_path
-                        })
-                        return msg
+                permission_error =_check_aml_permission(
+                    message="Permission Denied - You do not have permissions to amalgamate a business not in good standing."
+                )
+                if permission_error:
+                    msg.append({
+                        "error": permission_error.msg[0].get("message"),
+                        "path": amalgamating_business_path
+                    })
+                    return msg
                 else:
                     msg.append({
                         "error": f"{identifier} is not in good standing.",
