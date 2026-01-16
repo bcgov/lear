@@ -897,7 +897,10 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
-    err = validate(None, filing, account_id)
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if expected_code is None:
@@ -910,7 +913,8 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
             assert (f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' ==
                     err.msg[1]['error'])
         else:
-            assert 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.' == err.msg[0]['error']
+            error_msg = err.msg[0].get('error') or err.msg[0].get('message')
+            assert 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.' == error_msg
 
 
 @pytest.mark.parametrize(
@@ -968,6 +972,11 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
+
     err = validate(None, filing, account_id)
 
     # validate outcomes
@@ -979,7 +988,8 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
             assert f'{expected_msg[0]} is not in good standing.' == err.msg[0]['error']
             assert f'{expected_msg[1]} is not in good standing.' == err.msg[1]['error']
         else:
-            assert 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.' == err.msg[0]['error']
+            error_msg = err.msg[0].get('error') or err.msg[0].get('message')
+            assert 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.' == error_msg
 
 
 @pytest.mark.parametrize(
@@ -1081,6 +1091,11 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
     
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
+
     err = validate(None, filing, account_id)
 
     # validate outcomes
@@ -1088,7 +1103,8 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         assert not err
     else:
         assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
+        error_msg = err.msg[0].get('error') or err.msg[0].get('message')
+        assert expected_msg == error_msg
 
 
 @pytest.mark.parametrize(
