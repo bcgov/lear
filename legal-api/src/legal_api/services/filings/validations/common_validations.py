@@ -24,7 +24,7 @@ from flask import current_app, g, request
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business, PartyRole
+from legal_api.models import Address, Business, Filing, PartyRole
 from legal_api.models.configuration import EMAIL_PATTERN
 from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.bootstrap import AccountService
@@ -983,19 +983,93 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
             
     return msg
 
+def _get_completing_party_officer_and_mailing_address(
+    filing_json: dict,
+    filing_type: str
+) -> tuple[Optional[dict], Optional[dict]]:
+    """Return (officer, mailingAddress) for the completing party in the filing JSON."""
+    try:
+        parties = filing_json.get("filing", {}).get(filing_type, {}).get("parties", [])
+    except AttributeError:
+        return None, None
+
+    for party in parties or []:
+        roles = party.get("roles", []) or []
+        if any(
+            (role.get("roleType") or "").lower().replace(" ", "_") ==
+            PartyRole.RoleTypes.COMPLETING_PARTY.value.lower()
+            for role in roles
+        ):
+            return party.get("officer") or None, party.get("mailingAddress") or {}
+
+    return None, None
+
+
+def _get_filing_id_from_filing_json(filing_json: dict) -> Optional[int]:
+    """Best-effort filing id lookup (payload first, then Flask route params)."""
+    filing_id = filing_json.get("filing", {}).get("header", {}).get("filingId")
+    if filing_id:
+        try:
+            return int(filing_id)
+        except (TypeError, ValueError):
+            pass
+
+    # Some requests may not include filingId in the payload; attempt to read it from the Flask route params.
+    try:
+        if get_request_context() and hasattr(request, "view_args") and request.view_args:
+            view_filing_id = request.view_args.get("filing_id") or request.view_args.get("filingId")
+            if view_filing_id:
+                return int(view_filing_id)
+    except (TypeError, ValueError):
+        pass
+
+    return None
+
+
+def _get_staff_completing_party_snapshot(filing_id: int) -> Optional[dict]:
+    """Return the staff-authorized completing party snapshot from Filing.meta_data, if present."""
+    filing = Filing.find_by_id(filing_id)
+    if not filing or not filing.meta_data:
+        return None
+
+    snapshot = (
+        filing.meta_data
+        .get("staffOverrides", {})
+        .get("completingParty", {})
+        .get("snapshot")
+    )
+    return snapshot if isinstance(snapshot, dict) else None
+
+
+def _get_completing_party_baseline_from_contact(contact: dict, filing_json: dict) -> dict:
+    """Baseline completing party fields from account contact, overridden by staff snapshot if present."""
+    baseline = {
+        "firstName": contact.get("firstName", ""),
+        "middleName": contact.get("middleName", "") or contact.get("middleInitial", ""),
+        "lastName": contact.get("lastName", ""),
+        "email": contact.get("email", "")
+    }
+
+    filing_id = _get_filing_id_from_filing_json(filing_json)
+    if not filing_id:
+        return baseline
+
+    staff_snapshot = _get_staff_completing_party_snapshot(filing_id)
+    if not staff_snapshot:
+        return baseline
+
+    baseline["firstName"] = staff_snapshot.get("firstName", baseline["firstName"])
+    baseline["middleName"] = staff_snapshot.get("middleName", baseline["middleName"])
+    baseline["lastName"] = staff_snapshot.get("lastName", baseline["lastName"])
+    baseline["email"] = staff_snapshot.get("email", baseline["email"])
+    return baseline
+
+
 def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> dict:
     """Validate completing party edited."""
     msg = []
-    parties = filing_json["filing"][filing_type].get("parties", {})
 
-    officer = None
-    mailing_address = None
-    for party in parties:
-        roles = party.get("roles", [])
-        if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
-            officer = party.get("officer", {})
-            mailing_address = party.get("mailingAddress", {})
-            break
+    officer, mailing_address = _get_completing_party_officer_and_mailing_address(filing_json, filing_type)
     if not officer:
         return {
             "error":[{
@@ -1009,6 +1083,7 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     
     filing_completing_party_mailing_address = mailing_address or {}
     filing_firstname = officer.get("firstName")
+    filing_middlename = officer.get("middleName", None) or officer.get("middleInitial", None)
     filing_lastname = officer.get("lastName")
     filing_email = officer.get("email")
     
@@ -1034,30 +1109,31 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         "deliveryInstructions": contact.get("deliveryInstructions", ""),
         "streetAddressAdditional": contact.get("streetAdditional", "")
     }
-    existing_firstname = contact.get("firstName", "")
-    existing_lastname = contact.get("lastName", "")
-    existing_email = contact.get("email", "")
+
+    baseline = _get_completing_party_baseline_from_contact(contact, filing_json)
 
     address_changed = False
     if filing_completing_party_mailing_address:
         address_changed = not is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
 
     existing_name = {
-        "firstName": existing_firstname,
-        "lastName": existing_lastname
+        "firstName": baseline.get("firstName"),
+        "middleName": baseline.get("middleName"),
+        "lastName": baseline.get("lastName")
     }
     filing_name = {
         "firstName": filing_firstname,
+        "middleName": filing_middlename,
         "lastName": filing_lastname
     }
 
     name_changed = False
-    if filing_firstname or filing_lastname:
+    if filing_firstname or filing_middlename or filing_lastname:
         name_changed = is_name_changed(existing_name, filing_name)
 
     email_changed = False
     if filing_email:
-        email_changed = not is_same_str(existing_email, filing_email)
+        email_changed = not is_same_str(baseline.get("email"), filing_email)
 
     return {
         "error": msg,
