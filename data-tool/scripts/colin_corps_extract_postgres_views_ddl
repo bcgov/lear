@@ -786,7 +786,6 @@ FROM (
           AND cn.end_event_id IS NULL
           AND cn.corp_name_typ_cd IN ('CO', 'NB')
     LEFT OUTER JOIN filing f ON e.event_id = f.event_id
-    LEFT OUTER JOIN corp_comments cc ON c.corp_num = cc.corp_num
     LEFT OUTER JOIN mv_corps_with_officers cow ON c.corp_num = cow.corp_num
     LEFT OUTER JOIN corps_with_third_party cowtp ON c.corp_num = cowtp.corp_num
     LEFT OUTER JOIN corp_processing cop ON c.corp_num = cop.corp_num and cop.environment = 'prod' and cop.processed_status = 'COMPLETED'
