@@ -707,11 +707,12 @@ def get_filings_query(corp_num):
                  left outer join payment p on p.event_id = e.event_id
                  left outer join conv_ledger cl on cl.event_id = e.event_id
                  left outer join conv_event ce on e.event_id = ce.event_id
-                 left outer join corp_name cn_old on e.event_id = cn_old.end_event_id and cn_old.corp_name_typ_cd in ('CO', 'NB')
-                 left outer join corp_name cn_new on e.event_id = cn_new.start_event_id and cn_new.corp_name_typ_cd in ('CO', 'NB')
+                 left outer join corp_name cn_old on e.event_id = cn_old.end_event_id
+                 left outer join corp_name cn_new on e.event_id = cn_new.start_event_id
                  left outer join cont_out co on co.start_event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
+            and not (cn_old.corp_name is null AND cn_new.corp_name is not null and cn_new.corp_name_typ_cd in ('CO', 'NB'))
 --          and e.corp_num = 'BC0068889'
 --          and e.corp_num = 'BC0449924'  -- AR, ADCORP
 --        and e.trigger_dts is not null
