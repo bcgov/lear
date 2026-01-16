@@ -68,10 +68,10 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
             amalgamation_json,
             filing_type,
             msg,
-            check_name=False,
-            check_email=True,
-            check_address=False,
-            check_document_email=True
+            {"check_name":False,
+            "check_email":True,
+            "check_address":False,
+            "check_document_email":True}
                             )
         if err:
             return err
