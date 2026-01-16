@@ -721,6 +721,31 @@ def test_validate_email_format(session, email, is_valid):
         assert 'Invalid email address format' in result[0]['error']
         assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'
 
+@pytest.mark.parametrize('email', [
+    # Valid email formats
+    (' test@example.com'),
+    ('test@example.com '),
+    (' test@@example.com'),
+    ('test@@example.com '),
+])
+def test_validate_email_whitespace(session, email):
+    """Test whitespace handling in email validation."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'contactPoint': {
+                    'email': email
+                }
+            }
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+
+    assert len(result) == 1
+    assert 'Email cannot start or end with whitespace' in result[0]['error']
+    assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'        
+
 
 def test_validate_email_missing_contact_point(session):
     """Test that missing contactPoint does not cause an error."""

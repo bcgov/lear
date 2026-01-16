@@ -687,7 +687,7 @@ def validate_email(filing_json: dict, filing_type: str) -> list:
             })
 
         # Validate format
-        if not re.match(EMAIL_PATTERN, email):
+        elif not re.match(EMAIL_PATTERN, email):
             msg.append({
                 "error": "Invalid email address format.",
                 "path": f"{contact_point_path}/email"
