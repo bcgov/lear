@@ -913,6 +913,14 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 "filingTypeCode": "NOFEE",
                 "waiveFees": waive_fees_flag
             })
+        elif dissolution_type == "delay":
+            filing_type_code = Filing.FILINGS["dissolution"][dissolution_type]["codes"].get(legal_type)
+            filing_types.append({
+                "filingTypeCode": filing_type_code,
+                "futureEffective": ListFilingResource.is_future_effective_filing(filing_json),
+                "priority": priority_flag,
+                "waiveFees": waive_fees_flag
+            })
         return filing_types
 
     @staticmethod
