@@ -69,3 +69,37 @@ def test_find_roles_for_filing_type_unknown():
     """Should return empty string for unknown filing type."""
     permission = PermissionService.find_roles_for_filing_type('UNKNOWN_FILING', legal_type='BC', filing_sub_type='unknown')
     assert permission == ''
+
+def test_staff_filing_with_staff_filings_permission(mock_token_info, app):
+    """Should return True for staff filing types when user has STAFF_FILINGS permission."""
+    mock_token_info.jwt_oidc_token_info = {'realm_access': {'roles': [STAFF_ROLE]}}
+
+    with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=['STAFF_FILINGS']):
+        result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.AMALGAMATIONOUT.value, legal_type='BC', filing_sub_type='')
+        assert result is True
+
+def test_staff_filing_without_staff_filings_permission(mock_token_info, app):
+    """Should return False for staff filing types when user does not have STAFF_FILINGS permission."""
+    from flask import current_app
+
+    mock_token_info.jwt_oidc_token_info = {'realm_access': {'roles': [PUBLIC_USER]}}
+
+    with app.app_context():
+        with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=[]):
+            result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.PUTBACKON.value, legal_type='BC', filing_sub_type='')
+            assert result is False
+
+def test_staff_filing_with_no_staff_permissions_but_regular_filing_permission(mock_token_info, app):
+    """Should return False for staff filing types when user has no permissions."""
+    from flask import current_app
+
+    mock_token_info.jwt_oidc_token_info = {'realm_access': {'roles': [PUBLIC_USER]}}
+
+    with app.app_context():
+        with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=['']):
+            result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.PUTBACKON.value, legal_type='BC', filing_sub_type='')
+            assert result is False
+
+        with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=['ALTERATION_FILING']):
+            result = PermissionService.has_permissions_for_action(CoreFiling.FilingTypes.ALTERATION.value, legal_type='BC', filing_sub_type='')
+            assert result is True
