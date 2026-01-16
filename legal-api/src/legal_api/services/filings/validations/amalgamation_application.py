@@ -43,6 +43,7 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_delivery_address,
 )
 from legal_api.services.request_context import get_request_context
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
@@ -284,15 +285,42 @@ def _validate_foreign_businesses(  # noqa: PLR0913
                 "error": f"A {foreign_legal_name} foreign corporation cannot be marked as Primary or Holding.",
                 "path": amalgamating_business_path
             })
+    elif flags.is_on("enabled-deeper-permission-action"):
+        permission_error = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+            message="Permission Denied - You do not have permissions to amalgamate a foreign corporation."
+        )
+        if permission_error:
+            msg.append({
+                "error": permission_error.msg[0].get("message"),
+                "path": amalgamating_business_path
+            })
+            return msg
     else:
         msg.append({
             "error": (f"{foreign_legal_name} foreign corporation cannot "
-                      "be amalgamated except by Registries staff."),
+                    "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
 
     return msg
 
+def _check_aml_permission_or_default_error(msg: list, message: str, default_error: dict) -> bool:
+        if flags.is_on("enabled-deeper-permission-action"):
+            permission_error = PermissionService.check_user_permission(
+                ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+                message=message
+            )
+            if permission_error:
+                msg.append({
+                    "error": permission_error.msg[0].get("message"),
+                    "path": default_error.get("path")
+                })
+                return True
+        else:
+            msg.append(default_error)
+            return True
+        return False
 
 def _validate_lear_businesses(  # pylint: disable=too-many-arguments
         identifier,
@@ -320,17 +348,30 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
 
         if not is_staff:
             if not _is_business_affliated(identifier, account_id):
-                msg.append({
-                    "error": (f"{identifier} is not affiliated with the currently "
-                              "selected BC Registries account."),
-                    "path": amalgamating_business_path
-                })
-
+                error = _check_aml_permission_or_default_error(
+                    msg,
+                    "Permission Denied - You do not have permissions to amalgamate an unaffiliated business.",
+                    {
+                        "error": (f"{identifier} is not affiliated with the currently "
+                                  "selected BC Registries account."),
+                        "path": amalgamating_business_path
+                    }
+                    )
+                if error:
+                    return msg
+                
             if not amalgamating_business.good_standing:
-                msg.append({
+                error = _check_aml_permission_or_default_error(
+                msg,
+                "Permission Denied - You do not have permissions to amalgamate a business not in good standing.",
+                {
                     "error": f"{identifier} is not in good standing.",
                     "path": amalgamating_business_path
-                })
+                }
+                )
+                if error:
+                    return msg
+               
     else:
         msg.append({
             "error": f"A business with identifier:{identifier} not found.",

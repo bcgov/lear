@@ -47,6 +47,7 @@ from legal_api.services.filings.validations.common_validations import (
     is_officer_proprietor_replace_valid,
     validate_certify_name,
     validate_certified_by,
+    validate_email,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_party_name,
@@ -624,3 +625,76 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
             filing_json['filing']['changeOfRegistration']['parties'][0]['officer'].pop(['identifier'], None)
         result = is_officer_proprietor_replace_valid(business, filing_json, 'changeOfRegistration')
         assert result is expected_result
+
+@pytest.mark.parametrize('email, is_valid', [
+    # Valid email formats
+    ('test@example.com', True),
+    ('user.name@domain.com', True),
+    ('user+tag@example.com', True),
+    ('test@subdomain.example.com', True),
+    ('test@example.co.uk', True),
+    ('user@[192.168.1.1]', True),
+    ('no_one@never.get', True),
+    ('"quoted"@example.com', True),
+    ('user_name@domain.org', True),
+    ('test123@test123.com', True),
+    ('john.o\'smith@gov.bc.ca', True),
+    # Invalid email formats
+    ('no_one@never.', False),
+    ('invalid', False),
+    ('@invalid.com', False),
+    ('test@.com', False),
+    ('test@', False),
+    ('test@domain', False),
+    ('test @example.com', False),
+    ('test@ example.com', False),
+    ('test@@example.com', False),
+])
+def test_validate_email_format(session, email, is_valid):
+    """Test email format validation against various email patterns."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'contactPoint': {
+                    'email': email
+                }
+            }
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+
+    if is_valid:
+        assert result == []
+    else:
+        assert len(result) == 1
+        assert 'Invalid email address format' in result[0]['error']
+        assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'
+
+
+def test_validate_email_missing_contact_point(session):
+    """Test that missing contactPoint does not cause an error."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {}
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+    assert result == []
+
+
+def test_validate_email_missing_email_field(session):
+    """Test that missing email field does not cause an error."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'contactPoint': {
+                    'phone': '123-456-7890'
+                }
+            }
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+    assert result == []
