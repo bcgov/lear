@@ -887,7 +887,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
                  return_value=False)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
     mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
-                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS_AFFILIATED' else {})
+                 return_value={'orgs': [{'id': account_id}]} if test_status in  'SUCCESS_AFFILIATED' else {})
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
@@ -914,13 +914,16 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
 
 
 @pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
+    'test_status, flag_enabled, has_permission, expected_code, expected_msg',
     [
-        ('FAIL', HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
-        ('SUCCESS', None, None)
+        ('FAIL_FLAG_OFF', False, False, HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
+         ('SUCCESS_GOOD_STANDING', False, False, None, None),
+         ('FAIL_FLAG_ON_WITH_PERMISSION', True, False, HTTPStatus.BAD_REQUEST, 'BC1234567'),
+        ('SUCCESS_FLAG_ON_WITH_PERMISSION', True, True, None, None)
     ]
+
 )
-def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, flag_enabled, has_permission, expected_code, expected_msg):
     """Assert valid amalgamating businesses is in good standing."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -941,11 +944,12 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
 
     def mock_find_by_identifier(identifier):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
+        is_good_standing = test_status in ( 'SUCCESS_GOOD_STANDING', 'SUCCESS_FLAG_ON_WITH_PERMISSION')
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value,
                         state=Business.State.ACTIVE,
                         founding_date=utc_now,
-                        restoration_expiry_date=utc_now if test_status == 'FAIL' else None)
+                        restoration_expiry_date=utc_now if not is_good_standing else None)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -957,15 +961,25 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+
+    permission_error = None if has_permission else Error(
+        HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.'}])
+    mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+
     err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if expected_code is None:
         assert not err
     else:
         assert expected_code == err.code
-        assert f'{expected_msg[0]} is not in good standing.' == err.msg[0]['error']
-        assert f'{expected_msg[1]} is not in good standing.' == err.msg[1]['error']
+        if isinstance(expected_msg, list):
+            assert f'{expected_msg[0]} is not in good standing.' == err.msg[0]['error']
+            assert f'{expected_msg[1]} is not in good standing.' == err.msg[1]['error']
+        else:
+            assert 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.' == err.msg[0]['error']
 
 
 @pytest.mark.parametrize(
