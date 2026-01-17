@@ -17,6 +17,7 @@ from datetime import date
 from http import HTTPStatus
 
 import datedelta
+from legal_api.errors import Error
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORATION_FILING_TEMPLATE
@@ -32,7 +33,7 @@ from tests.unit.services.filings.test_utils import _upload_file
 from . import create_party, create_party_address, lists_are_equal, create_officer
 from tests import not_github_ci
 from unittest.mock import patch
-from legal_api.services import NameXService
+from legal_api.services import NameXService, flags
 from tests.unit import MockResponse
 
 
@@ -1847,3 +1848,65 @@ def test_validate_name_translation(session, test_name, name_translation, expecte
         if err:
             print(err, err.code, err.msg)
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_name, flag_enabled, permission_error, expected_code, expected_msg',
+    [
+        ('SUCCESS_FLAG_ON', True, None, None, None),
+        ('SUCCESS_FLAG_OFF', False, None, None, None),
+        ('FAIL_PERMISSION_ERROR', True, Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission denied.'}]),
+            HTTPStatus.FORBIDDEN, 'Permission denied.'),
+    ]
+)
+def test_incorporation_permission_and_completing_party_flag(mocker, app, session, test_name, flag_enabled, permission_error, expected_code, expected_msg):
+    """Test validate_permission_and_completing_party is called when flag is enabled."""
+    account_id = '123456'
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {
+        'name': incorporation_application_name,
+        'date': '2019-04-08',
+        'certifiedBy': 'fname mname lname',
+        'email': 'test@email.com',
+        'filingId': 1
+    }
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_party', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_parties_names', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_parties_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_offices', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_offices_addresses', return_value=[])
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+    mock_validate_permission = mocker.patch(
+        'legal_api.services.filings.validations.incorporation_application.validate_permission_and_completing_party', return_value=permission_error)
+    
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing_json)
+
+    if flag_enabled:
+        mock_validate_permission.assert_called_once()
+        call_args = mock_validate_permission.call_args
+        assert call_args[0][0] is None 
+        assert call_args[0][1] == filing_json 
+        assert call_args[0][2] == incorporation_application_name
+        check_options = call_args[0][4] 
+
+        assert check_options.get('check_name') is False
+        assert check_options.get('check_email') is True
+        assert check_options.get('check_address') is False
+        assert check_options.get('check_document_email') is True
+    else:
+        # When flag is off
+        mock_validate_permission.assert_not_called()
+    if expected_code:
+        assert err is not None
+        assert err.code == expected_code
+        assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
+    else:
+        assert err is None
+ 
