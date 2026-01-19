@@ -187,7 +187,7 @@ def sanitize_address(address: dict):
             # This keeps:
             #   \p{L} = any letter (all languages, including Indigenous)
             #   \p{M} = combining marks for accents/diacritics
-            #   \p{N} = any numeric character (0–9 and other scripts’ digits)
+            #   \p{N} = any numeric character (0-9 and other scripts digits)
             #   Literal punctuation: . , _
             address[key] = regex.sub(r"[^\p{L}\p{M}\p{N}.,_]+", " ", value).strip()
     return address
