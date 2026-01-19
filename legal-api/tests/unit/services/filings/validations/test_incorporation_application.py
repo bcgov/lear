@@ -27,7 +27,6 @@ from reportlab.lib.pagesizes import letter
 
 from legal_api.models import Business
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_coop_parties_mailing_address, validate_parties_names
 
 from tests.unit.services.filings.test_utils import _upload_file
 
@@ -2028,7 +2027,7 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     mocker.patch.object(incorporation_application, 'validate_parties_delivery_address', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_cooperative_documents', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_ia_court_order', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_office_addresses', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_offices_addresses', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_parties_names', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_parties_addresses', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_name_request', return_value=[])
@@ -2041,11 +2040,11 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
-    mock_validate_permission = mocker.patch(incorporation_application,
+    mock_validate_permission = mocker.patch.object(incorporation_application,
         'validate_permission_and_completing_party', return_value=permission_error)
     
     with app.test_request_context(headers={'account-id': account_id}):
-        err = validate(filing_json)
+        err = validate(None, filing_json, account_id)
 
     if flag_enabled:
         mock_validate_permission.assert_called_once()
