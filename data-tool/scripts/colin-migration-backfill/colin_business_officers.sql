@@ -566,24 +566,19 @@ $$;
 -- Tombstone corp current officers add an active officer.
 -- Inserts into addresses, addresses_version, parties, parties_version, party_roles, party_roles_version.
 -- The transaction ID should be the tombstone process transaction ID.
-create or replace function public.colin_tombstone_officer(p_colin_event_id integer,
-                                                          p_business_id integer,
+create or replace function public.colin_tombstone_officer(p_business_id integer,
                                                           p_trans_id integer,
                                                           p_corp_num character varying) returns integer
   language plpgsql
 as $$
 declare
-  cur_hist_party cursor(v_colin_event_id integer, v_corp_num character varying)
+  cur_hist_party cursor(v_corp_num character varying)
      for select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cast('officer' as character varying) as party_role,
                 case when cp.appointment_dt is not null then
                           cast((to_timestamp(to_char(cp.appointment_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
                      else cp.appointment_dt end as appointment_dt,
                 case when cp.cessation_dt is not null then
                           cast((to_timestamp(to_char(cp.cessation_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
-                     when cp.cessation_dt is null and (cp.prev_party_id is null or cp.prev_party_id < 1) and cp.end_event_id is not null then
-                          (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
-                             from colin_extract.event e
-                            where e.event_id = cp.end_event_id)
                      else cp.cessation_dt end as cessation_dt,
                 case when cp.last_name is not null and trim(cp.last_name) != '' then upper(cp.last_name) else null end as last_name,
                 case when cp.middle_name is not null and trim(cp.middle_name) != '' then upper(cp.middle_name) else null end as middle_name,
@@ -592,55 +587,186 @@ declare
                 cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id,
                 (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
                    from colin_extract.event e
-                  where e.event_id = v_colin_event_id) as party_date
-          from colin_extract.corp_party cp 
+                  where e.event_id = cp.start_event_id) as party_date,
+                case when cp.cessation_dt is null and cp.end_event_id is not null then
+                      (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                         from colin_extract.event e
+                        where e.event_id = cp.end_event_id)
+                     else null end as party_end_date,
+                (select string_agg(oh1.officer_typ_cd, ',')
+                   from (select oh.officer_typ_cd
+                           from colin_extract.offices_held oh
+                          where oh.corp_party_id = cp.corp_party_id
+                       order by oh.officer_typ_cd) as oh1) as offices,
+                (select (select string_agg(oh2.officer_typ_cd, ',')
+                           from (select oh.officer_typ_cd
+                                   from colin_extract.offices_held oh
+                                  where oh.corp_party_id = cp2.corp_party_id
+                               order by oh.officer_typ_cd) as oh2)
+                   from colin_extract.corp_party cp2
+                  where cp2.corp_num = cp.corp_num
+                    and cp2.party_typ_cd = cp.party_typ_cd
+                    and cp2.prev_party_id = cp.corp_party_id
+                    and cp.end_event_id is not null
+                    and cp2.start_event_id = cp.end_event_id) as edit_offices,
+               (select max(cp2.corp_party_id)
+                  from colin_extract.corp_party cp2
+                 where cp2.corp_num = cp.corp_num
+                   and cp2.party_typ_cd = 'OFF'
+                   and cp2.prev_party_id = cp.corp_party_id) as last_party_id
+         from colin_extract.corp_party cp
         where cp.corp_num = v_corp_num
-          and cp.start_event_id = v_colin_event_id
           and cp.party_typ_cd = 'OFF'
-          and (cp.end_event_id is null or cp.cessation_dt is not null)
-/*
-          and not exists (select cp2.corp_party_id
-                            from colin_extract.corp_party cp2
-                           where cp2.corp_num = cp.corp_num
-                             and cp2.party_typ_cd = cp.party_typ_cd
-                             and cp2.prev_party_id is not null
-                             and cp2.prev_party_id = cp.corp_party_id)
-*/
-        order by corp_party_id;
-  cur_hist_officer_offices cursor(v_party_id integer)
-    for select to_officer_role(officer_typ_cd) as party_role
-      from colin_extract.offices_held
-     where corp_party_id = v_party_id;
+          and (cp.prev_party_id is null or cp.prev_party_id = 0)
+     order by cp.corp_party_id;
+  cur_hist_edit_offices cursor(v_prev_party_id integer, v_corp_num character varying)
+    for select case when cp.appointment_dt is not null then
+                          cast((to_timestamp(to_char(cp.appointment_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     else cp.appointment_dt end as appointment_dt,
+                case when cp.cessation_dt is not null then
+                          cast((to_timestamp(to_char(cp.cessation_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                     else cp.cessation_dt end as cessation_dt,
+                cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id,
+                (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                   from colin_extract.event e
+                  where e.event_id = cp.start_event_id) as party_date,
+                case when cp.cessation_dt is null and cp.end_event_id is not null then
+                      (select cast((to_timestamp(to_char(e.event_timerstamp, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                         from colin_extract.event e
+                        where e.event_id = cp.end_event_id)
+                     else null end as party_end_date,
+                (select string_agg(oh1.officer_typ_cd, ',')
+                   from (select oh.officer_typ_cd
+                           from colin_extract.offices_held oh
+                          where oh.corp_party_id = cp.corp_party_id
+                       order by oh.officer_typ_cd) as oh1) as offices,
+                (select (select string_agg(oh2.officer_typ_cd, ',')
+                           from (select oh.officer_typ_cd
+                                   from colin_extract.offices_held oh
+                                  where oh.corp_party_id = cp2.corp_party_id
+                               order by oh.officer_typ_cd) as oh2)
+                   from colin_extract.corp_party cp2
+                  where cp2.corp_num = cp.corp_num
+                    and cp2.party_typ_cd = cp.party_typ_cd
+                    and cp.end_event_id is not null
+                    and cp2.start_event_id = cp.end_event_id) as edit_offices
+  from colin_extract.corp_party cp
+ where cp.corp_num = v_corp_num
+   and cp.party_typ_cd = 'OFF'
+   and cp.prev_party_id = v_prev_party_id
+order by cp.corp_party_id;
   rec_hist_party record;
-  rec_hist_officer_office record;
+  rec_last_party record;
+  rec_hist_offices record;
   counter integer := 0;
   party_id integer := 0;
   party_role_id integer := 0;
+  officer_role varchar(30);
 begin
-  open cur_hist_party(p_colin_event_id, p_corp_num);
+  open cur_hist_party(p_corp_num);
   loop
     fetch cur_hist_party into rec_hist_party;
     exit when not found;
     counter := counter + 1;
-    -- party_id := colin_hist_party_add(p_trans_id, p_business_id, null, rec_hist_party);
+    -- Create parties record
     party_id := nextval('parties_id_seq');
-    perform colin_hist_party_change(p_business_id, p_trans_id, party_id, 0, rec_hist_party, null);
-    open cur_hist_officer_offices(rec_hist_party.corp_party_id);
-    loop
-      fetch cur_hist_officer_offices into rec_hist_officer_office;          
-      exit when not found;
-      party_role_id := nextval('party_roles_id_seq');
+    if rec_hist_party.last_party_id is not null and rec_hist_party.last_party_id > 0 then -- edits exist, use last party
+      select cp.mailing_addr_id, cp.delivery_addr_id, cp.party_typ_cd, cast('officer' as character varying) as party_role,
+             case when cp.appointment_dt is not null then
+                       cast((to_timestamp(to_char(cp.appointment_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                  else cp.appointment_dt end as appointment_dt,
+             case when cp.cessation_dt is not null then
+                       cast((to_timestamp(to_char(cp.cessation_dt, 'YYYY-MM-DD') || ' 00:00:00', 'YYYY-MM-DD HH24:MI:SS') at time zone 'utc') as timestamp with time zone)
+                  else cp.cessation_dt end as cessation_dt,
+             case when cp.last_name is not null and trim(cp.last_name) != '' then upper(cp.last_name) else null end as last_name,
+             case when cp.middle_name is not null and trim(cp.middle_name) != '' then upper(cp.middle_name) else null end as middle_name,
+             case when cp.first_name is not null and  trim(cp.first_name) != '' then upper(cp.first_name) else null end as first_name,
+             case when cp.business_name is not null and  trim(cp.business_name) != '' then upper(cp.business_name) else null end as business_name,
+             cp.email_address, cp.corp_party_id, cp.prev_party_id, cp.start_event_id, cp.end_event_id
+        into rec_last_party
+        from colin_extract.corp_party cp
+       where cp.corp_num = p_corp_num
+         and cp.corp_party_id = rec_hist_party.last_party_id;
+      perform colin_hist_party_change(p_business_id, p_trans_id, party_id, 0, rec_last_party, null);
+      -- At least 1 edit, iterate through to conditionally cease offices or make no office changes.
+      if rec_hist_party.offices != rec_hist_party.edit_offices then
+        for i in 1 .. array_length(string_to_array(rec_hist_party.offices, ','), 1)
+        loop
+          officer_role := SPLIT_PART(rec_hist_party.offices, ',', i);
+          if position(officer_role in rec_hist_party.edit_offices) < 1 then -- Removing
+            if rec_hist_party.appointment_dt is null then
+              rec_hist_party.appointment_dt := rec_hist_party.party_date;
+            end if;
+            if rec_hist_party.cessation_dt is null then
+              rec_hist_party.cessation_dt := rec_hist_party.party_end_date;
+            end if;
+            party_role_id := nextval('party_roles_id_seq');
+            insert into party_roles 
+              values(party_role_id, to_officer_role(officer_role), rec_hist_party.appointment_dt, rec_hist_party.cessation_dt, 
+                     p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
+          end if;
+        end loop;        
+      end if;
+      open cur_hist_edit_offices(rec_hist_party.corp_party_id, p_corp_num);
+      loop
+        fetch cur_hist_edit_offices into rec_hist_offices;
+        exit when not found;
+          if rec_hist_offices.end_event_id is null then
+            if rec_hist_offices.appointment_dt is null then
+              rec_hist_offices.appointment_dt := rec_hist_offices.party_date;
+            end if;
+            for i in 1 .. array_length(string_to_array(rec_hist_offices.offices, ','), 1)
+            loop
+              officer_role := to_officer_role(SPLIT_PART(rec_hist_offices.offices, ',', i));
+              party_role_id := nextval('party_roles_id_seq');
+              insert into party_roles_version 
+                values(party_role_id, officer_role, rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt,
+                       p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
+              insert into party_roles 
+                values(party_role_id, officer_role, rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt, 
+                       p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
+            end loop;
+          elsif rec_hist_offices.edit_offices is not null and rec_hist_offices.offices != rec_hist_offices.edit_offices then
+            for i in 1 .. array_length(string_to_array(rec_hist_offices.offices, ','), 1)
+            loop
+              officer_role := SPLIT_PART(rec_hist_offices.offices, ',', i);
+              if position(officer_role in rec_hist_offices.edit_offices) < 1 then -- Removing
+                if rec_hist_offices.appointment_dt is null then
+                  rec_hist_offices.appointment_dt := rec_hist_party.party_date;
+                end if;
+                if rec_hist_offices.cessation_dt is null then
+                  rec_hist_offices.cessation_dt := rec_hist_offices.party_end_date;
+                end if;
+                party_role_id := nextval('party_roles_id_seq');
+                insert into party_roles 
+                  values(party_role_id, to_officer_role(officer_role), rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt, 
+                         p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
+              end if;
+            end loop;        
+          end if;
+      end loop;
+      close cur_hist_edit_offices;
+    else
+      perform colin_hist_party_change(p_business_id, p_trans_id, party_id, 0, rec_hist_party, null);
+      -- No future edit: if end event id create a cease party_roles record, otherwise create an appoint party_role record.
       if rec_hist_party.appointment_dt is null then
         rec_hist_party.appointment_dt := rec_hist_party.party_date;
       end if;
-      insert into party_roles_version 
-        values(party_role_id, rec_hist_officer_office.party_role, rec_hist_party.appointment_dt, rec_hist_party.cessation_dt,
-               p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
-      insert into party_roles 
-        values(party_role_id, rec_hist_officer_office.party_role, rec_hist_party.appointment_dt, rec_hist_party.cessation_dt, 
-               p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
-    end loop;
-    close cur_hist_officer_offices;
+      if rec_hist_party.cessation_dt is null and rec_hist_party.end_event_id is not null then
+        rec_hist_party.cessation_dt := rec_hist_party.party_end_date;
+      end if;
+      for i in 1 .. array_length(string_to_array(rec_hist_party.offices, ','), 1)
+      loop
+        officer_role := to_officer_role(SPLIT_PART(rec_hist_party.offices, ',', i));
+        party_role_id := nextval('party_roles_id_seq');
+        insert into party_roles_version 
+          values(party_role_id, officer_role, rec_hist_party.appointment_dt, rec_hist_party.cessation_dt,
+                 p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
+        insert into party_roles 
+          values(party_role_id, officer_role, rec_hist_party.appointment_dt, rec_hist_party.cessation_dt, 
+                 p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
+      end loop;        
+    end if;
   end loop;
   close cur_hist_party;
   return counter;
@@ -688,22 +814,22 @@ declare
             and ci.offiflag = 'Y'
          order by b.identifier, e.event_id;
   cur_outstanding cursor(v_env character varying)
-     for select distinct cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, ce.colin_event_id,
-                (select f2.transaction_id from filings f2 where f2.business_id = b.id and f2.status = 'TOMBSTONE') as transaction_id
-           from businesses b, filings f, colin_event_ids ce, colin_extract.corp_processing cp, colin_extract.corp_party p
+     for select cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, 
+                (select count(p.start_event_id) 
+                   from colin_extract.corp_party p
+                  where cp.corp_num = p.corp_num
+                    and p.party_typ_cd = 'OFF') as officer_count,
+                f.transaction_id
+           from businesses b, filings f, colin_extract.corp_processing cp
           where b.identifier = cp.corp_num
             and b.id = f.business_id
             and cp.processed_status = 'COMPLETED'
             and f.source = 'COLIN'
-            and f.status = 'COMPLETED'
-            and not exists (select pr.id from party_roles pr where pr.business_id = b.id and pr.party_class_type = 'OFFICER')
-            and f.id = ce.filing_id
+            and f.status = 'TOMBSTONE'
             and not exists (select mcph.corp_processing_id from mig_corp_processing_history mcph where mcph.corp_processing_id = cp.id)
-            and cp.corp_num = p.corp_num
-            and ce.colin_event_id = p.start_event_id
-            and p.party_typ_cd = 'OFF'
+            and not exists (select pr.id from party_roles pr where pr.business_id = b.id and pr.party_class_type = 'OFFICER')
             and cp.environment = v_env
-       order by cp.id, ce.colin_event_id;
+       order by cp.id;
   rec_cars record;
   rec_officer record;
   update_counter integer := 0;
@@ -735,11 +861,12 @@ begin
   loop
     fetch cur_outstanding into rec_officer;
     exit when not found;
-    update_counter := update_counter + 1;
-    perform colin_tombstone_officer(rec_officer.colin_event_id,
-                                    rec_officer.business_id,
-                                    cast(rec_officer.transaction_id as integer),
-                                    rec_officer.corp_num);
+    if rec_officer.officer_count > 0 then
+      update_counter := update_counter + 1;
+      perform colin_tombstone_officer(rec_officer.business_id,
+                                      cast(rec_officer.transaction_id as integer),
+                                      rec_officer.corp_num);
+    end if;
     if previous_id != rec_officer.corp_processing_id then
       previous_id := rec_officer.corp_processing_id;
       insert into mig_corp_processing_history
@@ -848,23 +975,22 @@ declare
             and ci.offiflag = 'Y'
          order by b.identifier, e.event_id;
   cur_outstanding cursor(v_env character varying, v_corp_num character varying)
-     for select distinct cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, ce.colin_event_id,
-                (select f2.transaction_id from filings f2 where f2.business_id = b.id and f2.status = 'TOMBSTONE') as transaction_id
-           from businesses b, filings f, colin_event_ids ce, colin_extract.corp_processing cp, colin_extract.corp_party p
+     for select cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, 
+                (select count(p.start_event_id) 
+                   from colin_extract.corp_party p
+                  where cp.corp_num = p.corp_num
+                    and p.party_typ_cd = 'OFF') as officer_count,
+                f.transaction_id
+           from businesses b, filings f, colin_extract.corp_processing cp
           where b.identifier = cp.corp_num
             and b.identifier = v_corp_num
             and b.id = f.business_id
             and cp.processed_status = 'COMPLETED'
             and f.source = 'COLIN'
-            and f.status = 'COMPLETED'
-            and not exists (select pr.id from party_roles pr where pr.business_id = b.id and pr.party_class_type = 'OFFICER')
-            and f.id = ce.filing_id
+            and f.status = 'TOMBSTONE'
             and not exists (select mcph.corp_processing_id from mig_corp_processing_history mcph where mcph.corp_processing_id = cp.id)
-            and cp.corp_num = p.corp_num
-            and ce.colin_event_id = p.start_event_id
-            and p.party_typ_cd = 'OFF'
-            and cp.environment = v_env
-       order by cp.id, ce.colin_event_id;
+            and not exists (select pr.id from party_roles pr where pr.business_id = b.id and pr.party_class_type = 'OFFICER')
+            and cp.environment = v_env;
   rec_cars record;
   rec_officer record;
   update_counter integer := 0;
@@ -896,11 +1022,12 @@ begin
   loop
     fetch cur_outstanding into rec_officer;
     exit when not found;
-    update_counter := update_counter + 1;
-    perform colin_tombstone_officer(rec_officer.colin_event_id,
-                                    rec_officer.business_id,
-                                    cast(rec_officer.transaction_id as integer),
-                                    rec_officer.corp_num);
+    if rec_officer.officer_count > 0 then
+      update_counter := update_counter + 1;
+      perform colin_tombstone_officer(rec_officer.business_id,
+                                      cast(rec_officer.transaction_id as integer),
+                                      rec_officer.corp_num);
+    end if;
     if previous_id != rec_officer.corp_processing_id then
       previous_id := rec_officer.corp_processing_id;
       insert into mig_corp_processing_history
