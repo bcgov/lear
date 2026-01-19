@@ -18,6 +18,7 @@ from http import HTTPStatus
 
 import datedelta
 from legal_api.errors import Error
+from legal_api.services.filings.validations import incorporation_application
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORATION_FILING_TEMPLATE
@@ -1870,23 +1871,34 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
         'filingId': 1
     }
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
 
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_party', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_parties_names', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_parties_addresses', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_offices', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_offices_addresses', return_value=[])
+    mocker.patch.object(incorporation_application ,'validate_offices', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_roles', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_coop_parties_mailing_address', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_parties_delivery_address', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_cooperative_documents', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_ia_court_order', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_office_addresses', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_parties_names', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_parties_addresses', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_name_request', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_share_structure', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_effective_date', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_phone_number', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_email', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_name_translation', return_value=[])
+
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
-    mock_validate_permission = mocker.patch(
-        'legal_api.services.filings.validations.incorporation_application.validate_permission_and_completing_party', return_value=permission_error)
+    mock_validate_permission = mocker.patch(incorporation_application,
+        'validate_permission_and_completing_party', return_value=permission_error)
     
     with app.test_request_context(headers={'account-id': account_id}):
-        err = validate(None, filing_json)
+        err = validate(filing_json)
 
     if flag_enabled:
         mock_validate_permission.assert_called_once()
