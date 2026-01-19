@@ -270,6 +270,153 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     else:
         assert err is None
 
+@pytest.mark.parametrize(
+    'test_name, delivery_address, mailing_address, expected_code, expected_msg',
+    [
+        (
+            'SUCCESS',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V5K0A1"},
+            None, None
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with leading whitespace',
+            {"streetAddress": " 123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with trailing whitespace',
+            {"streetAddress": "123 A St ", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with only whitespace',
+            {"streetAddress": "   ", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress addressCity with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": " Vancouver ", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCity cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCity'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress addressCountry with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": " CA ", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCountry cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress postalCode with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress streetAddress with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": " 456 B St ", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress addressCity with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": " Victoria ", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCity cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCity'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress addressCountry with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": " CA ", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCountry cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress postalCode with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
+            ]
+        ),
+        (
+            'FAIL - multiple fields with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
+            ]
+        ),
+    ]
+)
+def test_validate_incorporation_addresses_whitespace(session, mocker, test_name, delivery_address, mailing_address,
+                                                    expected_code, expected_msg):
+    """Assert that incorporation offices can be validated."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = 'BC'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+
+    regoffice = filing_json['filing'][incorporation_application_name]['offices']['registeredOffice']
+    regoffice['deliveryAddress'] = delivery_address
+    regoffice['mailingAddress'] = mailing_address
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
+                 return_value=[])
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
+                 return_value=[])
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing_json)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
 
 @pytest.mark.parametrize(
     'test_name, legal_type, expected_code, expected_msg',
