@@ -15,11 +15,11 @@
 
 from flask import current_app
 
-from business_model.models import Business, DCRevocationReason
+from business_model.models import Business, DCDefinition, DCRevocationReason
 
 from .helpers import (
     get_all_digital_credentials_for_business,
-    revoke_digital_credential,
+    replace_digital_credential,
 )
 
 
@@ -35,7 +35,9 @@ def process(business: Business) -> None:
         return None
 
     for credential in credentials:
-        revoke_digital_credential(
-            credential=credential, reason=DCRevocationReason.PUT_BACK_ON
+        replace_digital_credential(
+            credential=credential,
+            credential_type=DCDefinition.CredentialType.business.name,
+            reason=DCRevocationReason.PUT_BACK_ON,
         )
     return None

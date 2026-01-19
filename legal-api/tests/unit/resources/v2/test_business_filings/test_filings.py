@@ -2139,7 +2139,7 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         # mock response from auth to give edit access
         requests_mock.get(f"{current_app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
                             json={'roles': ['edit']})
-    requests_mock.post(
+    pay_mock = requests_mock.post(
         current_app.config.get('PAYMENT_SVC_URL'),
         json={
             'id': 21322,
@@ -2165,6 +2165,14 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         filing_id = rv.json['filing']['header']['filingId']
         dod_filing: Filing = Filing.find_by_id(filing_id)
         assert dod_filing.hide_in_ledger == expected_ledger_hidden
+        # assert payment info
+        assert pay_mock.called == True
+        assert pay_mock.call_count == 1
+        pay_payload = pay_mock.request_history[0].json()
+        assert pay_payload['filingInfo']['filingIdentifier'] == str(filing_id)
+        fee_info = pay_payload['filingInfo']['filingTypes']
+        assert len(fee_info) == 1
+        assert fee_info[0]['filingTypeCode'] == 'DISDE'
 
     else:
         assert rv.status_code == HTTPStatus.FORBIDDEN
