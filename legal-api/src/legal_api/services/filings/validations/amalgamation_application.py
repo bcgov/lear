@@ -30,6 +30,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
+    validate_permission_and_completing_party,
     validate_phone_number,
     validate_share_structure,
 )
@@ -60,7 +61,20 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
     if amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         # Adopt from one of the amalgamating businesses contains name not nrNumber
         msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
-
+    
+    if flags.is_on("enabled-deeper-permission-action"):
+        err = validate_permission_and_completing_party(
+            None,
+            amalgamation_json,
+            filing_type,
+            msg,
+            {"check_name":False,
+            "check_email":True,
+            "check_address":False,
+            "check_document_email":True}
+                            )
+        if err:
+            return err
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
     msg.extend(validate_parties_names(amalgamation_json, filing_type, legal_type))
     msg.extend(validate_parties_addresses(amalgamation_json, filing_type))
