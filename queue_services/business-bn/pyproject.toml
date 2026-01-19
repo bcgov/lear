@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-bn"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Patrick Wang <peinan.wang@gov.bc.ca>"]
 readme = "README.md"
