@@ -17,7 +17,7 @@ Processors hold the logic to communicate with CRA.
 """
 
 import jinja2
-import re
+import regex
 import requests
 from flask import current_app
 
@@ -173,13 +173,21 @@ def sanitize_address(address: dict):
     if not address:
         return address
 
-    for key, value in address.items():
+    fields = [
+        "streetAddress",
+        "streetAddressAdditional",
+        "addressCity",
+        "addressRegion",
+        "addressCountry",
+        "postalCode",
+    ]
+    for key in fields:
+        value = address.get(key)
         if isinstance(value, str):
-            address[key] = (
-                re.sub(r'[^A-Za-z0-9.,_]+', ' ', value)
-                .replace("\r\n", " ")
-                .replace("\n", " ")
-                .replace("\r", " ")
-                .strip()
-            )
+            # This keeps:
+            #   \p{L} = any letter (all languages, including Indigenous)
+            #   \p{M} = combining marks for accents/diacritics
+            #   \p{N} = any numeric character (0–9 and other scripts’ digits)
+            #   Literal punctuation: . , _
+            address[key] = regex.sub(r"[^\p{L}\p{M}\p{N}.,_]+", " ", value).strip()
     return address

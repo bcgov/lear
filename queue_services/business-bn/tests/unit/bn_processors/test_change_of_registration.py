@@ -275,7 +275,11 @@ def test_change_of_registration_address_sanitization(app, session, mocker):
     address.street = "123 #456\nStreet"
     address.save()
     
-    sanitized_street = "123  456 Street"
+    address = business.mailing_address.one()
+    address.street = "123 #456\nStreet"
+    address.save()
+    
+    sanitized_street = "123 456 Street"
 
     json_filing = {
         'filing': {

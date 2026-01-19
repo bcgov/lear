@@ -19,14 +19,21 @@ from business_bn.bn_processors import sanitize_address
 @pytest.mark.parametrize("test_input, expected", [
     (None, None),
     ({}, {}),
-    ({"street": "123 Main St"}, {"street": "123 Main St"}),
-    ({"street": "123 #456 Main St"}, {"street": "123 456 Main St"}),
-    ({"street": "Line 1\nLine 2"}, {"street": "Line 1 Line 2"}),
-    ({"street": "Line 1\rLine 2"}, {"street": "Line 1 Line 2"}),
-    ({"street": "123 #456\nMain St"}, {"street": "123 456 Main St"}),
-    ({"street": "#Start"}, {"street": "Start"}),
-    ({"street": "End#"}, {"street": "End"}),
-    ({"street": "#\n\r"}, {"street": ""}),
+    ({"streetAddress": "123 Main St"}, {"streetAddress": "123 Main St"}),
+    ({"streetAddress": "123 #456 Main St"}, {"streetAddress": "123 456 Main St"}),
+    ({"streetAddress": "Line 1\nLine 2"}, {"streetAddress": "Line 1 Line 2"}),
+    ({"streetAddress": "Line 1\rLine 2"}, {"streetAddress": "Line 1 Line 2"}),
+    ({"streetAddress": "123 #456\nMain St"}, {"streetAddress": "123 456 Main St"}),
+    ({"streetAddress": "#Start"}, {"streetAddress": "Start"}),
+    ({"streetAddress": "End#"}, {"streetAddress": "End"}),
+    ({"streetAddress": "#\n\r"}, {"streetAddress": ""}),
+    # French characters
+    ({"streetAddress": "Montréal"}, {"streetAddress": "Montréal"}),
+    ({"streetAddress": "François"}, {"streetAddress": "François"}),
+    ({"streetAddress": "L'Ancienne-Lorette"}, {"streetAddress": "L Ancienne Lorette"}),
+    # Indigenous characters
+    ({"streetAddress": "T’Sou-ke"}, {"streetAddress": "T Sou ke"}),
+    ({"streetAddress": "Šxʷwəq̓ʷəθət"}, {"streetAddress": "Šxʷwəq̓ʷəθət"}),
 ])
 def test_cleanse_address(test_input, expected):
     """Test the _cleanse_address function."""
@@ -36,7 +43,7 @@ def test_cleanse_address(test_input, expected):
 def test_cleanse_address_mutation():
     """Test that _cleanse_address modifies dictionary in place (or returns modified copy effectively)."""
     # Note: Current implementation modifies in place.
-    address = {"street": "123 #456"}
+    address = {"streetAddress": "123 #456"}
     cleaned = sanitize_address(address)
-    assert cleaned["street"] == "123 456"
-    assert address["street"] == "123 456"
+    assert cleaned["streetAddress"] == "123 456"
+    assert address["streetAddress"] == "123 456"

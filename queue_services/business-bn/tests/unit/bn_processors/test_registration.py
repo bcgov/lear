@@ -175,7 +175,7 @@ def test_registration_address_sanitization(app, session, mocker):
     address.street = "123 #456\nStreet"
     address.save()
     
-    sanitized_street = "123  456 Street"
+    sanitized_street = "123 456 Street"
 
     def mock_request_bn_hub(input_xml):
         root = Et.fromstring(input_xml)
