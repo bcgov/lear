@@ -51,19 +51,9 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    if flags.is_on("enabled-deeper-permission-action"):
-        err = validate_permission_and_completing_party(
-            None,
-            incorporation_json,
-            filing_type,
-            msg,
-            {"check_name":False,
-            "check_email":True,
-            "check_address":False,
-            "check_document_email":True}
-                            )
-        if err:
-            return err
+    err = _validate_incorporation_permission(incorporation_json, filing_type, msg)
+    if err:
+        return err
         
     msg.extend(validate_offices(incorporation_json, legal_type))
     msg.extend(validate_offices_addresses(incorporation_json, filing_type))
@@ -336,3 +326,22 @@ def validate_ia_court_order(filing: dict) -> list:
         if err:
             return err
     return []
+
+def _validate_incorporation_permission(
+    incorporation_json: dict,
+    filing_type: str,
+    msg: list
+):
+    """Validate the permission and completing party of the incorporation filing."""
+    if not flags.is_on("enabled-deeper-permission-action"):
+        return None
+    return validate_permission_and_completing_party(
+        None,
+        incorporation_json,
+        filing_type,
+        msg,
+        {"check_name":False,
+         "check_email":True,
+         "check_address":False,
+         "check_document_email":True}
+                        )

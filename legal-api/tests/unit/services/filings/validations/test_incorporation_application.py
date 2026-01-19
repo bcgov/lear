@@ -34,6 +34,7 @@ from . import create_party, create_party_address, lists_are_equal, create_office
 from tests import not_github_ci
 from unittest.mock import patch
 from legal_api.services import NameXService, flags
+from legal_api.services.filings.validations.incorporation_application import validate_coop_parties_mailing_address, validate_parties_names
 from tests.unit import MockResponse
 
 
