@@ -143,6 +143,7 @@ class PermissionService:
                 DissolutionTypes.VOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
                 DissolutionTypes.INVOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value,
                 DissolutionTypes.ADMINISTRATIVE: ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value,
+                DissolutionTypes.DELAY: ListFilingsPermissionsAllowed.DISSOLUTION_DELAY_FILING.value
             }
             permission_granted = dissolution_mapping.get(filing_sub_type)
             if legal_type in ["FM", "SP", "GP", "LLP"]:
