@@ -655,25 +655,21 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
 
     msg = []
     if phone_num := contact_point_dict.get("phone", None):
-        # if pure digits (max 10)
-        phone_length: Final = 10
-        if phone_num.isdigit():
-            if len(phone_num) != phone_length:
-                msg.append({
-                    "error": "Invalid phone number, maximum 10 digits in phone number format",
-                    "path": f"{contact_point_path}/phone"})
-        else:
-            # Check various phone formats
-            # (123) 456-7890 / 123-456-7890 / 123.456.7890 / 123 456 7890
-            phone_pattern = r"^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$"
-            if not re.match(phone_pattern, phone_num):
-                msg.append({
-                    "error": "Invalid phone number, maximum 10 digits in phone number format",
-                    "path": f"{contact_point_path}/phone"})
+        # Expected format: (XXX) XXX-XXXX
+        phone_pattern = r"\(\d{3}\) \d{3}-\d{4}"
+
+        if not re.fullmatch(phone_pattern, phone_num):
+            msg.append({
+                "error": "Invalid phone number, expected format: (XXX) XXX-XXXX",
+                "path": f"{contact_point_path}/phone"
+            })
 
     max_extension_length: Final = 5
-    if (extension := contact_point_dict.get("extension")) and len(str(extension)) > max_extension_length:
-        msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
+    if (extension := contact_point_dict.get("extension")):
+        extension_str = str(extension)
+
+        if not extension_str.isdigit() or len(extension_str) > max_extension_length:
+            msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
 
     return msg
 
