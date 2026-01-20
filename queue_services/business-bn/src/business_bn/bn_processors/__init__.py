@@ -17,6 +17,7 @@ Processors hold the logic to communicate with CRA.
 """
 
 import jinja2
+import regex
 import requests
 from flask import current_app
 
@@ -165,3 +166,28 @@ def get_owners_legal_type(identifier):
     except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as err:
         current_app.logger.error(err, exc_info=True)
         return None, None
+
+
+def sanitize_address(address: dict):
+    """Remove special characters from address."""
+    if not address:
+        return address
+
+    fields = [
+        "streetAddress",
+        "streetAddressAdditional",
+        "addressCity",
+        "addressRegion",
+        "addressCountry",
+        "postalCode",
+    ]
+    for key in fields:
+        value = address.get(key)
+        if isinstance(value, str):
+            # This keeps:
+            #   \p{L} = any letter (all languages, including Indigenous)
+            #   \p{M} = combining marks for accents/diacritics
+            #   \p{N} = any numeric character (0-9 and other scripts digits)
+            #   Literal punctuation: . , _
+            address[key] = regex.sub(r"[^\p{L}\p{M}\p{N}.,_]+", " ", value).strip()
+    return address
