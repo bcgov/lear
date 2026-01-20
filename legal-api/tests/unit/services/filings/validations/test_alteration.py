@@ -732,10 +732,16 @@ def test_alteration_good_standing(session, good_standing, has_permission, should
             HTTPStatus.FORBIDDEN,
             [{'error': 'Permission Denied - You do not have permissions send not in gpod standing businesss in this filing.'}],
         ))
+    def court_order_permission_check(required_permission, message=None):
+        if required_permission == ListActionsPermissionsAllowed.COURT_ORDER_POA.value:
+            return None
+        return mock_check_user_permission(required_permission, message)
+    
     with (
         patch.object(flags, 'is_on', return_value=True),
         patch.object(Business, 'good_standing', new_callable =lambda: good_standing),
-        patch.object(PermissionService, 'check_user_permission', mock_check_user_permission)
+        patch.object(PermissionService, 'check_user_permission', mock_check_user_permission),
+        patch.object(PermissionService, 'check_user_permission', side_effect=court_order_permission_check)
     ):
         err = validate(business, f)
     if should_pass:
