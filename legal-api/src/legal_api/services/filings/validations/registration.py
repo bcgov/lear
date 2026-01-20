@@ -58,10 +58,10 @@ def validate(registration_json: dict) -> Optional[Error]:
             registration_json,
             filing_type,
             msg,
-            check_name=False,
-            check_email=True,
-            check_address=False,
-            check_document_email=False
+            {"check_name":False,
+            "check_email":True,
+            "check_address":False,
+            "check_document_email":False}
                             )
         if err:
             return err
