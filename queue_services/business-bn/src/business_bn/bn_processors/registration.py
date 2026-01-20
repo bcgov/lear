@@ -31,6 +31,7 @@ from business_bn.bn_processors import (
     get_owners_legal_type,
     program_type_code,
     request_bn_hub,
+    sanitize_address,
 )
 from business_bn.exceptions import BNException, BNRetryExceededException, QueueException
 from business_bn.services import gcp_queue
@@ -228,8 +229,8 @@ def _inform_cra(
                 "foundingDate": founding_date,
                 "legalNames": legal_names,
                 "parties": [party.json for party in parties[:5]],
-                "deliveryAddress": business.delivery_address.one_or_none().json,
-                "mailingAddress": business.mailing_address.one_or_none().json,
+                "deliveryAddress": sanitize_address(business.delivery_address.one_or_none().json),
+                "mailingAddress": sanitize_address(business.mailing_address.one_or_none().json),
                 "businessOwned": business_owned,
                 "isFirms": is_firms,
                 "isCorps": is_corps,
