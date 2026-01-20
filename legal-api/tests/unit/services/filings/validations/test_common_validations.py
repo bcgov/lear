@@ -20,6 +20,8 @@ from unittest.mock import patch
 from legal_api.errors import Error
 from legal_api.models.party import Party
 from legal_api.models.party_role import PartyRole
+from legal_api.services import flags
+from legal_api.services.permissions import PermissionService
 import pytest
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
@@ -47,6 +49,7 @@ from legal_api.services.filings.validations.common_validations import (
     is_officer_proprietor_replace_valid,
     validate_certify_name,
     validate_certified_by,
+    validate_court_order,
     validate_email,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -773,3 +776,37 @@ def test_validate_email_missing_email_field(session):
 
     result = validate_email(filing_json, 'incorporationApplication')
     assert result == []
+
+
+@pytest.mark.parametrize('has_permission, expected_error_msg', [
+    (True, None),
+    (False, 'Permission Denied'),
+])
+def test_validate_court_order_with_flag_on(session, has_permission, expected_error_msg):
+    """
+    Test court order validation with flag ON
+    """
+    court_order = {
+        'fileNumber': 'Valid file number',
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }
+
+    permission_error = Error(
+        HTTPStatus.FORBIDDEN,
+        [{'message': 'Permission Denied - You do not have permissions add court order details in this filing.'}]
+    ) if not has_permission else None
+
+    with (
+        patch.object(flags, 'is_on', return_value=True),
+        patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+    ):
+        result = validate_court_order('/filing/alteration/courtOrder', court_order)
+
+    if has_permission:
+        assert result is None
+    else:
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert expected_error_msg in result[0]['error']
+        assert result[0]['path'] == '/filing/alteration/courtOrder'

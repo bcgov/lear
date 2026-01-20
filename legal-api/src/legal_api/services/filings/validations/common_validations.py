@@ -239,7 +239,13 @@ def validate_court_order(court_order_path, court_order):
         except ValueError:
             err_path = court_order_date_path
             msg.append({"error": "Invalid court order date format.", "path": err_path})
-
+            
+    if flags.is_on("enabled-deeper-permission-action"):
+        required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
+        message = "Permission Denied - You do not have permissions add court order details in this filing."
+        permission_error = PermissionService.check_user_permission(required_permission, message=message)
+        if permission_error:
+            msg.append({"error": permission_error.msg[0].get("message", message), "path": court_order_path})
     if msg:
         return msg
 

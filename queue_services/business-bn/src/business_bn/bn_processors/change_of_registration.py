@@ -27,6 +27,7 @@ from business_bn.bn_processors import (
     document_sub_type,
     get_splitted_business_number,
     request_bn_hub,
+    sanitize_address,
 )
 from business_bn.exceptions import BNException, BNRetryExceededException
 from business_common.utils.datetime import datetime
@@ -199,7 +200,7 @@ def change_address(
             "documentSubType": document_sub_type[address_type],
             "addressTypeCode": address_type_code[address_type],
             "effectiveDate": effective_date,
-            "address": address.one_or_none().json,
+            "address": sanitize_address(address.one_or_none().json),
             **get_splitted_business_number(business.tax_id),
         },
     )
