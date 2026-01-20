@@ -788,7 +788,7 @@ def test_validate_court_order_with_flag_on(session, has_permission, expected_err
     """
     court_order = {
         'fileNumber': 'Valid file number',
-        'orderDare': '2021-01-30T09:56:01+01:00',
+        'orderDate': '2021-01-30T09:56:01+01:00',
         'effectOfOrder': 'planOfArrangement'
     }
 
@@ -809,4 +809,4 @@ def test_validate_court_order_with_flag_on(session, has_permission, expected_err
         assert isinstance(result, list)
         assert len(result) == 1
         assert expected_error_msg in result[0]['error']
-        assert result[0]['path'] == 'filing/alteration/courtOrder'
+        assert result[0]['path'] == '/filing/alteration/courtOrder'
