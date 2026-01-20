@@ -18,15 +18,12 @@ from typing import Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
-from flask import current_app, has_request_context, request
 from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
-    check_completing_party_permission,
-    validate_completing_party,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
