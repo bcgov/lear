@@ -1136,6 +1136,8 @@ def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
 def validate_permission_and_completing_party(business: Optional[Business], filing_json: dict, filing_type: str, msg: list, check_options: Optional[dict] = None
 ) -> Optional[Error]:
     """Validate completing party permission and changes."""
+    if not flags.is_on("enable-edit-completing-party-permission"):
+        return None
     if check_options is None:
         check_options = {}
     check_name = check_options.get("check_name", True)
