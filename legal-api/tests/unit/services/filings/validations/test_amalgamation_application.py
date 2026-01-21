@@ -1832,6 +1832,7 @@ def test_amalgamation_permission_and_completing_party_flag(mocker, app, session,
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_parties_addresses', return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_offices', return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_offices_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamation_court_order', return_value=[])
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
     mock_validate_permission = mocker.patch(
