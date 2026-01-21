@@ -16,12 +16,12 @@ from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
 from typing import Final, Optional
 
-from legal_api.core.filing import Filing
 import pycountry
 from dateutil.relativedelta import relativedelta
 from flask import current_app, has_request_context, request
 from flask_babel import _ as babel
 
+from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService, flags
