@@ -154,6 +154,7 @@ def test_sp_registration(mocker, app, session, jwt):
 def test_dba_registration(mocker, app, session, jwt):
     """Assert that the general partnership registration is valid."""
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             with patch.object(flags, 'is_on', return_value=True):
@@ -162,7 +163,8 @@ def test_dba_registration(mocker, app, session, jwt):
                         mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
                         mock_colin.return_value = mock_response
                         with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
-                            err = validate(None, DBA_REGISTRATION)
+                            with app.test_request_context(headers={'account-id': '123'}):
+                                err = validate(None, DBA_REGISTRATION)
 
     assert not err
 
@@ -437,8 +439,8 @@ def test_registration_completing_party_validation(mocker, app, session, jwt):
     with patch.object(flags, 'is_on', return_value=True):
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
             with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                    with patch('legal_api.services.filings.validations.registration.validate_completing_party', return_value=completing_party_result):
-                        with patch('legal_api.services.filings.validations.registration.check_completing_party_permission') as mock_check_permission:
+                    with patch('legal_api.services.filings.validations.common_validations.validate_completing_party', return_value=completing_party_result):
+                        with patch('legal_api.services.filings.validations.common_validations.check_completing_party_permission') as mock_check_permission:
                             def mock_check(permissions_msg, filing_type):
                                 permissions_msg.append({
                                     "error": "Permission Denied: You do not have permission to edit the completing party.",
