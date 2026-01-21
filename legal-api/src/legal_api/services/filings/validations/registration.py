@@ -133,7 +133,7 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
     partner_parties = 0
     invalid_roles = set()
     parties = filing["filing"][filing_type]["parties"]
-    if flags.is_on("enabled-deeper-permission-action"):
+    if flags.is_on("enabled-deeper-permission-action") and filing_type == 'registration':
         msg.extend(validate_party_role_firms(parties, filing_type))
     for party in parties:  # pylint: disable=too-many-nested-blocks;
         for role in party.get("roles", []):
