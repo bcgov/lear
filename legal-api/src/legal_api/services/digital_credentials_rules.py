@@ -16,18 +16,11 @@
 
 from datetime import datetime, timezone
 from enum import Enum
-from http import HTTPStatus
 
-import requests
 from flask import current_app
 
 from legal_api.models import Business, Filing, Party, PartyRole, User
-from legal_api.services.digital_credentials_utils import (
-    FormattedUser,
-    determine_allowed_business_types,
-    is_account_based_access_enabled,
-)
-from legal_api.utils.auth import jwt
+from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
 
 
 class DigitalCredentialsRulesService:
@@ -87,22 +80,6 @@ class DigitalCredentialsRulesService:
 
         return True
 
-    def user_has_account_role(self, business: Business) -> bool:
-        """Return True if the user has ADMIN or COORDINATOR org membership."""
-        try:
-            # Check FF for account based access enablement
-            if not is_account_based_access_enabled():
-                return False
-
-            # Call Auth API to get org membership for the business
-            auth_url = f"{current_app.config.get('AUTH_SVC_URL', '').rstrip('/')}/entities/{business.identifier}/authorizations"
-            resp = requests.get(auth_url, headers={"Authorization": f"Bearer {jwt.get_token_auth_header()}"}, timeout=30)
-            if resp.status_code == HTTPStatus.OK:
-                return resp.json().get("orgMembership") in self.ALLOWED_DBC_ACCOUNT_ROLES
-        except Exception as ex:
-            current_app.logger.error(f"DBC Rules: Error checking account role: {ex}", exc_info=True)
-        return False
-
     def _has_specific_access(self, user: User, business: Business) -> bool:
         """Return True if business rules are met."""
         if not business:
@@ -112,15 +89,13 @@ class DigitalCredentialsRulesService:
         allowed_business_types = determine_allowed_business_types(
             self.valid_registration_types, self.valid_incorporation_types)
         current_app.logger.debug(
-            "DBC Allowed business types: %s. Account based access enabled: %s",
-            allowed_business_types,
-            is_account_based_access_enabled(),
+            "DBC Allowed business types: %s",
+            allowed_business_types
         )
 
         if business.legal_type in allowed_business_types:
             return (self.user_has_filing_party_role(user, business)
-                    or self.user_has_business_party_role(user, business)
-                    or self.user_has_account_role(business))
+                    or self.user_has_business_party_role(user, business))
 
         current_app.logger.debug("No specific DBC access rules are met.")
         return False

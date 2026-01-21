@@ -114,9 +114,7 @@ def test_has_general_access_true(monkeypatch, app, session, jwt, rules):
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
-@patch.object(DigitalCredentialsRulesService, 'user_has_account_role', return_value=False)
-def test_has_specific_access_false_when_no_business(mock_user_has_account_role,
-                                                    mock_user_has_business_party_role,
+def test_has_specific_access_false_when_no_business(mock_user_has_business_party_role,
                                                     mock_user_has_filing_party_role,
                                                     monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
@@ -130,9 +128,7 @@ def test_has_specific_access_false_when_no_business(mock_user_has_account_role,
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
-@patch.object(DigitalCredentialsRulesService, 'user_has_account_role', return_value=False)
-def test_has_specific_access_false_when_wrong_business_type(mock_user_has_account_role,
-                                                            mock_user_has_business_party_role,
+def test_has_specific_access_false_when_wrong_business_type(mock_user_has_business_party_role,
                                                             mock_user_has_filing_party_role,
                                                             monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
@@ -154,9 +150,7 @@ def test_has_specific_access_false_when_wrong_business_type(mock_user_has_accoun
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
-@patch.object(DigitalCredentialsRulesService, 'user_has_account_role', return_value=False)
-def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_has_account_role,
-                                                                          mock_user_has_business_party_role,
+def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_has_business_party_role,
                                                                           mock_user_has_filing_party_role,
                                                                           monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
@@ -178,10 +172,8 @@ def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_u
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
-@patch.object(DigitalCredentialsRulesService, 'user_has_account_role', return_value=False)
 @patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
 def test_has_specific_access_true_when_correct_business_type_and_filing_role(mock_determine_allowed_business_types,
-                                                                             mock_user_has_account_role,
                                                                              mock_user_has_business_party_role,
                                                                              mock_user_has_filing_party_role,
                                                                              monkeypatch, app, session, legal_type, jwt, rules):
@@ -204,10 +196,8 @@ def test_has_specific_access_true_when_correct_business_type_and_filing_role(moc
 @patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 @patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
 @patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
-@patch.object(DigitalCredentialsRulesService, 'user_has_account_role', return_value=False)
 @patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
 def test_has_specific_access_true_when_correct_business_type_and_party_role(mock_determine_allowed_business_types,
-                                                                            mock_user_has_account_role,
                                                                             mock_user_has_business_party_role,
                                                                             mock_user_has_filing_party_role,
                                                                             monkeypatch, app, session, legal_type, jwt, rules):
@@ -215,33 +205,6 @@ def test_has_specific_access_true_when_correct_business_type_and_party_role(mock
     setup_mock_auth(monkeypatch, jwt, token_json)
 
     with app.test_request_context():
-        user = User.find_by_jwt_token(jwt)
-        business = create_business(legal_type, Business.State.ACTIVE)
-
-        assert rules._has_specific_access(user, business) is True
-
-
-@pytest.mark.parametrize('legal_type', [
-    Business.LegalTypes.SOLE_PROP.value,
-    Business.LegalTypes.PARTNERSHIP.value,
-    Business.LegalTypes.BCOMP.value,
-])
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
-@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
-@patch.object(DigitalCredentialsRulesService, 'user_has_account_role', return_value=True)
-@patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
-def test_has_specific_access_true_when_correct_business_type_and_account_role(mock_determine_allowed_business_types,
-                                                                              mock_user_has_account_role,
-                                                                              mock_user_has_business_party_role,
-                                                                              mock_user_has_filing_party_role,
-                                                                              mock_user_find_by_jwt_token,
-                                                                              monkeypatch, app, session, legal_type, jwt, rules):
-    """Test _has_specific_access returns True when user has account role (ADMIN/COORDINATOR)."""
-    token_json = {'username': 'test'}
-
-    with app.test_request_context():
-        setup_mock_auth(monkeypatch, jwt, token_json)
         user = User.find_by_jwt_token(jwt)
         business = create_business(legal_type, Business.State.ACTIVE)
 
@@ -489,247 +452,3 @@ def test_user_has_filing_party_role_and_user_has_business_party_role_true(app, s
 
     assert rules.user_has_filing_party_role(user, business) is True
     assert rules.user_has_business_party_role(user, business) is True
-
-
-@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_admin_true(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
-    """Test user_has_account_role returns True when user has ADMIN role."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'orgMembership': 'ADMIN'}
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is True
-    mock_requests_get.assert_called_once_with(
-        f'https://auth-api.example.com/entities/{business.identifier}/authorizations',
-        headers={'Authorization': 'Bearer mock-jwt-token'},
-        timeout=30
-    )
-
-
-@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_coordinator_true(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
-    """Test user_has_account_role returns True when user has COORDINATOR role."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com/'  # Test trailing slash handling
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'orgMembership': 'COORDINATOR'}
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is True
-    mock_requests_get.assert_called_once_with(
-        f'https://auth-api.example.com/entities/{business.identifier}/authorizations',
-        headers={'Authorization': 'Bearer mock-jwt-token'},
-        timeout=30
-    )
-
-
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_member_false(mock_current_app, mock_requests_get, app, session, jwt, rules):
-    """Test user_has_account_role returns False when user has USER role (not allowed)."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'orgMembership': 'USER'}
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-
-
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_no_org_membership_false(mock_current_app, mock_requests_get, app, session, jwt, rules):
-    """Test user_has_account_role returns False when orgMembership is missing from response."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'someOtherField': 'value'}  # Missing orgMembership
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-
-
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_404_false(mock_current_app, mock_requests_get, app, session, jwt, rules):
-    """Test user_has_account_role returns False when API returns 404."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_response = Mock()
-    mock_response.status_code = 404
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-
-
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_exception_false(mock_current_app, mock_requests_get, app, session, jwt, rules):
-    """Test user_has_account_role returns False when requests raises an exception."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_requests_get.side_effect = requests.RequestException('Connection error')
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-
-
-@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_empty_auth_url_false(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
-    """Test user_has_account_role returns False when AUTH_SVC_URL is empty."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = ''  # Empty AUTH_SVC_URL
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-    # Verify requests.get was called with empty base URL
-    mock_requests_get.assert_called_once_with(
-        f'/entities/{business.identifier}/authorizations',
-        headers={'Authorization': 'Bearer mock-jwt-token'},
-        timeout=30
-    )
-
-
-@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=False)
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_feature_flag_disabled_false(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
-    """Test user_has_account_role returns False when account-based access feature flag is disabled."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-    # Verify that requests.get was never called because the feature flag is off
-    mock_requests_get.assert_not_called()
-    mock_is_account_based_access_enabled.assert_called_once()
-
-
-@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_feature_flag_enabled_with_admin_role(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
-    """Test user_has_account_role returns True when feature flag is enabled and user has ADMIN role."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'orgMembership': 'ADMIN'}
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is True
-    # Verify that both the feature flag check and the API call were made
-    mock_is_account_based_access_enabled.assert_called_once()
-    mock_requests_get.assert_called_once_with(
-        f'https://auth-api.example.com/entities/{business.identifier}/authorizations',
-        headers={'Authorization': 'Bearer mock-jwt-token'},
-        timeout=30
-    )
-
-
-@patch('legal_api.services.digital_credentials_rules.is_account_based_access_enabled', return_value=True)
-@patch('legal_api.services.digital_credentials_rules.requests.get')
-@patch('legal_api.services.digital_credentials_rules.current_app')
-def test_user_has_account_role_feature_flag_enabled_with_non_admin_role(mock_current_app, mock_requests_get, mock_is_account_based_access_enabled, app, session, jwt, rules):
-    """Test user_has_account_role returns False when feature flag is enabled but user has non-admin role."""
-    # Setup mocks
-    mock_current_app.config.get.return_value = 'https://auth-api.example.com'
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'orgMembership': 'USER'}
-    mock_requests_get.return_value = mock_response
-    
-    # Mock JWT token
-    jwt.get_token_auth_header = Mock(return_value='mock-jwt-token')
-    
-    business = create_business(Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
-    
-    with app.test_request_context():
-        result = rules.user_has_account_role(business)
-    
-    assert result is False
-    # Verify that both the feature flag check and the API call were made
-    mock_is_account_based_access_enabled.assert_called_once()
-    mock_requests_get.assert_called_once_with(
-        f'https://auth-api.example.com/entities/{business.identifier}/authorizations',
-        headers={'Authorization': 'Bearer mock-jwt-token'},
-        timeout=30
-    )
