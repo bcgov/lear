@@ -359,9 +359,11 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
         _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
-        next_ar_year = (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        next_ar_year = (self.last_ar_year if self.last_ar_year else _founding_date.year) + 1
         no_of_years_to_add = next_ar_year - _founding_date.year
-        return _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        return LegislationDatetime.as_utc_timezone(
+            _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        )
 
     @property
     def next_annual_tr_due_datetime(self) -> datetime:

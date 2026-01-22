@@ -496,8 +496,8 @@ def test_post_only_validate_ar(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
@@ -519,8 +519,8 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
@@ -590,8 +590,8 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['routingSlipNumber'] = '123131332'
@@ -743,8 +743,8 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['business']['identifier'] = 'CP7654321'
@@ -1256,8 +1256,8 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
