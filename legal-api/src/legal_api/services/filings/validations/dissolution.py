@@ -416,7 +416,7 @@ def _check_dissolution_permission(required_permission: str, dissolution_type: st
 def _validate_dissolution_permission(business: Business, dissolution: dict, dissolution_type: str, filing_type: str, msg: list) -> Optional[Error]:
     """Validate dissolution permission based on business and dissolution type."""
 
-    if not dissolution_type == DissolutionTypes.DELAY.value:
+    if dissolution_type != DissolutionTypes.DELAY.value:
         err = check_good_standing_permission(business)
         if err:
             return err
