@@ -377,14 +377,6 @@ class AccountService:
                 # IDIR
                 email = user_data.get("email", "")
 
-            phone = ""
-            if user_contacts and len(user_contacts) > 0 and user_contacts[0].get("phone"):
-                # BCSC
-                phone = user_contacts[0].get("phone", "")
-            elif user_data.get("phone"):
-                # IDIR
-                phone = user_data.get("phone", "")
-
             mailing_address = org_info.get("mailingAddress", {})
             if not mailing_address:
                 current_app.logger.warning(f"No mailing address found for org {org_id}")
@@ -398,9 +390,8 @@ class AccountService:
                 "firstName": first_name,
                 "lastName": last_name,
                 "email": email,
-                "phone": phone,
                 "streetAdditional": mailing_address.get("streetAdditional", ""),
-                "delieveryInstructions": mailing_address.get("deliveryInstructions", "")
+                "deliveryInstructions": mailing_address.get("deliveryInstructions", "")
             }
             return {"contacts": [contact]}
         except Exception as e:
