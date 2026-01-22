@@ -768,7 +768,7 @@ def test_validate_email_missing_email_field(session):
         'filing': {
             'incorporationApplication': {
                 'contactPoint': {
-                    'phone': '123-456-7890'
+                    'phone': '(123) 456-7890'
                 }
             }
         }
