@@ -1150,20 +1150,21 @@ def validate_permission_and_completing_party(business: Optional[Business], filin
         account_id = request.headers.get("account-id",
                                             request.headers.get("accountId", None))
     if account_id and completing_party_exists and filing_json.get("filing", {}).get(filing_type, {}).get("parties"):
-        completing_party_result = validate_completing_party(filing_json, filing_type, account_id)
-        if completing_party_result.get("error"):
-            msg.extend(completing_party_result["error"])
+        permission_error = check_completing_party_permission(msg, filing_type)
         
-        # Check if any relevant fields changed
-        should_check_permission = (
-            (check_email and completing_party_result.get("email_changed")) or
-            (check_name and completing_party_result.get("name_changed")) or
-            (check_address and completing_party_result.get("address_changed"))
-            )
-        if should_check_permission:
-            error = check_completing_party_permission(msg, filing_type)
-            if error:
-                return error
+        if permission_error:
+            completing_party_result = validate_completing_party(filing_json, filing_type, account_id)
+            if completing_party_result.get("error"):
+                msg.extend(completing_party_result["error"])
+            
+            # Check if any relevant fields changed
+            should_check_permission = (
+                (check_email and completing_party_result.get("email_changed")) or
+                (check_name and completing_party_result.get("name_changed")) or
+                (check_address and completing_party_result.get("address_changed"))
+                )
+            if should_check_permission and permission_error:
+                return permission_error
 
     if check_document_email:
         return check_document_email_changes(filing_json, filing_type, account_id, msg)
