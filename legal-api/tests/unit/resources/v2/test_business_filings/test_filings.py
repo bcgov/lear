@@ -2120,7 +2120,15 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         lambda flag, _user, _account_id: enabled_filings
         if flag == 'enabled-specific-filings' else {}
     )
+    monkeypatch.setattr(
+        'legal_api.services.flags.is_on',
+        lambda flag: True
+        if flag == 'enabled-deeper-permission-action' else {}
+    )
     dod = copy.deepcopy(FILING_HEADER)
+    del dod['filing']['header']['routingSlipNumber']
+    del dod['filing']['header']['waiveFees']
+    del dod['filing']['header']['priority']
     dod['filing']['header']['name'] = 'dissolution'
     dod['filing']['dissolution'] = {
         'dissolutionType': 'delay',
@@ -2129,7 +2137,8 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     dod['filing']['business']['identifier'] = identifier
     dod['filing']['business']['legalType'] = legal_type
 
-    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    # Note: a business requiring a DOD will not be in good standing
+    b = factory_business(identifier, (datetime.now() - datedelta.datedelta(years=4)), (datetime.now() - datedelta.datedelta(years=3)), legal_type)
     factory_business_mailing_address(b)
     batch = factory_batch(Batch.BatchType.INVOLUNTARY_DISSOLUTION, Batch.BatchStatus.PROCESSING, 1, '')
 
@@ -2157,7 +2166,7 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         json=dod,
         headers=headers
     )
-
+    print(rv.json)
     if enabled:
         assert rv.status_code == HTTPStatus.CREATED
         # assert ledger display hidden or not as expected
