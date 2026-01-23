@@ -5,7 +5,7 @@ Revises: 7fb9cd3e81bf
 Create Date: 2025-06-04 01:03:37.254302
 
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import sqlalchemy as sa
 from alembic import op
@@ -52,7 +52,7 @@ def upgrade():
         sa.Column('modified_by_id', sa.Integer, nullable=True),
     )
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     authorized_roles = sa.table(
         'authorized_roles',

@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Review Result Model is working as expected.
 """
 import copy
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 from registry_schemas.example_data import (
     CONTINUATION_IN,
@@ -73,7 +73,7 @@ def test_review_result_save(session):
     assert change_requested.id
 
     review.status = ReviewStatus.APPROVED
-    review.submission_date = datetime.now(timezone.utc)
+    review.submission_date = datetime.now(UTC)
 
     approved = ReviewResult()
     approved.review_id = review.id
