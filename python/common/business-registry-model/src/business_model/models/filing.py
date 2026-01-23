@@ -571,20 +571,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             'temporaryCorpTypeCode': 'TMP'
         },
-        'intentToLiquidate': {
-            'name': 'intentToLiquidate',
-            'title': 'Statement of Intent to Liquidate',
-            'codes': {
-                'BC': 'LQSIN',
-                'BEN': 'LQSIN',
-                'ULC': 'LQSIN',
-                'CC': 'LQSIN',
-                'C': 'LQSIN',
-                'CBEN': 'LQSIN',
-                'CUL': 'LQSIN',
-                'CCC': 'LQSIN'
-            }
-        },
         'noticeOfWithdrawal': {
             'name': 'noticeOfWithdrawal',
             'title': 'Notice of Withdrawal',
@@ -1359,7 +1345,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         excluded_filings = [
             'lear_epoch',
             'adminFreeze',
+            'changeOfLiquidators',
+            'changeOfOfficers',
+            'changeOfReceivers',
             'courtOrder',
+            'noticeOfWithdrawal',
             'registrarsNotation',
             'registrarsOrder',
             'transparencyRegister'
@@ -1369,6 +1359,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
+                ~and_(Filing._filing_type == 'dissolution', Filing._filing_sub_type == 'delay'),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
