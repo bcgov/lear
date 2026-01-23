@@ -12,7 +12,7 @@
 # pylint: disable=too-many-lines
 import copy
 from contextlib import suppress
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import Final
@@ -1037,7 +1037,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def set_processed(self):
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
-            self._completion_date = datetime.now(timezone.utc)
+            self._completion_date = datetime.now(UTC)
             self._status = Filing.Status.COMPLETED.value
         if not self.effective_date_can_be_before_payment_completion_date() and (
                 self.effective_date is None or (
@@ -1383,7 +1383,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing.id). \
             filter(Filing._status == Filing.Status.PAID.value). \
             filter(Filing.effective_date > Filing._payment_completion_date). \
-            filter(Filing.effective_date <= datetime.now(timezone.utc)).all()
+            filter(Filing.effective_date <= datetime.now(UTC)).all()
         return [filing.id for filing in filings]
 
     @staticmethod

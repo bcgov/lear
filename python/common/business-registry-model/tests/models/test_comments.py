@@ -70,7 +70,7 @@ def test_filing_comment_dump_json(session):
     f = factory_filing(b, ANNUAL_REPORT)
     c = factory_comment(b, f, 'a comment')
 
-    now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
+    now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.UTC)
     with freeze_time(now):
         test_json = c.json
         print(test_json)

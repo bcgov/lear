@@ -922,7 +922,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
     @classmethod
-    def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
+    def get_next_value_from_sequence(cls, business_type: str) -> int | None:
         """Return the next value from the sequence."""
         sequence_mapping = {
             'BC': 'business_identifier_bc',  # only available in sandbox now
@@ -989,7 +989,7 @@ class BusinessType(BaseEnum):
     DEFAULT = 'OT'
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
@@ -1014,7 +1014,7 @@ class BusinessIdentifier:
         return True
 
     @staticmethod
-    def next_identifier(business_type: BusinessType) -> Optional[str]:
+    def next_identifier(business_type: BusinessType) -> str | None:
         """Get the next identifier."""
         if not (business_type in BusinessType and
                 (sequence_val := Business.get_next_value_from_sequence(business_type))):
