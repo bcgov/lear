@@ -118,6 +118,8 @@ class PermissionService:
         """Return the first matching authorized role from the JWT, based on priority."""
         role_priority = [
             authz.STAFF_ROLE,
+            authz.SYSTEM_ROLE,
+            authz.COLIN_SVC_ROLE,
             authz.SBC_STAFF_ROLE,
             authz.CONTACT_CENTRE_STAFF_ROLE,
             authz.MAXIMUS_STAFF_ROLE,
@@ -126,8 +128,11 @@ class PermissionService:
 
         if token_info is None:
             token_info = getattr(g, "jwt_oidc_token_info", {}) or {}
-
+        
         roles_in_token = token_info.get("realm_access", {}).get("roles", [])
+        if authz.SYSTEM_ROLE in roles_in_token or authz.COLIN_SVC_ROLE in roles_in_token:
+            return authz.STAFF_ROLE
+        
         for role in role_priority:
             if role in roles_in_token:
                 return role
