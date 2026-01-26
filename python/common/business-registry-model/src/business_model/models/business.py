@@ -359,9 +359,11 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
         _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
-        next_ar_year = (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        next_ar_year = (self.last_ar_year if self.last_ar_year else _founding_date.year) + 1
         no_of_years_to_add = next_ar_year - _founding_date.year
-        return _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        return LegislationDatetime.as_utc_timezone(
+            _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        )
 
     @property
     def next_annual_tr_due_datetime(self) -> datetime:
@@ -920,7 +922,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
     @classmethod
-    def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
+    def get_next_value_from_sequence(cls, business_type: str) -> int | None:
         """Return the next value from the sequence."""
         sequence_mapping = {
             'BC': 'business_identifier_bc',  # only available in sandbox now
@@ -987,7 +989,7 @@ class BusinessType(BaseEnum):
     DEFAULT = 'OT'
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
@@ -1012,7 +1014,7 @@ class BusinessIdentifier:
         return True
 
     @staticmethod
-    def next_identifier(business_type: BusinessType) -> Optional[str]:
+    def next_identifier(business_type: BusinessType) -> str | None:
         """Get the next identifier."""
         if not (business_type in BusinessType and
                 (sequence_val := Business.get_next_value_from_sequence(business_type))):

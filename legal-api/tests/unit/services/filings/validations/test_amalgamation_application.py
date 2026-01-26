@@ -346,7 +346,7 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     filing['filing']['amalgamationApplication']['contactPoint']['email'] = 'no_one@never.get'
-    filing['filing']['amalgamationApplication']['contactPoint']['phone'] = '123-456-7890'
+    filing['filing']['amalgamationApplication']['contactPoint']['phone'] = '(123) 456-7890'
 
     regoffice = filing['filing']['amalgamationApplication']['offices']['registeredOffice']
     regoffice['deliveryAddress']['addressRegion'] = delivery_region

@@ -360,7 +360,7 @@ def test_get_filings_by_status__default_order(session):
     transaction_id = VersioningProxy.get_transaction_id(session())
     business = factory_business('CP1234567')
 
-    completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+    completion_date = datetime.datetime.utcnow().replace(tzinfo=datetime.UTC)
 
     # setup - create multiple filings on the same day & time
     filing_ids = []
@@ -565,7 +565,7 @@ def test_get_most_recent_filing(session):
     identifier = 'CP7654321'
     b = factory_business(identifier)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    base_ar_date = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=datetime.timezone.utc)
+    base_ar_date = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=datetime.UTC)
     filings = []
     for i in range(5):
         filing_date = base_ar_date + datedelta.datedelta(years=i)
