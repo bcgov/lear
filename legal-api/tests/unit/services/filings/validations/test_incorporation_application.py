@@ -239,7 +239,7 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
 
     regoffice = filing_json['filing'][incorporation_application_name]['offices']['registeredOffice']
     regoffice['deliveryAddress']['addressRegion'] = delivery_region
@@ -395,7 +395,7 @@ def test_validate_incorporation_addresses_whitespace(session, mocker, test_name,
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = 'BC'
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
 
     regoffice = filing_json['filing'][incorporation_application_name]['offices']['registeredOffice']
     regoffice['deliveryAddress'] = delivery_address
@@ -466,7 +466,7 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = legal_name
     else:
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = 'company name'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
     nr_response_copy = copy.deepcopy(nr_response)
     nr_response_copy['legalType'] = legal_type
 
@@ -679,7 +679,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
 
     base_mailing_address = filing_json['filing'][incorporation_application_name]['parties'][0]['mailingAddress']
     base_delivery_address = filing_json['filing'][incorporation_application_name]['parties'][0]['deliveryAddress']
@@ -830,7 +830,7 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
     filing_json['filing'][incorporation_application_name]['parties'] = []
 
     # populate party and party role info
@@ -1240,7 +1240,7 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
     filing_json['filing'][incorporation_application_name]['parties'] = []
 
     # populate party and party role info
@@ -1851,30 +1851,32 @@ def test_validate_incorporation_application_parties_delivery_address(mocker, app
         assert err is None
 
 @pytest.mark.parametrize('should_pass, phone_number, extension', [
-    (True, '1234567890', 12345),
-    (True, '1234567890', 1234),
-    (True, '1234567890', 123),
-    (True, '1234567890', 12),
-    (True, '1234567890', 1),
-    (False, '1234567890', 123456),
-    (False, '12345678901', 12345),
-    (True, '(123)456-7890', None),
+    # Valid phone, valid extensions
+    (True, '(123) 456-7890', 12345),
+    (True, '(123) 456-7890', 1234),
+    (True, '(123) 456-7890', 123),
+    (True, '(123) 456-7890', 12),
+    (True, '(123) 456-7890', 1),
+    (True, '(123) 456-7890', None),
+    (True, None, None),
+
+    # Invalid phone formats
+    (False, '(123)456-7890', None),
+    (False, '(123) 456-7890abc', None),
     (False, '(1234)456-7890', None),
     (False, '(123)4567-7890', None),
     (False, '(123)456-78901', None),
-    (True, '123-456-7890', None),
-    (False, '1234-456-7890', None),
-    (False, '123-4567-7890', None),
-    (False, '123-456-78901', None),
-    (True, '123.456.7890', None),
-    (False, '1234.456.7890', None),
-    (False, '123.4567.7890', None),
-    (False, '123.456.78901', None),
-    (True, '123 456 7890', None),
-    (False, '1234 456 7890', None),
-    (False, '123 4567 7890', None),
-    (False, '123 456 78901', None),
-    (True, None, None)
+
+    # Legacy formats that are no longer allowed
+    (False, '1234567890', 12345),
+    (False, '123-456-7890', None),
+    (False, '123.456.7890', None),
+    (False, '123 456 7890', None),
+
+    # Invalid extensions
+    (False, '(123) 456-7890', 123456),
+    (False, '(123) 456-7890', 12.3),
+    (False, '(123) 456-7890', -123),
 ])
 def test_ia_phone_number_validation(session, should_pass, phone_number, extension):
     """Test validate phone number and / or extension if they are provided."""
