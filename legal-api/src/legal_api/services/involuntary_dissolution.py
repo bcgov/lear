@@ -20,6 +20,7 @@ from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
 from legal_api.models import Batch, BatchProcessing, Business, Filing, db
+from legal_api.services.request_context import get_request_context
 
 from .bootstrap import AccountService
 
@@ -284,7 +285,10 @@ def _check_feature_flags_filter():
     # pylint: disable=E1101
     from . import flags  # pylint: disable=import-outside-toplevel
     # Scenario 1: If the flag is off, proceed with the standard eligibility check.
-    if not flags.is_on("enable-involuntary-dissolution-filter"):
+    request_context = get_request_context()
+    if not flags.is_on("enable-involuntary-dissolution-filter",
+                       request_context.user,
+                       request_context.account_id):
         return True  # Continue with the usual logic
 
     # Get the dissolution filter data (handle if filter is None or empty)

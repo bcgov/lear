@@ -12,7 +12,7 @@
 # pylint: disable=too-many-lines
 import copy
 from contextlib import suppress
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime, timezone
 from enum import Enum
 from http import HTTPStatus
 from typing import Final
@@ -571,20 +571,6 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             },
             'temporaryCorpTypeCode': 'TMP'
         },
-        'intentToLiquidate': {
-            'name': 'intentToLiquidate',
-            'title': 'Statement of Intent to Liquidate',
-            'codes': {
-                'BC': 'LQSIN',
-                'BEN': 'LQSIN',
-                'ULC': 'LQSIN',
-                'CC': 'LQSIN',
-                'C': 'LQSIN',
-                'CBEN': 'LQSIN',
-                'CUL': 'LQSIN',
-                'CCC': 'LQSIN'
-            }
-        },
         'noticeOfWithdrawal': {
             'name': 'noticeOfWithdrawal',
             'title': 'Notice of Withdrawal',
@@ -1037,7 +1023,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     def set_processed(self):
         """Assign the completion and effective dates, unless they are already set."""
         if not self._completion_date:
-            self._completion_date = datetime.now(timezone.utc)
+            self._completion_date = datetime.now(UTC)
             self._status = Filing.Status.COMPLETED.value
         if not self.effective_date_can_be_before_payment_completion_date() and (
                 self.effective_date is None or (
@@ -1359,7 +1345,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         excluded_filings = [
             'lear_epoch',
             'adminFreeze',
+            'changeOfLiquidators',
+            'changeOfOfficers',
+            'changeOfReceivers',
             'courtOrder',
+            'noticeOfWithdrawal',
             'registrarsNotation',
             'registrarsOrder',
             'transparencyRegister'
@@ -1369,6 +1359,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             filter(
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
+                ~and_(Filing._filing_type == 'dissolution', Filing._filing_sub_type == 'delay'),
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
@@ -1383,7 +1374,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         filings = db.session.query(Filing.id). \
             filter(Filing._status == Filing.Status.PAID.value). \
             filter(Filing.effective_date > Filing._payment_completion_date). \
-            filter(Filing.effective_date <= datetime.now(timezone.utc)).all()
+            filter(Filing.effective_date <= datetime.now(UTC)).all()
         return [filing.id for filing in filings]
 
     @staticmethod

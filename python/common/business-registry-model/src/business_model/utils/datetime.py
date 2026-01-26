@@ -14,6 +14,7 @@
 """Date time utilities."""
 import time as _time
 from datetime import (  # pylint: disable=unused-import
+    UTC,
     date,
     timedelta,
     timezone,
@@ -42,7 +43,7 @@ class datetime(_datetime):  # pylint: disable=invalid-name; ha datetime is inval
     def utcnow(cls):
         """Construct a UTC non-naive datetime, meaning it includes timezone from time.time()."""
         time_stamp = _time.time()
-        return super().utcfromtimestamp(time_stamp).replace(tzinfo=timezone.utc)
+        return super().utcfromtimestamp(time_stamp).replace(tzinfo=UTC)
 
     @classmethod
     def from_date(cls, date_obj):

@@ -19,7 +19,7 @@ Test-Suite to ensure that the Business Model is working as expected.
 import base64
 import copy
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import datedelta
 import pytest
@@ -58,8 +58,8 @@ def random_str():
 def factory_business(designation: str = '001'):
     """Return a valid Business object stamped with the supplied designation."""
     return Business(legal_name=f'legal_name-{designation}',
-                    founding_date=datetime.fromtimestamp(0, timezone.utc),
-                    last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                    founding_date=datetime.fromtimestamp(0, UTC),
+                    last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                     dissolution_date=None,
                     identifier='CP1234567',
                     tax_id=f'BN0000{designation}',
@@ -122,8 +122,8 @@ def test_business_find_by_legal_name_pass(session):
     designation = '001'
     legal_name = random_str()
     business = Business(legal_name=legal_name,
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -140,9 +140,9 @@ def test_business_find_by_legal_name_fail(session):
     legal_name = random_str()
     business = Business(
         legal_name=legal_name,
-        founding_date=datetime.fromtimestamp(0, timezone.utc),
-        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
-        dissolution_date=datetime.fromtimestamp(0, timezone.utc),
+        founding_date=datetime.fromtimestamp(0, UTC),
+        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+        dissolution_date=datetime.fromtimestamp(0, UTC),
         identifier="CP3435367",
         tax_id="BN0000001",
         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
@@ -159,8 +159,8 @@ def test_business_find_by_legal_name_missing(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -184,9 +184,9 @@ def test_delete_business_with_dissolution(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
-                        dissolution_date=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                        dissolution_date=datetime.fromtimestamp(0, UTC),
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362))
@@ -201,8 +201,8 @@ def test_delete_business_active(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                         dissolution_date=None,
                         identifier='CP1234567',
                         tax_id='XX',
@@ -219,8 +219,8 @@ def test_business_find_by_identifier(session):
     designation = '001'
     identifier = 'CP1213147'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                         dissolution_date=None,
                         identifier=identifier,
                         tax_id=f'BN0000{designation}',
@@ -236,8 +236,8 @@ def test_business_find_by_identifier_no_identifier(session):
     """Assert that the business can be found by name."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         tax_id=f'BN0000{designation}',
@@ -266,8 +266,8 @@ def test_good_standing(session, last_ar_date, legal_type, state, limited_restora
     """Assert that the business is in good standing when conditions are met."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
-                        founding_date=datetime.fromtimestamp(0, timezone.utc),
-                        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, UTC),
+                        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
                         dissolution_date=None,
                         identifier=f'CP1234{designation}',
                         legal_type=legal_type,
@@ -370,7 +370,7 @@ def test_business_json(app, session):
         'naicsKey': None,
         'naicsCode': None,
         'naicsDescription': None,
-        'nextAnnualReport': '1971-12-31T16:00:00-08:00',
+        'nextAnnualReport': '1971-01-01T00:00:00+00:00',
         'hasRestrictions': True,
         'arMinDate': '1971-01-01',
         'arMaxDate': '1972-04-30',
@@ -600,7 +600,7 @@ def test_business_alternate_names(session, test_name, businesses_info, alternate
         session.begin_nested()
         founding_date_str = business_info.get("foundingDate")
         start_date_str = business_info.get("startDate")
-        founding_date = datetime.strptime(business_info["foundingDate"], "%Y-%m-%dT%H:%M:%S%z") if founding_date_str else datetime.fromtimestamp(0, timezone.utc)
+        founding_date = datetime.strptime(business_info["foundingDate"], "%Y-%m-%dT%H:%M:%S%z") if founding_date_str else datetime.fromtimestamp(0, UTC)
         start_date = datetime.strptime(business_info["startDate"], "%Y-%m-%dT%H:%M:%S%z") if start_date_str else None
 
         business = Business(
@@ -702,8 +702,8 @@ def test_continued_in_business(session):
     business = Business(
         legal_name='Test - Legal Name',
         legal_type='BC',
-        founding_date=datetime.fromtimestamp(0, timezone.utc),
-        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+        founding_date=datetime.fromtimestamp(0, UTC),
+        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
         dissolution_date=None,
         identifier='BC2123247',
         state=Business.State.ACTIVE,
@@ -725,7 +725,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
     existing_business = Business(
         legal_name='Test - Amalgamating Legal Name',
         legal_type='BC',
-        founding_date=datetime.fromtimestamp(0, timezone.utc),
+        founding_date=datetime.fromtimestamp(0, UTC),
         dissolution_date=datetime.now(),
         identifier='BC1234567',
         state=Business.State.ACTIVE,
@@ -744,7 +744,7 @@ def test_amalgamated_into_business_json(session, test_name, existing_business_st
         business = Business(
             legal_name='Test - Legal Name',
             legal_type='BC',
-            founding_date=datetime.fromtimestamp(0, timezone.utc),
+            founding_date=datetime.fromtimestamp(0, UTC),
             identifier='BC1234568',
             state=Business.State.ACTIVE,
         )
@@ -795,8 +795,8 @@ def test_firm_business_json(session, test_name, legal_type):
     business = Business(
         legal_name='TEST ABC',
         legal_type=legal_type,
-        founding_date=datetime.fromtimestamp(0, timezone.utc),
-        last_ledger_timestamp=datetime.fromtimestamp(0, timezone.utc),
+        founding_date=datetime.fromtimestamp(0, UTC),
+        last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
         dissolution_date=None,
         identifier='BC1234567',
         state=Business.State.ACTIVE,

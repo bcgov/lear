@@ -1,7 +1,8 @@
-FROM mcr.microsoft.com/devcontainers/python:1-3.11-bookworm
+FROM mcr.microsoft.com/devcontainers/python:dev-3.13-bookworm
 
 
 RUN \
+    rm -f /etc/apt/sources.list.d/yarn.list && \
     apt update && apt install bash-completion -y && \
     pip install pre-commit && \
     curl -sSL https://install.python-poetry.org | POETRY_HOME=/home/vscode/.local python3 -

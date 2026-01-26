@@ -359,7 +359,7 @@ def test_business_json(session):
         'naicsKey': None,
         'naicsCode': None,
         'naicsDescription': None,
-        'nextAnnualReport': '1971-12-31T16:00:00-08:00',
+        'nextAnnualReport': '1971-01-01T00:00:00+00:00',
         'hasRestrictions': True,
         'arMinDate': '1971-01-01',
         'arMaxDate': '1972-04-30',

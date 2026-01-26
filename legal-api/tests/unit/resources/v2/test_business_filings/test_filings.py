@@ -496,8 +496,8 @@ def test_post_only_validate_ar(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
@@ -519,8 +519,8 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
@@ -590,8 +590,8 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['routingSlipNumber'] = '123131332'
@@ -743,8 +743,8 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['business']['identifier'] = 'CP7654321'
@@ -1256,8 +1256,8 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
@@ -2120,7 +2120,15 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         lambda flag, _user, _account_id: enabled_filings
         if flag == 'enabled-specific-filings' else {}
     )
+    monkeypatch.setattr(
+        'legal_api.services.flags.is_on',
+        lambda flag: True
+        if flag == 'enabled-deeper-permission-action' else {}
+    )
     dod = copy.deepcopy(FILING_HEADER)
+    del dod['filing']['header']['routingSlipNumber']
+    del dod['filing']['header']['waiveFees']
+    del dod['filing']['header']['priority']
     dod['filing']['header']['name'] = 'dissolution'
     dod['filing']['dissolution'] = {
         'dissolutionType': 'delay',
@@ -2129,7 +2137,8 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     dod['filing']['business']['identifier'] = identifier
     dod['filing']['business']['legalType'] = legal_type
 
-    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    # Note: a business requiring a DOD will not be in good standing
+    b = factory_business(identifier, (datetime.now() - datedelta.datedelta(years=4)), (datetime.now() - datedelta.datedelta(years=3)), legal_type)
     factory_business_mailing_address(b)
     batch = factory_batch(Batch.BatchType.INVOLUNTARY_DISSOLUTION, Batch.BatchStatus.PROCESSING, 1, '')
 
@@ -2157,7 +2166,7 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
         json=dod,
         headers=headers
     )
-
+    print(rv.json)
     if enabled:
         assert rv.status_code == HTTPStatus.CREATED
         # assert ledger display hidden or not as expected
