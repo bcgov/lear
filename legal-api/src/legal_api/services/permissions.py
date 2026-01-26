@@ -120,8 +120,6 @@ class PermissionService:
             authz.STAFF_ROLE,
             authz.SYSTEM_ROLE,
             authz.COLIN_SVC_ROLE,
-            authz.SYSTEM_ROLE,
-            authz.COLIN_SVC_ROLE,
             authz.SBC_STAFF_ROLE,
             authz.CONTACT_CENTRE_STAFF_ROLE,
             authz.MAXIMUS_STAFF_ROLE,
