@@ -695,6 +695,7 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         bar_keycloak_guid,
         bar_idp_userid,
         bar_account_id,
+        CAST(bar_account_has_mailing_address as boolean) as bar_account_has_mailing_address,
         ting_corps
 FROM (
     SELECT
@@ -775,6 +776,7 @@ FROM (
            bc.sub as bar_keycloak_guid,
            bc.idp_userid as bar_idp_userid,
            bc.payment_account as bar_account_id,
+           bc.bar_account_has_mailing_address as bar_account_has_mailing_address,
            ciaml.ting_corps as ting_corps
     FROM event e
     JOIN corporation c ON c.corp_num = e.corp_num
@@ -820,6 +822,7 @@ FROM (
            mvaqc.party_all_any_bad_key_fields_count,
            mvaqc.party_all_null_count,
            bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account,
+           bc.bar_account_has_mailing_address,
            ciaml.ting_corps
 ) tblFe
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain

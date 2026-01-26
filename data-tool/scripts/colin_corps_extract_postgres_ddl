@@ -973,7 +973,8 @@ create table if not exists bar_corps
     last_ar_filing_date timestamp with time zone,
     sub                 varchar(36),
     idp_userid          varchar(256),
-    payment_account     integer
+    payment_account     integer,
+    bar_account_has_mailing_address boolean not null default false
 );
 
 alter table bar_corps
