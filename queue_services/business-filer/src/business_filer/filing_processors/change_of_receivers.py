@@ -35,6 +35,7 @@
 import copy
 
 from business_model.models import Business, Filing, PartyRole
+from flask import current_app
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.filings import update_filing_court_order
@@ -44,6 +45,7 @@ from business_filer.filing_processors.filing_components.relationships import (
     update_relationship_addresses,
     update_relationship_entity_info,
 )
+from business_filer.services.publish_event import PublishEvent
 
 
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
@@ -69,4 +71,11 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     if court_order := filing_json["filing"]["changeOfReceivers"].get("courtOrder"):
         update_filing_court_order(filing_rec, court_order)
     
-    # FUTURE: DRS integration with document id
+    try:
+        # Create DRS record
+        PublishEvent.publish_drs_create_message(current_app, business, filing_rec)
+
+    except Exception as err:
+        # log error for ops, but don't prevent filing from completing
+        current_app.logger.warning(err.with_traceback(None))
+        current_app.logger.warning(f"Failed to create DRS Record for {filing_rec.id}.")
