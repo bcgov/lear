@@ -669,6 +669,7 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(last_file_event_ts as timestamp) as last_file_event_ts,
         CAST(last_event_ts as timestamp) as last_event_ts,
         event_file_types,
+        failed_events,
         CAST(has_officers as boolean) as has_officers,
         CAST(has_3rd_party as boolean) as has_3rd_party,
         vendor,
@@ -755,6 +756,7 @@ FROM (
            MAX(CASE WHEN e.event_type_cd = 'FILE' THEN e.event_timerstamp END) AS last_file_event_ts,
            MAX(e.event_timerstamp) AS last_event_ts,
            STRING_AGG(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ',' ORDER BY e.event_id) AS event_file_types,
+           fe.failed_events,
            COALESCE(cprt_dir.director_count, 0) AS director_count,
            CASE WHEN cow.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_officers,
            CASE WHEN cowtp.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_3rd_party,
@@ -805,6 +807,31 @@ FROM (
       FROM corp_involved_amalgamating
       GROUP BY ted_corp_num
     ) ciaml ON c.corp_num = ciaml.ted_corp_num
+    LEFT OUTER JOIN (
+        SELECT
+          fe_sub.corp_num,
+          STRING_AGG(fe_sub.failed_event, ',' ORDER BY fe_sub.failed_event) AS failed_events
+              FROM (
+                SELECT DISTINCT 
+                  e2.corp_num,
+                  e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL') AS failed_event
+                FROM event e2
+                LEFT JOIN filing f2 ON e2.event_id = f2.event_id
+                WHERE (e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL'))
+                    NOT IN ('FILE_ICORP', 'FILE_ICORU', 'FILE_ICORC', -- IA
+                            'FILE_ANNBC', 'FILE_AM_AR', -- AR
+                            'FILE_NOCAD', 'FILE_APTRA', 'FILE_NOERA', 'FILE_AM_DO', 'FILE_AM_RR', -- CoA
+                            'FILE_NOCDR', 'FILE_AM_DI', -- CoD
+                            'FILE_NOALA', 'FILE_NOALB', 'FILE_NOALU', 'FILE_NOALC', 'FILE_AM_BC', 'FILE_AM_LI', 'FILE_AM_RM', 'FILE_AM_SS', -- Alteration
+                            'ADCORP_NULL',
+                            -- Skipped events/filing types
+                            'FILE_COGS1', 'FILE_CHGJU', 'FILE_NWPTA', 'FILE_PARES', 'FILE_TILAT', 'FILE_TILHO', 'FILE_TILMA',
+                            'SYST_CANPS', 'SYST_CHGJU', 'SYST_CHGPN', 'SYST_CO_PN', 'SYST_LNKPS', 'SYST_NWPTA',
+                            'SYST_PARES', 'SYST_RIPFL', 'SYST_TILAT', 'SYST_TILHO', 'SYST_NULL',
+                            'TRESP_NULL', 'TRESP_COUTI')
+                ) fe_sub
+                GROUP BY fe_sub.corp_num
+      ) fe on c.corp_num = fe.corp_num
     WHERE 1 = 1
     GROUP BY e.corp_num, cn.corp_name, c.corp_type_cd, c.corp_frozen_type_cd, c.recognition_dts, c.last_ar_filed_dt,
              LOWER(SPLIT_PART(c.admin_email, '@', 2)), c.admin_email, cow.corp_num,
@@ -823,7 +850,8 @@ FROM (
            mvaqc.party_all_null_count,
            bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account,
            bc.bar_account_has_mailing_address,
-           ciaml.ting_corps
+           ciaml.ting_corps,
+           fe.failed_events
 ) tblFe
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
 LEFT JOIN mv_share_class_issue_flags sif USING (corp_num)
