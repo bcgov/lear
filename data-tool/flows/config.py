@@ -152,6 +152,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     TOMBSTONE_BATCH_SIZE = int(TOMBSTONE_BATCH_SIZE) if TOMBSTONE_BATCH_SIZE.isnumeric() else 0
 
     # verify flow
+    VERIFY_BATCHES = os.getenv('VERIFY_BATCHES')
+    VERIFY_BATCHES = int(VERIFY_BATCHES) if VERIFY_BATCHES.isnumeric() else 0
     VERIFY_BATCH_SIZE = os.getenv('VERIFY_BATCH_SIZE')
     VERIFY_BATCH_SIZE = int(VERIFY_BATCH_SIZE) if VERIFY_BATCH_SIZE.isnumeric() else 0
     VERIFY_SUMMARY_PATH = os.getenv('VERIFY_SUMMARY_PATH')
