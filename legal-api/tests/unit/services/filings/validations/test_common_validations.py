@@ -45,6 +45,8 @@ from registry_schemas.example_data import (
 from tests.unit.models import factory_business, factory_party_role
 
 from legal_api.services.filings.validations.common_validations import (
+    EXCLUDED_WORDS_FOR_CLASS,
+    EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
     is_officer_proprietor_replace_valid,
     validate_certify_name,
@@ -55,6 +57,9 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_party_name,
     validate_party_role_firms,
+    validate_series,
+    validate_share_structure,
+    validate_shares,
     validate_staff_payment,
 )
 
@@ -810,3 +815,636 @@ def test_validate_court_order_with_flag_on(session, has_permission, expected_err
         assert len(result) == 1
         assert expected_error_msg in result[0]['error']
         assert result[0]['path'] == '/filing/alteration/courtOrder'
+
+@pytest.mark.parametrize('share_class_name, expected_valid', [
+    # Valid names - end with " Shares"
+    ('Class A Shares', True),
+    ('Common Shares', True),
+    ('Preferred Shares', True),
+    ('Class B Non-Voting Shares', True),
+    ('Series 1 Preferred Shares', True),
+    ('Voting Shares', True),
+    ('Non-Voting Shares', True),
+    # Invalid names - don't end with " Shares"
+    ('Class A', False),
+    ('Common', False),
+    ('Preferred Stock', False),
+    ('SharesClass', False),
+    ('', False),  # empty name handled separately
+])
+def test_share_class_name_must_end_with_shares(session, share_class_name, expected_valid):
+    """Test that share class names must end with ' Shares'."""
+    share_class = {
+        'name': share_class_name,
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
+
+    if expected_valid:
+        assert len(suffix_errors) == 0
+    else:
+        if share_class_name.strip():  # only check suffix error if name is not empty
+            assert len(suffix_errors) == 1
+            assert f"Share class name '{share_class_name}' must end with ' Shares'." in suffix_errors[0]['error']
+
+
+@pytest.mark.parametrize('share_class_name, expected_valid', [
+    # Valid names - no reserved words before " Shares" suffix
+    ('Class A Shares', True),
+    ('Common Shares', True),
+    ('Preferred Shares', True),
+    ('Class B Non-Voting Shares', True),
+    ('Voting Shares', True),
+    # Invalid names - contain reserved word "share" (case insensitive)
+    ('Share Class A Shares', False),
+    ('My Share Shares', False),
+    ('SHARE Type Shares', False),
+    # Invalid names - contain reserved word "shares" (case insensitive)
+    ('Shares Class Shares', False),
+    ('Multiple Shares Type Shares', False),
+    # Invalid names - contain reserved word "value" (case insensitive)
+    ('Value Class Shares', False),
+    ('Par Value Shares', False),
+    ('VALUE Type Shares', False),
+    ('No Par Value Shares', False),
+])
+def test_share_class_name_reserved_words(session, share_class_name, expected_valid):
+    """Test that share class names cannot contain reserved words."""
+    share_class = {
+        'name': share_class_name,
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
+
+    if expected_valid:
+        assert len(reserved_word_errors) == 0
+    else:
+        assert len(reserved_word_errors) == 1
+        assert "Share class name cannot contain the words 'share', 'shares', or 'value'." in reserved_word_errors[0]['error']
+
+
+@pytest.mark.parametrize('share_class_name', [
+    '',
+    '   ',
+    '\t',
+    '\n',
+])
+def test_share_class_name_empty(session, share_class_name):
+    """Test that empty share class names are rejected."""
+    share_class = {
+        'name': share_class_name,
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    assert len(result) >= 1
+    assert any('Share class name is required' in e.get('error', '') for e in result)
+
+
+@pytest.mark.parametrize('share_class_name', [
+    ' Class A Shares',
+    'Class A Shares ',
+    ' Class A Shares ',
+    '\tClass A Shares',
+    'Class A Shares\n',
+])
+def test_share_class_name_whitespace(session, share_class_name):
+    """Test that share class names with leading/trailing whitespace are rejected."""
+    share_class = {
+        'name': share_class_name,
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    assert len(result) >= 1
+    assert any('cannot start or end with whitespace' in e.get('error', '') for e in result)
+
+
+def test_share_class_name_duplicate(session):
+    """Test that duplicate share class names are rejected."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = ['Class A Shares']  # Already used
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    assert len(result) >= 1
+    assert any('already used in a share class or series' in e.get('error', '') for e in result)
+
+
+@pytest.mark.parametrize('reserved_word', EXCLUDED_WORDS_FOR_CLASS)
+def test_share_class_name_each_reserved_word(session, reserved_word):
+    """Test that each reserved word is properly rejected in share class names."""
+    share_class_name = f'{reserved_word.capitalize()} Type Shares'
+    share_class = {
+        'name': share_class_name,
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
+    assert len(reserved_word_errors) == 1
+
+
+@pytest.mark.parametrize('share_class_name', [
+    'SHARE Type Shares',
+    'share Type Shares',
+    'Share Type Shares',
+    'ShArE Type Shares',
+    'VALUE Class Shares',
+    'value Class Shares',
+    'Value Class Shares',
+])
+def test_share_class_name_reserved_word_case_insensitive(session, share_class_name):
+    """Test that reserved word checking is case insensitive."""
+    share_class = {
+        'name': share_class_name,
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+
+    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
+    assert len(reserved_word_errors) == 1, f"Failed for: {share_class_name}"
+
+
+@pytest.mark.parametrize('filing_type', [
+    'alteration',
+    'correction',
+    'changeOfRegistration',
+])
+def test_share_class_name_validation_skipped_for_non_ia_filings(session, filing_type):
+    """Test that share class name suffix/reserved word validation is skipped for non-IA filings."""
+    # Use a name that would fail IA validation (no " Shares" suffix and contains reserved word)
+    share_class = {
+        'name': 'Share Class A',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, filing_type, 0, 'BEN')
+
+    # Should not have suffix or reserved word errors for non-IA filings
+    suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
+    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
+    assert len(suffix_errors) == 0, f"Unexpected suffix validation for {filing_type}"
+    assert len(reserved_word_errors) == 0, f"Unexpected reserved word validation for {filing_type}"
+
+
+@pytest.mark.parametrize('series_name, expected_valid', [
+    # Valid names - end with " Shares" and no reserved words
+    ('Series A Shares', True),
+    ('Series 1 Shares', True),
+    ('Preferred Shares', True),
+    ('Class A Series 1 Shares', True),
+    ('Convertible Shares', True),
+    ('Non-Voting Shares', True),
+    # Invalid names - don't end with " Shares"
+    ('Series A', False),
+    ('Series 1', False),
+    ('Preferred', False),
+])
+def test_series_name_must_end_with_shares(session, series_name, expected_valid):
+    """Test that series names must end with ' Shares'."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': series_name,
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
+
+    if expected_valid:
+        assert len(suffix_errors) == 0
+    else:
+        assert len(suffix_errors) == 1
+        assert f"Share series name '{series_name}' must end with ' Shares'." in suffix_errors[0]['error']
+
+
+@pytest.mark.parametrize('series_name, expected_valid', [
+    # Valid names - no reserved words (with " Shares" suffix)
+    ('Series A Shares', True),
+    ('Series 1 Shares', True),
+    ('Preferred Shares', True),
+    ('Class A Series 1 Shares', True),
+    ('Convertible Shares', True),
+    ('Non-Voting Shares', True),
+    # Invalid names - contain reserved word "share" (with " Shares" suffix)
+    ('Share Series A Shares', False),
+    ('Series Share 1 Shares', False),
+    ('My Share Shares', False),
+    # Invalid names - contain reserved word "shares" (with " Shares" suffix)
+    ('Shares Series Shares', False),
+    ('Series Shares Type Shares', False),
+    ('Multiple Shares Shares', False),
+])
+def test_series_name_reserved_words(session, series_name, expected_valid):
+    """Test that series names cannot contain reserved words."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': series_name,
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    reserved_word_errors = [e for e in result if "cannot contain the words 'share' or 'shares'" in e.get('error', '')]
+
+    if expected_valid:
+        assert len(reserved_word_errors) == 0
+    else:
+        assert len(reserved_word_errors) == 1
+
+
+@pytest.mark.parametrize('series_name', [
+    '',
+    '   ',
+    '\t',
+    '\n',
+])
+def test_series_name_empty(session, series_name):
+    """Test that empty series names are rejected."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': series_name,
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    assert len(result) >= 1
+    assert any('Share series name is required' in e.get('error', '') for e in result)
+
+
+@pytest.mark.parametrize('series_name', [
+    ' Series A',
+    'Series A ',
+    ' Series A ',
+    '\tSeries A',
+    'Series A\n',
+])
+def test_series_name_whitespace(session, series_name):
+    """Test that series names with leading/trailing whitespace are rejected."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': series_name,
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    assert len(result) >= 1
+    assert any('cannot start or end with whitespace' in e.get('error', '') for e in result)
+
+
+def test_series_name_duplicate(session):
+    """Test that duplicate series names are rejected."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': 'Series A Shares',
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares', 'Series A Shares']  # Series A Shares already used
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    assert len(result) >= 1
+    assert any('already used in a share class or series' in e.get('error', '') for e in result)
+
+
+@pytest.mark.parametrize('reserved_word', EXCLUDED_WORDS_FOR_SERIES)
+def test_series_name_each_reserved_word(session, reserved_word):
+    """Test that each reserved word is properly rejected in series names."""
+    series_name = f'{reserved_word.capitalize()} Series Shares'
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': series_name,
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    reserved_word_errors = [e for e in result if "cannot contain the words 'share' or 'shares'" in e.get('error', '')]
+    assert len(reserved_word_errors) == 1
+
+
+@pytest.mark.parametrize('series_name', [
+    'SHARE Series Shares',
+    'share Series Shares',
+    'Share Series Shares',
+    'ShArE Series Shares',
+    'SHARES Series Shares',
+    'shares Series Shares',
+    'Shares Series Shares',
+])
+def test_series_name_reserved_word_case_insensitive(session, series_name):
+    """Test that reserved word checking is case insensitive for series names."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': series_name,
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    reserved_word_errors = [e for e in result if "cannot contain the words 'share' or 'shares'" in e.get('error', '')]
+    assert len(reserved_word_errors) == 1, f"Failed for: {series_name}"
+
+
+def test_series_allows_value_word(session):
+    """Test that series names CAN contain 'value' (only restricted for classes)."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': 'Value Series Shares',
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+
+    reserved_word_errors = [e for e in result if "cannot contain" in e.get('error', '')]
+    assert len(reserved_word_errors) == 0
+
+
+@pytest.mark.parametrize('filing_type', [
+    'alteration',
+    'correction',
+    'changeOfRegistration',
+])
+def test_series_name_validation_skipped_for_non_ia_filings(session, filing_type):
+    """Test that series name suffix/reserved word validation is skipped for non-IA filings."""
+    # Use a name that would fail IA validation (no " Shares" suffix and contains reserved word)
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': 'Share Series A',
+            'hasMaximumShares': False
+        }]
+    }
+    memoize_names = ['Class A Shares']
+
+    result = validate_series(share_class, memoize_names, filing_type, 0)
+
+    # Should not have suffix or reserved word errors for non-IA filings
+    suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
+    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
+    assert len(suffix_errors) == 0, f"Unexpected suffix validation for {filing_type}"
+    assert len(reserved_word_errors) == 0, f"Unexpected reserved word validation for {filing_type}"
+
+
+def test_valid_share_structure(session):
+    """Test a completely valid share structure."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [{
+                        'name': 'Class A Shares',
+                        'hasMaximumShares': True,
+                        'maxNumberOfShares': 10000,
+                        'hasParValue': False,
+                        'hasRightsOrRestrictions': True,
+                        'series': [{
+                            'name': 'Series 1 Shares',
+                            'hasMaximumShares': True,
+                            'maxNumberOfShares': 5000
+                        }]
+                    }, {
+                        'name': 'Class B Shares',
+                        'hasMaximumShares': False,
+                        'hasParValue': True,
+                        'parValue': 1.00,
+                        'currency': 'CAD',
+                        'hasRightsOrRestrictions': False,
+                        'series': []
+                    }]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is None
+
+
+def test_share_structure_with_invalid_class_name_no_shares_suffix(session):
+    """Test share structure with class name missing ' Shares' suffix."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [{
+                        'name': 'Class A',
+                        'hasMaximumShares': False,
+                        'hasParValue': False,
+                        'hasRightsOrRestrictions': False,
+                        'series': []
+                    }]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is not None
+    assert any("must end with ' Shares'" in e.get('error', '') for e in result)
+
+
+def test_share_structure_with_reserved_word_in_class_name(session):
+    """Test share structure with reserved word in class name."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [{
+                        'name': 'Share Class Shares',
+                        'hasMaximumShares': False,
+                        'hasParValue': False,
+                        'hasRightsOrRestrictions': False,
+                        'series': []
+                    }]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is not None
+    assert any("cannot contain the words 'share', 'shares', or 'value'" in e.get('error', '') for e in result)
+
+
+def test_share_structure_with_reserved_word_in_series_name(session):
+    """Test share structure with reserved word in series name."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [{
+                        'name': 'Class A Shares',
+                        'hasMaximumShares': False,
+                        'hasParValue': False,
+                        'hasRightsOrRestrictions': True,
+                        'series': [{
+                            'name': 'Share Series 1 Shares',
+                            'hasMaximumShares': False
+                        }]
+                    }]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is not None
+    assert any("cannot contain the words 'share' or 'shares'" in e.get('error', '') for e in result)
+
+
+def test_share_structure_multiple_errors(session):
+    """Test share structure validation catches multiple errors."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [{
+                        'name': 'Value Class',  # Missing " Shares" and contains "value"
+                        'hasMaximumShares': False,
+                        'hasParValue': False,
+                        'hasRightsOrRestrictions': True,
+                        'series': [{
+                            'name': 'Shares Series Shares',  # Contains "shares"
+                            'hasMaximumShares': False
+                        }]
+                    }]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is not None
+    assert len(result) >= 2  # At least errors for class name and series name
+
+
+def test_share_structure_duplicate_names_between_class_and_series(session):
+    """Test that a series cannot have the same name as a class."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [{
+                        'name': 'Class A Shares',
+                        'hasMaximumShares': False,
+                        'hasParValue': False,
+                        'hasRightsOrRestrictions': True,
+                        'series': [{
+                            'name': 'Class A Shares',  # Same as class name
+                            'hasMaximumShares': False
+                        }]
+                    }]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is not None
+    assert any('already used' in e.get('error', '') for e in result)
+
