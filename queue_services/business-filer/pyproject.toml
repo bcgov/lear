@@ -23,7 +23,6 @@ dependencies = [
   #  "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
   "gunicorn (>=23.0.0,<24.0.0)",
   "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
-  "pytest-cov (>=7.0.0,<8.0.0)"
 
 ]
 
@@ -42,6 +41,7 @@ flask-migrate = "^4.1.0"
 psycopg2-binary = "^2.9.10"
 pytest-mock = "^3.14.0"
 requests-mock = "^1.12.1"
+pytest-cov = "^7.0.0"
 
 
 [tool.poetry.dependencies]
