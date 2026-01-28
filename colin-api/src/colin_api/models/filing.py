@@ -938,7 +938,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             submitting_party_query,
             event_id=filing.event_id,
             mailing_addr_id=mailing_addr_id,
-            last_nme=filing.get_certified_by()
+            last_nme=filing.get_certified_by()[:20]
         )
 
     # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
