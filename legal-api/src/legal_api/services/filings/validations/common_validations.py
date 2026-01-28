@@ -23,6 +23,7 @@ import PyPDF2
 from flask import current_app, g, request
 from flask_babel import _
 
+from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.models.configuration import EMAIL_PATTERN
@@ -48,6 +49,10 @@ WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
     "addressCountry",
     "postalCode",
 )
+
+# Reserved words that cannot be used in share class/series names
+EXCLUDED_WORDS_FOR_CLASS = ["share", "shares", "value"]
+EXCLUDED_WORDS_FOR_SERIES = ["share", "shares"]
 
 
 def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
@@ -130,6 +135,24 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
                         "path": err_path})
         else:
             memoize_names.append(series_name)
+    
+        if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION:
+            # Validate series name ends with " Shares"
+            if not series_name.endswith(" Shares"):
+                msg.append({
+                    "error": f"Share series name '{series_name}' must end with ' Shares'.",
+                    "path": f"{err_path}/name/"
+                })
+
+            # Validate series name does not contain reserved words (excluding the required " Shares" suffix)
+            # Remove the " Shares" suffix before checking for reserved words
+            name_without_suffix = series_name[:-7] if series_name.endswith(" Shares") else series_name
+            series_name_words = name_without_suffix.lower().split()
+            if any(word in EXCLUDED_WORDS_FOR_SERIES for word in series_name_words):
+                msg.append({
+                    "error": "Share series name cannot contain the words 'share' or 'shares'.",
+                    "path": f"{err_path}/name/"
+                })
 
         if series["hasMaximumShares"]:
             if not series.get("maxNumberOfShares", None):
@@ -146,7 +169,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
     return msg
 
 
-def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912
     """Validate a wellformed share structure."""
     msg = []
 
@@ -173,6 +196,26 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
                     "path": err_path})
     else:
         memoize_names.append(share_name)
+
+    if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION:
+        # Validate share class name ends with " Shares"
+        if not share_name.endswith(" Shares"):
+            err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
+            msg.append({
+                "error": f"Share class name '{share_name}' must end with ' Shares'.",
+                "path": err_path
+            })
+
+        # Validate share class name does not contain reserved words (excluding the required " Shares" suffix)
+        # Remove the " Shares" suffix before checking for reserved words
+        name_without_suffix = share_name[:-7] if share_name.endswith(" Shares") else share_name
+        name_words = name_without_suffix.lower().split()
+        if any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words):
+            err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
+            msg.append({
+                "error": "Share class name cannot contain the words 'share', 'shares', or 'value'.",
+                "path": err_path
+            })
 
     if item["hasMaximumShares"] and not item.get("maxNumberOfShares", None):
         err_path = f"/filing/{filing_type}/shareClasses/{index}/maxNumberOfShares/"
