@@ -1448,3 +1448,40 @@ def test_share_structure_duplicate_names_between_class_and_series(session):
     assert result is not None
     assert any('already used' in e.get('error', '') for e in result)
 
+
+def test_share_structure_empty_share_classes_for_ia(session):
+    """Test that incorporation application requires at least one share class."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': []
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is not None
+    assert len(result) == 1
+    assert result[0]['error'] == 'A company must have a minimum of one share class.'
+    assert result[0]['path'] == '/filing/incorporationApplication/shareStructure/shareClasses'
+
+
+def test_share_structure_empty_share_classes_allowed_for_non_ia(session):
+    """Test that empty share classes are allowed for non-IA filings (e.g., alteration)."""
+    filing_json = {
+        'filing': {
+            'alteration': {
+                'shareStructure': {
+                    'shareClasses': []
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'alteration', 'BEN')
+
+    assert result is None
+
