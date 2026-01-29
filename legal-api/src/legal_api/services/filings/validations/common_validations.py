@@ -51,12 +51,11 @@ WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
 )
 
 
-# Reserved words that cannot be used in share class/series names
+# Share structure constants
 EXCLUDED_WORDS_FOR_CLASS = ["share", "shares", "value"]
 EXCLUDED_WORDS_FOR_SERIES = ["share", "shares"]
-
-# Suffix required for share class/series names
 SHARE_NAME_SUFFIX = " Shares"
+MAX_SHARE_DIGITS = 16
 
 
 def validate_resolution_date_in_share_structure(filing_json, filing_type) -> Optional[dict]:
@@ -109,7 +108,7 @@ def validate_share_structure(incorporation_json, filing_type, legal_type) -> Err
     return None
 
 
-def validate_series(item, memoize_names, filing_type, index) -> Error:
+def validate_series(item, memoize_names, filing_type, index) -> Error: # noqa: PLR0912
     """Validate shareStructure includes a wellformed series."""
     msg = []
     for series_index, series in enumerate(item.get("series", [])):
@@ -172,24 +171,27 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
                     "error": "Number must be greater than 0",
                     "path": f"{err_path}/maxNumberOfShares"
                 })
-            elif len(str(abs(max_shares))) >= 16:
+            elif len(str(abs(max_shares))) >= MAX_SHARE_DIGITS:
                 msg.append({
                     "error": "Number must be less than 16 digits",
                     "path": f"{err_path}/maxNumberOfShares"
                 })
             # Check series shares do not exceed class shares
-            elif item["hasMaximumShares"] and item.get("maxNumberOfShares", None):
-                class_max = item["maxNumberOfShares"]
-                if isinstance(class_max, int) and not isinstance(class_max, bool):
-                    if max_shares > class_max:
-                        msg.append({
-                            "error": f"Series {series['name']} share quantity must be less than or equal to that of its class {item['name']}",
-                            "path": f"{err_path}/maxNumberOfShares"
-                        })
+            elif (
+                item["hasMaximumShares"]
+                and item.get("maxNumberOfShares", None)
+                and isinstance(item["maxNumberOfShares"], int)
+                and not isinstance(item["maxNumberOfShares"], bool)
+                and max_shares > item["maxNumberOfShares"]
+            ):
+                msg.append({
+                    "error": f"Series {series['name']} share quantity must be less than or equal to that of its class {item['name']}",
+                    "path": f"{err_path}/maxNumberOfShares"
+                })
     return msg
 
 
-def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912 PLR0915
     """Validate a wellformed share structure."""
     msg = []
 
@@ -256,7 +258,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
                 "error": "Number must be greater than 0",
                 "path": err_path
             })
-        elif len(str(abs(max_shares))) >= 16:
+        elif len(str(abs(max_shares))) >= MAX_SHARE_DIGITS:
             msg.append({
                 "error": "Number must be less than 16 digits",
                 "path": err_path
