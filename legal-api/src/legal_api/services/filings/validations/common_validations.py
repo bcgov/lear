@@ -50,21 +50,13 @@ WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
     "postalCode",
 )
 
+
 # Reserved words that cannot be used in share class/series names
 EXCLUDED_WORDS_FOR_CLASS = ["share", "shares", "value"]
 EXCLUDED_WORDS_FOR_SERIES = ["share", "shares"]
 
-
-def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
-    """Ensure that share structure contain at least 1 class by the end of the alteration or IA Correction filing."""
-    if filing_type in filing_json["filing"] and "shareStructure" in filing_json["filing"][filing_type]:
-        share_classes = filing_json["filing"][filing_type] \
-            .get("shareStructure", {}).get("shareClasses", [])
-
-        if len(share_classes) == 0:
-            return "A company must have a minimum of one share class."
-
-    return None
+# Suffix required for share class/series names
+SHARE_NAME_SUFFIX = " Shares"
 
 
 def validate_resolution_date_in_share_structure(filing_json, filing_type) -> Optional[dict]:
@@ -101,7 +93,7 @@ def validate_share_structure(incorporation_json, filing_type, legal_type) -> Err
     # For incorporation applications, at least one share class is required
     if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION and len(share_classes) == 0:
         msg.append({
-            "error": "A company must have least one Class of Shares",
+            "error": "A company must have least one Class of Shares.",
             "path": f"/filing/{filing_type}/shareStructure/shareClasses"
         })
         return msg
@@ -144,36 +136,56 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
         else:
             memoize_names.append(series_name)
     
-        if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION:
-            # Validate series name ends with " Shares"
-            if not series_name.endswith(" Shares"):
-                msg.append({
-                    "error": f"Share series name '{series_name}' must end with ' Shares'.",
-                    "path": f"{err_path}/name/"
-                })
 
-            # Validate series name does not contain reserved words (excluding the required " Shares" suffix)
-            # Remove the " Shares" suffix before checking for reserved words
-            name_without_suffix = series_name[:-7] if series_name.endswith(" Shares") else series_name
-            series_name_words = name_without_suffix.lower().split()
-            if any(word in EXCLUDED_WORDS_FOR_SERIES for word in series_name_words):
-                msg.append({
-                    "error": "Share series name cannot contain the words 'share' or 'shares'.",
-                    "path": f"{err_path}/name/"
-                })
+        # Validate series name ends with required suffix
+        if not series_name.endswith(SHARE_NAME_SUFFIX):
+            msg.append({
+                "error": f"Share series name '{series_name}' must end with '{SHARE_NAME_SUFFIX}'.",
+                "path": f"{err_path}/name/"
+            })
+
+        # Validate series name does not contain reserved words (excluding the required suffix)
+        # Remove the suffix before checking for reserved words
+        suffix_len = len(SHARE_NAME_SUFFIX)
+        name_without_suffix = series_name[:-suffix_len] if series_name.endswith(SHARE_NAME_SUFFIX) else series_name
+        series_name_words = name_without_suffix.lower().split()
+        if any(word in EXCLUDED_WORDS_FOR_SERIES for word in series_name_words):
+            msg.append({
+                "error": "Share series name cannot contain the words 'share' or 'shares'.",
+                "path": f"{err_path}/name/"
+            })
 
         if series["hasMaximumShares"]:
-            if not series.get("maxNumberOfShares", None):
+            max_shares = series.get("maxNumberOfShares", None)
+            if max_shares is None:
                 msg.append({
-                    "error": "Share series {} must provide value for maximum number of shares".format(series["name"]),
+                    "error": f"Share series {series['name']} must provide value for maximum number of shares",
                     "path": f"{err_path}/maxNumberOfShares"
                 })
-            elif item["hasMaximumShares"] and item.get("maxNumberOfShares", None) and \
-                    int(series["maxNumberOfShares"]) > int(item["maxNumberOfShares"]):
+            elif not (isinstance(max_shares, int) and not isinstance(max_shares, bool)):
                 msg.append({
-                    "error": "Series {} share quantity must be less than or equal to that of its class {}".format(series["name"], item["name"]),
+                    "error": "Must be a whole number",
                     "path": f"{err_path}/maxNumberOfShares"
                 })
+            elif max_shares <= 0:
+                msg.append({
+                    "error": "Number must be greater than 0",
+                    "path": f"{err_path}/maxNumberOfShares"
+                })
+            elif len(str(abs(max_shares))) >= 16:
+                msg.append({
+                    "error": "Number must be less than 16 digits",
+                    "path": f"{err_path}/maxNumberOfShares"
+                })
+            # Check series shares do not exceed class shares
+            elif item["hasMaximumShares"] and item.get("maxNumberOfShares", None):
+                class_max = item["maxNumberOfShares"]
+                if isinstance(class_max, int) and not isinstance(class_max, bool):
+                    if max_shares > class_max:
+                        msg.append({
+                            "error": f"Series {series['name']} share quantity must be less than or equal to that of its class {item['name']}",
+                            "path": f"{err_path}/maxNumberOfShares"
+                        })
     return msg
 
 
@@ -206,17 +218,18 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
         memoize_names.append(share_name)
 
     if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION:
-        # Validate share class name ends with " Shares"
-        if not share_name.endswith(" Shares"):
+        # Validate share class name ends with required suffix
+        if not share_name.endswith(SHARE_NAME_SUFFIX):
             err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
             msg.append({
-                "error": f"Share class name '{share_name}' must end with ' Shares'.",
+                "error": f"Share class name '{share_name}' must end with '{SHARE_NAME_SUFFIX}'.",
                 "path": err_path
             })
 
-        # Validate share class name does not contain reserved words (excluding the required " Shares" suffix)
-        # Remove the " Shares" suffix before checking for reserved words
-        name_without_suffix = share_name[:-7] if share_name.endswith(" Shares") else share_name
+        # Validate share class name does not contain reserved words (excluding the required suffix)
+        # Remove the suffix before checking for reserved words
+        suffix_len = len(SHARE_NAME_SUFFIX)
+        name_without_suffix = share_name[:-suffix_len] if share_name.endswith(SHARE_NAME_SUFFIX) else share_name
         name_words = name_without_suffix.lower().split()
         if any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words):
             err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
@@ -225,10 +238,29 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
                 "path": err_path
             })
 
-    if item["hasMaximumShares"] and not item.get("maxNumberOfShares", None):
+    if item["hasMaximumShares"]:
+        max_shares = item.get("maxNumberOfShares", None)
         err_path = f"/filing/{filing_type}/shareClasses/{index}/maxNumberOfShares/"
-        msg.append({"error": "Share class {} must provide value for maximum number of shares".format(item["name"]),
-                    "path": err_path})
+        if max_shares is None:
+            msg.append({
+                "error": f"Share class {item['name']} must provide value for maximum number of shares",
+                "path": err_path
+            })
+        elif not (isinstance(max_shares, int) and not isinstance(max_shares, bool)):
+            msg.append({
+                "error": "Must be a whole number",
+                "path": err_path
+            })
+        elif max_shares <= 0:
+            msg.append({
+                "error": "Number must be greater than 0",
+                "path": err_path
+            })
+        elif len(str(abs(max_shares))) >= 16:
+            msg.append({
+                "error": "Number must be less than 16 digits",
+                "path": err_path
+            })
     if item["hasParValue"]:
         if not item.get("parValue", None):
             err_path = f"/filing/{filing_type}/shareClasses/{index}/parValue/"
