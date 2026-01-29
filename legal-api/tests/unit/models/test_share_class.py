@@ -31,7 +31,7 @@ def test_valid_share_class_save(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -50,7 +50,7 @@ def test_share_class_json(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -81,7 +81,7 @@ def test_invalid_share_quantity(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=None,
@@ -105,7 +105,7 @@ def test_invalid_par_value(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -129,7 +129,7 @@ def test_share_class_currency(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -153,7 +153,7 @@ def test_find_by_share_class_id(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
