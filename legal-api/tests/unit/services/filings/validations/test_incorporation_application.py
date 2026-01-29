@@ -2073,4 +2073,30 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
         assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
     else:
         assert err is None
+
+
+def test_coop_incorporation_does_not_validate_shares(session, mocker):
+    """Assert that COOP incorporation does not call validate_share_structure."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing_json['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing_json['filing']['incorporationApplication']['nameRequest']['legalType'] = Business.LegalTypes.COOP.value
+
+    # Mock all other validations to isolate the test
+    for func_name in ['validate_offices', 'validate_offices_addresses', 'validate_roles',
+                      'validate_parties_names', 'validate_parties_addresses',
+                      'validate_coop_parties_mailing_address', 'validate_parties_delivery_address',
+                      'validate_name_request', 'validate_cooperative_documents', 'validate_effective_date',
+                      'validate_ia_court_order', 'validate_phone_number', 'validate_email',
+                      'validate_name_translation']:
+        mocker.patch.object(incorporation_application, func_name, return_value=[])
+    mocker.patch.object(flags, 'is_on', return_value=False)
+
+    mock_share_structure = mocker.patch.object(incorporation_application, 'validate_share_structure')
+
+    err = incorporation_application.validate(filing_json)
+
+    mock_share_structure.assert_not_called()
+    assert err is None
  
