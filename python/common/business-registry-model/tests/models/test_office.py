@@ -16,7 +16,6 @@
 
 Test-Suite to ensure that the Office Model is working as expected.
 """
-import time
 from business_model.models import Address, Office
 from business_model.models.db import VersioningProxy
 from tests.models import factory_business, factory_filing
