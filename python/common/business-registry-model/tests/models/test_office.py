@@ -85,7 +85,7 @@ def test_office_save_to_business(session):
 
 
 def test_office_remove_from_business(session):
-    """Assert that the office removal from a business."""
+    """Assert that the office removal from a business creates the expected versioned records."""
     identifier = 'CP1234567'
     business = factory_business(identifier)
 
