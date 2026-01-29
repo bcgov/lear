@@ -142,8 +142,11 @@ def validate_effective_date(business: Business, cod: dict) -> list:
     except KeyError:
         return [{"error": babel("No effective date provided.")}]
 
-    # get effective datetime in UTC
-    effective_datetime_utc = datetime.fromisoformat(effective_datetime_str)
+    # convert string to datetime
+    try:
+        effective_datetime_utc = datetime.fromisoformat(effective_datetime_str)
+    except ValueError:
+        return [{"error": babel("Invalid ISO format for effective date.")}]
 
     # check if effective datetime is in the future
     if effective_datetime_utc > datetime.utcnow():

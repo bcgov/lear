@@ -46,7 +46,7 @@ def common_setup(identifier: str, date_time: datetime):
     return business, f
 
 def test_validate_effective_date_missing_key(session):
-    """Assert that missing effectiveDate triggers the appropriate error."""
+    """Assert that missing effectiveDate triggers validation."""
     identifier = 'CP1234567'
     now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
     business, filing = common_setup(identifier, now)
@@ -58,6 +58,21 @@ def test_validate_effective_date_missing_key(session):
         err = validate_effective_date(business, filing)
 
     assert err == [{"error": "No effective date provided."}]
+
+def test_validate_effective_date_invalid_format(session):
+    """Assert that an invalid ISO effectiveDate format triggers validation."""
+    identifier = 'CP1234567'
+    now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business, filing = common_setup(identifier, now)
+
+    # Set an invalid ISO effectiveDate value
+    filing['filing']['header']['effectiveDate'] = "2026-01-21T08:00:00Z"
+
+    with freeze_time(now):
+        err = validate_effective_date(business, filing)
+
+    assert err == [{"error": "Invalid ISO format for effective date."}]
+
 
 def test_effective_date_sanity_check(session):
     """Assert that a COD with a valid effective date passes validation."""
