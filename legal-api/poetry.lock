@@ -23,23 +23,23 @@ tz = ["tzdata"]
 
 [[package]]
 name = "arrow"
-version = "1.3.0"
+version = "1.4.0"
 description = "Better dates & times for Python"
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "arrow-1.3.0-py3-none-any.whl", hash = "sha256:c728b120ebc00eb84e01882a6f5e7927a53960aa990ce7dd2b10f39005a67f80"},
-    {file = "arrow-1.3.0.tar.gz", hash = "sha256:d4540617648cb5f895730f1ad8c82a65f2dad0166f57b75f3ca54759c4d67a85"},
+    {file = "arrow-1.4.0-py3-none-any.whl", hash = "sha256:749f0769958ebdc79c173ff0b0670d59051a535fa26e8eba02953dc19eb43205"},
+    {file = "arrow-1.4.0.tar.gz", hash = "sha256:ed0cc050e98001b8779e84d461b0098c4ac597e88704a655582b21d116e526d7"},
 ]
 
 [package.dependencies]
 python-dateutil = ">=2.7.0"
-types-python-dateutil = ">=2.8.10"
+tzdata = {version = "*", markers = "python_version >= \"3.9\""}
 
 [package.extras]
 doc = ["doc8", "sphinx (>=7.0.0)", "sphinx-autobuild", "sphinx-autodoc-typehints", "sphinx_rtd_theme (>=1.3.0)"]
-test = ["dateparser (==1.*)", "pre-commit", "pytest", "pytest-cov", "pytest-mock", "pytz (==2021.1)", "simplejson (==3.*)"]
+test = ["dateparser (==1.*)", "pre-commit", "pytest", "pytest-cov", "pytest-mock", "pytz (==2025.2)", "simplejson (==3.*)"]
 
 [[package]]
 name = "attrs"
@@ -2201,7 +2201,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.57"
+version = "2.18.58"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -2219,8 +2219,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.57"
-resolved_reference = "0f008ab7d59e8587c61fceca5dec2d74a1685b79"
+reference = "2.18.58"
+resolved_reference = "0a9c92e66a0a8c50d470c830ff73e5c38f020d3a"
 
 [[package]]
 name = "reportlab"
@@ -2924,18 +2924,6 @@ files = [
 ]
 
 [[package]]
-name = "types-python-dateutil"
-version = "2.9.0.20250822"
-description = "Typing stubs for python-dateutil"
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "types_python_dateutil-2.9.0.20250822-py3-none-any.whl", hash = "sha256:849d52b737e10a6dc6621d2bd7940ec7c65fcb69e6aa2882acf4e56b2b508ddc"},
-    {file = "types_python_dateutil-2.9.0.20250822.tar.gz", hash = "sha256:84c92c34bd8e68b117bff742bc00b692a1e8531262d4507b33afcc9f7716cd53"},
-]
-
-[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -2945,6 +2933,18 @@ groups = ["main", "dev"]
 files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
+]
+
+[[package]]
+name = "tzdata"
+version = "2025.3"
+description = "Provider of IANA time zone data"
+optional = false
+python-versions = ">=2"
+groups = ["main"]
+files = [
+    {file = "tzdata-2025.3-py2.py3-none-any.whl", hash = "sha256:06a47e5700f3081aab02b2e513160914ff0694bce9947d6b76ebd6bf57cfc5d1"},
+    {file = "tzdata-2025.3.tar.gz", hash = "sha256:de39c2ca5dc7b0344f2eba86f49d614019d29f060fc4ebc8a417896a620b56a7"},
 ]
 
 [[package]]
@@ -3122,4 +3122,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9.22,<3.10"
-content-hash = "6b27bf5d5df7e076233049f3c46dff649bbd72e02b043b60d2cd1764cf784fb3"
+content-hash = "65b17fe0208d8938cb54d85d0a2c41d9ac0659a591778730e576e812aff50c49"
