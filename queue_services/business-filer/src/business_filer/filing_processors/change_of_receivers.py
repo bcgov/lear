@@ -70,12 +70,3 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfReceivers"].get("courtOrder"):
         update_filing_court_order(filing_rec, court_order)
-    
-    try:
-        # Create DRS record
-        PublishEvent.publish_drs_create_message(current_app, business, filing_rec)
-
-    except Exception as err:
-        # log error for ops, but don't prevent filing from completing
-        current_app.logger.warning(err.with_traceback(None))
-        current_app.logger.warning(f"Failed to create DRS Record for {filing_rec.id}.")
