@@ -31,7 +31,7 @@ def test_valid_share_series_save(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -42,14 +42,14 @@ def test_valid_share_series_save(session):
         business_id=business.id
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
+        name='Series 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=500,
         special_rights_flag=False
     )
     share_series_2 = ShareSeries(
-        name='Share Series 2',
+        name='Series 2 Shares',
         priority=2,
         max_share_flag=True,
         max_shares=1000,
@@ -67,7 +67,7 @@ def test_share_series_json(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -78,7 +78,7 @@ def test_share_series_json(session):
         business_id=business.id
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
+        name='Series 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=500,
@@ -116,7 +116,7 @@ def test_invalid_share_quantity(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -127,7 +127,7 @@ def test_invalid_share_quantity(session):
         business_id=business.id
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
+        name='Series 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=None,
@@ -150,7 +150,7 @@ def test_validate_share_quantity_not_exceed_class_value(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -161,7 +161,7 @@ def test_validate_share_quantity_not_exceed_class_value(session):
         business_id=business.id
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
+        name='Series 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1500,
@@ -184,7 +184,7 @@ def test_share_quantity_when_no_max_share_for_parent(session):
     identifier = 'CP1234567'
     business = factory_business(identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=False,
         max_shares=None,
@@ -195,7 +195,7 @@ def test_share_quantity_when_no_max_share_for_parent(session):
         business_id=business.id
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
+        name='Series 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1500,
