@@ -326,4 +326,16 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         if not Flags.is_on("enable-sandbox"):
             PublishEvent.publish_email_message(current_app, business, filing_submission, filing_submission.status)
 
+        if filing_type in [
+            FilingTypes.CHANGEOFLIQUIDATORS,
+            FilingTypes.CHANGEOFRECEIVERS
+        ]:
+            try:
+                # Create DRS record
+                PublishEvent.publish_drs_create_message(current_app, business, filing_submission)
+            except Exception as err:
+                # log error for ops, but don't prevent filing from completing
+                current_app.logger.warning(err.with_traceback(None))
+                current_app.logger.warning(f"Failed to create DRS Record for {filing_submission.id}.")
+
         PublishEvent.publish_event(current_app, business, filing_submission)

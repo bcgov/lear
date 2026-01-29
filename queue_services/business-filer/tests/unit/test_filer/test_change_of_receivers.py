@@ -40,12 +40,10 @@ import random
 from business_model.models import Address, Business, Filing, PartyRole, Party
 from registry_schemas.example_data import FILING_TEMPLATE
 
-from business_filer.services.filer import process_filing
-from tests.unit import (
-    create_business,
-    create_filing
-)
 from business_filer.common.filing_message import FilingMessage
+from business_filer.services.filer import process_filing
+from tests.unit import create_business, create_filing
+from tests.unit.test_filer import check_drs_publish
 
 CHANGE_OF_RECEIVERS_APPOINT = {
     'type': 'appointReceiver',
@@ -157,12 +155,12 @@ CHANGE_OF_RECEIVERS_APPOINT = {
 }
 
 
-def test_process_cor_filing(app, session):
+def test_process_cor_filing(app, session, mocker):
     """Assert that all COR filings can be applied to the model correctly."""
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     effective_date = datetime(2023, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
     identifier = f'BC{random.randint(1000000, 9999999)}'
-
+    drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
 
     business = create_business(identifier)
 
@@ -191,6 +189,8 @@ def test_process_cor_filing(app, session):
     assert appoint_filing.transaction_id
     assert appoint_filing.business_id == business.id
     assert appoint_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, appoint_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
     assert len(party_roles) == 4
@@ -244,6 +244,8 @@ def test_process_cor_filing(app, session):
     assert cease_filing.transaction_id
     assert cease_filing.business_id == business.id
     assert cease_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, cease_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
@@ -308,6 +310,8 @@ def test_process_cor_filing(app, session):
     assert change_address_filing.transaction_id
     assert change_address_filing.business_id == business.id
     assert change_address_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
@@ -368,7 +372,9 @@ def test_process_cor_filing(app, session):
             }
         ]
     }
+    expected_document_id = '12345678'
     filing['filing']['changeOfReceivers'] = {
+        'documentId': expected_document_id,
         'type': 'amendReceiver',
         'relationships': [
             {
@@ -415,6 +421,8 @@ def test_process_cor_filing(app, session):
     assert amend_filing.transaction_id
     assert amend_filing.business_id == business.id
     assert amend_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, amend_filing, expected_document_id)
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
