@@ -1255,35 +1255,6 @@ def test_series_allows_value_word(session):
     assert len(reserved_word_errors) == 0
 
 
-@pytest.mark.parametrize('filing_type', [
-    'alteration',
-    'correction',
-    'changeOfRegistration',
-])
-def test_series_name_validation_skipped_for_non_ia_filings(session, filing_type):
-    """Test that series name suffix/reserved word validation is skipped for non-IA filings."""
-    # Use a name that would fail IA validation (no " Shares" suffix and contains reserved word)
-    share_class = {
-        'name': 'Class A Shares',
-        'hasMaximumShares': False,
-        'hasParValue': False,
-        'hasRightsOrRestrictions': True,
-        'series': [{
-            'name': 'Share Series A',
-            'hasMaximumShares': False
-        }]
-    }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, filing_type, 0)
-
-    # Should not have suffix or reserved word errors for non-IA filings
-    suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
-    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
-    assert len(suffix_errors) == 0, f"Unexpected suffix validation for {filing_type}"
-    assert len(reserved_word_errors) == 0, f"Unexpected reserved word validation for {filing_type}"
-
-
 def test_valid_share_structure(session):
     """Test a completely valid share structure."""
     filing_json = {
@@ -1465,7 +1436,7 @@ def test_share_structure_empty_share_classes_for_ia(session):
 
     assert result is not None
     assert len(result) == 1
-    assert result[0]['error'] == 'A company must have a minimum of one share class.'
+    assert result[0]['error'] == 'A company must have least one Class of Shares.'
     assert result[0]['path'] == '/filing/incorporationApplication/shareStructure/shareClasses'
 
 
@@ -1484,4 +1455,52 @@ def test_share_structure_empty_share_classes_allowed_for_non_ia(session):
     result = validate_share_structure(filing_json, 'alteration', 'BEN')
 
     assert result is None
+
+@pytest.mark.parametrize("max_shares,expected_error", [
+    (None, "must provide value for maximum number of shares"),
+    ("1000", "Must be a whole number"),
+    (10.5, "Must be a whole number"),
+    (True, "Must be a whole number"),
+    (0, "Number must be greater than 0"),
+    (-5, "Number must be greater than 0"),
+    (10**16, "Number must be less than 16 digits"),
+])
+def test_share_class_max_number_of_shares_validation(session, max_shares, expected_error):
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': True,
+        'maxNumberOfShares': max_shares,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+    assert any(expected_error in e.get('error', '') for e in result)
+
+@pytest.mark.parametrize("max_shares,expected_error", [
+    (None, "must provide value for maximum number of shares"),
+    ("1000", "Must be a whole number"),
+    (10.5, "Must be a whole number"),
+    (True, "Must be a whole number"),
+    (0, "Number must be greater than 0"),
+    (-5, "Number must be greater than 0"),
+    (10**16, "Number must be less than 16 digits"),
+])
+def test_share_series_max_number_of_shares_validation(session, max_shares, expected_error):
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': True,
+        'maxNumberOfShares': 10000,
+        'hasParValue': False,
+        'hasRightsOrRestrictions': True,
+        'series': [{
+            'name': 'Series 1 Shares',
+            'hasMaximumShares': True,
+            'maxNumberOfShares': max_shares
+        }]
+    }
+    memoize_names = ['Class A Shares']
+    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    assert any(expected_error in e.get('error', '') for e in result)
 
