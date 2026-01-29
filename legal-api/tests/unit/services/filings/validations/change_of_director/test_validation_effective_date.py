@@ -45,6 +45,19 @@ def common_setup(identifier: str, date_time: datetime):
 
     return business, f
 
+def test_validate_effective_date_missing_key(session):
+    """Assert that missing effectiveDate triggers the appropriate error."""
+    identifier = 'CP1234567'
+    now = datetime(2001, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business, filing = common_setup(identifier, now)
+
+    # Remove the effectiveDate key
+    del filing['filing']['header']['effectiveDate']
+
+    with freeze_time(now):
+        err = validate_effective_date(business, filing)
+
+    assert err == [{"error": "No effective date provided."}]
 
 def test_effective_date_sanity_check(session):
     """Assert that a COD with a valid effective date passes validation."""
