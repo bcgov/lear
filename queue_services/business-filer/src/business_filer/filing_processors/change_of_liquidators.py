@@ -35,7 +35,6 @@
 import copy
 
 from business_model.models import Business, Filing, PartyRole
-from flask import current_app
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.filings import update_filing_court_order
@@ -45,7 +44,6 @@ from business_filer.filing_processors.filing_components.relationships import (
     create_relationships,
     update_relationship_addresses,
 )
-from business_filer.services.publish_event import PublishEvent
 
 
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
