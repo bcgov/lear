@@ -42,11 +42,9 @@ from registry_schemas.example_data import FILING_TEMPLATE
 
 from business_filer.common.filing_message import FilingMessage
 from business_filer.services.filer import process_filing
-from tests.unit import (
-    create_business,
-    create_filing
-)
+from tests.unit import create_business, create_filing
 from tests.unit.filing_processors.filing_components.test_offices import LIQUIDATION_RECORDS_OFFICE
+from tests.unit.test_filer import check_drs_publish
 
 CHANGE_OF_LIQUIDATORS_INTENT = {
     'type': 'intentToLiquidate',
@@ -109,12 +107,12 @@ CHANGE_OF_LIQUIDATORS_INTENT = {
 }
 
 
-def test_process_col_filing(app, session):
+def test_process_col_filing(app, session, mocker):
     """Assert that all COL filings can be applied to the model correctly."""
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     effective_date = datetime(2023, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
     identifier = f'BC{random.randint(1000000, 9999999)}'
-
+    drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
 
     business = create_business(identifier)
 
@@ -144,6 +142,8 @@ def test_process_col_filing(app, session):
     assert intent_filing.business_id == business.id
     assert intent_filing.status == Filing.Status.COMPLETED.value
     assert business.in_liquidation == True
+    check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
     assert len(party_roles) == 2
@@ -211,6 +211,8 @@ def test_process_col_filing(app, session):
     assert cease_filing.transaction_id
     assert cease_filing.business_id == business.id
     assert cease_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, cease_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
     assert len(party_roles) == 2
@@ -287,6 +289,8 @@ def test_process_col_filing(app, session):
     assert change_address_filing.transaction_id
     assert change_address_filing.business_id == business.id
     assert change_address_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
@@ -346,8 +350,10 @@ def test_process_col_filing(app, session):
             }
         ]
     }
+    new_document_id = '12345677'
     filing['filing']['changeOfLiquidators'] = {
         'type': 'appointLiquidator',
+        'documentId': new_document_id,
         'relationships': [
             new_relationship
         ]
@@ -372,6 +378,8 @@ def test_process_col_filing(app, session):
     assert appoint_filing.transaction_id
     assert appoint_filing.business_id == business.id
     assert appoint_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, appoint_filing, new_document_id)
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
