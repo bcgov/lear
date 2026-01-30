@@ -123,7 +123,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
             msg.append({
                 "error": "Share series name cannot start or end with whitespace.",
                 "path": f"{err_path}/name/"
-            })  
+            })
 
         elif series_name in memoize_names:
             msg.append({"error": f"Share series {series_name} name already used in a share class or series.",
@@ -165,7 +165,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
         msg.append({
             "error": "Share class name cannot start or end with whitespace.",
             "path": err_path
-        })   
+        })
 
     elif share_name in memoize_names:
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
@@ -335,7 +335,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             msg.append({
                 "error": f"{party_roles_str} first name cannot start or end with whitespace",
                 "path": party_path
-            })  
+            })
         elif len(first_name) > custom_allowed_max_length:
             err_msg = f"{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters"
             msg.append({"error": err_msg, "path": party_path})
@@ -348,7 +348,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
                              "path": party_path})
             elif len(middle_initial) > custom_allowed_max_length:
                 err_msg = f"{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters"
-                msg.append({"error": err_msg, "path": party_path})    
+                msg.append({"error": err_msg, "path": party_path})
 
         middle_name = officer.get("middleName", None)
         # Only validate middle name if it exists and contains non-whitespace characters
@@ -371,7 +371,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             })
         elif len(last_name) > last_name_max_length:
             err_msg = f"{party_roles_str} last name cannot be longer than {last_name_max_length} characters"
-            msg.append({"error": err_msg, "path": party_path})  
+            msg.append({"error": err_msg, "path": party_path})
         
         if organization_name:
             err_msg = f"{party_roles_str} organization name should not be set for person party type"
@@ -402,7 +402,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             err_msg = f"{party_roles_str} last name should not be set for organization party type"
             msg.append({"error": err_msg, "path": party_path})
         
-    return msg 
+    return msg
 
 
 def validate_relationships( # noqa: PLR0913
@@ -620,7 +620,7 @@ def validate_addresses(
                         msg.append({
                             "error": _(f"{field} cannot start or end with whitespace."),
                             "path": f"{address_type_path}/{field}"
-                        })    
+                        })
     return msg
 
 
@@ -701,7 +701,7 @@ def validate_effective_date(filing_json: dict) -> list:
     """Validate effective date"""
     msg = []
 
-    now = dt.utcnow() 
+    now = dt.utcnow()
     min_allowed = now + timedelta(minutes=2)
     max_allowed = now + timedelta(days=10)
 
@@ -719,12 +719,12 @@ def validate_effective_date(filing_json: dict) -> list:
     if effective_date < min_allowed:
         msg.append({"error": "Invalid Datetime, effective date must be a minimum of 2 minutes ahead.",
                     "path": "/filing/header/effectiveDate"})
-        return msg            
+        return msg
 
     if effective_date > max_allowed:
         msg.append({"error": "Invalid Datetime, effective date must be a maximum of 10 days ahead.",
                     "path": "/filing/header/effectiveDate"})
-        return msg            
+        return msg
 
     return msg
 
@@ -956,7 +956,7 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
         # Validation only for sole proprietorships
-        return False 
+        return False
     
     # Existing proprietor in DB
     existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
@@ -1006,7 +1006,7 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
                 ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
                 message="Permission Denied: You do not have permission to add a business or corporation which is not registered in BC."
                 ):
-                msg.append({"error": err_msg.msg[0].get("message"), 
+                msg.append({"error": err_msg.msg[0].get("message"),
                             "path": f"/filing/{filing_type}/parties"
                             })
             

@@ -192,7 +192,7 @@ def validate_roles(filing_dict: dict, # noqa: PLR0912
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}',
             "path": err_path
-        })         
+        })
 
     if filing_type == "incorporationApplication" or \
             (filing_type == "correction" and filing_dict["filing"][filing_type].get("type") == "CLIENT"):

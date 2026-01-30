@@ -113,14 +113,14 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
             elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
                 director_count += 1
             else:
-                invalid_roles.add(role_type)  
+                invalid_roles.add(role_type)
 
     if invalid_roles:
         err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             "path": err_path
-        })      
+        })
 
     if completing_party_count == 0:
         err_path = f"/filing/{filing_type}/parties/roles"
