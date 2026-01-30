@@ -3308,15 +3308,24 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
             business = factory_business(identifier=identifier,
                                         entity_type=legal_type,
                                         state=state)
-            for _ in range(num_dods):
+            for i in range(num_dods):
                 dod_filing_json = copy.deepcopy(FILING_TEMPLATE)
                 dod_filing_json["filing"]["header"]["name"] = "dissolution"
                 dod_filing_json["filing"]["dissolution"] = DELAY_DISSOLUTION
-                factory_completed_filing(business, dod_filing_json)
-            with patch.object(type(business), 'in_dissolution', new_callable=PropertyMock) as mock_in_dissolution:
-                mock_in_dissolution.return_value = True
-                filing_types = get_allowed_filings(business, state, legal_type, jwt)
-                assert filing_types == expected
+                factory_completed_filing(business, dod_filing_json, datetime.utcnow() - datedelta(days=i))
+
+            batch = factory_batch()
+            batch_processing = factory_batch_processing(
+                batch_id=batch.id,
+                business_id=business.id,
+                identifier=identifier,
+                trigger_date=datetime.utcnow() + datedelta(days=10)
+            )
+            batch_processing.created_date = datetime.utcnow() + datedelta(days=-10)
+            batch_processing.save()
+
+            filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            assert filing_types == expected
 
 
 @pytest.mark.parametrize(
