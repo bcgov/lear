@@ -62,7 +62,7 @@ def check_business(business: Business) -> list:
         elif dis_details.ar_overdue:
             result.append(ar_overdue_warning)
 
-        data = _get_modified_warning_data(batch_processing)
+        data = _get_modified_warning_data(batch_processing, len(business.user_dod_filings))
 
         result.append({
             "code": BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,
@@ -74,22 +74,26 @@ def check_business(business: Business) -> list:
     return result
 
 
-def _get_modified_warning_data(batch_processing: BatchProcessing) -> dict:
+def _get_modified_warning_data(batch_processing: BatchProcessing, user_delays: int = 0) -> dict:
     """Return involuntary disssolution warning data based on rules."""
     meta_data = batch_processing.meta_data if batch_processing.meta_data else {}
 
     trigger_date = batch_processing.trigger_date
     current_date = datetime.utcnow()
     modified_target_date = None
+    target_stage_2_date = None
     if batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1:
         modified_target_date = max(current_date, trigger_date) + datedelta(days=current_app.config.get("STAGE_2_DELAY"))
+        target_stage_2_date = max(current_date, trigger_date)
     elif batch_processing.step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_2:
         modified_target_date = max(current_date, trigger_date)
 
     if modified_target_date:
         meta_data = {
             **meta_data,
-            "targetDissolutionDate": modified_target_date.date().isoformat()
+            "userDelays": user_delays,
+            "targetDissolutionDate": modified_target_date.date().isoformat(),
+            **({"targetStage2Date": target_stage_2_date.date().isoformat()} if target_stage_2_date else {})
         }
 
     return meta_data
