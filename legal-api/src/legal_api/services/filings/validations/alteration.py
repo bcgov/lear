@@ -62,7 +62,7 @@ def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-
     if err:
         msg.extend(err)
 
-    msg.extend(validate_effective_date(filing))    
+    msg.extend(validate_effective_date(filing))
     msg.extend(validate_name_translation(filing, "alteration"))
 
     if msg:
@@ -189,7 +189,7 @@ def type_change_validation(filing, business: Business):
             minimum_directors: Final = 3
             if len(active_directors) < minimum_directors:
                 msg.append({ "error": "Must have a minimum of three directors. File a change of director filing first.",
-                            "path": legal_type_path })      
+                            "path": legal_type_path })
     return msg
 
 

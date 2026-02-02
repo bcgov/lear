@@ -173,7 +173,7 @@ class PermissionService:
             CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
                 ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CHANGEOFOFFICERS.value:
-                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,    
+                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
                 ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value,
             CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:

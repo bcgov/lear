@@ -138,21 +138,21 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
             elif role_type == PartyRole.RoleTypes.PARTNER.value:
                 partner_parties += 1
             else:
-                invalid_roles.add(role_type)  
+                invalid_roles.add(role_type)
 
     if invalid_roles:
         err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             "path": err_path
-        })   
+        })
 
     party_path = "/filing/registration/parties"
     if legal_type == Business.LegalTypes.SOLE_PROP.value:
         if partner_parties > 0:
             msg.append({"error": "Partner is not valid for a Sole Proprietorship.", "path": party_path})
         if completing_parties < 1 or proprietor_parties < 1:
-            msg.append({"error": "1 Proprietor and a Completing Party are required.", "path": party_path})    
+            msg.append({"error": "1 Proprietor and a Completing Party are required.", "path": party_path})
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         if proprietor_parties > 0:
             msg.append({"error": "Proprietor is not valid for a General Partnership.", "path": party_path})

@@ -1321,7 +1321,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             parties_deleted = [p for p in existing_party_json if p["officer"]["id"] not in parties_to_edit]
             filing["ceasedParties"] = parties_deleted
 
-    def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
+    def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals;
         if filing.get("correction").get("shareStructure") is None:
             return
         filing["shareClasses"] = filing.get("correction").get("shareStructure", {}).get("shareClasses")
@@ -1358,7 +1358,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             ceased_share_classes = [s for s in prev_share_class_json if s["id"] not in share_class_to_edit]
             filing["ceasedShareClasses"] = ceased_share_classes
 
-    def _format_share_series_data(self, share_class, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals; # noqa: E501;
+    def _format_share_series_data(self, share_class, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals;
         if share_class.get("series"):
             prev_share_series_json = VersionedBusinessDetailsService.get_share_series_revision(
                 prev_completed_filing.transaction_id,
@@ -1463,7 +1463,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if (
             not (title := self._filing.FILINGS[self._filing.filing_type].get("title")) and
             not (
-                self._filing.filing_sub_type and 
+                self._filing.filing_sub_type and
                 (title := self._filing.FILINGS[self._filing.filing_type]
                  .get(self._filing.filing_sub_type, {})
                  .get("title"))

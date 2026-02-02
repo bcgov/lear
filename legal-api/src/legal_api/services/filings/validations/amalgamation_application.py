@@ -15,7 +15,7 @@
 from http import HTTPStatus
 from typing import Final, Optional
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
@@ -394,7 +394,7 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
     msg = []
     regular_amalgamation_minimum: Final = 2
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
-        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 
+        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >=
              regular_amalgamation_minimum and
              amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 0 and
              amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 0)):
@@ -437,7 +437,7 @@ def _is_business_affliated(identifier, account_id):
 
 
 def _has_pending_filing(amalgamating_business: Business):
-    return bool(Filing.get_filings_by_status(amalgamating_business.id, 
+    return bool(Filing.get_filings_by_status(amalgamating_business.id,
                                              [Filing.Status.DRAFT.value,
                                               Filing.Status.PENDING.value,
                                               Filing.Status.PAID.value]))
@@ -458,14 +458,14 @@ def validate_party(filing: dict, amalgamation_type, filing_type) -> list:
             elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
                 director_parties += 1
             else:
-                invalid_roles.add(role_type)  
+                invalid_roles.add(role_type)
 
     if invalid_roles:
         err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             "path": err_path
-        })                  
+        })
 
     party_path = f"/filing/{filing_type}/parties"
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and

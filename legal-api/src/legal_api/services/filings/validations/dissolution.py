@@ -34,7 +34,7 @@ from legal_api.services.permissions import (
     ListFilingsPermissionsAllowed,
     PermissionService,
 )
-from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
+from legal_api.services.utils import get_str
 
 
 class DissolutionTypes(str, Enum):
@@ -76,7 +76,7 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     dissolution_type = get_str(dissolution, "/filing/dissolution/dissolutionType")
     msg = []
      
-    if flags.is_on("enabled-deeper-permission-action"):        
+    if flags.is_on("enabled-deeper-permission-action"):
         err = _validate_dissolution_permission(business, dissolution, dissolution_type, filing_type, msg)
         if err:
             return err
@@ -95,7 +95,7 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
 
     err = validate_dissolution_parties_roles(dissolution, business.legal_type, dissolution_type)
     if err:
-        msg.extend(err)    
+        msg.extend(err)
 
     # Specific validation for addresses in dissolution
     err = validate_dissolution_parties_address(dissolution, business.legal_type, dissolution_type)
@@ -233,7 +233,7 @@ def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type
         if custodian_count == 0:
             msg.append({"error": "Must have a minimum of one custodian.", "path": party_path})
         elif custodian_count > 1:
-            msg.append({"error": "Must have a maximum of one custodian.", "path": party_path})    
+            msg.append({"error": "Must have a maximum of one custodian.", "path": party_path})
     elif legal_type == Business.LegalTypes.COOP.value:
         total = custodian_count + liquidator_count
         if total == 0:
@@ -377,7 +377,7 @@ def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
             msg.append({
                 "error": "Custodian email cannot contain any whitespaces.",
                 "path": f"/filing/dissolution/parties/{idx}/officer/email"
-            })    
+            })
     return msg
 
 def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
@@ -404,7 +404,7 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
                 msg.append({
                     "error": "Organization name cannot have leading or trailing spaces.",
                     "path": f"/filing/dissolution/parties/{idx}/officer/organizationName"
-                })    
+                })
 
     return msg
 

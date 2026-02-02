@@ -146,6 +146,7 @@ select = [
     "TID252", # relative imports
     "UP",  # pyupgrade
     "F", # pyflakes
+    "W291",
 ]
 ignore = ["RUF012"]
 
