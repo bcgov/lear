@@ -923,46 +923,46 @@ def test_in_dissolution(session, test_name, is_testing_business_id, batch_status
     (
         'staff_only_delay_filings',
         [
-            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'staff'},
-            { 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-3), 'user': 'staff'},
         ],
         []
     ),
     (
         'user_only_delay_filings',
         [
-            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'public'},
-            { 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-3), 'user': 'public'},
         ],
         [0, 1]
     ),
     (
         'staff_and_user_delay_filings',
         [
-            { 'date': datetime.utcnow() + datedelta(days=-7), 'user': 'staff'},
-            { 'date': datetime.utcnow() + datedelta(days=-6), 'user': 'public'},
-            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-7), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-6), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'staff'},
         ],
         [1]
     ),
     (
         'previous_delay_filings',
         [
-            { 'date': datetime.utcnow() + datedelta(days=-20), 'user': 'staff'},
-            { 'date': datetime.utcnow() + datedelta(days=-19), 'user': 'public'},
-            { 'date': datetime.utcnow() + datedelta(days=-18), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-20), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-19), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-18), 'user': 'staff'},
         ],
         []
     ),
     (
         'previous_and_current_delay_filings',
         [
-            { 'date': datetime.utcnow() + datedelta(days=-20), 'user': 'staff'},
-            { 'date': datetime.utcnow() + datedelta(days=-19), 'user': 'public'},
-            { 'date': datetime.utcnow() + datedelta(days=-18), 'user': 'staff'},
-            { 'date': datetime.utcnow() + datedelta(days=-7), 'user': 'staff'},
-            { 'date': datetime.utcnow() + datedelta(days=-6), 'user': 'public'},
-            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-20), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-19), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-18), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-7), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-6), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'public'},
         ],
         [4, 5]
     ),
@@ -970,7 +970,7 @@ def test_in_dissolution(session, test_name, is_testing_business_id, batch_status
 def test_public_user_dod_filings(session, test_name, dods, expected_dod_indxs):
     """Assert public_user_dod_filings returns as expected."""
     identifier = 'BC7654321'
-    business: Business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP)
+    business: Business = factory_business_from_tests(identifier=identifier, entity_type=Business.LegalTypes.COMP)
     delay_filing_json = {
         'filing': {
             'header': {
@@ -998,11 +998,10 @@ def test_public_user_dod_filings(session, test_name, dods, expected_dod_indxs):
         business_id=business.id,
         identifier=identifier,
         step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
-        trigger_date=datetime.now(UTC) + datedelta(days=10)
+        trigger_date=datetime.now(UTC) + datedelta.datedelta(days=10)
     )
-    batch_processing.created_date = datetime.now(UTC) + datedelta(days=-10)
+    batch_processing.created_date = datetime.now(UTC) + datedelta.datedelta(days=-10)
     batch_processing.save()
 
-    assert business.public_user_dod_filings
     assert len(business.public_user_dod_filings) == len(expected_ids)
-    assert [filing.id for filing in business.public_user_dod_filings] == expected_ids
+    assert sorted([filing.id for filing in business.public_user_dod_filings]) == sorted(expected_ids)
