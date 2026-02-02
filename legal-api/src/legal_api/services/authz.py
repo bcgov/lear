@@ -945,7 +945,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
 
-    if len(business.user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
+    if len(business.public_user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
         business_blocker_checks[BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED] = True
 
     return business_blocker_checks

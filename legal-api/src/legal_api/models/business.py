@@ -557,8 +557,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return find_in_batch_processing is not None
     
     @property
-    def user_dod_filings(self):
-        """Return the list of user filed delay of dissolution filings for the current in progress dissolution process."""
+    def public_user_dod_filings(self):
+        """Return the list of public user filed delay of dissolution filings for the current in progress dissolution process."""
         batch_processings: list[BatchProcessing] = BatchProcessing.find_by(business_id=self.id)
         if self.in_dissolution and len(batch_processings):
             most_recent_batch_processing = batch_processings[0]

@@ -161,11 +161,11 @@ def test_get_modified_warning_data(session, test_name, batch_processing_step, tr
     batch_processing.meta_data = {}
     batch_processing.save()
 
-    data = _get_modified_warning_data(batch_processing, len(business.user_dod_filings))
+    data = _get_modified_warning_data(batch_processing, len(business.public_user_dod_filings))
 
     assert 'targetDissolutionDate' in data
     assert data['targetDissolutionDate'] == expected_warning_date.date().isoformat()
-    assert data['userDelays'] == len(business.user_dod_filings)
+    assert data['userDelays'] == len(business.public_user_dod_filings)
     if batch_processing_step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1:
         assert data['targetStage2Date']
 
@@ -260,5 +260,5 @@ def test_get_modified_warning_data_user_delays(session, test_name, delay_filings
     batch_processing.created_date = start_date
     batch_processing.save()
 
-    data = _get_modified_warning_data(batch_processing, len(business.user_dod_filings))
+    data = _get_modified_warning_data(batch_processing, len(business.public_user_dod_filings))
     assert data['userDelays'] == expected_user_delays

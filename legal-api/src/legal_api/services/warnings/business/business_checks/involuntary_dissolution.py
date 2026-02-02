@@ -62,7 +62,7 @@ def check_business(business: Business) -> list:
         elif dis_details.ar_overdue:
             result.append(ar_overdue_warning)
 
-        data = _get_modified_warning_data(batch_processing, len(business.user_dod_filings))
+        data = _get_modified_warning_data(batch_processing, len(business.public_user_dod_filings))
 
         result.append({
             "code": BusinessWarningCodes.DISSOLUTION_IN_PROGRESS,
