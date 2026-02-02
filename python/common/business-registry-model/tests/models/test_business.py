@@ -19,7 +19,7 @@ Test-Suite to ensure that the Business Model is working as expected.
 import base64
 import copy
 import uuid
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 
 import datedelta
 import pytest
@@ -47,7 +47,7 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 
 # from business_model.services import flags
 from tests import EPOCH_DATETIME, has_expected_date_str_format
-from tests.models import factory_batch, factory_completed_filing, factory_party_role
+from tests.models import factory_batch, factory_batch_processing, factory_completed_filing, factory_party_role
 from tests.models import factory_business as factory_business_from_tests
 
 
@@ -910,3 +910,98 @@ def test_in_dissolution(session, test_name, is_testing_business_id, batch_status
         )
         batch_processing.save()
         assert business.in_dissolution is expected
+
+
+@pytest.mark.parametrize(
+    'test_name, dods, expected_dod_indxs',
+    [
+        (
+        'no_delay_filings',
+        [],
+        []
+    ),
+    (
+        'staff_only_delay_filings',
+        [
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-3), 'user': 'staff'},
+        ],
+        []
+    ),
+    (
+        'user_only_delay_filings',
+        [
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-3), 'user': 'public'},
+        ],
+        [0, 1]
+    ),
+    (
+        'staff_and_user_delay_filings',
+        [
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-7), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-6), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'staff'},
+        ],
+        [1]
+    ),
+    (
+        'previous_delay_filings',
+        [
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-20), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-19), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-18), 'user': 'staff'},
+        ],
+        []
+    ),
+    (
+        'previous_and_current_delay_filings',
+        [
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-20), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-19), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-18), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-7), 'user': 'staff'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-6), 'user': 'public'},
+            { 'date': datetime.now(UTC) + datedelta.datedelta(days=-5), 'user': 'public'},
+        ],
+        [4, 5]
+    ),
+    ])
+def test_public_user_dod_filings(session, test_name, dods, expected_dod_indxs):
+    """Assert public_user_dod_filings returns as expected."""
+    identifier = 'BC7654321'
+    business: Business = factory_business_from_tests(identifier=identifier, entity_type=Business.LegalTypes.COMP)
+    delay_filing_json = {
+        'filing': {
+            'header': {
+                'name': 'dissolution'
+            },
+            'dissolution': {
+                'dissolutionType': 'delay',
+                'delayType': 'custom'
+            }
+        }
+    }
+
+    expected_ids = []
+    for idx, delay in enumerate(dods):
+        filing = factory_completed_filing(business, delay_filing_json, delay['date'], None, None, 'dissolution', 'delay')
+        if delay['user'] == 'staff':
+            filing.submitter_roles = 'staff'
+            filing.save()
+        if idx in expected_dod_indxs:
+            expected_ids.append(filing.id)
+
+    batch = factory_batch()
+    batch_processing = factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=identifier,
+        step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        trigger_date=datetime.now(UTC) + datedelta.datedelta(days=10)
+    )
+    batch_processing.created_date = datetime.now(UTC) + datedelta.datedelta(days=-10)
+    batch_processing.save()
+
+    assert len(business.public_user_dod_filings) == len(expected_ids)
+    assert sorted([filing.id for filing in business.public_user_dod_filings]) == sorted(expected_ids)

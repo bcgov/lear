@@ -45,7 +45,7 @@ from .party import Party
 from .party_role import PartyRole
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
-from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .user import User, UserRoles  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
@@ -555,6 +555,27 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
             one_or_none()
         return find_in_batch_processing is not None
+    
+    @property
+    def public_user_dod_filings(self):
+        """Return the list of public user filed delay of dissolution filings for the current in progress dissolution process."""
+        batch_processings: list[BatchProcessing] = BatchProcessing.find_by(business_id=self.id)
+        if self.in_dissolution and len(batch_processings):
+            most_recent_batch_processing = batch_processings[0]
+            dissolution_start_date = most_recent_batch_processing.created_date
+            relevant_filings: list[Filing] = Filing.get_filings_by_status(
+                self.id,
+                [Filing.Status.COMPLETED, Filing.Status.PENDING, Filing.Status.PAID],
+                dissolution_start_date
+            )
+            return [
+                filing for filing in relevant_filings
+                if filing.filing_type == "dissolution"
+                    and filing.filing_sub_type == "delay"
+                    and not filing.submitter_roles in [UserRoles.staff, UserRoles.system]
+            ]
+
+        return []
 
     @property
     def is_tombstone(self):

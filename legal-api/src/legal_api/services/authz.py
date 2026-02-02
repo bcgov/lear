@@ -45,6 +45,8 @@ COLIN_SVC_ROLE = "colin"
 PUBLIC_USER = "public_user"
 ACCOUNT_IDENTITY = "account_identity"
 
+MAX_PUBLIC_USER_DOD_FILINGS = 2
+
 
 class BusinessBlocker(str, Enum):
     """Define an enum for business level blocker checks."""
@@ -60,6 +62,7 @@ class BusinessBlocker(str, Enum):
     IN_DISSOLUTION = "IN_DISSOLUTION"
     IN_LIQUIDATION = "IN_LIQUIDATION"
     FILING_WITHDRAWAL = "FILING_WITHDRAWAL"
+    MAX_DISSOLUTION_DELAYS_REACHED = "MAX_DISSOLUTION_DELAYS_REACHED"
 
 
 class BusinessRequirement(str, Enum):
@@ -580,8 +583,7 @@ def get_allowable_filings_dict():
                     "delay": {
                         "legalTypes": ["CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
-                            "maxFilings": {"dissolution.delay": 2},
-                            "business": [BusinessBlocker.DEFAULT],
+                            "business": [BusinessBlocker.DEFAULT, BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED],
                             "validBusiness": [BusinessBlocker.IN_DISSOLUTION]
                         }
                     }
@@ -913,7 +915,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
         BusinessBlocker.IN_DISSOLUTION: False,
         BusinessBlocker.IN_LIQUIDATION: False,
-        BusinessBlocker.FILING_WITHDRAWAL: False
+        BusinessBlocker.FILING_WITHDRAWAL: False,
+        BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED: False
     }
 
     if not business:
@@ -941,6 +944,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
+
+    if len(business.public_user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
+        business_blocker_checks[BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED] = True
 
     return business_blocker_checks
 

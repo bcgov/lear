@@ -32,7 +32,7 @@ from sqlalchemy.sql import and_, exists, func, not_, text
 
 from business_model.exceptions import BusinessException
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime, timezone
+from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from .address import (
@@ -68,6 +68,7 @@ from .share_class import (
 from .types.filings import FilingTypes, RestorationSubTypes
 from .user import (
     User,
+    UserRoles,
 )
 
 
@@ -581,6 +582,27 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
             one_or_none()
         return find_in_batch_processing is not None
+    
+    @property
+    def public_user_dod_filings(self):
+        """Return the list of public user filed delay of dissolution filings for the current in progress dissolution process."""
+        batch_processings: list[BatchProcessing] = BatchProcessing.find_by(business_id=self.id)
+        if self.in_dissolution and len(batch_processings):
+            most_recent_batch_processing = batch_processings[0]
+            dissolution_start_date = most_recent_batch_processing.created_date
+            relevant_filings: list[Filing] = Filing.get_filings_by_status(
+                self.id,
+                [Filing.Status.COMPLETED, Filing.Status.PENDING, Filing.Status.PAID],
+                dissolution_start_date
+            )
+            return [
+                filing for filing in relevant_filings
+                if filing.filing_type == "dissolution"
+                    and filing.filing_sub_type == "delay"
+                    and not filing.submitter_roles in [UserRoles.staff, UserRoles.system]
+            ]
+
+        return []
 
     @property
     def is_tombstone(self):

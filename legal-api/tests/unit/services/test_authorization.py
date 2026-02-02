@@ -23,6 +23,7 @@ from enum import Enum
 from http import HTTPStatus
 
 import pytest
+from datedelta import datedelta
 from unittest.mock import patch, PropertyMock
 from flask import g, jsonify
 from registry_schemas.example_data import (
@@ -50,8 +51,9 @@ from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_
     authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
 from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.utils.datetime import datetime
 from tests import integration_authorization, not_github_ci
-from tests.unit.models import factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
+from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
 from tests.unit.services.utils import create_business, create_header, helper_create_jwt
 
 
@@ -3306,15 +3308,24 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
             business = factory_business(identifier=identifier,
                                         entity_type=legal_type,
                                         state=state)
-            for _ in range(num_dods):
+            for i in range(num_dods):
                 dod_filing_json = copy.deepcopy(FILING_TEMPLATE)
                 dod_filing_json["filing"]["header"]["name"] = "dissolution"
                 dod_filing_json["filing"]["dissolution"] = DELAY_DISSOLUTION
-                factory_completed_filing(business, dod_filing_json)
-            with patch.object(type(business), 'in_dissolution', new_callable=PropertyMock) as mock_in_dissolution:
-                mock_in_dissolution.return_value = True
-                filing_types = get_allowed_filings(business, state, legal_type, jwt)
-                assert filing_types == expected
+                factory_completed_filing(business, dod_filing_json, datetime.utcnow() - datedelta(days=i))
+
+            batch = factory_batch()
+            batch_processing = factory_batch_processing(
+                batch_id=batch.id,
+                business_id=business.id,
+                identifier=identifier,
+                trigger_date=datetime.utcnow() + datedelta(days=10)
+            )
+            batch_processing.created_date = datetime.utcnow() + datedelta(days=-10)
+            batch_processing.save()
+
+            filing_types = get_allowed_filings(business, state, legal_type, jwt)
+            assert filing_types == expected
 
 
 @pytest.mark.parametrize(
@@ -3607,6 +3618,179 @@ def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
                                         state=state)
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
+
+
+@pytest.mark.parametrize(
+    'test_name,username,roles,dods,expected',
+    [
+        # active business - staff user
+        ('staff_allowed_no_dod_filings', 'staff', [STAFF_ROLE], [],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_REPORT,
+                          FilingKey.COO_CORPS,
+                          FilingKey.CHANGE_OF_RECEIVERS_AMEND,
+                          FilingKey.CHANGE_OF_RECEIVERS_APPOINT,
+                          FilingKey.CHANGE_OF_RECEIVERS_CEASE,
+                          FilingKey.CHANGE_OF_RECEIVERS_ADDRESS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION,
+                          ])),
+        ('staff_allowed_public_user_dod_filings',
+         'staff',
+         [STAFF_ROLE],
+         [{ 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'public' }, { 'date': datetime.utcnow() + datedelta(days=-2), 'user': 'public' }],
+         expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          FilingKey.CHANGE_OF_LIQUIDATORS_REPORT,
+                          FilingKey.COO_CORPS,
+                          FilingKey.CHANGE_OF_RECEIVERS_AMEND,
+                          FilingKey.CHANGE_OF_RECEIVERS_APPOINT,
+                          FilingKey.CHANGE_OF_RECEIVERS_CEASE,
+                          FilingKey.CHANGE_OF_RECEIVERS_ADDRESS,
+                          FilingKey.CORRCTN,
+                          FilingKey.COURT_ORDER,
+                          FilingKey.ADM_DISS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.PUT_BACK_OFF,
+                          FilingKey.REGISTRARS_NOTATION,
+                          FilingKey.REGISTRARS_ORDER,
+                          FilingKey.TRANSITION,
+                          ])),
+        ('basic_user_allowed_no_dod_filings',
+         'basic_user',
+         [BASIC_USER],
+         [],
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+        ('basic_user_allowed_staff_dod_filings',
+         'basic_user',
+         [BASIC_USER],
+         [{ 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'staff' }, { 'date': datetime.utcnow() + datedelta(days=-2), 'user': 'staff' }],
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+        ('basic_user_allowed_1_public_user_dod_filings',
+         'basic_user',
+         [BASIC_USER],
+         [{ 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'public' }, { 'date': datetime.utcnow() + datedelta(days=-2), 'user': 'staff' }],
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+        ('basic_user_not_allowed_2_public_user_dod_filings',
+         'basic_user',
+         [BASIC_USER],
+         [{ 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'public' }, { 'date': datetime.utcnow() + datedelta(days=-2), 'user': 'public' }],
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+        ('basic_user_allowed_1_current_1_prev',
+         'basic_user',
+         [BASIC_USER],
+         [{ 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'public' }, { 'date': datetime.utcnow() + datedelta(days=-40), 'user': 'public' }],
+         expected_lookup([FilingKey.AR_CORPS,
+                          FilingKey.COA_CORPS,
+                          FilingKey.COD_CORPS,
+                          FilingKey.COO_CORPS,
+                          FilingKey.DELAY_DISS,
+                          FilingKey.TRANSITION,
+                          FilingKey.TRANSPARENCY_REGISTER_ANNUAL,
+                          FilingKey.TRANSPARENCY_REGISTER_CHANGE,
+                          FilingKey.TRANSPARENCY_REGISTER_INITIAL])),
+    ]
+)
+def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, test_name, username, roles, dods, expected):
+    """Assert that get allowed returns valid filings when business is in dissolution."""
+    token = helper_create_jwt(jwt, roles=roles, username=username)
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
+
+        identifier = 'BC7654321'
+        business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP)
+        delay_filing_json = {
+            'filing': {
+                'header': {
+                    'name': 'dissolution'
+                },
+                'dissolution': {
+                    'dissolutionType': 'delay',
+                    'delayType': 'custom'
+                }
+            }
+        }
+        for delay in dods:
+            filing = factory_completed_filing(business, delay_filing_json, delay['date'], None, None, 'dissolution', 'delay')
+            if delay['user'] == 'staff':
+                filing.submitter_roles = 'staff'
+                filing.save()
+        batch = factory_batch()
+        batch_processing = factory_batch_processing(
+            batch_id=batch.id,
+            business_id=business.id,
+            identifier=identifier,
+            trigger_date=datetime.utcnow() + datedelta(days=10)
+        )
+        batch_processing.created_date = datetime.utcnow() + datedelta(days=-10)
+        batch_processing.save()
+
+        filing_types = get_allowed_filings(business, Business.State.ACTIVE, Business.LegalTypes.COMP, jwt)
+        assert filing_types == expected
 
 
 def create_incomplete_filing(business,
