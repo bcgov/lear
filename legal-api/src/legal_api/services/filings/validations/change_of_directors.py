@@ -55,20 +55,10 @@ def validate(business: Business, cod: dict) -> Error:
 
 def get_cod_date_bounds(business: Business) -> tuple[date, date]:
     """Return (earliest_allowed_date_leg, today_leg) for COD date validation."""
-    founding_date_leg = LegislationDatetime.as_legislation_timezone(
-        business.founding_date
+    earliest_allowed_date_leg = LegislationDatetime.as_legislation_timezone(
+        business.last_cod_date or business.founding_date
     ).date()
-
-    last_cod_date_leg = LegislationDatetime.as_legislation_timezone(
-        business.last_cod_date
-    ).date()
-
-    # Whichever is more recent
-    earliest_allowed_date_leg = max(founding_date_leg, last_cod_date_leg)
-
-    today_leg = LegislationDatetime.as_legislation_timezone(
-        datetime.utcnow()
-    ).date()
+    today_leg = LegislationDatetime.datenow()
 
     return earliest_allowed_date_leg, today_leg
 
