@@ -19,7 +19,6 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 import copy
 from http import HTTPStatus
 import pytest
-from unittest.mock import patch
 
 import registry_schemas
 from registry_schemas.example_data import (
