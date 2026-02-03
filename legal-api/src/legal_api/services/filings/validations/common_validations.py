@@ -108,6 +108,14 @@ def validate_share_structure(incorporation_json, filing_type, legal_type) -> Err
     return None
 
 
+def _series_name_has_reserved_words(series_name: str) -> bool:
+    """Check if the series name contains reserved words (excluding the required suffix)."""
+    suffix_len = len(SHARE_NAME_SUFFIX)
+    name_without_suffix = series_name[:-suffix_len] if series_name.endswith(SHARE_NAME_SUFFIX) else series_name
+    series_name_words = name_without_suffix.lower().split()
+    return any(word in EXCLUDED_WORDS_FOR_SERIES for word in series_name_words)
+
+
 def validate_series(item, memoize_names, filing_type, index) -> Error: # noqa: PLR0912
     """Validate shareStructure includes a wellformed series."""
     msg = []
@@ -128,31 +136,25 @@ def validate_series(item, memoize_names, filing_type, index) -> Error: # noqa: P
                 "error": "Share series name cannot start or end with whitespace.",
                 "path": f"{err_path}/name/"
             })
+        
+        elif not series_name.endswith(SHARE_NAME_SUFFIX):
+            msg.append({
+                "error": f"Share series name '{series_name}' must end with '{SHARE_NAME_SUFFIX}'.",
+                "path": f"{err_path}/name/"
+            })
+        
+        elif _series_name_has_reserved_words(series_name):
+            msg.append({
+                "error": "Share series name cannot contain the words 'share' or 'shares'.",
+                "path": f"{err_path}/name/"
+            })
 
         elif series_name in memoize_names:
             msg.append({"error": f"Share series {series_name} name already used in a share class or series.",
                         "path": err_path})
         else:
             memoize_names.append(series_name)
-    
 
-        # Validate series name ends with required suffix
-        if not series_name.endswith(SHARE_NAME_SUFFIX):
-            msg.append({
-                "error": f"Share series name '{series_name}' must end with '{SHARE_NAME_SUFFIX}'.",
-                "path": f"{err_path}/name/"
-            })
-
-        # Validate series name does not contain reserved words (excluding the required suffix)
-        # Remove the suffix before checking for reserved words
-        suffix_len = len(SHARE_NAME_SUFFIX)
-        name_without_suffix = series_name[:-suffix_len] if series_name.endswith(SHARE_NAME_SUFFIX) else series_name
-        series_name_words = name_without_suffix.lower().split()
-        if any(word in EXCLUDED_WORDS_FOR_SERIES for word in series_name_words):
-            msg.append({
-                "error": "Share series name cannot contain the words 'share' or 'shares'.",
-                "path": f"{err_path}/name/"
-            })
 
         if series["hasMaximumShares"]:
             max_shares = series.get("maxNumberOfShares", None)
@@ -191,6 +193,15 @@ def validate_series(item, memoize_names, filing_type, index) -> Error: # noqa: P
     return msg
 
 
+def _class_name_has_reserved_words(share_name: str) -> bool:
+    # Validate share class name does not contain reserved words (excluding the required suffix)
+    # Remove the suffix before checking for reserved words
+    suffix_len = len(SHARE_NAME_SUFFIX)
+    name_without_suffix = share_name[:-suffix_len] if share_name.endswith(SHARE_NAME_SUFFIX) else share_name
+    name_words = name_without_suffix.lower().split()
+    return any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words)
+
+
 def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912 PLR0915
     """Validate a wellformed share structure."""
     msg = []
@@ -211,6 +222,20 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
             "error": "Share class name cannot start or end with whitespace.",
             "path": err_path
         })
+    
+    elif not share_name.endswith(SHARE_NAME_SUFFIX):
+        err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
+        msg.append({
+            "error": f"Share class name '{share_name}' must end with '{SHARE_NAME_SUFFIX}'.",
+            "path": err_path
+        })
+    
+    elif _class_name_has_reserved_words(share_name):
+        err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
+        msg.append({
+            "error": "Share class name cannot contain the words 'share', 'shares', or 'value'.",
+            "path": err_path
+        })
 
     elif share_name in memoize_names:
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
@@ -218,27 +243,6 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
                     "path": err_path})
     else:
         memoize_names.append(share_name)
-
-    if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION:
-        # Validate share class name ends with required suffix
-        if not share_name.endswith(SHARE_NAME_SUFFIX):
-            err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-            msg.append({
-                "error": f"Share class name '{share_name}' must end with '{SHARE_NAME_SUFFIX}'.",
-                "path": err_path
-            })
-
-        # Validate share class name does not contain reserved words (excluding the required suffix)
-        # Remove the suffix before checking for reserved words
-        suffix_len = len(SHARE_NAME_SUFFIX)
-        name_without_suffix = share_name[:-suffix_len] if share_name.endswith(SHARE_NAME_SUFFIX) else share_name
-        name_words = name_without_suffix.lower().split()
-        if any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words):
-            err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-            msg.append({
-                "error": "Share class name cannot contain the words 'share', 'shares', or 'value'.",
-                "path": err_path
-            })
 
     if item["hasMaximumShares"]:
         max_shares = item.get("maxNumberOfShares", None)
