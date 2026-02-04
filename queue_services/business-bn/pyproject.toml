@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-bn"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["Patrick Wang <peinan.wang@gov.bc.ca>"]
 readme = "README.md"
@@ -23,6 +23,8 @@ psycopg2-binary = "2.9.10"
 six = ">=1.17.0,<2.0.0"
 urllib3 = ">=2.3.0,<3.0.0"
 launchdarkly-server-sdk = "^9.10.0"
+gunicorn = "^23.0.0"
+regex = "^2026.1.15"
 
 # Git-based dependencies
 business-registry-account = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/business-registry-account" }
@@ -31,7 +33,6 @@ business-registry-common = { git = "https://github.com/bcgov/lear.git", branch =
 gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/gcp-queue", branch = "main" }
 sql-versioning = { git = "https://github.com/bcgov/lear.git", branch = "main", subdirectory = "python/common/sql-versioning-alt" }
 structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/structured-logging", branch = "main" }
-gunicorn = "^23.0.0"
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"

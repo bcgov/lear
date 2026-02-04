@@ -21,7 +21,7 @@ from legal_api.errors import Error
 from legal_api.models import Address, Business, Filing
 from legal_api.services.filings.validations.common_validations import validate_parties_addresses
 from legal_api.services.utils import get_str
-from legal_api.utils.datetime import datetime
+from legal_api.utils.datetime import date, datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 # noqa: I003; needed as the linter gets confused from the babel override above.
@@ -33,9 +33,13 @@ def validate(business: Business, cod: dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
-    msg_cessation_date = validate_cessation_date(cod)
+    msg_cessation_date = validate_cessation_date(business, cod)
     if msg_cessation_date:
         msg += msg_cessation_date
+
+    msg_appointment_date = validate_appointment_date(business, cod)
+    if msg_appointment_date:
+        msg += msg_appointment_date
 
     msg_directors_addresses = validate_directors_addresses(business, cod)
     if msg_directors_addresses:
@@ -49,27 +53,121 @@ def validate(business: Business, cod: dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
 
-def validate_cessation_date(cod: dict) -> list:
-    """Return an error message if the directors cessation date is invalid.
+def get_cod_date_bounds(business: Business) -> tuple[date, date]:
+    """Return (earliest_allowed_date_leg, today_leg) for COD date validation."""
+    earliest_allowed_date_leg = LegislationDatetime.as_legislation_timezone(
+        business.last_cod_date or business.founding_date
+    ).date()
+    today_leg = LegislationDatetime.datenow()
 
-    Cessation date must be null for newly appointed directors.
+    return earliest_allowed_date_leg, today_leg
+
+
+def validate_cessation_date(business: Business, cod: dict) -> list:
+    """Return error messages if a director's cessation date is invalid.
+
+    Rules:
+    - Cessation date must only be provided if "ceased" is present in actions.
+    - Cessation date is required when "ceased" is in actions.
+    - Cessation date cannot be in the future.
+    - Cessation date cannot be before the most recent of:
+        - the business founding date, or
+        - the most recent Change of Directors filing date.
     """
     msg = []
     filing_type = "changeOfDirectors"
     directors = cod["filing"][filing_type]["directors"]
 
+    earliest_allowed_date_leg, today_leg = get_cod_date_bounds(business)
+
     for idx, director in enumerate(directors):
         actions = director.get("actions", [])
         cessation_date = director.get("cessationDate")
+        path = f"/filing/changeOfDirectors/directors/{idx}/cessationDate"
 
-        if "appointed" in actions and cessation_date is not None:
+        is_ceased = "ceased" in actions
+
+        # Cessation date provided but director is NOT ceased
+        if cessation_date is not None and not is_ceased:
             msg.append({
-                "error": babel("Appointed directors must not have a cessation date."),
-                "path": f"/filing/changeOfDirectors/directors/{idx}/cessationDate"
+                "error": babel("Cessation date must only be provided for a ceased director."),
+                "path": path
             })
+            continue
+
+        # Director is ceased but cessation date is missing
+        if is_ceased and not cessation_date:
+            msg.append({
+                "error": babel("Cessation date is required for ceased directors."),
+                "path": path
+            })
+            continue
+
+        # Validate cessation date when present and ceased
+        if is_ceased and cessation_date:
+            cessation_date_leg = date.fromisoformat(cessation_date)
+
+            if cessation_date_leg > today_leg:
+                msg.append({
+                    "error": babel("Cessation date cannot be in the future."),
+                    "path": path
+                })
+
+            if cessation_date_leg < earliest_allowed_date_leg:
+                msg.append({
+                    "error": babel(
+                        "Cessation date cannot be before the business founding date "
+                        "or the most recent Change of Directors filing."
+                    ),
+                    "path": path
+                })
 
     return msg
 
+
+def validate_appointment_date(business: Business, cod: dict) -> list:
+    """Return error messages if a director's appointment date is invalid.
+
+    Rules:
+    - Appointment date cannot be in the future.
+    - Appointment date cannot be before the most recent of:
+        - the business founding date, or
+        - the most recent Change of Directors filing date.
+    """
+    msg = []
+    filing_type = "changeOfDirectors"
+    directors = cod["filing"][filing_type]["directors"]
+
+    earliest_allowed_date_leg, today_leg = get_cod_date_bounds(business)
+
+    for idx, director in enumerate(directors):
+        actions = director.get("actions", [])
+        if "appointed" not in actions:
+            continue
+
+        appointment_date = director.get("appointmentDate")
+        if not appointment_date:
+            continue
+
+        path = f"/filing/changeOfDirectors/directors/{idx}/appointmentDate"
+        appointment_date_leg = date.fromisoformat(appointment_date)
+
+        if appointment_date_leg > today_leg:
+            msg.append({
+                "error": babel("Appointment date cannot be in the future."),
+                "path": path
+            })
+
+        if appointment_date_leg < earliest_allowed_date_leg:
+            msg.append({
+                "error": babel(
+                    "Appointment date cannot be before the business founding date "
+                    "or the most recent Change of Directors filing."
+                ),
+                "path": path
+            })
+
+    return msg
 
 def validate_directors_addresses(business: Business, cod: dict) -> list:
     """Return an error message if the directors address are invalid.
@@ -140,13 +238,13 @@ def validate_effective_date(business: Business, cod: dict) -> list:
     try:
         effective_datetime_str = cod["filing"]["header"]["effectiveDate"]
     except KeyError:
-        return {"error": babel("No effective date provided.")}
+        return [{"error": babel("No effective date provided.")}]
 
     # convert string to datetime
     try:
         effective_datetime_utc = datetime.fromisoformat(effective_datetime_str)
     except ValueError:
-        return {"error": babel("Invalid ISO format for effective date.")}
+        return [{"error": babel("Invalid ISO format for effective date.")}]
 
     # check if effective datetime is in the future
     if effective_datetime_utc > datetime.utcnow():

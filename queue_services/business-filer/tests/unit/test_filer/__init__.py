@@ -32,3 +32,21 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Worker."""
+import json
+from flask import Flask
+from unittest.mock import MagicMock
+
+from business_model.models import Business, Filing
+
+def check_drs_publish(mock_publish: MagicMock, app: Flask, business: Business, filing: Filing, document_id: str):
+    """Assert the drs publish was triggered with the expected values."""
+    assert mock_publish.call_count == 1
+    subject, payload = mock_publish.call_args.args
+    assert subject == app.config["DOC_CREATE_REC_TOPIC"]
+    payload_data = (json.loads(payload)).get('data')
+    assert payload_data.get('accountId') == 'business-api'
+    assert payload_data.get('consumerDocumentId') == document_id
+    assert payload_data.get('consumerFilingType') == filing.filing_type
+    assert payload_data.get('consumerIdentifier') == business.identifier
+    assert payload_data.get('consumerReferenceId') == str(filing.id)
+    assert payload_data.get('documentClass') == 'CORP'

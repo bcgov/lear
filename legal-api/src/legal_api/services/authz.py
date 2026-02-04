@@ -32,6 +32,7 @@ from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
+from legal_api.services.request_context import get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
 
 SYSTEM_ROLE = "system"
@@ -43,6 +44,8 @@ BASIC_USER = "basic"
 COLIN_SVC_ROLE = "colin"
 PUBLIC_USER = "public_user"
 ACCOUNT_IDENTITY = "account_identity"
+
+MAX_PUBLIC_USER_DOD_FILINGS = 2
 
 
 class BusinessBlocker(str, Enum):
@@ -59,6 +62,7 @@ class BusinessBlocker(str, Enum):
     IN_DISSOLUTION = "IN_DISSOLUTION"
     IN_LIQUIDATION = "IN_LIQUIDATION"
     FILING_WITHDRAWAL = "FILING_WITHDRAWAL"
+    MAX_DISSOLUTION_DELAYS_REACHED = "MAX_DISSOLUTION_DELAYS_REACHED"
 
 
 class BusinessRequirement(str, Enum):
@@ -579,8 +583,7 @@ def get_allowable_filings_dict():
                     "delay": {
                         "legalTypes": ["CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
-                            "maxFilings": {"dissolution.delay": 2},
-                            "business": [BusinessBlocker.DEFAULT],
+                            "business": [BusinessBlocker.DEFAULT, BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED],
                             "validBusiness": [BusinessBlocker.IN_DISSOLUTION]
                         }
                     }
@@ -636,12 +639,34 @@ def get_allowable_filings_dict():
         }
     }
 
-    if not flags.is_on("enable-unloved-filings"):
-        # These ones are only allowed if the flag is on
-        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfLiquidators"]
-        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["changeOfReceivers"]
-        del allowable_filings_dict["staff"][Business.State.ACTIVE.value]["dissolution"]["delay"]
-        del allowable_filings_dict["general"][Business.State.ACTIVE.value]["dissolution"]["delay"]
+    request_context = get_request_context()
+    enabled_filings: list[str] = (flags.value("enabled-specific-filings",
+                                              request_context.user,
+                                              request_context.account_id)).split(",")
+
+    filings_to_check = [
+        ("changeOfLiquidators", "appointLiquidator", "staff"),
+        ("changeOfLiquidators", "ceaseLiquidator", "staff"),
+        ("changeOfLiquidators", "changeAddressLiquidator", "staff"),
+        ("changeOfLiquidators", "intentToLiquidate", "staff"),
+        ("changeOfLiquidators", "liquidationReport", "staff"),
+        ("changeOfReceivers", "amendReceiver", "staff"),
+        ("changeOfReceivers", "appointReceiver", "staff"),
+        ("changeOfReceivers", "ceaseReceiver", "staff"),
+        ("changeOfReceivers", "changeAddressReceiver", "staff"),
+        ("dissolution", "delay", "staff"),
+        ("dissolution", "delay", "general"),
+        ("transition", None, "staff"),
+        ("transition", None, "general")
+    ]
+    for filing_type, filing_sub_type, user_type in filings_to_check:
+        filing_key = f"{filing_type}.{filing_sub_type}" if filing_sub_type else filing_type
+        if filing_key not in enabled_filings:
+            # the filing is not enabled so remove the filing information from the allowable filings dict
+            if filing_sub_type:
+                del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type][filing_sub_type]
+            else:
+                del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type]
 
     return allowable_filings_dict
 
@@ -890,7 +915,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.AMALGAMATING_BUSINESS: False,
         BusinessBlocker.IN_DISSOLUTION: False,
         BusinessBlocker.IN_LIQUIDATION: False,
-        BusinessBlocker.FILING_WITHDRAWAL: False
+        BusinessBlocker.FILING_WITHDRAWAL: False,
+        BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED: False
     }
 
     if not business:
@@ -918,6 +944,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True
+
+    if len(business.public_user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
+        business_blocker_checks[BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED] = True
 
     return business_blocker_checks
 

@@ -55,12 +55,6 @@ def _check_permission_for_change_of_registration(business: Business, filing: dic
             error = PermissionService.check_user_permission(required_permission, message=message)
             if error:
                 return error
-        elif not item.get("is_dba") and item.get("email_changed"):
-            required_permission = ListActionsPermissionsAllowed.FIRM_EDITABLE_EMAIL_ADDRESS.value
-            message = "Permission Denied - You do not have permissions edit email in this filing."
-            error = PermissionService.check_user_permission(required_permission, message=message)
-            if error:
-                return error
         
     if is_officer_proprietor_replace_valid(business, filing, filing_type):
             required_permission = ListActionsPermissionsAllowed.FIRM_REPLACE_PERSON.value

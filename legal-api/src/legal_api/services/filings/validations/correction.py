@@ -176,14 +176,14 @@ def validate_party(filing: dict, legal_type: str) -> list: # noqa: PLR0912
             elif role_type == PartyRole.RoleTypes.PARTNER.value:
                 partner_parties += 1
             else:
-                invalid_roles.add(role_type)  
+                invalid_roles.add(role_type)
 
     if invalid_roles:
         err_path = "/filing/correction/parties/roles"
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             "path": err_path
-        })    
+        })
 
     party_path = "/filing/correction/parties"
 

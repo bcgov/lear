@@ -21,12 +21,13 @@ from http import HTTPStatus
 from typing import Optional, Union
 
 import requests
-from flask import current_app
+from flask import current_app, has_request_context
 from flask_babel import _ as babel
 from sqlalchemy.orm.exc import FlushError
 
 from legal_api.models import RegistrationBootstrap
 from legal_api.services import Flags, flags
+from legal_api.utils.auth import jwt
 
 
 class RegistrationBootstrapService:
@@ -322,20 +323,29 @@ class AccountService:
         return None
     
     @classmethod
-    def get_contacts(cls, config, org_id: str):
+    def get_contacts(cls, config, org_id: str, user_token: Optional[str] = None):
         """Get contacts for the business.
-        Fetch Compelting Party Details from Auth API.
+        Fetch Completing Party Details from Auth API.
         - GET /orgs/{org_id}/memeberships for user contacts details
         - GET /orgs/{org_id} for org contacts details
         """
-        token = cls.get_bearer_token(config)
-        auth_url = config.AUTH_SVC_URL
+        token = cls.get_bearer_token()
+        auth_url = current_app.config.get("AUTH_SVC_URL")
 
-        if not token:
-            return HTTPStatus.UNAUTHORIZED
 
-        membership_response = requests.get(
-            url=f"{auth_url}/{org_id}/memberships",
+        if user_token:
+            token = user_token
+        elif has_request_context():
+            try:
+                token = jwt.get_token_auth_header()
+            except Exception:
+                token = cls.get_bearer_token()
+
+        else:
+            token = cls.get_bearer_token()
+
+        user_response = requests.get(
+            url=f"{auth_url}/users/@me",
             headers={**cls.CONTENT_TYPE_JSON,
                      "Authorization": cls.BEARER + token},
             timeout=cls.timeout
@@ -348,39 +358,42 @@ class AccountService:
             timeout=cls.timeout
         )
 
-        if membership_response.status_code == HTTPStatus.OK and org_info_response.status_code == HTTPStatus.OK:
+        if user_response.status_code != HTTPStatus.OK or org_info_response.status_code != HTTPStatus.OK:
             return None
         
         try:
-            membership_data = membership_response.json()
+            user_data = user_response.json()
             org_info = org_info_response.json()
 
-            user_info = membership_data.get("user", {})
-            first_name = user_info.get("firstName", "")
-            last_name = user_info.get("lastName", "")
+            first_name = user_data.get("firstname", "")
+            last_name = user_data.get("lastname", "")
 
-            user_contacts = user_info.get("contacts", [])
-            user_contact = user_contacts[0] if user_contacts else {}
-            email = user_contact.get("email", "")
-            phone = user_contact.get("phone", "")
+            user_contacts = user_data.get("contacts", [])
+            email = ""
+            if user_contacts and len(user_contacts) > 0 and user_contacts[0].get("email"):
+                # BCSC
+                email = user_contacts[0].get("email", "")
+            elif user_data.get("email"):
+                # IDIR
+                email = user_data.get("email", "")
 
-            org_contacts = org_info.get("contacts", [])
-            org_contact = org_contacts[0] if org_contacts else {}
-
+            mailing_address = org_info.get("mailingAddress", {})
+            if not mailing_address:
+                current_app.logger.warning(f"No mailing address found for org {org_id}")
+                mailing_address = {}
             contact = {
-                "street": org_contact.get("street", ""),
-                "city": org_contact.get("city", ""),
-                "region": org_contact.get("region", ""),
-                "country": org_contact.get("country", ""),
-                "postalCode": org_contact.get("postalCode", ""),
+                "street": mailing_address.get("street", ""),
+                "city": mailing_address.get("city", ""),
+                "region": mailing_address.get("region", ""),
+                "country": mailing_address.get("country", ""),
+                "postalCode": mailing_address.get("postalCode", ""),
                 "firstName": first_name,
                 "lastName": last_name,
                 "email": email,
-                "phone": phone,
-                "streetAdditional": org_contact.get("streetAdditional", ""),
-                "delieveryInstructions": org_contact.get("deliveryInstructions", "")
+                "streetAdditional": mailing_address.get("streetAdditional", ""),
+                "deliveryInstructions": mailing_address.get("deliveryInstructions", "")
             }
-            return {"contact": [contact]}
+            return {"contacts": [contact]}
         except Exception as e:
             current_app.logger.error(f"Error fetching contacts: {e}")
         return None

@@ -42,7 +42,7 @@ from tests.unit.models import factory_business
           'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_LAST_AR_NOT_AFTER_FOUNDING', '2016-08-05', None, '1900-07-01',
      HTTPStatus.BAD_REQUEST, [
-         {'error': 'Annual Report Date must be the next Annual Report in contiguous order.',
+         {'error': 'Annual Report Date must be the next Annual Report in contiguous order. Next Annual Report year is 1901.',
           'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_LAST_AR_BEFORE_FOUNDING', '2016-08-05', None, '2017-08-05',
      HTTPStatus.BAD_REQUEST, [
@@ -50,7 +50,7 @@ from tests.unit.models import factory_business
           'path': 'filing/annualReport/annualReportDate'}]),
     ('LAST_AR_NOT_CONTIGUOUS_ORDER', '2019-08-05', '2017-08-05', '1900-07-01',
      HTTPStatus.BAD_REQUEST, [
-         {'error': 'Annual Report Date must be the next Annual Report in contiguous order.',
+         {'error': 'Annual Report Date must be the next Annual Report in contiguous order. Next Annual Report year is 2018.',
           'path': 'filing/annualReport/annualReportDate'}]),
 ])
 def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, founding_date,

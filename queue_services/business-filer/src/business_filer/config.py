@@ -80,6 +80,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-event-dev")
     BUSINESS_MAILER_TOPIC = os.getenv("BUSINESS_MAILER_TOPIC", "business-mailer-dev")
     BUSINESS_PAY_TOPIC = os.getenv("BUSINESS_PAY_TOPIC", "business-pay-dev")
+    DOC_CREATE_REC_TOPIC = os.getenv("DOC_CREATE_REC_TOPIC")
     NAMEX_PAY_TOPIC = os.getenv("NAMEX_PAY_TOPIC", "namex-pay-dev")
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "")
@@ -117,6 +118,9 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     SUB_AUDIENCE = os.getenv("SUB_AUDIENCE", "test@test.test")
     SUB_SERVICE_ACCOUNT = os.getenv("SUB_SERVICE_ACCOUNT", "test@test.test")
+    
+    # Faked out publishing
+    DOC_CREATE_REC_TOPIC = os.getenv("TEST_DOC_CREATE_REC_TOPIC", "fake-doc-create-rec-topic")
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

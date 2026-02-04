@@ -36,7 +36,8 @@ import copy
 import random
 from datetime import datetime, timezone, timezone
 
-from business_model.models import Business, Filing, Office, OfficeType
+from business_model.models import Address, Business, Filing, Office, OfficeType
+from business_model.models.db import VersioningProxy
 from registry_schemas.example_data import PUT_BACK_ON, FILING_HEADER
 
 from business_filer.filing_meta import FilingMeta
@@ -87,7 +88,8 @@ def tests_filer_put_back_on(app, session):
 
     office = create_office(business, 'custodialOffice')
     create_office_address(business, office, 'delivery')
-    create_office_address(business, office, 'mailing')
+    mailing = create_office_address(business, office, 'mailing')
+    mailing_id = mailing.id
 
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing']['business']['identifier'] = identifier
@@ -98,8 +100,12 @@ def tests_filer_put_back_on(app, session):
     filing_id = filing.id
 
     # Test
+    transaction_id = VersioningProxy.get_transaction_id(session())
     put_back_on.process(business, filing_json['filing'], filing, filing_meta)
-    business.save()
+    filing.transaction_id = transaction_id
+    session.add(business)
+    session.add(filing)
+    session.commit()
 
     # Check outcome
     # final_filing = Filing.find_by_id(filing_id)
@@ -114,6 +120,18 @@ def tests_filer_put_back_on(app, session):
         one_or_none()
     assert not custodial_office
 
+    assert filing.transaction_id
+    # assert custodial office version
+    offices_version = VersioningProxy.version_class(session(), Office)
+    custodial_office_version = session.query(offices_version).filter(offices_version.transaction_id == filing.transaction_id).one_or_none()
+    assert custodial_office_version
+    
+    # assert custodial office addresses
+    addresses_version = VersioningProxy.version_class(session(), Address)
+    custodial_office_mailing = session.query(addresses_version).filter(addresses_version.id == mailing_id).one_or_none()
+    assert custodial_office_mailing
+    assert custodial_office_mailing.transaction_id <= filing.transaction_id
+    
     party_roles = business.party_roles.all()
     assert len(party_roles) == 1
     custodian = party_roles[0]

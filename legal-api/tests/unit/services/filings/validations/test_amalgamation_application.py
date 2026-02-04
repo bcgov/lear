@@ -17,13 +17,15 @@ from unittest.mock import patch
 from http import HTTPStatus
 from datetime import date
 
+from legal_api.errors import Error
+from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
 import datetime
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing
-from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER
+from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
 from legal_api.services.filings.validations.validation import validate
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
@@ -344,7 +346,7 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     filing['filing']['amalgamationApplication']['contactPoint']['email'] = 'no_one@never.get'
-    filing['filing']['amalgamationApplication']['contactPoint']['phone'] = '123-456-7890'
+    filing['filing']['amalgamationApplication']['contactPoint']['phone'] = '(123) 456-7890'
 
     regoffice = filing['filing']['amalgamationApplication']['offices']['registeredOffice']
     regoffice['deliveryAddress']['addressRegion'] = delivery_region
@@ -847,13 +849,15 @@ def test_in_future_effective_amalgamation_filing(mocker, app, session, jwt,
 
 
 @pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
+    'test_status, flag_enabled, has_permission, expected_code, expected_msg',
     [
-        ('FAIL', HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
-        ('SUCCESS', None, None)
+        ('FAIL_FLAG_OFF', False, False, HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
+         ('SUCCESS_AFFILIATED', False, False, None, None),
+         ('FAIL_FLAG_ON_WITH_PERMISSION', True, False, HTTPStatus.BAD_REQUEST, 'BC1234567'),
+        ('SUCCESS_FLAG_ON_WITH_PERMISSION', True, True, None, None)
     ]
 )
-def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enabled, has_permission, expected_code, expected_msg):
     """Assert valid amalgamating businesses is affliated."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -883,31 +887,47 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, expected_
                  return_value=False)
     mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
     mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
-                 return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
+                 return_value={'orgs': [{'id': account_id}]} if test_status in  'SUCCESS_AFFILIATED' else {})
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
-    err = validate(None, filing, account_id)
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+
+    permission_error = None if has_permission else Error(
+        HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.'}])
+    mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if expected_code is None:
         assert not err
     else:
         assert expected_code == err.code
-        assert (f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' ==
-                err.msg[0]['error'])
-        assert (f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' ==
-                err.msg[1]['error'])
+        if isinstance(expected_msg, list):
+            assert (f'{expected_msg[0]} is not affiliated with the currently selected BC Registries account.' ==
+                    err.msg[0]['error'])
+            assert (f'{expected_msg[1]} is not affiliated with the currently selected BC Registries account.' ==
+                    err.msg[1]['error'])
+        else:
+            error_msg = err.msg[0].get('error') or err.msg[0].get('message')
+            assert 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.' == error_msg
 
 
 @pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
+    'test_status, flag_enabled, has_permission, expected_code, expected_msg',
     [
-        ('FAIL', HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
-        ('SUCCESS', None, None)
+        ('FAIL_FLAG_OFF', False, False, HTTPStatus.BAD_REQUEST, ['BC1234567', 'BC7654321']),
+         ('SUCCESS_GOOD_STANDING', False, False, None, None),
+         ('FAIL_FLAG_ON_WITH_PERMISSION', True, False, HTTPStatus.BAD_REQUEST, 'BC1234567'),
+        ('SUCCESS_FLAG_ON_WITH_PERMISSION', True, True, None, None)
     ]
+
 )
-def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, flag_enabled, has_permission, expected_code, expected_msg):
     """Assert valid amalgamating businesses is in good standing."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -928,11 +948,12 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
 
     def mock_find_by_identifier(identifier):
         utc_now = datetime.datetime.now(datetime.timezone.utc)
+        is_good_standing = test_status in ( 'SUCCESS_GOOD_STANDING', 'SUCCESS_FLAG_ON_WITH_PERMISSION')
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value,
                         state=Business.State.ACTIVE,
                         founding_date=utc_now,
-                        restoration_expiry_date=utc_now if test_status == 'FAIL' else None)
+                        restoration_expiry_date=utc_now if not is_good_standing else None)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -944,15 +965,29 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, ex
 
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
-    err = validate(None, filing, account_id)
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+
+    permission_error = None if has_permission else Error(
+        HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.'}])
+    mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if expected_code is None:
         assert not err
     else:
         assert expected_code == err.code
-        assert f'{expected_msg[0]} is not in good standing.' == err.msg[0]['error']
-        assert f'{expected_msg[1]} is not in good standing.' == err.msg[1]['error']
+        if isinstance(expected_msg, list):
+            assert f'{expected_msg[0]} is not in good standing.' == err.msg[0]['error']
+            assert f'{expected_msg[1]} is not in good standing.' == err.msg[1]['error']
+        else:
+            error_msg = err.msg[0].get('error') or err.msg[0].get('message')
+            assert 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.' == error_msg
 
 
 @pytest.mark.parametrize(
@@ -1010,14 +1045,17 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
 
 
 @pytest.mark.parametrize(
-    'test_status, role, expected_code, expected_msg',
+    'test_status, role, flag_enabled, has_permission, expected_code, expected_msg',
     [
-        ('FAIL', BASIC_USER, HTTPStatus.BAD_REQUEST,
+        ('FAIL_FLAG_OFF', BASIC_USER, False, False, HTTPStatus.BAD_REQUEST,
          'Foreign Co. foreign corporation cannot be amalgamated except by Registries staff.'),
-        ('SUCCESS', STAFF_ROLE, None, None)
+        ('SUCCESS', STAFF_ROLE, False, False, None, None),
+        ('FAIL_FLAG_ON_NO_PERMISSION', BASIC_USER, True, False, HTTPStatus.BAD_REQUEST,
+         'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'),
+        ('SUCCESS_FLAG_ON_WITH_PERMISSION', BASIC_USER, True, True, None, None)
     ]
 )
-def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, role, expected_code, expected_msg):
+def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, role, flag_enabled, has_permission, expected_code, expected_msg):
     """Assert valid amalgamating foreign business."""
     account_id = '123456'
     filing = {'filing': {}}
@@ -1045,14 +1083,24 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         return False
     mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
 
-    err = validate(None, filing, account_id)
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+
+    permission_error = None if has_permission else Error(
+        HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'}])
+    mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+    
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if expected_code is None:
         assert not err
     else:
         assert expected_code == err.code
-        assert expected_msg == err.msg[0]['error']
+        error_msg = err.msg[0].get('error') or err.msg[0].get('message')
+        assert expected_msg == error_msg
 
 
 @pytest.mark.parametrize(
@@ -1750,3 +1798,68 @@ def test_validate_amalgamation_name_translation(mocker, session, test_name, amal
         if err:
             print(err, err.code, err.msg)
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_name, flag_enabled, permission_error, expected_code, expected_msg',
+    [
+        ('SUCCESS_FLAG_ON', True, None, None, None),
+        ('SUCCESS_FLAG_OFF', False, None, None, None),
+        ('FAIL_PERMISSION_ERROR', True, Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission denied.'}]),
+            HTTPStatus.FORBIDDEN, 'Permission denied.'),
+    ]
+)
+def test_amalgamation_permission_and_completing_party_flag(mocker, app, session, test_name, flag_enabled, permission_error, expected_code, expected_msg):
+    """Test validate_permission_and_completing_party is called when flag is enabled."""
+    account_id = '123456'
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'date': '2019-04-08',
+        'certifiedBy': 'fname mname lname',
+        'email': 'test@email.com',
+        'filingId': 1
+    }
+
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.regular.name
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_party', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_parties_names', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_parties_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_offices', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_offices_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamation_court_order', return_value=[])
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+    mock_validate_permission = mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_permission_and_completing_party', return_value=permission_error)
+    
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
+
+    if flag_enabled:
+        mock_validate_permission.assert_called_once()
+        call_args = mock_validate_permission.call_args
+        assert call_args[0][0] is None 
+        assert call_args[0][1] == filing 
+        assert call_args[0][2] == 'amalgamationApplication' 
+        check_options = call_args[0][4] 
+
+        assert check_options.get('check_name') is False
+        assert check_options.get('check_email') is True
+        assert check_options.get('check_address') is False
+        assert check_options.get('check_document_email') is True
+    else:
+        # When flag is off
+        mock_validate_permission.assert_not_called()
+    if expected_code:
+        assert err is not None
+        assert err.code == expected_code
+        assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
+    else:
+        assert err is None
+ 

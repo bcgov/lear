@@ -31,12 +31,12 @@ from registry_schemas.example_data import (
     INCORPORATION
 )
 
-from legal_api.models import Amalgamation, Business, Filing, RegistrationBootstrap
+from legal_api.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.services import flags
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
-from tests.unit.models import factory_business, factory_pending_filing
+from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
@@ -255,6 +255,84 @@ def test_get_business_slim_info(app, session, client, jwt, requests_mock, test_n
     assert rv.json['business'].get('goodStanding') is not None
     if amalgamated:
         assert rv.json['business'].get('amalgamatedInto') is not None
+
+
+@pytest.mark.parametrize('test_name,role,amalgamated,slim', [
+    ('regular', PUBLIC_USER, False, True),
+    ('amalgamated', PUBLIC_USER, True, True),
+    ('regular', PUBLIC_USER, True, False),
+])
+def test_get_business_public(monkeypatch, app, session, client, jwt, requests_mock, test_name, role, amalgamated, slim):
+    """Assert that the business public info can be received with the expected data."""
+    identifier = 'BC7654321'
+    legal_type = 'BC'
+    legal_name = identifier + ' legal name'
+    tax_id = '123'
+    business = factory_business_model(legal_name=legal_name,
+                                      legal_type=legal_type,
+                                      identifier=identifier,
+                                      founding_date=datetime.fromtimestamp(0),
+                                      last_ledger_timestamp=datetime.fromtimestamp(0),
+                                      last_modified=datetime.fromtimestamp(0),
+                                      fiscal_year_end_date=None,
+                                      tax_id=tax_id,
+                                      dissolution_date=None)
+
+    if amalgamated:
+        filing = copy.deepcopy(FILING_TEMPLATE)
+        filing['filing'].pop('business')
+        filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+        filing['filing']['header']['name'] = 'amalgamationApplication'
+        filing = factory_completed_filing(business, filing)
+        business.state_filing_id = filing.id
+        business.state = 'HISTORICAL'
+        amalgamation = Amalgamation(
+            amalgamation_type=Amalgamation.AmalgamationTypes.regular,
+            business_id=business.id,
+            filing_id=filing.id,
+            amalgamation_date=datetime.utcnow(),
+            court_approval=True
+        )
+        amalgamation.save()
+        business.save()
+
+    def mocked_check_warnings(_business):
+        return [{ 'warning': 'mocked' }]
+
+    monkeypatch.setattr('legal_api.resources.v2.business.business.check_warnings', mocked_check_warnings)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/public?slim={slim}' ,
+                    headers=create_header(jwt, [role], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business']['identifier'] == identifier
+    assert rv.json['business']['legalType'] == legal_type
+    assert rv.json['business']['taxId'] == tax_id
+    assert rv.json['business'].get('state') is not None
+    assert rv.json['business'].get('goodStanding') is not None
+    if amalgamated:
+        assert rv.json['business'].get('amalgamatedInto') is not None
+    if not slim:
+        assert rv.json['business'].get('warnings') is not None
+        assert len(rv.json['business']['warnings']) == 1
+    else:
+        assert rv.json['business'].get('warnings') is None
+    # check expected data is not returned
+    assert not rv.json['business'].get('submitter')
+    assert not rv.json['business'].get('nextAnnualReport')
+    assert not rv.json['business'].get('lastDirectorChangeDate')
+    assert not rv.json['business'].get('lastAnnualReportDate')
+    assert not rv.json['business'].get('lastAnnualGeneralMeetingDate')
+    assert not rv.json['business'].get('lastAddressChangeDate')
+    assert not rv.json['business'].get('fiscalYearEndDate')
+    assert not rv.json['business'].get('arMaxDate')
+    assert not rv.json['business'].get('arMinDate')
+    assert not rv.json['business'].get('hasRestrictions')
+    assert not rv.json['business'].get('hasCourtOrders')
+    assert not rv.json['business'].get('hasCorrections')
+    assert not rv.json['business'].get('naicsCode')
+    assert not rv.json['business'].get('naicsKey')
+    assert not rv.json['business'].get('allowedActions')
 
 
 @pytest.mark.parametrize('test_name, slim_version, auth_check_on', [
@@ -654,8 +732,17 @@ def test_post_affiliated_businesses_invalid(session, client, jwt):
     assert rv.status_code == HTTPStatus.BAD_REQUEST
 
 
-def test_get_could_file(session, client, jwt):
+def test_get_could_file(session, client, jwt, monkeypatch):
     """Assert that the cold file is returned."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
+        if flag == 'enabled-specific-filings' else {}
+    )
+    monkeypatch.setattr(
+        'legal_api.models.User.get_or_create_user_by_jwt',
+        lambda _: None
+    )
     identifier = 'BC0000001'
     rv = client.get('/api/v2/businesses/allowable/BC/ACTIVE',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))

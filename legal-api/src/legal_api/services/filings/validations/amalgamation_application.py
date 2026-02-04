@@ -15,7 +15,7 @@
 from http import HTTPStatus
 from typing import Final, Optional
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
 from legal_api.errors import Error
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
@@ -30,6 +30,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
+    validate_permission_and_completing_party,
     validate_phone_number,
     validate_share_structure,
 )
@@ -37,6 +38,7 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_offices,
     validate_parties_delivery_address,
 )
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
@@ -59,7 +61,20 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
     if amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         # Adopt from one of the amalgamating businesses contains name not nrNumber
         msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
-
+    
+    if flags.is_on("enabled-deeper-permission-action"):
+        err = validate_permission_and_completing_party(
+            None,
+            amalgamation_json,
+            filing_type,
+            msg,
+            {"check_name":False,
+            "check_email":True,
+            "check_address":False,
+            "check_document_email":True}
+                            )
+        if err:
+            return err
     msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
     msg.extend(validate_parties_names(amalgamation_json, filing_type, legal_type))
     msg.extend(validate_parties_addresses(amalgamation_json, filing_type))
@@ -274,15 +289,42 @@ def _validate_foreign_businesses(  # noqa: PLR0913
                 "error": f"A {foreign_legal_name} foreign corporation cannot be marked as Primary or Holding.",
                 "path": amalgamating_business_path
             })
+    elif flags.is_on("enabled-deeper-permission-action"):
+        permission_error = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+            message="Permission Denied - You do not have permissions to amalgamate a foreign corporation."
+        )
+        if permission_error:
+            msg.append({
+                "error": permission_error.msg[0].get("message"),
+                "path": amalgamating_business_path
+            })
+            return msg
     else:
         msg.append({
             "error": (f"{foreign_legal_name} foreign corporation cannot "
-                      "be amalgamated except by Registries staff."),
+                    "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
 
     return msg
 
+def _check_aml_permission_or_default_error(msg: list, message: str, default_error: dict) -> bool:
+        if flags.is_on("enabled-deeper-permission-action"):
+            permission_error = PermissionService.check_user_permission(
+                ListActionsPermissionsAllowed.AML_OVERRIDES.value,
+                message=message
+            )
+            if permission_error:
+                msg.append({
+                    "error": permission_error.msg[0].get("message"),
+                    "path": default_error.get("path")
+                })
+                return True
+        else:
+            msg.append(default_error)
+            return True
+        return False
 
 def _validate_lear_businesses(  # pylint: disable=too-many-arguments
         identifier,
@@ -310,17 +352,30 @@ def _validate_lear_businesses(  # pylint: disable=too-many-arguments
 
         if not is_staff:
             if not _is_business_affliated(identifier, account_id):
-                msg.append({
-                    "error": (f"{identifier} is not affiliated with the currently "
-                              "selected BC Registries account."),
-                    "path": amalgamating_business_path
-                })
-
+                error = _check_aml_permission_or_default_error(
+                    msg,
+                    "Permission Denied - You do not have permissions to amalgamate an unaffiliated business.",
+                    {
+                        "error": (f"{identifier} is not affiliated with the currently "
+                                  "selected BC Registries account."),
+                        "path": amalgamating_business_path
+                    }
+                    )
+                if error:
+                    return msg
+                
             if not amalgamating_business.good_standing:
-                msg.append({
+                error = _check_aml_permission_or_default_error(
+                msg,
+                "Permission Denied - You do not have permissions to amalgamate a business not in good standing.",
+                {
                     "error": f"{identifier} is not in good standing.",
                     "path": amalgamating_business_path
-                })
+                }
+                )
+                if error:
+                    return msg
+               
     else:
         msg.append({
             "error": f"A business with identifier:{identifier} not found.",
@@ -339,7 +394,7 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
     msg = []
     regular_amalgamation_minimum: Final = 2
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
-        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >= 
+        not (amalgamating_business_roles[AmalgamatingBusiness.Role.amalgamating.name] >=
              regular_amalgamation_minimum and
              amalgamating_business_roles[AmalgamatingBusiness.Role.holding.name] == 0 and
              amalgamating_business_roles[AmalgamatingBusiness.Role.primary.name] == 0)):
@@ -382,7 +437,7 @@ def _is_business_affliated(identifier, account_id):
 
 
 def _has_pending_filing(amalgamating_business: Business):
-    return bool(Filing.get_filings_by_status(amalgamating_business.id, 
+    return bool(Filing.get_filings_by_status(amalgamating_business.id,
                                              [Filing.Status.DRAFT.value,
                                               Filing.Status.PENDING.value,
                                               Filing.Status.PAID.value]))
@@ -403,14 +458,14 @@ def validate_party(filing: dict, amalgamation_type, filing_type) -> list:
             elif role_type == PartyRole.RoleTypes.DIRECTOR.value:
                 director_parties += 1
             else:
-                invalid_roles.add(role_type)  
+                invalid_roles.add(role_type)
 
     if invalid_roles:
         err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}.',
             "path": err_path
-        })                  
+        })
 
     party_path = f"/filing/{filing_type}/parties"
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and

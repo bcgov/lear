@@ -25,6 +25,7 @@ from legal_api.errors import Error
 from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services import authz, flags
 from legal_api.services.cache import cache
+from legal_api.services.request_context import get_request_context
 
 
 class ListFilingsPermissionsAllowed(str, Enum):
@@ -78,7 +79,22 @@ class ListActionsPermissionsAllowed(str, Enum):
 
 class PermissionService:
     """Service to manage permissions for user roles."""
-
+    
+    STAFF_FILING_TYPES = [
+            CoreFiling.FilingTypes.AMALGAMATIONOUT.value,
+            CoreFiling.FilingTypes.CONTINUATIONOUT.value,
+            CoreFiling.FilingTypes.COURTORDER.value,
+            CoreFiling.FilingTypes.PUTBACKON.value,
+            CoreFiling.FilingTypes.PUTBACKOFF.value,
+            CoreFiling.FilingTypes.ADMIN_FREEZE.value,
+            CoreFiling.FilingTypes.REGISTRARSNOTATION.value,
+            CoreFiling.FilingTypes.REGISTRARSORDER.value,
+            CoreFiling.FilingTypes.CHANGEOFLIQUIDATORS.value,
+            CoreFiling.FilingTypes.CHANGEOFRECEIVERS.value,
+            CoreFiling.FilingTypes.CONVERSION.value,
+            CoreFiling.FilingTypes.CORRECTION.value
+        ]
+    
     @staticmethod
     def get_authorized_permissions_for_user():
         """Return a JSON response containing the authorized permissions for the current user."""
@@ -102,6 +118,8 @@ class PermissionService:
         """Return the first matching authorized role from the JWT, based on priority."""
         role_priority = [
             authz.STAFF_ROLE,
+            authz.SYSTEM_ROLE,
+            authz.COLIN_SVC_ROLE,
             authz.SBC_STAFF_ROLE,
             authz.CONTACT_CENTRE_STAFF_ROLE,
             authz.MAXIMUS_STAFF_ROLE,
@@ -110,8 +128,11 @@ class PermissionService:
 
         if token_info is None:
             token_info = getattr(g, "jwt_oidc_token_info", {}) or {}
-
+        
         roles_in_token = token_info.get("realm_access", {}).get("roles", [])
+        if authz.SYSTEM_ROLE in roles_in_token or authz.COLIN_SVC_ROLE in roles_in_token:
+            return authz.STAFF_ROLE
+        
         for role in role_priority:
             if role in roles_in_token:
                 return role
@@ -127,6 +148,7 @@ class PermissionService:
                 DissolutionTypes.VOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_VOLUNTARY_FILING.value,
                 DissolutionTypes.INVOLUNTARY: ListFilingsPermissionsAllowed.DISSOLUTION_INVOLUNTARY_FILING.value,
                 DissolutionTypes.ADMINISTRATIVE: ListFilingsPermissionsAllowed.DISSOLUTION_ADMIN_FILING.value,
+                DissolutionTypes.DELAY: ListFilingsPermissionsAllowed.DISSOLUTION_DELAY_FILING.value
             }
             permission_granted = dissolution_mapping.get(filing_sub_type)
             if legal_type in ["FM", "SP", "GP", "LLP"]:
@@ -151,7 +173,7 @@ class PermissionService:
             CoreFiling.FilingTypes.CHANGEOFDIRECTORS.value:
                 ListFilingsPermissionsAllowed.DIRECTOR_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CHANGEOFOFFICERS.value:
-                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,    
+                ListFilingsPermissionsAllowed.OFFICER_CHANGE_FILING.value,
             CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT.value:
                 ListFilingsPermissionsAllowed.CONSENT_AMALGAMATION_OUT_FILING.value,
             CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT.value:
@@ -194,6 +216,13 @@ class PermissionService:
         if not authorized_permissions or not isinstance(authorized_permissions, list):
             current_app.logger.error("No authorized permissions found for user.")
             return False
+  
+        if filing_type in PermissionService.STAFF_FILING_TYPES:
+            if ListFilingsPermissionsAllowed.STAFF_FILINGS.value not in authorized_permissions:
+                current_app.logger.warning(f"User does not have permission for staff filing type: {filing_type}")
+                return False
+            return True
+        
         roles_in_filings = PermissionService.find_roles_for_filing_type(filing_type, legal_type, filing_sub_type)
         if roles_in_filings in authorized_permissions:
             return True
@@ -215,18 +244,35 @@ class PermissionService:
         return None
     
     @staticmethod
-    def check_filing_enabled(filing_type: str, identifier: str) -> Error:
+    def check_filing_enabled(filing_type: str, filing_sub_type: str) -> Error:
         """Check if a filing type is enabled via FF."""
-        filings_feature_flag = {
-            "changeOfOfficers": "supported-change-of-officers-entities"
-        }
-        flag_name = filings_feature_flag.get(filing_type)
-        if flag_name and not flags.is_on(flag_name):
-            return Error(
-                HTTPStatus.FORBIDDEN,
-                [{
-                    "message": f"Permission Denied - {filing_type} filing is currently not available for: {identifier}."
-                }]
-            )
+        filings_to_check = [
+            "changeOfLiquidators.appointLiquidator",
+            "changeOfLiquidators.ceaseLiquidator",
+            "changeOfLiquidators.changeAddressLiquidator",
+            "changeOfLiquidators.intentToLiquidate",
+            "changeOfLiquidators.liquidationReport",
+            "changeOfReceivers.amendReceiver",
+            "changeOfReceivers.appointReceiver",
+            "changeOfReceivers.ceaseReceiver",
+            "changeOfReceivers.changeAddressReceiver",
+            "dissolution.delay",
+            "transition"
+        ]
+        filing_key = f"{filing_type}.{filing_sub_type}" if filing_sub_type else filing_type
+
+        if filing_key in filings_to_check:
+            request_context = get_request_context()
+            enabled_filings_str: str = flags.value("enabled-specific-filings",
+                                                   request_context.user,
+                                                   request_context.account_id)
+
+            if not filing_key in enabled_filings_str.split(","):
+                return Error(
+                    HTTPStatus.FORBIDDEN,
+                    [{
+                        "message": f"Permission Denied - {filing_key} filing is currently not available for this user and/or account."
+                    }]
+                )
         return None
     

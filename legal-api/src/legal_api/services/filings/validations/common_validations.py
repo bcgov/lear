@@ -20,14 +20,16 @@ from typing import Final, Optional
 
 import pycountry
 import PyPDF2
-from flask import current_app, g
+from flask import current_app, g, request
 from flask_babel import _
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
+from legal_api.models.configuration import EMAIL_PATTERN
 from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
+from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import datetime as dt
 
@@ -39,6 +41,13 @@ NO_POSTAL_CODE_COUNTRY_CODES = {
     "AN", "NU", "QA", "RW", "KN", "ST", "SC", "SL", "SX", "SB", "SO", "SR", "SY",
     "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
 }
+
+WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
+    "streetAddress",
+    "addressCity",
+    "addressCountry",
+    "postalCode",
+)
 
 
 def has_at_least_one_share_class(filing_json, filing_type) -> Optional[str]:  # pylint: disable=too-many-branches
@@ -114,7 +123,7 @@ def validate_series(item, memoize_names, filing_type, index) -> Error:
             msg.append({
                 "error": "Share series name cannot start or end with whitespace.",
                 "path": f"{err_path}/name/"
-            })  
+            })
 
         elif series_name in memoize_names:
             msg.append({"error": f"Share series {series_name} name already used in a share class or series.",
@@ -156,7 +165,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
         msg.append({
             "error": "Share class name cannot start or end with whitespace.",
             "path": err_path
-        })   
+        })
 
     elif share_name in memoize_names:
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
@@ -230,12 +239,29 @@ def validate_court_order(court_order_path, court_order):
         except ValueError:
             err_path = court_order_date_path
             msg.append({"error": "Invalid court order date format.", "path": err_path})
-
+            
+    if flags.is_on("enabled-deeper-permission-action"):
+        required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
+        message = "Permission Denied - You do not have permissions add court order details in this filing."
+        permission_error = PermissionService.check_user_permission(required_permission, message=message)
+        if permission_error:
+            msg.append({"error": permission_error.msg[0].get("message", message), "path": court_order_path})
     if msg:
         return msg
 
     return None
 
+def check_good_standing_permission(business: Business) -> Optional[Error]:
+    """Check if user has permission to file for a business not in good standing."""
+    if business.good_standing:
+        return None
+    
+    if not flags.is_on("enabled-deeper-permission-action"):
+        return None
+    
+    required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
+    message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
+    return PermissionService.check_user_permission(required_permission, message=message)
 
 def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> Optional[list]:
     """Validate the PDF file."""
@@ -309,7 +335,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             msg.append({
                 "error": f"{party_roles_str} first name cannot start or end with whitespace",
                 "path": party_path
-            })  
+            })
         elif len(first_name) > custom_allowed_max_length:
             err_msg = f"{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters"
             msg.append({"error": err_msg, "path": party_path})
@@ -322,7 +348,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
                              "path": party_path})
             elif len(middle_initial) > custom_allowed_max_length:
                 err_msg = f"{party_roles_str} middle initial cannot be longer than {custom_allowed_max_length} characters"
-                msg.append({"error": err_msg, "path": party_path})    
+                msg.append({"error": err_msg, "path": party_path})
 
         middle_name = officer.get("middleName", None)
         # Only validate middle name if it exists and contains non-whitespace characters
@@ -345,7 +371,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             })
         elif len(last_name) > last_name_max_length:
             err_msg = f"{party_roles_str} last name cannot be longer than {last_name_max_length} characters"
-            msg.append({"error": err_msg, "path": party_path})  
+            msg.append({"error": err_msg, "path": party_path})
         
         if organization_name:
             err_msg = f"{party_roles_str} organization name should not be set for person party type"
@@ -376,7 +402,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             err_msg = f"{party_roles_str} last name should not be set for organization party type"
             msg.append({"error": err_msg, "path": party_path})
         
-    return msg 
+    return msg
 
 
 def validate_relationships( # noqa: PLR0913
@@ -581,9 +607,20 @@ def validate_addresses(
     msg = []
     for address_type in Address.JSON_ADDRESS_TYPES:
         if address := addresses.get(address_type):
-            err = _validate_postal_code(address, f"{addresses_path}/{address_type}")
+
+            address_type_path = f"{addresses_path}/{address_type}"
+            err = _validate_postal_code(address, address_type_path)
             if err:
                 msg.append(err)
+
+            for field in WHITESPACE_VALIDATED_ADDRESS_FIELDS:
+                if field in address and address[field] is not None:
+                    field_value = address[field]
+                    if field_value != field_value.strip():
+                        msg.append({
+                            "error": _(f"{field} cannot start or end with whitespace."),
+                            "path": f"{address_type_path}/{field}"
+                        })
     return msg
 
 
@@ -618,25 +655,45 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
 
     msg = []
     if phone_num := contact_point_dict.get("phone", None):
-        # if pure digits (max 10)
-        phone_length: Final = 10
-        if phone_num.isdigit():
-            if len(phone_num) != phone_length:
-                msg.append({
-                    "error": "Invalid phone number, maximum 10 digits in phone number format",
-                    "path": f"{contact_point_path}/phone"})
-        else:
-            # Check various phone formats
-            # (123) 456-7890 / 123-456-7890 / 123.456.7890 / 123 456 7890
-            phone_pattern = r"^\(?\d{3}[\)\-\.\s]?\s?\d{3}[\-\.\s]\d{4}$"
-            if not re.match(phone_pattern, phone_num):
-                msg.append({
-                    "error": "Invalid phone number, maximum 10 digits in phone number format",
-                    "path": f"{contact_point_path}/phone"})
+        # Expected format: (XXX) XXX-XXXX
+        phone_pattern = r"\(\d{3}\) \d{3}-\d{4}"
+
+        if not re.fullmatch(phone_pattern, phone_num):
+            msg.append({
+                "error": "Invalid phone number, expected format: (XXX) XXX-XXXX",
+                "path": f"{contact_point_path}/phone"
+            })
 
     max_extension_length: Final = 5
-    if (extension := contact_point_dict.get("extension")) and len(str(extension)) > max_extension_length:
-        msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
+    if (extension := contact_point_dict.get("extension")):
+        extension_str = str(extension)
+
+        if not extension_str.isdigit() or len(extension_str) > max_extension_length:
+            msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
+
+    return msg
+
+def validate_email(filing_json: dict, filing_type: str) -> list:
+    """Validate email address format."""
+    contact_point_path = f"/filing/{filing_type}/contactPoint"
+    contact_point_dict = filing_json["filing"][filing_type].get("contactPoint", {})
+
+    msg = []
+
+    if email := contact_point_dict.get("email", None):
+        # Validate leading/trailing whitespace
+        if email != email.strip():
+            msg.append({
+                "error": "Email cannot start or end with whitespace.",
+                "path": f"{contact_point_path}/email"
+            })
+
+        # Validate format
+        elif not re.match(EMAIL_PATTERN, email):
+            msg.append({
+                "error": "Invalid email address format.",
+                "path": f"{contact_point_path}/email"
+            })
 
     return msg
 
@@ -644,7 +701,7 @@ def validate_effective_date(filing_json: dict) -> list:
     """Validate effective date"""
     msg = []
 
-    now = dt.utcnow() 
+    now = dt.utcnow()
     min_allowed = now + timedelta(minutes=2)
     max_allowed = now + timedelta(days=10)
 
@@ -662,12 +719,12 @@ def validate_effective_date(filing_json: dict) -> list:
     if effective_date < min_allowed:
         msg.append({"error": "Invalid Datetime, effective date must be a minimum of 2 minutes ahead.",
                     "path": "/filing/header/effectiveDate"})
-        return msg            
+        return msg
 
     if effective_date > max_allowed:
         msg.append({"error": "Invalid Datetime, effective date must be a maximum of 10 days ahead.",
                     "path": "/filing/header/effectiveDate"})
-        return msg            
+        return msg
 
     return msg
 
@@ -711,7 +768,7 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                         break
        
         if matched_db_party:
-            if role_type == Business.LegalTypes.SOLE_PROP.value and matched_db_party.organization_name:
+            if role_type == PartyRole.RoleTypes.PROPRIETOR.value and matched_db_party.organization_name:
                 is_dba = True
             changes = {}
             # Email comparison
@@ -823,6 +880,17 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
    ]
    return all(is_same_str(addr1.get(key), addr2.get(key)) for key in keys)
 
+def check_completing_party_permission(msg: list, filing_type:str) -> Optional[Error]:
+    """Check completing party permission and append error message if not allowed."""
+    permission_error = PermissionService.check_user_permission(
+        ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
+        message="Permission Denied: You do not have permission to edit the completing party."
+    )
+    if permission_error:
+       return permission_error
+    return None
+
+
 def validate_staff_payment(filing_json: dict) -> bool:
     """Check staff specific headers are in the filing."""
     header = filing_json["filing"]["header"]
@@ -888,7 +956,7 @@ def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, f
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
         # Validation only for sole proprietorships
-        return False 
+        return False
     
     # Existing proprietor in DB
     existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
@@ -938,42 +1006,52 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
                 ListActionsPermissionsAllowed.FIRM_ADD_BUSINESS.value,
                 message="Permission Denied: You do not have permission to add a business or corporation which is not registered in BC."
                 ):
-                msg.append({"error": err_msg.msg[0].get("message"), 
+                msg.append({"error": err_msg.msg[0].get("message"),
                             "path": f"/filing/{filing_type}/parties"
                             })
             
     return msg
 
-def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> list:
+def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) -> dict:
     """Validate completing party edited."""
     msg = []
     parties = filing_json["filing"][filing_type].get("parties", {})
 
     officer = None
+    mailing_address = None
     for party in parties:
         roles = party.get("roles", [])
-        if any(role.get("roleType").lower() == PartyRole.RoleTypes.COMPLETING_PARTY.value for role in roles):
+        if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
             officer = party.get("officer", {})
+            mailing_address = party.get("mailingAddress", {})
             break
     if not officer:
-        msg.append({
-            "error": "Completing party is required.",
-            "path": f"/filing/{filing_type}/parties"
-        })
-        return msg
+        return {
+            "error":[{
+                "error": "Completing party is required.",
+                "path": f"/filing/{filing_type}/parties"
+            }],
+            "email_changed": False,
+            "name_changed": False,
+            "address_changed": False
+        }
     
-    filing_completing_party_mailing_address = officer.get("mailingAddress", {})
-    filing_firstname = officer.get("firstName", "")
-    filing_lastname = officer.get("lastName", "")
-    filing_email = officer.get("email", "")
+    filing_completing_party_mailing_address = mailing_address or {}
+    filing_firstname = officer.get("firstName")
+    filing_lastname = officer.get("lastName")
+    filing_email = officer.get("email")
     
     contacts_response = AccountService.get_contacts(current_app.config, org_id)
     if contacts_response is None:
-        msg.append({
+        return {
+            "error":[{
             "error": "Unable to verify completing party against account contacts.",
             "path": f"/filing/{filing_type}/parties"
-        })
-        return msg
+        }],
+        "email_changed": False,
+        "name_changed": False,
+        "address_changed": False
+        }
     
     contact = contacts_response["contacts"][0]
     existing_cp_mailing_address = {
@@ -989,7 +1067,9 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     existing_lastname = contact.get("lastName", "")
     existing_email = contact.get("email", "")
 
-    address_changed = is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
+    address_changed = False
+    if filing_completing_party_mailing_address:
+        address_changed = not is_address_changed(existing_cp_mailing_address, filing_completing_party_mailing_address)
 
     existing_name = {
         "firstName": existing_firstname,
@@ -1000,19 +1080,110 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
         "lastName": filing_lastname
     }
 
-    name_changed = is_name_changed(existing_name, filing_name)
+    name_changed = False
+    if filing_firstname or filing_lastname:
+        name_changed = is_name_changed(existing_name, filing_name)
 
-    email_changed = not is_same_str(existing_email, filing_email)
+    email_changed = False
+    if filing_email:
+        email_changed = not is_same_str(existing_email, filing_email)
 
-    if address_changed or name_changed or email_changed:
-        permission_error = PermissionService.check_user_permission(
-            ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
-            message="Permission Denied - You do not have rights to edit completing address."
-        )
+    return {
+        "error": msg,
+        "email_changed": email_changed,
+        "name_changed": name_changed,
+        "address_changed": address_changed
+    }
+
+def has_completing_party(filing_json: dict, filing_type: str) -> bool:
+    """Check if completing party is present in the filing."""
+    parties = filing_json.get("filing", {}).get(filing_type, {}).get("parties", [])
+    for party in parties:
+        roles = party.get("roles", [])
+        if any(role.get("roleType").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value.lower() for role in roles):
+            return True
+    return False
+
+def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
+    """Validate document delivery email changed."""
+    result = {
+        "errors": [],
+        "email_changed": False
+    }
+
+    if not email:
+        return result
+
+    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+    if contacts_response is None:
+        result["errors"].append({
+            "error": "Unable to verify document delivery email against account contacts."
+        })
+        return result
+    
+    contact = contacts_response["contacts"][0]
+    existing_email = contact.get("email", "")
+
+    email_changed = not is_same_str(existing_email, email)
+    result["email_changed"] = email_changed
+
+    return result
+
+def validate_permission_and_completing_party(business: Optional[Business], filing_json: dict, filing_type: str, msg: list, check_options: Optional[dict] = None
+) -> Optional[Error]:
+    """Validate completing party permission and changes."""
+    if not flags.is_on("enable-edit-completing-party-permission"):
+        return None
+    if check_options is None:
+        check_options = {}
+    check_name = check_options.get("check_name", True)
+    check_email = check_options.get("check_email", True)
+    check_address = check_options.get("check_address", True)
+    check_document_email = check_options.get("check_document_email", True)
+    # check if completing party is entered
+    completing_party_exists = has_completing_party(filing_json, filing_type)
+    completing_party_result = None
+    account_id = None
+    if get_request_context() and hasattr(request, "headers"):
+        account_id = request.headers.get("account-id",
+                                            request.headers.get("accountId", None))
+    if account_id and completing_party_exists and filing_json.get("filing", {}).get(filing_type, {}).get("parties"):
+        permission_error = check_completing_party_permission(msg, filing_type)
+        
         if permission_error:
-            error_msg = permission_error.message[0]["message"] if permission_error.message else "You do not have rights to edit completing address."
-            msg.append({
-                "error": error_msg,
-                "path": f"/filing/{filing_type}/parties"
-            })
-    return msg
+            completing_party_result = validate_completing_party(filing_json, filing_type, account_id)
+            if completing_party_result.get("error"):
+                msg.extend(completing_party_result["error"])
+            
+            # Check if any relevant fields changed
+            should_check_permission = (
+                (check_email and completing_party_result.get("email_changed")) or
+                (check_name and completing_party_result.get("name_changed")) or
+                (check_address and completing_party_result.get("address_changed"))
+                )
+            if should_check_permission and permission_error:
+                return permission_error
+
+    if check_document_email:
+        return check_document_email_changes(filing_json, filing_type, account_id, msg)
+            
+    return None
+
+def check_document_email_changes(
+        filing_json: dict,
+        filing_type: str,
+        account_id: int,
+        msg: list
+) -> Optional[Error]:
+    """Check if document delivery email has changed."""
+    document_optional_email = filing_json.get("filing", {}).get("header", {}).get("documentOptionalEmail")
+    if not (document_optional_email and account_id):
+        return None
+    
+    email_validation_result = validate_document_delivery_email_changed(document_optional_email, int(account_id))
+    if email_validation_result.get("error"):
+        msg.extend(email_validation_result["error"])
+    if email_validation_result.get("email_changed"):
+        return check_completing_party_permission(msg, filing_type)
+
+    return None

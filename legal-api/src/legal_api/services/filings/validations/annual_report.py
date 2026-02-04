@@ -83,7 +83,8 @@ def validate_ar_year(*, business: Business, current_annual_report: dict) -> Erro
     # AR Date must be the next contiguous year, from either the last AR or foundingDate
     if ar_date > ar_max_date:
         return Error(HTTPStatus.BAD_REQUEST,
-                     [{"error": _("Annual Report Date must be the next Annual Report in contiguous order."),
+                     [{"error": _("Annual Report Date must be the next Annual Report in contiguous order. "
+                                  "Next Annual Report year is %(next_year)s.") % {"next_year": next_ar_year},
                        "path": "filing/annualReport/annualReportDate"}])
 
     return None

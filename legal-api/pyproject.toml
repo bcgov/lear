@@ -52,7 +52,7 @@ dependencies = [
     "blinker (==1.4)",
     "pyjwt (==2.8.0)",
 
-    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.56#egg=registry_schemas",
+    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.58#egg=registry_schemas",
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging"
@@ -65,6 +65,7 @@ packages = [{include = "legal_api", from = "src"}
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.4"
 pytest = "^8.3.5"
+pytest-cov = "^7.0.0"
 freezegun = "^1.5.1"
 testcontainers = "^4.10.0"
 google-cloud-datastore = "^2.20.2"
@@ -145,6 +146,7 @@ select = [
     "TID252", # relative imports
     "UP",  # pyupgrade
     "F", # pyflakes
+    "W291",
 ]
 ignore = ["RUF012"]
 
@@ -172,7 +174,7 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-## addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+addopts = "--cov=src/legal_api"
 python_files = [
    "test*.py"
 ]

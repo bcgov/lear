@@ -42,11 +42,9 @@ from registry_schemas.example_data import FILING_TEMPLATE
 
 from business_filer.common.filing_message import FilingMessage
 from business_filer.services.filer import process_filing
-from tests.unit import (
-    create_business,
-    create_filing
-)
+from tests.unit import create_business, create_filing
 from tests.unit.filing_processors.filing_components.test_offices import LIQUIDATION_RECORDS_OFFICE
+from tests.unit.test_filer import check_drs_publish
 
 CHANGE_OF_LIQUIDATORS_INTENT = {
     'type': 'intentToLiquidate',
@@ -109,12 +107,12 @@ CHANGE_OF_LIQUIDATORS_INTENT = {
 }
 
 
-def test_process_col_filing(app, session):
+def test_process_col_filing(app, session, mocker):
     """Assert that all COL filings can be applied to the model correctly."""
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     effective_date = datetime(2023, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
     identifier = f'BC{random.randint(1000000, 9999999)}'
-
+    drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
 
     business = create_business(identifier)
 
@@ -144,6 +142,8 @@ def test_process_col_filing(app, session):
     assert intent_filing.business_id == business.id
     assert intent_filing.status == Filing.Status.COMPLETED.value
     assert business.in_liquidation == True
+    check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
     assert len(party_roles) == 2
@@ -211,6 +211,8 @@ def test_process_col_filing(app, session):
     assert cease_filing.transaction_id
     assert cease_filing.business_id == business.id
     assert cease_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, cease_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
     assert len(party_roles) == 2
@@ -287,6 +289,8 @@ def test_process_col_filing(app, session):
     assert change_address_filing.transaction_id
     assert change_address_filing.business_id == business.id
     assert change_address_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 
@@ -301,6 +305,95 @@ def test_process_col_filing(app, session):
             assert mailing_address.address_type == 'mailing'
             assert mailing_address.street == new_address_mailing['streetAddress']
     
+    offices: list[Office] = business.offices.all()
+    assert len(offices) == 2
+    has_liquidation_office = False
+    for office in offices:
+        if office.office_type == OfficeType.LIQUIDATION:
+            has_liquidation_office = True
+            officeAddresses: list[Address] = office.addresses.all()
+            assert len(officeAddresses) == 2
+            expected_delivery_street = new_office['deliveryAddress']['streetAddress']
+            expected_mailing_street = new_office['mailingAddress']['streetAddress']
+            for address in officeAddresses:
+                if address.address_type == Address.DELIVERY:
+                    assert address.street == expected_delivery_street
+                else:
+                    assert address.address_type == Address.MAILING
+                    assert address.street == expected_mailing_street
+    assert has_liquidation_office
+    
+    # Test change address liquidators - no offices submitted
+
+    new_address_delivery_no_offices = {
+        'streetAddress': 'Changed Delivery No Offices',
+        'streetAddressAdditional': '',
+        'addressCity': 'Vancouver',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V0N4Y8',
+        'deliveryInstructions': ''
+    }
+    new_address_mailing_no_offices = {
+        'streetAddress': 'Changed Mailing No Offices',
+        'streetAddressAdditional': '',
+        'addressCity': 'Vancouver',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V0N4Y8',
+        'deliveryInstructions': ''
+    }
+    filing['filing']['changeOfLiquidators'] = {
+        'type': 'changeAddressLiquidator',
+        'relationships': [
+            {
+                'entity': {
+                    'identifier': party_id_2
+                },
+                'deliveryAddress': new_address_delivery_no_offices,
+                'mailingAddress': new_address_mailing_no_offices
+            }
+        ],
+        # No offices in payload
+        # 'offices': {}
+    }
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    effective_date = datetime(2025, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
+    filing_rec = create_filing(payment_id, filing, business.id)
+    filing_rec.effective_date = effective_date
+    filing_rec.save()
+    
+    # setup
+    filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+
+    # TEST
+    process_filing(filing_msg)
+
+    # Get modified data
+    change_address_filing: Filing = Filing.find_by_id(filing_rec.id)
+    business: Business = Business.find_by_internal_id(business.id)
+
+    # assert changes
+    assert change_address_filing.transaction_id
+    assert change_address_filing.business_id == business.id
+    assert change_address_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
+    drs_publish_mock.reset_mock()
+
+    party_roles: list[PartyRole] = business.party_roles.all()
+
+    assert len(party_roles) == 2
+
+    for role in party_roles:
+        if role.party_id == party_id_2:
+            delivery_address: Address = role.party.delivery_address
+            mailing_address: Address = role.party.mailing_address
+            assert delivery_address.address_type == 'delivery'
+            assert delivery_address.street == new_address_delivery_no_offices['streetAddress']
+            assert mailing_address.address_type == 'mailing'
+            assert mailing_address.street == new_address_mailing_no_offices['streetAddress']
+    
+    # Will still have offices from the previous changeAddressLiquidator filing
     offices: list[Office] = business.offices.all()
     assert len(offices) == 2
     has_liquidation_office = False
@@ -346,8 +439,10 @@ def test_process_col_filing(app, session):
             }
         ]
     }
+    new_document_id = '12345677'
     filing['filing']['changeOfLiquidators'] = {
         'type': 'appointLiquidator',
+        'documentId': new_document_id,
         'relationships': [
             new_relationship
         ]
@@ -372,6 +467,8 @@ def test_process_col_filing(app, session):
     assert appoint_filing.transaction_id
     assert appoint_filing.business_id == business.id
     assert appoint_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, appoint_filing, new_document_id)
+    drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
 

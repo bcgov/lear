@@ -56,6 +56,27 @@ class PublishEvent:
 
         except Exception as err:  # pylint: disable=broad-except;
             raise PublishException(err) from err
+    
+    @staticmethod
+    def publish_drs_create_message(app: Flask, business: Business, filing: Filing):
+        """Publish the drs create record message."""
+        try:
+            subject = app.config.get("DOC_CREATE_REC_TOPIC")
+            document_id = filing.filing_json["filing"][filing.filing_type].get("documentId", "")
+            data = {
+                "accountId": "business-api",
+                "consumerDocumentId": document_id,
+                "consumerIdentifier": business.identifier,
+                "consumerFilingType": filing.filing_type,
+                "consumerReferenceId": str(filing.id),
+                "documentClass": "CORP"
+            }
+
+            ce = PublishEvent._create_cloud_event(app, business, filing, subject, data)
+            gcp_queue.publish(subject, to_queue_message(ce))
+
+        except Exception as err:  # pylint: disable=broad-except;
+            raise PublishException(err) from err
 
     @staticmethod
     def publish_mras_email(app: Flask, business: Business, filing: Filing):

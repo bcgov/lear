@@ -579,7 +579,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         else:
             legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
 
-        if err := PermissionService.check_filing_enabled(filing_type, identifier):
+        if err := PermissionService.check_filing_enabled(filing_type, filing_sub_type):
             return jsonify(err.msg), err.code
 
         if (
@@ -745,7 +745,11 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return bool(filing.filing_type == "adminFreeze" or
                     (filing.filing_type == "dissolution" and
                      filing.filing_sub_type == "involuntary") or
-                    (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true"))
+                    (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true") or
+                    (jwt.validate_roles([STAFF_ROLE]) and
+                     hide_in_ledger == "true" and
+                     filing.filing_type == "dissolution" and
+                     filing.filing_sub_type == "delay"))
 
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
@@ -907,6 +911,14 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         elif dissolution_type == "administrative":
             filing_types.append({
                 "filingTypeCode": "NOFEE",
+                "waiveFees": waive_fees_flag
+            })
+        elif dissolution_type == "delay":
+            filing_type_code = Filing.FILINGS["dissolution"][dissolution_type]["codes"].get(legal_type)
+            filing_types.append({
+                "filingTypeCode": filing_type_code,
+                "futureEffective": ListFilingResource.is_future_effective_filing(filing_json),
+                "priority": priority_flag,
                 "waiveFees": waive_fees_flag
             })
         return filing_types

@@ -45,7 +45,7 @@ from .party import Party
 from .party_role import PartyRole
 from .resolution import Resolution  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 from .share_class import ShareClass  # noqa: F401 pylint: disable=unused-import
-from .user import User  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
+from .user import User, UserRoles  # noqa: F401 pylint: disable=unused-import; needed by the SQLAlchemy backref
 
 
 class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes,disable=too-many-public-methods
@@ -336,9 +336,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
         _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
-        next_ar_year = (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        next_ar_year = (self.last_ar_year if self.last_ar_year else _founding_date.year) + 1
         no_of_years_to_add = next_ar_year - _founding_date.year
-        return _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        return LegislationDatetime.as_utc_timezone(_founding_date + datedelta.datedelta(years=no_of_years_to_add))
 
     @property
     def next_annual_tr_due_datetime(self) -> datetime:
@@ -555,6 +555,27 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
             one_or_none()
         return find_in_batch_processing is not None
+    
+    @property
+    def public_user_dod_filings(self):
+        """Return the list of public user filed delay of dissolution filings for the current in progress dissolution process."""
+        batch_processings: list[BatchProcessing] = BatchProcessing.find_by(business_id=self.id)
+        if self.in_dissolution and len(batch_processings):
+            most_recent_batch_processing = batch_processings[0]
+            dissolution_start_date = most_recent_batch_processing.created_date
+            relevant_filings: list[Filing] = Filing.get_filings_by_status(
+                self.id,
+                [Filing.Status.COMPLETED, Filing.Status.PENDING, Filing.Status.PAID],
+                dissolution_start_date
+            )
+            return [
+                filing for filing in relevant_filings
+                if filing.filing_type == "dissolution"
+                    and filing.filing_sub_type == "delay"
+                    and not filing.submitter_roles in [UserRoles.staff, UserRoles.system]
+            ]
+
+        return []
 
     @property
     def is_tombstone(self):

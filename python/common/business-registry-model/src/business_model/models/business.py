@@ -32,7 +32,7 @@ from sqlalchemy.sql import and_, exists, func, not_, text
 
 from business_model.exceptions import BusinessException
 from business_model.utils.base import BaseEnum
-from business_model.utils.datetime import datetime, timezone
+from business_model.utils.datetime import datetime
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from .address import (
@@ -68,6 +68,7 @@ from .share_class import (
 from .types.filings import FilingTypes, RestorationSubTypes
 from .user import (
     User,
+    UserRoles,
 )
 
 
@@ -359,9 +360,11 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
         _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
-        next_ar_year = (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
+        next_ar_year = (self.last_ar_year if self.last_ar_year else _founding_date.year) + 1
         no_of_years_to_add = next_ar_year - _founding_date.year
-        return _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        return LegislationDatetime.as_utc_timezone(
+            _founding_date + datedelta.datedelta(years=no_of_years_to_add)
+        )
 
     @property
     def next_annual_tr_due_datetime(self) -> datetime:
@@ -579,6 +582,27 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             filter(Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION).\
             one_or_none()
         return find_in_batch_processing is not None
+    
+    @property
+    def public_user_dod_filings(self):
+        """Return the list of public user filed delay of dissolution filings for the current in progress dissolution process."""
+        batch_processings: list[BatchProcessing] = BatchProcessing.find_by(business_id=self.id)
+        if self.in_dissolution and len(batch_processings):
+            most_recent_batch_processing = batch_processings[0]
+            dissolution_start_date = most_recent_batch_processing.created_date
+            relevant_filings: list[Filing] = Filing.get_filings_by_status(
+                self.id,
+                [Filing.Status.COMPLETED, Filing.Status.PENDING, Filing.Status.PAID],
+                dissolution_start_date
+            )
+            return [
+                filing for filing in relevant_filings
+                if filing.filing_type == "dissolution"
+                    and filing.filing_sub_type == "delay"
+                    and not filing.submitter_roles in [UserRoles.staff, UserRoles.system]
+            ]
+
+        return []
 
     @property
     def is_tombstone(self):
@@ -920,7 +944,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         return f'{numbered_legal_name_prefix} {numbered_legal_name_suffix}'
 
     @classmethod
-    def get_next_value_from_sequence(cls, business_type: str) -> Optional[int]:
+    def get_next_value_from_sequence(cls, business_type: str) -> int | None:
         """Return the next value from the sequence."""
         sequence_mapping = {
             'BC': 'business_identifier_bc',  # only available in sandbox now
@@ -987,7 +1011,7 @@ class BusinessType(BaseEnum):
     DEFAULT = 'OT'
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
@@ -1012,7 +1036,7 @@ class BusinessIdentifier:
         return True
 
     @staticmethod
-    def next_identifier(business_type: BusinessType) -> Optional[str]:
+    def next_identifier(business_type: BusinessType) -> str | None:
         """Get the next identifier."""
         if not (business_type in BusinessType and
                 (sequence_val := Business.get_next_value_from_sequence(business_type))):

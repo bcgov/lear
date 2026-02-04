@@ -69,7 +69,6 @@ class Flags:
         try:
             if client and client.is_initialized():
                 app.extensions["featureflags"] = client
-                app.teardown_appcontext(self.teardown)
         except Exception as err:
             app.logger.warning("Issue registering flag service %s", err)
 
@@ -147,10 +146,20 @@ class Flags:
 
         client = self._get_client()
 
+        if not client:
+            self.logger.warning("LaunchDarkly client not available for flag %s", flag)
+            return False
+
+        if not client.is_initialized():
+            self.logger.warning("LaunchDarkly client not initialized for flag %s", flag)
+            return False
+
         ctx = self.build_context(user, account_id)
 
         try:
-            return bool(client.variation(flag, ctx, None))
+            variation_value = client.variation(flag, ctx, None)
+            self.logger.debug("flag %s variation value: %s", flag, variation_value)
+            return bool(variation_value)
         except Exception as err:
             self.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
             return False
@@ -158,10 +167,21 @@ class Flags:
     def value(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> Any:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
+
+        if not client:
+            self.logger.warning("LaunchDarkly client not available for flag %s", flag)
+            return None
+
+        if not client.is_initialized():
+            self.logger.warning("LaunchDarkly client not initialized for flag %s", flag)
+            return None
+
         ctx = self.build_context(user, account_id)
 
         try:
-            return client.variation(flag, ctx, None)
+            variation_value = client.variation(flag, ctx, None)
+            self.logger.debug("flag %s variation value: %s", flag, variation_value)
+            return variation_value
         except Exception as err:
             self.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
-            return False
+            return None

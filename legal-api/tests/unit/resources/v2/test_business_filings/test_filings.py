@@ -18,6 +18,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
 import json
+import random
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
@@ -495,8 +496,8 @@ def test_post_only_validate_ar(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
@@ -518,8 +519,8 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
 
@@ -589,8 +590,8 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
 
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['header']['routingSlipNumber'] = '123131332'
@@ -742,8 +743,8 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
     ar['filing']['business']['identifier'] = 'CP7654321'
@@ -1255,8 +1256,8 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
     annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
     ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
@@ -1687,10 +1688,13 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
 )
 def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, filing_status, review_status, monkeypatch):
     """Assert that the a filing can be submitted/resubmitted."""
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
-    )
+    def mockFlagsValue(flag, _user=None, _account_id=None):
+        if flag == 'supported-continuation-in-entities':
+            return 'C CBEN CCC CUL'
+        elif flag == 'enabled-specific-filings':
+            return ''
+        return {}
+    monkeypatch.setattr('legal_api.services.flags.value', mockFlagsValue)
     identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
@@ -1986,21 +1990,27 @@ def test_coo(session, requests_mock, mocker, client, jwt, test_name, legal_type,
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier',
+    'test_name, legal_type, identifier, enabled',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115', True),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116', True),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117', True),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118', True),
+        ('disabled', Business.LegalTypes.BCOMP.value, 'BC1111111', False),
     ]
 )
-def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+def test_cor(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
     """Assert Change of Receivers is submitted correctly for entity types."""
-    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    enabled_filings = 'changeOfReceivers.appointReceiver' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
     cor = copy.deepcopy(FILING_HEADER)
     cor['filing']['header']['name'] = 'changeOfReceivers'
     cor['filing']['changeOfReceivers'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
@@ -2025,25 +2035,35 @@ def test_cor(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 
-    assert rv.status_code == HTTPStatus.CREATED
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - changeOfReceivers.appointReceiver filing is currently not available for this user and/or account.'
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier',
+    'test_name, legal_type, identifier, enabled',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111', True),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112', True),
+        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113', True),
+        ('BC', Business.LegalTypes.COMP.value, 'BC1111114', True),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115', True),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116', True),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117', True),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118', True),
+        ('disabled', Business.LegalTypes.BCOMP.value, 'BC1111111', False),
     ]
 )
-def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, identifier, enabled):
     """Assert Change of Liquidators is submitted correctly for entity types."""
-    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    enabled_filings = 'changeOfLiquidators.intentToLiquidate' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
     col = copy.deepcopy(FILING_HEADER)
     col['filing']['header']['name'] = 'changeOfLiquidators'
     col['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
@@ -2067,26 +2087,48 @@ def test_col(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         headers=create_header(jwt, [STAFF_ROLE], identifier)
     )
 
-    assert rv.status_code == HTTPStatus.CREATED
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - changeOfLiquidators.intentToLiquidate filing is currently not available for this user and/or account.'
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, identifier',
+    'test_name, legal_type, roles, enabled, hide_ledger',
     [
-        ('BEN', Business.LegalTypes.BCOMP.value, 'BC1111111'),
-        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, 'BC1111112'),
-        ('CC', Business.LegalTypes.BC_CCC.value, 'BC1111113'),
-        ('BC', Business.LegalTypes.COMP.value, 'BC1111114'),
-        ('C', Business.LegalTypes.CONTINUE_IN.value, 'BC1111115'),
-        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'BC1111116'),
-        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, 'BC1111117'),
-        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, 'BC1111118'),
+        ('BEN_staff', Business.LegalTypes.BCOMP.value, [STAFF_ROLE], True, False),
+        ('BEN_user', Business.LegalTypes.BCOMP.value, [PUBLIC_USER], True, False),
+        ('ULC', Business.LegalTypes.BC_ULC_COMPANY.value, [STAFF_ROLE], True, False),
+        ('CC', Business.LegalTypes.BC_CCC.value, [STAFF_ROLE], True, False),
+        ('BC', Business.LegalTypes.COMP.value, [STAFF_ROLE], True, False),
+        ('C', Business.LegalTypes.CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('CBEN', Business.LegalTypes.BCOMP_CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('CCC', Business.LegalTypes.CCC_CONTINUE_IN.value, [STAFF_ROLE], True, False),
+        ('hidden_ledger_staff', Business.LegalTypes.BCOMP.value, [STAFF_ROLE], True, True),
+        ('hidden_ledger_user', Business.LegalTypes.BCOMP.value, [PUBLIC_USER], True, True),
+        ('disabled', Business.LegalTypes.BCOMP.value, [STAFF_ROLE], False, False),
     ]
 )
-def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type, identifier):
+def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, roles, enabled, hide_ledger):
     """Assert Delay of Dissolution is submitted correctly for entity types."""
-    mocker.patch('legal_api.services.permissions.PermissionService.check_filing_enabled', return_value=None)
+    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+    enabled_filings = 'dissolution.delay' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
+    monkeypatch.setattr(
+        'legal_api.services.flags.is_on',
+        lambda flag: True
+        if flag == 'enabled-deeper-permission-action' else {}
+    )
     dod = copy.deepcopy(FILING_HEADER)
+    del dod['filing']['header']['routingSlipNumber']
+    del dod['filing']['header']['waiveFees']
+    del dod['filing']['header']['priority']
     dod['filing']['header']['name'] = 'dissolution'
     dod['filing']['dissolution'] = {
         'dissolutionType': 'delay',
@@ -2095,13 +2137,18 @@ def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type,
     dod['filing']['business']['identifier'] = identifier
     dod['filing']['business']['legalType'] = legal_type
 
-    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    # Note: a business requiring a DOD will not be in good standing
+    b = factory_business(identifier, (datetime.now() - datedelta.datedelta(years=4)), (datetime.now() - datedelta.datedelta(years=3)), legal_type)
     factory_business_mailing_address(b)
     batch = factory_batch(Batch.BatchType.INVOLUNTARY_DISSOLUTION, Batch.BatchStatus.PROCESSING, 1, '')
 
     factory_batch_processing(batch.id, b.id, b.identifier)
 
-    requests_mock.post(
+    if PUBLIC_USER in roles:        
+        # mock response from auth to give edit access
+        requests_mock.get(f"{current_app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                            json={'roles': ['edit']})
+    pay_mock = requests_mock.post(
         current_app.config.get('PAYMENT_SVC_URL'),
         json={
             'id': 21322,
@@ -2110,10 +2157,33 @@ def test_dod(session, requests_mock, mocker, client, jwt, test_name, legal_type,
         },
         status_code=HTTPStatus.CREATED
     )
+    headers = {
+        **create_header(jwt, roles, identifier),
+        'hide-in-ledger': hide_ledger
+    }
     rv = client.post(
         f'/api/v2/businesses/{identifier}/filings',
         json=dod,
-        headers=create_header(jwt, [STAFF_ROLE], identifier)
+        headers=headers
     )
+    print(rv.json)
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+        # assert ledger display hidden or not as expected
+        expected_ledger_hidden = hide_ledger and STAFF_ROLE in roles
+        filing_id = rv.json['filing']['header']['filingId']
+        dod_filing: Filing = Filing.find_by_id(filing_id)
+        assert dod_filing.hide_in_ledger == expected_ledger_hidden
+        # assert payment info
+        assert pay_mock.called == True
+        assert pay_mock.call_count == 1
+        pay_payload = pay_mock.request_history[0].json()
+        assert pay_payload['filingInfo']['filingIdentifier'] == str(filing_id)
+        fee_info = pay_payload['filingInfo']['filingTypes']
+        assert len(fee_info) == 1
+        assert fee_info[0]['filingTypeCode'] == 'DISDE'
 
-    assert rv.status_code == HTTPStatus.CREATED
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - dissolution.delay filing is currently not available for this user and/or account.'
+    

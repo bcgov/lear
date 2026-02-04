@@ -599,6 +599,55 @@ create unique index on mv_addr_quality_by_corp (corp_num);
 ALTER MATERIALIZED VIEW mv_addr_quality_by_corp
     owner to postgres;
 
+/* ---------------------------------------------------------------------
+   Share class eligibility issue flags (1 row per corp_num)
+
+   - Uses CURRENT share structure only: share_struct.end_event_id IS NULL
+   - Decimal-place checks use scale(par_value_amt) and therefore count
+     trailing zeros exactly as persisted.
+   --------------------------------------------------------------------- */
+CREATE MATERIALIZED VIEW mv_share_class_issue_flags AS
+SELECT
+  ss.corp_num,
+
+  /* 1) Currency type = OTHER (currency_typ_cd='OTH' OR other_currency populated) */
+  bool_or(
+    (ssc.currency_typ_cd IS NOT NULL AND upper(btrim(ssc.currency_typ_cd)) = 'OTH')
+    OR (ssc.other_currency IS NOT NULL AND NOT is_blank(ssc.other_currency))
+  ) AS has_other_currency,
+
+  /* 2) Par value < 1 and more than 6 decimal places */
+  bool_or(
+    ssc.par_value_ind IS TRUE
+    AND ssc.par_value_amt IS NOT NULL
+    AND ssc.par_value_amt < 1
+    AND significant_decimal_places(ssc.par_value_amt) > 6
+  ) AS has_par_value_lt1_gt6dp,
+
+  /* 3) Par value > 1 and more than 2 decimal places */
+  bool_or(
+    ssc.par_value_ind IS TRUE
+    AND ssc.par_value_amt IS NOT NULL
+    AND ssc.par_value_amt > 1
+    AND significant_decimal_places(ssc.par_value_amt) > 2
+  ) AS has_par_value_gt1_gt2dp
+
+FROM share_struct ss
+JOIN share_struct_cls ssc
+  ON ssc.corp_num = ss.corp_num
+ AND ssc.start_event_id = ss.start_event_id
+WHERE ss.end_event_id IS NULL
+GROUP BY ss.corp_num
+WITH NO DATA
+;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_share_class_issue_flags_corpnum
+  ON mv_share_class_issue_flags (corp_num);
+
+ALTER MATERIALIZED VIEW mv_share_class_issue_flags
+    owner to postgres;
+
+
 CREATE MATERIALIZED VIEW mv_legacy_corps_data AS
 SELECT COALESCE(edg.group_name, NULL) AS group_name,
         tblFe.email_domain,
@@ -620,11 +669,22 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(last_file_event_ts as timestamp) as last_file_event_ts,
         CAST(last_event_ts as timestamp) as last_event_ts,
         event_file_types,
+        failed_events,
         CAST(has_officers as boolean) as has_officers,
         CAST(has_3rd_party as boolean) as has_3rd_party,
         vendor,
         CAST(migrated as boolean) as migrated,
         CAST(has_password as boolean) as has_password,
+        CAST(COALESCE(sif.has_other_currency, false) as boolean) as has_other_share_currency,
+        CAST(COALESCE(sif.has_par_value_lt1_gt6dp, false) as boolean) as has_share_par_value_lt1_gt6dp,
+        CAST(COALESCE(sif.has_par_value_gt1_gt2dp, false) as boolean) as has_share_par_value_gt1_gt2dp,
+        CAST(
+          NOT (
+            COALESCE(sif.has_other_currency, false)
+            OR COALESCE(sif.has_par_value_lt1_gt6dp, false)
+            OR COALESCE(sif.has_par_value_gt1_gt2dp, false)
+          )
+        as boolean) as meets_share_criteria,
         CAST(send_ar_ind as boolean) as send_ar_ind,
         address_all_any_bad_count,
         office_all_any_bad_count,
@@ -636,6 +696,7 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         bar_keycloak_guid,
         bar_idp_userid,
         bar_account_id,
+        CAST(bar_account_has_mailing_address as boolean) as bar_account_has_mailing_address,
         ting_corps
 FROM (
     SELECT
@@ -695,6 +756,7 @@ FROM (
            MAX(CASE WHEN e.event_type_cd = 'FILE' THEN e.event_timerstamp END) AS last_file_event_ts,
            MAX(e.event_timerstamp) AS last_event_ts,
            STRING_AGG(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ',' ORDER BY e.event_id) AS event_file_types,
+           fe.failed_events,
            COALESCE(cprt_dir.director_count, 0) AS director_count,
            CASE WHEN cow.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_officers,
            CASE WHEN cowtp.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_3rd_party,
@@ -716,6 +778,7 @@ FROM (
            bc.sub as bar_keycloak_guid,
            bc.idp_userid as bar_idp_userid,
            bc.payment_account as bar_account_id,
+           bc.bar_account_has_mailing_address as bar_account_has_mailing_address,
            ciaml.ting_corps as ting_corps
     FROM event e
     JOIN corporation c ON c.corp_num = e.corp_num
@@ -727,7 +790,6 @@ FROM (
           AND cn.end_event_id IS NULL
           AND cn.corp_name_typ_cd IN ('CO', 'NB')
     LEFT OUTER JOIN filing f ON e.event_id = f.event_id
-    LEFT OUTER JOIN corp_comments cc ON c.corp_num = cc.corp_num
     LEFT OUTER JOIN mv_corps_with_officers cow ON c.corp_num = cow.corp_num
     LEFT OUTER JOIN corps_with_third_party cowtp ON c.corp_num = cowtp.corp_num
     LEFT OUTER JOIN corp_processing cop ON c.corp_num = cop.corp_num and cop.environment = 'prod' and cop.processed_status = 'COMPLETED'
@@ -745,6 +807,31 @@ FROM (
       FROM corp_involved_amalgamating
       GROUP BY ted_corp_num
     ) ciaml ON c.corp_num = ciaml.ted_corp_num
+    LEFT OUTER JOIN (
+        SELECT
+          fe_sub.corp_num,
+          STRING_AGG(fe_sub.failed_event, ',' ORDER BY fe_sub.failed_event) AS failed_events
+              FROM (
+                SELECT DISTINCT 
+                  e2.corp_num,
+                  e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL') AS failed_event
+                FROM event e2
+                LEFT JOIN filing f2 ON e2.event_id = f2.event_id
+                WHERE (e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL'))
+                    NOT IN ('FILE_ICORP', 'FILE_ICORU', 'FILE_ICORC', -- IA
+                            'FILE_ANNBC', 'FILE_AM_AR', -- AR
+                            'FILE_NOCAD', 'FILE_APTRA', 'FILE_NOERA', 'FILE_AM_DO', 'FILE_AM_RR', -- CoA
+                            'FILE_NOCDR', 'FILE_AM_DI', -- CoD
+                            'FILE_NOALA', 'FILE_NOALB', 'FILE_NOALU', 'FILE_NOALC', 'FILE_AM_BC', 'FILE_AM_LI', 'FILE_AM_RM', 'FILE_AM_SS', -- Alteration
+                            'ADCORP_NULL',
+                            -- Skipped events/filing types
+                            'FILE_COGS1', 'FILE_CHGJU', 'FILE_NWPTA', 'FILE_PARES', 'FILE_TILAT', 'FILE_TILHO', 'FILE_TILMA',
+                            'SYST_CANPS', 'SYST_CHGJU', 'SYST_CHGPN', 'SYST_CO_PN', 'SYST_LNKPS', 'SYST_NWPTA',
+                            'SYST_PARES', 'SYST_RIPFL', 'SYST_TILAT', 'SYST_TILHO', 'SYST_NULL',
+                            'TRESP_NULL', 'TRESP_COUTI')
+                ) fe_sub
+                GROUP BY fe_sub.corp_num
+      ) fe on c.corp_num = fe.corp_num
     WHERE 1 = 1
     GROUP BY e.corp_num, cn.corp_name, c.corp_type_cd, c.corp_frozen_type_cd, c.recognition_dts, c.last_ar_filed_dt,
              LOWER(SPLIT_PART(c.admin_email, '@', 2)), c.admin_email, cow.corp_num,
@@ -762,9 +849,12 @@ FROM (
            mvaqc.party_all_any_bad_key_fields_count,
            mvaqc.party_all_null_count,
            bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account,
-           ciaml.ting_corps
+           bc.bar_account_has_mailing_address,
+           ciaml.ting_corps,
+           fe.failed_events
 ) tblFe
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
+LEFT JOIN mv_share_class_issue_flags sif USING (corp_num)
 where 1=1
 ORDER BY email_domain, filing_cnt desc
 WITH NO DATA
@@ -1141,6 +1231,7 @@ REFRESH MATERIALIZED VIEW mv_corps_party_role_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_domain_count;
 REFRESH MATERIALIZED VIEW mv_addr_quality_by_corp;
+REFRESH MATERIALIZED VIEW mv_share_class_issue_flags;
 REFRESH MATERIALIZED VIEW mv_legacy_corps_data;
 REFRESH MATERIALIZED VIEW mv_corp_issue_flags;
 REFRESH MATERIALIZED VIEW mv_issue_counts_by_corp_type;
@@ -1150,6 +1241,7 @@ ANALYZE mv_corps_party_role_count;
 ANALYZE mv_admin_email_count;
 ANALYZE mv_admin_email_domain_count;
 ANALYZE mv_addr_quality_by_corp;
+ANALYZE mv_share_class_issue_flags;
 ANALYZE mv_legacy_corps_data;
 ANALYZE mv_corp_issue_flags;
 ANALYZE mv_issue_counts_by_corp_type;

@@ -35,10 +35,14 @@
 from __future__ import annotations
 
 import datetime
+from typing import TYPE_CHECKING
 
-from business_model.models import Address, Business, Filing, Party, PartyRole
+from business_model.models import Address, Business, Filing, Party, PartyRole, db
 
 from business_filer.filing_processors.filing_components import create_address, update_address
+
+if TYPE_CHECKING:
+    from business_model.models.types.party_class_type import PartyClassType
 
 RELATIONSHIP_ROLE_CONVERTER = {
     "custodian": PartyRole.RoleTypes.CUSTODIAN.value,
@@ -51,15 +55,15 @@ RELATIONSHIP_ROLE_CONVERTER = {
     "applicant": PartyRole.RoleTypes.APPLICANT.value,
     "receiver": PartyRole.RoleTypes.RECEIVER.value,
     # below is for role class officer
-    "ceo": PartyRole.RoleTypes.CEO,
-    "cfo": PartyRole.RoleTypes.CFO,
-    "president": PartyRole.RoleTypes.PRESIDENT,
-    "vice president": PartyRole.RoleTypes.VICE_PRESIDENT,
-    "chair": PartyRole.RoleTypes.CHAIR,
-    "treasurer": PartyRole.RoleTypes.TREASURER,
-    "secretary": PartyRole.RoleTypes.SECRETARY,
-    "assistant secretary": PartyRole.RoleTypes.ASSISTANT_SECRETARY,
-    "other": PartyRole.RoleTypes.OTHER,
+    "ceo": PartyRole.RoleTypes.CEO.value,
+    "cfo": PartyRole.RoleTypes.CFO.value,
+    "president": PartyRole.RoleTypes.PRESIDENT.value,
+    "vice president": PartyRole.RoleTypes.VICE_PRESIDENT.value,
+    "chair": PartyRole.RoleTypes.CHAIR.value,
+    "treasurer": PartyRole.RoleTypes.TREASURER.value,
+    "secretary": PartyRole.RoleTypes.SECRETARY.value,
+    "assistant secretary": PartyRole.RoleTypes.ASSISTANT_SECRETARY.value,
+    "other": PartyRole.RoleTypes.OTHER.value,
 }
 
 
@@ -87,24 +91,29 @@ def _create_party(relationship: dict):
         mailing_address = create_address(relationship["mailingAddress"], Address.MAILING)
         party.mailing_address = mailing_address
 
+    db.session.add(party)
     return party
 
 
-def _create_role(party: Party, role_info: dict, default_appointment: datetime.datetime) -> PartyRole:
+def _create_role(party: Party,
+                 role_info: dict,
+                 default_appointment: datetime.datetime,
+                 role_class: PartyClassType | None) -> PartyRole:
     """Create a new party role and link to party."""
     party_role = PartyRole(
         role=RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType").lower(), ""),
-        appointment_date=role_info.get("appointmentDate") or default_appointment,
+        # FUTURE: use appointmentDate instead of default when given (api validation needs to be updated first for officers, receivers, liquidators)
+        appointment_date=default_appointment or role_info.get("appointmentDate"),
         cessation_date=role_info.get("cessationDate"),
         party=party
     )
-    if role_class := role_info.get("roleClass"):
+    if role_class:
         party_role.party_class_type = role_class
 
     return party_role
 
 
-def _str_to_int(str: str | None) -> str | None:
+def _str_to_int(str: str | None) -> int | None:
     if str:
         try:
             return int(str)
@@ -119,7 +128,10 @@ def _str_to_upper(str: str | None) -> str:
     return None
 
 
-def create_relationsips(relationships: list[dict], business: Business, filing: Filing) -> list | None:
+def create_relationships(relationships: list[dict],
+                        business: Business,
+                        filing: Filing,
+                        role_class: PartyClassType | None = None) -> list | None:
     """Create new party and party roles for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -130,19 +142,34 @@ def create_relationsips(relationships: list[dict], business: Business, filing: F
     err = []
 
     # Only create new records for relationships without an existing id
-    relationships = [relationship for relationship in relationships if not relationship.get("entity").get("identifier")]
     if relationships:
         try:
             for relationship_info in relationships:
-                party = _create_party(relationship_info)
-                for role_type in relationship_info.get("roles"):
-                    party_role = _create_role(party=party, role_info=role_type, default_appointment=filing.effective_date)
-                    if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value,
-                                           PartyRole.RoleTypes.INCORPORATOR.value,
-                                           PartyRole.RoleTypes.APPLICANT.value]:
-                        filing.filing_party_roles.append(party_role)
-                    else:
-                        business.party_roles.append(party_role)
+                party_id = _str_to_int(relationship_info.get("entity", {}).get("identifier"))
+                party = Party.find_by_id(party_id) if party_id else None
+                if not party:
+                    party = _create_party(relationship_info)
+
+                party_roles: list[PartyRole] = PartyRole.get_party_roles_by_party_id(business.id, party.id)
+                # FUTURE: rely on api validation to check existing party is allowed to be updated instead of ignoring the update here
+                if not party_roles and party_id:
+                    # ignore updates
+                    continue
+
+                active_party_role_types = [party_role.role for party_role in party_roles if party_role.cessation_date is None]
+                for role_info in relationship_info.get("roles", []):
+                    role_type = RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType", "").lower(), "")
+                    if role_type not in active_party_role_types and not role_info.get("cessationDate"):
+                        party_role = _create_role(party=party,
+                                                  role_info=role_info,
+                                                  default_appointment=filing.effective_date,
+                                                  role_class=role_class)
+                        if party_role.role in [PartyRole.RoleTypes.COMPLETING_PARTY.value,
+                                               PartyRole.RoleTypes.INCORPORATOR.value,
+                                               PartyRole.RoleTypes.APPLICANT.value]:
+                            filing.filing_party_roles.append(party_role)
+                        else:
+                            business.party_roles.append(party_role)
         except KeyError:
             err.append(
                 {"error_code": "FILER_UNABLE_TO_SAVE_PARTIES",
@@ -154,7 +181,7 @@ def create_relationsips(relationships: list[dict], business: Business, filing: F
 def cease_relationships(
     relationships: dict,
     business: Business,
-    role: PartyRole.RoleTypes,
+    allowed_roles: list[str],
     date_time: datetime.datetime | None = None):
     """Cease the party role types for the given parties for a business.
     
@@ -162,27 +189,31 @@ def cease_relationships(
     """
     date_time = date_time or datetime.datetime.now(datetime.UTC)
 
-    def has_ceased_role(roles: list[dict]):
+    def has_ceased_role(roles: list[dict], role: str):
         return any(
             ceased_role for ceased_role in roles
-            if RELATIONSHIP_ROLE_CONVERTER.get(ceased_role.get("roleType", "").lower(), "") == role.value and
+            if RELATIONSHIP_ROLE_CONVERTER.get(ceased_role.get("roleType", "").lower(), "") == role and
             ceased_role.get("cessationDate")
         )
-    cease_party_ids = [
-        _str_to_int(relationship["entity"]["identifier"])
+    
+    existing_relationships = [
+        relationship
         for relationship in relationships
-        # Only include existing relationships with a cessation date set for the given role type
-        if relationship.get("entity", {}).get("identifier") is not None and
-        # NOTE: cessationDate must be set in the role of the submission, but it will be overriden below by the date_time
-        has_ceased_role(relationship.get("roles", []))
+        if relationship.get("entity", {}).get("identifier") is not None
     ]
-    party_roles: list[PartyRole] = PartyRole.get_party_roles(business.id, date_time.date(), role.value)
-    for party_role in party_roles:
-        if party_role.party_id in cease_party_ids:
-            party_role.cessation_date = date_time
+    for relationship in existing_relationships:
+        party_id = _str_to_int(relationship["entity"]["identifier"])
+        party_roles: list[PartyRole] = PartyRole.get_party_roles_by_party_id(business.id, party_id)
+
+        for party_role in party_roles:
+            if (party_role.role in allowed_roles
+                and has_ceased_role(relationship.get("roles", []), party_role.role)
+                and not party_role.cessation_date
+            ):
+                party_role.cessation_date = date_time
 
 
-def update_relationship_addresses(relationships: list[dict]) -> None:
+def update_relationship_addresses(relationships: list[dict], business: Business) -> None:
     """Update the relationship addresses for existing party relationships.
     
     Assumption: The structure has already been validated, upon submission.
@@ -190,7 +221,9 @@ def update_relationship_addresses(relationships: list[dict]) -> None:
     for relationship in relationships:
         if (
             (existing_party_id := _str_to_int(relationship.get("entity", {}).get("identifier"))) and
-            (party := Party.find_by_id(existing_party_id))
+            (party := Party.find_by_id(existing_party_id)) and
+            # FUTURE: rely on api validation to check party is allowed to be updated instead of ignoring the update here
+            PartyRole.get_party_roles_by_party_id(business.id, party.id)
         ):
             if new_delivery_address := relationship.get("deliveryAddress"):
                 if party.delivery_address:
@@ -207,7 +240,7 @@ def update_relationship_addresses(relationships: list[dict]) -> None:
                     party.mailing_address = new_address
 
 
-def update_relationship_entity_info(relationships: list[dict]) -> None:
+def update_relationship_entity_info(relationships: list[dict], business: Business) -> None:
     """Update the party info for existing relationships.
     
     Assumption: The structure has already been validated, upon submission.
@@ -215,13 +248,18 @@ def update_relationship_entity_info(relationships: list[dict]) -> None:
     for relationship in relationships:
         if (
             (existing_party_id := _str_to_int(relationship.get("entity", {}).get("identifier"))) and
-            (party := Party.find_by_id(existing_party_id))
+            (party := Party.find_by_id(existing_party_id)) and
+            # FUTURE: rely on api validation to check party is allowed to be updated instead of ignoring the update here
+            PartyRole.get_party_roles_by_party_id(business.id, party.id)
         ):
+            org_name = _str_to_upper(relationship["entity"].get("businessName", ""))
+            party_type = Party.PartyTypes.ORGANIZATION.value if org_name else Party.PartyTypes.PERSON.value
             party.first_name=_str_to_upper(relationship["entity"].get("givenName", ""))
             party.last_name=_str_to_upper(relationship["entity"].get("familyName", ""))
             party.middle_initial=_str_to_upper(relationship["entity"].get("middleInitial", ""))
             party.alternate_name=_str_to_upper(relationship["entity"].get("alternateName", ""))
-            party.organization_name=_str_to_upper(relationship["entity"].get("businessName", ""))
+            party.organization_name=org_name
             party.identifier=_str_to_upper(relationship["entity"].get("businessIdentifier", ""))
             party.email=_str_to_upper(relationship["entity"].get("email", ""))
+            party.party_type=party_type
             

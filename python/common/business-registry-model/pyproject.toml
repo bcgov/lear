@@ -1,12 +1,12 @@
 [project]
 name = "business-model"
-version = "3.3.15"
+version = "3.3.18"
 description = ""
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.9,<4"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning-alt",
     "registry-schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.56",

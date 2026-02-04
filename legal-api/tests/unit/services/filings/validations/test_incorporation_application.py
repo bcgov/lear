@@ -17,6 +17,8 @@ from datetime import date
 from http import HTTPStatus
 
 import datedelta
+from legal_api.errors import Error
+from legal_api.services.filings.validations import incorporation_application
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORATION_FILING_TEMPLATE
@@ -25,14 +27,14 @@ from reportlab.lib.pagesizes import letter
 
 from legal_api.models import Business
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.incorporation_application import validate_coop_parties_mailing_address, validate_parties_names
 
 from tests.unit.services.filings.test_utils import _upload_file
 
 from . import create_party, create_party_address, lists_are_equal, create_officer
 from tests import not_github_ci
 from unittest.mock import patch
-from legal_api.services import NameXService
+from legal_api.services import NameXService, flags
+from legal_api.services.filings.validations.incorporation_application import validate_coop_parties_mailing_address, validate_parties_names
 from tests.unit import MockResponse
 
 
@@ -237,7 +239,7 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
 
     regoffice = filing_json['filing'][incorporation_application_name]['offices']['registeredOffice']
     regoffice['deliveryAddress']['addressRegion'] = delivery_region
@@ -268,6 +270,153 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     else:
         assert err is None
 
+@pytest.mark.parametrize(
+    'test_name, delivery_address, mailing_address, expected_code, expected_msg',
+    [
+        (
+            'SUCCESS',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V5K0A1"},
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V5K0A1"},
+            None, None
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with leading whitespace',
+            {"streetAddress": " 123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with trailing whitespace',
+            {"streetAddress": "123 A St ", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress streetAddress with only whitespace',
+            {"streetAddress": "   ", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress addressCity with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": " Vancouver ", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCity cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCity'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress addressCountry with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": " CA ", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCountry cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'}
+            ]
+        ),
+        (
+            'FAIL - deliveryAddress postalCode with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress streetAddress with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": " 456 B St ", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'streetAddress cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/streetAddress'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress addressCity with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": " Victoria ", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCity cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCity'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress addressCountry with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": " CA ", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'addressCountry cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'}
+            ]
+        ),
+        (
+            'FAIL - mailingAddress postalCode with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
+            ]
+        ),
+        (
+            'FAIL - multiple fields with leading/trailing whitespace',
+            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
+            HTTPStatus.BAD_REQUEST, [
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
+                {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
+            ]
+        ),
+    ]
+)
+def test_validate_incorporation_addresses_whitespace(session, mocker, test_name, delivery_address, mailing_address,
+                                                    expected_code, expected_msg):
+    """Assert that incorporation offices can be validated."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = 'BC'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
+
+    regoffice = filing_json['filing'][incorporation_application_name]['offices']['registeredOffice']
+    regoffice['deliveryAddress'] = delivery_address
+    regoffice['mailingAddress'] = mailing_address
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_name_request',
+                 return_value=[])
+
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_roles',
+                 return_value=[])
+
+    # perform test
+    with freeze_time(now):
+        err = validate(business, filing_json)
+
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
 
 @pytest.mark.parametrize(
     'test_name, legal_type, expected_code, expected_msg',
@@ -317,7 +466,7 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = legal_name
     else:
         filing_json['filing'][incorporation_application_name]['nameRequest']['legalName'] = 'company name'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
     nr_response_copy = copy.deepcopy(nr_response)
     nr_response_copy['legalType'] = legal_type
 
@@ -530,7 +679,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
 
     base_mailing_address = filing_json['filing'][incorporation_application_name]['parties'][0]['mailingAddress']
     base_delivery_address = filing_json['filing'][incorporation_application_name]['parties'][0]['deliveryAddress']
@@ -681,7 +830,7 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
     filing_json['filing'][incorporation_application_name]['parties'] = []
 
     # populate party and party role info
@@ -1091,7 +1240,7 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
     filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = 'no_one@never.get'
-    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '123-456-7890'
+    filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = '(123) 456-7890'
     filing_json['filing'][incorporation_application_name]['parties'] = []
 
     # populate party and party role info
@@ -1702,30 +1851,32 @@ def test_validate_incorporation_application_parties_delivery_address(mocker, app
         assert err is None
 
 @pytest.mark.parametrize('should_pass, phone_number, extension', [
-    (True, '1234567890', 12345),
-    (True, '1234567890', 1234),
-    (True, '1234567890', 123),
-    (True, '1234567890', 12),
-    (True, '1234567890', 1),
-    (False, '1234567890', 123456),
-    (False, '12345678901', 12345),
-    (True, '(123)456-7890', None),
+    # Valid phone, valid extensions
+    (True, '(123) 456-7890', 12345),
+    (True, '(123) 456-7890', 1234),
+    (True, '(123) 456-7890', 123),
+    (True, '(123) 456-7890', 12),
+    (True, '(123) 456-7890', 1),
+    (True, '(123) 456-7890', None),
+    (True, None, None),
+
+    # Invalid phone formats
+    (False, '(123)456-7890', None),
+    (False, '(123) 456-7890abc', None),
     (False, '(1234)456-7890', None),
     (False, '(123)4567-7890', None),
     (False, '(123)456-78901', None),
-    (True, '123-456-7890', None),
-    (False, '1234-456-7890', None),
-    (False, '123-4567-7890', None),
-    (False, '123-456-78901', None),
-    (True, '123.456.7890', None),
-    (False, '1234.456.7890', None),
-    (False, '123.4567.7890', None),
-    (False, '123.456.78901', None),
-    (True, '123 456 7890', None),
-    (False, '1234 456 7890', None),
-    (False, '123 4567 7890', None),
-    (False, '123 456 78901', None),
-    (True, None, None)
+
+    # Legacy formats that are no longer allowed
+    (False, '1234567890', 12345),
+    (False, '123-456-7890', None),
+    (False, '123.456.7890', None),
+    (False, '123 456 7890', None),
+
+    # Invalid extensions
+    (False, '(123) 456-7890', 123456),
+    (False, '(123) 456-7890', 12.3),
+    (False, '(123) 456-7890', -123),
 ])
 def test_ia_phone_number_validation(session, should_pass, phone_number, extension):
     """Test validate phone number and / or extension if they are provided."""
@@ -1748,6 +1899,67 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     else:
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
+
+
+@pytest.mark.parametrize('should_pass, email', [
+    # Valid email
+    (True, 'test@example.com'),
+    (True, 'user.name@domain.com'),
+    (True, 'user+tag@example.com'),
+    (True, 'test@subdomain.example.com'),
+    (True, 'test@example.co.uk'),
+    (True, 'user@[192.168.1.1]'),
+    (True, 'no_one@never.get'),
+    (True, '"quoted"@example.com'),
+    # Invalid email
+    (False, 'no_one@never.'),
+    (False, '@invalid.com'),
+    (False, 'test@.com'),
+    (False, 'test@'),
+    (False, 'test@domain'),
+    (False, 'test @example.com'),
+    (False, 'test@ example.com'),
+])
+def test_ia_email_validation(session, should_pass, email):
+    """Test validate email format if provided."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = email
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    if should_pass:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert any('Invalid email address format' in msg['error'] for msg in err.msg)
+
+
+@pytest.mark.parametrize('email', [
+    '',
+    None,
+    '   ',  # whitespace only
+])
+def test_ia_email_required_validation(session, email):
+    """Test validate email is a required field."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
+                                       'effectiveDate': effective_date}
+
+    filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = email
+
+    # perform test
+    with freeze_time(now):
+        err = validate(None, filing_json)
+
+    assert err
 
 @pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
     ('SUCCESS_EMPTY_ARRAY', [], None, None),
@@ -1786,3 +1998,76 @@ def test_validate_name_translation(session, test_name, name_translation, expecte
         if err:
             print(err, err.code, err.msg)
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_name, flag_enabled, permission_error, expected_code, expected_msg',
+    [
+        ('SUCCESS_FLAG_ON', True, None, None, None),
+        ('SUCCESS_FLAG_OFF', False, None, None, None),
+        ('FAIL_PERMISSION_ERROR', True, Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission denied.'}]),
+            HTTPStatus.FORBIDDEN, 'Permission denied.'),
+    ]
+)
+def test_incorporation_permission_and_completing_party_flag(mocker, app, session, test_name, flag_enabled, permission_error, expected_code, expected_msg):
+    """Test validate_permission_and_completing_party is called when flag is enabled."""
+    account_id = '123456'
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {
+        'name': incorporation_application_name,
+        'date': '2019-04-08',
+        'certifiedBy': 'fname mname lname',
+        'email': 'test@email.com',
+        'filingId': 1
+    }
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+
+    mocker.patch.object(incorporation_application ,'validate_offices', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_roles', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_coop_parties_mailing_address', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_parties_delivery_address', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_cooperative_documents', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_ia_court_order', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_offices_addresses', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_parties_names', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_parties_addresses', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_name_request', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_share_structure', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_effective_date', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_phone_number', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_email', return_value=[])
+    mocker.patch.object(incorporation_application, 'validate_name_translation', return_value=[])
+
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+
+    mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+    mock_validate_permission = mocker.patch.object(incorporation_application,
+        'validate_permission_and_completing_party', return_value=permission_error)
+    
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing_json, account_id)
+
+    if flag_enabled:
+        mock_validate_permission.assert_called_once()
+        call_args = mock_validate_permission.call_args
+        assert call_args[0][0] is None 
+        assert call_args[0][1] == filing_json 
+        assert call_args[0][2] == incorporation_application_name
+        check_options = call_args[0][4] 
+
+        assert check_options.get('check_name') is False
+        assert check_options.get('check_email') is True
+        assert check_options.get('check_address') is False
+        assert check_options.get('check_document_email') is True
+    else:
+        # When flag is off
+        mock_validate_permission.assert_not_called()
+    if expected_code:
+        assert err is not None
+        assert err.code == expected_code
+        assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
+    else:
+        assert err is None
+ 

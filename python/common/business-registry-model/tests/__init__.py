@@ -5,10 +5,10 @@ from contextlib import contextmanager
 from sqlalchemy import exc
 
 EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(
-    tzinfo=datetime.timezone.utc
+    tzinfo=datetime.UTC
 )
 FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362).replace(
-    tzinfo=datetime.timezone.utc
+    tzinfo=datetime.UTC
 )
 TIMEZONE_OFFSET = time.timezone / 60 / 60 if time.timezone else 0
 

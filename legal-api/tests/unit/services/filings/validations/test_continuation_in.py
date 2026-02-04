@@ -365,7 +365,7 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
     filing['filing']['continuationIn']['contactPoint']['email'] = 'no_one@never.get'
-    filing['filing']['continuationIn']['contactPoint']['phone'] = '123-456-7890'
+    filing['filing']['continuationIn']['contactPoint']['phone'] = '(123) 456-7890'
 
     regoffice = filing['filing']['continuationIn']['offices']['registeredOffice']
     regoffice['deliveryAddress']['addressRegion'] = delivery_region

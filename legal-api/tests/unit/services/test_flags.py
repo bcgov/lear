@@ -135,3 +135,70 @@ def test_flag_bool_unique_user(ld):
         assert False
     finally:
         app.env = app_env
+
+
+def test_flags_is_on_client_none():
+    """Assert that is_on returns False when client is None."""
+    app = Flask(__name__)
+
+    with app.app_context():
+        flags = Flags()
+        # Don't init_app, so client is None
+        result = flags.is_on('test-flag')
+        assert result is False
+
+
+def test_flags_value_client_none():
+    """Assert that value returns None when client is None."""
+    app = Flask(__name__)
+
+    with app.app_context():
+        flags = Flags()
+        # Don't init_app, so client is None
+        result = flags.value('test-flag')
+        assert result is None
+
+
+def test_flags_is_on_client_not_initialized(ld):
+    """Assert that is_on returns False when client is not initialized."""
+    from unittest.mock import patch
+
+    app = Flask(__name__)
+
+    with app.app_context():
+        flags = Flags()
+        flags.init_app(app, ld)
+        # Mock client.is_initialized to return False
+        with patch.object(app.extensions['featureflags'], 'is_initialized', return_value=False):
+            result = flags.is_on('test-flag')
+            assert result is False
+
+
+def test_flags_value_client_not_initialized(ld):
+    """Assert that value returns None when client is not initialized."""
+    from unittest.mock import patch
+
+    app = Flask(__name__)
+
+    with app.app_context():
+        flags = Flags()
+        flags.init_app(app, ld)
+        # Mock client.is_initialized to return False
+        with patch.object(app.extensions['featureflags'], 'is_initialized', return_value=False):
+            result = flags.value('test-flag')
+            assert result is None
+
+
+def test_flags_value_error_returns_none(ld):
+    """Assert that value returns None on exception, not False."""
+    from unittest.mock import patch
+
+    app = Flask(__name__)
+
+    with app.app_context():
+        flags = Flags()
+        flags.init_app(app, ld)
+        # Mock client.variation to raise an exception
+        with patch.object(app.extensions['featureflags'], 'variation', side_effect=Exception('test error')):
+            result = flags.value('test-flag')
+            assert result is None

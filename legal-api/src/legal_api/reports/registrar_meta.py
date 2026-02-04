@@ -74,7 +74,7 @@ class RegistrarInfo:   # pylint: disable=too-few-public-methods
         """Return the registrar for a filing."""
         filing_effective_date = filing_effective_date.replace(tzinfo=None)
         registrar = next(
-            x for x in RegistrarInfo.registrar_info if 
+            x for x in RegistrarInfo.registrar_info if
             (
                 filing_effective_date >= datetime.datetime.strptime(x["startDate"], "%Y-%m-%dT%H:%M:%S") and
                 (

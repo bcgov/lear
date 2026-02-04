@@ -20,6 +20,8 @@ from unittest.mock import patch
 from legal_api.errors import Error
 from legal_api.models.party import Party
 from legal_api.models.party_role import PartyRole
+from legal_api.services import flags
+from legal_api.services.permissions import PermissionService
 import pytest
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
@@ -47,6 +49,8 @@ from legal_api.services.filings.validations.common_validations import (
     is_officer_proprietor_replace_valid,
     validate_certify_name,
     validate_certified_by,
+    validate_court_order,
+    validate_email,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_party_name,
@@ -75,6 +79,31 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     'addressRegion': ''
 }
 
+INVALID_ADDRESS_WHITESPACE = {
+    'streetAddress': ' 123 Main St ',
+    'streetAddressAdditional': ' Suite 200 ',
+    'addressCity': 'Vancouver ',
+    'addressRegion': ' BC',
+    'postalCode': ' V6B 1A1 ',
+    'addressCountry': ' CA'
+}
+
+VALID_ADDRESS_WHITESPACE = {
+    'streetAddress': '123 Main St',
+    'streetAddressAdditional': 'Suite 200  ',
+    'addressCity': 'Vancouver',
+    'addressRegion': 'BC',
+    'postalCode': 'V6B 1A1',
+    'addressCountry': 'CA'
+}
+
+WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
+    'streetAddress',
+    'addressCity',
+    'addressCountry',
+    'postalCode',
+)
+
 
 @pytest.mark.parametrize('filing_type, filing_data, office_type', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'registeredOffice'),
@@ -88,14 +117,15 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     ('registration', REGISTRATION, 'businessOffice'),
     ('restoration', RESTORATION, 'registeredOffice')
 ])
-def test_validate_offices_addresses_postal_code(session, filing_type, filing_data, office_type):
-    """Test postal code of office address can be validated."""
+def test_validate_offices_addresses(session, filing_type, filing_data, office_type):
+    """Test office addresses can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'][filing_type] = copy.deepcopy(filing_data)
 
     err1 = validate_offices_addresses(filing, filing_type)
     assert err1 == []
 
+    # --- Postal code validation ---
     filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = INVALID_ADDRESS_NO_POSTAL_CODE
     err2 = validate_offices_addresses(filing, filing_type)
     assert err2
@@ -104,6 +134,18 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_offices_addresses(filing, filing_type)
     assert err3 == []
+
+    # --- Whitespace validation ---
+    filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = VALID_ADDRESS_WHITESPACE
+    err3 = validate_offices_addresses(filing, filing_type)
+    assert err3 == []
+
+    filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = INVALID_ADDRESS_WHITESPACE
+    err4 = validate_offices_addresses(filing, filing_type)
+    assert err4
+    error_fields = {e['path'].split('/')[-1] for e in err4}
+    assert error_fields == set(WHITESPACE_VALIDATED_ADDRESS_FIELDS)
+
     
 
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
@@ -121,14 +163,15 @@ def test_validate_offices_addresses_postal_code(session, filing_type, filing_dat
     ('registration', REGISTRATION, 'parties'),
     ('restoration', RESTORATION, 'parties')
 ])
-def test_validate_parties_addresses_postal_code(session, filing_type, filing_data, party_key):
-    """Test postal code of party address can be validated."""
+def test_validate_parties_addresses(session, filing_type, filing_data, party_key):
+    """Test party addresses can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing'][filing_type] = copy.deepcopy(filing_data)
 
     err1 = validate_parties_addresses(filing, filing_type, party_key)
     assert err1 == []
 
+    # --- Postal code validation ---
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = INVALID_ADDRESS_NO_POSTAL_CODE
     err2 = validate_parties_addresses(filing, filing_type, party_key)
     assert err2
@@ -137,6 +180,17 @@ def test_validate_parties_addresses_postal_code(session, filing_type, filing_dat
     filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_NO_POSTAL_CODE
     err3 = validate_parties_addresses(filing, filing_type, party_key)
     assert err3 == []
+
+    # --- Whitespace validation ---
+    filing['filing'][filing_type][party_key][0]['deliveryAddress'] = VALID_ADDRESS_WHITESPACE
+    err3 = validate_parties_addresses(filing, filing_type, party_key)
+    assert err3 == []
+
+    filing['filing'][filing_type][party_key][0]['deliveryAddress'] = INVALID_ADDRESS_WHITESPACE
+    err4 = validate_parties_addresses(filing, filing_type, party_key)
+    assert err4
+    error_fields = {e['path'].split('/')[-1] for e in err4}
+    assert error_fields == set(WHITESPACE_VALIDATED_ADDRESS_FIELDS)
 
 @pytest.mark.parametrize('payment_type, expected', [
     ({}, False),
@@ -624,3 +678,135 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
             filing_json['filing']['changeOfRegistration']['parties'][0]['officer'].pop(['identifier'], None)
         result = is_officer_proprietor_replace_valid(business, filing_json, 'changeOfRegistration')
         assert result is expected_result
+
+@pytest.mark.parametrize('email, is_valid', [
+    # Valid email formats
+    ('test@example.com', True),
+    ('user.name@domain.com', True),
+    ('user+tag@example.com', True),
+    ('test@subdomain.example.com', True),
+    ('test@example.co.uk', True),
+    ('user@[192.168.1.1]', True),
+    ('no_one@never.get', True),
+    ('"quoted"@example.com', True),
+    ('user_name@domain.org', True),
+    ('test123@test123.com', True),
+    ('john.o\'smith@gov.bc.ca', True),
+    # Invalid email formats
+    ('no_one@never.', False),
+    ('invalid', False),
+    ('@invalid.com', False),
+    ('test@.com', False),
+    ('test@', False),
+    ('test@domain', False),
+    ('test @example.com', False),
+    ('test@ example.com', False),
+    ('test@@example.com', False),
+])
+def test_validate_email_format(session, email, is_valid):
+    """Test email format validation against various email patterns."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'contactPoint': {
+                    'email': email
+                }
+            }
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+
+    if is_valid:
+        assert result == []
+    else:
+        assert len(result) == 1
+        assert 'Invalid email address format' in result[0]['error']
+        assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'
+
+@pytest.mark.parametrize('email', [
+    # Valid email formats
+    (' test@example.com'),
+    ('test@example.com '),
+    (' test@@example.com'),
+    ('test@@example.com '),
+])
+def test_validate_email_whitespace(session, email):
+    """Test whitespace handling in email validation."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'contactPoint': {
+                    'email': email
+                }
+            }
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+
+    assert len(result) == 1
+    assert 'Email cannot start or end with whitespace' in result[0]['error']
+    assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'        
+
+
+def test_validate_email_missing_contact_point(session):
+    """Test that missing contactPoint does not cause an error."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {}
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+    assert result == []
+
+
+def test_validate_email_missing_email_field(session):
+    """Test that missing email field does not cause an error."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'contactPoint': {
+                    'phone': '(123) 456-7890'
+                }
+            }
+        }
+    }
+
+    result = validate_email(filing_json, 'incorporationApplication')
+    assert result == []
+
+
+@pytest.mark.parametrize('has_permission, expected_error_msg', [
+    (True, None),
+    (False, 'Permission Denied'),
+])
+def test_validate_court_order_with_flag_on(session, has_permission, expected_error_msg):
+    """
+    Test court order validation with flag ON
+    """
+    court_order = {
+        'fileNumber': 'Valid file number',
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }
+
+    permission_error = Error(
+        HTTPStatus.FORBIDDEN,
+        [{'message': 'Permission Denied - You do not have permissions add court order details in this filing.'}]
+    ) if not has_permission else None
+
+    with (
+        patch.object(flags, 'is_on', return_value=True),
+        patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
+    ):
+        result = validate_court_order('/filing/alteration/courtOrder', court_order)
+
+    if has_permission:
+        assert result is None
+    else:
+        assert isinstance(result, list)
+        assert len(result) == 1
+        assert expected_error_msg in result[0]['error']
+        assert result[0]['path'] == '/filing/alteration/courtOrder'

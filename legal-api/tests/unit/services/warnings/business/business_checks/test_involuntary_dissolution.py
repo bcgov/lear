@@ -62,7 +62,8 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
         'overdueARs': True,
         'overdueTransition': False,
         'warningsSent': 2,
-        'targetDissolutionDate': target_date.date().isoformat()
+        'targetDissolutionDate': target_date.date().isoformat(),
+        'userDelays': 0
     }
     if 'TRANSITION_OVERDUE' in test_name:
         effective_date = datetime.utcnow() - datedelta(years=3)
@@ -82,6 +83,7 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
         )
         batch_processing.meta_data = meta_data
         batch_processing.save()
+        meta_data['targetStage2Date'] = batch_processing.trigger_date.date().isoformat()
 
     if 'FUTURE_EFFECTIVE_FILING' in test_name:
         factory_pending_filing(business, CHANGE_OF_ADDRESS_FILING)
@@ -159,7 +161,104 @@ def test_get_modified_warning_data(session, test_name, batch_processing_step, tr
     batch_processing.meta_data = {}
     batch_processing.save()
 
-    data = _get_modified_warning_data(batch_processing)
+    data = _get_modified_warning_data(batch_processing, len(business.public_user_dod_filings))
 
     assert 'targetDissolutionDate' in data
     assert data['targetDissolutionDate'] == expected_warning_date.date().isoformat()
+    assert data['userDelays'] == len(business.public_user_dod_filings)
+    if batch_processing_step == BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1:
+        assert data['targetStage2Date']
+
+
+@pytest.mark.parametrize('test_name, delay_filings, start_date, expected_user_delays', [
+    (
+        'no_delay_filings',
+        [],
+        datetime.utcnow(),
+        0
+    ),
+    (
+        'staff_only_delay_filings',
+        [
+            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'staff'},
+            { 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'staff'},
+        ],
+        datetime.utcnow() + datedelta(days=-10),
+        0
+    ),
+    (
+        'user_only_delay_filings',
+        [
+            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'public'},
+            { 'date': datetime.utcnow() + datedelta(days=-3), 'user': 'public'},
+        ],
+        datetime.utcnow() + datedelta(days=-10),
+        2
+    ),
+    (
+        'staff_and_user_delay_filings',
+        [
+            { 'date': datetime.utcnow() + datedelta(days=-7), 'user': 'staff'},
+            { 'date': datetime.utcnow() + datedelta(days=-6), 'user': 'public'},
+            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'staff'},
+        ],
+        datetime.utcnow() + datedelta(days=-10),
+        1
+    ),
+    (
+        'previous_delay_filings',
+        [
+            { 'date': datetime.utcnow() + datedelta(days=-20), 'user': 'staff'},
+            { 'date': datetime.utcnow() + datedelta(days=-19), 'user': 'public'},
+            { 'date': datetime.utcnow() + datedelta(days=-18), 'user': 'staff'},
+        ],
+        datetime.utcnow() + datedelta(days=-10),
+        0
+    ),
+    (
+        'previous_and_current_delay_filings',
+        [
+            { 'date': datetime.utcnow() + datedelta(days=-20), 'user': 'staff'},
+            { 'date': datetime.utcnow() + datedelta(days=-19), 'user': 'public'},
+            { 'date': datetime.utcnow() + datedelta(days=-18), 'user': 'staff'},
+            { 'date': datetime.utcnow() + datedelta(days=-7), 'user': 'staff'},
+            { 'date': datetime.utcnow() + datedelta(days=-6), 'user': 'public'},
+            { 'date': datetime.utcnow() + datedelta(days=-5), 'user': 'public'},
+        ],
+        datetime.utcnow() + datedelta(days=-10),
+        2
+    ),
+])
+def test_get_modified_warning_data_user_delays(session, test_name, delay_filings, start_date, expected_user_delays):
+    """Test _get_modified_warning_data function user delay response."""
+    identifier = 'BC7654321'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP)
+    delay_filing_json = {
+        'filing': {
+            'header': {
+                'name': 'dissolution'
+            },
+            'dissolution': {
+                'dissolutionType': 'delay',
+                'delayType': 'custom'
+            }
+        }
+    }
+    for delay in delay_filings:
+        filing = factory_completed_filing(business, delay_filing_json, delay['date'], None, None, 'dissolution', 'delay')
+        if delay['user'] == 'staff':
+            filing.submitter_roles = 'staff'
+            filing.save()
+    batch = factory_batch()
+    batch_processing = factory_batch_processing(
+        batch_id=batch.id,
+        business_id=business.id,
+        identifier=identifier,
+        step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
+        trigger_date=FUTURE_TRIGGER_DATE
+    )
+    batch_processing.created_date = start_date
+    batch_processing.save()
+
+    data = _get_modified_warning_data(batch_processing, len(business.public_user_dod_filings))
+    assert data['userDelays'] == expected_user_delays
