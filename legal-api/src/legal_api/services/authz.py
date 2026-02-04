@@ -181,10 +181,7 @@ def get_allowable_filings_dict():
                 "alteration": {
                     "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.IN_DISSOLUTION],
-                        "invalidStateFilings": ["restoration.limitedRestoration",
-                                                "restoration.limitedRestorationExtension"]
-                    }
+                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.IN_DISSOLUTION]
                 },
                 "amalgamationApplication": {
                     "businessRequirement": BusinessRequirement.NO_RESTRICTION,
@@ -483,9 +480,7 @@ def get_allowable_filings_dict():
                     "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
                         "business": [BusinessBlocker.DEFAULT,
-                                     BusinessBlocker.IN_DISSOLUTION],
-                        "invalidStateFilings": ["restoration.limitedRestoration",
-                                                "restoration.limitedRestorationExtension"]
+                                     BusinessBlocker.IN_DISSOLUTION]
                     }
                 },
                 "amalgamationApplication": {
