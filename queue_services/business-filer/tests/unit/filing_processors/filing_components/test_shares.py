@@ -80,7 +80,7 @@ def test_manage_share_structure__resolution_dates(
 SINGLE_SHARE_CLASS = {
     'shareStructure': {
         'shareClasses': [{
-            'name': 'Class 1 Shares',
+            'name': 'class1',
             'priority': 1,
             'maxNumberOfShares': 600,
             'parValue': 1,
@@ -89,7 +89,7 @@ SINGLE_SHARE_CLASS = {
             'hasParValue': True,
             'hasRightsOrRestrictions': False,
             'series': [{
-                    'name': 'Series 1 Shares',
+                    'name': 'series1',
                     'priority': 1,
                     'maxNumberOfShares': 600,
                     'hasMaximumShares': True,

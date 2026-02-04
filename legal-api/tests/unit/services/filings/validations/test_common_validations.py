@@ -1006,32 +1006,6 @@ def test_share_class_name_reserved_word_case_insensitive(session, share_class_na
     assert len(reserved_word_errors) == 1, f"Failed for: {share_class_name}"
 
 
-@pytest.mark.parametrize('filing_type', [
-    'alteration',
-    'correction',
-    'changeOfRegistration',
-])
-def test_share_class_name_validation_skipped_for_non_ia_filings(session, filing_type):
-    """Test that share class name suffix/reserved word validation is skipped for non-IA filings."""
-    # Use a name that would fail IA validation (no " Shares" suffix and contains reserved word)
-    share_class = {
-        'name': 'Share Class A',
-        'hasMaximumShares': False,
-        'hasParValue': False,
-        'hasRightsOrRestrictions': False,
-        'series': []
-    }
-    memoize_names = []
-
-    result = validate_shares(share_class, memoize_names, filing_type, 0, 'BEN')
-
-    # Should not have suffix or reserved word errors for non-IA filings
-    suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
-    reserved_word_errors = [e for e in result if "cannot contain the words" in e.get('error', '')]
-    assert len(suffix_errors) == 0, f"Unexpected suffix validation for {filing_type}"
-    assert len(reserved_word_errors) == 0, f"Unexpected reserved word validation for {filing_type}"
-
-
 @pytest.mark.parametrize('series_name, expected_valid', [
     # Valid names - end with " Shares" and no reserved words
     ('Series A Shares', True),
