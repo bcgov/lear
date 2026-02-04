@@ -45,6 +45,11 @@ from .bp import bp
 @jwt.requires_auth
 def get_businesses(identifier: str):
     """Return a JSON object with meta information about the Service."""
+    if str(request.args.get("slim", None)).lower() == "true":
+        # getting all business info is expensive so returning the slim version is desirable for some flows
+        # - (i.e. business/person search updates)
+        return get_businesses_public(identifier, True)
+
     if identifier.startswith("T"):
         return {"message": babel("No information on temp registrations.")}, 200
 
@@ -52,15 +57,6 @@ def get_businesses(identifier: str):
 
     if not business:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
-
-    # getting all business info is expensive so returning the slim version is desirable for some flows
-    # - (i.e. business/person search updates)
-    if str(request.args.get("slim", None)).lower() == "true":
-        business_json = business.json(slim=True)
-        # need to add the alternateNames array here because it is not a part of slim JSON
-        business_json["alternateNames"] = business.get_alternate_names()
-
-        return jsonify(business=business_json)
 
     # check authorization if required
     if flags.is_on("enable-auth-v2-business") and not authorized(identifier, jwt, action=["view"]):
@@ -109,6 +105,32 @@ def get_businesses(identifier: str):
             any(str(org.get("id")) == q_account for org in orgs)
         ):
             business_json["accountId"] = q_account
+
+    return jsonify(business=business_json)
+
+
+@bp.route("/<string:identifier>/public", methods=["GET"])
+@cross_origin(origin="*")
+@jwt.requires_auth
+def get_businesses_public(identifier: str, slim = False):
+    """Return a JSON object with public meta information about the business."""
+    if identifier.startswith("T"):
+        return {"message": babel("No information on temp registrations.")}, 200
+
+    business = Business.find_by_identifier(identifier)
+
+    if not business:
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
+
+    business_json = business.json(slim=True)
+    # add extras here that are not a part of the initial slim JSON
+    business_json["alternateNames"] = business.get_alternate_names()
+
+    if slim or str(request.args.get("slim", None)).lower() == "true":
+        return jsonify(business=business_json)
+
+    # NOTE: warnings can take longer to process which is why its not returned in the slim business call
+    business_json["warnings"] = check_warnings(business)
 
     return jsonify(business=business_json)
 
