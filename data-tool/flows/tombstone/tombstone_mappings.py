@@ -480,6 +480,7 @@ SKIPPED_EVENT_FILE_TYPES = [
     'TRESP_COUTI',
     # Others
     'FILE_COGS1',
+    'FILE_XREFN'
     # TODO: decide on the final list
 ]
 
