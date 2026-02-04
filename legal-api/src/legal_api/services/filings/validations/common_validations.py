@@ -202,7 +202,7 @@ def _class_name_has_reserved_words(share_name: str) -> bool:
     return any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words)
 
 
-def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912 PLR0915
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912
     """Validate a wellformed share structure."""
     msg = []
 

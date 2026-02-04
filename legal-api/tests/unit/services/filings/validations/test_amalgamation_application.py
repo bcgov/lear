@@ -382,236 +382,236 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
     'class_name_2,series_name_2,'
     'expected_code, expected_msg',
     [
-        ('SUCCESS', 'BEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'BEN', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'BEN', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'BEN', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'BEN', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'BEN', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'BEN', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'BEN', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'BEN',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'BEN',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'BEN',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/amalgamationApplication/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'BEN',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/amalgamationApplication/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'BEN',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'BEN',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
             HTTPStatus.BAD_REQUEST, [{
                 'error':
-                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+                'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
                 'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
             }]),
-        ('SUCCESS', 'BC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'BC', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'BC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'BC', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'BC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'BC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'BC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'BC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'BC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'BC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BC',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'BC',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/amalgamationApplication/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'BC',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/amalgamationApplication/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'BC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'BC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error':
-             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
-        ('SUCCESS', 'ULC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'ULC', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'ULC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'ULC', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'ULC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'ULC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'ULC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'ULC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'ULC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'ULC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'ULC',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'ULC',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/amalgamationApplication/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'ULC',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/amalgamationApplication/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'ULC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'ULC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error':
-             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
-        ('SUCCESS', 'CC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CC', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CC', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'CC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'CC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'CC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'CC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CC',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'CC',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/amalgamationApplication/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'CC',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/amalgamationApplication/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'CC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'CC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error':
-             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/0/maxNumberOfShares'
          }])
     ])
@@ -662,6 +662,9 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
     # validate outcomes
     if expected_code:
         assert err.code == expected_code
+        # print exptected and actual for easier debugging
+        print(f'Expected msg: {expected_msg}')
+        print(f'Actual msg: {err.msg}')
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None

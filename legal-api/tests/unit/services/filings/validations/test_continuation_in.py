@@ -403,236 +403,236 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
     'class_name_2,series_name_2,'
     'expected_code, expected_msg',
     [
-        ('SUCCESS', 'CBEN', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CBEN', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CBEN', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CBEN', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CBEN', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'CBEN', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'CBEN', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'CBEN', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'CBEN',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CBEN',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CBEN',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'CBEN',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/continuationIn/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'CBEN',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/continuationIn/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'CBEN',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'CBEN',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
             HTTPStatus.BAD_REQUEST, [{
                 'error':
-                'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+                'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
                 'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
             }]),
-        ('SUCCESS', 'C', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'C', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'C', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'C', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'C', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'C', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'C', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'C', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'C',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'C',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'C',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'C',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/continuationIn/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'C',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/continuationIn/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'C',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'C',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error':
-             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }]),
-        ('SUCCESS', 'CUL', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CUL', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CUL', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CUL', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CUL', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'CUL', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'CUL', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'CUL', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'CUL',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CUL',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CUL',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'CUL',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/continuationIn/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'CUL',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/continuationIn/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'CUL',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'CUL',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error':
-             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }]),
-        ('SUCCESS', 'CCC', 'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CCC', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CCC', 'Share Class 1', False, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+        ('SUCCESS', 'CCC', 'Class 1 Shares', False, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None, None, None),
-        ('SUCCESS', 'CCC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
+        ('SUCCESS', 'CCC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          None, None, None, None),
-        ('SUCCESS-CLASS2', 'CCC', 'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', None, None, None),
+        ('SUCCESS-CLASS2', 'CCC', 'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', None, None, None),
         ('FAIL-CLASS2', 'CCC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 1', None,
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CCC',
-         'Share Class 1', False, None, False, None, None, 'Share Series 1', False, None,
-         'Share Class 2', 'Share Series 1',
+         'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
+         'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in a share class or series.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CCC',
-         'Share Class 1', True, None, True, 0.875, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must provide value for maximum number of shares',
+             'error': 'Share class Class 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/maxNumberOfShares/'
          }]),
         ('FAIL_INVALID_CURRENCY', 'CCC',
-         'Share Class 1', True, 5000, True, 0.875, None, 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, 0.875, None, 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify currency',
+             'error': 'Share class Class 1 Shares must specify currency',
              'path': '/filing/continuationIn/shareClasses/0/currency/'
          }]),
         ('FAIL_INVALID_PAR_VALUE', 'CCC',
-         'Share Class 1', True, 5000, True, None, 'CAD', 'Share Series 1', True, 1000,
+         'Class 1 Shares', True, 5000, True, None, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Share Class 1 must specify par value',
+             'error': 'Share class Class 1 Shares must specify par value',
              'path': '/filing/continuationIn/shareClasses/0/parValue/'
          }]),
         ('FAIL_INVALID_SERIES_MAX_SHARES', 'CCC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, None,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, None,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Share Series 1 must provide value for maximum number of shares',
+             'error': 'Share series Series 1 Shares must provide value for maximum number of shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }]),
         ('FAIL_SERIES_SHARES_EXCEEDS_CLASS_SHARES', 'CCC',
-         'Share Class 1', True, 5000, True, 0.875, 'CAD', 'Share Series 1', True, 10000,
+         'Class 1 Shares', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 10000,
          None, None,
          HTTPStatus.BAD_REQUEST, [{
              'error':
-             'Series Share Series 1 share quantity must be less than or equal to that of its class Share Class 1',
+             'Series Series 1 Shares share quantity must be less than or equal to that of its class Class 1 Shares',
              'path': '/filing/continuationIn/shareClasses/0/series/0/maxNumberOfShares'
          }])
     ])
@@ -660,7 +660,7 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
     share_structure = filing['filing']['continuationIn']['shareStructure']
     share_structure['shareClasses'].append({
         'id': 2,
-        'name': 'Share Class 2',
+        'name': 'Class 2 Shares',
         'priority': 1,
         'hasMaximumShares': False,
         'maxNumberOfShares': None,
