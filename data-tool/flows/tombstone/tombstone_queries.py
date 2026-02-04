@@ -712,6 +712,7 @@ def get_filings_query(corp_num):
                  left outer join cont_out co on co.start_event_id = e.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
+            and not (e.event_type_cd = 'CONVNC' and cn_old.corp_name is null and cn_new.corp_name is null)
 --          and e.corp_num = 'BC0068889'
 --          and e.corp_num = 'BC0449924'  -- AR, ADCORP
 --        and e.trigger_dts is not null
