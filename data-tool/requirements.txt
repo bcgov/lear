@@ -66,6 +66,6 @@ psycopg2==2.9.9
 nest_asyncio
 asyncio-nats-client==0.11.4
 asyncio-nats-streaming==0.4.0
-protobuf==3.15.8
+protobuf==5.29.6
 requests==2.25.1
 oracledb==3.1.1
