@@ -662,9 +662,6 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
     # validate outcomes
     if expected_code:
         assert err.code == expected_code
-        # print exptected and actual for easier debugging
-        print(f'Expected msg: {expected_msg}')
-        print(f'Actual msg: {err.msg}')
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None

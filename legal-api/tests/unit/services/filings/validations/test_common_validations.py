@@ -1410,7 +1410,7 @@ def test_share_structure_empty_share_classes_for_ia(session):
 
     assert result is not None
     assert len(result) == 1
-    assert result[0]['error'] == 'A company must have least one Class of Shares.'
+    assert result[0]['error'] == 'A company must have at least one Class of Shares.'
     assert result[0]['path'] == '/filing/incorporationApplication/shareStructure/shareClasses'
 
 
