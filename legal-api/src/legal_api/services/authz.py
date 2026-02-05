@@ -153,7 +153,7 @@ def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
     return bool(jwt.validate_roles(roles))
 
 
-def get_allowable_filings_dict():
+def get_allowable_filings_dict(is_authorization: bool = False):
     """Return dictionary containing rules for when filings are allowed."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -668,6 +668,30 @@ def get_allowable_filings_dict():
             else:
                 del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type]
 
+    # Remove some alteration blockers when authorization is not required
+    if not is_authorization:
+        for user_type_dict in allowable_filings_dict.values():
+            alteration_blockers = (
+                user_type_dict
+                    .get(Business.State.ACTIVE, {})
+                    .get("alteration", {})
+                    .get("blockerChecks", {})
+            )
+
+            if not alteration_blockers:
+                continue
+
+            if BusinessBlocker.NOT_IN_GOOD_STANDING in alteration_blockers.get("business", []):
+                alteration_blockers["business"].remove(BusinessBlocker.NOT_IN_GOOD_STANDING)
+
+            if "restoration.limitedRestoration" in alteration_blockers.get("invalidStateFilings", []):
+                alteration_blockers["invalidStateFilings"].remove("restoration.limitedRestoration")
+
+            if "restoration.limitedRestorationExtension" in alteration_blockers.get("invalidStateFilings", []):
+                alteration_blockers["invalidStateFilings"].remove(
+                    "restoration.limitedRestorationExtension"
+                )
+
     return allowable_filings_dict
 
 
@@ -680,6 +704,7 @@ def is_allowed(business: Business, # noqa: PLR0913
                filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
+    is_authorization = True
 
     if filing:
         if filing.status not in [Filing.Status.DRAFT.value,
@@ -693,7 +718,7 @@ def is_allowed(business: Business, # noqa: PLR0913
     # this check is to make sure that amalgamation application is not allowed/authorized with continue in corps
     if filing_type == "amalgamationApplication" and legal_type in ["C", "CBEN", "CUL", "CCC"]:
         return False
-    allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers)
+    allowable_filings = get_allowed_filings(business, state, legal_type, jwt, is_ignore_draft_blockers, is_authorization)
 
     for allowable_filing in allowable_filings:
         if (
@@ -786,11 +811,13 @@ def get_could_file(legal_type: str,
     return could_filing_types
 
 
-def get_allowed_filings(business: Business,
+def get_allowed_filings(business: Business,   # noqa: PLR0913
                         state: Business.State,
                         legal_type: str,
                         jwt: JwtManager,
-                        is_ignore_draft_blockers: bool = False):
+                        is_ignore_draft_blockers: bool = False,
+                        is_authorization: bool = False
+                        ):
     """Get allowed type of filing types for the current user."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -806,7 +833,7 @@ def get_allowed_filings(business: Business,
 
     # doing this check up front to cache result
     business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
-    allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
+    allowable_filings = get_allowable_filings_dict(is_authorization).get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
     for allowable_filing_key, allowable_filing_value in allowable_filings.items():
