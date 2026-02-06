@@ -106,6 +106,39 @@ CHANGE_OF_LIQUIDATORS_INTENT = {
     }
 }
 
+def _assert_party_roles_addresses(party_roles, party_id, expected_delivery, expected_mailing):
+        assert len(party_roles) == 2
+
+        for role in party_roles:
+            if role.party_id == party_id:
+                delivery = role.party.delivery_address
+                mailing = role.party.mailing_address
+                
+                assert delivery.address_type == 'delivery'
+                assert delivery.street == expected_delivery['streetAddress']
+                
+                assert mailing.address_type == 'mailing'
+                assert mailing.street == expected_mailing['streetAddress']
+                return
+    
+def _assert_office_addresses(offices, expected_office):
+    assert len(offices) == 2
+
+    has_liquidation_office = False
+    for office in offices:
+        if office.office_type == OfficeType.LIQUIDATION:
+            has_liquidation_office = True
+            officeAddresses: list[Address] = office.addresses.all()
+            assert len(officeAddresses) == 2
+            expected_delivery_street = expected_office['deliveryAddress']['streetAddress']
+            expected_mailing_street = expected_office['mailingAddress']['streetAddress']
+            for address in officeAddresses:
+                if address.address_type == Address.DELIVERY:
+                    assert address.street == expected_delivery_street
+                else:
+                    assert address.address_type == Address.MAILING
+                    assert address.street == expected_mailing_street
+    assert has_liquidation_office
 
 def test_process_col_filing(app, session, mocker):
     """Assert that all COL filings can be applied to the model correctly."""
@@ -223,11 +256,9 @@ def test_process_col_filing(app, session, mocker):
         else:
             assert role.party_id == party_id_2
             assert role.cessation_date is None
-    
-    # Test change address liquidators
 
-    new_address_delivery = {
-        'streetAddress': 'Changed Delivery',
+    # Test change address liquidators - relationships and offices submitted
+    base_address = {
         'streetAddressAdditional': '',
         'addressCity': 'Vancouver',
         'addressRegion': 'BC',
@@ -235,24 +266,12 @@ def test_process_col_filing(app, session, mocker):
         'postalCode': 'V0N4Y8',
         'deliveryInstructions': ''
     }
-    new_address_mailing = {
-        'streetAddress': 'Changed Mailing',
-        'streetAddressAdditional': '',
-        'addressCity': 'Vancouver',
-        'addressRegion': 'BC',
-        'addressCountry': 'CA',
-        'postalCode': 'V0N4Y8',
-        'deliveryInstructions': ''
-    }
+
+    new_address_delivery = {**base_address, 'streetAddress': 'Changed Delivery'}
+    new_address_mailing  = {**base_address, 'streetAddress': 'Changed Mailing'}
     new_office = {
-        'deliveryAddress': {
-            **new_address_delivery,
-            'streetAddress': 'Changed Office Delivery',
-        },
-        'mailingAddress': {
-            **new_address_mailing,
-            'streetAddress': 'Changed Office Mailing',
-        }
+        'deliveryAddress': {**base_address, 'streetAddress': 'Changed Office Delivery'},
+        'mailingAddress':  {**base_address, 'streetAddress': 'Changed Office Mailing'}
     }
     filing['filing']['changeOfLiquidators'] = {
         'type': 'changeAddressLiquidator',
@@ -293,56 +312,16 @@ def test_process_col_filing(app, session, mocker):
     drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
-
-    assert len(party_roles) == 2
-
-    for role in party_roles:
-        if role.party_id == party_id_2:
-            delivery_address: Address = role.party.delivery_address
-            mailing_address: Address = role.party.mailing_address
-            assert delivery_address.address_type == 'delivery'
-            assert delivery_address.street == new_address_delivery['streetAddress']
-            assert mailing_address.address_type == 'mailing'
-            assert mailing_address.street == new_address_mailing['streetAddress']
+    _assert_party_roles_addresses(party_roles, party_id_2, new_address_delivery, new_address_mailing)
     
     offices: list[Office] = business.offices.all()
-    assert len(offices) == 2
-    has_liquidation_office = False
-    for office in offices:
-        if office.office_type == OfficeType.LIQUIDATION:
-            has_liquidation_office = True
-            officeAddresses: list[Address] = office.addresses.all()
-            assert len(officeAddresses) == 2
-            expected_delivery_street = new_office['deliveryAddress']['streetAddress']
-            expected_mailing_street = new_office['mailingAddress']['streetAddress']
-            for address in officeAddresses:
-                if address.address_type == Address.DELIVERY:
-                    assert address.street == expected_delivery_street
-                else:
-                    assert address.address_type == Address.MAILING
-                    assert address.street == expected_mailing_street
-    assert has_liquidation_office
+    _assert_office_addresses(offices, new_office)
     
     # Test change address liquidators - no offices submitted
 
-    new_address_delivery_no_offices = {
-        'streetAddress': 'Changed Delivery No Offices',
-        'streetAddressAdditional': '',
-        'addressCity': 'Vancouver',
-        'addressRegion': 'BC',
-        'addressCountry': 'CA',
-        'postalCode': 'V0N4Y8',
-        'deliveryInstructions': ''
-    }
-    new_address_mailing_no_offices = {
-        'streetAddress': 'Changed Mailing No Offices',
-        'streetAddressAdditional': '',
-        'addressCity': 'Vancouver',
-        'addressRegion': 'BC',
-        'addressCountry': 'CA',
-        'postalCode': 'V0N4Y8',
-        'deliveryInstructions': ''
-    }
+    new_address_delivery_no_offices = {**base_address, 'streetAddress': 'Changed Delivery No Offices'}
+    new_address_mailing_no_offices  = {**base_address, 'streetAddress': 'Changed Mailing No Offices'}
+    
     filing['filing']['changeOfLiquidators'] = {
         'type': 'changeAddressLiquidator',
         'relationships': [
@@ -381,38 +360,57 @@ def test_process_col_filing(app, session, mocker):
     drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
-
-    assert len(party_roles) == 2
-
-    for role in party_roles:
-        if role.party_id == party_id_2:
-            delivery_address: Address = role.party.delivery_address
-            mailing_address: Address = role.party.mailing_address
-            assert delivery_address.address_type == 'delivery'
-            assert delivery_address.street == new_address_delivery_no_offices['streetAddress']
-            assert mailing_address.address_type == 'mailing'
-            assert mailing_address.street == new_address_mailing_no_offices['streetAddress']
+    _assert_party_roles_addresses(party_roles, party_id_2, new_address_delivery_no_offices, new_address_mailing_no_offices)
     
-    # Will still have offices from the previous changeAddressLiquidator filing
     offices: list[Office] = business.offices.all()
-    assert len(offices) == 2
-    has_liquidation_office = False
-    for office in offices:
-        if office.office_type == OfficeType.LIQUIDATION:
-            has_liquidation_office = True
-            officeAddresses: list[Address] = office.addresses.all()
-            assert len(officeAddresses) == 2
-            expected_delivery_street = new_office['deliveryAddress']['streetAddress']
-            expected_mailing_street = new_office['mailingAddress']['streetAddress']
-            for address in officeAddresses:
-                if address.address_type == Address.DELIVERY:
-                    assert address.street == expected_delivery_street
-                else:
-                    assert address.address_type == Address.MAILING
-                    assert address.street == expected_mailing_street
-    assert has_liquidation_office
+    # Will still have offices from the previous changeAddressLiquidator filing
+    _assert_office_addresses(offices, new_office)
+
+    # Test change address liquidators - no relationships submitted
+
+    new_office_no_rels = {
+        'deliveryAddress': {**base_address, 'streetAddress': 'Changed Delivery No Relationships'},
+        'mailingAddress': {**base_address, 'streetAddress': 'Changed Mailing No Relationships'}
+    }
+
+    filing['filing']['changeOfLiquidators'] = {
+        'type': 'changeAddressLiquidator',
+        'offices': {
+            'liquidationRecordsOffice': new_office_no_rels
+        },
+        # No relationships in payload
+        # 'relationships': []
+    }
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    effective_date = datetime(2025, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
+    filing_rec = create_filing(payment_id, filing, business.id)
+    filing_rec.effective_date = effective_date
+    filing_rec.save()
     
+    # setup
+    filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+
+    # TEST
+    process_filing(filing_msg)
+
+    # Get modified data
+    change_address_filing: Filing = Filing.find_by_id(filing_rec.id)
+    business: Business = Business.find_by_internal_id(business.id)
+
+    # assert changes
+    assert change_address_filing.transaction_id
+    assert change_address_filing.business_id == business.id
+    assert change_address_filing.status == Filing.Status.COMPLETED.value
+    check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
+    drs_publish_mock.reset_mock()
+
+    # Will still have party address values from the previous changeAddressLiquidator filing
+    party_roles: list[PartyRole] = business.party_roles.all()
+    _assert_party_roles_addresses(party_roles, party_id_2, new_address_delivery_no_offices, new_address_mailing_no_offices)
     
+    offices: list[Office] = business.offices.all()
+    _assert_office_addresses(offices, new_office_no_rels)
+
     # Test appoint liquidators
     new_relationship = {
         'entity': {

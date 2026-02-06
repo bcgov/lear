@@ -179,7 +179,7 @@ def create_relationships(relationships: list[dict],
 
 
 def cease_relationships(
-    relationships: dict,
+    relationships: list[dict],
     business: Business,
     allowed_roles: list[str],
     date_time: datetime.datetime | None = None):
