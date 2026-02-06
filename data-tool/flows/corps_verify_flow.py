@@ -11,7 +11,6 @@ from sqlalchemy import Engine, text, bindparam
 # TODO: adjust clause in different phases
 where_clause = """
 1 = 1
-and corp_num in ('C1510051', 'C1492359', 'C1482758', 'C1478508', 'C1468987')
 """
 
 colin_cnt_query = f"""
