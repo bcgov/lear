@@ -49,7 +49,7 @@ from business_filer.filing_processors.filing_components.relationships import (
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfLiquidators onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
-    relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships")
+    relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships", [])
     offices = filing_json["filing"]["changeOfLiquidators"].get("offices", {})
 
     if filing_rec.filing_sub_type == "intentToLiquidate":
