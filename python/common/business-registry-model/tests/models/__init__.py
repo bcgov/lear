@@ -360,7 +360,7 @@ def factory_share_class(business_identifier: str):
     """Create a share class."""
     business = factory_business(business_identifier)
     share_class = ShareClass(
-        name='Share Class 1',
+        name='Class 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=1000,
@@ -371,7 +371,7 @@ def factory_share_class(business_identifier: str):
         business_id=business.id
     )
     share_series_1 = ShareSeries(
-        name='Share Series 1',
+        name='Series 1 Shares',
         priority=1,
         max_share_flag=True,
         max_shares=500,

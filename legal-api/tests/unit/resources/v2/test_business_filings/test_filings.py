@@ -605,6 +605,32 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
     assert not rv.json.get('errors')
 
 
+@pytest.mark.parametrize('only_validate', [True, False])
+def test_post_cod_with_empty_directors_array(session, client, jwt, only_validate):
+    """Assert that a change of directors filing with empty directors array fails validation."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    cod = copy.deepcopy(FILING_HEADER)
+    cod['filing']['header']['name'] = 'changeOfDirectors'
+    cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    # Set empty directors array - this should fail validation due to minItems: 1 in schema
+    cod['filing']['changeOfDirectors']['directors'] = []
+
+    url = f'/api/v2/businesses/{identifier}/filings'
+    if only_validate:
+        url += '?only_validate=true'
+
+    rv = client.post(url, json=cod, headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    # Should fail validation with BAD_REQUEST or UNPROCESSABLE_ENTITY
+    assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNPROCESSABLE_ENTITY)
+    assert rv.json.get('errors')
+    # The error should mention directors array being empty or having minimum items requirement
+    errors_str = str(rv.json['errors'])
+    assert 'directors' in errors_str.lower() or 'minItems' in errors_str or 'minimum' in errors_str.lower()
+
+
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
