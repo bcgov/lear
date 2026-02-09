@@ -480,8 +480,9 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
     name='Corps-Tombstone-Migrate-Flow',
     log_prints=True,
     persist_result=False,
+    # Parallel Migration - Setup 
     # use ConcurrentTaskRunner when using work pool based deployments
-    # task_runner=ConcurrentTaskRunner(max_workers=100)
+    # task_runner=ConcurrentTaskRunner(max_workers=50)
     # task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 3, "threads_per_worker": 2})
 )
 def tombstone_flow():
@@ -507,6 +508,15 @@ def tombstone_flow():
 
         # Calculate max corps to initialize
         max_corps = min(total, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
+
+        # Parallel Migration - Setup 
+        #########################################################################################
+        # Reservation Logic for All prallel flows to distribute work
+        # max_corps_per_flow = min(total, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
+        # reservation_limit = batch_size * 3
+        # max_corps = min(total, min(max_corps_per_flow, reservation_limit))
+        #########################################################################################
+
         print(f'👷 max_corps: {max_corps}')
         reserved_corps = reserve_unprocessed_corps(config, processing_service, flow_run_id, max_corps)
         print(f'👷 Reserved {reserved_corps} corps for processing')
@@ -686,5 +696,5 @@ if __name__ == "__main__":
     #     name="tombstone-deployment",
     #     tags=["tombstone-migration"],
     #     work_pool_name="tombstone-pool",
-    #     interval=timedelta(seconds=70)  # Run every x seconds
+    #     interval=timedelta(seconds=40)  # Run every x seconds
     # )
