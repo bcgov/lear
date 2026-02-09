@@ -120,9 +120,9 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
     def name(self) -> str:
         """Return the full name of the party for comparison."""
         if self.party_type == Party.PartyTypes.PERSON.value:
-            if self.middle_initial:
-                return ' '.join((self.first_name, self.middle_initial, self.last_name)).strip().upper()
-            return ' '.join((self.first_name, self.last_name)).strip().upper()
+            return " ".join(
+                [x.strip() for x in [self.first_name, self.middle_initial, self.last_name] if x and x.strip()]
+            ).upper()
         return self.organization_name.strip().upper()
 
     @property
