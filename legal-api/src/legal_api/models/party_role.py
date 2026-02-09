@@ -116,10 +116,8 @@ class PartyRole(db.Model, Versioned):
         search_name = ""
         if org_name:
             search_name = org_name
-        elif middle_initial:
-            search_name = " ".join((first_name.strip(), middle_initial.strip(), last_name.strip()))
         else:
-            search_name = " ".join((first_name.strip(), last_name.strip()))
+            search_name = " ".join([x.strip() for x in [first_name, middle_initial, last_name] if x and x.strip()])
 
         for role in party_roles:
             # the name of the party for each role
