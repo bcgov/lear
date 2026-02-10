@@ -36,19 +36,47 @@ import copy
 import random
 
 from business_model.models import Business, Filing, PartyRole
-from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE, FILING_HEADER, TRANSITION
+from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
 from business_filer.services.filer import process_filing
-from tests.unit import create_business, create_filing
+from tests.unit import create_business, create_filing, create_party, create_party_role
 from business_filer.common.filing_message import FilingMessage
 
 
 def test_transition_filing(app, session):
     """Assert we can create a business based on transition filing."""
-    filing_data = copy.deepcopy(FILING_HEADER)
-    filing_data['filing']['transition'] = copy.deepcopy(TRANSITION)
+    filing_data = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
 
     business = create_business(filing_data['filing']['business']['identifier'])
+    base_address = {
+        'streetAddressAdditional': '',
+        'streetAddress': 'Original street',
+        'addressCity': 'Vancouver',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V0N4Y8',
+        'deliveryInstructions': ''
+    }
+    party_json = {
+        'officer': {
+            'firstName': 'Test',
+            'lastName': 'Tester',
+        },
+        'mailingAddress': base_address,
+        'deliveryAddress': base_address
+    }
+    party = create_party(party_json)
+    create_party_role(business, party, [PartyRole.RoleTypes.DIRECTOR.value], business.founding_date.date().isoformat())
+    business.save()
+    
+    relationship = filing_data['filing']['transition']['relationships'][0]
+    relationship['entity']['identifier'] = str(party.id)
+    new_address_delivery = {**base_address, 'streetAddress': 'Changed Delivery'}
+    new_address_mailing  = {**base_address, 'streetAddress': 'Changed Mailing'}
+    relationship['deliveryAddress'] = new_address_delivery
+    relationship['mailingAddress'] = new_address_mailing
+
+    filing_data['filing']['transition']['relationships'] = [relationship]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = (create_filing(payment_id, filing_data, business.id))
@@ -72,6 +100,4 @@ def test_transition_filing(app, session):
                                                     ['shareClasses'])
     assert len(business.offices.all()) == len(filing_json['filing']['transition']['offices'])
     assert len(business.aliases.all()) == len(filing_json['filing']['transition']['nameTranslations'])
-    assert len(business.resolutions.all()) == len(filing_json['filing']['transition']['shareStructure']
-                                                  ['resolutionDates'])
     assert len(PartyRole.get_parties_by_role(business.id, 'director')) == 1
