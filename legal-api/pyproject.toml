@@ -174,7 +174,7 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-# addopts = "--cov=src/legal_api"
+addopts = "--cov=src/legal_api"
 python_files = [
    "test*.py"
 ]
