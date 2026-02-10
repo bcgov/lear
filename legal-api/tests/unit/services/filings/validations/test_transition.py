@@ -162,8 +162,8 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
         filing_share['series'] = []
 
     transition['shareStructure']['shareClasses'] = [filing_share]
+
     # perform test
-    print(transition['offices'])
     err = validate(business, filing)
     if err:
         print(test_name, err.msg)
