@@ -2165,11 +2165,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-<<<<<<< Updated upstream
-version = "2.18.59"
-=======
 version = "2.18.62"
->>>>>>> Stashed changes
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
