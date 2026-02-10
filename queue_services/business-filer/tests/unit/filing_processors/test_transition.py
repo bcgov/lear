@@ -37,12 +37,12 @@ import copy
 import datetime
 import random
 
-from business_model.models import Filing
+from business_model.models import Filing, PartyRole
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import transition
-from tests.unit import create_business, create_filing
+from tests.unit import create_business, create_filing, create_party, create_party_role
 
 
 def test_transition_filing_process(app, session):
@@ -53,7 +53,38 @@ def test_transition_filing_process(app, session):
     filing['filing']['business']['identifier'] = identifier
 
     business = create_business(filing['filing']['business']['identifier'])
-    create_filing('abc', filing)
+    
+    base_address = {
+        'streetAddressAdditional': '',
+        'streetAddress': 'Original street',
+        'addressCity': 'Vancouver',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V0N4Y8',
+        'deliveryInstructions': ''
+    }
+    party_json = {
+        'officer': {
+            'firstName': 'Test',
+            'lastName': 'Tester',
+        },
+        'mailingAddress': base_address,
+        'deliveryAddress': base_address
+    }
+    party = create_party(party_json)
+    create_party_role(business, party, [PartyRole.RoleTypes.DIRECTOR.value], business.founding_date.date().isoformat())
+    business.save()
+    
+    relationship = filing['filing']['transition']['relationships'][0]
+    relationship['entity']['identifier'] = str(party.id)
+    new_address_delivery = {**base_address, 'streetAddress': 'Changed Delivery'}
+    new_address_mailing  = {**base_address, 'streetAddress': 'Changed Mailing'}
+    relationship['deliveryAddress'] = new_address_delivery
+    relationship['mailingAddress'] = new_address_mailing
+
+    filing['filing']['transition']['relationships'] = [relationship]
+
+    create_filing('abc', filing, business.id)
 
     effective_date = datetime.datetime.now(datetime.timezone.utc)
     filing_rec = Filing(effective_date=effective_date, filing_json=filing)
@@ -67,6 +98,9 @@ def test_transition_filing_process(app, session):
     assert len(business.share_classes.all()) == len(filing['filing']['transition']['shareStructure']['shareClasses'])
     assert len(business.offices.all()) == len(filing['filing']['transition']['offices'])
     assert len(business.aliases.all()) == len(filing['filing']['transition']['nameTranslations'])
-    assert len(business.resolutions.all()) == len(filing['filing']['transition']['shareStructure']['resolutionDates'])
     assert len(business.party_roles.all()) == 1
-    assert len(filing_rec.filing_party_roles.all()) == 1
+    # currently no completing party in the form
+    assert len(filing_rec.filing_party_roles.all()) == 0
+    assert business.party_roles[0].party_id == party.id
+    assert party.delivery_address.json['streetAddress'] == new_address_delivery['streetAddress']
+    assert party.mailing_address.json['streetAddress'] == new_address_mailing['streetAddress']

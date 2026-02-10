@@ -38,8 +38,8 @@ from business_model.models import Business, Filing
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import aliases, shares
-from business_filer.filing_processors.filing_components.offices import update_offices
-from business_filer.filing_processors.filing_components.parties import update_parties
+from business_filer.filing_processors.filing_components.offices import update_or_create_offices
+from business_filer.filing_processors.filing_components.relationships import update_relationship_addresses
 
 
 def process(business: Business, filing_rec: Filing, filing: dict, filing_meta: FilingMeta):
@@ -54,13 +54,13 @@ def process(business: Business, filing_rec: Filing, filing: dict, filing_meta: F
     # Initial insert of the business record
     business.restriction_ind = transition_filing.get("hasProvisions")
 
-    if offices := transition_filing["offices"]:
-        update_offices(business, offices)
+    if offices := transition_filing.get("offices"):
+        update_or_create_offices(business, offices)
 
-    if parties := transition_filing.get("parties"):
-        update_parties(business, parties, filing_rec)
+    if relationships := transition_filing.get("relationships"):
+        update_relationship_addresses(relationships, business)
 
-    if share_structure := transition_filing["shareStructure"]:
+    if share_structure := transition_filing.get("shareStructure"):
         shares.update_share_structure(business, share_structure)
 
     if name_translations := transition_filing.get("nameTranslations"):
