@@ -125,6 +125,7 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
         filing_relationship['deliveryAddress'] = INVALID_ADDRESS_NO_POSTAL_CODE
         filing_relationship['mailingAddress'] = VALID_ADDRESS_BC
 
+    print(relationship)
     if relationship['has_existing_id']:
         officer_dict = {
             'firstName': 'Test',
@@ -140,11 +141,13 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
             founding_date,
             None,
             PartyRole.RoleTypes.DIRECTOR)
-
+        print(role)
         business.party_roles.append(role)
         business.save()
-
+        print(business.party_roles)
         filing_relationship['entity']['identifier'] = str(role.id if relationship['valid_id'] else role.id + 1)
+        print(role.id)
+        print(filing_relationship['entity']['identifier'])
 
     transition['relationships'] = [filing_relationship]
     
