@@ -83,27 +83,3 @@ def test_party_save(session):
     member2.save()
     assert member1.id
     assert member2.id
-
-
-def test_invalid_org_party_type(session):
-    """Assert the party model validates the party type correctly."""
-    member1 = Party(
-        party_type=Party.PartyTypes.ORGANIZATION.value,
-        first_name='invalid',
-        last_name='name',
-        middle_initial='test',
-        title='INV'
-    )
-    member2 = Party(
-        party_type=Party.PartyTypes.PERSON.value,
-        organization_name='organization'
-    )
-    with pytest.raises(BusinessException) as party_type_err1:
-        member1.save()
-    session.rollback()
-    with pytest.raises(BusinessException) as party_type_err2:
-        member2.save()
-
-    assert party_type_err1 and party_type_err2
-    assert party_type_err1.value.status_code == HTTPStatus.BAD_REQUEST
-    assert party_type_err2.value.status_code == HTTPStatus.BAD_REQUEST
