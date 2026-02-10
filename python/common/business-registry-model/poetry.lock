@@ -1472,7 +1472,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.53"
+version = "2.18.56"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -1490,8 +1490,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.56"
-resolved_reference = "f08dd570ad603705c3e0312367543452de3a8b63"
+reference = "2.18.62"
+resolved_reference = "1cea81cf14104fb7d4989169236eff13b3df16c4"
 
 [[package]]
 name = "requests"
@@ -2085,4 +2085,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "d4a720729f920506912cdc28e9d620734801105710cfd7c6645976deb017edab"
+content-hash = "12f11946bf62a6bf3d1a21472a765fe85e24629b2811aa213527d1e88d6fb22e"
