@@ -681,7 +681,7 @@ def validate_offices(filing_json: dict, filing_type: str, allowed_types: list[st
             
             msg.extend(validate_addresses(value, f"{offices_path}/{key}", bc_req))
 
-    if missing_types := [office_type for office_type in required_types if office_type not in offices_dict.keys()]:
+    if missing_types := [office_type for office_type in required_types if office_type not in offices_dict]:
         msg.append({"error": f"Missing required offices {missing_types}.",
                     "path": f"/filing/{filing_type}/offices"})
     return msg

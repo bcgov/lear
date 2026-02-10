@@ -37,7 +37,11 @@ from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships, validate_share_structure
+from legal_api.services.filings.validations.common_validations import (
+    validate_offices,
+    validate_relationships,
+    validate_share_structure,
+)
 
 
 def validate(business: Business, filing_json: dict) -> Optional[Error]:
@@ -53,7 +57,7 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
                                       False,
                                       True))
 
-    office_types = ['registeredOffice', 'recordsOffice']
+    office_types = ["registeredOffice", "recordsOffice"]
     msg.extend(validate_offices(filing_json,
                                 filing_type,
                                 office_types,
