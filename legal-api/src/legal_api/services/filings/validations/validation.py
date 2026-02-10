@@ -57,6 +57,7 @@ from .registration import validate as registration_validate
 from .restoration import validate as restoration_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
+from .transition import validate as transition_validate
 from .transparency_register import validate as transparency_register_validate
 
 
@@ -229,6 +230,9 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
 
                 elif k == Filing.FILINGS["putBackOff"].get("name"):
                     err = put_back_off_validate(business, filing_json)
+                
+                elif k == Filing.FILINGS["transition"].get("name"):
+                    err = transition_validate(business, filing_json)
 
                 elif k == Filing.FILINGS["transparencyRegister"].get("name"):
                     err = transparency_register_validate(filing_json)  # pylint: disable=assignment-from-none

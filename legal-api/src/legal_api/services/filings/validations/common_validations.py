@@ -519,7 +519,7 @@ def validate_relationships( # noqa: PLR0913
         if identifier and not allow_edits:
             msg.append({"error": "Relationship edits are not allowed in this filing.", "path": f"{party_path}/{index}/entity"})
         elif identifier and identifier not in party_ids:
-            msg.append({"error": "Relationship with this identifier does not exist.", "path": f"{party_path}/{index}/entity/identifier"})
+            msg.append({"error": "Relationship with this identifier is not valid for this filing.", "path": f"{party_path}/{index}/entity/identifier"})
         elif not identifier and not allow_new:
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{party_path}/{index}/entity"})
 
@@ -668,8 +668,28 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
     return msg
 
 
+def validate_offices(filing_json: dict, filing_type: str, allowed_types: list[str], required_types: list[str], bc_req: bool) -> list:
+    """Validate offices."""
+    msg = []
+    offices_dict: dict = filing_json["filing"][filing_type]["offices"]
+    offices_path = f"/filing/{filing_type}/offices"
+    for key, value in offices_dict.items():
+        if key not in allowed_types:
+            msg.append({"error": f"Invalid office {key}. Only {allowed_types} are allowed.",
+                        "path": f"/filing/{filing_type}/offices"})
+        else:
+            
+            msg.extend(validate_addresses(value, f"{offices_path}/{key}", bc_req))
+
+    if missing_types := [office_type for office_type in required_types if office_type not in offices_dict.keys()]:
+        msg.append({"error": f"Missing required offices {missing_types}.",
+                    "path": f"/filing/{filing_type}/offices"})
+    return msg
+
+
 def validate_offices_addresses(filing_json: dict, filing_type: str) -> list:
     """Validate optional fields in office addresses."""
+    # FUTURE: Update validations using this to use validate_offices instead
     msg = []
     offices_dict = filing_json["filing"][filing_type]["offices"]
     offices_path = f"/filing/{filing_type}/offices"
@@ -690,7 +710,8 @@ def validate_parties_addresses(filing_json: dict, filing_type: str, key: str = "
 
 def validate_addresses(
     addresses: dict,
-    addresses_path: str
+    addresses_path: str,
+    delivery_bc_req = False
 ) -> list:
     """Validate optional fields in addresses."""
     msg = []
@@ -710,6 +731,23 @@ def validate_addresses(
                             "error": _(f"{field} cannot start or end with whitespace."),
                             "path": f"{address_type_path}/{field}"
                         })
+
+            if delivery_bc_req and address_type == Address.JSON_DELIVERY:
+                region = address.get("addressRegion")
+                country = address["addressCountry"]
+
+                if region != "BC":
+                    msg.append({"error": "Address Region must be 'BC'.",
+                                "path": addresses_path})
+
+                try:
+                    country = pycountry.countries.search_fuzzy(country)[0].alpha_2
+                    if country != "CA":
+                        raise LookupError
+                except LookupError:
+                    msg.append({"error": "Address Country must be 'CA'.",
+                                "path": addresses_path})
+
     return msg
 
 
