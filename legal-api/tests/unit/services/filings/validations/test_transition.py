@@ -33,6 +33,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Test Post Restoration Transtion Application validation."""
 import copy
+import random
 from datetime import date
 
 import datedelta
@@ -107,11 +108,12 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
     """Assert that a transition application can be validated."""
     # setup
     now = date.today()
-    identifier = 'BC1234567'
+    identifier = f'BC{random.randint(1000000, 9999999)}'
     founding_date = now - datedelta.YEAR
     business: Business = factory_business(identifier, founding_date, founding_date, Business.LegalTypes.COMP)
 
     filing = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    filing['filing']['header']['date'] = now.isoformat()
     filing['filing']['business']['identifier'] = identifier
     transition = filing['filing']['transition']
 
@@ -125,7 +127,6 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
         filing_relationship['deliveryAddress'] = INVALID_ADDRESS_NO_POSTAL_CODE
         filing_relationship['mailingAddress'] = VALID_ADDRESS_BC
 
-    print(relationship)
     if relationship['has_existing_id']:
         officer_dict = {
             'firstName': 'Test',
@@ -138,16 +139,13 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
             Address.create_address(VALID_ADDRESS_BC),
             Address.create_address(VALID_ADDRESS_BC),
             officer_dict,
-            founding_date,
+            founding_date.isoformat(),
             None,
             PartyRole.RoleTypes.DIRECTOR)
-        print(role)
+
         business.party_roles.append(role)
         business.save()
-        print(business.party_roles)
-        filing_relationship['entity']['identifier'] = str(role.id if relationship['valid_id'] else role.id + 1)
-        print(role.id)
-        print(filing_relationship['entity']['identifier'])
+        filing_relationship['entity']['identifier'] = str(role.party_id if relationship['valid_id'] else role.party_id + 1)
 
     transition['relationships'] = [filing_relationship]
     
