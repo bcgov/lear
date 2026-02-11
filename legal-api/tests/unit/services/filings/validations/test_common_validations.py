@@ -18,8 +18,7 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from legal_api.errors import Error
-from legal_api.models.party import Party
-from legal_api.models.party_role import PartyRole
+from legal_api.models import Business, Party, PartyRole
 from legal_api.services import flags
 from legal_api.services.permissions import PermissionService
 import pytest
@@ -53,6 +52,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_certified_by,
     validate_court_order,
     validate_email,
+    validate_offices,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_party_name,
@@ -102,12 +102,117 @@ VALID_ADDRESS_WHITESPACE = {
     'addressCountry': 'CA'
 }
 
+VALID_ADDRESS_BC = {
+    'streetAddress': 'Valid street',
+    'streetAddressAdditional': 'Suite 200',
+    'addressCity': 'Vancouver',
+    'addressRegion': 'BC',
+    'postalCode': 'V6B 1A1',
+    'addressCountry': 'CA'
+}
+
+VALID_ADDRESS_ON = {
+    'streetAddress': '88 Hawthorne',
+    'addressCity': 'Ottawa',
+    'addressRegion': 'ON',
+    'postalCode': 'K1N 3H9',
+    'addressCountry': 'CA'
+}
+
+VALID_ADDRESS_EX_CA = {
+    'streetAddress': 'Somewhere in the US',
+    'addressCity': 'New York',
+    'addressRegion': 'NY',
+    'postalCode': '10001-1234',
+    'addressCountry': 'US'
+}
+
+VALID_OFFICE = {
+    'deliveryAddress': VALID_ADDRESS_BC,
+    'mailingAddress': VALID_ADDRESS_ON,
+}
+
+VALID_OFFICE_EX_CA = {
+    'deliveryAddress': VALID_ADDRESS_EX_CA,
+    'mailingAddress': VALID_ADDRESS_EX_CA,
+}
+
 WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
     'streetAddress',
     'addressCity',
     'addressCountry',
     'postalCode',
 )
+
+
+@pytest.mark.parametrize('test_name, allowed_types, required_types, bc_req, filing_office_data, expected_errs', [
+    ('no_office_allowed_required_success', [], [], False, {}, []),
+    ('no_office_allowed_required_fail',
+     [],
+     [],
+     False,
+     {'recordsOffice': VALID_OFFICE},
+     [{'error': 'Invalid office recordsOffice. Only [] are allowed.', 'path': '/filing/transition/offices'}]),
+    ('office_required_success',
+     ['registeredOffice'],
+     ['registeredOffice'],
+     False,
+     {'registeredOffice': VALID_OFFICE},
+     []),
+    ('office_required_fail',
+     [],
+     ['registeredOffice'],
+     False,
+     {},
+     [{'error': "Missing required offices ['registeredOffice'].", 'path': '/filing/transition/offices'}]),
+    ('multiple_office_allowed_success',
+     ['registeredOffice', 'recordsOffice'],
+     ['registeredOffice'],
+     False,
+     {'registeredOffice': VALID_OFFICE, 'recordsOffice': VALID_OFFICE},
+     []),
+    ('multiple_office_allowed_fail',
+     ['registeredOffice', 'recordsOffice'],
+     ['registeredOffice'],
+     False,
+     {'registeredOffice': VALID_OFFICE, 'recordsOffice': VALID_OFFICE, 'liquidationRecordsOffice': VALID_OFFICE},
+     [{'error': "Invalid office liquidationRecordsOffice. Only ['registeredOffice', 'recordsOffice'] are allowed.", 'path': '/filing/transition/offices'}]),
+    ('multiple_office_required_success',
+     ['registeredOffice', 'recordsOffice'],
+     ['registeredOffice', 'recordsOffice'],
+     False,
+     {'registeredOffice': VALID_OFFICE, 'recordsOffice': VALID_OFFICE},
+     []),
+    ('multiple_office_required_fail',
+     ['registeredOffice', 'recordsOffice'],
+     ['registeredOffice', 'recordsOffice'],
+     False,
+     {'registeredOffice': VALID_OFFICE},
+     [{'error': "Missing required offices ['recordsOffice'].", 'path': '/filing/transition/offices'}]),
+    ('office_bc_req_success',
+     ['registeredOffice', 'recordsOffice'],
+     ['registeredOffice'],
+     True,
+     {'registeredOffice': VALID_OFFICE},
+     []),
+    ('office_bc_req_fail',
+     ['registeredOffice', 'recordsOffice'],
+     ['registeredOffice'],
+     True,
+     {'registeredOffice': VALID_OFFICE_EX_CA},
+     [{'error': "Address Region must be 'BC'.", 'path': '/filing/transition/offices/registeredOffice'},
+      {'error': "Address Country must be 'CA'.", 'path': '/filing/transition/offices/registeredOffice'}]),
+])
+def test_validate_offices(session, test_name, allowed_types, required_types, bc_req, filing_office_data, expected_errs):
+    """Test offices can be validated as expected."""
+    filing = copy.deepcopy(FILING_HEADER)
+    # NOTE: filing type could be anything for the purposes of this test
+    filing_type = 'transition'
+    filing['filing']['header']['name'] = filing_type
+    filing['filing'][filing_type] = {'offices': copy.deepcopy(filing_office_data)}
+
+    errs = validate_offices(filing, filing_type, allowed_types, required_types, bc_req)
+    assert errs == expected_errs
 
 
 @pytest.mark.parametrize('filing_type, filing_data, office_type', [

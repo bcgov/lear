@@ -31,37 +31,44 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""Validation for the Change of Liquidators filing."""
+"""Validation for the Post Restoration Transition Application filing."""
 from http import HTTPStatus
 from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.models import Business, PartyRole
-from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships
+from legal_api.services.filings.validations.common_validations import (
+    validate_offices,
+    validate_relationships,
+    validate_share_structure,
+)
 
 
 def validate(business: Business, filing_json: dict) -> Optional[Error]:
-    """Validate the Change of Liquidators filing."""
-    filing_type = "changeOfLiquidators"
-    filing_sub_type = filing_json["filing"][filing_type]["type"]
+    """Validate the Post Restoration Transition Application filing."""
+    filing_type = "transition"
 
     msg = []
 
-    if filing_json["filing"][filing_type].get("relationships"):
-        msg.extend(validate_relationships(
-            business,
-            filing_json,
-            filing_type,
-            PartyRole.RoleTypes.LIQUIDATOR,
-            filing_sub_type in ["appointLiquidator", "intentToLiquidate"],
-            filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
-        ))
+    msg.extend(validate_relationships(business,
+                                      filing_json,
+                                      filing_type,
+                                      PartyRole.RoleTypes.DIRECTOR,
+                                      False,
+                                      True))
 
-    if filing_json["filing"][filing_type].get("offices"):
-        allowed_offices = ["liquidationRecordsOffice"] if filing_sub_type in ["intentToLiquidate", "changeAddressLiquidator"] else []
-        required_offices = ["liquidationRecordsOffice"] if filing_sub_type in ["intentToLiquidate"] else []
-        msg.extend(validate_offices(filing_json, filing_type, allowed_offices, required_offices, False))
+    office_types = ["registeredOffice", "recordsOffice"]
+    msg.extend(validate_offices(filing_json,
+                                filing_type,
+                                office_types,
+                                office_types,
+                                True))
+
+    err = validate_share_structure(filing_json, filing_type, business.legal_type)
+    if err:
+        msg.extend(err)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
+
     return None
