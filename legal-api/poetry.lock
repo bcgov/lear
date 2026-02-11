@@ -2165,7 +2165,11 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
+<<<<<<< HEAD
 version = "2.18.59"
+=======
+version = "2.18.62"
+>>>>>>> f5c9f49e (31865 - Update resolution date validation and processing)
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -2183,8 +2187,13 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
+<<<<<<< HEAD
 reference = "2.18.60"
 resolved_reference = "4e355909b8d16237421bf7eb391acd23e037d437"
+=======
+reference = "2.18.62"
+resolved_reference = "1cea81cf14104fb7d4989169236eff13b3df16c4"
+>>>>>>> f5c9f49e (31865 - Update resolution date validation and processing)
 
 [[package]]
 name = "reportlab"
@@ -3086,4 +3095,8 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9.22,<3.10"
+<<<<<<< HEAD
 content-hash = "c256ff2667772a27ed6a47b64355b104f197a99bafe2b441679263fba0674bf4"
+=======
+content-hash = "bbb350d1d3081b4743035ac827680e44de266ed4150b31e115f423ce492d9674"
+>>>>>>> f5c9f49e (31865 - Update resolution date validation and processing)

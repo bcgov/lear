@@ -32,7 +32,9 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
+from legal_api.utils.datetime import date
 from legal_api.utils.datetime import datetime as dt
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 NO_POSTAL_CODE_COUNTRY_CODES = {
     "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
@@ -58,22 +60,58 @@ SHARE_NAME_SUFFIX = " Shares"
 MAX_SHARE_DIGITS = 16
 
 
-def validate_resolution_date_in_share_structure(filing_json, filing_type) -> Optional[dict]:
-    """Has resolution date in share structure when hasRightsOrRestrictions is true."""
+def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
+    """Validate the resolution date of a share structure.
+
+    Rules:
+    - If hasRightsOrRestrictions is true in any share class or series, resolution date is required.
+    - Only one resolution date is permitted.
+    - Resolution date cannot be in the future.
+    - Resolution date cannot be before the business founding date.
+    """
     share_structure = filing_json["filing"][filing_type].get("shareStructure", {})
     share_classes = share_structure.get("shareClasses", [])
+    resolution_dates = share_structure.get("resolutionDates", [])
+
+    err_path = f"/filing/{filing_type}/shareStructure/resolutionDates"
+        
+    msg = []
     if (
         (
             any(x.get("hasRightsOrRestrictions", False) for x in share_classes) or
             any(has_rights_or_restrictions_true_in_share_series(x) for x in share_classes)
         ) and
-        len(share_structure.get("resolutionDates", [])) == 0
+        len(resolution_dates) == 0
     ):
-        return {
-            "error": "Resolution date is required when hasRightsOrRestrictions is true in shareClasses.",
-            "path": f"/filing/{filing_type}/shareStructure/resolutionDates"
-        }
-    return None
+        msg.append({
+            "error": "Resolution date is required when hasRightsOrRestrictions is true.",
+            "path": err_path
+        })
+
+    if len(resolution_dates) > 1:
+        msg.append({
+            "error": "Only one resolution date is permitted.",
+            "path": err_path
+        })
+
+    elif len(resolution_dates) == 1:
+        resolution_date_leg = date.fromisoformat(resolution_dates[0])
+        founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+        today_leg = LegislationDatetime.datenow()
+
+        if resolution_date_leg > today_leg:
+            msg.append({
+                "error": "Resolution date cannot be in the future.",
+                "path": err_path
+            })
+
+        if resolution_date_leg < founding_date_leg:
+            msg.append({
+                "error": "Resolution date cannot be before the business founding date.",
+                "path": err_path
+            })
+
+    return msg
 
 
 def has_rights_or_restrictions_true_in_share_series(share_class) -> bool:
