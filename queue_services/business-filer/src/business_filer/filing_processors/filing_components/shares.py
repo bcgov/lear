@@ -37,6 +37,7 @@ from __future__ import annotations
 from business_model.models import Business, Resolution, ShareClass, ShareSeries
 from dateutil.parser import parse
 
+
 def update_resolution_dates(business: Business, share_structure: dict) -> list | None:
     """Update the business resolution dates from a share structure."""
     if not business or not share_structure:
