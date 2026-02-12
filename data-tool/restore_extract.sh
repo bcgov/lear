@@ -56,7 +56,7 @@ if [ "$DELTA_MODE" = "true" ]; then
   printf "⚠️  DELTA_MODE is true: skipping truncation of preserved tables.\n"
 else
    printf "DELTA_MODE is false: truncating preserved tables.\n"
-   /opt/homebrew/opt/postgresql@15/bin/psql $(pg_conn_opts) -v ON_ERROR_STOP=1 -q <<SQL
+   psql $(pg_conn_opts) -v ON_ERROR_STOP=1 -q <<SQL
    TRUNCATE TABLE $(IFS=,; echo "${RESTORE[*]}") RESTART IDENTITY;
 SQL
 fi
@@ -68,15 +68,15 @@ fi
 ##############################################################################
 if [ "$DELTA_MODE" = "true" ]; then
   printf "⚠️  DELTA_MODE is true: skipping restore of preserved tables, processing table only "corp_processing".\n"
-  /opt/homebrew/opt/postgresql@15/bin/psql $(pg_conn_opts) -v ON_ERROR_STOP=1 <<  SQL
+  psql $(pg_conn_opts) -v ON_ERROR_STOP=1 <<  SQL
   ALTER TABLE IF EXISTS corp_processing RENAME TO corp_processing_old;
   CREATE TABLE corp_processing (LIKE corp_processing_old INCLUDING ALL);
 SQL
-  /opt/homebrew/opt/postgresql@15/bin/pg_restore $(pg_conn_opts) --section=data --data-only \
+  pg_restore $(pg_conn_opts) --section=data --data-only \
             --disable-triggers \
             --table="corp_processing" \
             "$DUMP" 2>&1 | grep -v "ERROR" || true
-  /opt/homebrew/opt/postgresql@15/bin/psql $(pg_conn_opts) -v ON_ERROR_STOP=0 <<'MERGE'
+  psql $(pg_conn_opts) -v ON_ERROR_STOP=0 <<'MERGE'
 INSERT INTO corp_processing_old
 SELECT * FROM corp_processing
 ON CONFLICT (corp_num, flow_name, environment) DO UPDATE
@@ -101,7 +101,7 @@ MERGE
 
 else
   printf "🚚  Copying preserved rows (constraints temporarily disabled) …\n"
-  /opt/homebrew/opt/postgresql@15/bin/pg_restore $(pg_conn_opts) --section=data --data-only \
+  pg_restore $(pg_conn_opts) --section=data --data-only \
             --disable-triggers \
             $(as_table_opts "${RESTORE[@]}") "$DUMP"
 fi
@@ -111,7 +111,7 @@ fi
 ##############################################################################
 
 printf "🛠  Advancing sequences …\n"
-/opt/homebrew/opt/postgresql@15/bin/psql $(pg_conn_opts) <<'SQL'
+psql $(pg_conn_opts) <<'SQL'
 DO $$
 DECLARE
   r record;

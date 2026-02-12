@@ -46,7 +46,7 @@ as_table_opts() { local t; for t in "$@"; do printf -- '--table=%s ' "$t"; done;
 printf "📦  Dumping preserved tables …\n"
 mkdir -p "$BACKUP_DIR"
 
-/opt/homebrew/opt/postgresql@15/bin/pg_dump $(pg_conn_opts) -Fc \
+pg_dump $(pg_conn_opts) -Fc \
         $(as_table_opts "${KEEP[@]}") \
         --no-owner --no-acl \
         -f "$DUMP"
