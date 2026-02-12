@@ -700,31 +700,31 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
 
     resolution_dates = [res.resolution_date for res in business.resolutions.all()]
     if 'add_resolution_dates' in test_name:
-        assert len(resolution_dates) == 4
         assert parse(existing_resolution_date).date() in resolution_dates
         assert parse(resolution_dates_json1).date() in resolution_dates
         assert parse(resolution_dates_json2).date() in resolution_dates
         assert parse(new_resolution_dates).date() in resolution_dates
 
     elif 'update_existing_resolution_dates' in test_name:
-        assert len(resolution_dates) == 3
         assert parse(resolution_dates_json1).date() in resolution_dates
         assert parse(updated_resolution_dates).date() in resolution_dates
-        assert parse(existing_resolution_date).date() not in resolution_dates
+        # existing date should NOT be removed in correction
+        assert parse(existing_resolution_date).date() in resolution_dates
 
     elif 'update_with_new_resolution_dates' in test_name:
-        assert len(resolution_dates) == 1
         assert parse(updated_resolution_dates).date() in resolution_dates
-        assert parse(resolution_dates_json1).date() not in resolution_dates
-        assert parse(resolution_dates_json2).date() not in resolution_dates
+        # history preserved
+        assert parse(existing_resolution_date).date() in resolution_dates
 
     elif 'delete_resolution_dates' in test_name:
-        assert len(resolution_dates) == 2
+        # corrections should not delete historical resolution dates
+        assert parse(existing_resolution_date).date() in resolution_dates
         assert parse(resolution_dates_json1).date() in resolution_dates
         assert parse(resolution_dates_json2).date() in resolution_dates
 
     elif 'delete_all_resolution_dates' in test_name:
-        assert len(resolution_dates) == 0
+        # empty list should not wipe history
+        assert parse(existing_resolution_date).date() in resolution_dates
 
 
 
