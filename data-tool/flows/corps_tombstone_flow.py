@@ -21,7 +21,7 @@ from sqlalchemy import Connection, text
 from sqlalchemy.engine import Engine
 from tombstone.tombstone_queries import (get_corp_snapshot_filings_queries,
                                          get_corp_users_query,
-                                         get_total_unprocessed_count_query,
+                                         get_total_reservable_count_query,
                                          get_unprocessed_corps_query)
 from tombstone.tombstone_utils import (all_unsupported_types,
                                        build_epoch_filing, format_users_data,
@@ -37,12 +37,6 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
     Note that this is not same as claiming them for processing which will be done in some subsequent steps.  This step
     is done to avoid parallel flows from trying to compete for the same corps.
     """
-    base_query = get_unprocessed_corps_query(
-        'tombstone-flow',
-        config,
-        num_corps  # Pass the total number we want to process
-    )
-
     # Decide if we should persist account_ids on corp_processing and what fallback to use.
     # Fallback CSV is used when candidate corps do not have mig_corp_account mapping.
     fallback_csv = (
@@ -50,7 +44,16 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
         if (config.AFFILIATE_ENTITY and getattr(config, 'AFFILIATE_ENTITY_ACCOUNT_IDS', None))
         else None
     )
-    extra_cols = ['account_ids'] if (config.USE_MIGRATION_FILTER or fallback_csv) else None
+    need_account_ids = bool(config.AFFILIATE_ENTITY) or bool(fallback_csv)
+
+    base_query = get_unprocessed_corps_query(
+        'tombstone-flow',
+        config,
+        num_corps,  # Pass the total number we want to process
+        include_account_ids=need_account_ids
+    )
+
+    extra_cols = ['account_ids'] if need_account_ids else None
 
     # reserve corps
     reserved = processing_service.reserve_for_flow(
@@ -63,10 +66,11 @@ def reserve_unprocessed_corps(config, processing_service, flow_run_id, num_corps
 
 
 @task(cache_policy=NO_CACHE)
-def get_unprocessed_count(config, colin_engine: Engine) -> int:
-    query = get_total_unprocessed_count_query(
+def get_reservable_count(config, colin_engine: Engine) -> int:
+    """Count corps eligible to be reserved for this flow (matches reservation filters)."""
+    query = get_total_reservable_count_query(
         'tombstone-flow',
-        config.DATA_LOAD_ENV
+        config
     )
 
     sql_text = text(query)
@@ -74,8 +78,7 @@ def get_unprocessed_count(config, colin_engine: Engine) -> int:
     with colin_engine.connect() as conn:
         rs = conn.execute(sql_text)
         total = rs.scalar()
-
-        return total
+        return int(total or 0)
 
 
 @task(name='1.1-Users-Collect-Task', cache_policy=NO_CACHE)
@@ -480,9 +483,9 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
     name='Corps-Tombstone-Migrate-Flow',
     log_prints=True,
     persist_result=False,
-    # Parallel Migration - Setup 
+    # Parallel Migration - Setup
     # use ConcurrentTaskRunner when using work pool based deployments
-    # task_runner=ConcurrentTaskRunner(max_workers=50)
+    task_runner=ConcurrentTaskRunner(max_workers=100)
     # task_runner=DaskTaskRunner(cluster_kwargs={"n_workers": 3, "threads_per_worker": 2})
 )
 def tombstone_flow():
@@ -495,21 +498,29 @@ def tombstone_flow():
         colin_engine = colin_extract_init(config)
         lear_engine = lear_init(config)
         flow_run_id = get_run_context().flow_run.id
-        processing_service = CorpProcessingService(config.DATA_LOAD_ENV, colin_engine, 'tombstone-flow')
+        processing_service = CorpProcessingService(
+            config.DATA_LOAD_ENV,
+            colin_engine,
+            'tombstone-flow',
+            statement_timeout_ms=getattr(config, 'RESERVE_STATEMENT_TIMEOUT_MS', None)
+        )
 
-        total = get_unprocessed_count(config, colin_engine)
+        total_reservable = get_reservable_count(config, colin_engine)
+        if total_reservable <= 0:
+            print('No reservable corps found for this run (cohort may be exhausted or already reserved).')
+            return
 
         if config.TOMBSTONE_BATCHES <= 0:
             raise ValueError('TOMBSTONE_BATCHES must be explicitly set to a positive integer')
         if config.TOMBSTONE_BATCH_SIZE <= 0:
             raise ValueError('TOMBSTONE_BATCH_SIZE must be explicitly set to a positive integer')
         batch_size = config.TOMBSTONE_BATCH_SIZE
-        batches = min(math.ceil(total/batch_size), config.TOMBSTONE_BATCHES)
+        batches = min(math.ceil(total_reservable/batch_size), config.TOMBSTONE_BATCHES)
 
         # Calculate max corps to initialize
-        max_corps = min(total, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
+        max_corps = min(total_reservable, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
 
-        # Parallel Migration - Setup 
+        # Parallel Migration - Setup
         #########################################################################################
         # Reservation Logic for All prallel flows to distribute work
         # max_corps_per_flow = min(total, config.TOMBSTONE_BATCHES * config.TOMBSTONE_BATCH_SIZE)
@@ -520,7 +531,7 @@ def tombstone_flow():
         print(f'👷 max_corps: {max_corps}')
         reserved_corps = reserve_unprocessed_corps(config, processing_service, flow_run_id, max_corps)
         print(f'👷 Reserved {reserved_corps} corps for processing')
-        print(f'👷 Going to migrate {total} corps with batch size of {batch_size}')
+        print(f'👷 Going to migrate {total_reservable} corps with batch size of {batch_size}')
 
         cnt = 0
         migrated_cnt = 0

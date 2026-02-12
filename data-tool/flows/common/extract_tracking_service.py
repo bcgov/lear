@@ -2,6 +2,7 @@ from enum import Enum
 from typing import List, Optional
 from sqlalchemy import Engine, text
 import logging
+import time
 
 
 class ProcessingStatuses(str, Enum):
@@ -25,12 +26,15 @@ class ExtractTrackingService:
         environment: str,
         db_engine: Engine,
         flow_name: str,
-        table_name: str = 'corp_processing'
+        table_name: str = 'corp_processing',
+        *,
+        statement_timeout_ms: Optional[int] = None
     ):
         self.data_load_env = environment
         self.db_engine = db_engine
         self.flow_name = flow_name
         self.table_name = table_name
+        self.statement_timeout_ms = statement_timeout_ms
         self.logger = logging.getLogger(__name__)
 
     def reserve_for_flow(self, base_query: str, flow_run_id: str,
@@ -128,6 +132,12 @@ class ExtractTrackingService:
 
         with self.db_engine.connect() as conn:
             with conn.begin():
+                if self.statement_timeout_ms:
+                    conn.execute(
+                        text("SET LOCAL statement_timeout = :ms"),
+                        {'ms': int(self.statement_timeout_ms)}
+                    )
+
                 params = {
                     'flow_name': self.flow_name,
                     'status': ProcessingStatuses.PENDING,
@@ -136,11 +146,22 @@ class ExtractTrackingService:
                 }
                 # Only add the fallback bind if the SQL references it
                 if uses_fallback_bind:
-                        params['fallback_account_ids'] = fallback_account_ids
+                    params['fallback_account_ids'] = fallback_account_ids
 
+                start = time.monotonic()
                 result = conn.execute(text(init_query), params)
-                count = len(result.fetchall())
-                self.logger.info(f"Initialized {count} corps for flow run {flow_run_id}")
+                rows = result.fetchall()
+                count = len(rows)
+                elapsed = time.monotonic() - start
+
+                self.logger.info(
+                    "Initialized %s corps for flow run %s in %.2fs (include_account_ids=%s, fallback_account_ids=%s)",
+                    count,
+                    flow_run_id,
+                    elapsed,
+                    include_account_ids,
+                    bool(fallback_account_ids)
+                )
                 return count
 
     def claim_batch(self, flow_run_id: str, batch_size: int,
