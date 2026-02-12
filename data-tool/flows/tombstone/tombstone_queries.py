@@ -83,127 +83,115 @@ def get_unprocessed_corps_subquery(flow_name, environment):
     subquery = subqueries[3]
     return subquery['cte'], subquery['where']
 
-def get_unprocessed_corps_query(flow_name, config, batch_size):
+def get_unprocessed_corps_query(flow_name, config, batch_size, *, include_account_ids: bool = False):
     """
     Build SQL to get corps for migration, *optionally* filtering by migration batches/groups.
 
-    config:
-        USE_MIGRATION_FILTER        true|false  (default false)
-        MIG_BATCH_IDS               Comma-list of batch IDs
-        MIG_GROUP_IDS               Comma-list of group IDs
+    IMPORTANT: The returned SQL is used by reserve_for_flow() and MUST select:
+        - corp_num
+        - corp_type_cd
+        - mig_batch_id
+
+    If include_account_ids=True, it will also select:
+        - account_ids (CSV string, may be NULL)
     """
 
     environment = config.DATA_LOAD_ENV
     use_mig_filter = config.USE_MIGRATION_FILTER
-    mig_group_ids  = config.MIG_GROUP_IDS
-    mig_batch_ids  = config.MIG_BATCH_IDS
+    mig_group_ids = config.MIG_GROUP_IDS
+    mig_batch_ids = config.MIG_BATCH_IDS
 
     cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
 
-    # Wire in migration filters & account mapping only when requested.
-    account_map_cte = ""
-    account_join    = ""
-    account_select  = "NULL::varchar(100) AS account_ids,"
-    mig_select      = "NULL::integer AS mig_batch_id,"
-    mig_join        = ""
+    corp_type_filter = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
+
     mig_extra_where = ""
+    if use_mig_filter:
+        if mig_batch_ids:
+            mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
+        if mig_group_ids:
+            mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+
+    # account_map is expensive (GROUP BY + array_agg); only build it when account_ids are requested.
+    account_map_cte = ""
+    account_join = ""
+    account_select = ""
+
+    if include_account_ids:
+        if use_mig_filter:
+            account_map_prefix = "WITH" if not cte_clause.strip() else ","
+            account_map_cte = f"""
+            {account_map_prefix} account_map AS (
+                SELECT mca.corp_num,
+                       array_to_string(array_agg(DISTINCT mca.account_id ORDER BY mca.account_id), ',') AS account_ids
+                FROM mig_corp_account mca
+                JOIN mig_batch b2 ON b2.id = mca.mig_batch_id
+                WHERE mca.target_environment = '{environment}'
+                {f" AND b2.id IN ({mig_batch_ids})" if mig_batch_ids else ""}
+                {f" AND b2.mig_group_id IN ({mig_group_ids})" if mig_group_ids else ""}
+                GROUP BY mca.corp_num
+            )
+            """
+            account_join = "LEFT JOIN account_map am ON am.corp_num = c.corp_num"
+            account_select = ", COALESCE(am.account_ids, NULL::varchar(100)) AS account_ids"
+        else:
+            # No migration filter: account mapping isn't available; still return the column
+            account_select = ", NULL::varchar(100) AS account_ids"
 
     if use_mig_filter:
-        mig_select = "b.id AS mig_batch_id,"
-        mig_join   = """
-            JOIN mig_corp_batch mcb ON mcb.corp_num = c.corp_num
-            JOIN mig_batch      b   ON b.id = mcb.mig_batch_id
-            JOIN mig_group      g   ON g.id = b.mig_group_id
+        # Drive selection from mig_corp_batch so we don't scan the full corporation table when the cohort is nearly exhausted.
+        query = f"""
+        {cte_clause}
+        {account_map_cte}
+        SELECT
+            c.corp_num,
+            c.corp_type_cd,
+            b.id AS mig_batch_id
+            {account_select}
+        FROM mig_corp_batch mcb
+        JOIN mig_batch b ON b.id = mcb.mig_batch_id
+        JOIN mig_group g ON g.id = b.mig_group_id
+        JOIN corporation c ON c.corp_num = mcb.corp_num
+        JOIN corp_state cs
+            ON cs.corp_num = c.corp_num
+           AND cs.end_event_id IS NULL
+        {account_join}
+        LEFT JOIN corp_processing cp
+            ON cp.corp_num = c.corp_num
+           AND cp.flow_name = '{flow_name}'
+           AND cp.environment = '{environment}'
+        WHERE 1=1
+        {where_clause}
+        {mig_extra_where}
+        AND c.corp_type_cd IN {corp_type_filter}
+        AND cp.corp_num IS NULL
+        LIMIT {batch_size}
         """
-        if mig_batch_ids:
-               mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
-        if mig_group_ids:
-               mig_extra_where += f" AND g.id IN ({mig_group_ids})"
-
-        account_map_prefix = "WITH" if not cte_clause.strip() else ","
-        account_map_cte = f"""
-        {account_map_prefix} account_map AS (
-            SELECT mca.corp_num,
-                   array_to_string(array_agg(DISTINCT mca.account_id ORDER BY mca.account_id), ',') AS account_ids
-            FROM mig_corp_account mca
-            JOIN mig_batch b2 ON b2.id = mca.mig_batch_id
-            WHERE mca.target_environment = '{environment}'
-            {f" AND b2.id IN ({mig_batch_ids})" if mig_batch_ids else ""}
-            {f" AND b2.mig_group_id IN ({mig_group_ids})" if mig_group_ids else ""}
-            GROUP BY mca.corp_num
-        )
+    else:
+        query = f"""
+        {cte_clause}
+        SELECT
+            c.corp_num,
+            c.corp_type_cd,
+            NULL::integer AS mig_batch_id
+            {account_select}
+        FROM corporation c
+        JOIN corp_state cs
+            ON cs.corp_num = c.corp_num
+           AND cs.end_event_id IS NULL
+        LEFT JOIN corp_processing cp
+            ON cp.corp_num = c.corp_num
+           AND cp.flow_name = '{flow_name}'
+           AND cp.environment = '{environment}'
+        WHERE 1=1
+        {where_clause}
+        --    and c.corp_num = 'BC0000621' -- state changes a lot
+        --    and cs.state_type_cd = 'ACT'
+        AND c.corp_type_cd IN {corp_type_filter}
+        AND cp.corp_num IS NULL
+        LIMIT {batch_size}
         """
-        account_join   = "LEFT JOIN account_map am ON am.corp_num = c.corp_num"
-        account_select = "COALESCE(am.account_ids, NULL::varchar(100)) AS account_ids,"
 
-    query = f"""
-    {cte_clause}
-    {account_map_cte}
-    SELECT c.corp_num,
-           c.corp_type_cd,
-           {mig_select}
-           {account_select}
-           cs.state_type_cd,
-           cp.flow_name,
-           cp.processed_status,
-           cp.last_processed_event_id,
-           cp.failed_event_id,
-           cp.failed_event_file_type
-    from corporation c
-    left outer join corp_state cs
-        on cs.corp_num = c.corp_num
-    {mig_join}
-    {account_join}
-    left outer join corp_processing cp
-           on cp.corp_num = c.corp_num
-          and cp.flow_name = '{flow_name}'
-          and cp.environment = '{environment}'
-    where 1=1
-    {where_clause} 
-    {mig_extra_where}
---    and c.corp_type_cd like 'BC%' -- some are 'Q%'
---    and c.corp_num = 'BC0000621' -- state changes a lot
---    and c.corp_num = 'BC0883637' -- one pary with multiple roles, but werid address_ids, same filing submitter but diff email
---    and c.corp_num = 'BC0046540' -- one share class with multiple series
---    and c.corp_num = 'BC0673578' -- lots of translations
---    and c.corp_num = 'BC0566856' -- single quotes in share structure (format issue - solved)
---    and c.corp_num = 'BC0326163' -- double quotes in corp name, no share structure, city in street additional of party's address
---    and c.corp_num = 'BC0395512' -- long RG, RC addresses
---    and c.corp_num = 'BC0043406' -- lots of directors
---    and c.corp_num in ('BC0326163', 'BC0395512', 'BC0883637')
---    and c.corp_num = 'BC0870626' -- lots of filings - IA, CoDs, ARs
---    and c.corp_num = 'BC0004969' -- lots of filings - IA, ARs, transition, alteration, COD, COA
---    and c.corp_num = 'BC0002567' -- lots of filings - IA, ARs, transition, COD
---    and c.corp_num in ('BC0068889', 'BC0441359') -- test users mapping
---    and c.corp_num in ('BC0326163', 'BC0046540', 'BC0883637', 'BC0043406', 'BC0068889', 'BC0441359')
-
---    and c.corp_num in (
---        'BC0472301', 'BC0649417', 'BC0808085', 'BC0803411', 'BC0511226', 'BC0833000', 'BC0343855', 'BC0149266', -- dissolution
---        'BC0548839', 'BC0541207', 'BC0462424', 'BC0021973', -- restoration
---        'BC0034290', -- legacy other
---        'C0870179', 'C0870343', 'C0883424', -- continuation in (C, CCC, CUL)
---        'BC0019921', 'BC0010385', -- conversion ledger
---        'BC0207097', 'BC0693625', 'BC0754041', 'BC0072008', 'BC0355241', 'BC0642237', 'BC0555891', 'BC0308683', -- correction
---        'BC0688906', 'BC0870100', 'BC0267106', 'BC0873461', -- alteration
---        'BC0536998', 'BC0574096', 'BC0663523' -- new mappings of CoA, CoD
-        -- TED
---          'BC0812196',                -- amalg - r (with xpro)
---          'BC0870100',                -- amalg - v
---          'BC0747392'                 -- amalg - h
-        -- TING
---          'BC0593394',                -- amalg - r (with xpro)
---          'BC0805986', 'BC0561086',   -- amalg - v
---          'BC0543231', 'BC0358476'    -- amalg - h
---    )
-    and c.corp_type_cd in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
-    and cs.end_event_id is null
---    and ((cp.processed_status is null or cp.processed_status != 'COMPLETED'))
-      and cp.processed_status is null
-      and cp.flow_run_id is null
---    and cs.state_type_cd = 'ACT'
---    order by random()
-    limit {batch_size}
-    """
     return query
 
 
@@ -221,6 +209,73 @@ def get_total_unprocessed_count_query(flow_name, environment):
     and cs.end_event_id is null
     and ((cp.processed_status is null or cp.processed_status not in ('COMPLETED', 'PARTIAL')))
     """
+    return query
+
+
+def get_total_reservable_count_query(flow_name: str, config) -> str:
+    """
+    Count corps that are eligible to be reserved for this flow.
+
+    Must match get_unprocessed_corps_query(...) filters:
+      - USE_MIGRATION_FILTER + MIG_GROUP_IDS/MIG_BATCH_IDS (when enabled)
+      - corp types filter
+      - active corp_state (end_event_id IS NULL)
+      - not already present in corp_processing for (corp_num, flow_name, environment)
+    """
+    environment = config.DATA_LOAD_ENV
+    use_mig_filter = config.USE_MIGRATION_FILTER
+    mig_group_ids = config.MIG_GROUP_IDS
+    mig_batch_ids = config.MIG_BATCH_IDS
+
+    cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
+
+    corp_type_filter = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
+
+    mig_extra_where = ""
+    if use_mig_filter:
+        if mig_batch_ids:
+            mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
+        if mig_group_ids:
+            mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+
+        query = f"""
+        {cte_clause}
+        SELECT count(*)
+        FROM mig_corp_batch mcb
+        JOIN mig_batch b ON b.id = mcb.mig_batch_id
+        JOIN mig_group g ON g.id = b.mig_group_id
+        JOIN corporation c ON c.corp_num = mcb.corp_num
+        JOIN corp_state cs
+            ON cs.corp_num = c.corp_num
+           AND cs.end_event_id IS NULL
+        LEFT JOIN corp_processing cp
+            ON cp.corp_num = c.corp_num
+           AND cp.flow_name = '{flow_name}'
+           AND cp.environment = '{environment}'
+        WHERE 1=1
+        {where_clause}
+        {mig_extra_where}
+        AND c.corp_type_cd IN {corp_type_filter}
+        AND cp.corp_num IS NULL
+        """
+    else:
+        query = f"""
+        {cte_clause}
+        SELECT count(*)
+        FROM corporation c
+        JOIN corp_state cs
+            ON cs.corp_num = c.corp_num
+           AND cs.end_event_id IS NULL
+        LEFT JOIN corp_processing cp
+            ON cp.corp_num = c.corp_num
+           AND cp.flow_name = '{flow_name}'
+           AND cp.environment = '{environment}'
+        WHERE 1=1
+        {where_clause}
+        AND c.corp_type_cd IN {corp_type_filter}
+        AND cp.corp_num IS NULL
+        """
+
     return query
 
 

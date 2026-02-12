@@ -1149,6 +1149,18 @@ CREATE INDEX if not exists ix_mig_corp_account_corp_env ON mig_corp_account (cor
 
 CREATE INDEX if not exists ix_mig_corp_account_mig_batch ON mig_corp_account (mig_batch_id);
 
+-- Critical for USE_MIGRATION_FILTER selection (filter/join on mig_batch_id)
+CREATE INDEX IF NOT EXISTS ix_mig_corp_batch_mig_batch_id
+	ON mig_corp_batch (mig_batch_id);
+
+-- Often best for "filter by batch then join by corp_num"
+CREATE INDEX IF NOT EXISTS ix_mig_corp_batch_batch_corp
+	ON mig_corp_batch (mig_batch_id, corp_num);
+
+-- Useful when filtering by group via mig_batch.mig_group_id
+CREATE INDEX IF NOT EXISTS ix_mig_batch_mig_group_id
+	ON mig_batch (mig_group_id);
+
 CREATE INDEX IF NOT EXISTS ix_corp_state_curr ON corp_state (corp_num, op_state_type_cd) WHERE end_event_id IS NULL;
 
 CREATE INDEX IF NOT EXISTS ix_corporation_corpnum ON corporation (corp_num);

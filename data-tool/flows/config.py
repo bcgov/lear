@@ -151,6 +151,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     TOMBSTONE_BATCH_SIZE = os.getenv('TOMBSTONE_BATCH_SIZE')
     TOMBSTONE_BATCH_SIZE = int(TOMBSTONE_BATCH_SIZE) if TOMBSTONE_BATCH_SIZE.isnumeric() else 0
 
+    # reservation (reserve_for_flow) query statement timeout (Postgres statement_timeout, in ms).
+    # When set, long-running reservation queries fail fast instead of tying up a worker indefinitely.
+    RESERVE_STATEMENT_TIMEOUT_MS = os.getenv('RESERVE_STATEMENT_TIMEOUT_MS', '')
+    RESERVE_STATEMENT_TIMEOUT_MS = int(RESERVE_STATEMENT_TIMEOUT_MS) if RESERVE_STATEMENT_TIMEOUT_MS.isnumeric() else None
+
     # verify flow
     VERIFY_BATCHES = os.getenv('VERIFY_BATCHES')
     VERIFY_BATCHES = int(VERIFY_BATCHES) if VERIFY_BATCHES.isnumeric() else 0
