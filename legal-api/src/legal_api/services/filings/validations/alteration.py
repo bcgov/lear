@@ -53,8 +53,8 @@ def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
 
-    if err := validate_resolution_date_in_share_structure(filing, "alteration"):
-        msg.append(err)
+    if err := validate_resolution_date_in_share_structure(filing, "alteration", business):
+        msg.extend(err)
 
     new_legal_type = filing["filing"]["alteration"].get("business", {}).get("legalType", None)
     err = validate_phone_number(filing, new_legal_type or business.legal_type, "alteration")

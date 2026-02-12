@@ -30,6 +30,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
+    validate_resolution_date_in_share_structure,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
@@ -84,7 +85,7 @@ def validate(business: Business, filing: dict) -> Error:
         if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
             _validate_firms_correction(business, filing, business.legal_type, msg)
         elif business.legal_type in Business.CORPS:
-            _validate_corps_correction(filing, business.legal_type, msg)
+            _validate_corps_correction(business, filing, business.legal_type, msg)
         elif business.legal_type == Business.LegalTypes.COOP.value:
             _validate_special_resolution_correction(filing, business.legal_type, msg)
 
@@ -107,7 +108,7 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
     msg.extend(validate_naics(business, filing, filing_type))
 
 
-def _validate_corps_correction(filing_dict, legal_type, msg):
+def _validate_corps_correction(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
     if filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
@@ -121,6 +122,10 @@ def _validate_corps_correction(filing_dict, legal_type, msg):
         msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
     if filing_dict.get("filing", {}).get("correction", {}).get("shareStructure", None):
         err = validate_share_structure(filing_dict, filing_type, legal_type)
+        if err:
+            msg.extend(err)
+
+        err = validate_resolution_date_in_share_structure(filing_dict, filing_type, business)
         if err:
             msg.extend(err)
 

@@ -38,13 +38,8 @@ from business_model.models import Business, Resolution, ShareClass, ShareSeries
 from dateutil.parser import parse
 
 
-def update_share_structure(business: Business, share_structure: dict) -> list | None:
-    """Manage the share structure for a business.
-
-    Assumption: The structure has already been validated, upon submission.
-
-    Other errors are recorded and will be managed out of band.
-    """
+def update_resolution_dates(business: Business, share_structure: dict) -> list | None:
+    """Update the business resolution dates from a share structure."""
     if not business or not share_structure:
         # if nothing is passed in, we don't care and it's not an error
         return None
@@ -64,6 +59,19 @@ def update_share_structure(business: Business, share_structure: dict) -> list | 
                     {"error_code": "FILER_INVALID_RESOLUTION_DATE",
                      "error_message": f"Filer: invalid resolution date:'{resolution_dt}'"}
                 )
+
+    return err
+
+def update_share_structure(business: Business, share_structure: dict) -> list | None:
+    """Manage the share structure for a business.
+
+    Assumption: The structure has already been validated, upon submission.
+
+    Other errors are recorded and will be managed out of band.
+    """
+    err = []
+
+    err = update_resolution_dates(business, share_structure)
 
     if share_classes := share_structure.get("shareClasses"):
         try:
@@ -88,50 +96,6 @@ def update_share_structure(business: Business, share_structure: dict) -> list | 
 
     return err
 
-
-def update_resolution_dates_correction(business: Business, share_structure: dict) -> list:
-    """Correct resolution dates by adding or removing."""
-    err = []
-
-    inclusion_entries = []
-    exclusion_entries = []
-    # Delete the ones that are present in db but not in the json and create the ones in json but not in db.
-    if resolution_dates := share_structure.get("resolutionDates"):
-        # Two lists of dates in datetime format
-        business_dates = [item.resolution_date for item in business.resolutions]
-        parsed_dates = [parse(resolution_dt).date() for resolution_dt in resolution_dates]
-
-        # Dates in both db and json
-        inclusion_entries = [business.resolutions[index] for index, date in enumerate(business_dates)
-                             if date in parsed_dates]
-        if len(inclusion_entries) > 0:
-            business.resolutions = inclusion_entries
-        else:
-            business.resolutions = []
-
-        # Dates in json and not in db
-        exclusion_entries = [date for date in parsed_dates if date not in business_dates]
-
-        resolution_dates = exclusion_entries
-
-        for resolution_dt in resolution_dates:
-            try:
-                d = Resolution(
-                    resolution_date=resolution_dt,
-                    resolution_type=Resolution.ResolutionType.SPECIAL.value
-                )
-                business.resolutions.append(d)
-            except (ValueError, OverflowError):
-                err.append(
-                    {"error_code": "FILER_INVALID_RESOLUTION_DATE",
-                     "error_message": f"Filer: invalid resolution date:'{resolution_dt}'"}
-                )
-    else:
-        business.resolutions = []
-
-    return err
-
-
 def update_share_structure_correction(business: Business, share_structure: dict) -> list | None:
     """Manage the share structure for a business.
 
@@ -143,7 +107,7 @@ def update_share_structure_correction(business: Business, share_structure: dict)
         # if nothing is passed in, we don't care and it's not an error
         return None
 
-    err = update_resolution_dates_correction(business, share_structure)
+    err = update_resolution_dates(business, share_structure)
 
     if share_classes := share_structure.get("shareClasses"):
         # Entries in json and not in db

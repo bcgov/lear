@@ -14,6 +14,9 @@
 """Test Correction IA validations."""
 
 import copy
+import datedelta
+from datetime import datetime, timezone
+from freezegun import freeze_time
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -304,3 +307,84 @@ def test_correction_share_class_series_validation(mocker, session, legal_type, h
     else:
         assert err
         assert any('cannot have series when hasRightsOrRestrictions is false' in msg['error'] for msg in err.msg)
+
+NOW = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
+FOUNDING_DATE = NOW - datedelta.YEAR
+
+@pytest.mark.parametrize(
+    'test_name, has_rights_or_restrictions, has_series, resolution_dates, expected_code, expected_msg',
+    [
+        ('SUCCESS_class_has_rights', True, False, ['2024-01-01'], None, None),
+        ('SUCCESS_class_no_rights', False, False, [], None, None),
+        ('SUCCESS_series_has_rights', True, True, ['2024-01-01'], None, None),
+        ('SUCCESS_series_no_rights', False, False, [], None, None),
+
+        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_too_many_dates', True, False, ['2024-01-01', '2024-02-01'], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Only one resolution date is permitted.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date cannot be in the future.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_before_founding', True, False, [(FOUNDING_DATE - datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date cannot be before the business founding date.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+    ]
+)
+def test_correction_resolution_date(mocker, session, test_name, has_rights_or_restrictions,
+                                    has_series, resolution_dates, expected_code, expected_msg):
+    """Test share class/series resolution date validation in correction filings."""
+    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.founding_date = FOUNDING_DATE
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    del filing['filing']['correction']['commentOnly']
+
+    # Share structure setup
+    filing['filing']['correction']['shareStructure'] = copy.deepcopy(
+        INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication'].get('shareStructure', {})
+    )
+    share_class = filing['filing']['correction']['shareStructure']['shareClasses'][0]
+    share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+
+    # Series handling
+    if has_series:
+        share_class['series'] = share_class.get('series', [{}])
+        share_class['series'][0]['hasRightsOrRestrictions'] = True
+    else:
+        share_class.pop('series', None)
+
+    filing['filing']['correction']['shareStructure']['resolutionDates'] = resolution_dates
+
+    # Remove the second share class if it exists
+    share_classes = filing['filing']['correction']['shareStructure']['shareClasses']
+    if len(share_classes) > 1:
+        share_classes.pop(1)
+
+    with freeze_time(NOW):
+        err = validate(business, filing)
+
+    if expected_code:
+        assert err
+        assert any(expected_msg[0]['error'] in e['error'] for e in err.msg)
+    else:
+        assert err is None

@@ -15,6 +15,7 @@
 import copy
 from http import HTTPStatus
 from unittest.mock import MagicMock, create_autospec, patch
+import datedelta
 from datetime import date
 from flask import g
 from legal_api.errors import Error
@@ -28,6 +29,7 @@ from reportlab.lib.pagesizes import letter
 from legal_api.models import Business
 from legal_api.services import flags, NameXService
 from legal_api.services.filings import validate
+from legal_api.utils.datetime import datetime, timezone
 from tests.unit.models import factory_business
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
@@ -392,48 +394,79 @@ def test_validate_nr_type(mock_get_parties, session, new_name, legal_type, nr_le
         assert HTTPStatus.BAD_REQUEST == err.code
         assert err.msg[0]['error'] == err_msg
 
+NOW = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
+FOUNDING_DATE = NOW - datedelta.YEAR
 
 @pytest.mark.parametrize(
-    'test_name, should_pass, has_rights_or_restrictions, has_rights_or_restrictions_series, resolution_dates', [
-        ('SUCCESS_has_rights_or_restrictions', True, True, False, ['2020-05-23']),
-        ('SUCCESS', True, False, False, []),
-        ('FAILURE', False, True, False, []),
-        ('SUCCESS_series_has_rights_or_restrictions', True, False, True, ['2020-05-23']),
-        ('SUCCESS_series', True, False, False, []),
-        ('FAILURE_series', False, False, True, [])
-    ])
+    'test_name, has_rights_or_restrictions, has_rights_or_restrictions_series, '
+    'resolution_dates, expected_code, expected_msg',
+    [
+        ('SUCCESS_class_has_rights', True, False, ['2024-01-01'], None, None),
+        ('SUCCESS_class_no_rights', False, False, [], None, None),
+        ('SUCCESS_series_has_rights', False, True, ['2024-01-01'], None, None),
+        ('SUCCESS_series_no_rights', False, False, [], None, None),
+
+        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
+             'path': '/filing/alteration/shareStructure/resolutionDates'}
+        ]),
+        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
+             'path': '/filing/alteration/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_too_many_dates', True, False, ['2024-01-01', '2024-02-01'], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Only one resolution date is permitted.',
+             'path': '/filing/alteration/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date cannot be in the future.',
+             'path': '/filing/alteration/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_before_founding', True, False, [(FOUNDING_DATE - datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date cannot be before the business founding date.',
+             'path': '/filing/alteration/shareStructure/resolutionDates'}
+        ]),
+    ]
+)
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_alteration_resolution_date(
-        session, test_name, should_pass, has_rights_or_restrictions,
-        has_rights_or_restrictions_series, resolution_dates):
-    """Test resolution date in share structure."""
+        session, test_name, has_rights_or_restrictions,
+        has_rights_or_restrictions_series, resolution_dates, expected_code, expected_msg):
+    """Test resolution date validation in alteration share structure."""
     # setup
     identifier = 'BC1234567'
     business = factory_business(identifier)
+    business.founding_date = FOUNDING_DATE
 
     f = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
     f['filing']['header']['identifier'] = identifier
     del f['filing']['alteration']['nameRequest']
     del f['filing']['alteration']['business']['legalType']
 
+    # set rights/restrictions and resolution dates
     f['filing']['alteration']['shareStructure']['shareClasses'][0]['hasRightsOrRestrictions'] = \
         has_rights_or_restrictions
     f['filing']['alteration']['shareStructure']['shareClasses'][0]['series'][0]['hasRightsOrRestrictions'] = \
         has_rights_or_restrictions_series
     f['filing']['alteration']['shareStructure']['resolutionDates'] = resolution_dates
 
-    err = validate(business, f)
+    if 'courtOrder' in f['filing']['alteration']:
+        del f['filing']['alteration']['courtOrder']
 
-    if err:
-        print(err.msg)
+    # freeze time to ensure deterministic validation
+    with freeze_time(NOW):
+        err = validate(business, f)
 
-    if should_pass:
-        # check that validation passed
-        assert None is err
+    # validate outcomes
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
     else:
-        # check that validation failed
-        assert err
-        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err is None
+
 
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
 def test_alteration_share_classes_optional(session):
