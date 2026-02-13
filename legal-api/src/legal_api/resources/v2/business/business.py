@@ -186,6 +186,43 @@ def post_businesses():
     return saving_filings(identifier=bootstrap.identifier)  # pylint: disable=no-value-for-parameter
 
 
+@bp.route("/<string:identifier>/ar-reminder", methods=["GET"])
+@cross_origin(origin="*")
+@jwt.requires_auth
+def get_ar_reminder(identifier):
+    """Return send ar reminder flag."""
+    if identifier.startswith("T"):
+        return {"message": "No information on temp registrations."}, 200
+
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return {"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND
+
+    return {"arReminder": business.send_ar_ind}, HTTPStatus.OK
+
+
+@bp.route("/<string:identifier>/ar-reminder", methods=["PUT"])
+@cross_origin(origin="*")
+@jwt.requires_auth
+def set_ar_reminder(identifier):
+    """Update send ar reminder flag."""
+    if identifier.startswith("T"):
+        return {"message": "No information on temp registrations."}, 200
+
+    json_input = request.get_json()
+    ar_reminder = json_input.get("arReminder")
+    if not isinstance(ar_reminder, bool):
+        return {"message": "arReminder must be a boolean value"}, HTTPStatus.BAD_REQUEST
+
+    business = Business.find_by_identifier(identifier)
+    if not business:
+        return {"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND
+
+    business.send_ar_ind = ar_reminder
+    business.save()
+    return {"message": "arReminder flag updated"}, HTTPStatus.OK
+
+
 @bp.route("/search", methods=["POST"])
 @cross_origin(origin="*")
 @jwt.requires_roles([SYSTEM_ROLE])

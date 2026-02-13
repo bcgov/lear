@@ -921,3 +921,64 @@ def test_get_could_file(session, client, jwt, monkeypatch):
     assert rv.json['couldFile']['filing']['filingTypes']
     assert len(rv.json['couldFile']['filing']['filingTypes']) > 0
     assert rv.json['couldFile']['filing']['filingTypes'] == expected
+
+
+@pytest.mark.parametrize('identifier, ar_reminder, status, message', [
+    ('BC7654321', False, HTTPStatus.OK, None),
+    ('BC7654321', True, HTTPStatus.OK, None),
+    ('T7654321', False, HTTPStatus.OK, 'No information on temp registrations.'),
+    ('BC1234567', False, HTTPStatus.NOT_FOUND, 'BC1234567 not found'),
+])
+def test_get_ar_reminder(session, client, jwt, identifier, ar_reminder, status, message):
+    """Assert that get ar reminder returns expected value."""
+    if identifier not in ('T7654321', 'BC1234567'):
+        business = factory_business_model(legal_name='legal_name',
+                            identifier=identifier,
+                            founding_date=datetime.utcfromtimestamp(0),
+                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                            last_modified=datetime.utcfromtimestamp(0),
+                            fiscal_year_end_date=None,
+                            tax_id=None,
+                            dissolution_date=None)
+        business.send_ar_ind = ar_reminder
+        business.save()
+    rv = client.get(f'/api/v2/businesses/{identifier}/ar-reminder',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == status
+    if message is None:
+        assert rv.json['arReminder'] == ar_reminder
+    else:
+        assert rv.json['message'] == message
+
+
+@pytest.mark.parametrize('identifier, ar_reminder, status, message', [
+    ('BC7654321', False, HTTPStatus.OK, 'arReminder flag updated'),
+    ('BC7654321', True, HTTPStatus.OK, 'arReminder flag updated'),
+    ('BC7654321', 'True', HTTPStatus.BAD_REQUEST, 'arReminder must be a boolean value'),
+    ('BC7654321', 123, HTTPStatus.BAD_REQUEST, 'arReminder must be a boolean value'),
+    ('T7654321', False, HTTPStatus.OK, 'No information on temp registrations.'),
+    ('BC1234567', False, HTTPStatus.NOT_FOUND, 'BC1234567 not found'),
+])
+def test_set_ar_reminder(session, client, jwt, identifier, ar_reminder, status, message):
+    """Assert that temp registration returns 200."""
+    if identifier not in ('T7654321', 'BC1234567'):
+        business = factory_business_model(legal_name='legal_name',
+                            identifier=identifier,
+                            founding_date=datetime.utcfromtimestamp(0),
+                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                            last_modified=datetime.utcfromtimestamp(0),
+                            fiscal_year_end_date=None,
+                            tax_id=None,
+                            dissolution_date=None)
+        business.send_ar_ind = not ar_reminder
+        business.save()
+    rv = client.put(f'/api/v2/businesses/{identifier}/ar-reminder',
+                    json={'arReminder': ar_reminder},
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == status
+    assert rv.json['message'] == message
+    if message == 'arReminder flag updated':
+        business = Business.find_by_identifier(identifier)
+        assert business.send_ar_ind == ar_reminder
