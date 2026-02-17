@@ -270,7 +270,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {
         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
         ]
@@ -283,7 +282,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {
         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
         ]
@@ -296,7 +294,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {
         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
         ]
@@ -309,7 +306,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {
         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
         ]
@@ -322,7 +318,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {
         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
         'legalFilings': [
             {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
         ]
