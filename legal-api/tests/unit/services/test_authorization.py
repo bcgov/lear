@@ -1262,6 +1262,10 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
             assert result['filing']['filingSubmissionLink']
             assert result['filing']['filingTypes'] == expected
             assert result['viewAll'] == is_comp_auth
+            if state == Business.State.ACTIVE and legal_type in Business.CORPS:
+                assert result["arReminders"] == True
+            else:
+                assert result["arReminders"] == False
 
 
 @pytest.mark.parametrize(

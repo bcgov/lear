@@ -757,6 +757,7 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
             "filingSubmissionLink": filing_submission_url,
             "filingTypes": allowed_filings
         },
+        "arReminders": (business.legal_type in Business.CORPS and business.state == Business.State.ACTIVE),
         "digitalBusinessCard": are_digital_credentials_allowed(business, jwt),
         "digitalBusinessCardPreconditions": get_digital_credentials_preconditions(business),
         "viewAll": is_competent_authority(jwt)
