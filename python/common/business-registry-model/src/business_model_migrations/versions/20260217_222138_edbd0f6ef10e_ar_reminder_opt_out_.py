@@ -5,10 +5,10 @@ Revises: 7efd0c42babd
 Create Date: 2026-02-17 22:21:38.643521
 
 """
-from datetime import datetime, timezone
-from alembic import op
-import sqlalchemy as sa
+from datetime import UTC, datetime, timezone
 
+import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'edbd0f6ef10e'
@@ -18,7 +18,7 @@ depends_on = None
 
 
 def upgrade():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     permissions = sa.table(
         'permissions',
