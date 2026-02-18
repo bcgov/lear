@@ -69,6 +69,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     USE_CUSTOM_CONTACT_EMAIL = os.getenv('USE_CUSTOM_CONTACT_EMAIL', 'False') == 'True'
     CUSTOM_CONTACT_EMAIL = os.getenv('CUSTOM_CONTACT_EMAIL', '')
+    SEND_UNAFFILIATED_EMAIL = os.getenv('SEND_UNAFFILIATED_EMAIL', 'False') == 'True'
 
     USE_CUSTOM_PASSCODE = os.getenv('USE_CUSTOM_PASSCODE', 'False') == 'True'
     CUSTOM_PASSCODE = os.getenv('CUSTOM_PASSCODE', '')
