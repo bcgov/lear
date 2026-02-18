@@ -16,7 +16,6 @@
 """
 import logging
 
-from flask import url_for
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager  # class for handling a set of commands
 
@@ -31,25 +30,6 @@ MIGRATE = Migrate(APP, db)
 MANAGER = Manager(APP)
 
 MANAGER.add_command("db", MigrateCommand)
-
-
-@MANAGER.command
-def list_routes():
-    output = []
-    for rule in APP.url_map.iter_rules():
-
-        options = {}
-        for arg in rule.arguments:
-            options[arg] = f"[{arg}]"
-
-        methods = ",".join(rule.methods)
-        url = url_for(rule.endpoint, **options)
-        line = (f"{rule.endpoint:50s} {methods:20s} {url}")
-        output.append(line)
-
-    for line in sorted(output):
-        print(line) # noqa: T201
-
 
 if __name__ == "__main__":
     logging.log(logging.INFO, "Running the Manager")
