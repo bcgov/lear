@@ -15,16 +15,14 @@
 from http import HTTPStatus
 
 import pycountry
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel  # importing camelcase '_' as a name
 
 from legal_api.errors import Error
 from legal_api.models import Address, Business, Filing
-from legal_api.services.filings.validations.common_validations import validate_parties_addresses
+from legal_api.services.filings.validations.common_validations import PARTY_NAME_MAX_LENGTH, validate_parties_addresses
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import date, datetime
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
-# noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(business: Business, cod: dict) -> Error:
@@ -40,6 +38,10 @@ def validate(business: Business, cod: dict) -> Error:
     msg_appointment_date = validate_appointment_date(business, cod)
     if msg_appointment_date:
         msg += msg_appointment_date
+
+    msg_directors_names = validate_directors_name(cod)
+    if msg_directors_names:
+        msg += msg_directors_names
 
     msg_directors_addresses = validate_directors_addresses(business, cod)
     if msg_directors_addresses:
@@ -265,5 +267,64 @@ def validate_effective_date(business: Business, cod: dict) -> list:
         last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
         if effective_date_leg < last_cod_date_leg:
             msg.append({"error": babel("Effective date cannot be before another Change of Director filing.")})
+
+    return msg
+
+def validate_directors_name(cod: dict) -> list:
+    """Return error messages if a director's name fields are invalid.
+
+    Rules:
+    - firstName and lastName are required (non-empty) for all directors.
+    - prevFirstName and prevLastName are required when "nameChanged" is in actions.
+    - No leading or trailing whitespace.
+    - All name fields have a maximum length of 30 characters.
+    """
+    msg = []
+    filing_type = "changeOfDirectors"
+    directors = cod["filing"][filing_type]["directors"]
+
+    name_fields = ["firstName", "middleInitial", "lastName",
+                   "prevFirstName", "prevMiddleInitial", "prevLastName"]
+    required_fields = ["firstName", "lastName"]
+    name_changed_required_fields = ["prevFirstName", "prevLastName"]
+
+    for idx, director in enumerate(directors):
+        officer = director.get("officer", {})
+        actions = director.get("actions", [])
+        is_name_changed = "nameChanged" in actions
+
+        for field in name_fields:
+            value = officer.get(field)
+            path = f"/filing/changeOfDirectors/directors/{idx}/officer/{field}"
+
+            if field in required_fields and (not value or not value.strip()):
+                msg.append({
+                    "error": babel(f"Director {field} is required."),
+                    "path": path
+                })
+                continue
+
+            # Check prev first/last required when nameChanged
+            if field in name_changed_required_fields and is_name_changed and (not value or not value.strip()):
+                msg.append({
+                    "error": babel(f"Director {field} is required when name has changed."),
+                    "path": path
+                })
+                continue
+
+            if value:
+                # No leading or trailing whitespace
+                if value != value.strip():
+                    msg.append({
+                        "error": babel(f"Director {field} cannot have leading or trailing whitespace."),
+                        "path": path
+                    })
+
+                # Max length
+                if len(value) > PARTY_NAME_MAX_LENGTH:
+                    msg.append({
+                        "error": babel(f"Director {field} cannot be longer than {PARTY_NAME_MAX_LENGTH} characters."),
+                        "path": path
+                    })
 
     return msg

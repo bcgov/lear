@@ -52,6 +52,7 @@ WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
     "postalCode",
 )
 
+PARTY_NAME_MAX_LENGTH = 30
 
 # Share structure constants
 EXCLUDED_WORDS_FOR_CLASS = ["share", "shares", "value"]
@@ -445,7 +446,7 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
     msg = []
 
     custom_allowed_max_length = 20
-    last_name_max_length = 30
+    last_name_max_length = PARTY_NAME_MAX_LENGTH
     officer = party["officer"]
     party_type = officer["partyType"]
     party_roles = [x.get("roleType") for x in party["roles"]]
