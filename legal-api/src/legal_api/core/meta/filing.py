@@ -1009,11 +1009,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Handle output file list modification for corrections."""
         if filing.filing_type == "correction":
             correction = filing.meta_data.get("correction", {})
-            if correction.get("commentOnly") and business.legal_type in Business.CORPS:
-                if not correction.get("correctionBenStatement"):  # BEN correction statement require NOA
-                    outputs.remove("noticeOfArticles")
-            else:
-                corrected_filing_type = filing.filing_json["filing"].get("correction", {}).get("correctedFilingType")
+            if (
+                correction.get("commentOnly") and
+                business.legal_type in Business.CORPS and
+                not correction.get("correctionBenStatement")  # BEN correction statement require NOA
+            ):
+                outputs.remove("noticeOfArticles")
+            if correction.get("toLegalName"):
+                corrected_filing_type = filing.meta_data.get("correction", {}).get("correctedFilingType")
                 if corrected_filing_type == "amalgamationApplication":
                     outputs.add("certificateOfAmalgamation")
                 elif corrected_filing_type == "continuationIn":
@@ -1023,9 +1026,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     business.legal_type != Business.LegalTypes.COOP.value
                 ):
                     outputs.add("certificateOfIncorporation")
+                elif business.legal_type == Business.LegalTypes.COOP.value:
+                    outputs.add("certificateOfNameCorrection")
 
-            if correction.get("toLegalName") and business.legal_type == Business.LegalTypes.COOP.value:
-                outputs.add("certificateOfNameCorrection")
             if correction.get("uploadNewRules"):
                 outputs.add("certifiedRules")
             if correction.get("uploadNewMemorandum"):
