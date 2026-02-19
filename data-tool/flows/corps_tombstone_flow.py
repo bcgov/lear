@@ -349,6 +349,7 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
     """Create auth entity and affiliate as required."""
     # Note: affiliation to an account does not need to happen.  only entity creation in auth is req'd.
     #  used for testing purposes to see how things look in entity dashboard
+    print(f'👷 Start updating auth for {corp_num}...')
     pass_code = tombstone_data.get('pass_code')
     if config.USE_CUSTOM_PASSCODE:
         pass_code = config.CUSTOM_PASSCODE
@@ -373,6 +374,7 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
             raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
 
         # Update the contact email when one is provided/configured
+        # Send email to unaffiliated entities if configured 
         if admin_email:
             update_email_status = AuthService.update_contact_email(
                 config=config,
@@ -381,6 +383,18 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
             )
             if update_email_status != HTTPStatus.OK:
                 raise Exception(f"""Failed to update admin email in auth {business_data['identifier']}""")
+            if config.SEND_UNAFFILIATED_EMAIL and config.AFFILIATE_ENTITY:
+                raise Exception(f"""Config is ON for both AFFILIATE_ENTITY and SEND_UNAFFILIATED_EMAIL in auth {business_data['identifier']}""")
+
+            elif config.SEND_UNAFFILIATED_EMAIL:
+                print(f'👷 Config is ON for SEND_UNAFFILIATED_EMAIL sending email to {admin_email} for {business_data["identifier"]}...')
+                AuthService.send_unaffiliated_email(config=config,
+                identifier=business_data['identifier'],
+                email=admin_email)
+            else:
+                print(f'👷 Config is OFF for SEND_UNAFFILIATED_EMAIL skipping sending email to {admin_email} for {business_data["identifier"]}...')
+        elif not admin_email and config.SEND_UNAFFILIATED_EMAIL:
+            raise Exception(f"""Config is ON for SEND_UNAFFILIATED_EMAIL but no admin email found for {business_data["identifier"]}""")
 
     if config.AFFILIATE_ENTITY:
         business_data = tombstone_data['businesses']
