@@ -957,11 +957,12 @@ def test_get_ar_reminder(session, client, jwt, identifier, ar_reminder, status, 
     ('BC7654321', True, HTTPStatus.OK, 'arReminder flag updated'),
     ('BC7654321', 'True', HTTPStatus.BAD_REQUEST, 'arReminder must be a boolean value'),
     ('BC7654321', 123, HTTPStatus.BAD_REQUEST, 'arReminder must be a boolean value'),
-    ('T7654321', False, HTTPStatus.OK, 'No information on temp registrations.'),
+    ('T7654321', False, HTTPStatus.BAD_REQUEST, 'Cannot update ar reminder for temp registrations.'),
     ('BC1234567', False, HTTPStatus.NOT_FOUND, 'BC1234567 not found'),
 ])
-def test_set_ar_reminder(session, client, jwt, identifier, ar_reminder, status, message):
+def test_set_ar_reminder(session, mocker, client, jwt, identifier, ar_reminder, status, message):
     """Assert that temp registration returns 200."""
+    mocker.patch('legal_api.services.permissions.PermissionService.check_user_permission', return_value=None)
     if identifier not in ('T7654321', 'BC1234567'):
         business = factory_business_model(legal_name='legal_name',
                             identifier=identifier,
