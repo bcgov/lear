@@ -53,7 +53,7 @@ class _Config:
     DB_CONNECTION_NAME = os.getenv("DATABASE_CONNECTION_NAME")  # project:region:instance-name
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
+
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )
