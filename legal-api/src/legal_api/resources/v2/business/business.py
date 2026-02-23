@@ -212,7 +212,7 @@ def set_ar_reminder(identifier):
 
     if (
         flags.is_on("enable-permissions-for-action") and
-        not PermissionService.check_user_permission(ListActionsPermissionsAllowed.AR_REMINDER_OPT_OUT.value)
+        PermissionService.check_user_permission(ListActionsPermissionsAllowed.AR_REMINDER_OPT_OUT.value)
     ):
         return (
             jsonify({
