@@ -259,12 +259,15 @@ class AuthService:
         auth_url = config.AUTH_SVC_URL
         account_svc_affiliation_invitation_url = f'{auth_url}/affiliationInvitations'
         print(f'👷 Sending unaffiliated email to {email} for {identifier}...')
+        data = {}
         rv = requests.post(
             url=f'{account_svc_affiliation_invitation_url}/unaffiliated/{identifier}',
             headers={
                 **cls.CONTENT_TYPE_JSON,
                 'Authorization': cls.BEARER + token
-            }
+            },
+            data=json.dumps(data),
+            timeout=cls.get_time_out(config)
         )
         
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):

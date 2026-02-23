@@ -387,10 +387,12 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
                 raise Exception(f"""Config is ON for both AFFILIATE_ENTITY and SEND_UNAFFILIATED_EMAIL in auth {business_data['identifier']}""")
 
             elif config.SEND_UNAFFILIATED_EMAIL:
-                print(f'👷 Config is ON for SEND_UNAFFILIATED_EMAIL sending email to {admin_email} for {business_data["identifier"]}...')
-                AuthService.send_unaffiliated_email(config=config,
+                print(f'👷 Config is ON for SEND_UNAFFILIATED_EMAIL trying to send email to {admin_email} for {business_data["identifier"]}...')
+                send_email = AuthService.send_unaffiliated_email(config=config,
                 identifier=business_data['identifier'],
                 email=admin_email)
+                if send_email not in (HTTPStatus.OK.value, HTTPStatus.CREATED.value):
+                    raise Exception(f"""Failed to send unaffiliated email to {admin_email} for {business_data['identifier']}""")
             else:
                 print(f'👷 Config is OFF for SEND_UNAFFILIATED_EMAIL skipping sending email to {admin_email} for {business_data["identifier"]}...')
         elif not admin_email and config.SEND_UNAFFILIATED_EMAIL:
@@ -481,8 +483,14 @@ def migrate_tombstone(config, lear_engine: Engine, corp_num: str, clean_data: di
                 versioning_mapper)
             update_versioning(
                 lear_conn, tombstone_transaction_id, versioning_mapper)
-            update_auth(lear_conn, config, corp_num, clean_data, account_ids)
-            transaction.commit()
+            if config.SEND_UNAFFILIATED_EMAIL:
+                transaction.commit()
+                print(f'👷 Finished migrating snapshot and filings for {corp_num}, no more rollback for business..... start updating auth...')
+                update_auth(lear_conn, config, corp_num, clean_data, account_ids)
+            else:
+                print(f'👷 Finished migrating snapshot and filings for {corp_num}..... default rollback enabled.... start updating auth...')
+                update_auth(lear_conn, config, corp_num, clean_data, account_ids)
+                transaction.commit()
         except Exception as e:
             transaction.rollback()
             print(f'❌ Error migrating corp snapshot and filings data for {corp_num}: {repr(e)}')
