@@ -70,7 +70,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_TIMEOUT = int(os.getenv("ACCOUNT_SVC_TIMEOUT", "20"))
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
     PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
     BUSINESS_FILER_TOPIC = os.getenv("BUSINESS_FILER_TOPIC", "")

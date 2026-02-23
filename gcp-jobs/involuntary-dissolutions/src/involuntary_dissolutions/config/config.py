@@ -66,7 +66,6 @@ class _Config:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
     AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
     PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
     CLIENT_NAME = os.getenv("CLIENT_NAME", "involuntary-dissolutions-job")
@@ -99,7 +98,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
-    GCP_AUTH_KEY = None
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods

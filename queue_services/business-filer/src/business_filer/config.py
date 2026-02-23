@@ -76,7 +76,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
 
     # GCP Queue Configs
-    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
     BUSINESS_EVENTS_TOPIC = os.getenv("BUSINESS_EVENTS_TOPIC", "business-event-dev")
     BUSINESS_MAILER_TOPIC = os.getenv("BUSINESS_MAILER_TOPIC", "business-mailer-dev")
     BUSINESS_PAY_TOPIC = os.getenv("BUSINESS_PAY_TOPIC", "business-pay-dev")
