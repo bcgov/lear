@@ -52,18 +52,18 @@ class PdfService:
     def stamp_pdf(input_pdf, watermark, only_first_page=True):
         """Merge two PDFs."""
         watermark_obj = PdfReader(watermark)
-        watermark_page = watermark_obj.getPage(0)
+        watermark_page = watermark_obj.get_page(0)
 
         pdf_reader = PdfReader(input_pdf)
         pdf_writer = PdfWriter()
 
-        for page_num in range(pdf_reader.getNumPages()):
-            page = pdf_reader.getPage(page_num)
+        for page_num in range(pdf_reader.get_num_pages()):
+            page = pdf_reader.get_page(page_num)
 
             if (only_first_page and page_num == 0) or not only_first_page:
-                page.mergePage(watermark_page)
+                page.merge_page(watermark_page)
 
-            pdf_writer.addPage(page)
+            pdf_writer.add_page(page)
 
         output = io.BytesIO()
         pdf_writer.write(output)

@@ -414,7 +414,7 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         if file_info.size > max_file_size:
             msg.append({"error": _("File exceeds maximum size."), "path": file_key_path})
 
-        if pdf_reader.isEncrypted:
+        if pdf_reader.is_encrypted:
             msg.append({"error": _("File must be unencrypted."), "path": file_key_path})
 
     except Exception as ex:
