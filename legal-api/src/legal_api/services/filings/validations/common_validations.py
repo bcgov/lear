@@ -19,9 +19,9 @@ from http import HTTPStatus
 from typing import Final, Optional
 
 import pycountry
-import PyPDF2
 from flask import current_app, g, request
 from flask_babel import _
+from pypdf import PdfReader
 
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
@@ -397,7 +397,7 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     try:
         file = MinioService.get_file(file_key)
         open_pdf_file = io.BytesIO(file.data)
-        pdf_reader = PyPDF2.PdfFileReader(open_pdf_file)
+        pdf_reader = PdfReader(open_pdf_file)
 
         # Check that all pages in the pdf are letter size and able to be processed.
         width: Final = 612  # 8.5 inches
@@ -417,7 +417,8 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         if pdf_reader.isEncrypted:
             msg.append({"error": _("File must be unencrypted."), "path": file_key_path})
 
-    except Exception:
+    except Exception as ex:
+        current_app.logger.debug(f"Error validating PDF: {ex}")
         msg.append({"error": _("Invalid file."), "path": file_key_path})
 
     if msg:

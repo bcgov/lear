@@ -16,7 +16,7 @@
 """
 import io
 
-import PyPDF2
+from pypdf import PdfReader
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
@@ -36,7 +36,7 @@ def test_stamp(app):  # pylint:disable=unused-argument
         registrars_stamp = pdf_service.create_registrars_stamp(registrar_stamp_data)
         
         certified_copy = pdf_service.stamp_pdf(pdf_input, registrars_stamp, only_first_page=True)
-        certified_copy_obj = PyPDF2.PdfFileReader(certified_copy)
+        certified_copy_obj = PdfReader(certified_copy)
         
         certified_copy_page = certified_copy_obj.getPage(0)
         text = certified_copy_page.extractText()

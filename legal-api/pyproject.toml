@@ -40,7 +40,7 @@ dependencies = [
     "python-editor (==1.0.4)",
     "strict-rfc3339 (==0.7)",
     "minio (==7.0.2)",
-    "PyPDF2 (==1.26.0)",
+    "pypdf (==6.7.2)",
     "reportlab (==3.6.12)",
     "html-sanitizer (==2.4.1)",
     "lxml (==5.2.2)",
