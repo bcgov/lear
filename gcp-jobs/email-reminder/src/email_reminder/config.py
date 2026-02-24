@@ -41,7 +41,7 @@ class _Config:
     PAYMENT_SVC_FEES_URL = PAY_API_URL + PAY_API_VERSION + "/fees"
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("BUSINESS_GCP_AUTH_KEY", None)
+
     AUDIENCE = os.getenv("AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber")
     PUBLISHER_AUDIENCE = os.getenv("PUBLISHER_AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Publisher")
     BUSINESS_EMAILER_TOPIC = os.getenv("BUSINESS_EMAILER_TOPIC")
@@ -89,7 +89,6 @@ class UnitTestingConfig(_Config):
     SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
     PAYMENT_SVC_FEES_URL = "http://test.PAY_API_URL.fake/fees"
-    GCP_AUTH_KEY = None
 
 
 class ProductionConfig(_Config):
