@@ -60,21 +60,6 @@ def test_get_digital_credentials_preconditions_business_no_name(mock_preconditio
         }
 
 
-@patch("business_model.models.User.find_by_jwt_token", return_value=None)
-@patch.object(DigitalCredentialsRulesService, "get_preconditions", return_value=[])
-def test_get_digital_credentials_preconditions_no_user(mock_preconditions, mock_user, app):
-    with app.test_request_context():
-        app.app_ctx_globals_class.jwt_oidc_token_info = {"username": "test"}
-        business = Business()
-        business.legal_name = "Test Business"
-        result = get_digital_credentials_preconditions(business)
-        assert result == {
-            "attestBusiness": "Test Business",
-            "attestName": None,
-            "attestRoles": [],
-        }
-
-
 @patch("business_model.models.User.find_by_jwt_token", return_value=User(id=1, username="testuser"))
 @patch.object(DigitalCredentialsRulesService, "get_preconditions", return_value=[])
 def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_user, app):

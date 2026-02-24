@@ -15,7 +15,6 @@
 """This provides the service for determining access rules to digital credentials."""
 
 import logging
-import os
 from datetime import datetime, timezone
 from enum import Enum
 from typing import List

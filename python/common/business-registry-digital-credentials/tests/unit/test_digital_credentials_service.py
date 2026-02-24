@@ -1,4 +1,4 @@
-# Copyright © 2025 Province of British Columbia
+# Copyright © 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ class TestInitApp:
     @patch.object(DigitalCredentialsService, "_register_business_definition")
     def test_sets_config_values(self, mock_register, app):
         """init_app reads config values from the app."""
-        app.config["TRACTION_API_URL"] = "http://traction.test"
+        app.config["TRACTION_API_URL"] = "https://traction.test"
         app.config["TRACTION_PUBLIC_SCHEMA_DID"] = "schema-did"
         app.config["TRACTION_PUBLIC_ISSUER_DID"] = "issuer-did"
         app.config["BUSINESS_SCHEMA_NAME"] = "test-schema"
@@ -67,7 +67,7 @@ class TestInitApp:
         service.init_app(app)
 
         assert service.app is app
-        assert service.api_url == "http://traction.test"
+        assert service.api_url == "https://traction.test"
         assert service.public_schema_did == "schema-did"
         assert service.public_issuer_did == "issuer-did"
         assert service.business_schema_name == "test-schema"
@@ -111,7 +111,7 @@ class TestCreateInvitation:
 
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.create_invitation()
 
         assert result == {"invitation": {"@id": "123"}}
@@ -122,7 +122,7 @@ class TestCreateInvitation:
         app.api_token = _make_valid_token()
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.create_invitation()
         assert result is None
 
@@ -139,7 +139,7 @@ class TestFetchCredentialExchangeRecord:
 
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.fetch_credential_exchange_record("123")
         assert result == {"cred_ex_id": "123"}
 
@@ -156,7 +156,7 @@ class TestRemoveConnectionRecord:
 
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.remove_connection_record("conn-123")
         assert result == {}
 
@@ -166,7 +166,7 @@ class TestRemoveConnectionRecord:
         app.api_token = _make_valid_token()
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.remove_connection_record("conn-123")
         assert result is None
 
@@ -183,7 +183,7 @@ class TestRemoveCredentialExchangeRecord:
 
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.remove_credential_exchange_record("cred-123")
         assert result == {}
 
@@ -200,7 +200,7 @@ class TestRevokeCredential:
 
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.revoke_credential("conn-123", "cred-rev-1", "rev-reg-1", DCRevocationReason.UPDATED_INFORMATION)
         assert result == {}
 
@@ -210,6 +210,6 @@ class TestRevokeCredential:
         app.api_token = _make_valid_token()
         service = DigitalCredentialsService()
         service.app = app
-        service.api_url = "http://traction.test"
+        service.api_url = "https://traction.test"
         result = service.revoke_credential("conn-123", "cred-rev-1", "rev-reg-1", DCRevocationReason.UPDATED_INFORMATION)
         assert result is None

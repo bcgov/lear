@@ -1,4 +1,4 @@
-# Copyright © 2025 Province of British Columbia
+# Copyright © 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
 # you may not use this file except in compliance with the License.
@@ -142,13 +142,13 @@ class TestGetTractionToken:
 
     def test_missing_tenant_id(self, app):
         """Raises EnvironmentError when TRACTION_TENANT_ID is not set."""
-        app.config["TRACTION_API_URL"] = "http://traction.test"
+        app.config["TRACTION_API_URL"] = "https://traction.test"
         with pytest.raises(EnvironmentError, match="TRACTION_TENANT_ID"):
             _get_traction_token()
 
     def test_missing_api_key(self, app):
         """Raises EnvironmentError when TRACTION_API_KEY is not set."""
-        app.config["TRACTION_API_URL"] = "http://traction.test"
+        app.config["TRACTION_API_URL"] = "https://traction.test"
         app.config["TRACTION_TENANT_ID"] = "tenant-id"
         with pytest.raises(EnvironmentError, match="TRACTION_API_KEY"):
             _get_traction_token()
@@ -157,7 +157,7 @@ class TestGetTractionToken:
     @patch("business_registry_digital_credentials.decorators.requests.post")
     def test_success(self, mock_post, mock_get, app):
         """Returns token on successful authentication."""
-        app.config["TRACTION_API_URL"] = "http://traction.test"
+        app.config["TRACTION_API_URL"] = "https://traction.test"
         app.config["TRACTION_TENANT_ID"] = "tenant-id"
         app.config["TRACTION_API_KEY"] = "api-key"
 
