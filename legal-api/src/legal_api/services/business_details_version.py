@@ -501,7 +501,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         return member
 
     @staticmethod
-    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:  # noqa: PLR0912
+    def party_revision_json(transaction_id, party, is_ia_or_after) -> dict:
         """Return the party member as a json object."""
         member = VersionedBusinessDetailsService.party_revision_type_json(party, is_ia_or_after)
 
@@ -509,13 +509,13 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         if isinstance(party, VersioningProxy.version_class(db.session(), Party)):
             # Versioned party
             if party.delivery_address_id:
-                address_revision = VersionedBusinessDetailsService.get_address_revision(
-                    transaction_id, party.delivery_address_id)
-                if address_revision and address_revision.postal_code:
-                    member_address = VersionedBusinessDetailsService.address_revision_json(address_revision)
-                    if "addressType" in member_address:
-                        del member_address["addressType"]
-                    member["deliveryAddress"] = member_address
+                member_address = \
+                    VersionedBusinessDetailsService.address_revision_json(
+                        VersionedBusinessDetailsService.get_address_revision
+                        (transaction_id, party.delivery_address_id))
+                if "addressType" in member_address:
+                    del member_address["addressType"]
+                member["deliveryAddress"] = member_address
         # Non-versioned party
         elif (party_da := party.delivery_address) and party_da.postal_code:
             member_address = VersionedBusinessDetailsService.address_revision_json(party_da)
