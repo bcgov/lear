@@ -98,7 +98,7 @@ def get_roles(
     """Get roles for the user in the business."""
 
     def valid_party_role_filter(party_role) -> bool:
-        """Filter party roles in both preconditions and self-attested roles."""
+        """Filter party roles to those in both preconditions and self-attested roles."""
         return party_role.role in preconditions and party_role.role in self_attested_roles
 
     party_roles = []
@@ -109,10 +109,8 @@ def get_roles(
     may_attach_role = not has_preconditions or only_use_self_attested_roles
 
     if may_attach_role:
-        if rules.user_has_business_party_role(user, business):
-            party_roles += rules.user_business_party_roles(user, business)
-        if rules.user_has_filing_party_role(user, business):
-            party_roles += rules.user_filing_party_roles(user, business)
+        party_roles += rules.user_business_party_roles(user, business)
+        party_roles += rules.user_filing_party_roles(user, business)
 
         if only_use_self_attested_roles:
             # Ensures that the user cant attach roles that are not stated in the preconditions
