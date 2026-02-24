@@ -404,7 +404,7 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         height: Final = 792  # 11 inches
         if (
             verify_paper_size and
-            any(x.mediaBox.getWidth() != width or x.mediaBox.getHeight() != height for x in pdf_reader.pages)
+            any(x.mediabox.width != width or x.mediabox.height != height for x in pdf_reader.pages)
         ):
             msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
                         "path": file_key_path})
