@@ -1102,6 +1102,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if region_code and region_code.upper() != "FEDERAL":
             region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
         filing["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
+        filing["prev_legal_name"] = filing["continuationIn"].get("foreignJurisdiction").get("legalName")
 
     def _format_continuation_in_data(self, filing):
         self._format_address(filing["continuationIn"]["offices"]["registeredOffice"]["deliveryAddress"])
