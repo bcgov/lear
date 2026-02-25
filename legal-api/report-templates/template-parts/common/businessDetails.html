@@ -92,7 +92,11 @@
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{effective_date_time}}</div>
-               <div class="pt-2">{{recognition_date_time}}</div>
+               {% if business.legalType in ['C', 'CCC', 'CUL', 'CBEN'] %}
+                  <div class="pt-2">Continued into B.C. on {{recognition_date_time}}</div>
+               {% else %}
+                  <div class="pt-2">{{recognition_date_time}}</div>
+               {% endif %}
             </td>
          {% elif header.reportType == 'specialResolution' %}
             <td>
