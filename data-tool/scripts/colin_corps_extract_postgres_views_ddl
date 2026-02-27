@@ -649,6 +649,53 @@ ALTER MATERIALIZED VIEW mv_share_class_issue_flags
 
 
 CREATE MATERIALIZED VIEW mv_legacy_corps_data AS
+WITH cp_completed AS (
+  /* One completed migration row per corp in prod */
+  SELECT DISTINCT ON (cp.corp_num)
+    cp.corp_num,
+    cp.mig_batch_id
+  FROM corp_processing cp
+  WHERE cp.environment = 'prod'
+    AND cp.processed_status = 'COMPLETED'
+  ORDER BY
+    cp.corp_num,
+    (cp.mig_batch_id IS NULL),
+    cp.last_modified DESC NULLS LAST,
+    cp.id DESC
+),
+mcb_prod AS (
+  /* One queued migration batch per corp for prod */
+  SELECT DISTINCT ON (mcb.corp_num)
+    mcb.corp_num,
+    mcb.mig_batch_id
+  FROM mig_corp_batch mcb
+  JOIN mig_batch mb
+    ON mb.id = mcb.mig_batch_id
+  LEFT JOIN mig_group mg
+    ON mg.id = mb.mig_group_id
+  WHERE mb.target_environment = 'prod'
+    AND (mg.target_environment = 'prod' OR mg.id IS NULL)
+  ORDER BY
+    mcb.corp_num,
+    mb.migrated_date DESC NULLS LAST,
+    mb.requested_date DESC NULLS LAST,
+    mb.created_date DESC NULLS LAST,
+    mb.id DESC,
+    mcb.id DESC
+),
+mig_status AS (
+  /* Precedence: Y (completed) over QUEUED */
+  SELECT DISTINCT ON (corp_num)
+    corp_num,
+    migrated,
+    mig_batch_id
+  FROM (
+    SELECT corp_num, 'Y'::text      AS migrated, mig_batch_id, 1 AS precedence FROM cp_completed
+    UNION ALL
+    SELECT corp_num, 'QUEUED'::text AS migrated, mig_batch_id, 2 AS precedence FROM mcb_prod
+  ) u
+  ORDER BY corp_num, precedence
+)
 SELECT COALESCE(edg.group_name, NULL) AS group_name,
         tblFe.email_domain,
         admin_email,
@@ -673,7 +720,15 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(has_officers as boolean) as has_officers,
         CAST(has_3rd_party as boolean) as has_3rd_party,
         vendor,
-        CAST(migrated as boolean) as migrated,
+        -- NOTE: `group_name` comes from email_domain_groups; migration tracking fields are prefixed with `mig_` to avoid confusion.
+        mg.id as mig_group_id,
+        mg.name as mig_group_name,
+        mg.display_name as mig_group_display_name,
+        ms.mig_batch_id as mig_batch_id,
+        mb.name as mig_batch_name,
+        mb.display_name as mig_batch_display_name,
+        mb.migrated_date as mig_date,
+        COALESCE(ms.migrated, 'N') AS migrated,
         CAST(has_password as boolean) as has_password,
         CAST(COALESCE(sif.has_other_currency, false) as boolean) as has_other_share_currency,
         CAST(COALESCE(sif.has_par_value_lt1_gt6dp, false) as boolean) as has_share_par_value_lt1_gt6dp,
@@ -708,7 +763,6 @@ FROM (
            c.corp_type_cd,
            CASE WHEN c.corp_frozen_type_cd is null THEN 'N' ELSE 'Y' END AS is_frozen,
            CASE WHEN cs.op_state_type_cd = 'ACT' THEN 'Y' ELSE 'N' END AS is_active,
-           CASE WHEN cop.id IS NULL THEN 'N' ELSE 'Y' END AS migrated,
             CASE
                 WHEN NOT EXISTS (
                     SELECT 1
@@ -792,7 +846,6 @@ FROM (
     LEFT OUTER JOIN filing f ON e.event_id = f.event_id
     LEFT OUTER JOIN mv_corps_with_officers cow ON c.corp_num = cow.corp_num
     LEFT OUTER JOIN corps_with_third_party cowtp ON c.corp_num = cowtp.corp_num
-    LEFT OUTER JOIN corp_processing cop ON c.corp_num = cop.corp_num and cop.environment = 'prod' and cop.processed_status = 'COMPLETED'
     LEFT OUTER JOIN (
       SELECT corp_num, MAX(party_typ_count) AS director_count
       FROM mv_corps_party_role_count
@@ -812,7 +865,7 @@ FROM (
           fe_sub.corp_num,
           STRING_AGG(fe_sub.failed_event, ',' ORDER BY fe_sub.failed_event) AS failed_events
               FROM (
-                SELECT DISTINCT 
+                SELECT DISTINCT
                   e2.corp_num,
                   e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL') AS failed_event
                 FROM event e2
@@ -835,7 +888,7 @@ FROM (
     WHERE 1 = 1
     GROUP BY e.corp_num, cn.corp_name, c.corp_type_cd, c.corp_frozen_type_cd, c.recognition_dts, c.last_ar_filed_dt,
              LOWER(SPLIT_PART(c.admin_email, '@', 2)), c.admin_email, cow.corp_num,
-             cowtp.corp_num, cowtp.vendor, cop.id, cprt_dir.director_count, aec.email_count, c.corp_password, c.send_ar_ind, cs.op_state_type_cd,
+             cowtp.corp_num, cowtp.vendor, cprt_dir.director_count, aec.email_count, c.corp_password, c.send_ar_ind, cs.op_state_type_cd,
            mvaqc.address_all_any_bad_count,
            mvaqc.address_all_stub_count,
            mvaqc.address_all_any_bad_key_fields_count,
@@ -853,6 +906,9 @@ FROM (
            ciaml.ting_corps,
            fe.failed_events
 ) tblFe
+LEFT JOIN mig_status ms USING (corp_num)
+LEFT JOIN mig_batch  mb ON mb.id = ms.mig_batch_id
+LEFT JOIN mig_group  mg ON mg.id = mb.mig_group_id
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
 LEFT JOIN mv_share_class_issue_flags sif USING (corp_num)
 where 1=1
