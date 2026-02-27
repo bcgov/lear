@@ -1166,3 +1166,17 @@ CREATE INDEX IF NOT EXISTS ix_corp_state_curr ON corp_state (corp_num, op_state_
 CREATE INDEX IF NOT EXISTS ix_corporation_corpnum ON corporation (corp_num);
 
 CREATE INDEX IF NOT EXISTS ix_corporation_type ON corporation (corp_type_cd);
+
+-- Performance indexes to support mv_legacy_corps_data migration CTEs
+-- (cp_completed: prod+completed rows, pick 1 row per corp_num with deterministic ordering)
+CREATE INDEX IF NOT EXISTS ix_corp_processing_prod_completed_pick
+	ON corp_processing (corp_num, (mig_batch_id IS NULL), last_modified DESC NULLS LAST, id DESC, mig_batch_id)
+	WHERE environment = 'prod' AND processed_status = 'COMPLETED';
+
+-- (mcb_prod: faster per-corp access patterns and joins)
+CREATE INDEX IF NOT EXISTS ix_mig_corp_batch_corp_num
+	ON mig_corp_batch (corp_num, mig_batch_id, id DESC);
+
+-- (batch ordering/filtering helper; useful if planner chooses to drive from mig_batch)
+CREATE INDEX IF NOT EXISTS ix_mig_batch_target_env_dates
+	ON mig_batch (target_environment, migrated_date DESC NULLS LAST, requested_date DESC NULLS LAST, created_date DESC NULLS LAST, id DESC);
