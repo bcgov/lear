@@ -626,12 +626,6 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           filing_type: str,
                           accepted_request_types: Optional[list] = None) -> list:
     """Validate name request section."""
-    # This is added specifically for the sandbox environment.
-    # i.e. NR check should only ever have feature flag disabled for sandbox environment.
-    if flags.is_on("enable-sandbox"):
-        current_app.logger.debug("Skipping name request validation for Sandbox.")
-        return []
-
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
     legal_name_path = f"{nr_path}/legalName"

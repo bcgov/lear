@@ -249,14 +249,6 @@ def test_validate_nr_not_consumable_rejected():
         assert not validation_result['consent_received']
 
 
-def test_validate_nr_rejected_skips_nr_validate():
-    """Assert that nr mock data that has been rejected skips nr check."""
-
-    with patch.object(flags, 'is_on', return_value=True):
-        validation_result = namex.validate_nr(nr_not_consumable_rejected)
-        assert validation_result == skip_nr_check_validation_result
-
-
 def test_validate_nr_not_consumable_expired():
     """Assert that nr mock data is not consumable as it has expired."""
     with patch.object(flags, 'is_on', return_value=False):
@@ -267,12 +259,6 @@ def test_validate_nr_not_consumable_expired():
         assert validation_result['is_expired']
         assert not validation_result['consent_required']
         assert not validation_result['consent_received']
-
-def test_validate_nr_expired_skips_nr_validate():
-    """Assert that nr mock data that has expired skips nr check."""
-    with patch.object(flags, 'is_on', return_value=True):
-        validation_result = namex.validate_nr(nr_not_consumable_expired)
-        assert validation_result == skip_nr_check_validation_result
 
 
 def test_validate_nr_already_consumed():
@@ -287,13 +273,6 @@ def test_validate_nr_already_consumed():
         assert not validation_result['consent_received']
 
 
-def test_validate_nr_already_consumed_skips_nr_validate():
-    """Assert that nr mock data has already been consumed skips nr check."""
-    with patch.object(flags, 'is_on', return_value=True):
-        validation_result = namex.validate_nr(nr_already_consumed)
-        assert validation_result == skip_nr_check_validation_result
-
-
 def test_validate_nr_consent_required_not_received():
     """Assert that nr mock data is conditionally approved, but consent not received."""
     with patch.object(flags, 'is_on', return_value=False):
@@ -305,15 +284,6 @@ def test_validate_nr_consent_required_not_received():
         assert not validation_result['is_expired']
         assert validation_result['consent_required']
         assert not validation_result['consent_received']
-
-
-def test_validate_nr_consent_required_not_received_skips_nr_validate():
-    """Assert that nr mock data is conditionally approved, but consent not received, skips nr check."""
-    with patch.object(flags, 'is_on', return_value=True):
-        nr_consent_required = copy.deepcopy(nr_consumable_conditional)
-        nr_consent_required['consentFlag'] = 'Y'
-        validation_result = namex.validate_nr(nr_consent_required)
-        assert validation_result == skip_nr_check_validation_result
 
 
 def test_validate_nr_consent_required_received():
@@ -354,30 +324,6 @@ def test_validate_nr_consent_required_received():
         assert not validation_result['is_expired']
         assert not validation_result['consent_required']
         assert not validation_result['consent_received']
-
-
-def test_validate_nr_consent_required_received_skips_nr_check():
-    """Assert that nr mock data is conditionally approved and consent was received, skips nr check."""
-    with patch.object(flags, 'is_on', return_value=True):
-        validation_result = namex.validate_nr(nr_consumable_conditional)
-        assert validation_result == skip_nr_check_validation_result
-
-        # N = consent waived
-        nr_consent_waived = copy.deepcopy(nr_consumable_conditional)
-        nr_consent_waived['consentFlag'] = 'N'
-        validation_result = namex.validate_nr(nr_consent_waived)
-        assert validation_result == skip_nr_check_validation_result
-
-        # None = consent not required
-        nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
-        nr_consent_not_required['consentFlag'] = None
-        validation_result = namex.validate_nr(nr_consent_not_required)
-        assert validation_result == skip_nr_check_validation_result
-
-        nr_consent_not_required = copy.deepcopy(nr_consumable_conditional)
-        nr_consent_not_required['consentFlag'] = ''
-        validation_result = namex.validate_nr(nr_consent_not_required)
-        assert validation_result == skip_nr_check_validation_result
 
 
 def test_get_approved_name():
