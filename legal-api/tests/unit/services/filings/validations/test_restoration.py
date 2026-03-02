@@ -95,6 +95,9 @@ def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, 
     mock_nr_response = MockResponse(temp_nr_response, HTTPStatus.OK)
 
     mocker.patch('legal_api.services.NameXService.query_nr_number', return_value=mock_nr_response)
+
+    if filing['filing']['restoration']['type'] in ('limitedRestoration', 'limitedRestorationExtension'):
+        del filing['filing']['restoration']['contactPoint']
     with patch.object(Filing, 'get_most_recent_filing',
                       return_value=limited_restoration_filing):
         err = validate(business, filing)
@@ -141,6 +144,10 @@ def test_validate_party(session, test_name, party_role, expected_msg):
         filing['filing']['restoration']['parties'][0]['roles'][0]['roleType'] = party_role
     else:
         filing['filing']['restoration']['parties'] = []
+
+    if filing['filing']['restoration']['type'] in ('limitedRestoration', 'limitedRestorationExtension'):
+        del filing['filing']['restoration']['contactPoint']
+
     err = validate(business, filing)
 
     if expected_msg:
@@ -177,6 +184,7 @@ def test_validate_relationship(session, test_status, restoration_type, expected_
         filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
 
     if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+        del filing['filing']['restoration']['contactPoint']
         expiry_date = LegislationDatetime.now() + relativedelta(months=1)
         filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
     elif test_status == 'SUCCESS' and restoration_type in ('fullRestoration', 'limitedRestorationToFull'):
@@ -233,6 +241,9 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
     filing['filing']['restoration']['type'] = restoration_type
     if delta_date:
         filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
+
+    if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+        del filing['filing']['restoration']['contactPoint']    
     with patch.object(Filing, 'get_most_recent_filing',
                       return_value=limited_restoration_filing):
         err = validate(business, filing)
@@ -282,6 +293,9 @@ def test_approval_type(session, test_status, restoration_types, legal_types, app
             filing['filing']['restoration']['approvalType'] = approval_type
             filing['filing']['restoration']['applicationDate'] = '2023-03-30'
             filing['filing']['restoration']['noticeDate'] = '2023-03-30'
+
+            if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+                del filing['filing']['restoration']['contactPoint']
 
             with patch.object(Filing, 'get_most_recent_filing',
                               return_value=limited_restoration_filing):
@@ -339,6 +353,9 @@ def test_restoration_court_orders(session, test_status, restoration_types, legal
             else:
                 del filing['filing']['restoration']['courtOrder']
 
+            if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+                del filing['filing']['restoration']['contactPoint']
+
             with patch.object(Filing, 'get_most_recent_filing',
                               return_value=limited_restoration_filing):
                 err = validate(business, filing)
@@ -395,6 +412,9 @@ def test_restoration_registrar(session, test_status, restoration_types, legal_ty
                 filing['filing']['restoration']['applicationDate'] = application_date
             if notice_date:
                 filing['filing']['restoration']['noticeDate'] = notice_date
+
+            if restoration_type in ('limitedRestoration', 'limitedRestorationExtension'):
+                del filing['filing']['restoration']['contactPoint']
 
             with patch.object(Filing, 'get_most_recent_filing',
                               return_value=limited_restoration_filing):
@@ -533,3 +553,49 @@ def test_validate_restoration_name_translation(session, test_name, name_translat
         if err:
             print(err, err.code, err.msg)
         assert err is None
+
+@pytest.mark.parametrize(
+    'test_status, restoration_type, has_contact_point, expected_code, expected_msg',
+    [
+        ('SUCCESS', 'limitedRestoration', False, None, None),
+        ('SUCCESS', 'limitedRestorationExtension', False, None, None),
+        ('FAIL', 'limitedRestoration', True, HTTPStatus.BAD_REQUEST,
+         'Contact point must not be provided. '
+         'The corporation will be restored with the contact information it had prior to dissolution.'),
+        ('FAIL', 'limitedRestorationExtension', True, HTTPStatus.BAD_REQUEST,
+         'Contact point must not be provided. '
+         'The corporation will be restored with the contact information it had prior to dissolution.'),
+    ]
+)
+def test_validate_contact_point(session, test_status, restoration_type, has_contact_point, expected_code, expected_msg):
+    """Assert that contact point is not allowed for limited restoration filings."""
+    business = Business(identifier='BC1234567', legal_type='BC', restoration_expiry_date=LegislationDatetime.now())
+    limited_restoration_filing = None
+    if restoration_type == 'limitedRestorationExtension':
+        limited_restoration_filing = factory_limited_restoration_filing()
+
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
+    filing['filing']['header']['name'] = 'restoration'
+    filing['filing']['restoration']['type'] = restoration_type
+
+    expiry_date = LegislationDatetime.now() + relativedelta(months=1)
+    filing['filing']['restoration']['expiry'] = expiry_date.strftime(date_format)
+
+    if restoration_type == 'limitedRestorationExtension':
+        del filing['filing']['restoration']['nameRequest']
+    else:
+        filing['filing']['restoration']['nameRequest']['legalName'] = legal_name
+
+    if not has_contact_point:
+        del filing['filing']['restoration']['contactPoint']
+
+    with patch.object(Filing, 'get_most_recent_filing',
+                      return_value=limited_restoration_filing):
+        err = validate(business, filing)
+
+    if expected_code:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+    else:
+        assert not err
