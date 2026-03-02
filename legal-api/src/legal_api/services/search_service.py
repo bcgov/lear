@@ -185,13 +185,11 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         for business in bus_query[:limit]:
             try:
                 business_json = business.json(slim=True)
-
                 if business.legal_type in (
                     Business.LegalTypes.SOLE_PROP,
                     Business.LegalTypes.PARTNERSHIP
                 ):
                     business_json["alternateNames"] = business.get_alternate_names()
-
                 bus_results.append(business_json)
             except Exception as e:
                 current_app. logger.error(
@@ -199,8 +197,8 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 )
                 bus_results. append({
                 "identifier": business. identifier,
-                "LegalName": None,
-                "goodStanding": None,
+                "LegalName": getattr(business, "legal_name", None),
+                "goodStanding": getattr(business, "good_standing", None),
                 "LegalType": getattr(business, "legal_type", None),
                 "state": getattr(business, "state", None),
                 "error": "Unable to retrieve full details for this business."
