@@ -197,9 +197,9 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 )
                 bus_results. append({
                 "identifier": business.identifier,
-                "LegalName": getattr(business, "legal_name", None),
+                "legalName": getattr(business, "legal_name", None),
                 "goodStanding": getattr(business, "good_standing", None),
-                "LegalType": getattr(business, "legal_type", None),
+                "legalType": getattr(business, "legal_type", None),
                 "state": getattr(business, "state", None),
                 "error": "Unable to retrieve full details for this business."
                 })
