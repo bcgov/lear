@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-digital-credentials"
-version = "0.1.4"
+version = "0.1.5"
 description = "This module is the service worker for handling events that deal with Digital Business Card credential tasks."
 authors = ["Lucas O'Neil <lucasoneil@gmail.com>"]
 license = "BSD-3-Clause"
@@ -8,9 +8,9 @@ readme = "README.md"
 
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.13,<3.14"
 gunicorn = "23.0.0"
-launchdarkly-server-sdk = "9.12.0"
+launchdarkly-server-sdk = "9.15.0"
 psycopg2-binary = "2.9.11"
 Flask = "^3.1.2"
 
@@ -32,7 +32,7 @@ requests-mock = "1.12.1"
 
 [tool.poetry.group.dev.dependencies]
 freezegun = "^1.5.5"
-ruff = "^0.14.13"
+ruff = "^0.15.2"
 deptry = "^0.24.0"
 
 [tool.ruff]
@@ -54,8 +54,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.13
+target-version = "py313"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.

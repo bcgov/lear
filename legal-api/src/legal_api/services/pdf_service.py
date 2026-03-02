@@ -18,8 +18,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
-import PyPDF2
 from flask import current_app
+from pypdf import PdfReader, PdfWriter
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -51,19 +51,19 @@ class PdfService:
     @staticmethod
     def stamp_pdf(input_pdf, watermark, only_first_page=True):
         """Merge two PDFs."""
-        watermark_obj = PyPDF2.PdfFileReader(watermark)
-        watermark_page = watermark_obj.getPage(0)
+        watermark_obj = PdfReader(watermark)
+        watermark_page = watermark_obj.get_page(0)
 
-        pdf_reader = PyPDF2.PdfFileReader(input_pdf)
-        pdf_writer = PyPDF2.PdfFileWriter()
+        pdf_reader = PdfReader(input_pdf)
+        pdf_writer = PdfWriter()
 
-        for page_num in range(pdf_reader.getNumPages()):
-            page = pdf_reader.getPage(page_num)
+        for page_num in range(pdf_reader.get_num_pages()):
+            page = pdf_reader.get_page(page_num)
 
             if (only_first_page and page_num == 0) or not only_first_page:
-                page.mergePage(watermark_page)
+                page.merge_page(watermark_page)
 
-            pdf_writer.addPage(page)
+            pdf_writer.add_page(page)
 
         output = io.BytesIO()
         pdf_writer.write(output)
