@@ -138,7 +138,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         invalid_types = [t for t in input_normalized if not BusinessSearchService.try_parse_legal_type(t)]
         return valid_types, invalid_types
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals # pylint: disable=too-many-branches # pylint: disable=too-many-statements
     @staticmethod
     def get_search_filtered_businesses_results(business_json,
                                                identifiers=None,
