@@ -53,10 +53,7 @@ def get_recipients(option: str, filing_json: dict, token: str | None = None, fil
     recipients = ""
     filing_type = filing_type if filing_type else "incorporationApplication"
     if filing_json["filing"].get(filing_type):
-        recipients = filing_json["filing"][filing_type].get("contactPoint", {}).get("email", "")
-        if not recipients:
-            identifier = filing_json["filing"]["business"]["identifier"]
-            recipients = get_recipient_from_auth(identifier, token)
+        recipients = filing_json["filing"][filing_type].get("contactPoint", {}).get("email")
         if option in [Filing.Status.PAID.value, "bn"] and \
             filing_json["filing"]["header"]["name"] == filing_type:
             parties = filing_json["filing"][filing_type].get("parties")
