@@ -2231,8 +2231,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.62"
-resolved_reference = "1cea81cf14104fb7d4989169236eff13b3df16c4"
+reference = "2.18.63"
+resolved_reference = "0e584cc385d1cd00722f96032af346b48f875d72"
 
 [[package]]
 name = "reportlab"
@@ -3134,4 +3134,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9.22,<3.10"
-content-hash = "5425c99816e9059bc80ed201c71960e55dc2ac19956193e5f33acd3134b0390f"
+content-hash = "1cb0b50b3e444405eec28df9a200178315601fa43e355662e85a1b1db1a4c03e"
