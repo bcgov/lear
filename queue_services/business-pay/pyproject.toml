@@ -5,7 +5,7 @@ description = "Business Registry Pay Service"
 authors = [{name = "thor",email = "thor@wolpert.ca"}]
 license = {text = "BSD-3-Clause"}
 readme = "README.md"
-requires-python = ">=3.13,<4"
+requires-python = ">=3.13,<3.14"
 
 dependencies = [
   "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
@@ -31,6 +31,7 @@ pytest-mock = "^3.14.0"
 black = "^24.4.2"
 zimports = "^0.6.1"
 lovely-pytest-docker = "^0.3.1"
+pytest-cov = "^6.1.1"
 
 [build-system]
 requires = ["poetry-core"]

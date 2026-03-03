@@ -761,6 +761,9 @@ def get_allowable_actions(jwt: JwtManager, business: Business):
         "digitalBusinessCardPreconditions": get_digital_credentials_preconditions(business),
         "viewAll": is_competent_authority(jwt)
     }
+    if business.legal_type in Business.CORPS:
+        result["arReminder"] = (business.state == Business.State.ACTIVE)
+
     return result
 
 

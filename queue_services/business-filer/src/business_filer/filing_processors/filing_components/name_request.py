@@ -42,7 +42,6 @@ from flask import current_app
 
 from business_filer.common.services.account_service import AccountService
 from business_filer.exceptions import QueueException
-from business_filer.services import Flags
 from business_filer.services.utils import get_str
 
 
@@ -51,10 +50,6 @@ def consume_nr(business: Business,
                filing_type: str | None = None):
     """Update the nr to a consumed state."""
     try:
-        if Flags.is_on("enable-sandbox"):
-            current_app.logger.info("Skip consuming NR")
-            return
-
         filing_type = filing_type if filing_type else filing.filing_type
         # skip this if none (nrNumber will not be available for numbered company)
         if nr_num := get_str(filing.filing_json, f"/filing/{filing_type}/nameRequest/nrNumber"):

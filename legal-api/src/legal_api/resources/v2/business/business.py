@@ -34,6 +34,7 @@ from legal_api.services import (  # noqa: I001;
     flags,
 )  # noqa: I001;
 from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
 from legal_api.utils.auth import jwt
 
@@ -207,7 +208,20 @@ def get_ar_reminder(identifier):
 def set_ar_reminder(identifier):
     """Update send ar reminder flag."""
     if identifier.startswith("T"):
-        return {"message": "No information on temp registrations."}, 200
+        return {"message": "Cannot update ar reminder for temp registrations."}, HTTPStatus.BAD_REQUEST
+
+    if (
+        flags.is_on("enable-permissions-for-action") and
+        PermissionService.check_user_permission(ListActionsPermissionsAllowed.AR_REMINDER_OPT_OUT.value)
+    ):
+        return (
+            jsonify({
+                "message": (
+                    f"Permission Denied - You do not have permissions to change opt out ar reminder: {identifier}."
+                )
+            }),
+            HTTPStatus.FORBIDDEN
+        )
 
     json_input = request.get_json()
     ar_reminder = json_input.get("arReminder")

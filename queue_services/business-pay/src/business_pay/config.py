@@ -103,7 +103,7 @@ class Config:  # pylint: disable=too-few-public-methods
     ENVIRONMENT = os.getenv("DEPLOYMENT_ENV", "production")
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )

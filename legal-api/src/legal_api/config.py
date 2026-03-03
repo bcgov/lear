@@ -200,7 +200,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     TR_START_DATE = os.getenv("TR_START_DATE", "").strip()  # i.e. '2025-02-01'
 
     # Pub/Sub
-    GCP_AUTH_KEY = os.getenv("GCP_AUTH_KEY", None)
+
     AUDIENCE = os.getenv(
         "AUDIENCE", "https://pubsub.googleapis.com/google.pubsub.v1.Subscriber"
     )

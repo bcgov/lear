@@ -15,8 +15,8 @@
 import io
 from typing import Final
 
-import PyPDF2
 from flask import current_app
+from pypdf import PdfWriter
 
 from legal_api.models import Furnishing, db
 from legal_api.reports.report_v2 import ReportTypes, ReportV2
@@ -79,15 +79,15 @@ class FurnishingDocumentsService:
     @staticmethod
     def _merge_documents(files: dict) -> bytes:
         try:
-            merger = PyPDF2.PdfFileMerger()
+            writer = PdfWriter()
             if files["cover"]:
-                merger.append(io.BytesIO(files["cover"]))
+                writer.append(io.BytesIO(files["cover"]))
             contents = files["contents"]
             for _, pdf in enumerate(contents):
-                merger.append(io.BytesIO(pdf))
+                writer.append(io.BytesIO(pdf))
             writer_buffer = io.BytesIO()
-            merger.write(writer_buffer)
-            merger.close()
+            writer.write(writer_buffer)
+            writer.close()
             return writer_buffer.getvalue()
         except Exception as e:
             current_app.logger.error(f"Error merging PDF:{e}")

@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from operator import and_
 from typing import Final, Optional
 
+from flask import current_app
 from requests import Request
 from sqlalchemy import func
 
@@ -137,7 +138,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         invalid_types = [t for t in input_normalized if not BusinessSearchService.try_parse_legal_type(t)]
         return valid_types, invalid_types
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals # pylint: disable=too-many-branches # pylint: disable=too-many-statements
     @staticmethod
     def get_search_filtered_businesses_results(business_json,
                                                identifiers=None,
@@ -182,15 +183,26 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
         bus_query = db.session.query(Business).filter(*filters).limit(limit+1).offset(offset).all()
         bus_results = []
         for business in bus_query[:limit]:
-            business_json = business.json(slim=True)
-
-            if business.legal_type in (
-                Business.LegalTypes.SOLE_PROP,
-                Business.LegalTypes.PARTNERSHIP
-            ):
-                business_json["alternateNames"] = business.get_alternate_names()
-
-            bus_results.append(business_json)
+            try:
+                business_json = business.json(slim=True)
+                if business.legal_type in (
+                    Business.LegalTypes.SOLE_PROP,
+                    Business.LegalTypes.PARTNERSHIP
+                ):
+                    business_json["alternateNames"] = business.get_alternate_names()
+                bus_results.append(business_json)
+            except Exception as e:
+                current_app. logger.error(
+                "Error serializing business %s: %s", business.identifier, e
+                )
+                bus_results. append({
+                "identifier": business.identifier,
+                "legalName": getattr(business, "legal_name", None),
+                "goodStanding": getattr(business, "good_standing", None),
+                "legalType": getattr(business, "legal_type", None),
+                "state": getattr(business, "state", None),
+                "error": "Unable to retrieve full details for this business."
+                })
         has_more = len(bus_query) > limit
         return bus_results, has_more
 

@@ -60,10 +60,12 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.models import (
+    Address,
     Batch,
     BatchProcessing,
     Business,
     Filing,
+    PartyRole,
     RegistrationBootstrap,
     Review,
     ReviewResult,
@@ -84,6 +86,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
+    factory_party_role,
     factory_pending_filing,
     factory_user,
 )
@@ -2212,4 +2215,106 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     else:
         assert rv.status_code == HTTPStatus.FORBIDDEN
         assert rv.json[0]['message'] == 'Permission Denied - dissolution.delay filing is currently not available for this user and/or account.'
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, roles, enabled',
+    [
+        ('BC_staff', Business.LegalTypes.COMP.value, [STAFF_ROLE], True),
+        ('BC_public', Business.LegalTypes.COMP.value, [PUBLIC_USER], True),
+        ('BC_staff_disabled', Business.LegalTypes.COMP.value, [STAFF_ROLE], False),
+    ]
+)
+def test_ta(session, requests_mock, client, jwt, monkeypatch, test_name, legal_type, roles, enabled):
+    """Assert Post Restoration Transition Application submission returns as expected."""
+    identifier = (f'BC{random.SystemRandom().getrandbits(0x58)}')[:9]
+    enabled_filings = 'transition' if enabled else ''
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, _user, _account_id: enabled_filings
+        if flag == 'enabled-specific-filings' else {}
+    )
+    monkeypatch.setattr(
+        'legal_api.services.flags.is_on',
+        lambda flag: True
+        if flag == 'enabled-deeper-permission-action' else {}
+    )
+    ta = copy.deepcopy(TRANSITION_FILING_TEMPLATE)
+    ta['filing']['business']['identifier'] = identifier
+    ta['filing']['business']['legalType'] = legal_type
+    ta['filing']['transition']['relationships'] = [ta['filing']['transition']['relationships'][0]]
+
+    b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
+    factory_business_mailing_address(b)
+    mailing_address = Address(
+        city='Test City',
+        street=f'{identifier}-party Street',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+        address_type='mailing'
+    )
+    delivery_address = Address(
+        city='Test City',
+        street=f'{identifier}-party Street',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+        address_type='delivery'
+    )
+    officer = {
+        'firstName': 'tester',
+        'lastName': 'test',
+        'middleInitial': '',
+        'partyType': 'person',
+        'organizationName': ''
+    }
+    existing_dir = factory_party_role(
+        delivery_address,
+        mailing_address,
+        officer,
+        datetime.now() - datedelta.YEAR,
+        None,
+        PartyRole.RoleTypes.DIRECTOR
+    )
+    existing_dir.save()
+    b.party_roles.append(existing_dir)
+    b.save()
+    ta['filing']['transition']['relationships'][0]['entity']['identifier'] = str(existing_dir.party_id)
+
+    if PUBLIC_USER in roles:        
+        # mock response from auth to give edit access
+        requests_mock.get(f"{current_app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                            json={'roles': ['edit']})
+    pay_mock = requests_mock.post(
+        current_app.config.get('PAYMENT_SVC_URL'),
+        json={
+            'id': 21322,
+            'statusCode': 'COMPLETED',
+            'isPaymentActionRequired': False
+        },
+        status_code=HTTPStatus.CREATED
+    )
+    headers = {**create_header(jwt, roles, identifier)}
+    rv = client.post(
+        f'/api/v2/businesses/{identifier}/filings',
+        json=ta,
+        headers=headers
+    )
+    print(rv.json)
+    if enabled:
+        assert rv.status_code == HTTPStatus.CREATED
+        filing_id = rv.json['filing']['header']['filingId']
+        # assert payment info
+        assert pay_mock.called == True
+        assert pay_mock.call_count == 1
+        pay_payload = pay_mock.request_history[0].json()
+        assert pay_payload['filingInfo']['filingIdentifier'] == str(filing_id)
+        fee_info = pay_payload['filingInfo']['filingTypes']
+        assert len(fee_info) == 1
+        assert fee_info[0]['filingTypeCode'] == 'TRANP'
+
+    else:
+        assert rv.status_code == HTTPStatus.FORBIDDEN
+        assert rv.json[0]['message'] == 'Permission Denied - transition filing is currently not available for this user and/or account.'
     

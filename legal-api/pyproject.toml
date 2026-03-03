@@ -40,7 +40,7 @@ dependencies = [
     "python-editor (==1.0.4)",
     "strict-rfc3339 (==0.7)",
     "minio (==7.0.2)",
-    "PyPDF2 (==1.26.0)",
+    "pypdf (==6.7.2)",
     "reportlab (==3.6.12)",
     "html-sanitizer (==2.4.1)",
     "lxml (==5.2.2)",
@@ -52,7 +52,7 @@ dependencies = [
     "blinker (==1.4)",
     "pyjwt (==2.8.0)",
 
-    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.62#egg=registry_schemas",
+    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.63#egg=registry_schemas",
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging"

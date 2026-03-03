@@ -2,9 +2,11 @@ FROM mcr.microsoft.com/devcontainers/python:3.9-bullseye
 
 
 RUN \
+    rm -f /etc/apt/sources.list.d/yarn.list && \
     apt update && apt install bash-completion postgresql-client -y && \
-    pip install pre-commit && \
-    curl -sSL https://install.python-poetry.org | POETRY_HOME=/home/vscode/.local python3 -
+    pip install --upgrade pip && \
+    pip install pre-commit poetry && \
+    poetry config virtualenvs.in-project true
 
 RUN \
     pip install ruff
