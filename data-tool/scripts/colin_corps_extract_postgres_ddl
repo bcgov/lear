@@ -2,6 +2,10 @@ create sequence affiliation_processing_id_seq;
 
 alter sequence affiliation_processing_id_seq owner to postgres;
 
+create sequence if not exists auth_processing_id_seq;
+
+alter sequence auth_processing_id_seq owner to postgres;
+
 create sequence corp_processing_id_seq;
 
 alter sequence corp_processing_id_seq owner to postgres;
@@ -791,6 +795,51 @@ create index if not exists idx_corp_processing_last_processed_event_id
 
 create index if not exists idx_corp_processing_flow_name
     on corp_processing (flow_name);
+
+create table if not exists auth_processing
+(
+	id               integer default nextval('auth_processing_id_seq'::regclass) not null
+		constraint pk_auth_processing primary key,
+
+	corp_num         varchar(10) not null
+		constraint fk_auth_processing_corporation references corporation (corp_num),
+	corp_type_cd     varchar(3),
+	mig_batch_id     integer
+		constraint fk_auth_processing_batch references mig_batch,
+
+	flow_name        varchar(100) not null,
+	environment      varchar(25)  not null,
+	flow_run_id      uuid,
+	processed_status varchar(25)  not null,
+
+	create_date      timestamp with time zone default current_timestamp not null,
+	last_modified    timestamp with time zone default current_timestamp not null,
+	claimed_at       timestamp with time zone,
+	last_error       varchar(1000),
+
+	-- safe inputs (no secrets)
+	account_ids      varchar(100),
+	contact_email    varchar(254),
+
+	-- outcomes per component (queryable)
+	entity_action        varchar(25),
+	contact_action       varchar(25),
+	affiliation_action   varchar(25),
+	invite_action        varchar(25),
+
+	-- short structured summary, never secrets
+	action_detail        varchar(2000),
+
+	constraint unq_auth_processing unique (corp_num, flow_name, environment)
+);
+
+alter table auth_processing owner to postgres;
+
+create index if not exists idx_auth_processing_claim_batch
+	on auth_processing (environment, flow_name, flow_run_id, processed_status, claimed_at);
+
+create index if not exists idx_auth_processing_flow_env_status
+	on auth_processing (flow_name, environment, processed_status, corp_num);
 
 create table if not exists corp_restriction
 (
