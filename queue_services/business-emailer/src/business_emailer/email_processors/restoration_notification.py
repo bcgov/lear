@@ -22,7 +22,7 @@ import requests
 from flask import current_app
 from jinja2 import Environment, FileSystemLoader
 
-from business_emailer.email_processors import get_filing_document, get_filing_info
+from business_emailer.email_processors import get_filing_document, get_filing_info, get_recipient_from_auth
 from business_model.models import Business, CorpType, Filing
 
 
@@ -172,7 +172,10 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # get recipients
     recipients = []
 
-    recipients.append(filing_data["contactPoint"]["email"])
+    if contact_email := filing_data.get("contactPoint", {}).get("email"):
+        recipients.append(contact_email)
+    else:
+        recipients.append(get_recipient_from_auth(identifier, token))
 
     for party in filing_data["parties"]:
         for role in party["roles"]:
