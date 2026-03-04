@@ -199,6 +199,9 @@ docstring-quotes = "double"
 ]
 "src/business_emailer/services/namex.py" = ["I001"]  # ignoring 'unordered' imports
 
+[tool.pytest.ini_options]
+addopts = "--cov=src"
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

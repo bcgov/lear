@@ -53,7 +53,7 @@ run: ## Run the project in local
         business-digital-credentials
 
 test: ## Unit testing
-	poetry run pytest --cov=src --cov-report=xml --cov-report=html --cov-report=term --cov-report=term-missing
+	poetry run pytest --cov-report=xml --cov-report=html --cov-report=term-missing
 
 coverage-check:
 	poetry run pytest --cov=src --cov-fail-under=85
