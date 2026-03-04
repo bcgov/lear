@@ -51,6 +51,7 @@ def validate(business: Business, restoration: dict) -> Optional[Error]:
                                                             "limitedRestoration")
     if restoration_type in ("limitedRestoration", "limitedRestorationExtension"):
         msg.extend(validate_expiry_date(business, restoration, restoration_type))
+        msg.extend(validate_contact_point(restoration))
     elif restoration_type in ("fullRestoration", "limitedRestorationToFull"):
         msg.extend(validate_relationship(restoration))
 
@@ -79,6 +80,16 @@ def validate(business: Business, restoration: dict) -> Optional[Error]:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def validate_contact_point(filing: dict) -> list:
+    """Validate that no contact point is provided for limited restoration filings."""
+    msg = []
+    if filing.get("filing", {}).get("restoration", {}).get("contactPoint", None):
+        msg.append({"error": "Contact point must not be provided. "
+                             "The corporation will be restored with the contact information it had prior to dissolution.",
+                    "path": "/filing/restoration/contactPoint"})
+    return msg
 
 
 def validate_expiry_date(business: Business, filing: dict, restoration_type: str) -> list:
