@@ -150,7 +150,7 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         tasks.append(task)
         order += 1
 
-    if business.legal_type not in entity_types_no_ar:
+    if business.legal_type not in entity_types_no_ar and not business.in_liquidation:
         # If this is the first calendar year since incorporation, there is no previous ar year.
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 

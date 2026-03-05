@@ -44,19 +44,22 @@ FUTURE_TRIGGER_DATE = datetime.utcnow() + datedelta(days=10)
 PAST_TRIGGER_DATE = datetime.utcnow() + datedelta(days=-10)
 
 
-@pytest.mark.parametrize('test_name, no_dissolution, batch_status, batch_processing_status', [
-    ('NOT_ELIGIBLE', True, None, None),
-    ('ELIGIBLE_AR_OVERDUE', False, 'PROCESSING', 'COMPLETED'),
-    ('ELIGIBLE_TRANSITION_OVERDUE', False, 'PROCESSING', 'COMPLETED'),
-    ('ELIGIBLE_AR_OVERDUE_FUTURE_EFFECTIVE_FILING_HAS_WARNINGS', False, 'PROCESSING', 'COMPLETED'),
-    ('IN_DISSOLUTION_AR_OVERDUE', False, 'PROCESSING', 'PROCESSING'),
-    ('IN_DISSOLUTION_TRANSITION_OVERDUE', False, 'PROCESSING', 'PROCESSING'),
-    ('IN_DISSOLUTION_AR_OVERDUE_FUTURE_EFFECTIVE_FILING_HAS_WARNINGS', False, 'PROCESSING', 'PROCESSING'),
+@pytest.mark.parametrize('test_name, no_dissolution, in_liquidation, batch_status, batch_processing_status', [
+    ('NOT_ELIGIBLE', True, False, None, None),
+    ('ELIGIBLE_AR_OVERDUE', False, False, 'PROCESSING', 'COMPLETED'),
+    ('ELIGIBLE_AR_OVERDUE_liquidation', False, True, 'PROCESSING', 'COMPLETED'),
+    ('ELIGIBLE_TRANSITION_OVERDUE', False, False, 'PROCESSING', 'COMPLETED'),
+    ('ELIGIBLE_TRANSITION_OVERDUE_liquidation', False, True, 'PROCESSING', 'COMPLETED'),
+    ('ELIGIBLE_AR_OVERDUE_FUTURE_EFFECTIVE_FILING_HAS_WARNINGS', False, False, 'PROCESSING', 'COMPLETED'),
+    ('IN_DISSOLUTION_AR_OVERDUE', False, False, 'PROCESSING', 'PROCESSING'),
+    ('IN_DISSOLUTION_TRANSITION_OVERDUE', False, False, 'PROCESSING', 'PROCESSING'),
+    ('IN_DISSOLUTION_AR_OVERDUE_FUTURE_EFFECTIVE_FILING_HAS_WARNINGS', False, False, 'PROCESSING', 'PROCESSING'),
 ])
-def test_check_business(session, test_name, no_dissolution, batch_status, batch_processing_status):
+def test_check_business(session, test_name, no_dissolution, in_liquidation, batch_status, batch_processing_status):
     """Test the check_business function."""
     identifier = 'BC7654321'
-    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, no_dissolution=no_dissolution)
+    in_liquidation_date = datetime.utcnow() if in_liquidation else None
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, no_dissolution=no_dissolution, in_liquidation_date=in_liquidation_date)
     target_date = datetime.utcnow() + datedelta(days=72)
     meta_data = {
         'overdueARs': True,
@@ -107,17 +110,20 @@ def test_check_business(session, test_name, no_dissolution, batch_status, batch_
             else:
                 assert res_meta_data['overdueARs'] == True
         else:
-            assert len(result) == 1
+            if test_name.startswith('ELIGIBLE_AR_OVERDUE') and in_liquidation:
+                assert len(result) == 0
+            else:
+                assert len(result) == 1
 
-        warning = result[0]
-        if 'TRANSITION_OVERDUE' in test_name:
-            assert warning['code'] == BusinessWarningCodes.TRANSITION_NOT_FILED_AFTER_12_MONTH_RESTORATION.value
-            assert warning['message'] == 'Transition filing not filed. Eligible for involuntary dissolution.'
-            assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
-        else:
-            assert warning['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
-            assert warning['message'] == 'Multiple annual reports not filed. Eligible for involuntary dissolution.'
-            assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
+                warning = result[0]
+                if 'TRANSITION_OVERDUE' in test_name:
+                    assert warning['code'] == BusinessWarningCodes.TRANSITION_NOT_FILED_AFTER_12_MONTH_RESTORATION.value
+                    assert warning['message'] == 'Transition filing not filed. Eligible for involuntary dissolution.'
+                    assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
+                else:
+                    assert warning['code'] == 'MULTIPLE_ANNUAL_REPORTS_NOT_FILED'
+                    assert warning['message'] == 'Multiple annual reports not filed. Eligible for involuntary dissolution.'
+                    assert warning['warningType'] == WarningType.NOT_IN_GOOD_STANDING
 
 
 @pytest.mark.parametrize('test_name, batch_processing_step, trigger_date, expected_warning_date', [

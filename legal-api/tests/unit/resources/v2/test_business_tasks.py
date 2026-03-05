@@ -265,6 +265,7 @@ def test_get_tasks_pending_correction_filings(session, client, jwt):
     ('BC first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.COMP.value, 1),
     ('BC no AR due yet', 'BC1234567', '2021-07-03', None, Business.LegalTypes.COMP.value, 0),
     ('BC 3 ARs overdue', 'BC1234567', '2019-05-15', None, Business.LegalTypes.COMP.value, 3),
+    ('BC in liquidation no ARs due', 'BC1234567', '2019-05-15', None, Business.LegalTypes.COMP.value, 0),
     ('BC current AR year issued', 'BC1234567', '1900-07-01', '2022-03-03', Business.LegalTypes.COMP.value, 0),
 
     ('ULC first AR to be issued', 'BC1234567', '2021-07-02', None, Business.LegalTypes.BC_ULC_COMPANY.value, 1),
@@ -292,8 +293,9 @@ def test_construct_task_list_ar(session, client, jwt, test_name, identifier, fou
     with patch('legal_api.resources.v2.business.business_tasks.check_warnings', return_value=[]):
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None
         founding_date = datetime.fromisoformat(founding_date + 'T12:00:00+00:00')
+        in_liquidation_date = datetime.now() if test_name.startswith('BC in liquidation') else None
         business = factory_business(
-            identifier, founding_date, previous_ar_datetime, legal_type)
+            identifier, founding_date, previous_ar_datetime, legal_type, in_liquidation_date=in_liquidation_date)
         tasks = construct_task_list(business)
         assert len(tasks) == tasks_length
 

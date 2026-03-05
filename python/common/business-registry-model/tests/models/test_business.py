@@ -19,7 +19,7 @@ Test-Suite to ensure that the Business Model is working as expected.
 import base64
 import copy
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import datedelta
 import pytest
@@ -96,6 +96,9 @@ TEST_IDENTIFIER_DATA = [
     ('CP000000A', False),
     ('AB0000001', False),
 ]
+
+FOUNDING_DATE = datetime(2023, 3, 3)
+IN_LIQUIDATION_DATE = datetime(2024, 6, 10)
 
 
 @pytest.mark.parametrize('identifier,expected', TEST_IDENTIFIER_DATA)
@@ -1005,3 +1008,21 @@ def test_public_user_dod_filings(session, test_name, dods, expected_dod_indxs):
 
     assert len(business.public_user_dod_filings) == len(expected_ids)
     assert sorted([filing.id for filing in business.public_user_dod_filings]) == sorted(expected_ids)
+
+
+@pytest.mark.parametrize('test_name, founding_date, in_liquidation_date, last_lr_year, expected_lr_min_date', [
+    ('NOT_IN_LIQUIDATION', datetime.now(), None, None, None),
+    ('IN_LIQUIDATION', FOUNDING_DATE, IN_LIQUIDATION_DATE, None, date(2025, 3, 2)),
+    ('IN_LIQUIDATION_lr_year', FOUNDING_DATE, IN_LIQUIDATION_DATE, 2025, date(2026, 3, 2))
+])
+def test_next_lr_min_date(session, test_name, founding_date, in_liquidation_date, last_lr_year, expected_lr_min_date):
+    """Assert next_lr_min_date works as expected."""
+    identifier = 'BC7654321'
+    business = factory_business_from_tests(identifier=identifier,
+                                           entity_type=Business.LegalTypes.COMP.value,
+                                           founding_date=founding_date,
+                                           in_liquidation_date=in_liquidation_date,
+                                           last_lr_year=last_lr_year)
+
+    assert business.next_lr_min_date == expected_lr_min_date
+

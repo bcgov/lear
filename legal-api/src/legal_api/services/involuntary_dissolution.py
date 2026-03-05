@@ -142,7 +142,7 @@ class InvoluntaryDissolutionService:
 
         query = query.filter(
                 or_(
-                    specific_filing_overdue,
+                    and_(specific_filing_overdue, not_(Business.in_liquidation.is_(True))),
                     no_transition_filed_after_restoration
                 )
             ).\
