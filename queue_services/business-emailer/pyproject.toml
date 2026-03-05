@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-emailer"
-version = "0.1.3"
+version = "0.1.4"
 description = "This module is the service worker for sending emails about entity related events."
 authors = ["Hrvoje Fekete <hrvoje.fekete@mindpoweredtech.com>"]
 license = "BSD-3-Clause"
