@@ -18,7 +18,8 @@ import pycountry
 from flask_babel import _ as babel  # importing camelcase '_' as a name
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business
+from legal_api.models import Address, Business, Filing
+from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import PARTY_NAME_MAX_LENGTH, validate_parties_addresses
 from legal_api.services.utils import get_str
 from legal_api.utils.datetime import date, datetime
@@ -56,12 +57,19 @@ def validate(business: Business, cod: dict) -> Error:
     return None
 
 def get_cod_date_bounds(business: Business) -> tuple[date, date]:
-    """Return (earliest_allowed_date_leg, today_leg) for COD date validation."""
-    earliest_allowed_date_leg = LegislationDatetime.as_legislation_timezone(
-        business.last_cod_date or business.founding_date
-    ).date()
-    today_leg = LegislationDatetime.datenow()
+    """Return (earliest_allowed_date_leg, today_leg) for COD date validation.
 
+    When enable-backdated-cod flag is on, only the founding_date is used as the lower bound.
+    When the flag is off, the earliest allowed date is the later of founding_date and last_cod_date.
+    """
+    founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+
+    if flags.is_on("enable-backdated-cod") or not business.last_cod_date:
+        earliest_allowed_date_leg = founding_date_leg
+    else:
+        earliest_allowed_date_leg = LegislationDatetime.as_legislation_timezone(business.last_cod_date).date()
+
+    today_leg = LegislationDatetime.datenow()
     return earliest_allowed_date_leg, today_leg
 
 
@@ -259,6 +267,15 @@ def validate_effective_date(business: Business, cod: dict) -> list:
     founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
     if effective_date_leg < founding_date_leg:
         msg.append({"error": babel("Effective date cannot be before businesses founding date.")})
+
+    # check if effective date is before their most recent COD or AR date
+    if not flags.is_on("enable-backdated-cod"):
+        last_cod_filing = Filing.get_most_recent_legal_filing(business.id,
+                                                              Filing.FILINGS["changeOfDirectors"]["name"])
+        if last_cod_filing:
+            last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
+            if effective_date_leg < last_cod_date_leg:
+                msg.append({"error": babel("Effective date cannot be before another Change of Director filing.")})
 
     return msg
 
