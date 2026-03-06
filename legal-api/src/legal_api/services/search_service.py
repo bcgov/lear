@@ -316,19 +316,43 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 nr_identifiers.append(identifier)
             else:
                 business_identifiers.append(identifier)
-        conditions = []
+        draft_conditions = []
         if business_identifiers:
-            conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
+            draft_conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
         if nr_identifiers:
-            conditions.append(Filing
+            draft_conditions.append(Filing
                               .filing_json["filing"][Filing._filing_type]  # pylint: disable=protected-access
                               ["nameRequest"]["nrNumber"]
                               .astext.in_(nr_identifiers))
         if temp_identifiers:
-            conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
-        query = query.filter(db.or_(*conditions))
+            draft_conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
+        
+        if not draft_conditions:
+            return []
+        
+        draft_query = query.filter(db.or_(*draft_conditions))
 
-        rows = query.all()
-        result_list = [dict(row) for row in rows]
+        draft_rows = draft_query.all()
+        result_list = []
+        draft_identifier = set()
+        for row in draft_rows:
+            result_list.append({
+                "identifier": row.identifier,
+                "nrNumber": row.nrNumber,
+                "bootstrapIdentifier": row.bootstrapIdentifier
+            })
+            if row.identifier:
+                draft_identifier.add(row.identifier)
+        missing_identifiers = set(identifiers) - draft_identifier
+        if missing_identifiers:
+            business_query = db.session.query(Business._identifier.label("identifier")) \
+                .filter(Business._identifier.in_(missing_identifiers))  # pylint: disable=protected-access
+            business_rows = business_query.all()
+            for row in business_rows:
+                result_list.append({
+                    "identifier": row.identifier,
+                    "nrNumber": None,
+                    "bootstrapIdentifier": None
+                })
 
         return result_list
