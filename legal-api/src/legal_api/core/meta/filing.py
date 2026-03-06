@@ -852,7 +852,7 @@ FILINGS: Final = {
     "transition": {
         "name": "transition",
         "title": "Transition",
-        "displayName": "Transition Application",
+        "displayName": "Post Restoration Transition Application",
         "codes": {
             "BC": "TRANP",
             "BEN": "TRANP",

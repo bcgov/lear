@@ -664,6 +664,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         'transition': {
             'name': 'transition',
             'title': 'Transition',
+            'displayName': 'Post Restoration Transition Application',
             'codes': {
                 'BC': 'TRANP',
                 'BEN': 'TRANP',

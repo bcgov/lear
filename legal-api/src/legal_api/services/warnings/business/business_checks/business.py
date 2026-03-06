@@ -16,12 +16,13 @@
 from legal_api.models import Business
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
 
+from . import BusinessWarningCodes, WarningType
 from .corps import check_business as corps_check
 from .firms import check_business as firms_check
 from .involuntary_dissolution import check_business as involuntary_dissolution_check
 
 
-def check_business(business: any) -> list:
+def check_business(business: Business) -> list:
     """Check business for warnings."""
     result = []
 
@@ -35,4 +36,15 @@ def check_business(business: any) -> list:
     if business.legal_type in InvoluntaryDissolutionService.ELIGIBLE_TYPES:
         result.extend(involuntary_dissolution_check(business))
 
+    if business.in_liquidation:
+        result.append({
+            "code": BusinessWarningCodes.LIQUIDATION_IN_PROGRESS.value,
+            "data": {
+                "inLiquidationDate": business.in_liquidation_date,
+                "lastLiquidationReportYear": business.last_lr_year,
+                "nextLiquidationReportMinDate": business.next_lr_min_date
+            },
+            "message": "This business is in the process of Liquidation.",
+            "warningType": WarningType.LIQUIDATION
+        })
     return result

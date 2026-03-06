@@ -19,7 +19,7 @@ Test-Suite to ensure that the Business Model is working as expected.
 import base64
 import copy
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 import datedelta
 import pytest
@@ -96,6 +96,9 @@ TEST_IDENTIFIER_DATA = [
     ('CP000000A', False),
     ('AB0000001', False),
 ]
+
+FOUNDING_DATE = datetime(2023, 3, 3)
+IN_LIQUIDATION_DATE = datetime(2024, 6, 10)
 
 
 @pytest.mark.parametrize('identifier,expected', TEST_IDENTIFIER_DATA)
@@ -250,19 +253,21 @@ def test_business_find_by_identifier_no_identifier(session):
 
 
 TEST_GOOD_STANDING_DATA = [
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, True, False),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, False, True),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, False),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, False, True),
-    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, False, True)
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, True, False),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, True, False, False),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, False, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.COMP, Business.State.HISTORICAL.value, False, True, False),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.COMP, Business.State.ACTIVE.value, False, False, False),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, False, False, True),
+    (datetime.now() - datedelta.datedelta(years=1, months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, False, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.SOLE_PROP, Business.State.ACTIVE.value, False, False, True),
+    (datetime.now() - datedelta.datedelta(months=6), Business.LegalTypes.PARTNERSHIP, Business.State.ACTIVE.value, False, False, True)
 ]
 
 
-@pytest.mark.parametrize('last_ar_date, legal_type, state, limited_restoration, expected', TEST_GOOD_STANDING_DATA)
-def test_good_standing(session, last_ar_date, legal_type, state, limited_restoration, expected):
+@pytest.mark.parametrize('last_ar_date, legal_type, state, limited_restoration, in_liquidation, expected', TEST_GOOD_STANDING_DATA)
+def test_good_standing(session, last_ar_date, legal_type, state, limited_restoration, in_liquidation, expected):
     """Assert that the business is in good standing when conditions are met."""
     designation = '001'
     business = Business(legal_name=f'legal_name-{designation}',
@@ -275,7 +280,9 @@ def test_good_standing(session, last_ar_date, legal_type, state, limited_restora
                         tax_id=f'BN0000{designation}',
                         fiscal_year_end_date=datetime(2001, 8, 5, 7, 7, 58, 272362),
                         last_ar_date=last_ar_date,
-                        restoration_expiry_date=datetime.utcnow() if limited_restoration else None)
+                        in_liquidation=in_liquidation,
+                        in_liquidation_date=datetime.now(UTC) if in_liquidation else None,
+                        restoration_expiry_date=datetime.now(UTC) if limited_restoration else None)
     business.save()
 
     assert business.good_standing is expected
@@ -1005,3 +1012,21 @@ def test_public_user_dod_filings(session, test_name, dods, expected_dod_indxs):
 
     assert len(business.public_user_dod_filings) == len(expected_ids)
     assert sorted([filing.id for filing in business.public_user_dod_filings]) == sorted(expected_ids)
+
+
+@pytest.mark.parametrize('test_name, founding_date, in_liquidation_date, last_lr_year, expected_lr_min_date', [
+    ('NOT_IN_LIQUIDATION', datetime.now(), None, None, None),
+    ('IN_LIQUIDATION', FOUNDING_DATE, IN_LIQUIDATION_DATE, None, date(2025, 3, 2)),
+    ('IN_LIQUIDATION_lr_year', FOUNDING_DATE, IN_LIQUIDATION_DATE, 2025, date(2026, 3, 2))
+])
+def test_next_lr_min_date(session, test_name, founding_date, in_liquidation_date, last_lr_year, expected_lr_min_date):
+    """Assert next_lr_min_date works as expected."""
+    identifier = 'BC7654321'
+    business = factory_business_from_tests(identifier=identifier,
+                                           entity_type=Business.LegalTypes.COMP.value,
+                                           founding_date=founding_date,
+                                           in_liquidation_date=in_liquidation_date,
+                                           last_lr_year=last_lr_year)
+
+    assert business.next_lr_min_date == expected_lr_min_date
+

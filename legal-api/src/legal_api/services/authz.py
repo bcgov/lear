@@ -34,6 +34,7 @@ from legal_api.services.digital_credentials_auth import (
 )
 from legal_api.services.request_context import get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.utils.legislation_datetime import LegislationDatetime
 
 SYSTEM_ROLE = "system"
 SBC_STAFF_ROLE = "sbc_staff"
@@ -63,6 +64,7 @@ class BusinessBlocker(str, Enum):
     IN_LIQUIDATION = "IN_LIQUIDATION"
     FILING_WITHDRAWAL = "FILING_WITHDRAWAL"
     MAX_DISSOLUTION_DELAYS_REACHED = "MAX_DISSOLUTION_DELAYS_REACHED"
+    MIN_LR_DATE_REACHED = "MIN_LR_DATE_REACHED"
 
 
 class BusinessRequirement(str, Enum):
@@ -229,7 +231,7 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 "annualReport": {
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT]
+                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.IN_LIQUIDATION]
                     }
                 },
                 "changeOfAddress": {
@@ -245,7 +247,6 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     }
                 },
                 "changeOfLiquidators": {
-                    # FUTURE: narrow down blocker checks, needs BA / design input - will be done in #31714
                     "appointLiquidator": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
@@ -255,13 +256,15 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     "ceaseLiquidator": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.DEFAULT]
+                            "business": [BusinessBlocker.DEFAULT],
+                            "validBusiness": [BusinessBlocker.IN_LIQUIDATION]
                         }
                     },
                     "changeAddressLiquidator": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.DEFAULT]
+                            "business": [BusinessBlocker.DEFAULT],
+                            "validBusiness": [BusinessBlocker.IN_LIQUIDATION]
                         }
                     },
                     "intentToLiquidate": {
@@ -273,7 +276,8 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     "liquidationReport": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.DEFAULT]
+                            "business": [BusinessBlocker.DEFAULT],
+                            "validBusiness": [BusinessBlocker.IN_LIQUIDATION, BusinessBlocker.MIN_LR_DATE_REACHED]
                         }
                     },
                 },
@@ -525,7 +529,7 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 "annualReport": {
                     "legalTypes": ["CP", "BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
-                        "business": [BusinessBlocker.DEFAULT]
+                        "business": [BusinessBlocker.DEFAULT, BusinessBlocker.IN_LIQUIDATION]
                     }
                 },
                 "changeOfAddress": {
@@ -946,7 +950,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.IN_DISSOLUTION: False,
         BusinessBlocker.IN_LIQUIDATION: False,
         BusinessBlocker.FILING_WITHDRAWAL: False,
-        BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED: False
+        BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED: False,
+        BusinessBlocker.MIN_LR_DATE_REACHED: False
     }
 
     if not business:
@@ -971,6 +976,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if business.in_liquidation:
         business_blocker_checks[BusinessBlocker.IN_LIQUIDATION] = True
+        if LegislationDatetime.datenow() >= business.next_lr_min_date:
+            business_blocker_checks[BusinessBlocker.MIN_LR_DATE_REACHED] = True
 
     if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
         business_blocker_checks[BusinessBlocker.FILING_WITHDRAWAL] = True

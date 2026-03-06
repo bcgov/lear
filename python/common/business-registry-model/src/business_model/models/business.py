@@ -231,6 +231,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'last_cod_date',
             'last_ledger_id',
             'last_ledger_timestamp',
+            'last_lr_year',
             'last_modified',
             'last_remote_ledger_id',
             'last_tr_year',
@@ -272,14 +273,19 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     tax_id = db.Column('tax_id', db.String(15), index=True)
     fiscal_year_end_date = db.Column('fiscal_year_end_date', db.DateTime(timezone=True), default=func.now())
     restriction_ind = db.Column('restriction_ind', db.Boolean, unique=False, default=False)
+    # last annual report filing year
     last_ar_year = db.Column('last_ar_year', db.Integer)
     last_ar_reminder_year = db.Column('last_ar_reminder_year', db.Integer)
+    # last liquidation report filing year
+    last_lr_year = db.Column('last_lr_year', db.Integer)
+    # last transparency register filing year
     last_tr_year = db.Column('last_tr_year', db.Integer)
     association_type = db.Column('association_type', db.String(50))
     state = db.Column('state', db.Enum(State), default=State.ACTIVE.value)
     state_filing_id = db.Column('state_filing_id', db.Integer)
     admin_freeze = db.Column('admin_freeze', db.Boolean, unique=False, default=False)
     in_liquidation = db.Column('in_liquidation', db.Boolean, unique=False, default=False)
+    in_liquidation_date = db.Column('in_liquidation_date', db.DateTime(timezone=True))
     submitter_userid = db.Column('submitter_userid', db.Integer, db.ForeignKey('users.id'))
     submitter = db.relationship('User', backref=backref('submitter', uselist=False), foreign_keys=[submitter_userid])
     send_ar_ind = db.Column('send_ar_ind', db.Boolean, unique=False, default=True)
@@ -444,6 +450,20 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         # return as this date at 23:59:59
         return due_datetime.replace(hour=23, minute=59, second=59, microsecond=0)
 
+    @property
+    def next_lr_min_date(self) -> datetime | None:
+        """Retrieve the next minimum date that a Liquidation Report can be filed."""
+        if self.in_liquidation and self.in_liquidation_date:
+            founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date).date()
+            in_liquidation_date = LegislationDatetime.as_legislation_timezone(self.in_liquidation_date).date()
+
+            next_lr_year = in_liquidation_date.year + 1
+            if self.last_lr_year:
+                next_lr_year = self.last_lr_year + 1
+
+            # min date for liquidation report is based on the anniversary date
+            return founding_date.replace(year=next_lr_year)
+
     def get_ar_dates(self, next_ar_year):
         """Get ar min and max date for the specific year."""
         ar_min_date = datetime(next_ar_year, 1, 1).date()
@@ -510,6 +530,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         # A firm is always in good standing
         if self.is_firm:
             return True
+
+        # A business in liquidation is always not in good standing
+        if self.in_liquidation:
+            return False
 
         # check transition filing for corps
         if self.legal_type in self.CORPS and self.transition_needed_but_not_filed():

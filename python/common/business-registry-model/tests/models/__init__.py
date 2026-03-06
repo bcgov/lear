@@ -138,7 +138,9 @@ def factory_business(identifier,
                      naics_code=None,
                      naics_desc=None,
                      admin_freeze=False,
-                     no_dissolution=False):
+                     no_dissolution=False,
+                     in_liquidation_date=None,
+                     last_lr_year=None):
     """Create a business entity with a versioned business."""
     last_ar_year = None
     if last_ar_date:
@@ -157,7 +159,10 @@ def factory_business(identifier,
                         naics_code=naics_code,
                         naics_description=naics_desc,
                         admin_freeze=admin_freeze,
-                        no_dissolution=no_dissolution)
+                        no_dissolution=no_dissolution,
+                        in_liquidation=in_liquidation_date != None,
+                        in_liquidation_date=in_liquidation_date,
+                        last_lr_year=last_lr_year)
 
     # Versioning business
     VersioningProxy.get_transaction_id(db.session())
