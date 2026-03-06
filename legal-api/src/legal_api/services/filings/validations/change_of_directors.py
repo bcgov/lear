@@ -60,7 +60,7 @@ def get_cod_date_bounds(business: Business) -> tuple[date, date]:
     """Return (earliest_allowed_date_leg, today_leg) for COD date validation.
 
     When enable-backdated-cod flag is on, only the founding_date is used as the lower bound.
-    When the flag is off, the earliest allowed date is the later of founding_date and last_cod_date.
+    When the flag is off, the earliest allowed date is last_cod_date (if present) or founding_date.
     """
     founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
 
@@ -275,7 +275,7 @@ def validate_effective_date(business: Business, cod: dict) -> list:
         if last_cod_filing:
             last_cod_date_leg = LegislationDatetime.as_legislation_timezone(last_cod_filing.effective_date).date()
             if effective_date_leg < last_cod_date_leg:
-                msg.append({"error": babel("Effective date cannot be before another Change of Director filing.")})
+                msg.append({"error": babel("Effective date cannot be before another Change of Directors filing.")})
 
     return msg
 

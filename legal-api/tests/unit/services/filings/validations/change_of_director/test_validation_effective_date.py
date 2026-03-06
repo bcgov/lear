@@ -151,7 +151,7 @@ def test_validate_effective_date_not_before_founding(session):
     assert not err
 
 
-def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; COD is an acronym
+def test_validate_effective_date_not_before_other_cod(session):
     """Assert that the effective date of change cannot be before a previous COD filing."""
     # setup
     identifier = 'CP1234567'
@@ -195,7 +195,7 @@ def test_validate_effective_date_not_before_other_COD(session):  # noqa: N802; C
     assert not err
 
 
-def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa: N802; COD is an acronym
+def test_validate_effective_date_not_before_other_ar_with_cod(session):
     """Assert that the effective date of change cannot be before a previous AR filing."""
     # setup
     identifier = 'CP1234567'
@@ -238,9 +238,9 @@ def test_validate_effective_date_not_before_other_AR_with_COD(session):  # noqa:
     assert not err
 
 
-def test_validate_effective_date_before_other_COD_with_flag_on(session, mocker):  # noqa: N802; COD is an acronym
+def test_validate_effective_date_before_other_cod_with_flag_on(session, mocker):
     """Assert that effective date before a previous COD passes when enable-backdated-cod flag is on."""
-    mocker.patch.object(flags, 'is_on', return_value=True)
+    mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
 
     identifier = 'CP1234567'
     founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)

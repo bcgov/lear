@@ -360,7 +360,7 @@ class TestGetCodDateBounds:
         business = Business(founding_date=FOUNDING_DATE, last_cod_date=LAST_COD_DATE_AFTER_FOUNDING)
 
         with freeze_time(NOW):
-            earliest, today = get_cod_date_bounds(business)
+            earliest, _ = get_cod_date_bounds(business)
 
         expected = LegislationDatetime.as_legislation_timezone(LAST_COD_DATE_AFTER_FOUNDING).date()
         assert earliest == expected
@@ -371,7 +371,7 @@ class TestGetCodDateBounds:
         business = Business(founding_date=FOUNDING_DATE, last_cod_date=LAST_COD_DATE_AFTER_FOUNDING)
 
         with freeze_time(NOW):
-            earliest, today = get_cod_date_bounds(business)
+            earliest, _ = get_cod_date_bounds(business)
 
         expected = LegislationDatetime.as_legislation_timezone(FOUNDING_DATE).date()
         assert earliest == expected
@@ -382,7 +382,7 @@ class TestGetCodDateBounds:
         business = Business(founding_date=FOUNDING_DATE, last_cod_date=None)
 
         with freeze_time(NOW):
-            earliest, today = get_cod_date_bounds(business)
+            earliest, _ = get_cod_date_bounds(business)
 
         expected = LegislationDatetime.as_legislation_timezone(FOUNDING_DATE).date()
         assert earliest == expected
