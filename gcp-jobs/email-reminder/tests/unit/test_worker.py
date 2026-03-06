@@ -49,22 +49,30 @@ def test_send_email(app: Flask):
         email_publish_mock.assert_called()
         assert_publish_mock(app, email_publish_mock, business_id, ar_fee, ar_year)
 
-@pytest.mark.parametrize('_test_name, founding_date, reminder_year, rest_expiry_date, state, expected',[
-    ('active_new_business', datetime.now(UTC), None, None, Business.State.ACTIVE, False),
-    ('active_year_old_business', datetime.now(UTC) - timedelta(days=365), None, None, Business.State.ACTIVE, True),
-    ('active_year_old_business_with_reminder_year', datetime.now(UTC) - timedelta(days=365), datetime.now(UTC).year, None, Business.State.ACTIVE, False),
-    ('active_2year_old_business_with_old_reminder_year', datetime.now(UTC) - timedelta(days=730), (datetime.now(UTC) - timedelta(days=730)).year, None, Business.State.ACTIVE, True),
-    ('active_2year_old_business_with_reminder_year', datetime.now(UTC) - timedelta(days=730), (datetime.now(UTC) - timedelta(days=364)).year, None, Business.State.ACTIVE, False),
-    ('active_year_old_business_with_restoration', datetime.now(UTC) - timedelta(days=365), None, datetime.now(UTC) + timedelta(days=10), Business.State.ACTIVE, False),
-    ('historical_year_old_business', datetime.now(UTC) - timedelta(days=365), None, None, Business.State.HISTORICAL, False),
+@pytest.mark.parametrize('_test_name, founding_date, reminder_year, rest_expiry_date, in_liquidation, state, expected',[
+    ('active_new_business', datetime.now(UTC), None, None, False, Business.State.ACTIVE, False),
+    ('active_year_old_business', datetime.now(UTC) - timedelta(days=365), None, None, False, Business.State.ACTIVE, True),
+    ('active_year_old_business_with_reminder_year', datetime.now(UTC) - timedelta(days=365), datetime.now(UTC).year, None, False, Business.State.ACTIVE, False),
+    ('active_2year_old_business_with_old_reminder_year', datetime.now(UTC) - timedelta(days=730), (datetime.now(UTC) - timedelta(days=730)).year, None, False, Business.State.ACTIVE, True),
+    ('active_2year_old_business_with_reminder_year', datetime.now(UTC) - timedelta(days=730), (datetime.now(UTC) - timedelta(days=364)).year, None, False, Business.State.ACTIVE, True),
+    ('active_2year_old_business_with_current_reminder_year', datetime.now(UTC) - timedelta(days=730), (datetime.now(UTC)).year, None, False, Business.State.ACTIVE, False),
+    ('active_year_old_business_with_restoration', datetime.now(UTC) - timedelta(days=365), None, datetime.now(UTC) + timedelta(days=10), False, Business.State.ACTIVE, False),
+    ('active_year_old_business_in_liquidation', datetime.now(UTC) - timedelta(days=365), None, None, True, Business.State.ACTIVE, False),
+    ('historical_year_old_business', datetime.now(UTC) - timedelta(days=365), None, None, False, Business.State.HISTORICAL, False),
 ])
-def test_get_businesses(app, session, _test_name, founding_date, reminder_year, rest_expiry_date, state, expected):
+def test_get_businesses(app, session, _test_name, founding_date, reminder_year, rest_expiry_date, in_liquidation, state, expected):
     """Assert the get_businesses method works as expected."""
     business = factory_business(identifier='BC1234567',
                                 founding_date=founding_date,
                                 last_ar_reminder_year=reminder_year,
                                 restoration_expiry_date=rest_expiry_date,
-                                state=state)
+                                state=state,
+                                in_liquidation=in_liquidation)
+    print(business.founding_date)
+    print(business.last_ar_reminder_year)
+    print(business.restoration_expiry_date)
+    print(business.in_liquidation)
+    print(expected)
     resp = get_businesses([business.legal_type])
     if expected:
         assert len(resp.items) == 1

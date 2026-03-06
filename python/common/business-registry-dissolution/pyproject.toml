@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{include = "dissolution_service", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.13,<3.14"
 flask = "^3.1.0"
 sqlalchemy = "^2.0.39"
 datedelta = "^1.4"

@@ -166,6 +166,7 @@ def test_get_businesses_eligible_query_in_dissolution(session, test_name, batch_
             ('RECOGNITION_OVERDUE', False),
             ('RESTORATION_OVERDUE', False),
             ('AR_OVERDUE', False),
+            ('AR_OVERDUE_IN_LIQUIDATION', True),
             ('NO_OVERDUE', True)
         ]
 )
@@ -177,9 +178,10 @@ def test_get_businesses_eligible_query_specific_filing_overdue(session, test_nam
         business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value)
         effective_date = datetime.utcnow() - datedelta(years=3)
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration', filing_date=effective_date)
-    elif test_name == 'AR_OVERDUE':
+    elif test_name.startswith('AR_OVERDUE'):
         last_ar_date = datetime.utcnow() - datedelta(years=3)
-        business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=last_ar_date)
+        in_liquidation_date = datetime.utcnow() if test_name == 'AR_OVERDUE_IN_LIQUIDATION' else None
+        business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, last_ar_date=last_ar_date, in_liquidation_date=in_liquidation_date)
     else:
         business = factory_business(identifier='BC1234567', entity_type=Business.LegalTypes.COMP.value, founding_date=datetime.utcnow())
 
