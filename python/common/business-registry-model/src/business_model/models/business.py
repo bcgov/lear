@@ -531,6 +531,10 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
         if self.is_firm:
             return True
 
+        # A business in liquidation is always not in good standing
+        if self.in_liquidation:
+            return False
+
         # check transition filing for corps
         if self.legal_type in self.CORPS and self.transition_needed_but_not_filed():
             return False
