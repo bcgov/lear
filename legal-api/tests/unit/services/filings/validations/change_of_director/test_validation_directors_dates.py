@@ -22,8 +22,11 @@ from freezegun import freeze_time
 from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
 
 from legal_api.models import Business
+from legal_api.services import flags
 from legal_api.services.filings import validate
+from legal_api.services.filings.validations.change_of_directors import get_cod_date_bounds
 from legal_api.utils.datetime import datetime, timezone
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.services.filings.validations import lists_are_equal
 
 NOW = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
@@ -254,3 +257,132 @@ def test_validate_cod_director_appointment_date(session, test_name, actions, app
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+
+def test_validate_cessation_date_before_last_cod_with_flag_on(session, mocker):
+    """Assert that cessation date before last_cod_date but after founding passes when flag is on."""
+    mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+    # Use a date between founding and last_cod_date
+    between_date = (FOUNDING_DATE + datedelta.DAY).date().isoformat()
+    business, f = common_setup_cod(
+        "CP7654321",
+        actions=["ceased"],
+        cessationDate=between_date,
+        last_cod_date=LAST_COD_DATE_AFTER_FOUNDING
+    )
+
+    with freeze_time(NOW):
+        err = validate(business, f)
+
+    assert err is None
+
+
+def test_validate_cessation_date_before_founding_with_flag_on(session, mocker):
+    """Assert that cessation date before founding_date still fails even when flag is on."""
+    mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+    business, f = common_setup_cod(
+        "CP7654321",
+        actions=["ceased"],
+        cessationDate="2023-01-01",  # before founding_date
+        last_cod_date=LAST_COD_DATE_SAME_AS_FOUNDING
+    )
+
+    with freeze_time(NOW):
+        err = validate(business, f)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert lists_are_equal(err.msg, [
+        {
+            "error": "Cessation date cannot be before the business founding date "
+                     "or the most recent Change of Directors filing.",
+            "path": "/filing/changeOfDirectors/directors/0/cessationDate"
+        }
+    ])
+
+
+def test_validate_appointment_date_before_last_cod_with_flag_on(session, mocker):
+    """Assert that appointment date before last_cod_date but after founding passes when flag is on."""
+    mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+    between_date = (FOUNDING_DATE + datedelta.DAY).date().isoformat()
+    business, f = common_setup_cod(
+        "CP7654321",
+        actions=["appointed"],
+        appointmentDate=between_date,
+        last_cod_date=LAST_COD_DATE_AFTER_FOUNDING
+    )
+
+    with freeze_time(NOW):
+        err = validate(business, f)
+
+    assert err is None
+
+
+def test_validate_appointment_date_before_founding_with_flag_on(session, mocker):
+    """Assert that appointment date before founding_date still fails even when flag is on."""
+    mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+    business, f = common_setup_cod(
+        "CP7654321",
+        actions=["appointed"],
+        appointmentDate="2023-01-01",  # before founding_date
+        last_cod_date=LAST_COD_DATE_SAME_AS_FOUNDING
+    )
+
+    with freeze_time(NOW):
+        err = validate(business, f)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert lists_are_equal(err.msg, [
+        {
+            "error": "Appointment date cannot be before the business founding date "
+                     "or the most recent Change of Directors filing.",
+            "path": "/filing/changeOfDirectors/directors/0/appointmentDate"
+        }
+    ])
+
+
+class TestGetCodDateBounds:
+    """Tests for get_cod_date_bounds."""
+
+    def test_flag_off_no_last_cod_date(self, session, mocker):
+        """Flag off, no last_cod_date -> returns founding_date."""
+        mocker.patch.object(flags, 'is_on', return_value=False)
+        business = Business(founding_date=FOUNDING_DATE, last_cod_date=None)
+
+        with freeze_time(NOW):
+            earliest, today = get_cod_date_bounds(business)
+            expected = LegislationDatetime.as_legislation_timezone(FOUNDING_DATE).date()
+            assert earliest == expected
+            assert today == LegislationDatetime.datenow()
+
+    def test_flag_off_with_last_cod_date(self, session, mocker):
+        """Flag off, last_cod_date after founding -> returns last_cod_date."""
+        mocker.patch.object(flags, 'is_on', return_value=False)
+        business = Business(founding_date=FOUNDING_DATE, last_cod_date=LAST_COD_DATE_AFTER_FOUNDING)
+
+        with freeze_time(NOW):
+            earliest, _ = get_cod_date_bounds(business)
+
+        expected = LegislationDatetime.as_legislation_timezone(LAST_COD_DATE_AFTER_FOUNDING).date()
+        assert earliest == expected
+
+    def test_flag_on_with_last_cod_date(self, session, mocker):
+        """Flag on, last_cod_date after founding -> returns founding_date (ignores last_cod_date)."""
+        mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+        business = Business(founding_date=FOUNDING_DATE, last_cod_date=LAST_COD_DATE_AFTER_FOUNDING)
+
+        with freeze_time(NOW):
+            earliest, _ = get_cod_date_bounds(business)
+
+        expected = LegislationDatetime.as_legislation_timezone(FOUNDING_DATE).date()
+        assert earliest == expected
+
+    def test_flag_on_no_last_cod_date(self, session, mocker):
+        """Flag on, no last_cod_date -> returns founding_date."""
+        mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+        business = Business(founding_date=FOUNDING_DATE, last_cod_date=None)
+
+        with freeze_time(NOW):
+            earliest, _ = get_cod_date_bounds(business)
+
+        expected = LegislationDatetime.as_legislation_timezone(FOUNDING_DATE).date()
+        assert earliest == expected
