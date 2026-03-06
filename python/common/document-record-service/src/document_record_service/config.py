@@ -63,6 +63,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
+    DOC_API_URL = os.getenv("DOC_API_URL", "") + os.getenv("DOC_API_VERSION", "")
     # POSTGRESQL
     if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = (
