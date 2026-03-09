@@ -142,7 +142,8 @@ def _assert_office_addresses(offices, expected_office):
 
 def test_process_col_filing(app, session, mocker):
     """Assert that all COL filings can be applied to the model correctly."""
-    expected_in_liquidation_date = datetime(2023, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
+    # NOTE: this is actually in 2023 pacific time
+    expected_in_liquidation_date = datetime(2024, 1, 1, 1, 0, 0, tzinfo=timezone.utc)
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     effective_date = expected_in_liquidation_date
     identifier = f'BC{random.randint(1000000, 9999999)}'
@@ -178,6 +179,7 @@ def test_process_col_filing(app, session, mocker):
     assert business.in_liquidation == True
     assert business.in_liquidation_date == expected_in_liquidation_date
     assert business.last_lr_year == None
+    assert business.next_lr_min_date.year == 2024
     check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -505,7 +507,7 @@ def test_process_col_filing(app, session, mocker):
             assert mailing_address.street == new_relationship['mailingAddress']['streetAddress']
     
     # liquidation report
-    expected_last_lr_year = expected_in_liquidation_date.year + 1
+    expected_last_lr_year = 2024
 
     filing['filing']['changeOfLiquidators'] = {
         'type': 'liquidationReport',
