@@ -24,6 +24,7 @@ from requests import Request
 from sqlalchemy import func
 
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
+from legal_api.core.filing import Filing as CoreFiling
 
 
 @dataclass
@@ -86,7 +87,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     EXCLUDED_FILINGS_STATUS: Final = [
         Filing.Status.WITHDRAWN.value
     ]
-
     @staticmethod
     def check_and_get_respective_values(codes):
         """Check if codes belong to BUSINESS_TEMP_FILINGS_CORP_CODES and return the matching ones."""
@@ -343,16 +343,18 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             })
             if row.identifier:
                 draft_identifier.add(row.identifier)
-        missing_identifiers = set(identifiers) - draft_identifier
-        if missing_identifiers:
-            business_query = db.session.query(Business._identifier.label("identifier")) \
-                .filter(Business._identifier.in_(missing_identifiers))  # pylint: disable=protected-access
-            business_rows = business_query.all()
-            for row in business_rows:
-                result_list.append({
+        migrated_identifiers = db.session.query( Business._identifier.label("identifier"),  # pylint: disable=protected-access
+            Filing
+            ._filing_type  # pylint: disable=protected-access
+            .label("filing_type"),
+        ).select_from(Filing) \
+            .join(Business, Filing.business_id == Business.id)  # pylint: disable=protected-access
+        migrated_rows = migrated_identifiers.filter(Business._identifier.in_(business_identifiers),
+                                                    Filing._filing_type == CoreFiling.FilingTypes.TOMBSTONE.value).all()  # pylint: disable=protected-access
+        for row in migrated_rows:
+            result_list.append({
                     "identifier": row.identifier,
                     "nrNumber": None,
                     "bootstrapIdentifier": None
                 })
-
         return result_list
