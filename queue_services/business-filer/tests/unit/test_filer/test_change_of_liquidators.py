@@ -151,26 +151,28 @@ def _assert_common_data(business: Business, filing: Filing, expected_date, expec
     assert business.last_lr_year == expected_lr_year
     assert business.next_lr_min_date.year == expected_next_lr_yr
 
-def test_process_col_filing(app, session, mocker):
-    """Assert that all COL filings can be applied to the model correctly."""
-    # NOTE: this is actually in 2023 pacific time
-    expected_in_liquidation_date = datetime(2024, 1, 1, 1, 0, 0, tzinfo=timezone.utc)
+def _get_liquidation_filing(sub_type: str, effective_date: datetime, identifier = 'BC1234567'):
+    """Return a valid change of liquidators filing for the sub type."""
     payment_id = str(random.SystemRandom().getrandbits(0x58))
-    effective_date = expected_in_liquidation_date
-    identifier = f'BC{random.randint(1000000, 9999999)}'
-    drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
-
-    business = create_business(identifier)
-
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = 'changeOfLiquidators'
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['business']['legalType'] = 'BC'
     filing['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS_INTENT)
+    return filing, payment_id, identifier
+    
+
+def test_process_col_filing(app, session, mocker):
+    """Assert that all COL filings can be applied to the model correctly."""
+    # NOTE: this is actually in 2023 pacific time
+    expected_in_liquidation_date = datetime(2024, 1, 1, 1, 0, 0, tzinfo=timezone.utc)
+    drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
+    filing, payment_id, identifier = _get_liquidation_filing('intentToLiquidate', expected_in_liquidation_date)
+    business = create_business(identifier)
 
     filing_rec = create_filing(payment_id, filing, business.id)
-    filing_rec.effective_date = effective_date
+    filing_rec.effective_date = expected_in_liquidation_date
     filing_rec.save()
 
     # setup
@@ -525,23 +527,13 @@ def test_process_col_filing(app, session, mocker):
 def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     """Assert that appointLiquidator filings can put the business into liquidation and can include liquidation office."""
     expected_in_liquidation_date = datetime(2023, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    effective_date = expected_in_liquidation_date
-    identifier = f'BC{random.randint(1000000, 9999999)}'
+    filing, payment_id, identifier = _get_liquidation_filing('appointLiquidator', expected_in_liquidation_date)
     drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
 
     business = create_business(identifier)
 
-    filing = copy.deepcopy(FILING_TEMPLATE)
-    filing['filing']['header']['name'] = 'changeOfLiquidators'
-    filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
-    filing['filing']['business']['identifier'] = identifier
-    filing['filing']['business']['legalType'] = 'BC'
-    filing['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS_INTENT)
-    filing['filing']['changeOfLiquidators']['type'] = 'appointLiquidator'
-
     filing_rec = create_filing(payment_id, filing, business.id)
-    filing_rec.effective_date = effective_date
+    filing_rec.effective_date = expected_in_liquidation_date
     filing_rec.save()
 
     # setup
