@@ -36,7 +36,7 @@ from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, 
 from legal_api.services import flags
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
-from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_pending_filing
+from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
@@ -767,7 +767,7 @@ def _create_affiliation_mapping_draft(identifier,
 def test_post_affiliation_mappings_migrated_business_without_bootstrap(session, client, jwt):
     """Assert that direct business identifiers return a mapping even without bootstrap-linked filings."""
     identifier = 'BC1328381'
-    factory_business_model(legal_name=identifier + 'name',
+    business = factory_business_model(legal_name=identifier + 'name',
                            identifier=identifier,
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -776,6 +776,11 @@ def test_post_affiliation_mappings_migrated_business_without_bootstrap(session, 
                            tax_id=None,
                            dissolution_date=None,
                            legal_type=Business.LegalTypes.BCOMP.value)
+    factory_filing(business,{'filing': {
+        'header': {
+            'name': 'lear_tombstone'
+        }
+    }}, filing_type='lear_tombstone')
 
     rv = client.post('/api/v2/businesses/search/affiliation_mappings',
                      json={'identifiers': [identifier]},
@@ -835,7 +840,7 @@ def test_post_affiliation_mappings_mixed_direct_and_nr_identifiers(session, clie
     nr_number = 'NR 1234568'
     bootstrap_identifier = 'Tb31yQIuC3'
 
-    factory_business_model(legal_name=business_identifier + 'name',
+    business = factory_business_model(legal_name=business_identifier + 'name',
                            identifier=business_identifier,
                            founding_date=datetime.utcfromtimestamp(0),
                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
@@ -844,6 +849,12 @@ def test_post_affiliation_mappings_mixed_direct_and_nr_identifiers(session, clie
                            tax_id=None,
                            dissolution_date=None,
                            legal_type=Business.LegalTypes.BCOMP.value)
+    
+    factory_filing(business,{'filing': {
+        'header': {
+            'name': 'lear_tombstone'
+        }
+    }}, filing_type='lear_tombstone')
 
     _create_affiliation_mapping_draft(identifier=bootstrap_identifier,
                                       filing_name='registration',

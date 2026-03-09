@@ -334,15 +334,12 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
 
         draft_rows = draft_query.all()
         result_list = []
-        draft_identifier = set()
         for row in draft_rows:
             result_list.append({
                 "identifier": row.identifier,
                 "nrNumber": row.nrNumber,
                 "bootstrapIdentifier": row.bootstrapIdentifier
             })
-            if row.identifier:
-                draft_identifier.add(row.identifier)
         migrated_identifiers = db.session.query( Business._identifier.label("identifier"),  # pylint: disable=protected-access
             Filing
             ._filing_type  # pylint: disable=protected-access
