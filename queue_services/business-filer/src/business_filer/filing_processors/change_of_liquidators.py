@@ -33,7 +33,6 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for change of liquidators filings."""
 import copy
-
 from datetime import UTC, datetime
 
 from business_model.models import Business, Filing, PartyRole
@@ -71,16 +70,11 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships", [])
     offices = filing_json["filing"]["changeOfLiquidators"].get("offices", {})
 
-    if filing_rec.filing_sub_type == "intentToLiquidate":
+    if filing_rec.filing_sub_type in ["intentToLiquidate", "appointLiquidator"]:
         create_relationships(relationships, business, filing_rec)
         update_or_create_offices(business, offices)
         _init_liquidation(business, filing_meta)
 
-    elif filing_rec.filing_sub_type == "appointLiquidator":
-        create_relationships(relationships, business, filing_rec)
-        update_or_create_offices(business, offices)
-        _init_liquidation(business, filing_meta)
-    
     elif filing_rec.filing_sub_type == "ceaseLiquidator":
         cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)
     
