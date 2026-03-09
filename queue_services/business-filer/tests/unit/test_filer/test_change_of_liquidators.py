@@ -122,6 +122,7 @@ def _assert_party_roles_addresses(party_roles, party_id, expected_delivery, expe
                 return
     
 def _assert_office_addresses(offices, expected_office):
+    # Should have registered office and liquidations office
     assert len(offices) == 2
 
     has_liquidation_office = False
@@ -139,6 +140,16 @@ def _assert_office_addresses(offices, expected_office):
                     assert address.address_type == Address.MAILING
                     assert address.street == expected_mailing_street
     assert has_liquidation_office
+
+def _assert_common_data(business: Business, filing: Filing, expected_date, expected_lr_year, expected_next_lr_yr):
+    """Assert the expected common data was updated by the liquidation filing processing."""
+    assert filing.transaction_id
+    assert filing.business_id == business.id
+    assert filing.status == Filing.Status.COMPLETED.value
+    assert business.in_liquidation == True
+    assert business.in_liquidation_date == expected_date
+    assert business.last_lr_year == expected_lr_year
+    assert business.next_lr_min_date.year == expected_next_lr_yr
 
 def test_process_col_filing(app, session, mocker):
     """Assert that all COL filings can be applied to the model correctly."""
@@ -173,13 +184,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert intent_filing.transaction_id
-    assert intent_filing.business_id == business.id
-    assert intent_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
-    assert business.next_lr_min_date.year == 2024
+    _assert_common_data(business, intent_filing, expected_in_liquidation_date, None, 2024)
     check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -191,23 +196,7 @@ def test_process_col_filing(app, session, mocker):
         assert role.role == PartyRole.RoleTypes.LIQUIDATOR.value
     
     offices: list[Office] = business.offices.all()
-    # NOTE: will have a registered office too
-    assert len(offices) == 2
-    has_liquidation_office = False
-    for office in offices:
-        if office.office_type == OfficeType.LIQUIDATION:
-            has_liquidation_office = True
-            officeAddresses: list[Address] = office.addresses.all()
-            assert len(officeAddresses) == 2
-            expected_delivery_street = filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice']['deliveryAddress']['streetAddress']
-            expected_mailing_street = filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice']['mailingAddress']['streetAddress']
-            for address in officeAddresses:
-                if address.address_type == Address.DELIVERY:
-                    assert address.street == expected_delivery_street
-                else:
-                    assert address.address_type == Address.MAILING
-                    assert address.street == expected_mailing_street
-    assert has_liquidation_office
+    _assert_office_addresses(offices, filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice'])
 
     # Test cease liquidator
 
@@ -246,12 +235,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert cease_filing.transaction_id
-    assert cease_filing.business_id == business.id
-    assert cease_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
+    _assert_common_data(business, cease_filing, expected_in_liquidation_date, None, 2024)
     check_drs_publish(drs_publish_mock, app, business, cease_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -313,12 +297,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert change_address_filing.transaction_id
-    assert change_address_filing.business_id == business.id
-    assert change_address_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
+    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2024)
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -364,12 +343,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert change_address_filing.transaction_id
-    assert change_address_filing.business_id == business.id
-    assert change_address_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
+    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2024)
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -412,12 +386,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert change_address_filing.transaction_id
-    assert change_address_filing.business_id == business.id
-    assert change_address_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
+    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2024)
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -479,12 +448,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert appoint_filing.transaction_id
-    assert appoint_filing.business_id == business.id
-    assert appoint_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
+    _assert_common_data(business, appoint_filing, expected_in_liquidation_date, None, 2024)
     check_drs_publish(drs_publish_mock, app, business, appoint_filing, new_document_id)
     drs_publish_mock.reset_mock()
 
@@ -528,12 +492,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert lr_filing_1.transaction_id
-    assert lr_filing_1.business_id == business.id
-    assert lr_filing_1.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == expected_last_lr_year
+    _assert_common_data(business, lr_filing_1, expected_in_liquidation_date, expected_last_lr_year, 2025)
     check_drs_publish(drs_publish_mock, app, business, lr_filing_1, '')
     drs_publish_mock.reset_mock()
     
@@ -558,12 +517,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert lr_filing_2.transaction_id
-    assert lr_filing_2.business_id == business.id
-    assert lr_filing_2.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == second_expected_last_lr_year
+    _assert_common_data(business, lr_filing_2, expected_in_liquidation_date, second_expected_last_lr_year, 2026)
     check_drs_publish(drs_publish_mock, app, business, lr_filing_2, '')
     drs_publish_mock.reset_mock()
 
@@ -597,17 +551,12 @@ def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     process_filing(filing_msg)
 
     # Get modified data
-    intent_filing: Filing = Filing.find_by_id(filing_rec.id)
+    appoint_filing: Filing = Filing.find_by_id(filing_rec.id)
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    assert intent_filing.transaction_id
-    assert intent_filing.business_id == business.id
-    assert intent_filing.status == Filing.Status.COMPLETED.value
-    assert business.in_liquidation == True
-    assert business.in_liquidation_date == expected_in_liquidation_date
-    assert business.last_lr_year == None
-    check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
+    _assert_common_data(business, appoint_filing, expected_in_liquidation_date, None, 2024)
+    check_drs_publish(drs_publish_mock, app, business, appoint_filing, '')
     drs_publish_mock.reset_mock()
 
     party_roles: list[PartyRole] = business.party_roles.all()
@@ -620,18 +569,4 @@ def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     offices: list[Office] = business.offices.all()
     # NOTE: will have a registered office too
     assert len(offices) == 2
-    has_liquidation_office = False
-    for office in offices:
-        if office.office_type == OfficeType.LIQUIDATION:
-            has_liquidation_office = True
-            officeAddresses: list[Address] = office.addresses.all()
-            assert len(officeAddresses) == 2
-            expected_delivery_street = filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice']['deliveryAddress']['streetAddress']
-            expected_mailing_street = filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice']['mailingAddress']['streetAddress']
-            for address in officeAddresses:
-                if address.address_type == Address.DELIVERY:
-                    assert address.street == expected_delivery_street
-                else:
-                    assert address.address_type == Address.MAILING
-                    assert address.street == expected_mailing_street
-    assert has_liquidation_office
+    _assert_office_addresses(offices, filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice'])
