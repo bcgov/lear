@@ -16,15 +16,15 @@
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from operator import and_
+from operator import and_, or_
 from typing import Final, Optional
 
 from flask import current_app
 from requests import Request
 from sqlalchemy import func
 
-from legal_api.models import Business, Filing, RegistrationBootstrap, db
 from legal_api.core.filing import Filing as CoreFiling
+from legal_api.models import Business, Filing, RegistrationBootstrap, db
 
 
 @dataclass
@@ -348,9 +348,11 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
             ._filing_type  # pylint: disable=protected-access
             .label("filing_type"),
         ).select_from(Filing) \
-            .join(Business, Filing.business_id == Business.id)  # pylint: disable=protected-access
-        migrated_rows = migrated_identifiers.filter(Business._identifier.in_(business_identifiers),
-                                                    Filing._filing_type == CoreFiling.FilingTypes.TOMBSTONE.value).all()  # pylint: disable=protected-access
+            .join(Business, Filing.business_id == Business.id).filter(Business._identifier.in_(business_identifiers))
+        migrated_rows = migrated_identifiers.filter(
+            or_(Filing._filing_type == CoreFiling.FilingTypes.TOMBSTONE.value,
+                and_(Business.legal_type.in_(["SP", "GP"]),Business.identifier.like("FM0%")))
+            ).all()
         for row in migrated_rows:
             result_list.append({
                     "identifier": row.identifier,
