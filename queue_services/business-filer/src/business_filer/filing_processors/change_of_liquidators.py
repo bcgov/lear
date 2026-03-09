@@ -33,8 +33,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for change of liquidators filings."""
 import copy
+from datetime import UTC, datetime
 
 from business_model.models import Business, Filing, PartyRole
+from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.filings import update_filing_court_order
@@ -46,20 +48,33 @@ from business_filer.filing_processors.filing_components.relationships import (
 )
 
 
+def _init_liquidation(business: Business, filing_meta: FilingMeta):
+    """Put the business into liquidation."""
+    if not business.in_liquidation:
+        business.in_liquidation = True
+        business.in_liquidation_date = filing_meta.application_date or datetime.now(UTC)
+
+
+def _update_last_lr_year(business: Business):
+    """Update the business last liquidation report year."""
+    if business.last_lr_year:
+        business.last_lr_year += 1
+    else:
+        in_liquidation_date = LegislationDatetime.as_legislation_timezone(business.in_liquidation_date).date()
+        business.last_lr_year = in_liquidation_date.year + 1
+
+
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfLiquidators onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships", [])
     offices = filing_json["filing"]["changeOfLiquidators"].get("offices", {})
 
-    if filing_rec.filing_sub_type == "intentToLiquidate":
+    if filing_rec.filing_sub_type in ["intentToLiquidate", "appointLiquidator"]:
         create_relationships(relationships, business, filing_rec)
         update_or_create_offices(business, offices)
-        business.in_liquidation = True
+        _init_liquidation(business, filing_meta)
 
-    elif filing_rec.filing_sub_type == "appointLiquidator":
-        create_relationships(relationships, business, filing_rec)
-    
     elif filing_rec.filing_sub_type == "ceaseLiquidator":
         cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)
     
@@ -68,8 +83,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
         update_or_create_offices(business, offices)
     
     elif filing_rec.filing_sub_type == "liquidationReport":
-        # FUTURE: updates for this will be made as part of #31714
-        pass
+        _update_last_lr_year(business)
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfLiquidators"].get("courtOrder"):
