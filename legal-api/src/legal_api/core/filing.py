@@ -102,6 +102,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         SPECIALRESOLUTION = "specialResolution"
         TRANSITION = "transition"
         TRANSPARENCY_REGISTER = "transparencyRegister"
+        TOMBSTONE = "lear_tombstone"
 
     class FilingTypesCompact(str, Enum):
         """Render enum for filing types with sub-types."""

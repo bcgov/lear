@@ -36,7 +36,7 @@ from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, 
 from legal_api.services import flags
 from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
-from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_pending_filing
+from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
@@ -727,6 +727,173 @@ def test_post_affiliated_businesses_unathorized(session, client, jwt):
 def test_post_affiliated_businesses_invalid(session, client, jwt):
     """Assert that the affiliated businesses endpoint bad request when identifiers not given."""
     rv = client.post('/api/v2/businesses/search',
+                     json={},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+def _create_affiliation_mapping_draft(identifier,
+                                      filing_name='registration',
+                                      legal_type=Business.LegalTypes.SOLE_PROP.value,
+                                      nr_number=None,
+                                      legal_name='Test NR Name'):
+    """Create a draft filing with a temp registration for affiliation mapping tests."""
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = identifier
+    temp_reg.save()
+
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = filing_name
+    json_data['filing']['header']['identifier'] = identifier
+    del json_data['filing']['business']
+    json_data['filing'][filing_name] = {
+        'nameRequest': {
+            'legalType': legal_type
+        }
+    }
+
+    if nr_number:
+        json_data['filing'][filing_name]['nameRequest'] = {
+            **json_data['filing'][filing_name]['nameRequest'],
+            'nrNumber': nr_number,
+            'legalName': legal_name
+        }
+
+    filing = factory_pending_filing(None, json_data)
+    filing.temp_reg = identifier
+    filing.save()
+
+
+def test_post_affiliation_mappings_migrated_business_without_bootstrap(session, client, jwt):
+    """Assert that direct business identifiers return a mapping even without bootstrap-linked filings."""
+    identifier = 'BC1328381'
+    business = factory_business_model(legal_name=identifier + 'name',
+                           identifier=identifier,
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None,
+                           legal_type=Business.LegalTypes.BCOMP.value)
+    factory_filing(business,{'filing': {
+        'header': {
+            'name': 'lear_tombstone'
+        }
+    }}, filing_type='lear_tombstone')
+
+    rv = client.post('/api/v2/businesses/search/affiliation_mappings',
+                     json={'identifiers': [identifier]},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['count'] == 1
+    assert rv.json['entityDetails'] == [{
+        'identifier': identifier,
+        'nrNumber': None,
+        'bootstrapIdentifier': None
+    }]
+
+
+def test_post_affiliation_mappings_temp_identifier(session, client, jwt):
+    """Assert that temp identifiers still resolve through the filing/bootstrap path."""
+    identifier = 'Tb31yQIuC1'
+    _create_affiliation_mapping_draft(identifier=identifier,
+                                      filing_name='incorporationApplication',
+                                      legal_type=Business.LegalTypes.BCOMP.value)
+
+    rv = client.post('/api/v2/businesses/search/affiliation_mappings',
+                     json={'identifiers': [identifier]},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['count'] == 1
+    detail = rv.json['entityDetails'][0]
+    assert detail['bootstrapIdentifier'] == identifier
+    assert detail['nrNumber'] is None
+
+
+def test_post_affiliation_mappings_nr_identifier(session, client, jwt):
+    """Assert that NR identifiers still resolve through the filing/bootstrap path."""
+    bootstrap_identifier = 'Tb31yQIuC2'
+    nr_number = 'NR 1234567'
+    _create_affiliation_mapping_draft(identifier=bootstrap_identifier,
+                                      filing_name='registration',
+                                      legal_type=Business.LegalTypes.SOLE_PROP.value,
+                                      nr_number=nr_number,
+                                      legal_name='Test NR Name')
+
+    rv = client.post('/api/v2/businesses/search/affiliation_mappings',
+                     json={'identifiers': [nr_number]},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['count'] == 1
+    detail = rv.json['entityDetails'][0]
+    assert detail['nrNumber'] == nr_number
+    assert detail['bootstrapIdentifier'] == bootstrap_identifier
+
+
+def test_post_affiliation_mappings_mixed_direct_and_nr_identifiers(session, client, jwt):
+    """Assert that direct business and draft-backed NR lookups coexist in a single request."""
+    business_identifier = 'BC7654321'
+    nr_number = 'NR 1234568'
+    bootstrap_identifier = 'Tb31yQIuC3'
+
+    business = factory_business_model(legal_name=business_identifier + 'name',
+                           identifier=business_identifier,
+                           founding_date=datetime.utcfromtimestamp(0),
+                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
+                           last_modified=datetime.utcfromtimestamp(0),
+                           fiscal_year_end_date=None,
+                           tax_id=None,
+                           dissolution_date=None,
+                           legal_type=Business.LegalTypes.BCOMP.value)
+    
+    factory_filing(business,{'filing': {
+        'header': {
+            'name': 'lear_tombstone'
+        }
+    }}, filing_type='lear_tombstone')
+
+    _create_affiliation_mapping_draft(identifier=bootstrap_identifier,
+                                      filing_name='registration',
+                                      legal_type=Business.LegalTypes.SOLE_PROP.value,
+                                      nr_number=nr_number,
+                                      legal_name='Mixed NR Name')
+
+    rv = client.post('/api/v2/businesses/search/affiliation_mappings',
+                     json={'identifiers': [business_identifier, nr_number]},
+                     headers=create_header(jwt, [SYSTEM_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['count'] == 2
+
+    business_detail = next(
+        detail for detail in rv.json['entityDetails']
+        if detail['identifier'] == business_identifier
+    )
+    nr_detail = next(
+        detail for detail in rv.json['entityDetails']
+        if detail['nrNumber'] == nr_number
+    )
+
+    assert business_detail['bootstrapIdentifier'] is None
+    assert business_detail['nrNumber'] is None
+    assert nr_detail['bootstrapIdentifier'] == bootstrap_identifier
+
+
+def test_post_affiliation_mappings_unauthorized(session, client, jwt):
+    """Assert that the affiliation mappings endpoint is unauthorized for non-system tokens."""
+    rv = client.post('/api/v2/businesses/search/affiliation_mappings',
+                     json={'identifiers': ['BC1234567']},
+                     headers=create_header(jwt, [STAFF_ROLE]))
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_post_affiliation_mappings_invalid(session, client, jwt):
+    """Assert that the affiliation mappings endpoint is bad request when identifiers are not given."""
+    rv = client.post('/api/v2/businesses/search/affiliation_mappings',
                      json={},
                      headers=create_header(jwt, [SYSTEM_ROLE]))
     assert rv.status_code == HTTPStatus.BAD_REQUEST

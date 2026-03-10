@@ -16,13 +16,14 @@
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from operator import and_
+from operator import and_, or_
 from typing import Final, Optional
 
 from flask import current_app
 from requests import Request
 from sqlalchemy import func
 
+from legal_api.core.filing import Filing as CoreFiling
 from legal_api.models import Business, Filing, RegistrationBootstrap, db
 
 
@@ -86,7 +87,6 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     EXCLUDED_FILINGS_STATUS: Final = [
         Filing.Status.WITHDRAWN.value
     ]
-
     @staticmethod
     def check_and_get_respective_values(codes):
         """Check if codes belong to BUSINESS_TEMP_FILINGS_CORP_CODES and return the matching ones."""
@@ -316,19 +316,44 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 nr_identifiers.append(identifier)
             else:
                 business_identifiers.append(identifier)
-        conditions = []
+        draft_conditions = []
         if business_identifiers:
-            conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
+            draft_conditions.append(Business._identifier.in_(business_identifiers))  # pylint: disable=protected-access
         if nr_identifiers:
-            conditions.append(Filing
+            draft_conditions.append(Filing
                               .filing_json["filing"][Filing._filing_type]  # pylint: disable=protected-access
                               ["nameRequest"]["nrNumber"]
                               .astext.in_(nr_identifiers))
         if temp_identifiers:
-            conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
-        query = query.filter(db.or_(*conditions))
+            draft_conditions.append(RegistrationBootstrap._identifier.in_(identifiers))  # pylint: disable=protected-access
+        
+        if not draft_conditions:
+            return []
+        
+        draft_query = query.filter(db.or_(*draft_conditions))
 
-        rows = query.all()
-        result_list = [dict(row) for row in rows]
-
+        draft_rows = draft_query.all()
+        result_list = []
+        for row in draft_rows:
+            result_list.append({
+                "identifier": row.identifier,
+                "nrNumber": row.nrNumber,
+                "bootstrapIdentifier": row.bootstrapIdentifier
+            })
+        migrated_identifiers = db.session.query( Business._identifier.label("identifier"),  # pylint: disable=protected-access
+            Filing
+            ._filing_type  # pylint: disable=protected-access
+            .label("filing_type"),
+        ).select_from(Filing) \
+            .join(Business, Filing.business_id == Business.id).filter(Business._identifier.in_(business_identifiers))
+        migrated_rows = migrated_identifiers.filter(
+            or_(Filing._filing_type == CoreFiling.FilingTypes.TOMBSTONE.value,
+                and_(Business.legal_type.in_(["SP", "GP"]),Business.identifier.like("FM0%")))
+            ).all()
+        for row in migrated_rows:
+            result_list.append({
+                    "identifier": row.identifier,
+                    "nrNumber": None,
+                    "bootstrapIdentifier": None
+                })
         return result_list
