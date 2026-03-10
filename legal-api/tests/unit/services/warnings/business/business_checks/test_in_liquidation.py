@@ -15,6 +15,7 @@
 import copy
 
 import pytest
+from psycopg2.tz import FixedOffsetTimezone
 from datedelta import datedelta
 
 from legal_api.models import Business
@@ -24,7 +25,7 @@ from legal_api.utils.datetime import datetime, date
 from tests.unit.models import factory_business
 
 FOUNDING_DATE = datetime(2023, 3, 3)
-IN_LIQUIDATION_DATE = datetime(2024, 6, 10)
+IN_LIQUIDATION_DATE = datetime(2024, 6, 10, 0, 0, tzinfo=FixedOffsetTimezone(0))
 
 @pytest.mark.parametrize('test_name, founding_date, in_liquidation_date, last_lr_year, expected_meta_data', [
     ('NOT_IN_LIQUIDATION', datetime.now(), None, None, {}),
@@ -39,6 +40,13 @@ IN_LIQUIDATION_DATE = datetime(2024, 6, 10)
          'inLiquidationDate': IN_LIQUIDATION_DATE,
          'lastLiquidationReportYear': 2025,
          'nextLiquidationReportMinDate': date(2026, 3, 2)}
+    ),
+    # Should not happen, but need to make sure it still returns for this case
+    ('IN_LIQUIDATION_no_in_liquidation_date', FOUNDING_DATE, None, None,
+     {
+         'inLiquidationDate': None,
+         'lastLiquidationReportYear': None,
+         'nextLiquidationReportMinDate': None}
     )
 ])
 def test_check_business(session, test_name, founding_date, in_liquidation_date, last_lr_year, expected_meta_data):
@@ -49,6 +57,10 @@ def test_check_business(session, test_name, founding_date, in_liquidation_date, 
                                 founding_date=founding_date,
                                 in_liquidation_date=in_liquidation_date,
                                 last_lr_year=last_lr_year)
+
+    if test_name != 'NOT_IN_LIQUIDATION':
+        business.in_liquidation = True
+        business.save()
 
     result = check_business(business)
 

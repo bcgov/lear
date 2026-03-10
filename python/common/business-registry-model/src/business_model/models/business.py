@@ -222,6 +222,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'founding_date',
             'identifier',
             'in_liquidation',
+            'in_liquidation_date',
             'jurisdiction',
             'last_agm_date',
             'last_ar_date',
