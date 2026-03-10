@@ -84,6 +84,30 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     'addressRegion': ''
 }
 
+VALID_CA_POSTAL_NO_SPACE = {
+    'streetAddress': 'Valid street',
+    'addressCity': 'Victoria',
+    'addressRegion': 'BC',
+    'postalCode': 'V8V2A4',
+    'addressCountry': 'CA'
+}
+
+INVALID_CA_POSTAL_FORMAT = {
+    'streetAddress': 'Valid street',
+    'addressCity': 'Victoria',
+    'addressRegion': 'BC',
+    'postalCode': '12345',
+    'addressCountry': 'CA'
+}
+
+INVALID_CA_POSTAL_SPECIAL = {
+    'streetAddress': 'Valid street',
+    'addressCity': 'Victoria',
+    'addressRegion': 'BC',
+    'postalCode': 'V8V-2A4',
+    'addressCountry': 'CA'
+}
+
 INVALID_ADDRESS_WHITESPACE = {
     'streetAddress': ' 123 Main St ',
     'streetAddressAdditional': ' Suite 200 ',
