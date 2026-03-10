@@ -84,30 +84,6 @@ VALID_ADDRESS_NO_POSTAL_CODE = {
     'addressRegion': ''
 }
 
-VALID_CA_POSTAL_NO_SPACE = {
-    'streetAddress': 'Valid street',
-    'addressCity': 'Victoria',
-    'addressRegion': 'BC',
-    'postalCode': 'V8V2A4',
-    'addressCountry': 'CA'
-}
-
-INVALID_CA_POSTAL_FORMAT = {
-    'streetAddress': 'Valid street',
-    'addressCity': 'Victoria',
-    'addressRegion': 'BC',
-    'postalCode': '12345',
-    'addressCountry': 'CA'
-}
-
-INVALID_CA_POSTAL_SPECIAL = {
-    'streetAddress': 'Valid street',
-    'addressCity': 'Victoria',
-    'addressRegion': 'BC',
-    'postalCode': 'V8V-2A4',
-    'addressCountry': 'CA'
-}
-
 INVALID_ADDRESS_WHITESPACE = {
     'streetAddress': ' 123 Main St ',
     'streetAddressAdditional': ' Suite 200 ',
@@ -280,7 +256,79 @@ def test_validate_offices_addresses(session, filing_type, filing_data, office_ty
     error_fields = {e['path'].split('/')[-1] for e in err4}
     assert error_fields == set(WHITESPACE_VALIDATED_ADDRESS_FIELDS)
 
-    
+
+@pytest.mark.parametrize('filing_type, filing_data, office_type', [
+    ('amaglamationApplication', AMALGAMATION_APPLICATION, 'registeredOffice'),
+    ('changeOfAddress', CHANGE_OF_ADDRESS, 'registeredOffice'),
+    ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, 'liquidationRecordsOffice'),
+    ('changeOfRegistration', CHANGE_OF_REGISTRATION, 'businessOffice'),
+    ('continuationIn', CONTINUATION_IN, 'registeredOffice'),
+    ('conversion', FIRMS_CONVERSION, 'businessOffice'),
+    ('correction', CORRECTION, 'registeredOffice'),
+    ('incorporationApplication', INCORPORATION, 'registeredOffice'),
+    ('registration', REGISTRATION, 'businessOffice'),
+    ('restoration', RESTORATION, 'registeredOffice')
+])
+@pytest.mark.parametrize('postal_code, expected_valid', [
+    # Valid cases
+    ('V6B 1A1', True),   # with space
+    ('V6B1A1', True),    # without space
+    ('v6b 1a1', True),   # lowercase
+    ('v6B1a1', True),    # mixed case
+    ('K1N 3H9', True),   # different province
+
+    # Invalid cases
+    ('12345', False),     # US zip code
+    ('V6B  1A1', False),  # double space
+    ('V6B', False),       # too short
+    ('V6B 1A1X', False),  # too long
+    ('VV6 1A1', False),   # wrong character positions
+
+    # Invalid cases with disallowed first letters (D, F, I, O, Q, U, W)
+    ('D6B 1A1', False),
+    ('F6B 1A1', False),
+    ('I6B 1A1', False),
+    ('O6B 1A1', False),
+    ('Q6B 1A1', False),
+    ('U6B 1A1', False),
+    ('W6B 1A1', False),
+
+])
+def test_validate_offices_addresses_canadian_postal_code(session, filing_type, filing_data, office_type, postal_code, expected_valid):
+    """Test Canadian postal code format validation for office addresses."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing'][filing_type] = copy.deepcopy(filing_data)
+
+    address = {
+        'streetAddress': '123 Main St',
+        'addressCity': 'Vancouver',
+        'addressCountry': 'CA',
+        'postalCode': postal_code,
+        'addressRegion': 'BC'
+    }
+    filing['filing'][filing_type]['offices'][office_type]['deliveryAddress'] = address
+
+    errs = validate_offices_addresses(filing, filing_type)
+
+    if expected_valid:
+        assert errs == []
+    else:
+        assert errs
+        assert errs[0]['error'] == "Postal code must follow Canadian format 'A1A 1A1'."
+        assert 'postalCode' in errs[0]['path']
+
+
+def test_validate_offices_addresses_non_ca_postal_code_not_validated(session):
+    """Test that non-Canadian addresses are not subject to Canadian postal code format validation."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing_type = 'incorporationApplication'
+    filing['filing'][filing_type] = copy.deepcopy(INCORPORATION)
+
+    # A US zip code on a US address should not trigger Canadian format validation
+    filing['filing'][filing_type]['offices']['registeredOffice']['deliveryAddress'] = VALID_ADDRESS_EX_CA
+    errs = validate_offices_addresses(filing, filing_type)
+    assert errs == []
+
 
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'parties'),

@@ -52,7 +52,10 @@ WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
     "postalCode",
 )
 
-CANADIAN_POSTAL_CODE_REGEX = re.compile(r"^[A-Z]\d[A-Z]\s?\d[A-Z]\d$")
+CANADIAN_POSTAL_CODE_REGEX = re.compile(
+    r"^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z]\s?\d[ABCEGHJ-NPRSTV-Z]\d$",
+    re.IGNORECASE
+)
 
 PARTY_NAME_MAX_LENGTH = 30
 
@@ -791,7 +794,7 @@ def _validate_postal_code(
     address: dict,
     address_path: str
 ) -> dict:
-    """Validate that postal code is optional for specified country."""
+    """Validate postal code presence and format for the given country."""
     country = address["addressCountry"]
     postal_code = address.get("postalCode")
     try:
@@ -802,14 +805,11 @@ def _validate_postal_code(
                     "path": f"{address_path}/postalCode"}
 
         # Canadian postal code format validation
-        if country == "CA" and postal_code:
-            normalized = postal_code.strip().upper()
-
-            if not CANADIAN_POSTAL_CODE_REGEX.match(normalized):
-                return {
-                    "error": _("Postal code must follow Canadian format A1A 1A1."),
-                    "path": f"{address_path}/postalCode"
-                }
+        if country == "CA" and postal_code and not CANADIAN_POSTAL_CODE_REGEX.match(postal_code):
+            return {
+                "error": _("Postal code must follow Canadian format 'A1A 1A1'."),
+                "path": f"{address_path}/postalCode"
+            }
     except LookupError:
         # Different ISO-2 country validations are done at filing level,
         # this can be refactored into a common validator in the future

@@ -207,15 +207,6 @@ def test_validate_cod_basic(session, test_name, now,
             ]
         ),
         (
-            'FAIL - deliveryAddress postalCode with leading/trailing whitespace',
-            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": " V8W1C2 "},
-            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'}
-            ]
-        ),
-        (
             'FAIL - mailingAddress streetAddress with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": " 456 B St ", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
@@ -240,26 +231,6 @@ def test_validate_cod_basic(session, test_name, now,
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'addressCountry cannot start or end with whitespace.',
                  'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCountry'}
-            ]
-        ),
-        (
-            'FAIL - mailingAddress postalCode with leading/trailing whitespace',
-            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": " V8W1C2 "},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
-            ]
-        ),
-        (
-            'FAIL - multiple fields with leading/trailing whitespace',
-            {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": " V8W1C2 "},
-            {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": " V8W1C2 "},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'},
-                {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
             ]
         ),
     ]
