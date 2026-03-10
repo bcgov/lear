@@ -43,6 +43,7 @@
     "support-agm-extension-entities": "BC BEN CC ULC C CBEN CCC CUL",
     "supported-agm-location-change-entities": "BC BEN CC ULC C CBEN CCC CUL",
     "supported-continuation-out-entities": "BC BEN CC ULC C CBEN CCC CUL",
-    "supported-consent-continuation-out-entities": "BC BEN CC ULC C CBEN CCC CUL"
+    "supported-consent-continuation-out-entities": "BC BEN CC ULC C CBEN CCC CUL",
+    "enable-backdated-cod": false
   }
 }

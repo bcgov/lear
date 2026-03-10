@@ -19,6 +19,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER
 
 from legal_api.models import Business
+from legal_api.services import flags
 from legal_api.services.filings.validations.change_of_directors import validate_effective_date
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -147,6 +148,122 @@ def test_validate_effective_date_not_before_founding(session):
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     with freeze_time(now):
         err = validate_effective_date(business, filing)
+    assert not err
+
+
+def test_validate_effective_date_not_before_other_cod(session):
+    """Assert that the effective date of change cannot be before a previous COD filing."""
+    # setup
+    identifier = 'CP1234567'
+    founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business = Business(identifier=identifier,
+                        founding_date=founding_date)
+    business.save()
+    now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
+
+    # create the previous COD filing
+    filing_cod = copy.deepcopy(FILING_HEADER)
+    filing_cod['filing']['header']['name'] = 'changeOfDirectors'
+    filing_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    filing_date = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    factory_completed_filing(business=business,
+                             data_dict=filing_cod,
+                             filing_date=filing_date)
+
+    # The effective date _cannot_ be before the previous COD.
+    before = datetime(2010, 8, 4, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(before)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_cod)
+    assert err
+
+    # The effective date _can_ be on the same date as the previous COD.
+    on = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(on)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_cod)
+    assert not err
+
+    # The effective date _can_ be after the previous COD.
+    after = datetime(2010, 8, 6, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(after)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_cod)
+    assert not err
+
+
+def test_validate_effective_date_not_before_other_ar_with_cod(session):
+    """Assert that the effective date of change cannot be before a previous AR filing."""
+    # setup
+    identifier = 'CP1234567'
+    founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business = Business(identifier=identifier,
+                        founding_date=founding_date)
+    business.save()
+    now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
+
+    # create the previous AR filing
+    filing_ar = copy.deepcopy(ANNUAL_REPORT)
+    filing_ar['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    filing_date = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    factory_completed_filing(business=business,
+                             data_dict=filing_ar,
+                             filing_date=filing_date)
+
+    # The effective date _cannot_ be before the previous AR.
+    before = datetime(2010, 8, 4, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(before)
+    filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_ar)
+    assert err
+
+    # The effective date _can_ be on the same date as the previous AR.
+    on = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(on)
+    filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_ar)
+    assert not err
+
+    # The effective date _can_ be after the previous AR.
+    after = datetime(2010, 8, 6, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(after)
+    filing_ar['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_ar)
+    assert not err
+
+
+def test_validate_effective_date_before_other_cod_with_flag_on(session, mocker):
+    """Assert that effective date before a previous COD passes when enable-backdated-cod flag is on."""
+    mocker.patch.object(flags, 'is_on', side_effect=lambda flag, **kwargs: flag == 'enable-backdated-cod')
+
+    identifier = 'CP1234567'
+    founding_date = datetime(2000, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    business = Business(identifier=identifier,
+                        founding_date=founding_date)
+    business.save()
+    now = datetime(2020, 7, 30, 12, 0, 0, 0, tzinfo=timezone.utc)
+
+    # create the previous COD filing
+    filing_cod = copy.deepcopy(FILING_HEADER)
+    filing_cod['filing']['header']['name'] = 'changeOfDirectors'
+    filing_cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    filing_date = datetime(2010, 8, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
+    factory_completed_filing(business=business,
+                             data_dict=filing_cod,
+                             filing_date=filing_date)
+
+    # The effective date _can_ be before the previous COD when flag is on.
+    before = datetime(2010, 8, 4, 12, 0, 0, 0, tzinfo=timezone.utc)
+    effective_date = as_effective_date(before)
+    filing_cod['filing']['header']['effectiveDate'] = effective_date.isoformat()
+    with freeze_time(now):
+        err = validate_effective_date(business, filing_cod)
     assert not err
 
 

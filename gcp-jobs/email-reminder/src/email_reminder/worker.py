@@ -111,6 +111,8 @@ def get_businesses(legal_types: list) -> Pagination:
         Business.state == Business.State.ACTIVE,
         # restoration_expiry_date will have a value for limitedRestoration and limitedRestorationExtension
         Business.restoration_expiry_date == None,
+        # businesses in liquidation do not file annual reports
+        Business.in_liquidation == False,
         where_clause
     ).order_by(Business.id).paginate(per_page=20)
 

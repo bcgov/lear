@@ -54,7 +54,8 @@ def factory_business(identifier,
                      admin_freeze=False,
                      no_dissolution=False,
                      last_ar_reminder_year=None,
-                     restoration_expiry_date=None):
+                     restoration_expiry_date=None,
+                     in_liquidation=False):
     """Create a business."""
     last_ar_year = None
     if last_ar_date:
@@ -69,7 +70,8 @@ def factory_business(identifier,
                         admin_freeze=admin_freeze,
                         no_dissolution=no_dissolution,
                         last_ar_reminder_year=last_ar_reminder_year,
-                        restoration_expiry_date=restoration_expiry_date)
+                        restoration_expiry_date=restoration_expiry_date,
+                        in_liquidation=in_liquidation)
     business.save()
     return business
 

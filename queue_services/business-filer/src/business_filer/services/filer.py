@@ -67,7 +67,6 @@ from business_filer.filing_processors import (
     court_order,
     dissolution,
     incorporation_filing,
-    intent_to_liquidate,
     notice_of_withdrawal,
     put_back_off,
     put_back_on,
@@ -222,9 +221,6 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                                                     filing_submission.json,
                                                     filing_submission,
                                                     filing_meta)
-                
-                case "intentToLiquidate":
-                    intent_to_liquidate.process(business, filing, filing_submission, filing_meta)
 
                 case "noticeOfWithdrawal":
                     notice_of_withdrawal.process(filing_submission, filing, filing_meta)
