@@ -976,7 +976,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if business.in_liquidation:
         business_blocker_checks[BusinessBlocker.IN_LIQUIDATION] = True
-        if LegislationDatetime.datenow() >= business.next_lr_min_date:
+        if business.next_lr_min_date and LegislationDatetime.datenow() >= business.next_lr_min_date:
             business_blocker_checks[BusinessBlocker.MIN_LR_DATE_REACHED] = True
 
     if has_notice_of_withdrawal_filing_blocker(business, is_ignore_draft_blockers):
