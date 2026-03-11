@@ -107,7 +107,12 @@ def build_input_xml(template_name, data):
     """
     template_loader = jinja2.FileSystemLoader(searchpath=current_app.config.get("TEMPLATE_PATH"))
 
-    template_env = jinja2.Environment(loader=template_loader, autoescape=True)
+    template_env = jinja2.Environment(
+        loader=template_loader,
+        autoescape=True,
+        trim_blocks=True,
+        lstrip_blocks=True
+    )
 
     template = template_env.get_template(f"{template_name}.xml")
     return template.render(data)
