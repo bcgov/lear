@@ -14,31 +14,36 @@
 
 """Tests to assure the colin sync end-point."""
 import copy
+from datetime import datetime
 from http import HTTPStatus
 
 import pytest
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CORRECTION_AR,
-    CORRECTION_INCORPORATION,
-    INCORPORATION_FILING_TEMPLATE,
+    CORRECTION_COL,
+    CORRECTION_COR
 )
 
-from legal_api.models import Business, Filing
+from legal_api.models import Business, Filing, PartyRole
+from legal_api.models.colin_event_id import ColinEventId
 from legal_api.services.authz import COLIN_SVC_ROLE
 from tests.unit.services.utils import create_header
 from tests.unit.models import (
+    factory_address,
     factory_business,
     factory_business_mailing_address,
     factory_completed_filing,
+    factory_error_filing,
+    factory_party_role,
     factory_filing,
+    factory_pending_filing
 )
+from tests.unit.models import db
 
 
 def test_get_internal_filings(session, client, jwt):
     """Assert that the internal filings get endpoint returns all completed filings without colin ids."""
-    from legal_api.models.colin_event_id import ColinEventId
-    from tests.unit.models import factory_error_filing, factory_pending_filing
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -82,7 +87,6 @@ def test_get_internal_filings(session, client, jwt):
 
 def test_patch_internal_filings(session, client, jwt):
     """Assert that the internal filings patch endpoint updates the colin_event_id."""
-    from legal_api.models.colin_event_id import ColinEventId
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -106,7 +110,6 @@ def test_patch_internal_filings(session, client, jwt):
 
 def test_get_colin_id(session, client, jwt):
     """Assert the internal/filings/colin_id get endpoint returns properly."""
-    from legal_api.models.colin_event_id import ColinEventId
     # setup
     identifier = 'CP7654321'
     b = factory_business(identifier)
@@ -129,7 +132,6 @@ def test_get_colin_id(session, client, jwt):
 
 def test_get_colin_last_update(session, client, jwt):
     """Assert the get endpoint for ColinLastUpdate returns last updated colin id."""
-    from tests.unit.models import db
     # setup
     colin_id = 1234
     db.session.execute(
@@ -153,3 +155,68 @@ def test_post_colin_last_update(session, client, jwt):
                      )
     assert rv.status_code == HTTPStatus.CREATED
     assert rv.json == {'maxId': colin_id}
+
+
+def test_get_completed_filings_for_colin_corps_correction(session, client, jwt):
+    """Assert that corps corrections are returned as expected."""
+    # setup
+    identifier = 'BC7654321'
+    b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+
+    correction_cod = copy.deepcopy(CORRECTION_COL)
+    correction_cod['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
+    correction_cod['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
+
+    filing_col = factory_completed_filing(b, CORRECTION_COL)
+    filing_cor = factory_completed_filing(b, CORRECTION_COR)
+    filing_cod = factory_completed_filing(b, correction_cod)
+    # Need to apply the relationships to the db
+    for filing in [filing_col, filing_cor, filing_cod]:
+        for relationship in filing.filing_json['filing']['correction']['relationships']:
+            mailing_address = factory_address(relationship['mailingAddress']['streetAddress'], 'mailing')
+            delivery_address = factory_address(relationship['deliveryAddress']['streetAddress'], 'delivery')
+            officer = {
+                'firstName': relationship['entity']['givenName'],
+                'lastName': relationship['entity']['familyName'],
+                'middleInitial': relationship['entity'].get('middleInitial'),
+                'partyType': 'person',
+                'organizationName': ''
+            }
+            role_type = PartyRole.RoleTypes.DIRECTOR
+            if relationship['roles'][0]['roleType'].lower() == 'receiver':
+                role_type = PartyRole.RoleTypes.RECEIVER
+            elif relationship['roles'][0]['roleType'].lower() == 'liquidator':
+                role_type = PartyRole.RoleTypes.LIQUIDATOR
+
+            party_role = factory_party_role(
+                delivery_address,
+                mailing_address,
+                officer,
+                filing.effective_date,
+                None,
+                role_type
+            )
+            b.party_roles.append(party_role)
+            b.save()
+
+    assert filing_col.status == Filing.Status.COMPLETED.value
+    assert filing_cor.status == Filing.Status.COMPLETED.value
+    assert filing_cod.status == Filing.Status.COMPLETED.value
+
+    # test endpoint returned filing1 only (completed, no corrections, with no colin id set)
+    rv = client.get('/api/v2/businesses/internal/filings',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.OK
+    filings = rv.json.get('filings')
+    # Should only return the filing with directors
+    assert len(filings) == 1
+    assert filings[0]['filingId'] == filing_cod.id
+    assert filings[0]['filing']['correction']['correctedFilingType'] == 'changeOfDirectors'
+    assert filings[0]['filing']['correction']['correctedFilingType'] == 'changeOfDirectors'
+    assert filings[0]['filing']['correction']['partyChanged'] == True
+    assert len(filings[0]['filing']['correction']['parties']) == 1
+    assert filings[0]['filing']['correction']['parties'][0]['officer']['firstName'] == correction_cod['filing']['correction']['relationships'][0]['entity']['givenName']
+    assert filings[0]['filing']['correction']['parties'][0]['mailingAddress']['streetAddress'] == correction_cod['filing']['correction']['relationships'][0]['mailingAddress']['streetAddress']
+    assert filings[0]['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress'] == correction_cod['filing']['correction']['relationships'][0]['deliveryAddress']['streetAddress']
+    assert filings[0]['filing']['correction']['parties'][0]['role'] == 'director'

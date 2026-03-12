@@ -53,7 +53,7 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
     msg.extend(validate_relationships(business,
                                       filing_json,
                                       filing_type,
-                                      PartyRole.RoleTypes.DIRECTOR,
+                                      [PartyRole.RoleTypes.DIRECTOR],
                                       False,
                                       True))
 

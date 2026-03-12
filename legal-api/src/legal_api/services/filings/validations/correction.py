@@ -30,6 +30,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
+    validate_relationships,
     validate_resolution_date_in_share_structure,
     validate_share_structure,
 )
@@ -79,6 +80,21 @@ def validate(business: Business, filing: dict) -> Error:
     if not is_comment_only_correction:
         if filing.get("filing", {}).get("correction", {}).get("parties", None):
             msg.extend(validate_parties_addresses(filing, filing_type))
+        if filing.get("filing", {}).get("correction", {}).get("relationships", None):
+            msg.extend(validate_relationships(
+                business,
+                filing,
+                filing_type,
+                [
+                    PartyRole.RoleTypes.DIRECTOR,
+                    PartyRole.RoleTypes.LIQUIDATOR,
+                    PartyRole.RoleTypes.RECEIVER,
+                    PartyRole.RoleTypes.COMPLETING_PARTY
+                ],
+                True,
+                True,
+                [PartyRole.RoleTypes.DIRECTOR, PartyRole.RoleTypes.COMPLETING_PARTY]
+            ))
         if filing.get("filing", {}).get("correction", {}).get("offices", None):
             msg.extend(validate_offices_addresses(filing, filing_type))
         # validations for firms

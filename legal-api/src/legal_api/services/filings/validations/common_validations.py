@@ -538,9 +538,10 @@ def validate_relationships( # noqa: PLR0913
     business: Business,
     filing_json: dict,
     filing_type: str,
-    role_type: PartyRole.RoleTypes,
+    role_types: list[PartyRole.RoleTypes],
     allow_new: bool,
-    allow_edits: bool
+    allow_edits: bool,
+    role_types_for_colin_sync: Optional[list[PartyRole.RoleTypes]] = None
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -548,75 +549,176 @@ def validate_relationships( # noqa: PLR0913
     party_path = f"/filing/{filing_type}/relationships"
 
     # get relevant parties for the business
-    party_roles: list[PartyRole] = PartyRole.get_party_roles(business.id,
-                                                             datetime.now(tz=timezone.utc).date(),
-                                                             role_type.value)
+    today = datetime.now(tz=timezone.utc).date()
+    party_roles: list[PartyRole] = []
+    for role_type in role_types:
+        if roles := PartyRole.get_party_roles(business.id, today, role_type.value):
+            party_roles.extend(roles)
+
     party_ids = [str(party_role.party_id) for party_role in party_roles]
 
     # Check if party is a valid party of the given role
     for index, relationship in enumerate(relationships):
+        path = f"{party_path}/{index}"
         identifier = relationship.get("entity", {}).get("identifier")
         if identifier and not allow_edits:
-            msg.append({"error": "Relationship edits are not allowed in this filing.", "path": f"{party_path}/{index}/entity"})
+            msg.append({"error": "Relationship edits are not allowed in this filing.", "path": f"{path}/entity"})
         elif identifier and identifier not in party_ids:
-            msg.append({"error": "Relationship with this identifier is not valid for this filing.", "path": f"{party_path}/{index}/entity/identifier"})
+            msg.append({"error": "Relationship with this identifier is not valid for this filing.", "path": f"{path}/entity/identifier"})
         elif not identifier and not allow_new:
-            msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{party_path}/{index}/entity"})
+            msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
-        msg.extend(validate_relationship_entity_name(relationship, party_path, index))
+        msg.extend(validate_relationship_entity_name(relationship, path))
+        msg.extend(validate_relationship_roles(relationship["roles"], role_types, path))
+        
+        # Below is for colin sync checking only (i.e. any relationship with Director roles)
+        converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
+        if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
+            validate_relationship_entity_colin_sync(relationship, business.legal_type, f"{path}/entity")
 
     msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
+    return msg
+
+
+def _get_relationship_entity_values(party: dict) -> tuple[str, str, str, str, str, str]:
+    """Return the expected mapped entity values."""
+    entity: dict[str, str] = party["entity"]
+    organization_name = entity.get("businessName") or ""
+    given_name = entity.get("givenName") or ""
+    family_name = entity.get("familyName") or ""
+    middle_initial = entity.get("middleInitial") or ""
+    party_type = "person" if family_name else "organization"
+    party_roles = [x.get("roleType") for x in party["roles"]]
+    party_roles_str = ", ".join(party_roles)
+    return organization_name, given_name, family_name, middle_initial, party_type, party_roles_str
+
+
+def validate_relationship_entity_name(party: dict, path: str) -> list:
+    """Validate relationship entity name."""
+    msg = []
+    organization_name, given_name, family_name, middle_initial, party_type, party_roles_str = _get_relationship_entity_values(party)
+    entity = party["entity"]
+    if party_type == "person":
+        # Only familyName is required
+        if not family_name or not family_name.strip():
+            msg.append({"error": f"{party_roles_str} familyName is required", "path": f"{path}/entity/familyName"})
+
+        if organization_name:
+            err_msg = f"{party_roles_str} businessName should not be set for a person relationship entity"
+            msg.append({"error": err_msg, "path": f"{path}/entity/businessName"})
+        
+        if entity.get("businessIdentifier"):
+            err_msg = f"{party_roles_str} businessIdentifier should not be set for a person relationship entity"
+            msg.append({"error": err_msg, "path": f"{path}/entity/businessIdentifier"})
+
+    elif party_type == "organization":
+        if not organization_name or not organization_name.strip():
+            msg.append({"error": f"{party_roles_str} businessName is required", "path": f"{path}/entity/businessName"})
+        
+        if given_name not in (None, ""):
+            err_msg = f"{party_roles_str} givenName should not be set for an organization relationship entity"
+            msg.append({"error": err_msg, "path": f"{path}/entity/givenName"})
+
+        if middle_initial not in (None, ""):
+            err_msg = f"{party_roles_str} middleInitial should not be set for an organization relationship entity"
+            msg.append({"error": err_msg, "path": f"{path}/entity/middleInitial"})
+
+        if entity.get("alternateName") not in (None, ""):
+            err_msg = f"{party_roles_str} alternateName should not be set for an organization relationship entity"
+            msg.append({"error": err_msg, "path": f"{path}/entity/alternateName"})
+    
+        if entity.get("fullName") not in (None, ""):
+            err_msg = f"{party_roles_str} fullName should not be set for an organization relationship entity"
+            msg.append({"error": err_msg, "path": f"{path}/entity/fullName"})
 
     return msg
 
 
-def validate_relationship_entity_name(party: dict, party_path: str, index: int) -> list:
-    """Validate relationship entity name."""
+def _validate_relationship_entity_person_colin_sync(relationship: dict, legal_type: str, entity_path: str, custom_max_length: int, family_name_max_length: int):
+    """Validate the relationship entity name for a person for the COLIN sync."""
+    msg = []
+    _, given_name, family_name, middle_initial, _, party_roles_str = _get_relationship_entity_values(relationship)
+    stripped_given_name = given_name.strip()
+    if (legal_type in Business.CORPS) and (not stripped_given_name):
+        msg.append({"error": f"{party_roles_str} giveName is required", "path": f"{entity_path}/givenName"})
+    elif given_name != stripped_given_name:
+        msg.append({
+            "error": f"{party_roles_str} giveName cannot start or end with whitespace",
+            "path": f"{entity_path}/givenName"
+        })
+    elif len(given_name) > custom_max_length:
+        err_msg = f"{party_roles_str} given name cannot be longer than {custom_max_length} characters"
+        msg.append({"error": err_msg, "path": f"{entity_path}/givenName"})
+
+    stripped_middle_initial = middle_initial.strip()
+    if middle_initial is not None and stripped_middle_initial:
+        if middle_initial != stripped_middle_initial:
+            msg.append({"error": f"{party_roles_str} middleInitial cannot start or end with whitespace",
+                        "path": f"{entity_path}/middleInitial"})
+        elif len(middle_initial) > custom_max_length:
+            err_msg = f"{party_roles_str} middleInitial cannot be longer than {custom_max_length} characters"
+            msg.append({"error": err_msg, "path": f"{entity_path}/middleInitial"})
+
+    stripped_family_name = family_name.strip()
+    if (legal_type in Business.CORPS) and (not stripped_family_name):
+        msg.append({"error": f"{party_roles_str} familyName is required", "path": f"{entity_path}/familyName"})
+    elif family_name != stripped_family_name:
+        msg.append({
+            "error": f"{party_roles_str} familyName cannot start or end with whitespace",
+            "path": f"{entity_path}/familyName"
+        })
+    elif len(family_name) > family_name_max_length:
+        err_msg = f"{party_roles_str} family name cannot be longer than {family_name_max_length} characters"
+        msg.append({"error": err_msg, "path": f"{entity_path}/familyName"})
+
+    return msg
+
+
+def _validate_relationship_entity_org_colin_sync(relationship: dict, entity_path: str, max_length: int):
+    """Validate the relationship entity name for an organization for the COLIN sync."""
+    msg = []
+    organization_name, _, _, _, _, party_roles_str = _get_relationship_entity_values(relationship)
+    stripped = organization_name.strip()
+    if organization_name != stripped:
+        err_msg = f"{party_roles_str} businessName cannot start or end with whitespace"
+        msg.append({"error": err_msg, "path": f"{entity_path}/businessName"})
+    elif len(organization_name) > max_length:
+        err_msg = f"{party_roles_str} businessName cannot be longer than {max_length} characters"
+        msg.append({"error": err_msg, "path": f"{entity_path}/businessName"})
+
+    return msg
+
+
+def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str, path: str) -> list:
+    """Validate the relationship entity name for COLIN sync."""
+    # FUTURE: This validation should be removed when COLIN sync is no longer required.
     msg = []
 
-    entity = party["entity"]
-    organization_name = entity.get("businessName", None)
-    family_name = entity.get("familyName", None)
-    party_type = "person" if family_name else "organization"
-    party_roles = [x.get("roleType") for x in party["roles"]]
-    party_roles_str = ", ".join(party_roles)
+    custom_allowed_max_length = 20
+    family_name_max_length = PARTY_NAME_MAX_LENGTH
+
+    _, _, _, _, party_type, _ = _get_relationship_entity_values(relationship)
 
     if party_type == "person":
-        # Only familyName is required
-        if not family_name or not family_name.strip():
-            msg.append({"error": f"{party_roles_str} familyName is required", "path": f"{party_path}/{index}/entity/familyName"})
-
-        if organization_name:
-            err_msg = f"{party_roles_str} businessName should not be set for a person relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/businessName"})
-        
-        if entity.get("businessIdentifier"):
-            err_msg = f"{party_roles_str} businessIdentifier should not be set for a person relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/businessIdentifier"})
+        msg.extend(_validate_relationship_entity_person_colin_sync(relationship, legal_type, path, custom_allowed_max_length, family_name_max_length))
 
     elif party_type == "organization":
-        if not organization_name or not organization_name.strip():
-            msg.append({"error": f"{party_roles_str} businessName is required", "path": f"{party_path}/{index}/entity/businessName"})
-        
-        if entity.get("givenName") not in (None, ""):
-            err_msg = f"{party_roles_str} givenName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/givenName"})
+        msg.extend(_validate_relationship_entity_org_colin_sync(relationship, path, family_name_max_length))
 
-        if entity.get("middleInitial") not in (None, ""):
-            err_msg = f"{party_roles_str} middleInitial should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/middleInitial"})
-        
-        if entity.get("additionalName") not in (None, ""):
-            err_msg = f"{party_roles_str} additionalName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/additionalName"})
+    return msg
 
-        if entity.get("alternateName") not in (None, ""):
-            err_msg = f"{party_roles_str} alternateName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/alternateName"})
-    
-        if entity.get("fullName") not in (None, ""):
-            err_msg = f"{party_roles_str} fullName should not be set for an organization relationship entity"
-            msg.append({"error": err_msg, "path": f"{party_path}/{index}/entity/fullName"})
+
+def validate_relationship_roles(roles: list[dict[str, str]],
+                                allowed_roles: list[PartyRole.RoleTypes],
+                                path: str) -> list:
+    """Validate relationship roles."""
+    msg = []
+    converted_allowed_roles = [role.value.lower().replace(" ", "_") for role in allowed_roles]
+    for index, role in enumerate(roles):
+        if role.get("roleType").lower() not in converted_allowed_roles:
+            err_msg = "Invalid role type for this filing."
+            msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
+        # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
 
     return msg
 

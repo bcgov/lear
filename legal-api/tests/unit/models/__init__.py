@@ -172,6 +172,18 @@ def factory_business(identifier,
     return business
 
 
+def factory_address(street: str, address_type: str):
+    """Return an Address."""
+    return Address(
+        city='Test City',
+        street=street,
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+        address_type=address_type
+    )
+
+
 def factory_business_mailing_address(business):
     """Create a business entity."""
     address = Address(
@@ -260,6 +272,7 @@ def factory_completed_filing(business,
         filing.payment_token = payment_token
         filing.effective_date = filing_date
         filing.payment_completion_date = filing_date
+        filing._meta_data = {}
         if colin_id:
             colin_event = ColinEventId()
             colin_event.colin_event_id = colin_id

@@ -52,7 +52,7 @@ from .bp import bp
 @bp.route("/internal/filings", methods=["GET"])
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.colin])
-def get_completed_filings_for_colin():  # noqa: PLR0912
+def get_completed_filings_for_colin():
     """Get filings by status formatted in json."""
     filings = []
 
@@ -62,41 +62,20 @@ def get_completed_filings_for_colin():  # noqa: PLR0912
     for filing in pending_filings:
         business = Business.find_by_internal_id(filing.business_id)
 
-        filing_json = copy.deepcopy(filing.filing_json)
-        filing_json["filingId"] = filing.id
-        filing_json["filing"]["header"]["source"] = Filing.Source.LEAR.value
-        filing_json["filing"]["header"]["date"] = (filing.payment_completion_date or filing.filing_date).isoformat()
-        filing_json["filing"]["header"]["learEffectiveDate"] = filing.effective_date.isoformat()
-        filing_json["filing"]["header"]["isFutureEffective"] = filing.is_future_effective
-        filing_json["filing"]["header"]["hideInLedger"] = filing.hide_in_ledger
-
-        if filing.submitter_roles:
-            filing_json["filing"]["header"]["isStaff"] = (
-                UserRoles.staff in filing.submitter_roles or UserRoles.system in filing.submitter_roles
-            )
-        if filing.filing_submitter:
-            filing_json["filing"]["header"]["filedBy"] = {
-                "userName": filing.filing_submitter.username,
-                "firstName": filing.filing_submitter.firstname,
-                "lastName": filing.filing_submitter.lastname,
-                "email": filing.filing_submitter.email
-            }
-
-        if not filing_json["filing"].get("business"):
-            if filing.transaction_id:
-                business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
-                filing_json["filing"]["business"] = VersionedBusinessDetailsService.business_revision_json(
-                    business_revision, business.json())
-            else:
-                # should never happen unless its a test data created directly in db.
-                # found some filing in DEV, adding this check to avoid exception
-                filing_json["filing"]["business"] = business.json()
-        elif not filing_json["filing"]["business"].get("legalName"):
-            filing_json["filing"]["business"]["legalName"] = business.legal_name
+        filing_json = _get_initial_filing_json(filing, business)
 
         if filing.filing_type == "correction" and business.legal_type != Business.LegalTypes.COOP.value:
             try:
                 set_correction_flags(filing_json, filing)
+                has_non_party_change = has_alias_changed(filing) or has_office_changed(filing) or has_resolution_changed(filing) or has_share_changed(filing)
+                inner_filing_json = filing_json["filing"].get(filing.filing_type, {})
+                # NOTE: has_party_changed specifically checks for Director changes
+                if inner_filing_json.get("relationships") and has_party_changed(filing):
+                    # set directors and completing party from the db when filing_json is using relationships schema - ignore other parties
+                    _set_relationship_parties(business, filing, inner_filing_json)
+                elif not filing.meta_data.get("commentOnly", False) and not has_non_party_change:
+                    # Only change was to non director parties so skip the colin sync for this correction
+                    continue
             except Exception as ex:
                 current_app.logger.error(f"correction: filingId={filing.id}, error: {ex!s}")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
@@ -125,6 +104,43 @@ def get_completed_filings_for_colin():  # noqa: PLR0912
             filing_json["filing"]["dissolution"]["mailingAddress"] = mailing.json
         filings.append(filing_json)
     return jsonify({"filings": filings}), HTTPStatus.OK
+
+
+def _get_initial_filing_json(filing: Filing, business: Business):
+    """Return the initial filing json with common colin sync values set."""
+    filing_json = copy.deepcopy(filing.filing_json)
+    filing_json["filingId"] = filing.id
+    filing_json["filing"]["header"]["source"] = Filing.Source.LEAR.value
+    filing_json["filing"]["header"]["date"] = (filing.payment_completion_date or filing.filing_date).isoformat()
+    filing_json["filing"]["header"]["learEffectiveDate"] = filing.effective_date.isoformat()
+    filing_json["filing"]["header"]["isFutureEffective"] = filing.is_future_effective
+    filing_json["filing"]["header"]["hideInLedger"] = filing.hide_in_ledger
+
+    if filing.submitter_roles:
+        filing_json["filing"]["header"]["isStaff"] = (
+            UserRoles.staff in filing.submitter_roles or UserRoles.system in filing.submitter_roles
+        )
+    if filing.filing_submitter:
+        filing_json["filing"]["header"]["filedBy"] = {
+            "userName": filing.filing_submitter.username,
+            "firstName": filing.filing_submitter.firstname,
+            "lastName": filing.filing_submitter.lastname,
+            "email": filing.filing_submitter.email
+        }
+
+    if not filing_json["filing"].get("business"):
+        if filing.transaction_id:
+            business_revision = VersionedBusinessDetailsService.get_business_revision_obj(filing, business.id)
+            filing_json["filing"]["business"] = VersionedBusinessDetailsService.business_revision_json(
+                business_revision, business.json())
+        else:
+            # should never happen unless its a test data created directly in db.
+            # found some filing in DEV, adding this check to avoid exception
+            filing_json["filing"]["business"] = business.json()
+    elif not filing_json["filing"]["business"].get("legalName"):
+        filing_json["filing"]["business"]["legalName"] = business.legal_name
+    
+    return filing_json
 
 
 def set_correction_flags(filing_json, filing: Filing):
@@ -322,6 +338,36 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
     business_dates = [res.resolution_date.isoformat() for res in resolutions_query]
     if business_dates:
         amalgamation_filing["shareStructure"]["resolutionDates"] = business_dates
+
+
+def _map_entity_to_officer(entity: dict[str, str]):
+    return {
+        "firstName": entity.get("givenName"),
+        "lastName": entity.get("familyName"),
+        "middleInitial": entity.get("middleInitial"),
+        "organizationName": entity.get("businessName"),
+        "id": entity.get("identifier")
+    }
+
+
+def _set_relationship_parties(business: Business, filing: Filing, filing_json: dict):
+    """Override filing_json with parties set from the db. Only Directors and Completing Party will be added."""
+    parties: list = VersionedBusinessDetailsService.get_party_role_revision(filing,
+                                                                            business.id,
+                                                                            role=PartyRole.RoleTypes.DIRECTOR.value)
+
+    # copy completing party from filing json
+    for party_info in filing_json.get("relationships"):
+        if comp_party_role := next((x for x in party_info.get("roles")
+                                    if x["roleType"].lower() == "completing party"), None):
+            mapped_party_info = {
+                "officer": _map_entity_to_officer(party_info["entity"]),
+                "roles": [comp_party_role]
+            }
+            parties.append(mapped_party_info)
+            break
+
+    filing_json["parties"] = parties
 
 
 @bp.route("/internal/filings/<int:filing_id>", methods=["PATCH"])
