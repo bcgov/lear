@@ -333,7 +333,9 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'}
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
             ]
         ),
         (
@@ -369,7 +371,9 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'},
             ]
         ),
         (
@@ -379,7 +383,11 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
                  'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
                 {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
             ]
         ),
