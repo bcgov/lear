@@ -38,8 +38,8 @@ CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType
 @pytest.mark.parametrize('test_name, legal_type, identifier, initial_filing, correction_filing', [
     ('AR', 'CP', 'CP1234567', ANNUAL_REPORT, CORRECTION_AR),
     ('COD', 'BC', 'BC1234567', CHANGE_OF_DIRECTORS, CORRECTION_COD),
-    # ('COL', 'BC', 'BC1234567', CHANGE_OF_LIQUIDATORS, CORRECTION_COL),
-    # ('COR', 'BC', 'BC1234567', CHANGE_OF_RECEIVERS, CORRECTION_COR),X
+    ('COL', 'BC', 'BC1234567', CHANGE_OF_LIQUIDATORS, CORRECTION_COL),
+    ('COR', 'BC', 'BC1234567', CHANGE_OF_RECEIVERS, CORRECTION_COR)
 ])
 def test_valid_correction(mocker, session, test_name, legal_type, identifier, initial_filing, correction_filing):
     """Test that a valid correction passes validation."""
