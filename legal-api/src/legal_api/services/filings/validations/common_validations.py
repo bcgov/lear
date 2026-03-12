@@ -807,7 +807,7 @@ def _validate_postal_code(
         # Canadian postal code format validation
         if country == "CA" and postal_code and not CANADIAN_POSTAL_CODE_REGEX.match(postal_code):
             return {
-                "error": _("Postal code must follow Canadian format 'A1A 1A1'."),
+                "error": _("Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'."),
                 "path": f"{address_path}/postalCode"
             }
     except LookupError:

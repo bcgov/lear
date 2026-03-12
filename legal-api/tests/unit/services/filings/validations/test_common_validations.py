@@ -316,7 +316,7 @@ def test_validate_offices_addresses_canadian_postal_code(session, filing_type, f
         assert errs == []
     else:
         assert errs
-        assert errs[0]['error'] == "Postal code must follow Canadian format 'A1A 1A1'."
+        assert errs[0]['error'] == "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'."
         assert 'postalCode' in errs[0]['path']
 
 

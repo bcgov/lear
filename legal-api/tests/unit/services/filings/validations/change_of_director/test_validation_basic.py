@@ -213,7 +213,7 @@ def test_validate_cod_basic(session, test_name, now,
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
                  'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'},
-                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
                  'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'},
             ]
         ),
@@ -251,7 +251,7 @@ def test_validate_cod_basic(session, test_name, now,
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
                  'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'},
-                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
                  'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
             ]
         ),
@@ -262,11 +262,11 @@ def test_validate_cod_basic(session, test_name, now,
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
                  'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'},
-                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
                  'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/postalCode'},
                 {'error': 'postalCode cannot start or end with whitespace.',
                  'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'},
-                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                {'error': "Postal code must follow Canadian format, e.g. 'A1A 1A1' or 'A1A1A1'.",
                  'path': '/filing/changeOfDirectors/directors/0/mailingAddress/postalCode'}
             ]
         ),
