@@ -29,6 +29,20 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
 
+def _get_int(name: str, default: int = 0) -> int:
+    """Safe int env parsing that avoids None.isnumeric() crashes."""
+    val = os.getenv(name)
+    return int(val) if (val and val.isnumeric()) else default
+
+
+def _get_bool(name: str, default: bool = False) -> bool:
+    """Safe bool env parsing (case-insensitive)."""
+    val = os.getenv(name)
+    if val is None:
+        return default
+    return val.strip().lower() == 'true'
+
+
 def get_named_config(config_name: str = 'production'):
     """Return the configuration object based on the name.
 
@@ -134,23 +148,20 @@ class _Config():  # pylint: disable=too-few-public-methods
     ACCOUNT_SVC_AFFILIATE_URL = os.getenv('ACCOUNT_SVC_AFFILIATE_URL')
     ACCOUNT_SVC_CLIENT_ID = os.getenv('ACCOUNT_SVC_CLIENT_ID')
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv('ACCOUNT_SVC_CLIENT_SECRET')
-    ACCOUNT_SVC_TIMEOUT = os.getenv('ACCOUNT_SVC_TIMEOUT')
-    ACCOUNT_SVC_TIMEOUT = int(ACCOUNT_SVC_TIMEOUT) if ACCOUNT_SVC_TIMEOUT.isnumeric() else None
+    ACCOUNT_SVC_TIMEOUT = _get_int('ACCOUNT_SVC_TIMEOUT', 0)
+    ACCOUNT_SVC_TIMEOUT = int(ACCOUNT_SVC_TIMEOUT) if ACCOUNT_SVC_TIMEOUT > 0 else None
 
     # batch delete flow
-    DELETE_BATCHES = os.getenv('DELETE_BATCHES')
-    DELETE_BATCHES = int(DELETE_BATCHES) if DELETE_BATCHES.isnumeric() else 0
-    DELETE_BATCH_SIZE = os.getenv('DELETE_BATCH_SIZE')
-    DELETE_BATCH_SIZE = int(DELETE_BATCH_SIZE) if DELETE_BATCH_SIZE.isnumeric() else 0
+    DELETE_BATCHES = _get_int('DELETE_BATCHES', 0)
+    DELETE_BATCH_SIZE = _get_int('DELETE_BATCH_SIZE', 0)
 
-    DELETE_AUTH_RECORDS = os.getenv('DELETE_AUTH_RECORDS').lower() == 'true'
-    DELETE_CORP_PROCESSING_RECORDS = os.getenv('DELETE_CORP_PROCESSING_RECORDS').lower() == 'true'
+    # Fix footgun: env vars may be unset
+    DELETE_AUTH_RECORDS = _get_bool('DELETE_AUTH_RECORDS', False)
+    DELETE_CORP_PROCESSING_RECORDS = _get_bool('DELETE_CORP_PROCESSING_RECORDS', False)
 
     # tombstone flow
-    TOMBSTONE_BATCHES = os.getenv('TOMBSTONE_BATCHES')
-    TOMBSTONE_BATCHES = int(TOMBSTONE_BATCHES) if TOMBSTONE_BATCHES.isnumeric() else 0
-    TOMBSTONE_BATCH_SIZE = os.getenv('TOMBSTONE_BATCH_SIZE')
-    TOMBSTONE_BATCH_SIZE = int(TOMBSTONE_BATCH_SIZE) if TOMBSTONE_BATCH_SIZE.isnumeric() else 0
+    TOMBSTONE_BATCHES = _get_int('TOMBSTONE_BATCHES', 0)
+    TOMBSTONE_BATCH_SIZE = _get_int('TOMBSTONE_BATCH_SIZE', 0)
 
     # reservation (reserve_for_flow) query statement timeout (Postgres statement_timeout, in ms).
     # When set, long-running reservation queries fail fast instead of tying up a worker indefinitely.
@@ -158,17 +169,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     RESERVE_STATEMENT_TIMEOUT_MS = int(RESERVE_STATEMENT_TIMEOUT_MS) if RESERVE_STATEMENT_TIMEOUT_MS.isnumeric() else None
 
     # verify flow
-    VERIFY_BATCHES = os.getenv('VERIFY_BATCHES')
-    VERIFY_BATCHES = int(VERIFY_BATCHES) if VERIFY_BATCHES.isnumeric() else 0
-    VERIFY_BATCH_SIZE = os.getenv('VERIFY_BATCH_SIZE')
-    VERIFY_BATCH_SIZE = int(VERIFY_BATCH_SIZE) if VERIFY_BATCH_SIZE.isnumeric() else 0
+    VERIFY_BATCHES = _get_int('VERIFY_BATCHES', 0)
+    VERIFY_BATCH_SIZE = _get_int('VERIFY_BATCH_SIZE', 0)
     VERIFY_SUMMARY_PATH = os.getenv('VERIFY_SUMMARY_PATH')
 
     # freeze flow
-    FREEZE_BATCHES = os.getenv('FREEZE_BATCHES')
-    FREEZE_BATCHES = int(FREEZE_BATCHES) if FREEZE_BATCHES.isnumeric() else 0
-    FREEZE_BATCH_SIZE = os.getenv('FREEZE_BATCH_SIZE')
-    FREEZE_BATCH_SIZE = int(FREEZE_BATCH_SIZE) if FREEZE_BATCH_SIZE.isnumeric() else 0
+    FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)
+    FREEZE_BATCH_SIZE = _get_int('FREEZE_BATCH_SIZE', 0)
+
     # ORACLE COLIN DB
     DB_USER_COLIN_ORACLE = os.getenv('DATABASE_USERNAME_COLIN_ORACLE', '')
     DB_PASSWORD_COLIN_ORACLE = os.getenv('DATABASE_PASSWORD_COLIN_ORACLE', '')
@@ -189,6 +197,34 @@ class _Config():  # pylint: disable=too-few-public-methods
     MIG_GROUP_IDS = os.getenv('MIG_GROUP_IDS')
     MIG_BATCH_IDS = os.getenv('MIG_BATCH_IDS')
 
+    # ------------------------------------------------------------------------------------------
+    # Auth-only flows (auth_processing tracking)
+    # ------------------------------------------------------------------------------------------
+    # Selection
+    AUTH_SELECTION_MODE = os.getenv('AUTH_SELECTION_MODE', 'MIGRATION_FILTER')
+    AUTH_CORP_NUMS = os.getenv('AUTH_CORP_NUMS', '')
+    AUTH_SOURCE_FLOW_NAME = os.getenv('AUTH_SOURCE_FLOW_NAME', 'tombstone-flow')
+
+    # Throughput
+    AUTH_BATCHES = _get_int('AUTH_BATCHES', 0)
+    AUTH_BATCH_SIZE = _get_int('AUTH_BATCH_SIZE', 0)
+    AUTH_MAX_WORKERS = _get_int('AUTH_MAX_WORKERS', 50) or 50
+
+    # Create plan
+    AUTH_CREATE_ENTITY = _get_bool('AUTH_CREATE_ENTITY', True)
+    AUTH_UPSERT_CONTACT = _get_bool('AUTH_UPSERT_CONTACT', False)
+    AUTH_CREATE_AFFILIATIONS = _get_bool('AUTH_CREATE_AFFILIATIONS', False)
+    AUTH_SEND_UNAFFILIATED_EMAIL = _get_bool('AUTH_SEND_UNAFFILIATED_EMAIL', False)
+    AUTH_FAIL_IF_MISSING_EMAIL = _get_bool('AUTH_FAIL_IF_MISSING_EMAIL', False)
+    AUTH_DRY_RUN = _get_bool('AUTH_DRY_RUN', False)
+
+    # Delete plan
+    AUTH_DELETE_AFFILIATIONS = _get_bool('AUTH_DELETE_AFFILIATIONS', False)
+    AUTH_DELETE_ENTITY = _get_bool('AUTH_DELETE_ENTITY', False)
+    AUTH_DELETE_INVITES = _get_bool('AUTH_DELETE_INVITES', False)  # unsupported unless API confirmed
+    AUTH_REQUIRE_CONFIRMATION = _get_bool('AUTH_REQUIRE_CONFIRMATION', False)
+    AUTH_CONFIRMATION_TOKEN = os.getenv('AUTH_CONFIRMATION_TOKEN', '')
+
     TESTING = False
     DEBUG = False
 
@@ -208,7 +244,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
 
     DEBUG = True
     TESTING = True
-
 
 
 class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
