@@ -278,6 +278,8 @@ def test_validate_offices_addresses(session, filing_type, filing_data, office_ty
     ('K1N 3H9', True),   # different province
 
     # Invalid cases
+    ('V6B\t1A1', False),  # tab
+    ('V6B\n1A1', False),  # newline
     ('12345', False),     # US zip code
     ('V6B  1A1', False),  # double space
     ('V6B', False),       # too short

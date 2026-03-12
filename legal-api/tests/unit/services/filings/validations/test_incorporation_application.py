@@ -333,7 +333,9 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'}
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
             ]
         ),
         (
@@ -369,7 +371,9 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": " V8W1C2 "},
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'},
             ]
         ),
         (
@@ -379,7 +383,11 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             HTTPStatus.BAD_REQUEST, [
                 {'error': 'postalCode cannot start or end with whitespace.',
                  'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/postalCode'},
                 {'error': 'postalCode cannot start or end with whitespace.',
+                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'},
+                {'error': "Postal code must follow Canadian format 'A1A 1A1'.",
                  'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/postalCode'}
             ]
         ),
@@ -417,8 +425,7 @@ def test_validate_incorporation_addresses_whitespace(session, mocker, test_name,
     # validate outcomes
     if expected_code:
         assert err.code == expected_code
-        actual_errors = [e['error'] for e in err.msg]
-        assert any(expected_error['error'] in actual_errors for expected_error in expected_msg)
+        assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
 
