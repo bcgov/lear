@@ -773,6 +773,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             "court_order_file_number",
             "deletion_locked",
             "hide_in_ledger",
+            "lear_only",
             "effective_date",
             "order_details",
             "paper_only",
@@ -805,6 +806,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     _source = db.Column("source", db.String(15), default=Source.LEAR.value)
     paper_only = db.Column("paper_only", db.Boolean, unique=False, default=False)
     colin_only = db.Column("colin_only", db.Boolean, unique=False, default=False)
+    lear_only = db.Column("lear_only", db.Boolean, unique=False, default=False)
     payment_account = db.Column("payment_account", db.String(30))
     effective_date = db.Column("effective_date", db.DateTime(timezone=True), default=datetime.utcnow)
     submitter_roles = db.Column("submitter_roles", db.String(200))
@@ -1343,6 +1345,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
                 ~and_(Filing._filing_type == "dissolution", Filing._filing_sub_type == "delay"),
+                ~Filing.lear_only,
                 Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison # noqa: E711;
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
