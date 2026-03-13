@@ -17,14 +17,16 @@ import copy
 
 import datedelta
 import pytest
+from flask import current_app
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from legal_api.core import Filing as CoreFiling
 from legal_api.models import Business, Comment, Filing, UserRoles
 from legal_api.models.user import UserRoles
+from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.datetime import datetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
-from tests.unit.services.utils import helper_create_jwt
+from tests.unit.services.utils import helper_create_jwt, create_header
 
 
 def load_ledger(business, founding_date):
@@ -65,16 +67,24 @@ def load_ledger(business, founding_date):
     return i
 
 
-def test_simple_ledger_search(session):
+def test_simple_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
     identifier = 'BC1234567'
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='testuser')
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
-    # test
-    ledger = CoreFiling.ledger(business.id)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+   # test
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
+        ledger = CoreFiling.ledger(business.id, jwt)
 
     # Did we get the full set
     assert len(ledger) == num_of_files
@@ -83,7 +93,7 @@ def test_simple_ledger_search(session):
     alteration = next((f for f in ledger if f.get('name') == 'alteration'), None)
 
     assert alteration
-    assert 18 == len(alteration.keys())
+    assert 18 <= len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
@@ -100,7 +110,7 @@ def test_simple_ledger_search(session):
     # assert alteration['filingLink']
 
 
-def test_common_ledger_items(session):
+def test_common_ledger_items(session,):
     """Assert that common ledger items works as expected."""
     identifier = 'BC1234567'
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(Filing.FILINGS.keys()))

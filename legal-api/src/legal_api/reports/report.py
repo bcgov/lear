@@ -36,7 +36,7 @@ from legal_api.models import (
     PartyRole,
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
-from legal_api.reports.document_service import DocumentService
+from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
@@ -78,21 +78,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
-        if flags.is_on("enable-document-records"):
-            account_id = request.headers.get("Account-Id", None)
-            if account_id is not None and self._business is not None:
-                document, status = self._document_service.get_document(
-                  self._business.identifier,
-                  self._filing.id,
-                  self._report_key,
-                  account_id
+        account_id = request.headers.get("Account-Id", None)
+        if account_id is not None and self._business is not None:
+            document, status = self._document_service.get_document(
+                self._business.identifier,
+                self._filing.id,
+                self._report_key,
+                account_id
+            )
+            if status == HTTPStatus.OK:
+                return current_app.response_class(
+                    response=document,
+                    status=status,
+                    mimetype="application/pdf"
                 )
-                if status == HTTPStatus.OK:
-                    return current_app.response_class(
-                        response=document,
-                        status=status,
-                        mimetype="application/pdf"
-                    )
 
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
@@ -114,32 +113,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
 
-        if flags.is_on("enable-document-records"):
-            create_document = account_id is not None
-            create_filing_types = [
-              "incorporationApplication",
-              "continuationIn",
-              "amalgamation",
-              "registration"
-            ]
-            if self._filing.filing_type in create_filing_types:
-                create_document = create_document and self._business and self._business.tax_id
-            else:
-                create_document = create_document and \
-                  self._filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED)
-
-            if create_document:
-                self._document_service.create_document(
-                  self._business.identifier,
-                  self._filing.id,
-                  self._report_key,
-                  account_id,
-                  response.content
-                )
-
+        response_drs = self._document_service.create_filing_report(
+            self._business.identifier,
+            self._filing,
+            ReportMeta.reports.get(self._report_key),
+            response
+        )
         return current_app.response_class(
-            response=response.content,
-            status=response.status_code,
+            response=response_drs.content,
+            status=response_drs.status_code,
             mimetype="application/pdf"
         )
 
@@ -1291,6 +1273,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_party_data(self, filing, prev_completed_filing: Filing):
         filing["parties"] = filing.get("correction").get("parties", [])
+        if relationships := filing.get("correction").get("relationships"):
+            # map relationships to parties for pdf templates
+            filing["parties"].extend([self._map_relationship_to_party(relationship) for relationship in relationships])
+
         if filing.get("parties"):
             self._format_directors(filing["parties"])
             filing["partyChange"] = False
@@ -1491,6 +1477,24 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return "TEST"
         return ""
 
+    @staticmethod
+    def _map_relationship_to_party(relationship):
+        # FUTURE: update pdf templates to expect relationships schema and remove this
+        organization_name = relationship["entity"].get("businessName")
+        return {
+            "officer": {
+                "id": relationship["entity"].get("identifier"),
+                "firstName": relationship["entity"].get("givenName"),
+                "middleName": relationship["entity"].get("middleInitial"),
+                "lastName": relationship["entity"].get("familyName"),
+                "organizationName": organization_name,
+                "partyType": "organization" if organization_name else "person"
+            },
+            "deliveryAddress": relationship.get("deliveryAddress"),
+            "mailingAddress": relationship.get("mailingAddress"),
+            "roles": relationship.get("roles", [])
+        }
+
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
@@ -1498,35 +1502,43 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
     reports = {
         "amalgamationApplication": {
             "filingDescription": "Amalgamation Application",
-            "fileName": "amalgamationApplication"
+            "fileName": "amalgamationApplication",
+            "reportType": ReportTypes.FILING.value
         },
         "certificateOfAmalgamation": {
             "filingDescription": "Certificate Of Amalgamation",
-            "fileName": "certificateOfAmalgamation"
+            "fileName": "certificateOfAmalgamation",
+            "reportType": ReportTypes.CERT.value
         },
         "certificateOfIncorporation": {
             "filingDescription": "Certificate of Incorporation",
-            "fileName": "certificateOfIncorporation"
+            "fileName": "certificateOfIncorporation",
+            "reportType": ReportTypes.CERT.value
         },
         "incorporationApplication": {
             "filingDescription": "Incorporation Application",
-            "fileName": "incorporationApplication"
+            "fileName": "incorporationApplication",
+            "reportType": ReportTypes.FILING.value
         },
         "noticeOfArticles": {
             "filingDescription": "Notice of Articles",
-            "fileName": "noticeOfArticles"
+            "fileName": "noticeOfArticles",
+            "reportType": ReportTypes.NOA.value
         },
         "alterationNotice": {
             "filingDescription": "Alteration Notice",
-            "fileName": "alterationNotice"
+            "fileName": "alterationNotice",
+            "reportType": ReportTypes.FILING.value
         },
         "transition": {
             "filingDescription": "Transition Application",
-            "fileName": "transitionApplication"
+            "fileName": "transitionApplication",
+            "reportType": ReportTypes.FILING.value
         },
         "changeOfAddress": {
             "hasDifferentTemplates": True,
             "filingDescription": "Change of Address",
+            "reportType": ReportTypes.FILING.value,
             "default": {
                 "fileName": "bcAddressChange"
             },
@@ -1537,6 +1549,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "changeOfDirectors": {
             "hasDifferentTemplates": True,
             "filingDescription": "Change of Directors",
+            "reportType": ReportTypes.FILING.value,
             "default": {
                 "fileName": "bcDirectorChange"
             },
@@ -1547,6 +1560,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "annualReport": {
             "hasDifferentTemplates": True,
             "filingDescription": "Annual Report",
+            "reportType": ReportTypes.FILING.value,
             "default": {
                 "fileName": "bcAnnualReport"
             },
@@ -1556,55 +1570,68 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "changeOfName": {
             "filingDescription": "Change of Name",
-            "fileName": "changeOfName"
+            "fileName": "changeOfName",
+            "reportType": ReportTypes.FILING.value
         },
         "specialResolution": {
             "filingDescription": "Special Resolution",
-            "fileName": "specialResolution"
+            "fileName": "specialResolution",
+            "reportType": ReportTypes.FILING.value
         },
         "specialResolutionApplication": {
             "filingDescription": "Special Resolution Application",
-            "fileName": "specialResolutionApplication"
+            "fileName": "specialResolutionApplication",
+            "reportType": ReportTypes.FILING.value
         },
         "voluntaryDissolution": {
             "filingDescription": "Voluntary Dissolution",
-            "fileName": "voluntaryDissolution"
+            "fileName": "voluntaryDissolution",
+            "reportType": ReportTypes.FILING.value
         },
         "certificateOfNameChange": {
             "filingDescription": "Certificate of Name Change",
-            "fileName": "certificateOfNameChange"
+            "fileName": "certificateOfNameChange",
+            "reportType": ReportTypes.CERT.value
         },
         "certificateOfNameCorrection": {
             "filingDescription": "Certificate of Name Correction",
-            "fileName": "certificateOfNameChange"
+            "fileName": "certificateOfNameChange",
+            "reportType": ReportTypes.CERT.value
         },
         "certificateOfDissolution": {
             "filingDescription": "Certificate of Dissolution",
-            "fileName": "certificateOfDissolution"
+            "fileName": "certificateOfDissolution",
+            "reportType": ReportTypes.CERT.value
         },
         "dissolution": {
             "filingDescription": "Dissolution Application",
-            "fileName": "dissolution"
+            "fileName": "dissolution",
+            "reportType": ReportTypes.FILING.value
         },
         "registration": {
             "filingDescription": "Statement of Registration",
-            "fileName": "registration"
+            "fileName": "registration",
+            "reportType": ReportTypes.FILING.value
         },
         "amendedRegistrationStatement": {
             "filingDescription": "Amended Registration Statement",
-            "fileName": "amendedRegistrationStatement"
+            "fileName": "amendedRegistrationStatement",
+            "reportType": ReportTypes.FILING.value
         },
         "correctedRegistrationStatement": {
             "filingDescription": "Corrected Registration Statement",
-            "fileName": "amendedRegistrationStatement"
+            "fileName": "amendedRegistrationStatement",
+            "reportType": ReportTypes.FILING.value
         },
         "changeOfRegistration": {
             "filingDescription": "Change of Registration",
-            "fileName": "changeOfRegistration"
+            "fileName": "changeOfRegistration",
+            "reportType": ReportTypes.FILING.value
         },
         "correction": {
             "hasDifferentTemplates": True,
             "filingDescription": "Correction",
+            "reportType": ReportTypes.FILING.value,
             "default": {
                 "fileName": "correction"
             },
@@ -1617,31 +1644,38 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "certificateOfRestoration": {
             "filingDescription": "Certificate of Restoration",
-            "fileName": "certificateOfRestoration"
+            "fileName": "certificateOfRestoration",
+            "reportType": ReportTypes.FILING.value
         },
         "restoration": {
             "filingDescription": "Restoration Application",
-            "fileName": "restoration"
+            "fileName": "restoration",
+            "reportType": ReportTypes.FILING.value
         },
         "letterOfConsent": {
             "filingDescription": "Letter Of Consent",
-            "fileName": "letterOfConsent"
+            "fileName": "letterOfConsent",
+            "reportType": ReportTypes.FILING.value
         },
         "letterOfConsentAmalgamationOut": {
             "filingDescription": "Letter Of Consent",
-            "fileName": "letterOfConsentAmalgamationOut"
+            "fileName": "letterOfConsentAmalgamationOut",
+            "reportType": ReportTypes.FILING.value
         },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",
-            "fileName": "letterOfAgmExtension"
+            "fileName": "letterOfAgmExtension",
+            "reportType": ReportTypes.FILING.value
         },
         "letterOfAgmLocationChange": {
             "filingDescription": "Letter Of AGM Location Change",
-            "fileName": "letterOfAgmLocationChange"
+            "fileName": "letterOfAgmLocationChange",
+            "reportType": ReportTypes.FILING.value
         },
         "continuationIn": {
             "filingDescription": "Continuation Application",
-            "fileName": "continuationApplication"
+            "fileName": "continuationApplication",
+            "reportType": ReportTypes.FILING.value
         },
         "certificateOfContinuation": {
             "filingDescription": "Certificate of Continuation",
@@ -1649,15 +1683,18 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "noticeOfWithdrawal": {
             "filingDescription": "Notice of Withdrawal",
-            "fileName": "noticeOfWithdrawal"
+            "fileName": "noticeOfWithdrawal",
+            "reportType": ReportTypes.FILING.value
         },
         "appointReceiver": {
             "filingDescription": "Appoint Receiver",
-            "fileName": "appointReceiver"
+            "fileName": "appointReceiver",
+            "reportType": ReportTypes.FILING.value
         },
         "ceaseReceiver": {
             "filingDescription": "Cease Receiver",
-            "fileName": "ceaseReceiver"
+            "fileName": "ceaseReceiver",
+            "reportType": ReportTypes.FILING.value
         }
     }
 
