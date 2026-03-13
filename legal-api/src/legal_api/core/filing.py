@@ -103,6 +103,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         SPECIALRESOLUTION = "specialResolution"
         TRANSITION = "transition"
         TRANSPARENCY_REGISTER = "transparencyRegister"
+        TOMBSTONE = "lear_tombstone"
 
     class FilingTypesCompact(str, Enum):
         """Render enum for filing types with sub-types."""
@@ -487,7 +488,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         ledger_filing["data"]["order"] = court_order_data
 
     @staticmethod
-    def get_document_list(business,  # noqa: PLR0912, PLR0915
+    def get_document_list(business,  # noqa: PLR0912, PLR0915, NOSONAR (S3776)
                           filing,
                           jwt: JwtManager) -> dict | None:
         """Return a list of documents for a particular filing."""

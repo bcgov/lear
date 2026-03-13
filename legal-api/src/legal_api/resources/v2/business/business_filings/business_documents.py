@@ -41,8 +41,9 @@ DOCUMENTS_BASE_ROUTE: Final = "/<string:identifier>/filings/<int:filing_id>/docu
 PARAM_REPORT_TYPE: str = "reportType"
 PARAM_DOC_CLASS = "documentClass"
 PARAM_DRS_ID = "drsId"
+APP_PDF =  "application/pdf"
 CONTENT_JSON = {"Content-Type": "application/json"}
-CONTENT_PDF = {"Content-Type": "application/pdf"}
+CONTENT_PDF = {"Content-Type": APP_PDF}
 
 
 @cors_preflight("GET, POST")
@@ -92,7 +93,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
             return {"documents": {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
 
-    if "application/pdf" in request.accept_mimetypes:
+    if APP_PDF in request.accept_mimetypes:
         file_name = (legal_filing_name or file_key)
         if not _is_document_available(business, filing, file_name):
             return jsonify(
@@ -114,7 +115,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                 return current_app.response_class(
                     response=response.data,
                     status=response.status,
-                    mimetype="application/pdf"
+                    mimetype=APP_PDF
                 )
 
     return {}, HTTPStatus.NOT_FOUND
@@ -132,7 +133,7 @@ def _get_drs_params() -> dict:
     return params
 
 
-def _get_drs_documents(drs_params: dict) -> dict:
+def _get_drs_documents(drs_params: dict):
     """Return an indvidual DRS document as binary data, or a DRS JSON error."""
     doc_service: DocumentService = DocumentService()
     drs_id: str = drs_params.get(PARAM_DRS_ID)

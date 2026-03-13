@@ -57,6 +57,10 @@ STATIC_DOCUMENTS = {
         "documentClass": "CORP"
     }
 }
+APP_JSON = "application/json"
+APP_PDF = "application/pdf"
+DOC_PATH = "/documents"
+BEARER = "Bearer "
 
 
 class ReportTypes(BaseEnum):
@@ -148,13 +152,13 @@ class DocumentService:
 
         token = AccountService.get_bearer_token()
         headers = {
-            "Content-Type": "application/json",
+            "Content-Type": APP_JSON,
             "X-ApiKey": self.api_key,
             "Account-Id": account_id,
-            "Authorization": "Bearer " + token
+            "Authorization": BEARER + token
         }
         filename: str = f"{business_identifier}_{filing_identifier}_{report_type}.pdf"
-        url: str = self.url.replace("/documents", "")
+        url: str = self.url.replace(DOC_PATH, "")
         post_url = (f"{url}/application-reports/"
                     f"{self.product_code}/{business_identifier}/"
                     f"{filing_identifier}/{report_type}?consumerFiliename={filename}")
@@ -191,10 +195,10 @@ class DocumentService:
         headers = {
             "X-ApiKey": self.api_key,
             "Account-Id": account_id,
-            "Content-Type": "application/pdf",
-            "Authorization": "Bearer " + token
+            "Content-Type": APP_PDF,
+            "Authorization": BEARER + token
         }
-        url: str = self.url.replace("/documents", "")
+        url: str = self.url.replace(DOC_PATH, "")
         get_url = ""
         if file_key is not None:
             get_url = f"{url}/application-reports/{self.product_code}/{file_key}"
@@ -226,10 +230,10 @@ class DocumentService:
             headers = {
                 "x-ApiKey": self.api_key,
                 "Account-Id": BUSINESS_API_ACCOUNT_ID,
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
+                "Content-Type": APP_JSON,
+                "Authorization": BEARER + token
             }
-            url: str = self.url.replace("/documents", "")
+            url: str = self.url.replace(DOC_PATH, "")
             get_url = BUSINESS_DOCS_PATH.format(url=url, product=self.product_code, business_id=business_identifier)
             response = requests.get(url=get_url, headers=headers)
             content = self.get_content(response)
@@ -254,10 +258,10 @@ class DocumentService:
             headers = {
                 "x-ApiKey": self.api_key,
                 "Account-Id": BUSINESS_API_ACCOUNT_ID,
-                "Content-Type": "application/json",
-                "Authorization": "Bearer " + token
+                "Content-Type": APP_JSON,
+                "Authorization": BEARER + token
             }
-            url: str = self.url.replace("/documents", "")
+            url: str = self.url.replace(DOC_PATH, "")
             get_url = FILING_DOCS_PATH.format(
                 url=url,
                 product=self.product_code,
@@ -272,7 +276,7 @@ class DocumentService:
         except Exception:
             return []
 
-    def update_document_list(self, drs_docs: list, document_list: list) -> list:  # noqa: PLR0912
+    def update_document_list(self, drs_docs: list, document_list: list) -> list:  # noqa: PLR0912, NOSONAR (S3776)
         """
         Update document_list urls with DRS information if a filing document maps to a DRS output or document.
 
@@ -327,7 +331,12 @@ class DocumentService:
                         break
         return document_list
 
-    def update_filing_documents(self, drs_docs: list, filing_docs: list, filing: Filing) -> list:  # noqa: PLR0912
+    def update_filing_documents(  # noqa: PLR0912, NOSONAR (S3776)
+            self,
+            drs_docs: list,
+            filing_docs: list,
+            filing: Filing
+        ) -> list:
         """
         Get outputs and documents for a ledger filing, adding DRS information if available by mapping on the filing ID.
 
@@ -403,10 +412,10 @@ class DocumentService:
         headers = {
             "x-apikey": self.api_key,
             "Account-Id": BUSINESS_API_ACCOUNT_ID,
-            "Accept": "application/pdf",
-            "Authorization": "Bearer " + token
+            "Accept": APP_PDF,
+            "Authorization": BEARER + token
         }
-        url: str = self.url.replace("/documents", "")
+        url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
         if report_type in (ReportTypes.FILING.value, ReportTypes.NOA.value):
             get_url = GET_REPORT_CERTIFIED_PATH
@@ -428,10 +437,10 @@ class DocumentService:
         headers = {
             "x-apikey": self.api_key,
             "Account-Id": BUSINESS_API_ACCOUNT_ID,
-            "Accept": "application/pdf",
-            "Authorization": "Bearer " + token
+            "Accept": APP_PDF,
+            "Authorization": BEARER + token
         }
-        url: str = self.url.replace("/documents", "")
+        url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_DOCUMENT_PATH.format(url=url, document_class=doc_class, drs_id=drs_id)
         response = requests.get(url=get_url, headers=headers)
         if response.status_code not in (HTTPStatus.OK, HTTPStatus.NOT_FOUND):
@@ -460,10 +469,10 @@ class DocumentService:
         headers = {
             "x-apikey": self.api_key,
             "Account-Id": BUSINESS_API_ACCOUNT_ID,
-            "Content-Type": "application/pdf",
-            "Authorization": "Bearer " + token
+            "Content-Type": APP_PDF,
+            "Authorization": BEARER + token
         }
-        url: str = self.url.replace("/documents", "")
+        url: str = self.url.replace(DOC_PATH, "")
         report_type: str = report_meta.get("reportType")
         filename: str = report_meta.get("fileName") + ".pdf"
         filing_date: str = filing.effective_date.isoformat()[:10]
