@@ -276,7 +276,7 @@ class DocumentService:
         except Exception:
             return []
 
-    def update_document_list(self, drs_docs: list, document_list: list) -> list:  # noqa: PLR0912, NOSONAR (S3776)
+    def update_document_list(self, drs_docs: list, document_list: list) -> list:  # noqa: PLR0912 NOSONAR(S3776)
         """
         Update document_list urls with DRS information if a filing document maps to a DRS output or document.
 
@@ -331,7 +331,7 @@ class DocumentService:
                         break
         return document_list
 
-    def update_filing_documents(  # noqa: PLR0912, NOSONAR (S3776)
+    def update_filing_documents(  # noqa: PLR0912 NOSONAR(S3776)
             self,
             drs_docs: list,
             filing_docs: list,
