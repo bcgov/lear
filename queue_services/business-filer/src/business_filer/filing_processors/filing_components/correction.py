@@ -53,6 +53,12 @@ from business_filer.filing_processors.filing_components import (
     shares,
     update_address,
 )
+from business_filer.filing_processors.filing_components.relationships import (
+    cease_relationships,
+    create_relationships,
+    update_relationship_addresses,
+    update_relationship_entity_info,
+)
 
 CEASE_ROLE_MAPPING = {
     **dict.fromkeys(Business.CORPS, PartyRole.RoleTypes.DIRECTOR.value),
@@ -113,6 +119,22 @@ def correct_business_data(business: Business,  # noqa: PLR0915
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.get(correction_filing, "/correction/parties")
         update_parties(business, party_json, correction_filing_rec)
+
+    # Update relationships (newer schema for parties)
+    with suppress(IndexError, KeyError, TypeError):
+        relationships = dpath.get(correction_filing, "/correction/relationships")
+        create_relationships(relationships, business, correction_filing_rec)
+        cease_relationships(relationships,
+                            business,
+                            [
+                                PartyRole.RoleTypes.DIRECTOR.value,
+                                PartyRole.RoleTypes.LIQUIDATOR.value,
+                                PartyRole.RoleTypes.RECEIVER.value
+                            ],
+                            filing_meta.application_date)
+        update_relationship_addresses(relationships, business)
+        update_relationship_entity_info(relationships, business)
+        _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
@@ -276,3 +298,31 @@ def _update_addresses(offices_structure):
                 address = Address.find_by_id(updated_address.get("id"))
                 if address:
                     update_address(address, updated_address)
+
+
+def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: list[dict], business: Business):
+    """Set lear_only if the only changes are to receivers and/or liquidators."""
+    def _has_director_role(relationship: dict):
+        """Return True if the relationship contains a director role."""
+        return any(role for role in relationship["roles"] if role["roleType"].lower() == "director")
+
+    if (
+        (
+            # colin-api only supports corrections for corps
+            business.legal_type not in Business.CORPS or
+            not any(
+                # below are the only changes the colin api supports for corrections
+                bool(dpath.get(correction_filing, "/correction/nameRequest", default=None)),
+                bool(dpath.get(correction_filing, "/correction/nameTranslations", default=None)),
+                bool(dpath.get(correction_filing, "/correction/offices", default=None)),
+                bool(dpath.get(correction_filing, "/correction/parties", default=None)),
+                bool(dpath.get(correction_filing, "/correction/shareStructure", default=None)),
+                bool(dpath.get(correction_filing, "/correction/resolution", default=None)))
+        ) and (
+            relationships and
+            # colin-api only supports relationships changes to directors
+            not any(relationship for relationship in relationships if _has_director_role(relationship))
+        )
+    ):
+        filing_rec.lear_only = True
+            
