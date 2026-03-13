@@ -35,7 +35,7 @@
 
 import dpath
 import pytz
-from business_model.models import Business, Comment, Filing, Party
+from business_model.models import Business, Comment, Filing
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.correction import correct_business_data

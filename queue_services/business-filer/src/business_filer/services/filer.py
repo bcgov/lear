@@ -35,7 +35,7 @@
 """
 import json
 
-from business_model.models import Business, Filing, Party, db
+from business_model.models import Business, Filing, db
 from business_model.models.db import VersioningProxy
 from flask import current_app
 
