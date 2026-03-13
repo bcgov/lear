@@ -13,22 +13,46 @@
 # limitations under the License.
 """Test Correction validations."""
 import copy
+import pytest
 from http import HTTPStatus
 
-from registry_schemas.example_data import ANNUAL_REPORT, CORRECTION_AR
+from registry_schemas.example_data import (
+    ANNUAL_REPORT,
+    CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
+    CHANGE_OF_RECEIVERS,
+    CORRECTION_AR,
+    CORRECTION_COL,
+    CORRECTION_COR,
+    FILING_TEMPLATE)
 
 from legal_api.services.filings import validate
-from tests.unit.models import factory_business, factory_completed_filing, factory_filing
+from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing
 
 
-def test_valid_correction(mocker, session):
+CORRECTION_COD = copy.deepcopy(CORRECTION_COL)
+CORRECTION_COD['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
+CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
+
+
+@pytest.mark.parametrize('test_name, legal_type, identifier, initial_filing, correction_filing', [
+    ('AR', 'CP', 'CP1234567', ANNUAL_REPORT, CORRECTION_AR),
+    ('COD', 'BC', 'BC1234567', CHANGE_OF_DIRECTORS, CORRECTION_COD),
+    ('COL', 'BC', 'BC1234567', CHANGE_OF_LIQUIDATORS, CORRECTION_COL),
+    ('COR', 'BC', 'BC1234567', CHANGE_OF_RECEIVERS, CORRECTION_COR)
+])
+def test_valid_correction(mocker, session, test_name, legal_type, identifier, initial_filing, correction_filing):
     """Test that a valid correction passes validation."""
     # setup
-    identifier = 'CP1234567'
-    business = factory_business(identifier)
-    corrected_filing = factory_completed_filing(business, ANNUAL_REPORT)
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    initial_filing_type = correction_filing['filing']['correction']['correctedFilingType']
+    filing_template['filing']['header']['name'] = initial_filing_type
+    filing_template['filing'][initial_filing_type] = initial_filing
+    business = factory_business(identifier, entity_type=legal_type)
+    factory_business_mailing_address(business)
+    corrected_filing = factory_completed_filing(business, filing_template)
 
-    f = copy.deepcopy(CORRECTION_AR)
+    f = copy.deepcopy(correction_filing)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 

@@ -1291,6 +1291,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_party_data(self, filing, prev_completed_filing: Filing):
         filing["parties"] = filing.get("correction").get("parties", [])
+        if relationships := filing.get("correction").get("relationships"):
+            # map relationships to parties for pdf templates
+            filing["parties"].extend([self._map_relationship_to_party(relationship) for relationship in relationships])
+
         if filing.get("parties"):
             self._format_directors(filing["parties"])
             filing["partyChange"] = False
@@ -1490,6 +1494,24 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if namespace.endswith("test"):
             return "TEST"
         return ""
+    
+    @staticmethod
+    def _map_relationship_to_party(relationship):
+        # FUTURE: update pdf templates to expect relationships schema and remove this
+        organization_name = relationship["entity"].get("businessName")
+        return {
+            "officer": {
+                "id": relationship["entity"].get("identifier"),
+                "firstName": relationship["entity"].get("givenName"),
+                "middleName": relationship["entity"].get("middleInitial"),
+                "lastName": relationship["entity"].get("familyName"),
+                "organizationName": organization_name,
+                "partyType": "organization" if organization_name else "person"
+            },
+            "deliveryAddress": relationship.get("deliveryAddress"),
+            "mailingAddress": relationship.get("mailingAddress"),
+            "roles": relationship.get("roles", [])
+        }
 
 
 class ReportMeta:  # pylint: disable=too-few-public-methods

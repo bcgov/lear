@@ -51,7 +51,7 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
         business,
         filing_json,
         filing_type,
-        PartyRole.RoleTypes.RECEIVER,
+        [PartyRole.RoleTypes.RECEIVER],
         filing_sub_type in ["amendReceiver", "appointReceiver"],
         filing_sub_type in ["amendReceiver", "ceaseReceiver", "changeAddressReceiver"]
     ))

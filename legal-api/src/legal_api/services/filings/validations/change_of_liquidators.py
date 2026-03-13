@@ -52,14 +52,22 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
             business,
             filing_json,
             filing_type,
-            PartyRole.RoleTypes.LIQUIDATOR,
+            [PartyRole.RoleTypes.LIQUIDATOR],
             filing_sub_type in ["appointLiquidator", "intentToLiquidate"],
             filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
         ))
 
     if filing_json["filing"][filing_type].get("offices"):
-        allowed_offices = ["liquidationRecordsOffice"] if filing_sub_type in ["intentToLiquidate", "changeAddressLiquidator"] else []
-        required_offices = ["liquidationRecordsOffice"] if filing_sub_type in ["intentToLiquidate"] else []
+        allowed_offices = []
+        required_offices = []
+        if filing_sub_type in ["intentToLiquidate", "changeAddressLiquidator"]:
+            allowed_offices = ["liquidationRecordsOffice"]
+            if filing_sub_type == "intentToLiquidate":
+                required_offices = ["liquidationRecordsOffice"]
+        elif filing_sub_type == "appointLiquidator" and not business.in_liquidation:
+            allowed_offices = ["liquidationRecordsOffice"]
+            required_offices = ["liquidationRecordsOffice"]
+
         msg.extend(validate_offices(filing_json, filing_type, allowed_offices, required_offices, False))
 
     if msg:
