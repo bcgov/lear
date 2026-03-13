@@ -149,14 +149,7 @@ class DocumentService:
         """
         if self.has_document(business_identifier, filing_identifier, report_type):
             raise BusinessException("Document already exists", HTTPStatus.CONFLICT)
-
-        token = AccountService.get_bearer_token()
-        headers = {
-            "Content-Type": APP_JSON,
-            "X-ApiKey": self.api_key,
-            "Account-Id": account_id,
-            "Authorization": BEARER + token
-        }
+        headers = self._get_request_headers(account_id)
         filename: str = f"{business_identifier}_{filing_identifier}_{report_type}.pdf"
         url: str = self.url.replace(DOC_PATH, "")
         post_url = (f"{url}/application-reports/"
@@ -191,13 +184,7 @@ class DocumentService:
         account_id: The account id.
         return: The document url (or binary).
         """
-        token = AccountService.get_bearer_token()
-        headers = {
-            "X-ApiKey": self.api_key,
-            "Account-Id": account_id,
-            "Content-Type": APP_PDF,
-            "Authorization": BEARER + token
-        }
+        headers = self._get_request_headers(account_id)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = ""
         if file_key is not None:
@@ -226,13 +213,7 @@ class DocumentService:
         try:
             if not business_identifier:
                 return []
-            token = AccountService.get_bearer_token()
-            headers = {
-                "x-ApiKey": self.api_key,
-                "Account-Id": BUSINESS_API_ACCOUNT_ID,
-                "Content-Type": APP_JSON,
-                "Authorization": BEARER + token
-            }
+            headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
             url: str = self.url.replace(DOC_PATH, "")
             get_url = BUSINESS_DOCS_PATH.format(url=url, product=self.product_code, business_id=business_identifier)
             response = requests.get(url=get_url, headers=headers)
@@ -254,13 +235,7 @@ class DocumentService:
         try:
             if not business_identifier or not filing_identifier:
                 return []
-            token = AccountService.get_bearer_token()
-            headers = {
-                "x-ApiKey": self.api_key,
-                "Account-Id": BUSINESS_API_ACCOUNT_ID,
-                "Content-Type": APP_JSON,
-                "Authorization": BEARER + token
-            }
+            headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
             url: str = self.url.replace(DOC_PATH, "")
             get_url = FILING_DOCS_PATH.format(
                 url=url,
@@ -276,13 +251,12 @@ class DocumentService:
         except Exception:
             return []
 
-    def update_document_list(self, drs_docs: list, document_list: list) -> list:  # noqa: PLR0912 NOSONAR(S3776)
+    def update_document_list(self, drs_docs: list, document_list: list) -> list:
         """
         Update document_list urls with DRS information if a filing document maps to a DRS output or document.
 
         drs_docs: The DRS reports/documents for the filing identifier.
         document_list: The business list of reports/documents for the filing.
-        include_docs: Include client documents linked to the filing if they exist.
         return: The updated list of filing reports and documents for the filing.
         """
         if not drs_docs or not document_list or not document_list.get("documents"):
@@ -307,36 +281,10 @@ class DocumentService:
                         doc_list[key] = doc_list[key] + query_params
                         break
             elif doc.get("documentClass"):
-                query_params: str = DRS_DOCUMENT_PARAMS.format(
-                    document_class=doc.get("documentClass"),
-                    drs_id=doc.get("identifier")
-                )
-                for key in doc_list:
-                    if key == "staticDocuments":
-                        for static_doc in doc_list.get("staticDocuments"):
-                            name: str = static_doc.get("name")
-                            if (name and name == doc.get("name")) or (
-                                    name and STATIC_DOCUMENTS.get(name) and
-                                    doc.get("documentClass") == STATIC_DOCUMENTS[name].get("documentClass") and
-                                    doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
-                                ):
-                                static_doc["url"] = static_doc["url"] + query_params
-                                break
-                    elif (
-                        FILING_DOCUMENTS.get(key) and
-                        doc.get("documentClass") == FILING_DOCUMENTS[key].get("documentClass") and
-                        doc.get("documentType") == FILING_DOCUMENTS[key].get("documentType")
-                    ):
-                        doc_list[key] = doc_list[key] + query_params
-                        break
+                doc_list = self._update_static_document(doc, doc_list)
         return document_list
 
-    def update_filing_documents(  # noqa: PLR0912 NOSONAR(S3776)
-            self,
-            drs_docs: list,
-            filing_docs: list,
-            filing: Filing
-        ) -> list:
+    def update_filing_documents(self, drs_docs: list, filing_docs: list, filing: Filing) -> list:  # noqa: PLR0912
         """
         Get outputs and documents for a ledger filing, adding DRS information if available by mapping on the filing ID.
 
@@ -376,28 +324,7 @@ class DocumentService:
                             doc_list[key] = doc_list[key] + query_params
                             break
                 elif doc.get("documentClass"):
-                    query_params: str = DRS_DOCUMENT_PARAMS.format(
-                        document_class=doc.get("documentClass"),
-                        drs_id=doc.get("identifier")
-                    )
-                    for key in doc_list:
-                        if key == "staticDocuments":
-                            for static_doc in doc_list.get("staticDocuments"):
-                                name: str = static_doc.get("name")
-                                if (name and name == doc.get("name")) or (
-                                        name and STATIC_DOCUMENTS.get(name) and
-                                        doc.get("documentClass") == STATIC_DOCUMENTS[name].get("documentClass") and
-                                        doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
-                                    ):
-                                    static_doc["url"] = static_doc["url"] + query_params
-                                    break
-                        elif (
-                            FILING_DOCUMENTS.get(key) and
-                            doc.get("documentClass") == FILING_DOCUMENTS[key].get("documentClass") and
-                            doc.get("documentType") == FILING_DOCUMENTS[key].get("documentType")
-                        ):
-                            doc_list[key] = doc_list[key] + query_params
-                            break
+                    doc_list = self._update_static_document(doc, doc_list)
         return doc_list
 
     def get_filing_report(self, drs_id: str, report_type: str):
@@ -408,13 +335,7 @@ class DocumentService:
         report_type: The report type: request a certified copy for NOA and FILING report types.
         return: The document binary data.
         """
-        token = AccountService.get_bearer_token()
-        headers = {
-            "x-apikey": self.api_key,
-            "Account-Id": BUSINESS_API_ACCOUNT_ID,
-            "Accept": APP_PDF,
-            "Authorization": BEARER + token
-        }
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
         if report_type in (ReportTypes.FILING.value, ReportTypes.NOA.value):
@@ -433,13 +354,7 @@ class DocumentService:
         document_class: The DRS document class for the business to filter on.
         return: The document binary data.
         """
-        token = AccountService.get_bearer_token()
-        headers = {
-            "x-apikey": self.api_key,
-            "Account-Id": BUSINESS_API_ACCOUNT_ID,
-            "Accept": APP_PDF,
-            "Authorization": BEARER + token
-        }
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_DOCUMENT_PATH.format(url=url, document_class=doc_class, drs_id=drs_id)
         response = requests.get(url=get_url, headers=headers)
@@ -465,13 +380,7 @@ class DocumentService:
         """
         if not business_identifier or not filing or not report_meta or not report_meta.get("reportType"):
             return report_response
-        token = AccountService.get_bearer_token()
-        headers = {
-            "x-apikey": self.api_key,
-            "Account-Id": BUSINESS_API_ACCOUNT_ID,
-            "Content-Type": APP_PDF,
-            "Authorization": BEARER + token
-        }
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
         url: str = self.url.replace(DOC_PATH, "")
         report_type: str = report_meta.get("reportType")
         filename: str = report_meta.get("fileName") + ".pdf"
@@ -497,3 +406,52 @@ class DocumentService:
             if response2.status_code == HTTPStatus.OK:
                 return response2
         return report_response
+
+    def _update_static_document(self, doc: dict, doc_list: list) -> list:
+        """
+        Update static document urls in the document_list if a DRS match is found.
+
+        docs: The DRS document information to match on.
+        doc_list: The business list of reports/documents for the filing.
+        return: The updated list of static documents for the filing.
+        """
+        query_params: str = DRS_DOCUMENT_PARAMS.format(
+            document_class=doc.get("documentClass"),
+            drs_id=doc.get("identifier")
+        )
+        for key in doc_list:
+            if key == "staticDocuments":
+                for static_doc in doc_list.get("staticDocuments"):
+                    name: str = static_doc.get("name")
+                    if (name and name == doc.get("name")) or (
+                            name and STATIC_DOCUMENTS.get(name) and
+                            doc.get("documentClass") == STATIC_DOCUMENTS[name].get("documentClass") and
+                            doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
+                        ):
+                        static_doc["url"] = static_doc["url"] + query_params
+                        break
+            elif (
+                FILING_DOCUMENTS.get(key) and
+                doc.get("documentClass") == FILING_DOCUMENTS[key].get("documentClass") and
+                doc.get("documentType") == FILING_DOCUMENTS[key].get("documentType")
+            ):
+                doc_list[key] = doc_list[key] + query_params
+                break
+        return doc_list
+
+
+    def _get_request_headers(self, account_id: str) -> dict:
+        """
+        Get request headers for the DRS api call.
+
+        account_id: The account use if not the default.
+        return: The request headers.
+        """
+        token = AccountService.get_bearer_token()
+        headers = {
+            "x-apikey": self.api_key,
+            "Account-Id": account_id if account_id else BUSINESS_API_ACCOUNT_ID,
+            "Content-Type": APP_PDF,
+            "Authorization": BEARER + token
+        }
+        return headers
