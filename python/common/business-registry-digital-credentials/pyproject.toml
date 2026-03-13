@@ -11,7 +11,7 @@ python = ">=3.9,<4.0"
 datedelta = "^1.4"
 flask-jwt-oidc = "^0.8.0"
 pytz = "^2025.1"
-pyjwt = "^2.8.0"
+pyjwt = "^2.12.0"
 requests = "^2.32.3"
 business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "main" }
 
