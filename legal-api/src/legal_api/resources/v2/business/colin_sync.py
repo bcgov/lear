@@ -67,15 +67,12 @@ def get_completed_filings_for_colin():
         if filing.filing_type == "correction" and business.legal_type != Business.LegalTypes.COOP.value:
             try:
                 set_correction_flags(filing_json, filing)
-                has_non_party_change = has_alias_changed(filing) or has_office_changed(filing) or has_resolution_changed(filing) or has_share_changed(filing)
                 inner_filing_json = filing_json["filing"].get(filing.filing_type, {})
-                # NOTE: has_party_changed specifically checks for Director changes
-                if inner_filing_json.get("relationships") and has_party_changed(filing):
+                if inner_filing_json.get("relationships"):
                     # set directors and completing party from the db when filing_json is using relationships schema - ignore other parties
+                    # NOTE: in the case where only non director parties were changed then set_correction_flags will not set partyChanged and parties will not be processed by the colin-api
+                    #       if no other colin relevant corrections were made then the lear_only flag will be set during the filer processing and it will not be picked up by 'get_completed_filings_for_colin'
                     _set_relationship_parties(business, filing, inner_filing_json)
-                elif not filing.meta_data.get("commentOnly", False) and not has_non_party_change:
-                    # Only change was to non director parties so skip the colin sync for this correction
-                    continue
             except Exception as ex:
                 current_app.logger.error(f"correction: filingId={filing.id}, error: {ex!s}")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings

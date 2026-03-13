@@ -169,7 +169,13 @@ def test_get_completed_filings_for_colin_corps_correction(session, client, jwt):
     correction_cod['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
 
     filing_col = factory_completed_filing(b, CORRECTION_COL)
+    # Filer will set this for corrections on liquidators only
+    filing_col.lear_only = True
+    filing_col.save()
     filing_cor = factory_completed_filing(b, CORRECTION_COR)
+    # Filer will set this for corrections on receivers only
+    filing_cor.lear_only = True
+    filing_cor.save()
     filing_cod = factory_completed_filing(b, correction_cod)
     # Need to apply the relationships to the db
     for filing in [filing_col, filing_cor, filing_cod]:
@@ -211,6 +217,7 @@ def test_get_completed_filings_for_colin_corps_correction(session, client, jwt):
     filings = rv.json.get('filings')
     # Should only return the filing with directors
     assert len(filings) == 1
+    # Should have been mapped to expected filing json
     assert filings[0]['filingId'] == filing_cod.id
     assert filings[0]['filing']['correction']['correctedFilingType'] == 'changeOfDirectors'
     assert filings[0]['filing']['correction']['correctedFilingType'] == 'changeOfDirectors'
