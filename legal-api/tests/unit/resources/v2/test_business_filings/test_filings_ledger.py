@@ -194,7 +194,6 @@ def test_ledger_comment_count(app, session, client, jwt, monkeypatch, mock_drs_s
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -240,7 +239,6 @@ def test_get_all_business_filings_permitted_statuses(app, session, client, jwt, 
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -283,7 +281,6 @@ def test_ledger_court_order(app, session, client, jwt, test_name, file_number, o
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -319,7 +316,6 @@ def test_ledger_display_name_annual_report(app, session, client, jwt, monkeypatc
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -346,7 +342,6 @@ def test_ledger_display_unknown_name(app, session, client, jwt, monkeypatch, moc
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -378,7 +373,6 @@ def test_ledger_display_alteration_report(app, session, client, jwt, monkeypatch
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -423,7 +417,6 @@ def test_ledger_display_restoration(app, session, client, jwt, restoration_type,
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -477,7 +470,6 @@ def test_ledger_display_incorporation(app, session, client, jwt, test_name, enti
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -501,7 +493,6 @@ def test_ledger_display_corrected_incorporation(app, session, client, jwt, monke
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -542,7 +533,6 @@ def test_ledger_display_corrected_annual_report(app, session, client, jwt, monke
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -609,7 +599,6 @@ def test_ledger_redaction(app, session, client, jwt, test_name, submitter_role, 
         # test
         with app.test_request_context():
             monkeypatch.setattr('flask.request.headers.get', mock_auth)
-            # app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
             rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                             headers=headers)
     except Exception as err:
@@ -663,7 +652,6 @@ def test_ledger_display_special_resolution_correction(app, session, client, jwt,
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -706,7 +694,6 @@ def test_ledger_display_non_special_resolution_correction_name(app, session, cli
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 

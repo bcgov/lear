@@ -83,7 +83,6 @@ def test_simple_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_s
    # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
         ledger = CoreFiling.ledger(business.id, jwt)
 
     # Did we get the full set

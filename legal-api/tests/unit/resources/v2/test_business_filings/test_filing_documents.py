@@ -21,6 +21,7 @@ import json
 import re
 from datetime import datetime
 from http import HTTPStatus
+import requests_mock
 
 import pytest
 from flask import current_app
@@ -1464,7 +1465,7 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      HTTPStatus.OK, '2024-09-26'
      )
 ])
-def test_document_list_for_various_filing_states(app, session, mocker, client, jwt, monkeypatch, mock_drs_service, requests_mock,
+def test_document_list_for_various_filing_states(app, session, mocker, client, jwt, monkeypatch, mock_drs_service,
                                                  test_name,
                                                  identifier,
                                                  entity_type,
@@ -1523,14 +1524,14 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
 
     # test
     with app.test_request_context():
-        # mocker.patch('legal_api.core.filing.has_roles', return_value=True)
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         account_products_mock = []
-        requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
-                          json=account_products_mock,
-                          status_code=HTTPStatus.OK)
-        rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
-                        headers=headers)
+        with requests_mock.Mocker() as m:
+            mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
+            m.get(mock_url, json=account_products_mock, status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+            m.reset_mock()
 
     # remove the filing ID
     rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
@@ -1637,7 +1638,7 @@ def filer_action(filing_name, filing_json, meta_data, business):
      {'documents': {}}, HTTPStatus.OK
      ),
 ])
-def test_temp_document_list_for_various_filing_states(app, mocker, session, client, jwt, monkeypatch, mock_drs_service, requests_mock,
+def test_temp_document_list_for_various_filing_states(app, mocker, session, client, jwt, monkeypatch, mock_drs_service,
                                                       test_name,
                                                       temp_identifier,
                                                       identifier,
@@ -1675,14 +1676,14 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
 
     # test
     with app.test_request_context():
-        mocker.patch('legal_api.core.filing.has_roles', return_value=True)
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         account_products_mock = []
-        requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
-                          json=account_products_mock,
-                          status_code=HTTPStatus.OK)
-        rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
-                        headers=headers)
+        with requests_mock.Mocker() as m:
+            mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
+            m.get(mock_url, json=account_products_mock, status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+            m.reset_mock()
 
     # remove the filing ID
     rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
@@ -1818,7 +1819,7 @@ def test_get_receipt_no_receipt_ca(session, client, jwt, requests_mock):
      HTTPStatus.OK
      )
 ])
-def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypatch, mock_drs_service, requests_mock,
+def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypatch, mock_drs_service,
                                     test_name,
                                     temp_identifier,
                                     entity_type,
@@ -1860,14 +1861,13 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
 
     # test
     with app.test_request_context():
-        mocker.patch('legal_api.core.filing.has_roles', return_value=True)
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
         account_products_mock = []
-        requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
-                          json=account_products_mock,
-                          status_code=HTTPStatus.OK)
-        rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
-                        headers=headers)
+        with requests_mock.Mocker() as m:
+            mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
+            m.get(mock_url, json=account_products_mock, status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents', headers=headers)
+            m.reset_mock()
 
     # remove the filing ID
     rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
