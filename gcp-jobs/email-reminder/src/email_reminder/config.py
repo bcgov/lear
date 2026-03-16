@@ -58,10 +58,28 @@ class _Config:
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
+    if os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME"):
+        from google.cloud.sql.connector import Connector, IPTypes
+
+        _connector = Connector()
+
+        def getconn(_connector=_connector, _IPTypes=IPTypes):
+            return _connector.connect(
+                os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+                "pg8000",
+                user=os.environ["DATABASE_USERNAME"],
+                db=os.environ["DATABASE_NAME"],
+                enable_iam_auth=True,
+                ip_type=_IPTypes.PRIVATE,
+            )
+
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
+        SQLALCHEMY_ENGINE_OPTIONS = {"creator": getconn}
     else:
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+        if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
+            SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
+        else:
+            SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
     TESTING = False
     DEBUG = False

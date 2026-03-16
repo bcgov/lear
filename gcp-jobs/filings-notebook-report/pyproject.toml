@@ -40,6 +40,7 @@ certifi = "^2025.1.31"
 urllib3 = "^2.3.0"
 idna = "^3.10"
 pg8000 = "^1.31.2"
+cloud-sql-python-connector = ">=1.18.0,<2.0.0"
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
 business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account"}
 
