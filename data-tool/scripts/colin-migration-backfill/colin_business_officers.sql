@@ -649,7 +649,9 @@ declare
                   where cp2.corp_num = cp.corp_num
                     and cp2.party_typ_cd = cp.party_typ_cd
                     and cp.end_event_id is not null
-                    and cp2.start_event_id = cp.end_event_id) as edit_offices
+                    and cp2.start_event_id = cp.end_event_id
+                    and lower(cp2.last_name) = lower(cp.last_name)
+                    and lower(cp2.first_name) = lower(cp.first_name)) as edit_offices
   from colin_extract.corp_party cp
  where cp.corp_num = v_corp_num
    and cp.party_typ_cd = 'OFF'
@@ -701,6 +703,9 @@ begin
               rec_hist_party.cessation_dt := rec_hist_party.party_end_date;
             end if;
             party_role_id := nextval('party_roles_id_seq');
+            insert into party_roles_version 
+              values(party_role_id, to_officer_role(officer_role), rec_hist_party.appointment_dt, rec_hist_party.cessation_dt,
+                     p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
             insert into party_roles 
               values(party_role_id, to_officer_role(officer_role), rec_hist_party.appointment_dt, rec_hist_party.cessation_dt, 
                      p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
@@ -738,11 +743,33 @@ begin
                   rec_hist_offices.cessation_dt := rec_hist_offices.party_end_date;
                 end if;
                 party_role_id := nextval('party_roles_id_seq');
+                insert into party_roles_version 
+                  values(party_role_id, to_officer_role(officer_role), rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt,
+                         p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
                 insert into party_roles 
                   values(party_role_id, to_officer_role(officer_role), rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt, 
                          p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
               end if;
-            end loop;        
+            end loop;
+          -- Removing 
+          elsif rec_hist_offices.edit_offices is null and rec_hist_offices.end_event_id is not null and rec_hist_offices.end_event_id > 0 then
+            for i in 1 .. array_length(string_to_array(rec_hist_offices.offices, ','), 1)
+            loop
+              officer_role := SPLIT_PART(rec_hist_offices.offices, ',', i);
+              if rec_hist_offices.appointment_dt is null then
+                rec_hist_offices.appointment_dt := rec_hist_party.party_date;
+              end if;
+              if rec_hist_offices.cessation_dt is null then
+                rec_hist_offices.cessation_dt := rec_hist_offices.party_end_date;
+              end if;
+              party_role_id := nextval('party_roles_id_seq');
+              insert into party_roles_version 
+                values(party_role_id, to_officer_role(officer_role), rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt,
+                       p_business_id, party_id, p_trans_id, null, 0, null, cast('OFFICER' as partyclasstype));
+              insert into party_roles 
+                values(party_role_id, to_officer_role(officer_role), rec_hist_offices.appointment_dt, rec_hist_offices.cessation_dt, 
+                       p_business_id, party_id, null, cast('OFFICER' as partyclasstype));
+            end loop;
           end if;
       end loop;
       close cur_hist_edit_offices;
@@ -1019,6 +1046,116 @@ begin
   previous_id := 0;
 
   open cur_outstanding(p_env, p_corp_num);
+  loop
+    fetch cur_outstanding into rec_officer;
+    exit when not found;
+    if rec_officer.officer_count > 0 then
+      update_counter := update_counter + 1;
+      perform colin_tombstone_officer(rec_officer.business_id,
+                                      cast(rec_officer.transaction_id as integer),
+                                      rec_officer.corp_num);
+    end if;
+    if previous_id != rec_officer.corp_processing_id then
+      previous_id := rec_officer.corp_processing_id;
+      insert into mig_corp_processing_history
+        values(rec_officer.corp_processing_id, rec_officer.transaction_id, false, false, true, null, now());
+    end if;
+  end loop;
+  close cur_outstanding;
+
+  return update_counter;
+end;
+$$;
+
+-- Tombstone data patch to load current officers for a single company which has previously migrated tombstone data.
+-- Identical to colin_tombstone_officers but with a range of colin_extract.corp_processing id's when running larger
+-- migrations in batches.
+-- The colin_extract.corp_processing table defines the set of colin corps previously migrated.
+-- It must accurately represent the environment load.
+-- The return value is the number of corps updated. If the number is unexpected, verify the 
+-- colin_extract.corp_processing and mig_corp_processing_history tables and rerun.
+-- On success, mig_corp_processing_history.officer_tombstone_migrated is set to true for the corp.
+-- Note: to reload a corp's active officers manually delete, including the mig_corp_processing_history table.
+create or replace function public.colin_tombstone_officers_range(p_env character varying, p_cp_id_start integer, p_cp_id_end integer) returns integer
+  language plpgsql
+as $$
+declare
+  cur_outstanding_cars cursor(v_env character varying, v_cp_id_start integer, v_cp_id_end integer)
+     for select distinct cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, e.event_id as colin_event_id, 
+                (select f2.transaction_id from filings f2 where f2.business_id = b.id and f2.status = 'TOMBSTONE') as transaction_id,
+                (select count(cp2.corp_party_id)
+                   from colin_extract.corp_party cp2
+                  where cp2.corp_num = e.corp_num
+                    and cp2.party_typ_cd = 'OFF'
+                    and cp2.end_event_id is null) as exists_count,
+                (select count(cp2.corp_party_id)
+                   from colin_extract.corp_party cp2
+                  where cp2.corp_num = e.corp_num
+                    and cp2.party_typ_cd = 'OFF'
+                    and cp2.last_name = ci.surname
+                    and cp2.first_name = ci.firname) as match_count
+           from colin_extract.conv_ledger cl, colin_extract.event e, colin_extract.carindiv ci, colin_event_ids ce,
+                filings f, businesses b,colin_extract.corp_processing cp
+          where e.event_id = cl.event_id
+            and e.event_id = ce.colin_event_id
+            and cl.cars_docmnt_id = ci.documtid
+            and ce.filing_id = f.id
+            and f.business_id = b.id
+            and b.identifier = e.corp_num
+            and b.identifier = cp.corp_num
+            and cp.environment = v_env
+            and cp.id between v_cp_id_start and v_cp_id_end
+            and f.source = 'COLIN'
+            and f.status = 'COMPLETED'
+            and not exists (select mcph.corp_processing_id from mig_corp_processing_history mcph where mcph.corp_processing_id = cp.id)
+            and ci.offiflag = 'Y'
+         order by b.identifier, e.event_id;
+  cur_outstanding cursor(v_env character varying, v_cp_id_start integer, v_cp_id_end integer)
+     for select cp.id as corp_processing_id, b.id as business_id, b.identifier as corp_num, 
+                (select count(p.start_event_id) 
+                   from colin_extract.corp_party p
+                  where cp.corp_num = p.corp_num
+                    and p.party_typ_cd = 'OFF') as officer_count,
+                f.transaction_id
+           from businesses b, filings f, colin_extract.corp_processing cp
+          where b.identifier = cp.corp_num
+            and b.id = f.business_id
+            and cp.processed_status = 'COMPLETED'
+            and f.source = 'COLIN'
+            and f.status = 'TOMBSTONE'
+            and not exists (select mcph.corp_processing_id from mig_corp_processing_history mcph where mcph.corp_processing_id = cp.id)
+            and not exists (select pr.id from party_roles pr where pr.business_id = b.id and pr.party_class_type = 'OFFICER')
+            and cp.environment = v_env
+            and cp.id between v_cp_id_start and v_cp_id_end
+       order by cp.id;
+  rec_cars record;
+  rec_officer record;
+  update_counter integer := 0;
+  previous_id integer := 0;
+begin
+  open cur_outstanding_cars(p_env, p_cp_id_start, p_cp_id_end);
+  loop
+    fetch cur_outstanding_cars into rec_cars;
+    exit when not found;
+    if rec_cars.match_count = 0 then
+      update_counter := update_counter + 1;
+      perform colin_tombstone_cars_officer(cast(rec_cars.colin_event_id as integer),
+                                           cast(rec_cars.business_id as integer),
+                                           cast(rec_cars.transaction_id as integer),
+                                           cast(rec_cars.corp_num as character varying));
+    end if;
+    if previous_id != rec_cars.corp_processing_id then
+      previous_id := rec_cars.corp_processing_id;
+      if rec_cars.exists_count = 0 then
+        insert into mig_corp_processing_history
+          values(rec_cars.corp_processing_id, rec_cars.transaction_id, false, false, true, null, now());
+      end if;
+    end if;
+  end loop;
+  close cur_outstanding_cars;
+  previous_id := 0;
+
+  open cur_outstanding(p_env, p_cp_id_start, p_cp_id_end);
   loop
     fetch cur_outstanding into rec_officer;
     exit when not found;
