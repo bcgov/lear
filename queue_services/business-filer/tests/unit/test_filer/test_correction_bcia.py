@@ -697,6 +697,8 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)
+    filing = Filing.find_by_id(filing_id)
+    assert filing.lear_only == False
 
     resolution_dates = [res.resolution_date for res in business.resolutions.all()]
     if 'add_resolution_dates' in test_name:
@@ -839,6 +841,8 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
 
     # Check outcome
     business = Business.find_by_internal_id(business_id)
+    filing = Filing.find_by_id(filing_id)
+    assert filing.lear_only == False
 
     if 'add_share_class' in test_name:
         assert len(business.share_classes.all()) == 4
@@ -912,6 +916,7 @@ def test_comment_only_correction(app, session, mocker, test_name):
     process_filing(filing_msg)
 
     final_filing = Filing.find_by_id(filing_id)
+    assert final_filing.lear_only == False
     meta_data = final_filing.meta_data.get('correction', {})
     assert meta_data.get('commentOnly')
 
