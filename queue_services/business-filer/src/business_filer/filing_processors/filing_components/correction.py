@@ -308,8 +308,6 @@ def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: l
 
     if (
         (
-            # colin-api only supports corrections for corps
-            business.legal_type not in Business.CORPS or
             not any((
                 # below are the only changes the colin api supports for corrections
                 bool(dpath.get(correction_filing, "/correction/nameRequest", default=None)),
