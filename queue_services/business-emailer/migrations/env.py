@@ -1,11 +1,12 @@
 from __future__ import with_statement
 
 import logging
+import os
 from logging.config import fileConfig
 
-from flask import current_app
-
+import sqlalchemy as sa
 from alembic import context
+from flask import current_app
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -73,6 +74,12 @@ def run_migrations_online():
     connectable = current_app.extensions['migrate'].db.engine
 
     with connectable.connect() as connection:
+
+        owner_role = os.getenv("DB_OWNER_ROLE")
+        if owner_role:
+            safe_role = owner_role.replace('"', '""')  # Escape any quotes for SQL safety
+            connection.execute(sa.text(f'SET ROLE "{safe_role}"'))
+
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
