@@ -310,7 +310,7 @@ def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: l
         (
             # colin-api only supports corrections for corps
             business.legal_type not in Business.CORPS or
-            not any(
+            not any((
                 # below are the only changes the colin api supports for corrections
                 bool(dpath.get(correction_filing, "/correction/nameRequest", default=None)),
                 bool(dpath.get(correction_filing, "/correction/nameTranslations", default=None)),
@@ -318,7 +318,7 @@ def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: l
                 bool(dpath.get(correction_filing, "/correction/parties", default=None)),
                 bool(dpath.get(correction_filing, "/correction/shareStructure", default=None)),
                 bool(dpath.get(correction_filing, "/correction/resolution", default=None)))
-        ) and (
+        )) and (
             relationships and
             # colin-api only supports relationships changes to directors
             not any(relationship for relationship in relationships if _has_director_role(relationship))
