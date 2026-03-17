@@ -555,7 +555,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party_role):
     assert edited_result['delivery_address_changed'] == True
 
 @pytest.mark.parametrize('legal_type', Business.CORPS + [
-    Business.LegalTypes.COOP + Business.LegalTypes.SOLE_PROP + Business.LegalTypes.PARTNERSHIP])
+    Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
 @pytest.mark.parametrize('input_value, expected_error', [
     ('John   Doe', False),
     ('   \t   ', False),
