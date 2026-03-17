@@ -23,7 +23,7 @@ from flask import current_app, g, request
 from flask_babel import _
 from pypdf import PdfReader
 
-from legal_api.core.filing import Filing
+from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.models import Address, Business, PartyRole
 from legal_api.models.configuration import EMAIL_PATTERN
@@ -134,7 +134,7 @@ def validate_share_structure(incorporation_json, filing_type, legal_type) -> Err
     memoize_names = []
 
     # For incorporation applications, at least one share class is required, for Alteration can not include if not changing
-    if filing_type == Filing.FilingTypes.INCORPORATIONAPPLICATION.value and len(share_classes) == 0:
+    if filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value and len(share_classes) == 0:
         msg.append({
             "error": "A company must have at least one Class of Shares.",
             "path": f"/filing/{filing_type}/shareStructure/shareClasses"
@@ -1194,13 +1194,15 @@ def validate_certified_by(filing_json: dict, business: Business) -> list:
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
+    filing_type = filing_json["filing"]["header"].get("name")
 
     if isinstance(business, Business):
         legal_type = business.legal_type
+    elif filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
+        legal_type = filing_json["filing"].get("business", None).get("legalType")
     else:
-        filing_type = filing_json["filing"]["header"].get("name")
         legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
-    
+
     if legal_type in Business.CORPS:
         return msg  # certifiedBy is not required for corporations
 

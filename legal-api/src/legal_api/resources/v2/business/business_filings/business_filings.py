@@ -1169,19 +1169,20 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     def modify_filing_json(filing_json, filing: Filing = None):
         """Modify filing json values if needed."""
         filing_type = filing_json["filing"]["header"]["name"]
-        if filing_type == Filing.FILINGS["continuationIn"].get("name"):
-            if filing and filing.status == Filing.Status.APPROVED.value:
-                filing_json["filing"][filing_type]["isApproved"] = True
+        if (filing_type == Filing.FILINGS["continuationIn"].get("name") and
+            filing and filing.status == Filing.Status.APPROVED.value
+        ):
+            filing_json["filing"][filing_type]["isApproved"] = True
 
-                # Once approved, user cannot change continuation in authorization details
-                if expro_business := filing.filing_json["filing"][filing_type].get("business"):
-                    filing_json["filing"][filing_type]["business"] = expro_business
-                filing_json["filing"][filing_type]["authorization"] = \
-                    filing.filing_json["filing"][filing_type]["authorization"]
-                filing_json["filing"][filing_type]["nameRequest"] = \
-                    filing.filing_json["filing"][filing_type]["nameRequest"]
-                filing_json["filing"][filing_type]["foreignJurisdiction"] = \
-                    filing.filing_json["filing"][filing_type]["foreignJurisdiction"]
+            # Once approved, user cannot change continuation in authorization details
+            if expro_business := filing.filing_json["filing"][filing_type].get("business"):
+                filing_json["filing"][filing_type]["business"] = expro_business
+            filing_json["filing"][filing_type]["authorization"] = \
+                filing.filing_json["filing"][filing_type]["authorization"]
+            filing_json["filing"][filing_type]["nameRequest"] = \
+                filing.filing_json["filing"][filing_type]["nameRequest"]
+            filing_json["filing"][filing_type]["foreignJurisdiction"] = \
+                filing.filing_json["filing"][filing_type]["foreignJurisdiction"]
 
     @staticmethod
     def submit_filing_for_review(business: Union[Business, RegistrationBootstrap], filing: Filing):
