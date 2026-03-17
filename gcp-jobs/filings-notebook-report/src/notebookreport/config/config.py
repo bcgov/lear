@@ -6,6 +6,24 @@ from dotenv import find_dotenv, load_dotenv
 load_dotenv(find_dotenv())
 
 
+def _make_cloudsql_getconn():
+    from google.cloud.sql.connector import Connector, IPTypes
+
+    _connector = Connector()
+
+    def getconn():
+        return _connector.connect(
+            os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+            "pg8000",
+            user=os.environ["DATABASE_USERNAME"],
+            db=os.environ["DATABASE_NAME"],
+            enable_iam_auth=True,
+            ip_type=IPTypes.PRIVATE,
+        )
+
+    return getconn
+
+
 class Config:
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
     APP_FILE = os.getenv("APP_FILE", "")
@@ -28,22 +46,8 @@ class Config:
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
     if DB_USER != "":
         if os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME"):
-            from google.cloud.sql.connector import Connector, IPTypes
-
-            _connector = Connector()
-
-            def getconn(_connector=_connector, _IPTypes=IPTypes):
-                return _connector.connect(
-                    os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
-                    "pg8000",
-                    user=os.environ["DATABASE_USERNAME"],
-                    db=os.environ["DATABASE_NAME"],
-                    enable_iam_auth=True,
-                    ip_type=_IPTypes.PRIVATE,
-                )
-
             SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
-            SQLALCHEMY_ENGINE_OPTIONS = {"creator": getconn}
+            SQLALCHEMY_ENGINE_OPTIONS = {"creator": _make_cloudsql_getconn()}
         elif DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
             SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
         else:

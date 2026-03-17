@@ -52,6 +52,24 @@ def get_named_config(config_name: str = "production"):
     return config
 
 
+def _make_cloudsql_getconn():
+    from google.cloud.sql.connector import Connector, IPTypes
+
+    _connector = Connector()
+
+    def getconn():
+        return _connector.connect(
+            os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+            "pg8000",
+            user=os.environ["DATABASE_USERNAME"],
+            db=os.environ["DATABASE_NAME"],
+            enable_iam_auth=True,
+            ip_type=IPTypes.PRIVATE,
+        )
+
+    return getconn
+
+
 class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
 
@@ -114,22 +132,8 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     # POSTGRESQL
     if os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME"):
-        from google.cloud.sql.connector import Connector, IPTypes
-
-        _connector = Connector()
-
-        def getconn(conn=_connector, ip_types=IPTypes):  # noqa: N805
-            return conn.connect(
-                os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
-                "pg8000",
-                user=os.environ["DATABASE_USERNAME"],
-                db=os.environ["DATABASE_NAME"],
-                enable_iam_auth=True,
-                ip_type=ip_types.PRIVATE,
-            )
-
         SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
-        SQLALCHEMY_ENGINE_OPTIONS = {"creator": getconn}
+        SQLALCHEMY_ENGINE_OPTIONS = {"creator": _make_cloudsql_getconn()}
     elif DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
         SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
     else:
