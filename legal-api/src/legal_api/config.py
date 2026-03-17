@@ -52,7 +52,7 @@ def get_named_config(config_name: str = "production"):
     return config
 
 
-def _make_cloudsql_getconn():
+def _make_cloudsql_getconn():  # pragma: no cover
     from google.cloud.sql.connector import Connector, IPTypes
 
     _connector = Connector()
@@ -131,7 +131,7 @@ class _Config:  # pylint: disable=too-few-public-methods
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
 
     # POSTGRESQL
-    if os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME"):
+    if os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
         SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
         SQLALCHEMY_ENGINE_OPTIONS = {"creator": _make_cloudsql_getconn()}
     elif DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
