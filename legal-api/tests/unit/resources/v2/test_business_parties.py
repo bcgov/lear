@@ -42,20 +42,22 @@ def test_get_business_parties_one_party_multiple_roles(app, session, client, jwt
         middle_initial=''
     )
     officer.save()
-    party_role_1 = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None,
-        party_id=officer.id
-    )
-    party_role_2 = PartyRole(
-        role=PartyRole.RoleTypes.CUSTODIAN.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None,
-        party_id=officer.id
-    )
-    business.party_roles.append(party_role_1)
-    business.party_roles.append(party_role_2)
+    roles_to_test = [
+        PartyRole.RoleTypes.DIRECTOR.value,
+        PartyRole.RoleTypes.CUSTODIAN.value,
+        PartyRole.RoleTypes.RECEIVER.value,
+        PartyRole.RoleTypes.LIQUIDATOR.value,
+    ]
+    for role_type in roles_to_test:
+        party_role = PartyRole(
+            role=role_type,
+            appointment_date=datetime.datetime(2017, 5, 17),
+            cessation_date=None,
+            party_id=officer.id,
+            business_id=business.id
+        )
+        business.party_roles.append(party_role)
+
     business.save()
 
     # mock response from auth to give view access (not needed if staff / system)
@@ -69,7 +71,7 @@ def test_get_business_parties_one_party_multiple_roles(app, session, client, jwt
     assert rv.status_code == HTTPStatus.OK
     assert 'parties' in rv.json
     assert len(rv.json['parties']) == 1
-    assert len(rv.json['parties'][0]['roles']) == 2
+    assert len(rv.json['parties'][0]['roles']) == len(roles_to_test)
 
 
 def test_get_business_parties_multiple_parties(session, client, jwt):
@@ -77,31 +79,26 @@ def test_get_business_parties_multiple_parties(session, client, jwt):
     # setup
     identifier = 'CP7654321'
     business = factory_business(identifier)
-    officer_1 = Party(
-        first_name='Connor',
-        last_name='Horton',
-        middle_initial=''
-    )
-    party_role_1 = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None,
-        party=officer_1
-    )
-    officer_2 = Party(
-        first_name='Abraham',
-        last_name='Mason',
-        middle_initial=''
-    )
+    roles_to_test = [
+        PartyRole.RoleTypes.DIRECTOR.value,
+        PartyRole.RoleTypes.CUSTODIAN.value,
+        PartyRole.RoleTypes.RECEIVER.value,
+        PartyRole.RoleTypes.LIQUIDATOR.value,
+    ]
+    for index, role_type in enumerate(roles_to_test):
+        officer = Party(
+            first_name=f'Michael{index}',
+            last_name=f'Crane{index}',
+            middle_initial=''
+        )
+        party_role = PartyRole(
+            role=role_type,
+            appointment_date=datetime.datetime(2017, 5, 17),
+            cessation_date=None,
+            party=officer
+        )
+        business.party_roles.append(party_role)
 
-    party_role_2 = PartyRole(
-        role=PartyRole.RoleTypes.CUSTODIAN.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None,
-        party=officer_2
-    )
-    business.party_roles.append(party_role_1)
-    business.party_roles.append(party_role_2)
     business.save()
 
     # test
@@ -111,9 +108,11 @@ def test_get_business_parties_multiple_parties(session, client, jwt):
     # check
     assert rv.status_code == HTTPStatus.OK
     assert 'parties' in rv.json
-    assert len(rv.json['parties']) == 2
+    assert len(rv.json['parties']) == 4
     assert len(rv.json['parties'][0]['roles']) == 1
     assert len(rv.json['parties'][1]['roles']) == 1
+    assert len(rv.json['parties'][2]['roles']) == 1
+    assert len(rv.json['parties'][3]['roles']) == 1
 
 
 def test_get_business_parties_by_role(session, client, jwt):

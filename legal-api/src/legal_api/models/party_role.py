@@ -168,9 +168,7 @@ class PartyRole(db.Model, Versioned):
     def get_party_roles(business_id: int, end_date: datetime | None = None, role: str | None = None) -> list:
         """Return the parties that match the filter conditions."""
         unsupported_roles = [
-            PartyRole.RoleTypes.OFFICER.value,
-            PartyRole.RoleTypes.LIQUIDATOR.value,
-            PartyRole.RoleTypes.RECEIVER.value,
+            PartyRole.RoleTypes.OFFICER.value
         ]
 
         party_roles = db.session.query(PartyRole). \

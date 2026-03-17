@@ -222,8 +222,12 @@ def test_get_completed_filings_for_colin_corps_correction(session, client, jwt):
     assert filings[0]['filing']['correction']['correctedFilingType'] == 'changeOfDirectors'
     assert filings[0]['filing']['correction']['correctedFilingType'] == 'changeOfDirectors'
     assert filings[0]['filing']['correction']['partyChanged'] == True
-    assert len(filings[0]['filing']['correction']['parties']) == 1
-    assert filings[0]['filing']['correction']['parties'][0]['officer']['firstName'] == correction_cod['filing']['correction']['relationships'][0]['entity']['givenName']
-    assert filings[0]['filing']['correction']['parties'][0]['mailingAddress']['streetAddress'] == correction_cod['filing']['correction']['relationships'][0]['mailingAddress']['streetAddress']
-    assert filings[0]['filing']['correction']['parties'][0]['deliveryAddress']['streetAddress'] == correction_cod['filing']['correction']['relationships'][0]['deliveryAddress']['streetAddress']
-    assert filings[0]['filing']['correction']['parties'][0]['role'] == 'director'
+    parties = filings[0]['filing']['correction']['parties']
+    assert len(parties) == 1
+    director = parties[0]
+    assert director['officer']['firstName'] == correction_cod['filing']['correction']['relationships'][0]['entity']['givenName']
+    assert director['mailingAddress']['streetAddress'] == correction_cod['filing']['correction']['relationships'][0]['mailingAddress']['streetAddress']
+    assert director['deliveryAddress']['streetAddress'] == correction_cod['filing']['correction']['relationships'][0]['deliveryAddress']['streetAddress']
+    assert len(director['roles']) == 1
+    assert director['roles'][0]['roleType'] == 'Director'
+    assert director['roles'][0]['appointmentDate']
