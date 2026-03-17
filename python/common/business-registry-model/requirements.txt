@@ -38,7 +38,7 @@ jsonschema==4.19.0
 launchdarkly-server-sdk==7.1.0
 psycopg2-binary==2.8.6
 pyRFC3339==1.1
-pyasn1==0.4.8
+pyasn1==0.6.3
 pycountry==20.7.3
 pydantic==1.10.2
 pyjwt==2.8.0
