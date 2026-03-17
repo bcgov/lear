@@ -69,7 +69,7 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
     if err:
         return err
 
-    cert_errs = validate_certified_by(filing_json)
+    cert_errs = validate_certified_by(filing_json, business)
     if cert_errs:
         return Error(HTTPStatus.BAD_REQUEST, cert_errs)
 

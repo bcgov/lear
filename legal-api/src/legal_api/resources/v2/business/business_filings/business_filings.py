@@ -135,7 +135,7 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
     if err_msg:
         return jsonify({"errors": [err_msg, ]}), err_code
     json_input = copy.deepcopy(request.get_json())  # used for validation
-    ListFilingResource.modify_filing_json(json_input, filing, for_validation=True)
+    ListFilingResource.modify_filing_json(json_input, filing)
 
     # check authorization
     response, response_code = ListFilingResource.check_authorization(identifier, json_input, business, filing)
@@ -1166,17 +1166,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         ]
 
     @staticmethod
-    def modify_filing_json(filing_json, filing: Filing = None, for_validation=False):
+    def modify_filing_json(filing_json, filing: Filing = None):
         """Modify filing json values if needed."""
         filing_type = filing_json["filing"]["header"]["name"]
         if filing_type == Filing.FILINGS["continuationIn"].get("name"):
-            if for_validation and (not filing or
-                                   filing.status in [Filing.Status.DRAFT.value,
-                                                     Filing.Status.CHANGE_REQUESTED.value]):
-                # certifiedBy is a common header, which is required field as per schema
-                # its not required for authorization (and cannot make it optional in schema only for continuationIn)
-                filing_json["filing"]["header"]["certifiedBy"] = "submission for review"
-
             if filing and filing.status == Filing.Status.APPROVED.value:
                 filing_json["filing"][filing_type]["isApproved"] = True
 

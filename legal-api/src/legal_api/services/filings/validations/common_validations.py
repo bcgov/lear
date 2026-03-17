@@ -1190,13 +1190,26 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_certified_by(filing_json: dict) -> list:
+def validate_certified_by(filing_json: dict, business: Business) -> list:
     """Validate certifiedBy field."""
     msg = []
-    certified_by = filing_json["filing"]["header"]["certifiedBy"]
+    certified_by = filing_json["filing"]["header"].get("certifiedBy")
 
-    # Only validate if non-whitespace characters are present
-    if certified_by.strip() and certified_by != certified_by.strip():
+    if isinstance(business, Business):
+        legal_type = business.legal_type
+    else:
+        filing_type = filing_json["filing"]["header"].get("name")
+        legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
+    
+    if legal_type in Business.CORPS:
+        return msg  # certifiedBy is not required for corporations
+
+    if not certified_by:
+        msg.append({
+            "error": "Certified by field is required.",
+            "path": "/filing/header/certifiedBy"
+        })
+    elif certified_by.strip() and certified_by != certified_by.strip():
         msg.append({
             "error": "Certified by field cannot start or end with whitespace.",
             "path": "/filing/header/certifiedBy"
