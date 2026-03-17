@@ -313,7 +313,7 @@ def minio_server(monkeypatch):
 
 DOCUMENT_API_URL = 'http://document-api.com'
 DOCUMENT_API_VERSION = '/api/v1'
-DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}/documents'
+DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}'
 DOCUMENT_PRODUCT_CODE = 'BUSINESS'
 
 @pytest.fixture()
@@ -331,4 +331,21 @@ def mock_doc_service():
         mock.get(re.compile(f"{get_url}.*"),
                  status_code=HTTPStatus.OK,
                  text=json.dumps(mock_response))
+        get_url2 = f'{DOCUMENT_SVC_URL}/application-reports/history/{DOCUMENT_PRODUCT_CODE}/'
+        mock.get(re.compile(f"{get_url2}.*"),
+                 status_code=HTTPStatus.OK,
+                 text=json.dumps(mock_response))
         yield mock
+
+
+@pytest.fixture()
+def mock_drs_service():
+    mock_response = []
+    with requests_mock.Mocker(real_http=True) as m:
+        get_url = f'{DOCUMENT_SVC_URL}/application-reports/{DOCUMENT_PRODUCT_CODE}/'
+        get_url2 = f'{DOCUMENT_SVC_URL}/application-reports/history/{DOCUMENT_PRODUCT_CODE}/'
+        get_url3 = f'{DOCUMENT_SVC_URL}/application-reports/events/{DOCUMENT_PRODUCT_CODE}/'
+        m.register_uri('GET', re.compile(f"{get_url}.*"), json=mock_response, status_code=HTTPStatus.OK)
+        m.register_uri('GET', re.compile(f"{get_url2}.*"), json=mock_response, status_code=HTTPStatus.OK)
+        m.register_uri('GET', re.compile(f"{get_url3}.*"), json=mock_response, status_code=HTTPStatus.OK)
+        yield m

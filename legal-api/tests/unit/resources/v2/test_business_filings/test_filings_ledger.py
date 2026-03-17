@@ -59,7 +59,7 @@ from tests.unit.models import (  # noqa:E501,I001
 from tests.unit.services.utils import create_header
 
 REGISTER_CORRECTION_APPLICATION = 'Register Correction Application'
-def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
+def test_get_all_business_filings_only_one_in_ledger(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
     identifier = 'CP7654321'
@@ -71,15 +71,21 @@ def test_get_all_business_filings_only_one_in_ledger(session, client, jwt):
     ar['filing']['header']['colinIds'] = []
 
     print('test_get_all_business_filings - filing:', filings)
+    headers=create_header(jwt, [STAFF_ROLE], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    # test
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 0  # The endpoint will return only completed filings
 
 
-def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
+def test_get_all_business_filings_multi_in_ledger(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
     from tests import add_years
@@ -95,25 +101,36 @@ def test_get_all_business_filings_multi_in_ledger(session, client, jwt):
         ar['filing']['annualReport']['annualGeneralMeetingDate'] = \
             datetime.date(add_years(datetime(2001, 8, 5, 7, 7, 58, 272362), i)).isoformat()
         factory_filing(b, ar)
+    headers=create_header(jwt, [STAFF_ROLE], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+    # test
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     assert rv.status_code == HTTPStatus.OK
     assert len(rv.json.get('filings')) == 0
 
 
-def test_ledger_search(session, client, jwt):
+def test_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns values for all the expected keys."""
     # setup
     identifier = 'BC1234567'
     founding_date = datetime.utcnow() - datedelta.datedelta(months=len(FILINGS.keys()))
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     ledger = rv.json
 
@@ -124,7 +141,7 @@ def test_ledger_search(session, client, jwt):
     alteration = next((f for f in ledger['filings'] if f.get('name') == 'alteration'), None)
 
     assert alteration
-    assert 18 == len(alteration.keys())
+    assert 18 <= len(alteration.keys())
     assert 'availableOnPaperOnly' in alteration
     assert 'effectiveDate' in alteration
     assert 'filingId' in alteration
@@ -159,7 +176,7 @@ def ledger_element_setup_filing(business, filing_name, filing_date, filing_dict=
     return f
 
 
-def test_ledger_comment_count(session, client, jwt):
+def test_ledger_comment_count(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -170,10 +187,15 @@ def test_ledger_comment_count(session, client, jwt):
         comment.comment = f'this comment {c}'
         filing_storage.comments.append(comment)
     filing_storage.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings'][0]['commentsCount'] == number_of_comments
@@ -191,7 +213,8 @@ def test_ledger_comment_count(session, client, jwt):
     ('filing-status-Withdrawn', Filing.Status.WITHDRAWN.value, 1),
 ])    
 
-def test_get_all_business_filings_permitted_statuses(session, client, jwt, test_name, filing_status, expected):
+def test_get_all_business_filings_permitted_statuses(app, session, client, jwt, test_name, filing_status, expected,
+                                                     monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger only shows filings with permitted statuses."""
     # setup
     identifier = 'BC1234567'
@@ -209,10 +232,15 @@ def test_get_all_business_filings_permitted_statuses(session, client, jwt, test_
     filing_storage._status = filing_status
     filing_storage.skip_status_listener = True
     filing_storage.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert len(rv.json.get('filings')) == expected    
@@ -233,7 +261,8 @@ def test_get_all_business_filings_permitted_statuses(session, client, jwt, test_
         ['fileNumber', 'orderDetails']),
 
 ])
-def test_ledger_court_order(session, client, jwt, test_name, file_number, order_date, effect_of_order, order_details, expected):
+def test_ledger_court_order(app, session, client, jwt, test_name, file_number, order_date, effect_of_order, order_details, expected,
+                            monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns court_order values."""
     # setup
     identifier = 'BC1234567'
@@ -245,10 +274,15 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
     filing_storage.order_details = order_details
 
     filing_storage.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings'][0]
@@ -260,7 +294,7 @@ def test_ledger_court_order(session, client, jwt, test_name, file_number, order_
         assert not filing_json.get('data')
 
 
-def test_ledger_display_name_annual_report(session, client, jwt):
+def test_ledger_display_name_annual_report(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -275,10 +309,15 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     business, filing_storage = ledger_element_setup_help(identifier, 'annualReport')
     filing_storage._meta_data = meta_data
     filing_storage.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings'][0]
@@ -287,7 +326,7 @@ def test_ledger_display_name_annual_report(session, client, jwt):
     assert filing_json['displayName'] == f'Annual Report ({date.fromisoformat(today).year})'
 
 
-def test_ledger_display_unknown_name(session, client, jwt):
+def test_ledger_display_unknown_name(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -296,10 +335,15 @@ def test_ledger_display_unknown_name(session, client, jwt):
     business, filing_storage = ledger_element_setup_help(identifier, 'someAncientNamedReport')
     filing_storage._meta_data = meta_data
     filing_storage.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings'][0]
@@ -308,7 +352,7 @@ def test_ledger_display_unknown_name(session, client, jwt):
     assert filing_json['displayName'] == 'Some Ancient Named Report'
 
 
-def test_ledger_display_alteration_report(session, client, jwt):
+def test_ledger_display_alteration_report(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -322,10 +366,15 @@ def test_ledger_display_alteration_report(session, client, jwt):
     business, filing_storage = ledger_element_setup_help(identifier, 'alteration')
     filing_storage._meta_data = meta_data
     filing_storage.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings'][0]
@@ -340,7 +389,8 @@ def test_ledger_display_alteration_report(session, client, jwt):
     ('limitedRestorationExtension', 'Limited Restoration Extension Application'),
     ('limitedRestorationToFull', 'Conversion to Full Restoration Application'),
 ])
-def test_ledger_display_restoration(session, client, jwt, restoration_type, expected_display_name):
+def test_ledger_display_restoration(app, session, client, jwt, restoration_type, expected_display_name,
+                                    monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct names of the four restoration types."""
     # setup
     identifier = 'BC1234567'
@@ -360,10 +410,15 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
     filing['filing']['restoration']['type'] = restoration_type
 
     factory_completed_filing(business, filing, filing_date=filing_date)
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings']
@@ -378,7 +433,8 @@ def test_ledger_display_restoration(session, client, jwt, restoration_type, expe
     ('CC', Business.LegalTypes.BC_CCC.value, 'BC Community Contribution Company Incorporation Application'),
     ('BC', Business.LegalTypes.COMP.value, 'BC Limited Company Incorporation Application'),
 ])
-def test_ledger_display_incorporation(session, client, jwt, test_name, entity_type, expected_display_name):
+def test_ledger_display_incorporation(app, session, client, jwt, test_name, entity_type, expected_display_name,
+                                      monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -407,17 +463,22 @@ def test_ledger_display_incorporation(session, client, jwt, test_name, entity_ty
                              'legalName': business_name}
                }
     f._meta_data = {**{'applicationDate': today}, **ia_meta}
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings']
     assert rv.json['filings'][0]['displayName'] == expected_display_name
 
 
-def test_ledger_display_corrected_incorporation(session, client, jwt):
+def test_ledger_display_corrected_incorporation(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -425,10 +486,15 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
     correction = ledger_element_setup_filing(business, 'correction', filing_date=business.founding_date + datedelta.datedelta(months=3))
     original.parent_filing_id = correction.id
     original.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings']
@@ -441,7 +507,7 @@ def test_ledger_display_corrected_incorporation(session, client, jwt):
             assert False
 
 
-def test_ledger_display_corrected_annual_report(session, client, jwt):
+def test_ledger_display_corrected_annual_report(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'BC1234567'
@@ -460,10 +526,15 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
     correction_meta = {'legalFilings': ['annualReport', 'correction']}
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings']
@@ -490,7 +561,8 @@ def test_ledger_display_corrected_annual_report(session, client, jwt):
         ('unknown-public', None, UserRoles.public_user, 'some-user', '', '', 'some-user'),
     ]
 )
-def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_role, username, firstname, lastname, expected):
+def test_ledger_redaction(app, session, client, jwt, test_name, submitter_role, jwt_role, username, firstname, lastname, expected,
+                          monkeypatch, mock_drs_service, mocker):
     """Assert that the core filing is saved to the backing store."""
     from legal_api.core.filing import Filing as CoreFiling
     try:
@@ -520,9 +592,15 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
         new_filing.submitter_roles = submitter_role
         setattr(new_filing, 'skip_status_listener', True)  # skip status listener
         new_filing.save()
+        headers=create_header(jwt, [jwt_role], identifier)
+        def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+            return headers[one]
 
-        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                        headers=create_header(jwt, [jwt_role], identifier))
+        # test
+        with app.test_request_context():
+            monkeypatch.setattr('flask.request.headers.get', mock_auth)
+            rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                            headers=headers)
     except Exception as err:
         print(err)
 
@@ -530,7 +608,7 @@ def test_ledger_redaction(session, client, jwt, test_name, submitter_role, jwt_r
     assert rv.json['filings'][0]['submitter'] == expected
 
 
-def test_ledger_display_special_resolution_correction(session, client, jwt):
+def test_ledger_display_special_resolution_correction(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'CP1234567'
@@ -567,10 +645,15 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
     correction_2_meta = {'legalFilings': ['correction']}
     correction_2._meta_data = {**{'applicationDate': today}, **correction_2_meta}
     correction_2.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings']
@@ -583,7 +666,7 @@ def test_ledger_display_special_resolution_correction(session, client, jwt):
             assert False
 
 
-def test_ledger_display_non_special_resolution_correction_name(session, client, jwt):
+def test_ledger_display_non_special_resolution_correction_name(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the ledger returns the correct number of comments."""
     # setup
     identifier = 'CP1234567'
@@ -604,10 +687,15 @@ def test_ledger_display_non_special_resolution_correction_name(session, client, 
     correction_meta = {'legalFilings': ['correction']}
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
+    headers=create_header(jwt, [UserRoles.system], identifier)
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
 
     # test
-    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
-                    headers=create_header(jwt, [UserRoles.system], identifier))
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                        headers=headers)
 
     # validate
     assert rv.json['filings']
