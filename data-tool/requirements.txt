@@ -39,7 +39,7 @@ itsdangerous>=2.0.0
 jsonschema==4.19.0
 launchdarkly-server-sdk==7.1.0
 pyRFC3339==1.1
-pyasn1==0.4.8
+pyasn1==0.6.3
 pycountry==20.7.3
 pydantic>=2.7,<3.0.0
 pyjwt==2.8.0
