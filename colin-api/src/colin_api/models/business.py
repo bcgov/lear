@@ -42,7 +42,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
         BC_COMP = 'BC'
         ULC_COMP = 'ULC'
         CCC_COMP = 'CC'
-        BCOMP_CONTINUE_IN = 'CBEN'
+        BCOMP_CONTINUE_IN = 'CBEN' # In COLIN its CBN
         CONTINUE_IN = 'C'
         CCC_CONTINUE_IN = 'CCC'
         ULC_CONTINUE_IN = 'CUL'
@@ -160,6 +160,22 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 'adminFreeze': self.admin_freeze
             }
         }
+
+    @classmethod
+    def map_legal_type_to_colin(cls, legal_type: str) -> str:
+        """Map legal type to COLIN legal type."""
+        if legal_type == 'CBEN':
+            return 'CBN'
+
+        return legal_type
+
+    @classmethod
+    def map_corp_type_to_lear(cls, corp_type: str) -> str:
+        """Map corp type to LEAR legal type."""
+        if corp_type == 'CBN':
+            return 'CBEN'
+
+        return corp_type
 
     @classmethod
     def get_colin_identifier(cls, lear_identifier, legal_type):
@@ -334,7 +350,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             business_obj.corp_num = business['corp_num']
             business_obj.corp_state = business['corp_state']
             business_obj.corp_state_class = business['corp_state_class']
-            business_obj.corp_type = business['corp_typ_cd']
+            business_obj.corp_type = cls.map_corp_type_to_lear(business['corp_typ_cd'])
             business_obj.email = business['admin_email']
             business_obj.founding_date = convert_to_json_datetime(business['recognition_dts'])
             business_obj.good_standing = cls.is_in_good_standing(business, cursor)
@@ -379,7 +395,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 values (:corp_num, :corp_type, TO_TIMESTAMP_TZ(:recognition_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'))
                 """,
                 corp_num=business.corp_num,
-                corp_type=business.corp_type,
+                corp_type=cls.map_legal_type_to_colin(business.corp_type),
                 recognition_date=business.founding_date
             )
 
@@ -604,7 +620,7 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
                 WHERE corp_num = :corp_num
                 """,
                 corp_num=corp_num,
-                corp_type=corp_type
+                corp_type=cls.map_legal_type_to_colin(corp_type)
             )
 
         except Exception as err:
