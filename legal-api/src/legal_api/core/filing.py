@@ -26,6 +26,7 @@ from sqlalchemy import desc
 from legal_api.core.meta import FilingMeta
 from legal_api.models import Business, Document, DocumentType, UserRoles
 from legal_api.models import Filing as FilingStorage
+from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_roles, is_competent_authority
 
@@ -402,6 +403,9 @@ class Filing:  # pylint: disable=too-many-public-methods
 
         query = query.order_by(desc(FilingStorage.filing_date))
 
+        drs_service: DocumentService = DocumentService()
+        drs_docs = drs_service.get_documents_by_business_id(business.identifier) if business else []
+
         ledger = []
         for filing in query.all():
 
@@ -443,6 +447,10 @@ class Filing:  # pylint: disable=too-many-public-methods
             if filing.court_order_file_number or filing.order_details:
                 Filing._add_ledger_order(filing, ledger_filing)
 
+            core_filing: Filing = Filing()  # Filing.get_document_list needs a core Filing.
+            core_filing._storage = filing  # pylint: disable=protected-access
+            filing_docs = Filing.get_document_list(business, core_filing, jwt)
+            ledger_filing["drsDocuments"] = drs_service.update_filing_documents(drs_docs, filing_docs, filing)
             ledger.append(ledger_filing)
 
         return ledger
@@ -480,7 +488,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         ledger_filing["data"]["order"] = court_order_data
 
     @staticmethod
-    def get_document_list(business,  # noqa: PLR0912
+    def get_document_list(business,  # noqa: PLR0912, PLR0915 NOSONAR(S3776)
                           filing,
                           jwt: JwtManager) -> dict | None:
         """Return a list of documents for a particular filing."""
@@ -512,7 +520,6 @@ class Filing:  # pylint: disable=too-many-public-methods
             identifier = withdrawn_filing.storage.temp_reg
 
         doc_url = url_for("API2.get_documents", identifier=identifier, filing_id=filing.id, legal_filing_name=None)
-
         documents = {"documents": {}}
         # for paper_only filings return and empty documents list
         if filing.storage and filing.storage.paper_only:
@@ -530,6 +537,8 @@ class Filing:  # pylint: disable=too-many-public-methods
                     (filing.storage.documents.filter(
                         Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
                 documents["documents"]["uploadedCourtOrder"] = f"{base_url}{doc_url}/uploadedCourtOrder"
+            documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
+        elif filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
             documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
         no_outputs_except_receipt = filing.filing_type in [
@@ -568,10 +577,13 @@ class Filing:  # pylint: disable=too-many-public-methods
                 del documents["documents"]["receipt"]
             return documents
 
+        legal_filings = filing.storage.meta_data.get("legalFilings") if filing.storage.meta_data else None
+        if not legal_filings and filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
+            legal_filings = [filing.filing_type]
         if (
             filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED) and
             filing.storage.meta_data and
-            (legal_filings := filing.storage.meta_data.get("legalFilings"))
+            legal_filings
             and not (no_outputs_except_receipt or no_outputs_except_receipt_dissolution)
         ):
             legal_filings_copy = copy.deepcopy(legal_filings)
@@ -612,7 +624,6 @@ class Filing:  # pylint: disable=too-many-public-methods
 
             adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
             additional = {item for sublist in adds for item in sublist}
-
             FilingMeta.alter_outputs(filing.storage, business, additional)
             for doc in additional:
                 documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"

@@ -234,29 +234,30 @@ def test_get_party_roles(session):
     member.save()
     # sanity check
     assert member.id
-    party_role_1 = PartyRole(
-        role=PartyRole.RoleTypes.DIRECTOR.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None,
-        party_id=member.id,
-        business_id=business.id
-    )
-    party_role_1.save()
-    party_role_2 = PartyRole(
-        role=PartyRole.RoleTypes.CUSTODIAN.value,
-        appointment_date=datetime.datetime(2017, 5, 17),
-        cessation_date=None,
-        party_id=member.id,
-        business_id=business.id
-    )
-    party_role_2.save()
+    roles_to_test = [
+        PartyRole.RoleTypes.DIRECTOR.value,
+        PartyRole.RoleTypes.CUSTODIAN.value,
+        PartyRole.RoleTypes.RECEIVER.value,
+        PartyRole.RoleTypes.LIQUIDATOR.value,
+    ]
+    for role_type in roles_to_test:
+        party_role = PartyRole(
+            role=role_type,
+            appointment_date=datetime.datetime(2017, 5, 17),
+            cessation_date=None,
+            party_id=member.id,
+            business_id=business.id
+        )
+        party_role.save()
+
     # Find by all party roles
     party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
-    assert len(party_roles) == 2
+    assert len(party_roles) == len(roles_to_test)
 
     # Find by party role
-    party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), PartyRole.RoleTypes.CUSTODIAN.value)
-    assert len(party_roles) == 1
+    for role_type in roles_to_test:
+        party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now(), role_type)
+        assert len(party_roles) == 1
 
 
 def test_get_party_roles_by_party_id(session):
@@ -388,7 +389,7 @@ def test_get_party_roles_unsupported_list(session):
     )
     party_role_4.save()
     # Find by all party roles
-    unsupported_list = ['officer', 'receiver', 'liquidator']
+    unsupported_list = ['officer']
 
     party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
     assert len(party_roles) == 4 - len(unsupported_list)

@@ -866,16 +866,17 @@ def test_firm_business_json(session, test_name, legal_type):
 
 
 @pytest.mark.parametrize(
-    'test_name, is_testing_business_id, batch_status, batch_processing_status, expected',
+    'test_name, is_testing_business_id, batch_status, batch_processing_status, in_liquidation, expected',
     [
-        ('test_valid_in_dissolution', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, True),
-        ('test_batch_is_completed', False, Batch.BatchStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.PROCESSING, False),
-        ('test_batch_processing_completed', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.COMPLETED, False),
-        ('test_both_completed', False, Batch.BatchStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.COMPLETED, False),
-        ('test_no_matched_business_id', True, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, False),
-        ('test_batch_processing_withdrawn', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.WITHDRAWN, False)
+        ('test_valid_in_dissolution', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, False, True),
+        ('test_batch_is_completed', False, Batch.BatchStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.PROCESSING, False, False),
+        ('test_batch_processing_completed', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.COMPLETED, False, False),
+        ('test_both_completed', False, Batch.BatchStatus.COMPLETED, BatchProcessing.BatchProcessingStatus.COMPLETED, False, False),
+        ('test_no_matched_business_id', True, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, False, False),
+        ('test_batch_processing_withdrawn', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.WITHDRAWN, False, False),
+        ('test_in_liquidation_with_processing', False, Batch.BatchStatus.PROCESSING, BatchProcessing.BatchProcessingStatus.PROCESSING, True, False),
     ])
-def test_in_dissolution(session, test_name, is_testing_business_id, batch_status, batch_processing_status, expected):
+def test_in_dissolution(session, test_name, is_testing_business_id, batch_status, batch_processing_status, in_liquidation, expected):
     """Assert in_dissolution works as expected, did not test with different batch types, since at this moment we only have one option in the BatchType Enum"""
     if is_testing_business_id:
         business_identifier_in = 'BC1234567'
@@ -899,6 +900,7 @@ def test_in_dissolution(session, test_name, is_testing_business_id, batch_status
     else:
         business_identifier = 'BC1234567'
         business = factory_business(business_identifier)
+        business.in_liquidation = in_liquidation
         business.save()
         batch = Batch(
             batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,

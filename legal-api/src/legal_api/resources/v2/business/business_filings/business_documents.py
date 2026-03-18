@@ -27,6 +27,7 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.models import Business, Document
 from legal_api.models import Filing as FilingModel
 from legal_api.reports import get_pdf
+from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp
 from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
@@ -37,6 +38,12 @@ from legal_api.utils.util import cors_preflight
 
 
 DOCUMENTS_BASE_ROUTE: Final = "/<string:identifier>/filings/<int:filing_id>/documents"
+PARAM_REPORT_TYPE: str = "reportType"
+PARAM_DOC_CLASS = "documentClass"
+PARAM_DRS_ID = "drsId"
+APP_PDF =  "application/pdf"
+CONTENT_JSON = {"Content-Type": "application/json"}
+CONTENT_PDF = {"Content-Type": APP_PDF}
 
 
 @cors_preflight("GET, POST")
@@ -55,7 +62,6 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
         return jsonify(
             message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
         ), HTTPStatus.UNAUTHORIZED
-
     if identifier.startswith("T"):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
@@ -87,13 +93,16 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
             return {"documents": {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
 
-    if "application/pdf" in request.accept_mimetypes:
+    if APP_PDF in request.accept_mimetypes:
         file_name = (legal_filing_name or file_key)
         if not _is_document_available(business, filing, file_name):
             return jsonify(
                 message=get_error_message(ErrorCode.DOCUMENT_NOT_FOUND,
                                           file_name=file_name, filing_id=filing_id, identifier=identifier)
             ), HTTPStatus.NOT_FOUND
+
+        if drs_params := _get_drs_params():
+            return _get_drs_documents(drs_params)
 
         if legal_filing_name:
             if legal_filing_name.lower().startswith("receipt"):
@@ -106,10 +115,36 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                 return current_app.response_class(
                     response=response.data,
                     status=response.status,
-                    mimetype="application/pdf"
+                    mimetype=APP_PDF
                 )
 
     return {}, HTTPStatus.NOT_FOUND
+
+
+def _get_drs_params() -> dict:
+    """Extract DRS parameters from the request."""
+    params: dict = {}
+    if request.args.get(PARAM_REPORT_TYPE):
+        params["reportType"] = request.args.get(PARAM_REPORT_TYPE)
+    if request.args.get(PARAM_DRS_ID):
+        params["drsId"] = request.args.get(PARAM_DRS_ID)
+    if request.args.get(PARAM_DOC_CLASS):
+        params["documentClass"] = request.args.get(PARAM_DOC_CLASS)
+    return params
+
+
+def _get_drs_documents(drs_params: dict):
+    """Return an indvidual DRS document as binary data, or a DRS JSON error."""
+    doc_service: DocumentService = DocumentService()
+    drs_id: str = drs_params.get(PARAM_DRS_ID)
+    response = None
+    if drs_params.get(PARAM_REPORT_TYPE):
+        response = doc_service.get_filing_report(drs_id, drs_params.get(PARAM_REPORT_TYPE))
+    else:
+        response = doc_service.get_filing_document(drs_id, drs_params.get(PARAM_DOC_CLASS))
+
+    content_type: str = CONTENT_PDF if response.status_code == HTTPStatus.OK else CONTENT_JSON
+    return response.content, response.status_code, content_type
 
 
 def _is_document_available(business, filing, file_name):
@@ -128,11 +163,23 @@ def _is_document_available(business, filing, file_name):
     return file_name in documents
 
 
-def _get_document_list(business, filing):
+def _get_document_list(business: Business, filing: Filing):
     """Get list of document outputs."""
-    if not (document_list := Filing.get_document_list(business, filing, jwt)):
+    document_list = Filing.get_document_list(business, filing, jwt)
+    if not (document_list):
         return {}, HTTPStatus.NOT_FOUND
-
+    storage: FilingModel = filing.storage
+    # If DRS reports/documents exist add the DRS download info to the document URLs.
+    if storage and not storage.paper_only:
+        drs_filing_id: int = storage.id
+        if storage.source and storage.source == storage.Source.COLIN.value and storage.meta_data:
+            meta_data = storage.meta_data
+            if meta_data and meta_data.get("colinFilingInfo") and meta_data["colinFilingInfo"].get("eventId"):
+                drs_filing_id = meta_data["colinFilingInfo"].get("eventId")
+        identifier = business.identifier if business else storage.temp_reg
+        doc_service: DocumentService = DocumentService()
+        drs_docs: list = doc_service.get_documents_by_filing_id(identifier, drs_filing_id)
+        document_list = doc_service.update_document_list(drs_docs, document_list)
     return jsonify(document_list), HTTPStatus.OK
 
 
