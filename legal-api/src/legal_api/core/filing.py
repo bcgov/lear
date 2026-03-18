@@ -450,7 +450,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             core_filing: Filing = Filing()  # Filing.get_document_list needs a core Filing.
             core_filing._storage = filing  # pylint: disable=protected-access
             filing_docs = Filing.get_document_list(business, core_filing, jwt)
-            ledger_filing["documents"] = drs_service.update_filing_documents(drs_docs, filing_docs, filing)
+            ledger_filing["drsDocuments"] = drs_service.update_filing_documents(drs_docs, filing_docs, filing)
             ledger.append(ledger_filing)
 
         return ledger
