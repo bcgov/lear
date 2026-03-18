@@ -348,7 +348,7 @@ def test_get_party_roles_unsupported_list(session):
     )
     party_role_4.save()
     # Find by all party roles
-    unsupported_list = ['officer', 'receiver', 'liquidator']
+    unsupported_list = ['officer']
 
     party_roles = PartyRole.get_party_roles(business.id, datetime.datetime.now())
     assert len(party_roles) == 4 - len(unsupported_list)

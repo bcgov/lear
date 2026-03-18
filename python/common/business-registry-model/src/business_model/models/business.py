@@ -597,6 +597,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def in_dissolution(self):
         """Return true if in dissolution, otherwise false."""
+        # businesses in liquidation are not eligible for dissolution due to overdue ARs
+        if self.in_liquidation and not self.transition_needed_but_not_filed():
+            return False
         # check a business has a batch_processing entry that matches business_id and status is not COMPLETED
         find_in_batch_processing = db.session.query(BatchProcessing, Batch).\
             filter(BatchProcessing.business_id == self.id).\

@@ -351,6 +351,7 @@ def _set_relationship_parties(business: Business, filing: Filing, filing_json: d
     """Override filing_json with parties set from the db. Only Directors and Completing Party will be added."""
     parties: list = VersionedBusinessDetailsService.get_party_role_revision(filing,
                                                                             business.id,
+                                                                            True,
                                                                             role=PartyRole.RoleTypes.DIRECTOR.value)
 
     # copy completing party from filing json
