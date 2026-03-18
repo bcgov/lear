@@ -346,7 +346,7 @@ class DocumentService:
             current_app.logger.error(f"DRS call {get_url} failed status={response.status_code}: {response.content}")
         return response
 
-    def get_filing_report_by_filing_id(self, business_identifier: str, filing_identifier: int, report_type: str) -> list:
+    def get_filing_report_by_filing_id(self, business_identifier: str, filing_identifier: int, report_type: str):
         """
         Try to get a filing report document from the DRS by filing identifier and report type.
 
@@ -367,9 +367,9 @@ class DocumentService:
         )
         response = requests.get(url=get_url, headers=headers)
         if response.status_code != HTTPStatus.OK:
-            return response
+            return response.content, response.status_code
         response_json = json.loads(response.content)
-        drs_id: str = None
+        drs_id = None
         for doc in response_json:
             if doc.get("reportType") == report_type and doc.get("eventIdentifier") == filing_identifier:
                 drs_id = doc.get("identifier")
