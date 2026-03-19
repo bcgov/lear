@@ -15,6 +15,7 @@
 from flask import current_app, jsonify
 from flask_restx import Resource, cors
 
+from colin_api.models import Business
 from colin_api.resources.business import API
 from colin_api.resources.db import DB
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
@@ -40,6 +41,7 @@ class EventInfo(Resource):
             """
         try:
             cursor = DB.connection.cursor()
+            corp_type = Business.map_legal_type_to_colin(corp_type)
             if event_id != 'earliest':
                 querystring += 'and event.event_id > :max_event_id '
                 cursor.execute(querystring, max_event_id=event_id, corp_type=corp_type)
