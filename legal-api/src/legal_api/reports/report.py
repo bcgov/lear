@@ -81,11 +81,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
-        if self._business:
             Report._populate_business_info_to_filing(self._filing, self._business)
+        business_identifier = self._business.identifier if self._business else self._filing.temp_reg
+        if business_identifier:
             report_meta: dict = ReportMeta.reports.get(self._report_key)
             document, status = self._document_service.get_filing_report_by_filing_id(
-                self._business.identifier,
+                business_identifier,
                 self._filing.id,
                 report_meta.get("reportType"))
             if status == HTTPStatus.OK:
@@ -113,7 +114,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return jsonify(message=str(response.content)), response.status_code
 
         response_drs = self._document_service.create_filing_report(
-            self._business.identifier,
+            business_identifier,
             self._filing,
             ReportMeta.reports.get(self._report_key),
             response
