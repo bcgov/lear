@@ -8,6 +8,12 @@ from prefect.states import Failed
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
+_GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
+
+def _resolve_master_script_path(mode: str, out: str | None) -> Path:
+    if out:
+        return Path(out).expanduser().resolve
+    return (_GENERATED_DIR / f'subset_{mode}.sql').resolve()
 
 @task(name='Run-CPRD-Subset-Generator', cache_policy=NO_CACHE)
 def run_cprd_subset_extract_generator(
@@ -56,6 +62,19 @@ def run_cprd_subset_extract_generator(
         text=True,
     )
 
+@task(name='DBSchemaCLI', cache_policy=NO_CACHE)
+def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli') -> subprocess.CompletedProcess:
+    master_script_path = Path(master_script)
+    if not master_script_path.exists():
+        raise FileNotFoundError(f'Generated script not found: {master_script_path}')
+    print(f'Running: {dbschemacli_cmd} {master_script_path}')
+    return subprocess.run(
+        [dbschemacli_cmd, str(master_script_path)],
+        cwd=str(_REPO_ROOT),
+        capture_output=False,
+        text=True
+    )
+
 @flow(name='Extract-Subset-Flow', log_prints=True, persist_result=False)
 def extract_pull_flow(
     corp_file: str,
@@ -65,6 +84,8 @@ def extract_pull_flow(
     pg_fastload: bool = False,
     pg_disable_method: str = 'replica_role',
     out: str | None=None,
+    run_dbschemacli: bool = False,
+    dbschemacli_cmd: str = 'dbschemacli',
 ) -> None:
     """
     Generate files
@@ -83,6 +104,15 @@ def extract_pull_flow(
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
 
+    if run_dbschemacli:
+        master_script = _resolve_master_script_path(mode=mode, out=out)
+        run_result = run_dbschemacli_task(
+            master_script=str(master_script),
+            dbschemacli_cmd=dbschemacli_cmd,
+        )
+        if run_result.returncode != 0:
+            raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+
     
 
 if __name__ == '__main__':
@@ -94,6 +124,8 @@ if __name__ == '__main__':
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
     p.add_argument('--pg-disable-method', default='replica_role', choices=('table_triggers', 'replica_role'))
     p.add_argument('--out', default=None, help='Output path for generated master script.')
+    p.add_argument('--run-dbschemacli', action='store_true')
+    p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     args = p.parse_args()
     extract_pull_flow(
         corp_file=args.corp_file,
@@ -103,4 +135,6 @@ if __name__ == '__main__':
         pg_fastload=args.pg_fastload,
         pg_disable_method=args.pg_disable_method,
         out=args.out,
+        run_dbschemacli=args.run_dbschemacli,
+        dbschemacli_cmd=args.dbschemacli_cmd,
     )
