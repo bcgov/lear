@@ -391,8 +391,8 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             # Expand query as NR data/ business info becomes more aparent
             cursor.execute(
                 """
-                insert into CORPORATION (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS)
-                values (:corp_num, :corp_type, TO_TIMESTAMP_TZ(:recognition_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'))
+                insert into CORPORATION (CORP_NUM, CORP_TYP_CD, RECOGNITION_DTS, SEND_AR_IND)
+                values (:corp_num, :corp_type, TO_TIMESTAMP_TZ(:recognition_date,'YYYY-MM-DD"T"HH24:MI:SS.FFTZH:TZM'), 'N')
                 """,
                 corp_num=business.corp_num,
                 corp_type=cls.map_legal_type_to_colin(business.corp_type),
