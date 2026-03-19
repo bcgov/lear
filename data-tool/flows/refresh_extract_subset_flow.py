@@ -23,9 +23,9 @@ def run_cprd_subset_extract_generator(
     Generate Commands
     """
     if not _SCRIPT_PATH.exists():
-            raise FileNotFoundError(
-                f'CPRD subset extract script not found: {_SCRIPT_PATH}'
-            )
+        raise FileNotFoundError(
+            f'CPRD subset extract script not found: {_SCRIPT_PATH}'
+        )
     corp_path = Path(corp_file).expanduser().resolve()
     if not corp_path.exists():
         raise FileNotFoundError(f'Corp file not found: {corp_path}')
@@ -65,7 +65,7 @@ def extract_pull_flow(
     pg_fastload: bool = False,
     pg_disable_method: str = 'replica_role',
     out: str | None=None,
-):
+) -> None:
     """
     Generate files
     """
@@ -80,8 +80,7 @@ def extract_pull_flow(
         out=out,
     )
     if result.returncode != 0:
-        print(f'generator exited with code {result.returncode}')
-        return Failed(message=f'CPRD subset extract generator exited with code {result.returncode}.')
+        raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
 
     
@@ -93,7 +92,7 @@ if __name__ == '__main__':
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
-    p.add_argument('--pg-disable-method', default='reploca_role', choices=('table_triggers', 'replica_role'))
+    p.add_argument('--pg-disable-method', default='replica_role', choices=('table_triggers', 'replica_role'))
     p.add_argument('--out', default=None, help='Output path for generated master script.')
     args = p.parse_args()
     extract_pull_flow(
