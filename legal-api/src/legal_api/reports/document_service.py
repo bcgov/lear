@@ -346,6 +346,39 @@ class DocumentService:
             current_app.logger.error(f"DRS call {get_url} failed status={response.status_code}: {response.content}")
         return response
 
+    def get_filing_report_by_filing_id(self, business_identifier: str, filing_identifier: int, report_type: str):
+        """
+        Try to get a filing report document from the DRS by filing identifier and report type.
+
+        business_identifier: The business identifier.
+        filing_identifier: The filing identifier.
+        report_type: The report type.
+        return: The report binary data status is OK.
+        """
+        if not business_identifier or not filing_identifier or not report_type:
+            return None, HTTPStatus.NOT_FOUND
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
+        url: str = self.url.replace(DOC_PATH, "")
+        get_url = FILING_DOCS_PATH.format(
+            url=url,
+            product=self.product_code,
+            business_id=business_identifier,
+            filing_id=filing_identifier
+        )
+        response = requests.get(url=get_url, headers=headers)
+        if response.status_code != HTTPStatus.OK:
+            return response.content, response.status_code
+        response_json = json.loads(response.content)
+        drs_id = None
+        for doc in response_json:
+            if doc.get("reportType") == report_type and doc.get("eventIdentifier") == filing_identifier:
+                drs_id = doc.get("identifier")
+                break
+        if drs_id:
+            response = self.get_filing_report(drs_id, report_type)
+            return response.content, response.status_code
+        return None, HTTPStatus.NOT_FOUND
+
     def get_filing_document(self, drs_id: str, doc_class: str):
         """
         Get a filing document from the document service by unique DRS identifier.
@@ -383,7 +416,12 @@ class DocumentService:
         headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
         url: str = self.url.replace(DOC_PATH, "")
         report_type: str = report_meta.get("reportType")
-        filename: str = report_meta.get("fileName") + ".pdf"
+        filename: str = filing.filing_type
+        if report_meta.get("fileName"):
+            filename = report_meta.get("fileName")
+        elif report_meta.get("default") and report_meta["default"].get("fileName"):
+            filename: str = report_meta["default"].get("fileName")
+        filename += ".pdf"
         filing_date: str = filing.effective_date.isoformat()[:10]
         post_url = POST_REPORT_PATH.format(
             url=url,
