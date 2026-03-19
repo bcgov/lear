@@ -113,9 +113,13 @@ run-colin-freeze:  ## Run colin freeze flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/colin_freeze_flow.py
 
-run-extract-pull:
+run-extract-load:
 	. $(VENV_DIR)/bin/activate && \
 	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)"
+
+run-extract-refresh:
+	. $(VENV_DIR)/bin/activate && \
+	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" --mode refresh
 
 #################################################################################
 # Self Documenting Commands                                                     #
