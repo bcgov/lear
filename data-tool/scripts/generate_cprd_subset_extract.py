@@ -77,6 +77,7 @@ class cfg_GenerationConfig:
 
     pg_fastload: bool
     pg_disable_method: cfg_PgDisableMethod
+    pg_debug_session_probes: bool
 
     oracle_in_strategy: cfg_OracleInStrategy
     or_of_in_max_ids: int
@@ -106,6 +107,8 @@ class tmpl_TemplateSpec:
 
 @dataclass(frozen=True)
 class tmpl_TemplateBundle:
+    pg_prepare_address_stage: tmpl_TemplateSpec
+    pg_cleanup_address_stage: tmpl_TemplateSpec
     disable_triggers: tmpl_TemplateSpec
     enable_triggers: tmpl_TemplateSpec
     pg_boolean_casts: tmpl_TemplateSpec
@@ -261,6 +264,18 @@ def sql_render_in_predicate(
     return f"(\n{joined}\n)"
 
 
+def sql_render_pg_session_probe(label: str) -> str:
+    quoted_label = sql_quote_literal(label)
+    return (
+        "SELECT "
+        f"{quoted_label} AS probe_label,\n"
+        "       pg_backend_pid() AS backend_pid,\n"
+        "       current_user AS db_user,\n"
+        "       current_setting('session_replication_role') AS session_replication_role,\n"
+        "       clock_timestamp() AS observed_at;"
+    )
+
+
 # =========================
 # tmpl_* (template loading/validation/rendering)
 # =========================
@@ -268,6 +283,14 @@ def sql_render_in_predicate(
 def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     subset_dir = repo_root / "data-tool" / "scripts" / "subset"
 
+    pg_prepare_address_stage = tmpl_TemplateSpec(
+        name="subset_pg_prepare_address_stage",
+        path=subset_dir / "subset_pg_prepare_address_stage.sql",
+    )
+    pg_cleanup_address_stage = tmpl_TemplateSpec(
+        name="subset_pg_cleanup_address_stage",
+        path=subset_dir / "subset_pg_cleanup_address_stage.sql",
+    )
     disable_triggers = tmpl_TemplateSpec(
         name="subset_disable_triggers",
         path=subset_dir / "subset_disable_triggers.sql",
@@ -312,6 +335,8 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     )
 
     return tmpl_TemplateBundle(
+        pg_prepare_address_stage=pg_prepare_address_stage,
+        pg_cleanup_address_stage=pg_cleanup_address_stage,
         disable_triggers=disable_triggers,
         enable_triggers=enable_triggers,
         pg_boolean_casts=pg_boolean_casts,
@@ -408,6 +433,7 @@ def gen_build_chunk_sql(
     corp_ids_sql: str,
     target_predicate_sql: str,
     oracle_predicate_sql: str,
+    pg_debug_session_probes: bool,
 ) -> str:
     replacements = {
         TMPL_TOKEN_CORP_IDS: corp_ids_sql,
@@ -422,6 +448,11 @@ def gen_build_chunk_sql(
     parts.append(f"-- target corps: {len(chunk.target_ids)}")
     parts.append(f"-- oracle corp_num: {len(chunk.oracle_ids)}")
     parts.append("")
+
+    if pg_debug_session_probes:
+        parts.append("-- Debug probe: backend/session state for this nested execute file.")
+        parts.append(sql_render_pg_session_probe(f"chunk:{chunk.chunk_file.stem}"))
+        parts.append("")
 
     if include_delete and mode == cfg_GenerationMode.REFRESH:
         rendered_delete = tmpl_render(delete_template_text, replacements=replacements)
@@ -454,6 +485,7 @@ def gen_write_chunk_files(
     delete_template_text: str,
     transfer_template_text: str,
     max_in_list: int,
+    pg_debug_session_probes: bool,
 ) -> List[Path]:
     out_paths: List[Path] = []
     for ch in chunks:
@@ -483,6 +515,7 @@ def gen_write_chunk_files(
             corp_ids_sql=corp_ids_sql,
             target_predicate_sql=target_predicate_sql,
             oracle_predicate_sql=oracle_predicate_sql,
+            pg_debug_session_probes=pg_debug_session_probes,
         )
         gen_write_text(ch.chunk_file, chunk_sql)
         out_paths.append(ch.chunk_file)
@@ -492,6 +525,11 @@ def gen_write_chunk_files(
 def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, templates: tmpl_TemplateBundle) -> None:
     if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
         lines.append(f"execute {templates.disable_triggers.path.as_posix()}")
+        if cfg.mode == cfg_GenerationMode.REFRESH:
+            lines.append("-- Refresh-only: preserved processing/tracking tables still reference corporation/event rows.")
+            lines.append("ALTER TABLE corp_processing DISABLE TRIGGER ALL;")
+            # lines.append("ALTER TABLE auth_processing DISABLE TRIGGER ALL;")
+            lines.append("ALTER TABLE colin_tracking DISABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -507,6 +545,11 @@ def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, t
 def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, templates: tmpl_TemplateBundle) -> None:
     if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
         lines.append(f"execute {templates.enable_triggers.path.as_posix()}")
+        if cfg.mode == cfg_GenerationMode.REFRESH:
+            lines.append("-- Refresh-only: restore preserved processing/tracking table triggers too.")
+            lines.append("ALTER TABLE corp_processing ENABLE TRIGGER ALL;")
+            # lines.append("ALTER TABLE auth_processing ENABLE TRIGGER ALL;")
+            lines.append("ALTER TABLE colin_tracking ENABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -519,12 +562,39 @@ def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, tem
     raise SystemExit(f"Unsupported pg_disable_method: {cfg.pg_disable_method}")
 
 
+def _gen_emit_refresh_fk_note(lines: List[str], *, cfg: cfg_GenerationConfig) -> None:
+    if cfg.mode != cfg_GenerationMode.REFRESH:
+        return
+
+    lines.append("-- Refresh mode preserves processing/tracking rows while deleting and reloading corporation/event rows.")
+    if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
+        lines.append("-- table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables too.")
+    else:
+        lines.append("-- replica_role mode relies on session_replication_role remaining active for nested execute/transfer work.")
+    lines.append("")
+
+
+def gen_write_pg_debug_copy(*, out_path: Path, source_path: Path, probe_label: str) -> Path:
+    source_text = source_path.read_text(encoding="utf-8")
+    debug_lines = [
+        f"-- generated debug copy: {out_path.name}",
+        "-- Debug probe: backend/session state for this nested execute file.",
+        sql_render_pg_session_probe(probe_label),
+        "",
+        source_text.rstrip(),
+        "",
+    ]
+    gen_write_text(out_path, "\n".join(debug_lines))
+    return out_path
+
+
 def gen_build_master_script_inline(
     *,
     cfg: cfg_GenerationConfig,
     templates: tmpl_TemplateBundle,
     delete_chunk_files: Sequence[Path],
     transfer_chunk_files: Sequence[Path],
+    pg_purge_script_path: Path,
 ) -> str:
     lines: List[str] = []
     lines.append("vset cli.settings.ignore_errors=false")
@@ -534,6 +604,8 @@ def gen_build_master_script_inline(
     lines.append("vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'")
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
+    lines.append("-- Prepare shared address staging table before learning schema")
+    lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
@@ -550,6 +622,11 @@ def gen_build_master_script_inline(
     lines.append("")
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
+    _gen_emit_refresh_fk_note(lines, cfg=cfg)
+    if cfg.pg_debug_session_probes:
+        lines.append("-- Debug probe: backend/session state in the master script after trigger/FK suppression.")
+        lines.append(sql_render_pg_session_probe("master:after_disable"))
+        lines.append("")
 
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
@@ -573,10 +650,14 @@ def gen_build_master_script_inline(
             lines.append("")
 
     lines.append("-- purge BCOMPS-excluded corps (computed in Postgres after load)")
-    lines.append(f"execute {templates.pg_purge_bcomps_excluded.path.as_posix()}")
+    lines.append(f"execute {pg_purge_script_path.as_posix()}")
     lines.append("")
 
     _gen_emit_pg_disable_end(lines, cfg=cfg, templates=templates)
+
+    lines.append("-- Cleanup shared address staging table")
+    lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
+    lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
@@ -612,6 +693,8 @@ def gen_build_master_script_vset(
     lines.append("vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'")
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
+    lines.append("-- Prepare shared address staging table before learning schema")
+    lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
@@ -628,6 +711,7 @@ def gen_build_master_script_vset(
     lines.append("")
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
+    _gen_emit_refresh_fk_note(lines, cfg=cfg)
 
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
@@ -684,6 +768,10 @@ def gen_build_master_script_vset(
     lines.append("")
 
     _gen_emit_pg_disable_end(lines, cfg=cfg, templates=templates)
+
+    lines.append("-- Cleanup shared address staging table")
+    lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
+    lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
@@ -781,6 +869,12 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
              "table_triggers=ALTER TABLE ... DISABLE/ENABLE TRIGGER ALL (default). "
              "replica_role=SET session_replication_role=replica|origin (requires superuser; disables triggers/FKs for session).",
     )
+    parser.add_argument(
+        "--pg-debug-session-probes",
+        action="store_true",
+        help="Inline-mode only. Add diagnostic SELECT probes that print pg_backend_pid/current_user/"
+             "session_replication_role in the master script and nested execute files.",
+    )
 
     parser.add_argument(
         "--target-connection",
@@ -846,6 +940,7 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
         include_cars=bool(args.include_cars),
         pg_fastload=bool(args.pg_fastload),
         pg_disable_method=pg_disable_method,
+        pg_debug_session_probes=bool(args.pg_debug_session_probes),
         oracle_in_strategy=oracle_in_strategy,
         or_of_in_max_ids=or_of_in_max_ids,
         out_master=out_master,
@@ -864,12 +959,17 @@ def _effective_oracle_strategy(cfg: cfg_GenerationConfig, total_ids: int) -> cfg
 def run(cfg: cfg_GenerationConfig) -> int:
     templates = tmpl_default_bundle(cfg.repo_root)
 
+    if cfg.pg_debug_session_probes and cfg.render_mode != cfg_RenderMode.INLINE:
+        raise SystemExit("--pg-debug-session-probes currently supports only --render-mode inline.")
+
     # Load/validate templates we depend on (fail fast if template contract changes).
     delete_template_text = tmpl_load_text(templates.delete_chunk)
     transfer_template_text = tmpl_load_text(templates.transfer_chunk)
 
     # Ensure the execute-only templates exist too (even though we don't render them).
     for spec in (
+        templates.pg_prepare_address_stage,
+        templates.pg_cleanup_address_stage,
         templates.disable_triggers,
         templates.enable_triggers,
         templates.pg_boolean_casts,
@@ -906,6 +1006,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 delete_template_text=delete_template_text,
                 transfer_template_text=transfer_template_text,
                 max_in_list=cfg.chunk_size,
+                pg_debug_session_probes=cfg.pg_debug_session_probes,
             )
             transfer_files = combined_files
 
@@ -921,6 +1022,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                     delete_template_text=delete_template_text,
                     transfer_template_text=transfer_template_text,
                     max_in_list=cfg.chunk_size,
+                    pg_debug_session_probes=cfg.pg_debug_session_probes,
                 )
 
             oracle_ids_all = corp_to_oracle_ids(target_ids)
@@ -939,6 +1041,15 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 delete_template_text=delete_template_text,
                 transfer_template_text=transfer_template_text,
                 max_in_list=cfg.chunk_size,
+                pg_debug_session_probes=cfg.pg_debug_session_probes,
+            )
+
+        pg_purge_script_path = templates.pg_purge_bcomps_excluded.path
+        if cfg.pg_debug_session_probes:
+            pg_purge_script_path = gen_write_pg_debug_copy(
+                out_path=cfg.out_chunks_dir / "pg_purge_bcomps_excluded_debug.sql",
+                source_path=templates.pg_purge_bcomps_excluded.path,
+                probe_label="execute:pg_purge_bcomps_excluded",
             )
 
         master_text = gen_build_master_script_inline(
@@ -946,6 +1057,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
             templates=templates,
             delete_chunk_files=delete_files,
             transfer_chunk_files=transfer_files,
+            pg_purge_script_path=pg_purge_script_path,
         )
         gen_write_text(cfg.out_master, master_text)
 
@@ -980,6 +1092,19 @@ def run(cfg: cfg_GenerationConfig) -> int:
             print(" - cars* tables will NOT be refreshed (--no-cars was set).")
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
+        print(" - Address loads use shared staging table public.subset_address_stage and merge into public.address by addr_id.")
+        print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to create/drop that helper table.")
+        if cfg.pg_debug_session_probes:
+            print(" - Postgres session probes: ENABLED (--pg-debug-session-probes)")
+            print("   - master + nested execute files will print pg_backend_pid/current_user/session_replication_role.")
+            print("   - probes confirm master/nested execute session context; DbSchemaCLI transfer writer sessions may still differ.")
+        if cfg.mode == cfg_GenerationMode.REFRESH:
+            print(" - refresh preserves processing/tracking rows while deleting/reloading corporation/event rows.")
+            if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
+                print("   - table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables.")
+                print("   - table_triggers changes table state globally while the refresh runs; use it against a quiesced extract DB with sufficient privileges.")
+            else:
+                print("   - replica_role is session-local; if FK errors still occur, probe current_setting('session_replication_role') inside nested execute files.")
         if cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
             print("   - NOTE: replica_role requires superuser and disables triggers/FKs for the session.")
         return 0
@@ -1018,6 +1143,19 @@ def run(cfg: cfg_GenerationConfig) -> int:
     print(" - Prefer --render-mode inline for faster runs (inline generates static SQL per chunk).")
     print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
     print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
+    print(" - Address loads use shared staging table public.subset_address_stage and merge into public.address by addr_id.")
+    print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to create/drop that helper table.")
+    if cfg.pg_debug_session_probes:
+        print(" - Postgres session probes: ENABLED (--pg-debug-session-probes)")
+        print("   - master + nested execute files will print pg_backend_pid/current_user/session_replication_role.")
+        print("   - probes confirm master/nested execute session context; DbSchemaCLI transfer writer sessions may still differ.")
+    if cfg.mode == cfg_GenerationMode.REFRESH:
+        print(" - refresh preserves processing/tracking rows while deleting/reloading corporation/event rows.")
+        if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
+            print("   - table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables.")
+            print("   - table_triggers changes table state globally while the refresh runs; use it against a quiesced extract DB with sufficient privileges.")
+        else:
+            print("   - replica_role is session-local; if FK errors still occur, probe current_setting('session_replication_role') inside nested execute files.")
     if cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
         print("   - NOTE: replica_role requires superuser and disables triggers/FKs for the session.")
     return 0
