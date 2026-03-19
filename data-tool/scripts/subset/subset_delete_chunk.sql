@@ -9,72 +9,14 @@
 -- Note: This script intentionally does NOT delete internal migration/processing tables (mig_*, corp_processing,
 -- colin_tracking, affiliation_processing, etc). It only deletes the corp-scoped COLIN extract tables that are
 -- reloaded from Oracle.
+-- IMPORTANT:
+-- - Because preserved processing/tracking tables still reference corporation/event rows, refresh mode must keep
+--   FK enforcement suppressed across this delete/reload window (for example via replica_role, or by disabling
+--   triggers on the preserved referencing tables too).
 
--- Capture address ids referenced by these corps BEFORE deleting corp rows.
--- We use a TEMP table so we can safely delete addresses after deleting all referencing rows.
-DROP TABLE IF EXISTS pg_temp.tmp_subset_refresh_addr_ids;
-CREATE TEMP TABLE tmp_subset_refresh_addr_ids (
-    addr_id numeric(10) PRIMARY KEY
-);
-
-INSERT INTO tmp_subset_refresh_addr_ids (addr_id)
-SELECT DISTINCT s.addr_id
-FROM (
-    SELECT cp.mailing_addr_id AS addr_id
-    FROM corp_party cp
-    WHERE cp.corp_num IN (&corp_ids_in) AND cp.mailing_addr_id IS NOT NULL
-
-    UNION
-    SELECT cp.delivery_addr_id AS addr_id
-    FROM corp_party cp
-    WHERE cp.corp_num IN (&corp_ids_in) AND cp.delivery_addr_id IS NOT NULL
-
-    UNION
-    SELECT o.mailing_addr_id AS addr_id
-    FROM office o
-    WHERE o.corp_num IN (&corp_ids_in) AND o.mailing_addr_id IS NOT NULL
-
-    UNION
-    SELECT o.delivery_addr_id AS addr_id
-    FROM office o
-    WHERE o.corp_num IN (&corp_ids_in) AND o.delivery_addr_id IS NOT NULL
-
-    UNION
-    SELECT cpl.mailing_addr_id AS addr_id
-    FROM completing_party cpl
-    JOIN event e ON e.event_id = cpl.event_id
-    WHERE e.corp_num IN (&corp_ids_in) AND cpl.mailing_addr_id IS NOT NULL
-
-    UNION
-    SELECT sp.mailing_addr_id AS addr_id
-    FROM submitting_party sp
-    JOIN event e ON e.event_id = sp.event_id
-    WHERE e.corp_num IN (&corp_ids_in) AND sp.mailing_addr_id IS NOT NULL
-
-    UNION
-    SELECT sp.notify_addr_id AS addr_id
-    FROM submitting_party sp
-    JOIN event e ON e.event_id = sp.event_id
-    WHERE e.corp_num IN (&corp_ids_in) AND sp.notify_addr_id IS NOT NULL
-
-    UNION
-    SELECT n.mailing_addr_id AS addr_id
-    FROM notification n
-    JOIN event e ON e.event_id = n.event_id
-    WHERE e.corp_num IN (&corp_ids_in) AND n.mailing_addr_id IS NOT NULL
-
-    UNION
-    SELECT nr.mailing_addr_id AS addr_id
-    FROM notification_resend nr
-    JOIN event e ON e.event_id = nr.event_id
-    WHERE e.corp_num IN (&corp_ids_in) AND nr.mailing_addr_id IS NOT NULL
-
-    UNION
-    SELECT pn.mailing_addr_id AS addr_id
-    FROM party_notification pn
-    JOIN corp_party cp ON cp.corp_party_id = pn.party_id
-    WHERE cp.corp_num IN (&corp_ids_in) AND pn.mailing_addr_id IS NOT NULL
-) s;
+-- Address rows are treated as shared/global during subset refresh.
+-- Do not delete them here: subset_transfer_chunk.sql stages incoming Oracle address rows and
+-- merges them into public.address by addr_id.
 
 -- Delete child tables first (event-scoped).
 DELETE FROM notification_resend
@@ -174,9 +116,4 @@ WHERE corp_num IN (&corp_ids_in);
 DELETE FROM corporation
 WHERE corp_num IN (&corp_ids_in);
 
--- Delete addresses captured at the start (these will be reloaded from Oracle).
-DELETE FROM address a
-USING tmp_subset_refresh_addr_ids t
-WHERE a.addr_id = t.addr_id;
-
-DROP TABLE IF EXISTS pg_temp.tmp_subset_refresh_addr_ids;
+-- Address rows are refreshed via stage+merge in subset_transfer_chunk.sql.

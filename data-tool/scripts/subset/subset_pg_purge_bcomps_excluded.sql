@@ -7,6 +7,9 @@
 -- - This script intentionally does NOT touch internal migration/processing tables (mig_*, corp_processing,
 --   colin_tracking, affiliation_processing, etc). It only purges the corp-scoped COLIN extract tables
 --   that are reloaded from Oracle.
+-- - Because preserved processing/tracking tables still reference corporation/event rows, refresh mode must keep
+--   FK enforcement suppressed across this purge window too (for example via replica_role, or by disabling
+--   triggers on the preserved referencing tables too).
 -- - This script avoids DO $$ blocks for DbSchemaCLI compatibility.
 
 -- 1) Build keysets
