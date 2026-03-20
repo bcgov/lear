@@ -21,7 +21,7 @@ from typing import Final
 import pycountry
 import requests
 from dateutil.relativedelta import relativedelta
-from flask import current_app, jsonify, request
+from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS, FilingMeta
 from legal_api.models import (
@@ -78,14 +78,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _get_report(self):
-        account_id = request.headers.get("Account-Id", None)
-        if account_id is not None and self._business is not None:
-            document, status = self._document_service.get_document(
-                self._business.identifier,
+        # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
+        if self._filing.business_id:
+            self._business = Business.find_by_internal_id(self._filing.business_id)
+            Report._populate_business_info_to_filing(self._filing, self._business)
+        business_identifier = self._business.identifier if self._business else self._filing.temp_reg
+        if business_identifier:
+            report_meta: dict = ReportMeta.reports.get(self._report_key)
+            document, status = self._document_service.get_filing_report_by_filing_id(
+                business_identifier,
                 self._filing.id,
-                self._report_key,
-                account_id
-            )
+                report_meta.get("reportType"))
             if status == HTTPStatus.OK:
                 return current_app.response_class(
                     response=document,
@@ -93,9 +96,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     mimetype="application/pdf"
                 )
 
-        if self._filing.business_id:
-            self._business = Business.find_by_internal_id(self._filing.business_id)
-            Report._populate_business_info_to_filing(self._filing, self._business)
         if self._report_key == "alteration":
             self._report_key = "alterationNotice"
         headers = {
@@ -114,7 +114,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return jsonify(message=str(response.content)), response.status_code
 
         response_drs = self._document_service.create_filing_report(
-            self._business.identifier,
+            business_identifier,
             self._filing,
             ReportMeta.reports.get(self._report_key),
             response
@@ -1476,24 +1476,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if namespace.endswith("test"):
             return "TEST"
         return ""
-    
-    @staticmethod
-    def _map_relationship_to_party(relationship):
-        # FUTURE: update pdf templates to expect relationships schema and remove this
-        organization_name = relationship["entity"].get("businessName")
-        return {
-            "officer": {
-                "id": relationship["entity"].get("identifier"),
-                "firstName": relationship["entity"].get("givenName"),
-                "middleName": relationship["entity"].get("middleInitial"),
-                "lastName": relationship["entity"].get("familyName"),
-                "organizationName": organization_name,
-                "partyType": "organization" if organization_name else "person"
-            },
-            "deliveryAddress": relationship.get("deliveryAddress"),
-            "mailingAddress": relationship.get("mailingAddress"),
-            "roles": relationship.get("roles", [])
-        }
 
     @staticmethod
     def _map_relationship_to_party(relationship):

@@ -4,8 +4,6 @@
 -- disposable extract databases (where maximum durability is not required).
 --
 -- IMPORTANT:
--- - subset_delete_chunk.sql creates a TEMP table. Any temp-table related settings (e.g. temp_buffers)
---   must be set before the first chunk delete runs.
 -- - Keep this file free of DO $$ blocks; some DbSchemaCLI builds split statements on semicolons
 --   and don't handle dollar-quoted bodies reliably.
 

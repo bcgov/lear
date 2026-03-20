@@ -262,8 +262,10 @@ join event e on e.corp_num = c.corp_num
 join filing_user u on u.event_id = e.event_id;
 
 
--- address (must load before office and corp_party which reference address via FK)
-transfer public.address from cprd using
+-- address (shared/global table; stage then merge before loading dependents)
+TRUNCATE TABLE public.subset_address_stage;
+
+transfer public.subset_address_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -323,6 +325,13 @@ from (
 	select a.*
 	from corporation_cte c
 	join event e on e.corp_num = c.corp_num
+	join notification_resend x on x.event_id = e.event_id
+	join address a on x.mailing_addr_id = a.addr_id
+
+	UNION ALL
+	select a.*
+	from corporation_cte c
+	join event e on e.corp_num = c.corp_num
 	join submitting_party x on x.event_id = e.event_id
 	join address a on (x.notify_addr_id = a.addr_id or x.mailing_addr_id = a.addr_id)
 
@@ -333,6 +342,49 @@ from (
 	join party_notification x on x.party_id = p.corp_party_id
 	join address a on x.mailing_addr_id = a.addr_id
 );
+
+INSERT INTO public.address (
+	addr_id,
+	province,
+	country_typ_cd,
+	postal_cd,
+	addr_line_1,
+	addr_line_2,
+	addr_line_3,
+	city
+)
+SELECT s.addr_id,
+	   s.province,
+	   s.country_typ_cd,
+	   s.postal_cd,
+	   s.addr_line_1,
+	   s.addr_line_2,
+	   s.addr_line_3,
+	   s.city
+FROM (
+	SELECT DISTINCT ON (addr_id)
+		   addr_id,
+		   province,
+		   country_typ_cd,
+		   postal_cd,
+		   addr_line_1,
+		   addr_line_2,
+		   addr_line_3,
+		   city
+	FROM public.subset_address_stage
+	WHERE addr_id IS NOT NULL
+	ORDER BY addr_id
+) s
+ON CONFLICT (addr_id) DO UPDATE
+SET province = EXCLUDED.province,
+	country_typ_cd = EXCLUDED.country_typ_cd,
+	postal_cd = EXCLUDED.postal_cd,
+	addr_line_1 = EXCLUDED.addr_line_1,
+	addr_line_2 = EXCLUDED.addr_line_2,
+	addr_line_3 = EXCLUDED.addr_line_3,
+	city = EXCLUDED.city;
+
+TRUNCATE TABLE public.subset_address_stage;
 
 
 -- office
