@@ -18,6 +18,8 @@
 import requests
 from flask import current_app
 
+from business_filer.exceptions import QueueException
+
 from .account_service import AccountService
 
 
@@ -30,7 +32,7 @@ class NaicsService:
         naics_url = current_app.config.get("NAICS_API_URL")
         token = AccountService.get_bearer_token()
         if not token:
-            raise Exception("Failed to get token for naics call")
+            raise QueueException("Failed to get token for naics call")
         response = requests.get(naics_url + "/" + naics_code, headers={
             "Content-Type": "application/json",
             "Authorization": "Bearer " + token

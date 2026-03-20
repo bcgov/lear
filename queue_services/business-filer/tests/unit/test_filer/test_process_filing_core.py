@@ -96,7 +96,7 @@ def test_process_filing_locked(app, session, mocker):
             try:
                 process_filing(filing_msg)
                 return "SUCCESS"
-            except Exception as e:
+            except Exception:
                 import traceback
                 return traceback.format_exc()
 
