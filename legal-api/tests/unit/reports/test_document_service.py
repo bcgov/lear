@@ -23,6 +23,7 @@ import pytest
 
 from legal_api.models import Filing
 from legal_api.reports.document_service import DocumentService
+from legal_api.reports.report import ReportMeta
 from tests.unit.models import factory_business, factory_completed_filing
 from registry_schemas.example_data import FILING_TEMPLATE
 
@@ -241,6 +242,56 @@ TEST_BUSINESS_UPDATE_DATA = [
     ("Static 1", DOCS_STATIC1, DRS_STATIC1, None, None, None, None, "documentClass=COOP&drsId=DS0000101630", META_MODERN, 233791),
     ("Static 2", DOCS_STATIC2, DRS_STATIC2, None, None, None, None, "documentClass=CORP&drsId=DS0000100741", META_MODERN, 155753),
 ]
+# testdata pattern is ({has_data}, {report_key}, {report_type})
+TEST_REPORT_META_DATA = [
+    (False, "JUNK", None),
+    (True, "amalgamationApplication", "FILING"),
+    (True, "certificateOfAmalgamation", "CERT"),
+    (True, "certificateOfIncorporation", "CERT"),
+    (True, "incorporationApplication", "FILING"),
+    (True, "noticeOfArticles", "NOA"),
+    (True, "alteration", "FILING"),
+    (True, "alterationNotice", "FILING"),
+    (True, "transition", "FILING"),
+    (True, "changeOfAddress", "FILING"),
+    (True, "changeOfDirectors", "FILING"),
+    (True, "annualReport", "FILING"),
+    (True, "changeOfName", "FILING"),
+    (True, "specialResolution", "FILING"),
+    (True, "specialResolutionApplication", "FILING"),
+    (True, "voluntaryDissolution", "FILING"),
+    (True, "certificateOfNameChange", "CERT"),
+    (True, "certificateOfNameCorrection", "CERT"),
+    (True, "certificateOfDissolution", "CERT"),
+    (True, "dissolution", "FILING"),
+    (True, "registration", "FILING"),
+    (True, "amendedRegistrationStatement", "FILING"),
+    (True, "correctedRegistrationStatement", "FILING"),
+    (True, "changeOfRegistration", "FILING"),
+    (True, "correction", "FILING"),
+    (True, "certificateOfRestoration", "CERT"),
+    (True, "letterOfConsent", "FILING"),
+    (True, "letterOfConsentAmalgamationOut", "FILING"),
+    (True, "letterOfAgmExtension", "FILING"),
+    (True, "letterOfAgmLocationChange", "FILING"),
+    (True, "continuationIn", "FILING"),
+    (True, "certificateOfContinuation", "CERT"),
+    (True, "noticeOfWithdrawal", "FILING"),
+    (True, "appointReceiver", "FILING"),
+    (True, "ceaseReceiver", "FILING"),
+    (True, "default", "FILING"),
+]
+
+
+@pytest.mark.parametrize("has_data,report_key,report_type", TEST_REPORT_META_DATA)
+def test_report_meta_type(session, has_data, report_key, report_type):
+    """Assert that DRS report type configuration is as expected."""
+    report_meta = ReportMeta.reports.get(report_key)
+    if not has_data:
+        assert not report_meta
+    else:
+        assert report_meta
+        assert report_meta.get("reportType") == report_type
 
 
 @pytest.mark.parametrize("desc,doc_data,drs_data,receipt,filing,noa,cert,static", TEST_FILING_UPDATE_DATA)

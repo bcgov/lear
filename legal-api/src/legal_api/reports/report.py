@@ -83,12 +83,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)
         business_identifier = self._business.identifier if self._business else self._filing.temp_reg
+        report_meta: dict = ReportMeta.reports.get(self._report_key)
+        if not report_meta:
+            report_meta = ReportMeta.reports.get("default")
+        report_type = report_meta.get("reportType")
         if business_identifier:
-            report_meta: dict = ReportMeta.reports.get(self._report_key)
             document, status = self._document_service.get_filing_report_by_filing_id(
                 business_identifier,
                 self._filing.id,
-                report_meta.get("reportType"))
+                report_type)
             if status == HTTPStatus.OK:
                 return current_app.response_class(
                     response=document,
@@ -96,6 +99,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     mimetype="application/pdf"
                 )
 
+        # Added "alteration" to ReportMeta, can these 2 lines be removed?
         if self._report_key == "alteration":
             self._report_key = "alterationNotice"
         headers = {
@@ -116,7 +120,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         response_drs = self._document_service.create_filing_report(
             business_identifier,
             self._filing,
-            ReportMeta.reports.get(self._report_key),
+            report_meta,
             response
         )
         return current_app.response_class(
@@ -1525,6 +1529,11 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "fileName": "noticeOfArticles",
             "reportType": ReportTypes.NOA.value
         },
+        "alteration": {
+            "filingDescription": "Alteration Notice",
+            "fileName": "alterationNotice",
+            "reportType": ReportTypes.FILING.value
+        },
         "alterationNotice": {
             "filingDescription": "Alteration Notice",
             "fileName": "alterationNotice",
@@ -1645,7 +1654,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "certificateOfRestoration": {
             "filingDescription": "Certificate of Restoration",
             "fileName": "certificateOfRestoration",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.CERT.value
         },
         "restoration": {
             "filingDescription": "Restoration Application",
@@ -1679,7 +1688,8 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "certificateOfContinuation": {
             "filingDescription": "Certificate of Continuation",
-            "fileName": "certificateOfContinuation"
+            "fileName": "certificateOfContinuation",
+            "reportType": ReportTypes.CERT.value
         },
         "noticeOfWithdrawal": {
             "filingDescription": "Notice of Withdrawal",
@@ -1694,6 +1704,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "ceaseReceiver": {
             "filingDescription": "Cease Receiver",
             "fileName": "ceaseReceiver",
+            "reportType": ReportTypes.FILING.value
+        },
+        "default": {  # Used as DRS fallback if no report key configuration found.
+            "fileName": "filing",
             "reportType": ReportTypes.FILING.value
         }
     }
