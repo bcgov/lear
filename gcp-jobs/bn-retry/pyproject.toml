@@ -14,7 +14,9 @@ dependencies = [
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
-    "psycopg2 (>=2.9.11,<3.0.0)"
+    "psycopg2 (>=2.9.11,<3.0.0)",
+    "cloud-sql-python-connector (>=1.18.0,<2.0.0)",
+    "pg8000 (>=1.31.2,<2.0.0)",
 ]
 
 

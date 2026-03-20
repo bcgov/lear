@@ -19,6 +19,8 @@ dependencies = [
     "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
     "flask-script (>=2.0.6,<3.0.0)",
     "psycopg2 (>=2.9.10,<3.0.0)",
+    "cloud-sql-python-connector (>=1.18.0,<2.0.0)",
+    "pg8000 (>=1.31.2,<2.0.0)",
 ]
 
 
