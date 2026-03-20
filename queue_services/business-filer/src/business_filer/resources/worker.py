@@ -95,7 +95,7 @@ def worker():
         process_filing(filing_message)
     except Exception as err:  # pylint: disable=broad-exception-caught
         current_app.logger.error(f"Error processing filing {filing_message}: {err}")
-        current_app.logger.debug(traceback.format_exc())
+        current_app.logger.debug(f"{filing_message}: {traceback.format_exc()}")
         return {"error": f"Unable to process filing: {filing_message}"}, HTTPStatus.INTERNAL_SERVER_ERROR
 
     # Completed
