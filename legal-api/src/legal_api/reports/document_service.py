@@ -335,7 +335,7 @@ class DocumentService:
         report_type: The report type: request a certified copy for NOA and FILING report types.
         return: The document binary data.
         """
-        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID, APP_PDF)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
         if report_type in (ReportTypes.FILING.value, ReportTypes.NOA.value):
@@ -387,7 +387,7 @@ class DocumentService:
         document_class: The DRS document class for the business to filter on.
         return: The document binary data.
         """
-        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID, APP_PDF)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_DOCUMENT_PATH.format(url=url, document_class=doc_class, drs_id=drs_id)
         response = requests.get(url=get_url, headers=headers)
@@ -478,7 +478,7 @@ class DocumentService:
         return doc_list
 
 
-    def _get_request_headers(self, account_id: str) -> dict:
+    def _get_request_headers(self, account_id: str, accept_mime_type = None) -> dict:
         """
         Get request headers for the DRS api call.
 
@@ -492,4 +492,6 @@ class DocumentService:
             "Content-Type": APP_PDF,
             "Authorization": BEARER + token
         }
+        if accept_mime_type:
+            headers["Accept"] = accept_mime_type
         return headers
