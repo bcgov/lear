@@ -68,6 +68,71 @@ Notes:
 
 ---
 
+## Resetting the derived COLIN view/materialized-view layer
+
+Use this when the **derived view/MV definitions** in `colin_corps_extract_postgres_views_ddl` have changed and you need to drop + recreate just that layer in an existing extract DB.
+
+Files:
+- Drop-plan generator: `data-tool/scripts/colin_corps_extract_generate_view_drop.sql`
+- Wrapper: `data-tool/reset_colin_extract_views.sh`
+- Reapply DDL: `data-tool/scripts/colin_corps_extract_postgres_views_ddl`
+
+Usage summary:
+```text
+./data-tool/reset_colin_extract_views.sh [options]
+
+Options:
+  --mode <plan|drop|reset>   plan=print SQL only (default)
+                             drop=execute generated drop SQL only
+                             reset=drop and then reapply views DDL
+  --db, --dbname <name>      target database name (default: colin-mig-corps-test)
+  --host <host>              PostgreSQL host (default: localhost)
+  --port <port>              PostgreSQL port (default: 5432)
+  --user <user>              PostgreSQL user (default: postgres)
+  --schema <schema>          target schema (default: public)
+  --psql-bin <path>          psql binary to use (default: psql or $PSQL_BIN)
+  --yes                      required for drop/reset execution
+  --allow-empty              allow drop/reset when zero allowlisted objects exist
+
+Environment defaults:
+  PGDATABASE=colin-mig-corps-test
+  PGUSER=postgres
+  PGHOST=localhost
+  PGPORT=5432
+  PGSCHEMA=public
+```
+
+Examples:
+```bash
+# Safe preview: print the generated dependency-aware drop plan only
+./data-tool/reset_colin_extract_views.sh \
+  --mode plan \
+  --db colin-mig-corps-test-subset \
+  --user postgres
+
+# Drop the allowlisted derived objects, then recreate them from the views DDL
+./data-tool/reset_colin_extract_views.sh \
+  --mode reset --yes \
+  --db colin-mig-corps-test-subset \
+  --user postgres
+
+# If the derived objects are already absent and you only want to recreate them,
+# add --allow-empty explicitly.
+./data-tool/reset_colin_extract_views.sh \
+  --mode reset --yes --allow-empty \
+  --db colin-mig-corps-test-subset \
+  --user postgres
+```
+
+Safety rules:
+- Only the COLIN-owned allowlisted views/materialized views are targeted.
+- The generator **does not use `CASCADE`**.
+- The generator **fails** if an unexpected non-allowlisted view/materialized view depends on a COLIN-owned object.
+- `reset` mode currently supports only schema `public` because `colin_corps_extract_postgres_views_ddl` is not schema-qualified.
+- For **data-only** changes, prefer `REFRESH MATERIALIZED VIEW` rather than drop/recreate.
+
+---
+
 ## Subset refresh / subset load (corp-id list; 10k+ supported)
 
 This workflow is for when you want to:
