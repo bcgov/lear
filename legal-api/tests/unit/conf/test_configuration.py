@@ -90,3 +90,69 @@ def test_prod_config_jwks_cache(monkeypatch):  # pylint: disable=missing-docstri
     monkeypatch.setenv(key, 'ack')
     reload(config)
     assert config.ProdConfig().JWT_OIDC_JWKS_CACHE_TIMEOUT == 300
+
+
+def _reload_prod_config(monkeypatch, **env):
+    keys_to_reset = (
+        "CLOUDSQL_INSTANCE_CONNECTION_NAME",
+        "DATABASE_UNIX_SOCKET",
+        "DATABASE_USERNAME",
+        "DATABASE_PASSWORD",
+        "DATABASE_NAME",
+        "DATABASE_HOST",
+        "DATABASE_PORT",
+    )
+
+    for key in keys_to_reset:
+        monkeypatch.delenv(key, raising=False)
+
+    for key, value in env.items():
+        monkeypatch.setenv(key, value)
+
+    reload(config)
+    return config.ProdConfig()
+
+
+def test_prod_config_prefers_cloudsql_iam(monkeypatch):
+    prod_config = _reload_prod_config(
+        monkeypatch,
+        CLOUDSQL_INSTANCE_CONNECTION_NAME="project:region:instance",
+        DATABASE_USERNAME="iam-user",
+        DATABASE_NAME="legal",
+        DATABASE_PASSWORD="ignored",
+        DATABASE_HOST="ignored",
+        DATABASE_PORT="5432",
+    )
+
+    assert prod_config.SQLALCHEMY_DATABASE_URI == "postgresql+pg8000://"
+    assert callable(prod_config.SQLALCHEMY_ENGINE_OPTIONS["creator"])
+
+
+def test_prod_config_falls_back_to_unix_socket(monkeypatch):
+    prod_config = _reload_prod_config(
+        monkeypatch,
+        DATABASE_USERNAME="user",
+        DATABASE_PASSWORD="pass",
+        DATABASE_NAME="legal",
+        DATABASE_UNIX_SOCKET="/cloudsql/project:region:instance",
+    )
+
+    assert (
+        prod_config.SQLALCHEMY_DATABASE_URI
+        == "postgresql+psycopg2://user:pass@/legal?host=/cloudsql/project:region:instance"
+    )
+    assert not hasattr(prod_config, "SQLALCHEMY_ENGINE_OPTIONS")
+
+
+def test_prod_config_falls_back_to_host_connection(monkeypatch):
+    prod_config = _reload_prod_config(
+        monkeypatch,
+        DATABASE_USERNAME="user",
+        DATABASE_PASSWORD="pass",
+        DATABASE_NAME="legal",
+        DATABASE_HOST="db.example",
+        DATABASE_PORT="6543",
+    )
+
+    assert prod_config.SQLALCHEMY_DATABASE_URI == "postgresql://user:pass@db.example:6543/legal"
+    assert not hasattr(prod_config, "SQLALCHEMY_ENGINE_OPTIONS")
