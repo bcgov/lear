@@ -100,7 +100,7 @@ def get_filing_types(legal_filings: dict):
 def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
     """Render the filings contained in the submission."""
     if not (filing_submission := db.session.query(Filing)
-                                    .with_for_update()
+                                    .with_for_update(nowait=True)
                                     .filter_by(id=filing_message.filing_identifier)
                                     .first()
     ):

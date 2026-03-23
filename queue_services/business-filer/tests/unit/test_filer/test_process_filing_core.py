@@ -107,5 +107,10 @@ def test_process_filing_locked(app, session, mocker):
         res1 = f1.result()
         res2 = f2.result()
 
-    assert res1 == "SUCCESS", f"Thread 1 failed with: {res1}"
-    assert res2 == "SUCCESS", f"Thread 2 failed with: {res2}"
+    results = [res1, res2]
+    
+    success_count = sum(1 for r in results if r == "SUCCESS")
+    error_count = sum(1 for r in results if "OperationalError" in r)
+    
+    assert success_count == 1, f"Expected exactly one thread to succeed, got: {results}"
+    assert error_count == 1, f"Expected exactly one thread to hit lock timeout (OperationalError), got: {results}"
