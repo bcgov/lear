@@ -928,17 +928,24 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             mailing_addr_id = Address.create_new_address(
                 cursor=cursor, address_info=mailing_address, corp_num=corp_num)
 
+        if filed_by := filing.header.get('filedBy'):
+            last_name = filed_by.get('lastName')
+            first_name = filed_by.get('firstName')
+            if not first_name and not last_name:
+                last_name = filed_by.get('userName')  # if no names, use userName for last name
+
         submitting_party_query = \
             """
-            insert into submitting_party (event_id, mailing_addr_id, last_nme)
-            values (:event_id, :mailing_addr_id, :last_nme)
+            insert into submitting_party (event_id, mailing_addr_id, last_nme, first_nme)
+            values (:event_id, :mailing_addr_id, :last_nme, :first_nme)
             """
 
         cursor.execute(
             submitting_party_query,
             event_id=filing.event_id,
             mailing_addr_id=mailing_addr_id,
-            last_nme=filing.get_certified_by()[:20]
+            last_nme=last_name[:20],
+            first_nme=first_name[:20]
         )
 
     # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
