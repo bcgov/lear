@@ -13,11 +13,12 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
 _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
+_SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 
 def _resolve_master_script_path(mode: str, out: str | None) -> Path:
     if out:
         return Path(out).expanduser().resolve()
-    return (_GENERATED_DIR / f'subset_refresh.sql').resolve()
+    return _SUBSET.resolve()
 
 def _run_cmd(argv: list[str], env: dict[str, str] | None = None) -> None:
     r = subprocess.run(argv, cwd=str(_REPO_ROOT), capture_output=False, text=True, env=env)
@@ -91,8 +92,9 @@ def run_cprd_subset_extract_generator(
     ]
     if pg_fastload:
         argv.append('--pg-fastload')
-    if out is not None:
-        argv.extend(['--out', str(Path(out).expanduser().resolve())])
+    out_path = Path(out).expanduser().resolve() if out is not None else _SUBSET.resolve()
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    argv.extend(['--out', str(out)])
     
     return subprocess.run(
         argv,
@@ -148,7 +150,7 @@ def extract_pull_flow(
     print(f'generator completed successfully')
 
     if run_dbschemacli:
-        master_script = _resolve_master_script_path(mode=mode, out=out)
+        master_script = _resolve_master_script_path(out=out)
         run_result = run_dbschemacli_task(
             master_script=str(master_script),
             dbschemacli_cmd=dbschemacli_cmd,
