@@ -289,6 +289,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
+        self._set_corp_flag(filing)
 
         filing["enable_new_ben_statements"] = flags.is_on("enable-new-ben-statements")
         filing["enable_sandbox"] = flags.is_on("enable-sandbox")
@@ -358,6 +359,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_special_resolution(filing)
         elif self._report_key == "specialResolutionApplication":
             self._format_special_resolution_application(filing, "alteration")
+
+    def _set_corp_flag(self, filing):
+        """Set a flag indicating whether the entity is a corporation."""
+        if self._business:
+            legal_type = self._business.legal_type
+        else:
+            filing_json = self._filing.filing_json.get("filing", {})
+            filing_type = self._filing.filing_type
+            legal_type = filing_json.get(filing_type, {}).get("nameRequest", {}).get("legalType")
+        filing["business"]["isCorp"] = legal_type in Business.CORPS
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
