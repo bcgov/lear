@@ -107,8 +107,11 @@ class tmpl_TemplateSpec:
 
 @dataclass(frozen=True)
 class tmpl_TemplateBundle:
+    pg_acquire_advisory_lock: tmpl_TemplateSpec
+    pg_release_advisory_lock: tmpl_TemplateSpec
     pg_prepare_address_stage: tmpl_TemplateSpec
     pg_cleanup_address_stage: tmpl_TemplateSpec
+    pg_cleanup_orphan_children: tmpl_TemplateSpec
     disable_triggers: tmpl_TemplateSpec
     enable_triggers: tmpl_TemplateSpec
     pg_boolean_casts: tmpl_TemplateSpec
@@ -283,6 +286,14 @@ def sql_render_pg_session_probe(label: str) -> str:
 def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     subset_dir = repo_root / "data-tool" / "scripts" / "subset"
 
+    pg_acquire_advisory_lock = tmpl_TemplateSpec(
+        name="subset_pg_acquire_advisory_lock",
+        path=subset_dir / "subset_pg_acquire_advisory_lock.sql",
+    )
+    pg_release_advisory_lock = tmpl_TemplateSpec(
+        name="subset_pg_release_advisory_lock",
+        path=subset_dir / "subset_pg_release_advisory_lock.sql",
+    )
     pg_prepare_address_stage = tmpl_TemplateSpec(
         name="subset_pg_prepare_address_stage",
         path=subset_dir / "subset_pg_prepare_address_stage.sql",
@@ -290,6 +301,10 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     pg_cleanup_address_stage = tmpl_TemplateSpec(
         name="subset_pg_cleanup_address_stage",
         path=subset_dir / "subset_pg_cleanup_address_stage.sql",
+    )
+    pg_cleanup_orphan_children = tmpl_TemplateSpec(
+        name="subset_pg_cleanup_orphan_children",
+        path=subset_dir / "subset_pg_cleanup_orphan_children.sql",
     )
     disable_triggers = tmpl_TemplateSpec(
         name="subset_disable_triggers",
@@ -335,8 +350,11 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     )
 
     return tmpl_TemplateBundle(
+        pg_acquire_advisory_lock=pg_acquire_advisory_lock,
+        pg_release_advisory_lock=pg_release_advisory_lock,
         pg_prepare_address_stage=pg_prepare_address_stage,
         pg_cleanup_address_stage=pg_cleanup_address_stage,
+        pg_cleanup_orphan_children=pg_cleanup_orphan_children,
         disable_triggers=disable_triggers,
         enable_triggers=enable_triggers,
         pg_boolean_casts=pg_boolean_casts,
@@ -604,6 +622,9 @@ def gen_build_master_script_inline(
     lines.append("vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'")
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
+    lines.append("-- Serialize subset runs on this target DB.")
+    lines.append(f"execute {templates.pg_acquire_advisory_lock.path.as_posix()}")
+    lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
     lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
@@ -620,6 +641,10 @@ def gen_build_master_script_inline(
     lines.append("select 't'::varchar::boolean;")
     lines.append("select 'f'::bpchar::boolean;")
     lines.append("")
+    if cfg.mode == cfg_GenerationMode.REFRESH:
+        lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
+        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
+        lines.append("")
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
     _gen_emit_refresh_fk_note(lines, cfg=cfg)
@@ -658,6 +683,9 @@ def gen_build_master_script_inline(
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
     lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
+    lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
@@ -693,6 +721,9 @@ def gen_build_master_script_vset(
     lines.append("vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'")
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
+    lines.append("-- Serialize subset runs on this target DB.")
+    lines.append(f"execute {templates.pg_acquire_advisory_lock.path.as_posix()}")
+    lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
     lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
@@ -709,9 +740,17 @@ def gen_build_master_script_vset(
     lines.append("select 't'::varchar::boolean;")
     lines.append("select 'f'::bpchar::boolean;")
     lines.append("")
+    if cfg.mode == cfg_GenerationMode.REFRESH:
+        lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
+        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
+        lines.append("")
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
     _gen_emit_refresh_fk_note(lines, cfg=cfg)
+    if cfg.mode == cfg_GenerationMode.REFRESH:
+        lines.append("-- Cleanup stale orphan child rows before chunked refresh deletes.")
+        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
+        lines.append("")
 
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
@@ -771,6 +810,9 @@ def gen_build_master_script_vset(
 
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
+    lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
     lines.append("")
 
     if cfg.pg_fastload:
@@ -968,8 +1010,11 @@ def run(cfg: cfg_GenerationConfig) -> int:
 
     # Ensure the execute-only templates exist too (even though we don't render them).
     for spec in (
+        templates.pg_acquire_advisory_lock,
+        templates.pg_release_advisory_lock,
         templates.pg_prepare_address_stage,
         templates.pg_cleanup_address_stage,
+        templates.pg_cleanup_orphan_children,
         templates.disable_triggers,
         templates.enable_triggers,
         templates.pg_boolean_casts,
@@ -1092,6 +1137,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
             print(" - cars* tables will NOT be refreshed (--no-cars was set).")
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
+        print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
         print(" - Address loads use shared staging table public.subset_address_stage and merge into public.address by addr_id.")
         print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to create/drop that helper table.")
         if cfg.pg_debug_session_probes:
@@ -1100,6 +1146,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
             print("   - probes confirm master/nested execute session context; DbSchemaCLI transfer writer sessions may still differ.")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             print(" - refresh preserves processing/tracking rows while deleting/reloading corporation/event rows.")
+            print("   - refresh also pre-cleans orphan event/corp-party child rows before entering the trigger-suppressed window.")
             if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
                 print("   - table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables.")
                 print("   - table_triggers changes table state globally while the refresh runs; use it against a quiesced extract DB with sufficient privileges.")
@@ -1143,6 +1190,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
     print(" - Prefer --render-mode inline for faster runs (inline generates static SQL per chunk).")
     print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
     print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
+    print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
     print(" - Address loads use shared staging table public.subset_address_stage and merge into public.address by addr_id.")
     print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to create/drop that helper table.")
     if cfg.pg_debug_session_probes:
@@ -1151,6 +1199,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
         print("   - probes confirm master/nested execute session context; DbSchemaCLI transfer writer sessions may still differ.")
     if cfg.mode == cfg_GenerationMode.REFRESH:
         print(" - refresh preserves processing/tracking rows while deleting/reloading corporation/event rows.")
+        print("   - refresh also pre-cleans orphan event/corp-party child rows that can survive parent-keyed deletes.")
         if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
             print("   - table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables.")
             print("   - table_triggers changes table state globally while the refresh runs; use it against a quiesced extract DB with sufficient privileges.")

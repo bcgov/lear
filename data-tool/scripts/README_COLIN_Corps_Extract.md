@@ -151,6 +151,8 @@ Core templates (always used in subset workflow):
 - `data-tool/scripts/subset/subset_enable_triggers.sql`
 - `data-tool/scripts/subset/subset_delete_chunk.sql`
 - `data-tool/scripts/subset/subset_transfer_chunk.sql`
+- `data-tool/scripts/subset/subset_pg_acquire_advisory_lock.sql` / `subset_pg_release_advisory_lock.sql` (serialize subset runs per target DB)
+- `data-tool/scripts/subset/subset_pg_cleanup_orphan_children.sql` (refresh-only orphan child cleanup before chunked deletes)
 - `data-tool/scripts/subset/subset_pg_boolean_casts.sql` (required so DbSchemaCLI can insert 't'/'f' into boolean columns)
 - `data-tool/scripts/subset/subset_pg_purge_bcomps_excluded.sql` (run once after transfer)
 
@@ -206,10 +208,12 @@ Generated scripts (gitignored by default):
    - `--pg-disable-method` currently accepts only `table_triggers` and `replica_role`.
    - The actual generator default is `table_triggers`, not `replica_role`.
    - In refresh mode, preserved rows in `corp_processing`, `auth_processing`, `affiliation_processing`, and `colin_tracking` still reference `corporation` / `event`, so FK enforcement must stay suppressed across delete/reload. The generator now adds refresh-only trigger suppression for those preserved FK-owning tables when `--pg-disable-method table_triggers` is used.
+   - Subset load/refresh scripts now acquire a session-level Postgres advisory lock at the start and release it at the end so overlapping subset runs on the same target DB serialize instead of interleaving. The same lock key is also used by the full refresh script.
    - `table_triggers` changes table trigger state globally while the refresh runs, so use it against a quiesced/disposable extract DB and with a role that can disable the relevant triggers.
    - If you use `replica_role`, remember it is session-local. If FK errors still occur, verify `current_setting('session_replication_role')` inside the nested delete/purge scripts being executed by DbSchemaCLI.
    - `address` is treated as a shared/global table during subset refresh/load. The generator now prepares a helper staging table, transfers incoming Oracle addresses into it, and merges them into `public.address` by `addr_id` instead of deleting/reinserting address rows directly. The address extract also includes `notification_resend` references.
    - The helper stage table is `public.subset_address_stage`. Do not overlap subset runs against the same target DB, and ensure the runtime role can create/drop that helper table.
+   - Refresh mode now pre-cleans orphan event/corp-party child rows that can survive the parent-keyed delete phase from earlier failed/interleaved runs (for example a stale `filing` row whose parent `event` row is missing in target).
    - For diagnostics, add `--pg-debug-session-probes` (inline mode only). The generated SQL will print `pg_backend_pid()`, `current_user`, and `current_setting('session_replication_role')` in the master script and nested execute files so you can verify the master/nested `execute` session context during refresh. This does not directly instrument any separate DbSchemaCLI transfer writer sessions.
 
 3. Run the generated main script with DbSchemaCLI:
