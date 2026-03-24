@@ -55,9 +55,14 @@ def get_named_config(config_name: str = "production"):
 def _make_cloudsql_getconn():  # pragma: no cover
     from google.cloud.sql.connector import Connector, IPTypes
 
-    _connector = Connector()
+    _connector = None
 
     def getconn():
+        nonlocal _connector
+
+        if _connector is None:
+            _connector = Connector()
+
         return _connector.connect(
             os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
             "pg8000",
