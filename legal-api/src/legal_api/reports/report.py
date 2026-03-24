@@ -362,19 +362,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_corp_flag(self, filing):
         """Set a flag indicating whether the entity is a corporation."""
-        corp_legal_types = {
-            Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BC_ULC_COMPANY.value,
-            Business.LegalTypes.BC_CCC.value,
-            Business.LegalTypes.CONTINUE_IN.value,
-            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-            Business.LegalTypes.CCC_CONTINUE_IN.value,
-            Business.LegalTypes.ULC_CONTINUE_IN.value,
-        }
-        legal_type = filing.get("business", {}).get("legalType") or \
-            (self._business.legal_type if self._business else None)
-        filing["business"]["isCorp"] = legal_type in corp_legal_types
+        if self._business:
+            legal_type = self._business.legal_type
+        else:
+            filing_json = self._filing.filing_json.get("filing", {})
+            filing_type = self._filing.filing_type
+            legal_type = filing_json.get(filing_type, {}).get("nameRequest", {}).get("legalType")
+        filing["business"]["isCorp"] = legal_type in Business.CORPS
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(

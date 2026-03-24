@@ -415,3 +415,38 @@ def test_document_service_not_create_document(session, mock_doc_service, mocker)
         assert False
     except BusinessException as err:
         assert err.status_code == HTTPStatus.NOT_FOUND
+
+@pytest.mark.parametrize(
+    'test_name, identifier, entity_type, expected_is_corp',
+    [
+        # Corporation types - should be True
+        ('BC corp', 'BC1234567', 'BC', True),
+        ('BEN corp', 'BC1234567', 'BEN', True),
+        ('CC corp', 'BC1234567', 'CC', True),
+        ('ULC corp', 'BC1234567', 'ULC', True),
+        ('C continuation', 'C1234567', 'C', True),
+        ('CBEN continuation', 'C1234567', 'CBEN', True),
+        ('CCC continuation', 'C1234567', 'CCC', True),
+        ('CUL continuation', 'C1234567', 'CUL', True),
+        # Non-corporation types - should be False
+        ('CP cooperative', 'CP1234567', 'CP', False),
+        ('SP sole prop', 'FM1234567', 'SP', False),
+        ('GP partnership', 'FM1234567', 'GP', False),
+    ]
+)
+def test_set_corp_flag(session, test_name, identifier, entity_type, expected_is_corp):
+    """Assert _set_corp_flag correctly identifies corporation vs non-corporation types."""
+    report = create_report(
+        identifier=identifier,
+        entity_type=entity_type,
+        report_type='annualReport',
+        filing_type='annualReport',
+        template=ANNUAL_REPORT
+    )
+    report._populate_business_info_to_filing(report._filing, report._business)
+
+    filing = report._filing.filing_json['filing']
+    report._set_corp_flag(filing)
+
+    assert filing['business']['isCorp'] == expected_is_corp, \
+        f'{test_name}: expected isCorp={expected_is_corp} for legalType={entity_type}'
