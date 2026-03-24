@@ -8,6 +8,7 @@ from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
+from config import get_named_config
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -32,11 +33,12 @@ def require_file(path: str | Path, description: str) -> Path:
 
 
 def _reset_extract_postgres_db() -> None:
-    dbname = current_app.config.DATABASE_NAME_COLIN_MIGR
-    host = current_app.config.DATABASE_NAME_COLIN_MIGR
-    port = current_app.config.DATABASE_PORT_COLIN_MIGR
-    user = current_app.config.DATABASE_USERNAME_COLIN_MIGR
-    password = current_app.config.DATABASE_PASSWORD_COLIN_MIGR
+    cfg = get_named_config()
+    dbname = cfg.DATABASE_NAME_COLIN_MIGR
+    host = cfg.DATABASE_HOST_COLIN_MIGR
+    port = str(cfg.DATABASE_PORT_COLIN_MIGR)
+    user = cfg.DATABASE_USERNAME_COLIN_MIGR
+    password = cfg.DATABASE_PASSWORD_COLIN_MIGR
     
     require_file(_DEFAULT_DDL, 'Extract DDL File')
 
@@ -44,10 +46,10 @@ def _reset_extract_postgres_db() -> None:
     run_env = dict(os.environ)
     if password and 'PGPASSWORD' not in run_env:
         run_env['PGPASSWORD'] = password
-    terminate_sql = {
+    terminate_sql = (
         "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity"
          f"WHERE datname = {dbname} AND pid <> pg_backend_pid();"
-    }
+    )
     _run_cmd(['psql', *pg_flags, '-d', 'postgres', '-c', terminate_sql ], env=run_env)
     _run_cmd(['dropdb', *pg_flags, '-d', '--if-exists', '-c', dbname ], env=run_env)
     _run_cmd(['createdb', *pg_flags, '-d', '-T', 'template0', dbname ], env=run_env)
