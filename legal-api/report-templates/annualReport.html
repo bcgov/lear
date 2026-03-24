@@ -56,7 +56,9 @@
 
 [[directors.html]]
 {% endif %}
-[[certification.html]]
+{% if not business.isCorp %}
+  [[certification.html]]
+{% endif %}
 
       </div>
     </div>

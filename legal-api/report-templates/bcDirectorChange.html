@@ -33,7 +33,9 @@
     <div class="container">
       <div class="separator"></div>
       [[bc-director-change/directors.html]]
-      [[certification.html]]
+      {% if not business.isCorp %}
+        [[certification.html]]
+      {% endif %}
     </div>
   </body>
 </html>

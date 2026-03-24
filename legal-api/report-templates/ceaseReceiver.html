@@ -32,6 +32,8 @@
       <div class="container"><div class="separator"></div></div>
 
       [[receivers/receivers.html]]
-      [[certification.html]]
+      {% if not business.isCorp %}
+         [[certification.html]]
+      {% endif %}
    </body>
 </html>

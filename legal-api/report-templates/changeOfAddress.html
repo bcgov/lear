@@ -54,7 +54,9 @@
 
 [[addresses.html]]
 
-[[certification.html]]
+{% if not business.isCorp %}
+  [[certification.html]]
+{% endif %}
 
       </div>
     </div>

@@ -87,17 +87,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
         report_type = report_meta.get("reportType")
-        if business_identifier:
-            document, status = self._document_service.get_filing_report_by_filing_id(
-                business_identifier,
-                self._filing.id,
-                report_type)
-            if status == HTTPStatus.OK:
-                return current_app.response_class(
-                    response=document,
-                    status=status,
-                    mimetype="application/pdf"
-                )
+        # if business_identifier:
+        #     document, status = self._document_service.get_filing_report_by_filing_id(
+        #         business_identifier,
+        #         self._filing.id,
+        #         report_type)
+        #     if status == HTTPStatus.OK:
+        #         return current_app.response_class(
+        #             response=document,
+        #             status=status,
+        #             mimetype="application/pdf"
+        #         )
 
         # Added "alteration" to ReportMeta, can these 2 lines be removed?
         if self._report_key == "alteration":
@@ -289,6 +289,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
+        self._set_corp_flag(filing)
 
         filing["enable_new_ben_statements"] = flags.is_on("enable-new-ben-statements")
         filing["enable_sandbox"] = flags.is_on("enable-sandbox")
@@ -358,6 +359,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_special_resolution(filing)
         elif self._report_key == "specialResolutionApplication":
             self._format_special_resolution_application(filing, "alteration")
+
+    def _set_corp_flag(self, filing):
+        """Set a flag indicating whether the entity is a corporation."""
+        corp_legal_types = {
+            Business.LegalTypes.BCOMP.value,    
+            Business.LegalTypes.COMP.value,      
+            Business.LegalTypes.BC_ULC_COMPANY.value,
+            Business.LegalTypes.BC_CCC.value, 
+            Business.LegalTypes.CONTINUE_IN.value,  
+            Business.LegalTypes.BCOMP_CONTINUE_IN.value,
+            Business.LegalTypes.CCC_CONTINUE_IN.value,
+            Business.LegalTypes.ULC_CONTINUE_IN.value,
+        }
+        legal_type = filing.get("business", {}).get("legalType") or \
+            (self._business.legal_type if self._business else None)
+        filing["business"]["isCorp"] = legal_type in corp_legal_types     
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
