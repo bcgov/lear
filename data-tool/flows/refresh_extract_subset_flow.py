@@ -1,40 +1,83 @@
 import argparse
+import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
-
+from flask import current_app
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
+_DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
 
 def _resolve_master_script_path(mode: str, out: str | None) -> Path:
     if out:
-        return Path(out).expanduser().resolve
+        return Path(out).expanduser().resolve()
     return (_GENERATED_DIR / f'subset_{mode}.sql').resolve()
+
+def _run_cmd(argv: list[str], env: dict[str, str] | None = None) -> None:
+    r = subprocess.run(argv, cwd=str(_REPO_ROOT), capture_output=False, text=True, env=env)
+    if r.returncode != 0:
+        raise RuntimeError(f'command failed ({r.returncode}): {" ".join(argv)}')
+    
+def require_file(path: str | Path, description: str) -> Path:
+    """File Not Found Error"""
+    resolved = Path(path).expanduser().resolve()
+    if not resolved.is_file():
+        raise FileNotFoundError(f'{description} not found (expected a file): {resolved}')
+    return resolved
+
+
+def _reset_extract_postgres_db() -> None:
+    dbname = current_app.config.DATABASE_NAME_COLIN_MIGR
+    host = current_app.config.DATABASE_NAME_COLIN_MIGR
+    port = current_app.config.DATABASE_PORT_COLIN_MIGR
+    user = current_app.config.DATABASE_USERNAME_COLIN_MIGR
+    password = current_app.config.DATABASE_PASSWORD_COLIN_MIGR
+    
+    require_file(_DEFAULT_DDL, 'Extract DDL File')
+
+    pg_flags = ['-h', host, '-p', str(port), '-U', user]
+    run_env = dict(os.environ)
+    if password and 'PGPASSWORD' not in run_env:
+        run_env['PGPASSWORD'] = password
+    terminate_sql = {
+        "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity"
+         f"WHERE datname = {dbname} AND pid <> pg_backend_pid();"
+    }
+    _run_cmd(['psql', *pg_flags, '-d', 'postgres', '-c', terminate_sql ], env=run_env)
+    _run_cmd(['dropdb', *pg_flags, '-d', '--if-exists', '-c', dbname ], env=run_env)
+    _run_cmd(['createdb', *pg_flags, '-d', '-T', 'template0', dbname ], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str[_DEFAULT_DDL] ], env=run_env)
+
+@task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
+def cleanup_extract_postgres_db() -> None:
+    _reset_extract_postgres_db()
 
 @task(name='Run-CPRD-Subset-Generator', cache_policy=NO_CACHE)
 def run_cprd_subset_extract_generator(
     corp_file: str,
-    mode: str = 'load',
-    chunk_size: int = 500,
-    threads: int = 4,
-    pg_fastload: bool = False,
-    pg_disabled_method: str = 'replica_role',
-    out: str | None = None
+    mode: str ,
+    chunk_size: int,
+    threads: int,
+    pg_fastload: bool,
+    pg_disabled_method: str,
+    out: str | None,
+    reset_extract_postgres: bool,
+    run_dbschemacli: bool,
+    dbschemacli_cmd: str,
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
     """
-    if not _SCRIPT_PATH.exists():
-        raise FileNotFoundError(
-            f'CPRD subset extract script not found: {_SCRIPT_PATH}'
-        )
-    corp_path = Path(corp_file).expanduser().resolve()
-    if not corp_path.exists():
-        raise FileNotFoundError(f'Corp file not found: {corp_path}')
+    if reset_extract_postgres:
+        reset_extract_postgres()
+
+    require_file(_SCRIPT_PATH, 'Generated script')
+    corp_path =require_file(corp_file, 'Corp list file')
     
     argv = [
         sys.executable,
