@@ -17,7 +17,7 @@ _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postg
 def _resolve_master_script_path(mode: str, out: str | None) -> Path:
     if out:
         return Path(out).expanduser().resolve()
-    return (_GENERATED_DIR / f'subset_{mode}.sql').resolve()
+    return (_GENERATED_DIR / f'subset_refresh.sql').resolve()
 
 def _run_cmd(argv: list[str], env: dict[str, str] | None = None) -> None:
     r = subprocess.run(argv, cwd=str(_REPO_ROOT), capture_output=False, text=True, env=env)
