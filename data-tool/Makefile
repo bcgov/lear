@@ -115,7 +115,7 @@ run-colin-freeze:  ## Run colin freeze flow
 
 run-extract-load:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)"
+	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
