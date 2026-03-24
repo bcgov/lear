@@ -5,6 +5,12 @@ vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 
 connect cprd_pg;
 
+-- Serialize COLIN extract refreshes on this target DB so subset/full runs cannot overlap.
+SELECT pg_advisory_lock(
+    hashtext('lear:data-tool:colin_subset_extract'),
+    hashtext('subset_run')
+);
+
 learn schema public;
 
 
@@ -1524,3 +1530,9 @@ ALTER TABLE share_struct_cls ENABLE TRIGGER ALL;
 ALTER TABLE notification ENABLE TRIGGER ALL;
 ALTER TABLE notification_resend ENABLE TRIGGER ALL;
 ALTER TABLE party_notification ENABLE TRIGGER ALL;
+
+-- Release COLIN extract refresh advisory lock.
+SELECT pg_advisory_unlock(
+    hashtext('lear:data-tool:colin_subset_extract'),
+    hashtext('subset_run')
+);
