@@ -62,22 +62,16 @@ def cleanup_extract_postgres_db() -> None:
 @task(name='Run-CPRD-Subset-Generator', cache_policy=NO_CACHE)
 def run_cprd_subset_extract_generator(
     corp_file: str,
-    mode: str ,
+    mode: str,
     chunk_size: int,
     threads: int,
     pg_fastload: bool,
-    pg_disabled_method: str,
-    out: str | None,
-    reset_extract_postgres: bool,
-    run_dbschemacli: bool,
-    dbschemacli_cmd: str,
+    pg_disable_method: str,
+    out: str | None
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
     """
-    if reset_extract_postgres:
-        reset_extract_postgres()
-
     require_file(_SCRIPT_PATH, 'Generated script')
     corp_path =require_file(corp_file, 'Corp list file')
     
@@ -93,7 +87,7 @@ def run_cprd_subset_extract_generator(
         '--threads',
         str(threads),
         '--pg-disable-method',
-        pg_disabled_method,
+        pg_disable_method,
     ]
     if pg_fastload:
         argv.append('--pg-fastload')
@@ -117,7 +111,7 @@ def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli
         [dbschemacli_cmd, str(master_script_path)],
         cwd=str(_REPO_ROOT),
         capture_output=False,
-        text=True
+        text=True,
     )
 
 @flow(name='Extract-Subset-Flow', log_prints=True, persist_result=False)
@@ -131,10 +125,14 @@ def extract_pull_flow(
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
+    reset_extract_postgres: bool = False,
 ) -> None:
     """
     Generate files
     """
+    if reset_extract_postgres:
+        cleanup_extract_postgres_db()
+
     print(f'Running CPRD subset extract generator {corp_file}')
     result = run_cprd_subset_extract_generator(
         corp_file=corp_file,
@@ -142,7 +140,7 @@ def extract_pull_flow(
         chunk_size=chunk_size,
         threads=threads,
         pg_fastload=pg_fastload,
-        pg_disabled_method=pg_disable_method,
+        pg_disable_method=pg_disable_method,
         out=out,
     )
     if result.returncode != 0:
@@ -171,15 +169,5 @@ if __name__ == '__main__':
     p.add_argument('--out', default=None, help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_true')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
-    args = p.parse_args()
-    extract_pull_flow(
-        corp_file=args.corp_file,
-        mode=args.mode,
-        chunk_size=args.chunk_size,
-        threads=args.threads,
-        pg_fastload=args.pg_fastload,
-        pg_disable_method=args.pg_disable_method,
-        out=args.out,
-        run_dbschemacli=args.run_dbschemacli,
-        dbschemacli_cmd=args.dbschemacli_cmd,
-    )
+    p.add_argument('--reset-extract-postgres', action='store_true')
+    extract_pull_flow(**vars(p.parse_args()))
