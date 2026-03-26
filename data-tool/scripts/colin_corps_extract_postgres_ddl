@@ -1005,6 +1005,12 @@ create table if not exists colin_tracking
 alter table colin_tracking
     owner to postgres;
 
+create table if not exists colin_extract_version (
+    extracted_at timestamp with time zone not null default current_timestamp
+);
+alter table colin_tracking
+    owner to postgres;
+
 create table if not exists corps_with_third_party
 (
     corp_num     text,
@@ -1229,3 +1235,5 @@ CREATE INDEX IF NOT EXISTS ix_mig_corp_batch_corp_num
 -- (batch ordering/filtering helper; useful if planner chooses to drive from mig_batch)
 CREATE INDEX IF NOT EXISTS ix_mig_batch_target_env_dates
 	ON mig_batch (target_environment, migrated_date DESC NULLS LAST, requested_date DESC NULLS LAST, created_date DESC NULLS LAST, id DESC);
+
+

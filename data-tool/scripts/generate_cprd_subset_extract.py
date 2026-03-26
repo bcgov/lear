@@ -630,6 +630,9 @@ def gen_build_master_script_inline(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
+    lines.append("insert into colin_extract_version (extracted_at) values (current_timestamp);")
+    lines.append("")
+
     if cfg.pg_fastload:
         lines.append("-- Postgres fast-load mode (session-level settings)")
         lines.append(f"execute {templates.pg_fastload_begin.path.as_posix()}")
@@ -727,6 +730,9 @@ def gen_build_master_script_vset(
     lines.append("-- Prepare shared address staging table before learning schema")
     lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
+    lines.append("")
+
+    lines.append("insert into colin_extract_version (extracted_at) values (current_timestamp);")
     lines.append("")
 
     if cfg.pg_fastload:
