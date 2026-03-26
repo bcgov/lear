@@ -112,10 +112,11 @@ run-tombstone-verify: ## Run corp tombstone verify flow
 run-colin-freeze:  ## Run colin freeze flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/colin_freeze_flow.py
-
+OUT ?=
+RESET_EXTRACT_POSTGRES ?=
 run-extract-load:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
+	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" $(if $(strip $(OUT)), --out "$(OUT)",) --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \

@@ -15,7 +15,7 @@ _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
 _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 
-def _resolve_master_script_path(mode: str, out: str | None) -> Path:
+def _resolve_master_script_path(out: str | None) -> Path:
     if out:
         return Path(out).expanduser().resolve()
     return _SUBSET.resolve()
@@ -35,11 +35,11 @@ def require_file(path: str | Path, description: str) -> Path:
 
 def _reset_extract_postgres_db() -> None:
     cfg = get_named_config()
-    dbname = cfg.DATABASE_NAME_COLIN_MIGR
-    host = cfg.DATABASE_HOST_COLIN_MIGR
-    port = str(cfg.DATABASE_PORT_COLIN_MIGR)
-    user = cfg.DATABASE_USERNAME_COLIN_MIGR
-    password = cfg.DATABASE_PASSWORD_COLIN_MIGR
+    dbname = cfg.DB_NAME_COLIN_MIGR
+    host = cfg.DB_HOST_COLIN_MIGR
+    port = str(cfg.DB_PORT_COLIN_MIGR)
+    user = cfg.DB_USER_COLIN_MIGR
+    password = cfg.DB_PASSWORD_COLIN_MIGR
     
     require_file(_DEFAULT_DDL, 'Extract DDL File')
 
@@ -47,14 +47,16 @@ def _reset_extract_postgres_db() -> None:
     run_env = dict(os.environ)
     if password and 'PGPASSWORD' not in run_env:
         run_env['PGPASSWORD'] = password
+    safe_db = str(dbname).replace("'", "''")
     terminate_sql = (
-        "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity"
-         f"WHERE datname = {dbname} AND pid <> pg_backend_pid();"
+        "SELECT pg_terminate_backend(pg_stat_activity.pid) "
+        "FROM pg_stat_activity "
+        f"WHERE datname = '{safe_db}' AND pid <> pg_backend_pid();"
     )
     _run_cmd(['psql', *pg_flags, '-d', 'postgres', '-c', terminate_sql ], env=run_env)
-    _run_cmd(['dropdb', *pg_flags, '-d', '--if-exists', '-c', dbname ], env=run_env)
-    _run_cmd(['createdb', *pg_flags, '-d', '-T', 'template0', dbname ], env=run_env)
-    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str[_DEFAULT_DDL] ], env=run_env)
+    _run_cmd(['dropdb', *pg_flags, '--maintenance-db=postgres', '--if-exists', dbname ], env=run_env)
+    _run_cmd(['createdb', *pg_flags, '--maintenance-db=postgres', '-T', 'template0', dbname ], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_DEFAULT_DDL) ], env=run_env)
 
 @task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
 def cleanup_extract_postgres_db() -> None:
@@ -127,7 +129,7 @@ def extract_pull_flow(
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
-    reset_extract_postgres: bool = False,
+    reset_extract_postgres: bool = True,
 ) -> None:
     """
     Generate files
@@ -171,5 +173,5 @@ if __name__ == '__main__':
     p.add_argument('--out', default=None, help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_true')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
-    p.add_argument('--reset-extract-postgres', action='store_true')
+    p.add_argument('--reset-extract-postgres', action='store_false')
     extract_pull_flow(**vars(p.parse_args()))
