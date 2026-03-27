@@ -1687,6 +1687,8 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
     filing = copy.deepcopy(FILING_HEADER)
     if authorization_received is not None:
         filing['filing']['header']['authorizationReceived'] = authorization_received
+    else:
+        filing['filing']['header'].pop('authorizationReceived', None)
         
     filing['filing']['incorporationApplication'] = INCORPORATION
     
@@ -1704,7 +1706,7 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
 
     if legal_type in Business.CORPS and expected_error:
         assert errors
-        assert errors[0]['error'] == 'Authorization received is required.'
+        assert errors[0]['error'] == 'Authorization received must be true to authorize the filing submission.'
         assert errors[0]['path'] == '/filing/header/authorizationReceived'
     else:
         assert errors == []
