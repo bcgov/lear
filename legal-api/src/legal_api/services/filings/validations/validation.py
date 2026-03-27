@@ -37,7 +37,7 @@ from .change_of_name import validate as con_validate
 from .change_of_officers import validate as coo_validate
 from .change_of_receivers import validate as cor_validate
 from .change_of_registration import validate as change_of_registration_validate
-from .common_validations import validate_certified_by
+from .common_validations import validate_authorization_received, validate_certified_by
 from .consent_amalgamation_out import validate as consent_amalgamation_out_validate
 from .consent_continuation_out import validate as consent_continuation_out_validate
 from .continuation_in import validate as continuation_in_validate
@@ -72,6 +72,10 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
     cert_errs = validate_certified_by(filing_json, business)
     if cert_errs:
         return Error(HTTPStatus.BAD_REQUEST, cert_errs)
+    
+    auth_received_errs = validate_authorization_received(filing_json, business)
+    if auth_received_errs:
+        return Error(HTTPStatus.BAD_REQUEST, auth_received_errs)
 
     if validate_staff_payment(filing_json) and flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
