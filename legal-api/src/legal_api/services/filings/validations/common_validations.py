@@ -1219,6 +1219,21 @@ def validate_certified_by(filing_json: dict, business: Business) -> list:
 
     return msg
 
+def validate_authorization_received(filing_json: dict, business: Business) -> list:
+    """Validate authorizationReceived field."""
+    msg = []
+
+    if business.legal_type not in Business.CORPS:
+        return msg  # authorizationReceived is only required for corporations
+
+    authorization_received = filing_json["filing"]["header"].get("authorizationReceived")
+
+    if not authorization_received:
+            msg.append({"error": "Authorization received is required.",
+                        "path": "/filing/header/authorizationReceived"})
+
+    return msg
+
 def validate_name_translation(filing_json: dict, filing_type: str) -> list:
     """Validate name translations fields."""
     msg = []

@@ -48,6 +48,7 @@ from legal_api.services.filings.validations.common_validations import (
     EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
     is_officer_proprietor_replace_valid,
+    validate_authorization_received,
     validate_certify_name,
     validate_certified_by,
     validate_court_order,
@@ -1674,3 +1675,36 @@ def test_share_series_max_number_of_shares_validation(session, max_shares, expec
     result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
     assert any(expected_error in e.get('error', '') for e in result)
 
+@pytest.mark.parametrize('legal_type', Business.CORPS + [
+    Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
+@pytest.mark.parametrize('authorization_received, expected_error', [
+    (True, False),
+    (False, True),
+    (None, True),
+])
+def test_validate_authorization_received(session, legal_type, authorization_received, expected_error):
+    """Test that authorizationReceived is enforced for Corps filings only."""
+    filing = copy.deepcopy(FILING_HEADER)
+    if authorization_received is not None:
+        filing['filing']['header']['authorizationReceived'] = authorization_received
+        
+    filing['filing']['incorporationApplication'] = INCORPORATION
+    
+    if legal_type == Business.LegalTypes.COOP:
+        identifier = 'CP1234567'
+    elif legal_type in [Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
+        identifier = 'FM1234567'
+        filing['filing']['registration'] = REGISTRATION
+    else:
+        identifier = 'BC1234567'
+
+    business = factory_business(identifier=identifier, entity_type=legal_type)
+
+    errors = validate_authorization_received(filing, business)
+
+    if legal_type in Business.CORPS and expected_error:
+        assert errors
+        assert errors[0]['error'] == 'Authorization received is required.'
+        assert errors[0]['path'] == '/filing/header/authorizationReceived'
+    else:
+        assert errors == []
