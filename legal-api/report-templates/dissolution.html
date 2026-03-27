@@ -42,7 +42,9 @@
             [[common/effectiveDate.html]]
             [[dissolution/custodianOfRecords.html]]
             [[dissolution/dissolutionStatement.html]]
-            [[certification.html]]
+            {% if not business.isCorp %}
+               [[certification.html]]
+            {% endif %}
          {% endif %}
       </div>
    </body>

@@ -112,6 +112,21 @@ class PdfService:
         return buffer
 
 
+    @classmethod
+    def create_certified_copy(cls, _bytes: bytes, data: RegistrarStampData):
+        """Create a certified copy"""
+        open_pdf_file = io.BytesIO(_bytes)
+        pdf_reader = PdfReader(open_pdf_file)
+        pdf_writer = PdfWriter()
+        pdf_writer.append_pages_from_reader(pdf_reader)
+        output_original_pdf = io.BytesIO()
+        pdf_writer.write(output_original_pdf)
+        output_original_pdf.seek(0)
+        registrars_stamp = cls.create_registrars_stamp(data)
+        certified_copy = cls.stamp_pdf(output_original_pdf, registrars_stamp, only_first_page=True)
+        return certified_copy
+
+
 def _write_text(can, text, line_height, x_margin, y_margin):
     """Write text lines into a canvas."""
     for line in text.splitlines():

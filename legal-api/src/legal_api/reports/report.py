@@ -477,12 +477,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["listOfDirectors"] = filing["changeOfDirectors"]
         else:
             filing["listOfDirectors"] = {
-                "directors": filing["annualReport"]["directors"]
+                "directors": filing["annualReport"].get("directors", [])
             }
-        # create helper lists of appointed and ceased directors
-        directors = self._format_directors(filing["listOfDirectors"]["directors"])
-        filing["listOfDirectors"]["directorsAppointed"] = [el for el in directors if "appointed" in el["actions"]]
-        filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
+
+        if filing["listOfDirectors"]["directors"]:
+            # create helper lists of appointed and ceased directors
+            directors = self._format_directors(filing["listOfDirectors"]["directors"])
+            filing["listOfDirectors"]["directorsAppointed"] = [el for el in directors if "appointed" in el["actions"]]
+            filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
 
     def _format_directors(self, directors):
         for director in directors:
