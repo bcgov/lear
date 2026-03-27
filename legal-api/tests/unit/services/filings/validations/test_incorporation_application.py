@@ -231,8 +231,8 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
     """Assert that incorporation offices can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, 
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
@@ -398,8 +398,8 @@ def test_validate_incorporation_addresses_whitespace(session, mocker, test_name,
     """Assert that incorporation offices can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True,
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
@@ -465,8 +465,8 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
     """Assert that incorporation name request can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True,
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
@@ -669,7 +669,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     """Assert that incorporation parties roles can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                                       'email': 'no_one@never.get', 'filingId': 1}
+                                       'authorizationReceived': True, 'email': 'no_one@never.get', 'filingId': 1}
     filing_json['filing']['business']['legalType'] = legal_type
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
@@ -833,7 +833,8 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
     """Assert that incorporation parties mailing address is not empty."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+                                       'authorizationReceived': True, 'email': 'no_one@never.get', 'filingId': 1, 
+                                       'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing']['business']['legalType'] = legal_type
@@ -1242,7 +1243,8 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
     """Assert that incorporation parties roles can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+                                       'authorizationReceived': True, 'email': 'no_one@never.get', 'filingId': 1, 
+                                       'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     base_officer = filing_json['filing'][incorporation_application_name]['parties'][0]['officer']
@@ -1562,7 +1564,8 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
     """Assert that validator validates share class correctly."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+                                       'authorizationReceived': True, 'email': 'no_one@never.get', 'filingId': 1, 
+                                       'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
@@ -1710,7 +1713,7 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     """Assert that validator validates cooperative documents correctly."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 'certifiedBy': 'full name',
-                                       'email': 'no_one@never.get', 'filingId': 1}
+                                       'authorizationReceived': True, 'email': 'no_one@never.get', 'filingId': 1}
     legal_type = 'CP'
     filing_json['filing']['business']['legalType'] = legal_type
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
@@ -1768,8 +1771,8 @@ def test_ia_court_order(session, mocker, test_name):
     """Assert that incorporation court order can be validated."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, 
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     if test_name == 'with_court_order':
@@ -1816,7 +1819,8 @@ def test_incorporation_application_share_class_series_validation(mocker, app, se
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, ''
+                                       'email': 'no_one@never.get', 'filingId': 1}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
 
@@ -1849,7 +1853,8 @@ def test_validate_incorporation_application_parties_delivery_address(mocker, app
     filing_json = copy.deepcopy(FILING_HEADER)
     filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True,
+                                       'email': 'no_one@never.get', 'filingId': 1}
 
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
 
@@ -1897,8 +1902,8 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     """Test validate phone number and / or extension if they are provided."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, 
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     if phone_number:
         filing_json['filing'][incorporation_application_name]['contactPoint']['phone'] = phone_number
@@ -1939,8 +1944,8 @@ def test_ia_email_validation(session, should_pass, email):
     """Test validate email format if provided."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, 
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = email
 
@@ -1965,8 +1970,8 @@ def test_ia_email_required_validation(session, email):
     """Test validate email is a required field."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, 
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
 
     filing_json['filing'][incorporation_application_name]['contactPoint']['email'] = email
 
@@ -1996,9 +2001,9 @@ def test_validate_name_translation(session, test_name, name_translation, expecte
     """Test validate name translation if provided."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1,
-                                       'effectiveDate': effective_date}
-    
+                                       'certifiedBy': 'full name', 'authorizationReceived': True, 
+                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
+
     filing_json['filing'][incorporation_application_name]['nameTranslations'] = name_translation
 
     # perform test
@@ -2031,6 +2036,7 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
         'name': incorporation_application_name,
         'date': '2019-04-08',
         'certifiedBy': 'fname mname lname',
+        'authorizationReceived': True,
         'email': 'test@email.com',
         'filingId': 1
     }
@@ -2091,7 +2097,8 @@ def test_coop_incorporation_does_not_validate_shares(session, mocker):
     """Assert that COOP incorporation does not call validate_share_structure."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': 'incorporationApplication', 'date': '2019-04-08',
-                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                       'certifiedBy': 'full name', 'authorizationReceived': True,
+                                       'email': 'no_one@never.get', 'filingId': 1}
     filing_json['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
     filing_json['filing']['incorporationApplication']['nameRequest']['legalType'] = Business.LegalTypes.COOP.value
 

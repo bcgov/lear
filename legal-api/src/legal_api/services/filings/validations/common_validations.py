@@ -1219,6 +1219,29 @@ def validate_certified_by(filing_json: dict, business: Business) -> list:
 
     return msg
 
+def validate_authorization_received(filing_json: dict, business: Business) -> list:
+    """Validate authorizationReceived field."""
+    msg = []
+    filing_type = filing_json["filing"]["header"].get("name")
+
+    if isinstance(business, Business):
+        legal_type = business.legal_type
+    elif filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
+        legal_type = filing_json["filing"].get("business", None).get("legalType")
+    else:
+        legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
+
+    if legal_type not in Business.CORPS:
+        return msg  # authorizationReceived is only required for corporations
+
+    authorization_received = filing_json["filing"]["header"].get("authorizationReceived")
+
+    if not authorization_received:
+            msg.append({"error": "Authorization received must be true to authorize the filing submission.",
+                        "path": "/filing/header/authorizationReceived"})
+
+    return msg
+
 def validate_name_translation(filing_json: dict, filing_type: str) -> list:
     """Validate name translations fields."""
     msg = []
