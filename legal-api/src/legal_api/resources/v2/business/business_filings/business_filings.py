@@ -66,7 +66,7 @@ from legal_api.services import (
 from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
-from legal_api.services.permissions import PermissionService
+from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
@@ -684,6 +684,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         }
         """
         json_input = client_request.get_json()
+        previous_filing_json = copy.deepcopy(filing.filing_json) if filing and filing.filing_json else None
         ListFilingResource.modify_filing_json(json_input, filing)
 
         if business_identifier.startswith("T"):
@@ -732,6 +733,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 ListFilingResource.link_now_and_withdrawn_filing(filing)
                 if business_identifier.startswith("T"):
                     filing.temp_reg = None
+
+            ListFilingResource._maybe_record_staff_completing_party_override(filing, user, previous_filing_json)
+
             filing.save()
         except BusinessException as err:
             return None, None, {"error": err.error}, err.status_code
@@ -778,6 +782,90 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         if resolution_content := filing_json["filing"].get("correction", {}).get("resolution", None):
             filing_json["filing"]["correction"]["resolution"] = Sanitizer().sanitize(resolution_content)
         return filing_json
+
+    @staticmethod
+    def _normalize_str(value: Optional[str]) -> str:
+        """Normalize a string for comparisons (strip + uppercase)."""
+        return (value or "").strip().upper()
+
+    @staticmethod
+    def _normalize_completing_party_snapshot(snapshot: Optional[dict]) -> dict:
+        """Normalize a completing party snapshot dict for stable comparisons."""
+        snapshot = snapshot or {}
+        return {
+            "firstName": ListFilingResource._normalize_str(snapshot.get("firstName")),
+            "middleName": ListFilingResource._normalize_str(snapshot.get("middleName")),
+            "lastName": ListFilingResource._normalize_str(snapshot.get("lastName")),
+            "email": ListFilingResource._normalize_str(snapshot.get("email"))
+        }
+
+    @staticmethod
+    def _get_completing_party_snapshot_from_filing_json(filing_json: dict) -> Optional[dict]:
+        """Extract completing party (first/middle/last/email) from a filing JSON."""
+        if not filing_json:
+            return None
+
+        try:
+            filing_type = filing_json["filing"]["header"]["name"]
+            parties = filing_json.get("filing", {}).get(filing_type, {}).get("parties", [])
+        except (TypeError, KeyError):
+            return None
+
+        for party in parties or []:
+            roles = party.get("roles", []) or []
+            if any((role.get("roleType") or "").lower().replace(" ", "_") == "completing_party" for role in roles):
+                officer = party.get("officer", {}) or {}
+                return {
+                    "firstName": str(officer.get("firstName") or "").strip(),
+                    "middleName": str(officer.get("middleName") or officer.get("middleInitial") or "").strip(),
+                    "lastName": str(officer.get("lastName") or "").strip(),
+                    "email": str(officer.get("email") or "").strip()
+                }
+
+        return None
+
+    @staticmethod
+    def _user_can_edit_completing_party() -> bool:
+        """Return True if the current caller is permitted to edit completing party fields."""
+        err = PermissionService.check_user_permission(
+            ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
+            message="Permission Denied: You do not have permission to edit the completing party."
+        )
+        return not bool(err)
+
+    @staticmethod
+    def _maybe_record_staff_completing_party_override(
+        filing: Filing,
+        user: User,
+        previous_filing_json: Optional[dict]
+    ) -> None:
+        """Persist a staff-authorized completing party snapshot in meta_data when staff edits it."""
+        if not filing or not user:
+            return
+
+        new_snapshot = ListFilingResource._get_completing_party_snapshot_from_filing_json(filing.filing_json)
+        if not new_snapshot:
+            return
+
+        old_snapshot = ListFilingResource._get_completing_party_snapshot_from_filing_json(previous_filing_json) \
+            if previous_filing_json else None
+
+        if (ListFilingResource._normalize_completing_party_snapshot(old_snapshot) ==
+                ListFilingResource._normalize_completing_party_snapshot(new_snapshot)):
+            return
+
+        if not ListFilingResource._user_can_edit_completing_party():
+            return
+
+        meta_data = copy.deepcopy(filing.meta_data) if filing.meta_data else {}
+        staff_overrides = meta_data.setdefault("staffOverrides", {})
+        staff_overrides["completingParty"] = {
+            "version": 1,
+            "updatedAt": datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc).isoformat(),
+            "updatedBy": user.id,
+            "snapshot": new_snapshot
+        }
+        filing.meta_data = meta_data
 
     @staticmethod
     def get_filing_types(business: Business, filing_json: dict):  # noqa: PLR0912
