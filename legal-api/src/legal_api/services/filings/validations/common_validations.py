@@ -341,6 +341,68 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
     return msg
 
 
+def _is_valid_currency(code: str) -> bool:
+    """Check if the currency code is a recognized ISO 4217 code."""
+    return pycountry.currencies.get(alpha_3=code) is not None
+
+
+def validate_share_currency(filing_json, filing_type, business=None):
+    """Validate share class currency codes are valid ISO 4217 codes.
+
+    Only validates share classes where hasParValue is true (currency is only
+    required/meaningful when par value is set).
+
+    Existing share classes with currency OTHER are allowed to pass through unchanged
+    when a business is provided and the incoming share class ID matches an existing
+    OTHER share class in the DB. New series under those classes are blocked.
+    """
+    share_classes = filing_json["filing"][filing_type] \
+        .get("shareStructure", {}).get("shareClasses", [])
+    msg = []
+
+    # Build lookup of existing OTHER share classes and their series by ID
+    existing_other_classes = {}
+    if business:
+        for sc in business.share_classes:
+            if sc.currency and sc.currency.upper() == "OTHER":
+                existing_series_ids = {s.id for s in sc.series}
+                existing_other_classes[sc.id] = existing_series_ids
+
+    for index, item in enumerate(share_classes):
+        if not item.get("hasParValue", False):
+            continue
+
+        currency = item.get("currency", None)
+        if not currency:
+            continue  # presence check handled by validate_shares()
+
+        err_path = f"/filing/{filing_type}/shareClasses/{index}"
+
+        # Allow grandfathered OTHER share classes to pass through
+        if currency.upper() == "OTHER":
+            share_class_id = item.get("id", None)
+            if share_class_id and share_class_id in existing_other_classes:
+                # Existing OTHER class allowed, but block new series
+                existing_series_ids = existing_other_classes[share_class_id]
+                for series_index, series in enumerate(item.get("series", [])):
+                    if series.get("id", None) not in existing_series_ids:
+                        msg.append({
+                            "error": "Cannot add new series under a share class with currency type OTHER.",
+                            "path": f"{err_path}/series/{series_index}"
+                        })
+                continue
+
+        # Reject invalid currency codes (includes OTHER on new/unmatched share classes)
+        if not _is_valid_currency(currency):
+            msg.append({
+                "error": f"Invalid currency for share class {item.get('name', '')}. "
+                         f"Currency must be a valid ISO 4217 code.",
+                "path": f"{err_path}/currency/"
+            })
+
+    return msg if msg else None
+
+
 def validate_court_order(court_order_path, court_order):
     """Validate the courtOrder data of the filing."""
     msg = []

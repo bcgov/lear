@@ -32,6 +32,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_names,
     validate_pdf,
     validate_permission_and_completing_party,
+    validate_share_currency,
     validate_phone_number,
     validate_share_structure,
 )
@@ -76,6 +77,9 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
 
     if legal_type in Business.CORPS:
         err = validate_share_structure(incorporation_json, filing_type, legal_type)
+        if err:
+            msg.extend(err)
+        err = validate_share_currency(incorporation_json, filing_type)
         if err:
             msg.extend(err)
 

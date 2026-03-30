@@ -70,10 +70,32 @@ def test_share_class_json(session):
         'hasParValue': share_class.par_value_flag,
         'parValue': share_class.par_value,
         'currency': share_class.currency,
+        'currencyAdditional': share_class.currency_additional,
         'hasRightsOrRestrictions': share_class.special_rights_flag,
         'series': []
     }
     assert share_class_json == share_class.json
+
+
+def test_share_class_json_with_currency_additional(session):
+    """Assert the json format of share class includes currencyAdditional."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    share_class = ShareClass(
+        name='Class 1 Shares',
+        priority=1,
+        max_share_flag=True,
+        max_shares=1000,
+        par_value_flag=True,
+        par_value=0.852,
+        currency='OTHER',
+        currency_additional='Bitcoin',
+        special_rights_flag=False,
+        business_id=business.id
+    )
+    share_class.save()
+    assert share_class.json['currency'] == 'OTHER'
+    assert share_class.json['currencyAdditional'] == 'Bitcoin'
 
 
 def test_invalid_share_quantity(session):

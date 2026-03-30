@@ -27,6 +27,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
+    validate_share_currency,
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
@@ -138,6 +139,10 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
     if filing_dict.get("filing", {}).get("correction", {}).get("shareStructure", None):
         err = validate_share_structure(filing_dict, filing_type, legal_type)
+        if err:
+            msg.extend(err)
+
+        err = validate_share_currency(filing_dict, filing_type, business)
         if err:
             msg.extend(err)
 

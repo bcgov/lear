@@ -28,6 +28,7 @@ from .common_validations import (
     validate_effective_date,
     validate_name_request,
     validate_name_translation,
+    validate_share_currency,
     validate_pdf,
     validate_phone_number,
     validate_resolution_date_in_share_structure,
@@ -88,6 +89,9 @@ def share_structure_validation(filing, business: Business):
 
     if get_str(filing, share_structure_path):
         err = validate_share_structure(filing, "alteration", new_legal_type or business.legal_type)
+        if err:
+            return err
+        err = validate_share_currency(filing, "alteration", business)
         if err:
             return err
     return []

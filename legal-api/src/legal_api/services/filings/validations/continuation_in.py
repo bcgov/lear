@@ -30,6 +30,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
+    validate_share_currency,
     validate_phone_number,
     validate_share_structure,
 )
@@ -76,6 +77,8 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
             msg.extend(err)
 
         if err := validate_share_structure(filing_json, filing_type, legal_type):
+            msg.extend(err)
+        if err := validate_share_currency(filing_json, filing_type):
             msg.extend(err)
 
         msg.extend(validate_effective_date(filing_json))
