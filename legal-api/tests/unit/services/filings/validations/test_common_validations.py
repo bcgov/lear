@@ -573,7 +573,7 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
 
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
-    errors = validate_certified_by(filing, business)
+    errors = validate_certified_by(filing, business, legal_type)
 
     if legal_type in Business.CORPS:
         assert errors == []
@@ -1826,7 +1826,7 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
 
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
-    errors = validate_authorization_received(filing, business)
+    errors = validate_authorization_received(filing, business, legal_type)
 
     if legal_type in Business.CORPS and expected_error:
         assert errors
