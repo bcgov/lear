@@ -13,13 +13,11 @@
 # limitations under the License.
 """Validation for the Annual Report filing."""
 from http import HTTPStatus
-from typing import Optional
 
 from flask_babel import _
 
 from legal_api.errors import Error
-from legal_api.models import Address, Business
-from legal_api.services.filings.validations.common_validations import _validate_postal_code
+from legal_api.models import Business
 from legal_api.services.utils import get_date
 from legal_api.utils.datetime import datetime
 
@@ -44,11 +42,6 @@ def validate(business: Business, annual_report: dict) -> Error:
     if requires_agm(business):
         err = validate_agm_year(business=business,
                                 annual_report=annual_report)
-
-    if err:
-        return err
-
-    err = validate_directors_addresses(annual_report, business.legal_type)
 
     if err:
         return err
@@ -138,51 +131,4 @@ def validate_agm_year(*, business: Business, annual_report: dict) -> tuple[int, 
     #                                 'The business will be dissolved, unless an extension and an AGM are held.'),
     #                    'path': 'filing/annualReport/annualGeneralMeetingDate'}])
     #
-    return None
-
-
-def validate_directors_addresses(annual_report: dict, legal_type: str) -> Optional[Error]:
-    """Validate directors contain both deliveryAddress and mailingAddress."""
-    if legal_type not in Business.CORPS:
-        return None
-
-    if not annual_report["filing"]["annualReport"].get("offices", {}).get("recordsOffice", {}):
-        return Error(HTTPStatus.BAD_REQUEST,
-                     [{"error": "recordsOffice is required",
-                       "path": "/filing/annualReport/offices/recordsOffice"}])
-
-    msg = []
-    directors = annual_report["filing"]["annualReport"].get("directors", [])
-
-    # Required fields for mailingAddress
-    mailing_required_fields = [
-        "streetAddress",
-        "addressCity",
-        "addressCountry"
-    ]
-
-    for idx, director in enumerate(directors):
-        for address_type in Address.JSON_ADDRESS_TYPES:
-            address = director.get(address_type)
-
-            if not address:
-                msg.append({
-                    "error": f"missing {address_type}",
-                    "path": f"/filing/annualReport/directors/{idx}/{address_type}"
-                })
-            elif address_type == Address.JSON_MAILING:
-                for field in mailing_required_fields:
-                    if not address.get(field):
-                        msg.append({
-                            "error": f"Mailing address must include {field}.",
-                            "path": f"/filing/annualReport/directors/{idx}/{address_type}/{field}"
-                        })
-
-                postal_error = _validate_postal_code(address,f"/filing/annualReport/directors/{idx}/{address_type}")
-                if postal_error:
-                    msg.append(postal_error)
-
-    if msg:
-        return Error(HTTPStatus.BAD_REQUEST, msg)
-
     return None
