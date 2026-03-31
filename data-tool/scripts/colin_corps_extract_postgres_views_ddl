@@ -54,111 +54,174 @@ ALTER MATERIALIZED VIEW mv_admin_email_domain_count
 
 
 create view v_addr_links as
-with party_addr as (select cp.corp_num,
-                           'party'::text      as entity_kind,
-                           cp.party_typ_cd    as entity_type,
-                           'mailing'::text    as addr_role,
-                           cp.mailing_addr_id as addr_id
-                    from corp_party cp
-                    where cp.end_event_id is null
-                    union all
-                    select cp.corp_num,
-                           'party',
-                           cp.party_typ_cd,
-                           'delivery',
-                           cp.delivery_addr_id
-                    from corp_party cp
-                    where cp.end_event_id is null),
-     office_addr as (select o.corp_num,
-                            'office'::text    as entity_kind,
-                            o.office_typ_cd   as entity_type,
-                            'mailing'::text   as addr_role,
-                            o.mailing_addr_id as addr_id
-                     from office o
-                     where o.end_event_id is null
-                     union all
-                     select o.corp_num,
-                            'office',
-                            o.office_typ_cd,
-                            'delivery',
-                            o.delivery_addr_id
-                     from office o
-                     where o.end_event_id is null)
+with current_party as (
+  select
+    cp.corp_num,
+    'party'::text   as entity_kind,
+    cp.party_typ_cd as entity_type,
+    addr.addr_role,
+    addr.addr_id
+  from corp_party cp
+  cross join lateral (
+    values
+      ('mailing'::text, cp.mailing_addr_id),
+      ('delivery'::text, cp.delivery_addr_id)
+  ) as addr(addr_role, addr_id)
+  where cp.end_event_id is null
+),
+current_office as (
+  select
+    o.corp_num,
+    'office'::text  as entity_kind,
+    o.office_typ_cd as entity_type,
+    addr.addr_role,
+    addr.addr_id
+  from office o
+  cross join lateral (
+    values
+      ('mailing'::text, o.mailing_addr_id),
+      ('delivery'::text, o.delivery_addr_id)
+  ) as addr(addr_role, addr_id)
+  where o.end_event_id is null
+)
 select *
-from party_addr
+from current_party
 union all
 select *
-from office_addr;
+from current_office;
 
 ALTER VIEW v_addr_links
     owner to postgres;
 
 create or replace view v_addr_issues as
-select
-  x.corp_num,
-  x.entity_kind,        -- 'party' | 'office'
-  x.entity_type,        -- e.g., 'DIR','OFF','RG','RC',...
-  x.addr_role,          -- 'mailing' | 'delivery'
-  x.addr_id,
-
-  x.is_null,
-  x.is_stub,
-
-  x.missing_city,
-  x.missing_province,
-  x.missing_country,
-  x.missing_postal_code,
-  x.missing_addr_line_1,
-  x.missing_addr_line_2,
-  x.missing_addr_line_3,
-
-  x.has_any_key_missing,
-
-  /* Row-level rollup flags */
-  (x.is_null or x.is_stub or x.has_any_key_missing) as any_bad,
-  not (x.is_null or x.is_stub or x.has_any_key_missing) as is_healthy
-
-from (
+with link_rows as (
   select
     l.corp_num,
     l.entity_kind,
     l.entity_type,
     l.addr_role,
     l.addr_id,
-
-    (l.addr_id is null) as is_null,
-    (l.addr_id = 1)     as is_stub,
-
-    -- Field-level missing key elements only checked for real (non-null, non-stub) addresses:
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.city is null or is_blank(a.city)) end                as missing_city,
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.province is null or is_blank(a.province)) end        as missing_province,
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.country_typ_cd is null or is_blank(a.country_typ_cd)) end as missing_country,
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.postal_cd is null or is_blank(a.postal_cd)) end      as missing_postal_code,
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.addr_line_1 is null or is_blank(a.addr_line_1)) end  as missing_addr_line_1,
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.addr_line_2 is null or is_blank(a.addr_line_2)) end  as missing_addr_line_2,
-    case when (l.addr_id is null or l.addr_id = 1) then false
-         else (a.addr_line_3 is null or is_blank(a.addr_line_3)) end  as missing_addr_line_3,
-
-    -- "key fields" = city, province, country, postal, addr_line_1
-    case when (l.addr_id is null or l.addr_id = 1) then false else
-      ( (a.city           is null or is_blank(a.city))
-     or (a.province       is null or is_blank(a.province))
-     or (a.country_typ_cd is null or is_blank(a.country_typ_cd))
-     or (a.postal_cd      is null or is_blank(a.postal_cd))
-     or (a.addr_line_1    is null or is_blank(a.addr_line_1)) )
-    end as has_any_key_missing
-
+    (l.addr_id is null)                        as is_null,
+    (l.addr_id = 1)                            as is_stub,
+    (l.addr_id is not null and l.addr_id <> 1) as is_real_addr,
+    a.city,
+    a.province,
+    a.country_typ_cd,
+    a.postal_cd,
+    a.addr_line_1,
+    a.addr_line_2,
+    a.addr_line_3
   from v_addr_links l
-  left join address a on a.addr_id = l.addr_id
-) as x;
+  left join address a
+    on a.addr_id = l.addr_id
+   and l.addr_id is not null
+   and l.addr_id <> 1
+),
+field_flags as (
+  select
+    lr.corp_num,
+    lr.entity_kind,
+    lr.entity_type,
+    lr.addr_role,
+    lr.addr_id,
+    lr.is_null,
+    lr.is_stub,
+    (lr.is_real_addr and (lr.city is null or is_blank(lr.city)))                     as missing_city,
+    (lr.is_real_addr and (lr.province is null or is_blank(lr.province)))             as missing_province,
+    (lr.is_real_addr and (lr.country_typ_cd is null or is_blank(lr.country_typ_cd))) as missing_country,
+    (lr.is_real_addr and (lr.postal_cd is null or is_blank(lr.postal_cd)))           as missing_postal_code,
+    (lr.is_real_addr and (lr.addr_line_1 is null or is_blank(lr.addr_line_1)))       as missing_addr_line_1,
+    (lr.is_real_addr and (lr.addr_line_2 is null or is_blank(lr.addr_line_2)))       as missing_addr_line_2,
+    (lr.is_real_addr and (lr.addr_line_3 is null or is_blank(lr.addr_line_3)))       as missing_addr_line_3
+  from link_rows lr
+),
+row_flags as (
+  select
+    ff.corp_num,
+    ff.entity_kind,
+    ff.entity_type,
+    ff.addr_role,
+    ff.addr_id,
+    ff.is_null,
+    ff.is_stub,
+    ff.missing_city,
+    ff.missing_province,
+    ff.missing_country,
+    ff.missing_postal_code,
+    ff.missing_addr_line_1,
+    ff.missing_addr_line_2,
+    ff.missing_addr_line_3,
+    (
+      ff.missing_city
+      or ff.missing_province
+      or ff.missing_country
+      or ff.missing_postal_code
+      or ff.missing_addr_line_1
+    ) as has_any_key_missing,
+    (
+      ff.is_null
+      or ff.is_stub
+      or ff.missing_city
+      or ff.missing_province
+      or ff.missing_country
+      or ff.missing_postal_code
+      or ff.missing_addr_line_1
+    ) as any_bad
+  from field_flags ff
+)
+select
+  rf.corp_num,
+  rf.entity_kind,
+  rf.entity_type,
+  rf.addr_role,
+  rf.addr_id,
+  rf.is_null,
+  rf.is_stub,
+  rf.missing_city,
+  rf.missing_province,
+  rf.missing_country,
+  rf.missing_postal_code,
+  rf.missing_addr_line_1,
+  rf.missing_addr_line_2,
+  rf.missing_addr_line_3,
+  rf.has_any_key_missing,
+  rf.any_bad,
+  not rf.any_bad as is_healthy
+from row_flags rf;
 
 ALTER VIEW v_addr_issues
+    owner to postgres;
+
+
+/* Shared per-corp/entity-type address issue counts reused by both the
+   slim screening MV and the wide/full address-quality MV. */
+CREATE MATERIALIZED VIEW mv_addr_issue_counts_by_entity AS
+SELECT
+  i.corp_num,
+  i.entity_kind,
+  i.entity_type,
+  COUNT(*)                                      AS address_count,
+  COUNT(*) FILTER (WHERE i.is_null)             AS null_count,
+  COUNT(*) FILTER (WHERE i.is_stub)             AS stub_count,
+  COUNT(*) FILTER (WHERE i.has_any_key_missing) AS any_bad_key_fields_count,
+  COUNT(*) FILTER (WHERE i.any_bad)             AS any_bad_count,
+  COUNT(*) FILTER (WHERE NOT i.any_bad)         AS healthy_count,
+  COUNT(*) FILTER (WHERE i.missing_city)        AS missing_city_count,
+  COUNT(*) FILTER (WHERE i.missing_province)    AS missing_province_count,
+  COUNT(*) FILTER (WHERE i.missing_country)     AS missing_country_count,
+  COUNT(*) FILTER (WHERE i.missing_postal_code) AS missing_postal_code_count,
+  COUNT(*) FILTER (WHERE i.missing_addr_line_1) AS missing_addr_line_1_count,
+  COUNT(*) FILTER (WHERE i.missing_addr_line_2) AS missing_addr_line_2_count,
+  COUNT(*) FILTER (WHERE i.missing_addr_line_3) AS missing_addr_line_3_count
+FROM v_addr_issues i
+GROUP BY i.corp_num, i.entity_kind, i.entity_type
+WITH NO DATA
+;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_addr_issue_counts_by_entity
+  ON mv_addr_issue_counts_by_entity (corp_num, entity_kind, entity_type);
+
+ALTER MATERIALIZED VIEW mv_addr_issue_counts_by_entity
     owner to postgres;
 
 
@@ -169,8 +232,28 @@ params as (
     array['DIR','OFF','LIQ','RCC','RCM']::text[] as party_types,
     array['RG','RC','LQ','DS']::text[]           as office_types
 ),
-issues as (
-  select * from v_addr_issues
+entity_counts as MATERIALIZED (
+  select
+    a.corp_num,
+    a.entity_kind,
+    a.entity_type,
+    a.address_count,
+    a.null_count,
+    a.stub_count,
+    a.any_bad_key_fields_count,
+    a.any_bad_count,
+    a.healthy_count,
+    a.missing_city_count,
+    a.missing_province_count,
+    a.missing_country_count,
+    a.missing_postal_code_count,
+    a.missing_addr_line_1_count,
+    a.missing_addr_line_2_count,
+    a.missing_addr_line_3_count,
+    COALESCE((a.entity_kind = 'party' AND a.entity_type = ANY(p.party_types)), false)   AS is_supported_party,
+    COALESCE((a.entity_kind = 'office' AND a.entity_type = ANY(p.office_types)), false) AS is_supported_office
+  from mv_addr_issue_counts_by_entity a
+  cross join params p
 ),
 
 /* ---------------------------------------
@@ -178,311 +261,224 @@ issues as (
    --------------------------------------- */
 agg as (
   select
-    i.corp_num,
+    ec.corp_num,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.is_supported_party OR ec.is_supported_office), 0) AS bigint) AS address_all_missing_addr1_count,
 
-    /* ===== ADDRESS (party + office; supported types) ===== */
-    count(*) filter (
-      where ((i.entity_kind='party'  and i.entity_type = any(p.party_types))
-          or (i.entity_kind='office' and i.entity_type = any(p.office_types)))
-        and i.is_null
-    ) as address_all_null_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_any_bad_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.is_supported_party), 0) AS bigint) AS party_all_missing_addr1_count,
 
-    count(*) filter (
-      where ((i.entity_kind='party'  and i.entity_type = any(p.party_types))
-          or (i.entity_kind='office' and i.entity_type = any(p.office_types)))
-        and i.is_stub
-    ) as address_all_stub_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_any_bad_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office), 0) AS bigint) AS office_all_missing_addr1_count,
 
-    count(*) filter (
-      where ((i.entity_kind='party'  and i.entity_type = any(p.party_types))
-          or (i.entity_kind='office' and i.entity_type = any(p.office_types)))
-        and i.has_any_key_missing
-    ) as address_all_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='office' AND ec.is_supported_office AND ec.entity_type NOT IN ('RG','RC')), 0) AS bigint) AS non_base_offices_missing_addr1_count,
 
-    count(*) filter (
-      where ((i.entity_kind='party'  and i.entity_type = any(p.party_types))
-          or (i.entity_kind='office' and i.entity_type = any(p.office_types)))
-        and i.any_bad
-    ) as address_all_any_bad_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type NOT IN ('DIR','OFF')), 0) AS bigint) AS non_base_parties_missing_addr1_count,
 
-    count(*) filter (
-      where ((i.entity_kind='party'  and i.entity_type = any(p.party_types))
-          or (i.entity_kind='office' and i.entity_type = any(p.office_types)))
-        and not i.any_bad
-    ) as address_all_healthy_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='DIR'), 0) AS bigint) AS dir_missing_addr1_count,
 
-    count(*) filter (where ((i.entity_kind='party' and i.entity_type = any(p.party_types)) or (i.entity_kind='office' and i.entity_type = any(p.office_types))) and i.missing_city)           as address_all_missing_city_count,
-    count(*) filter (where ((i.entity_kind='party' and i.entity_type = any(p.party_types)) or (i.entity_kind='office' and i.entity_type = any(p.office_types))) and i.missing_province)       as address_all_missing_province_count,
-    count(*) filter (where ((i.entity_kind='party' and i.entity_type = any(p.party_types)) or (i.entity_kind='office' and i.entity_type = any(p.office_types))) and i.missing_country)        as address_all_missing_country_count,
-    count(*) filter (where ((i.entity_kind='party' and i.entity_type = any(p.party_types)) or (i.entity_kind='office' and i.entity_type = any(p.office_types))) and i.missing_postal_code)    as address_all_missing_postal_code_count,
-    count(*) filter (where ((i.entity_kind='party' and i.entity_type = any(p.party_types)) or (i.entity_kind='office' and i.entity_type = any(p.office_types))) and i.missing_addr_line_1)    as address_all_missing_addr1_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='OFF'), 0) AS bigint) AS officer_missing_addr1_count,
 
-    /* ===== PARTIES: ALL (supported) ===== */
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.is_null)             as party_all_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.is_stub)             as party_all_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.has_any_key_missing) as party_all_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.any_bad)             as party_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.any_bad)             as party_all_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and not i.any_bad)         as party_all_healthy_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='LIQ'), 0) AS bigint) AS liq_missing_addr1_count,
 
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.missing_city)        as party_all_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.missing_province)    as party_all_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.missing_country)     as party_all_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.missing_postal_code) as party_all_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type = any(p.party_types) and i.missing_addr_line_1) as party_all_missing_addr1_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCC'), 0) AS bigint) AS rcc_missing_addr1_count,
 
-    /* ===== OFFICES: ALL (supported) ===== */
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.is_null)             as office_all_null_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.is_stub)             as office_all_stub_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.has_any_key_missing) as office_all_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.any_bad)             as office_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.any_bad)             as office_all_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and not i.any_bad)         as office_all_healthy_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='party' AND ec.entity_type='RCM'), 0) AS bigint) AS rcm_missing_addr1_count,
 
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.missing_city)        as office_all_missing_city_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.missing_province)    as office_all_missing_province_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.missing_country)     as office_all_missing_country_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.missing_postal_code) as office_all_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.missing_addr_line_1) as office_all_missing_addr1_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RG'), 0) AS bigint) AS office_rg_missing_addr1_count,
 
-    /* ===== NON‑BASE OFFICES (supported but not RG/RC → LQ, DS) ===== */
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.is_null)             as non_base_offices_null_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.is_stub)             as non_base_offices_stub_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.has_any_key_missing) as non_base_offices_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.any_bad)             as non_base_offices_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and not i.any_bad)         as non_base_offices_healthy_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='RC'), 0) AS bigint) AS office_rc_missing_addr1_count,
 
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.missing_city)         as non_base_offices_missing_city_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.missing_province)     as non_base_offices_missing_province_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.missing_country)      as non_base_offices_missing_country_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.missing_postal_code)  as non_base_offices_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type = any(p.office_types) and i.entity_type not in ('RG','RC') and i.missing_addr_line_1)  as non_base_offices_missing_addr1_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='LQ'), 0) AS bigint) AS office_lq_missing_addr1_count,
 
-    /* ===== NON‑BASE PARTIES (NOT in DIR/OFF; any party code) ===== */
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.is_null)             as non_base_parties_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.is_stub)             as non_base_parties_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.has_any_key_missing) as non_base_parties_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.any_bad)             as non_base_parties_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and not i.any_bad)         as non_base_parties_healthy_count,
+    CAST(COALESCE(SUM(ec.null_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_null_count,
+    CAST(COALESCE(SUM(ec.stub_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_stub_count,
+    CAST(COALESCE(SUM(ec.any_bad_key_fields_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_any_bad_key_fields_count,
+    CAST(COALESCE(SUM(ec.any_bad_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_any_bad_count,
+    CAST(COALESCE(SUM(ec.healthy_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_healthy_count,
+    CAST(COALESCE(SUM(ec.missing_city_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_missing_city_count,
+    CAST(COALESCE(SUM(ec.missing_province_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_missing_province_count,
+    CAST(COALESCE(SUM(ec.missing_country_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_missing_country_count,
+    CAST(COALESCE(SUM(ec.missing_postal_code_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_missing_postal_code_count,
+    CAST(COALESCE(SUM(ec.missing_addr_line_1_count) FILTER (WHERE ec.entity_kind='office' AND ec.entity_type='DS'), 0) AS bigint) AS office_ds_missing_addr1_count
 
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.missing_city)        as non_base_parties_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.missing_province)    as non_base_parties_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.missing_country)     as non_base_parties_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.missing_postal_code) as non_base_parties_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type not in ('DIR','OFF') and i.missing_addr_line_1) as non_base_parties_missing_addr1_count,
-
-    /* ===== PARTIES: per supported type ===== */
-    -- DIR
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.is_null)                                 as dir_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.is_stub)                                 as dir_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.has_any_key_missing)                     as dir_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.any_bad)                                 as dir_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and not i.any_bad)                             as dir_healthy_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.missing_city)                            as dir_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.missing_province)                        as dir_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.missing_country)                         as dir_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.missing_postal_code)                     as dir_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='DIR' and i.missing_addr_line_1)                     as dir_missing_addr1_count,
-
-    -- OFF (officer)
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.is_null)                                 as officer_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.is_stub)                                 as officer_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.has_any_key_missing)                     as officer_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.any_bad)                                 as officer_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and not i.any_bad)                             as officer_healthy_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.missing_city)                            as officer_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.missing_province)                        as officer_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.missing_country)                         as officer_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.missing_postal_code)                     as officer_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='OFF' and i.missing_addr_line_1)                     as officer_missing_addr1_count,
-
-    -- LIQ
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.is_null)                                 as liq_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.is_stub)                                 as liq_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.has_any_key_missing)                     as liq_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.any_bad)                                 as liq_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and not i.any_bad)                             as liq_healthy_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.missing_city)                            as liq_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.missing_province)                        as liq_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.missing_country)                         as liq_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.missing_postal_code)                     as liq_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='LIQ' and i.missing_addr_line_1)                     as liq_missing_addr1_count,
-
-    -- RCC
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.is_null)                                 as rcc_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.is_stub)                                 as rcc_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.has_any_key_missing)                     as rcc_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.any_bad)                                 as rcc_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and not i.any_bad)                             as rcc_healthy_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.missing_city)                            as rcc_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.missing_province)                        as rcc_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.missing_country)                         as rcc_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.missing_postal_code)                     as rcc_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCC' and i.missing_addr_line_1)                     as rcc_missing_addr1_count,
-
-    -- RCM
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.is_null)                                 as rcm_null_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.is_stub)                                 as rcm_stub_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.has_any_key_missing)                     as rcm_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.any_bad)                                 as rcm_any_bad_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and not i.any_bad)                             as rcm_healthy_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.missing_city)                            as rcm_missing_city_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.missing_province)                        as rcm_missing_province_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.missing_country)                         as rcm_missing_country_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.missing_postal_code)                     as rcm_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='party' and i.entity_type='RCM' and i.missing_addr_line_1)                     as rcm_missing_addr1_count,
-
-    /* ===== OFFICES: per supported type ===== */
-    -- RG
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.is_null)                                 as office_rg_null_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.is_stub)                                 as office_rg_stub_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.has_any_key_missing)                     as office_rg_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.any_bad)                                 as office_rg_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and not i.any_bad)                             as office_rg_healthy_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.missing_city)                            as office_rg_missing_city_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.missing_province)                        as office_rg_missing_province_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.missing_country)                         as office_rg_missing_country_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.missing_postal_code)                     as office_rg_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RG' and i.missing_addr_line_1)                     as office_rg_missing_addr1_count,
-
-    -- RC
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.is_null)                                 as office_rc_null_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.is_stub)                                 as office_rc_stub_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.has_any_key_missing)                     as office_rc_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.any_bad)                                 as office_rc_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and not i.any_bad)                             as office_rc_healthy_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.missing_city)                            as office_rc_missing_city_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.missing_province)                        as office_rc_missing_province_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.missing_country)                         as office_rc_missing_country_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.missing_postal_code)                     as office_rc_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='RC' and i.missing_addr_line_1)                     as office_rc_missing_addr1_count,
-
-    -- LQ
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.is_null)                                 as office_lq_null_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.is_stub)                                 as office_lq_stub_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.has_any_key_missing)                     as office_lq_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.any_bad)                                 as office_lq_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and not i.any_bad)                             as office_lq_healthy_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.missing_city)                            as office_lq_missing_city_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.missing_province)                        as office_lq_missing_province_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.missing_country)                         as office_lq_missing_country_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.missing_postal_code)                     as office_lq_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='LQ' and i.missing_addr_line_1)                     as office_lq_missing_addr1_count,
-
-    -- DS
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.is_null)                                 as office_ds_null_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.is_stub)                                 as office_ds_stub_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.has_any_key_missing)                     as office_ds_any_bad_key_fields_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.any_bad)                                 as office_ds_any_bad_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and not i.any_bad)                             as office_ds_healthy_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.missing_city)                            as office_ds_missing_city_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.missing_province)                        as office_ds_missing_province_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.missing_country)                         as office_ds_missing_country_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.missing_postal_code)                     as office_ds_missing_postal_code_count,
-    count(*) filter (where i.entity_kind='office' and i.entity_type='DS' and i.missing_addr_line_1)                     as office_ds_missing_addr1_count
-
-  from issues i
-  cross join params p
-  group by i.corp_num
+  from entity_counts ec
+  group by ec.corp_num
 ),
 
 /* ---------------------------------------
    JSON breakdowns (supported types only)
    --------------------------------------- */
-party_per_type as (
-  select
-    i.corp_num,
-    i.entity_type,
-    count(*)                                                  as addresses,
-    count(*) filter (where i.is_null)                         as null_count,
-    count(*) filter (where i.is_stub)                         as stub_count,
-    count(*) filter (where i.has_any_key_missing)             as any_bad_key_fields_count,
-    count(*) filter (where i.any_bad)                         as any_bad_count,
-    count(*) filter (where not i.any_bad)                     as healthy_count,
-    count(*) filter (where i.missing_city)                    as missing_city,
-    count(*) filter (where i.missing_province)                as missing_province,
-    count(*) filter (where i.missing_country)                 as missing_country,
-    count(*) filter (where i.missing_postal_code)             as missing_postal_code,
-    count(*) filter (where i.missing_addr_line_1)             as missing_addr_line_1,
-    count(*) filter (where i.missing_addr_line_2)             as missing_addr_line_2,
-    count(*) filter (where i.missing_addr_line_3)             as missing_addr_line_3
-  from issues i
-  cross join params p
-  where i.entity_kind='party'
-    and i.entity_type = any(p.party_types)
-  group by i.corp_num, i.entity_type
-),
 party_by_type as (
   select
-    corp_num,
+    ec.corp_num,
     jsonb_object_agg(
-      entity_type,
+      ec.entity_type,
       jsonb_build_object(
-        'addresses',                 addresses,
-        'null_count',                null_count,
-        'stub_count',                stub_count,
-        'any_bad_key_fields_count',  any_bad_key_fields_count,
-        'any_bad_count',             any_bad_count,
-        'healthy_count',             healthy_count,
-        'missing_city',              missing_city,
-        'missing_province',          missing_province,
-        'missing_country',           missing_country,
-        'missing_postal_code',       missing_postal_code,
-        'missing_addr_line_1',       missing_addr_line_1,
-        'missing_addr_line_2',       missing_addr_line_2,
-        'missing_addr_line_3',       missing_addr_line_3
+        'addresses',                 ec.address_count,
+        'null_count',                ec.null_count,
+        'stub_count',                ec.stub_count,
+        'any_bad_key_fields_count',  ec.any_bad_key_fields_count,
+        'any_bad_count',             ec.any_bad_count,
+        'healthy_count',             ec.healthy_count,
+        'missing_city',              ec.missing_city_count,
+        'missing_province',          ec.missing_province_count,
+        'missing_country',           ec.missing_country_count,
+        'missing_postal_code',       ec.missing_postal_code_count,
+        'missing_addr_line_1',       ec.missing_addr_line_1_count,
+        'missing_addr_line_2',       ec.missing_addr_line_2_count,
+        'missing_addr_line_3',       ec.missing_addr_line_3_count
       )
+      ORDER BY ec.entity_type
     ) as party_issue_breakdown
-  from party_per_type
-  group by corp_num
+  from entity_counts ec
+  where ec.entity_kind='party'
+    and ec.is_supported_party
+  group by ec.corp_num
 ),
 
-office_per_type as (
-  select
-    i.corp_num,
-    i.entity_type,
-    count(*)                                                  as addresses,
-    count(*) filter (where i.is_null)                         as null_count,
-    count(*) filter (where i.is_stub)                         as stub_count,
-    count(*) filter (where i.has_any_key_missing)             as any_bad_key_fields_count,
-    count(*) filter (where i.any_bad)                         as any_bad_count,
-    count(*) filter (where not i.any_bad)                     as healthy_count,
-    count(*) filter (where i.missing_city)                    as missing_city,
-    count(*) filter (where i.missing_province)                as missing_province,
-    count(*) filter (where i.missing_country)                 as missing_country,
-    count(*) filter (where i.missing_postal_code)             as missing_postal_code,
-    count(*) filter (where i.missing_addr_line_1)             as missing_addr_line_1,
-    count(*) filter (where i.missing_addr_line_2)             as missing_addr_line_2,
-    count(*) filter (where i.missing_addr_line_3)             as missing_addr_line_3
-  from issues i
-  cross join params p
-  where i.entity_kind='office'
-    and i.entity_type = any(p.office_types)
-  group by i.corp_num, i.entity_type
-),
 office_by_type as (
   select
-    corp_num,
+    ec.corp_num,
     jsonb_object_agg(
-      entity_type,
+      ec.entity_type,
       jsonb_build_object(
-        'addresses',                 addresses,
-        'null_count',                null_count,
-        'stub_count',                stub_count,
-        'any_bad_key_fields_count',  any_bad_key_fields_count,
-        'any_bad_count',             any_bad_count,
-        'healthy_count',             healthy_count,
-        'missing_city',              missing_city,
-        'missing_province',          missing_province,
-        'missing_country',           missing_country,
-        'missing_postal_code',       missing_postal_code,
-        'missing_addr_line_1',       missing_addr_line_1,
-        'missing_addr_line_2',       missing_addr_line_2,
-        'missing_addr_line_3',       missing_addr_line_3
+        'addresses',                 ec.address_count,
+        'null_count',                ec.null_count,
+        'stub_count',                ec.stub_count,
+        'any_bad_key_fields_count',  ec.any_bad_key_fields_count,
+        'any_bad_count',             ec.any_bad_count,
+        'healthy_count',             ec.healthy_count,
+        'missing_city',              ec.missing_city_count,
+        'missing_province',          ec.missing_province_count,
+        'missing_country',           ec.missing_country_count,
+        'missing_postal_code',       ec.missing_postal_code_count,
+        'missing_addr_line_1',       ec.missing_addr_line_1_count,
+        'missing_addr_line_2',       ec.missing_addr_line_2_count,
+        'missing_addr_line_3',       ec.missing_addr_line_3_count
       )
+      ORDER BY ec.entity_type
     ) as office_issue_breakdown
-  from office_per_type
-  group by corp_num
+  from entity_counts ec
+  where ec.entity_kind='office'
+    and ec.is_supported_office
+  group by ec.corp_num
 )
 
 -- ========== FINAL SELECT ==========
@@ -599,6 +595,41 @@ create unique index on mv_addr_quality_by_corp (corp_num);
 ALTER MATERIALIZED VIEW mv_addr_quality_by_corp
     owner to postgres;
 
+
+CREATE MATERIALIZED VIEW mv_addr_quality_screening_by_corp AS
+WITH
+-- IMPORTANT: keep these supported type lists in sync with mv_addr_quality_by_corp above.
+params AS (
+  SELECT
+    array['DIR','OFF','LIQ','RCC','RCM']::text[] AS party_types,
+    array['RG','RC','LQ','DS']::text[]           AS office_types
+)
+SELECT
+  ec.corp_num,
+  CAST(COALESCE(SUM(ec.any_bad_count) FILTER (
+    WHERE ((ec.entity_kind='party'  AND ec.entity_type = ANY(p.party_types))
+        OR (ec.entity_kind='office' AND ec.entity_type = ANY(p.office_types)))
+  ), 0) AS bigint) AS address_all_any_bad_count,
+  CAST(COALESCE(SUM(ec.any_bad_count) FILTER (
+    WHERE ec.entity_kind='office'
+      AND ec.entity_type = ANY(p.office_types)
+  ), 0) AS bigint) AS office_all_any_bad_count,
+  CAST(COALESCE(SUM(ec.any_bad_count) FILTER (
+    WHERE ec.entity_kind='party'
+      AND ec.entity_type = ANY(p.party_types)
+  ), 0) AS bigint) AS party_all_any_bad_count
+FROM mv_addr_issue_counts_by_entity ec
+CROSS JOIN params p
+GROUP BY ec.corp_num
+WITH NO DATA
+;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_addr_quality_screening_by_corp_corpnum
+  ON mv_addr_quality_screening_by_corp (corp_num);
+
+ALTER MATERIALIZED VIEW mv_addr_quality_screening_by_corp
+    owner to postgres;
+
 /* ---------------------------------------------------------------------
    Share class eligibility issue flags (1 row per corp_num)
 
@@ -645,6 +676,107 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_share_class_issue_flags_corpnum
   ON mv_share_class_issue_flags (corp_num);
 
 ALTER MATERIALIZED VIEW mv_share_class_issue_flags
+    owner to postgres;
+
+
+CREATE MATERIALIZED VIEW mv_corp_event_filing_rollup AS
+WITH allowed_event_file_codes(code) AS (
+  VALUES
+    ('FILE_ICORP'),
+    ('FILE_ICORU'),
+    ('FILE_ICORC'),
+    ('FILE_ANNBC'),
+    ('FILE_AM_AR'),
+    ('FILE_NOCAD'),
+    ('FILE_APTRA'),
+    ('FILE_NOERA'),
+    ('FILE_AM_DO'),
+    ('FILE_AM_RR'),
+    ('FILE_NOCDR'),
+    ('FILE_AM_DI'),
+    ('FILE_NOALA'),
+    ('FILE_NOALB'),
+    ('FILE_NOALU'),
+    ('FILE_NOALC'),
+    ('FILE_AM_BC'),
+    ('FILE_AM_LI'),
+    ('FILE_AM_RM'),
+    ('FILE_AM_SS'),
+    ('ADCORP_NULL'),
+    -- Skipped events/filing types
+    ('FILE_COGS1'),
+    ('FILE_CHGJU'),
+    ('FILE_NWPTA'),
+    ('FILE_PARES'),
+    ('FILE_TILAT'),
+    ('FILE_TILHO'),
+    ('FILE_TILMA'),
+    ('SYST_CANPS'),
+    ('SYST_CHGJU'),
+    ('SYST_CHGPN'),
+    ('SYST_CO_PN'),
+    ('SYST_LNKPS'),
+    ('SYST_NWPTA'),
+    ('SYST_PARES'),
+    ('SYST_RIPFL'),
+    ('SYST_TILAT'),
+    ('SYST_TILHO'),
+    ('SYST_NULL'),
+    ('SYSD1_NULL'),
+    ('SYSD2_NULL'),
+    ('SYST1_NULL'),
+    ('SYST2_NULL'),
+    ('TRESP_NULL'),
+    ('TRESP_COUTI')
+),
+event_rows AS (
+  SELECT
+    e.corp_num,
+    e.event_id,
+    e.event_type_cd,
+    e.event_timerstamp,
+    e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL') AS event_file_code
+  FROM event e
+  LEFT JOIN filing f
+    ON f.event_id = e.event_id
+),
+classified_event_rows AS (
+  SELECT
+    er.corp_num,
+    er.event_id,
+    er.event_type_cd,
+    er.event_timerstamp,
+    er.event_file_code,
+    CASE
+      WHEN er.event_file_code IS NULL THEN false
+      ELSE ac.code IS NULL
+    END AS is_disallowed
+  FROM event_rows er
+  LEFT JOIN allowed_event_file_codes ac
+    ON ac.code = er.event_file_code
+)
+SELECT
+  cer.corp_num,
+  COUNT(*) AS event_count,
+  COUNT(*) FILTER (
+    WHERE cer.event_type_cd = 'FILE'
+      AND cer.event_timerstamp >= CURRENT_DATE - INTERVAL '2 years'
+  ) AS file_event_count_last_2yrs,
+  MAX(CASE WHEN cer.event_type_cd = 'FILE' THEN cer.event_timerstamp END) AS last_file_event_ts,
+  MAX(cer.event_timerstamp) AS last_event_ts,
+  STRING_AGG(cer.event_file_code, ',' ORDER BY cer.event_id) AS event_file_types,
+  COALESCE(BOOL_OR(cer.is_disallowed), false) AS has_disallowed_event,
+  STRING_AGG(DISTINCT cer.event_file_code, ',' ORDER BY cer.event_file_code)
+    FILTER (WHERE cer.is_disallowed) AS failed_events
+FROM classified_event_rows cer
+GROUP BY cer.corp_num
+WITH NO DATA
+;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_corp_event_filing_rollup_corpnum
+  ON mv_corp_event_filing_rollup (corp_num);
+
+ALTER MATERIALIZED VIEW mv_corp_event_filing_rollup
     owner to postgres;
 
 
@@ -755,40 +887,17 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(bar_account_has_mailing_address as boolean) as bar_account_has_mailing_address,
         ting_corps
 FROM (
-    SELECT
+    SELECT DISTINCT
            LOWER(SPLIT_PART(c.admin_email, '@', 2)) as email_domain,
            LOWER(c.admin_email) as admin_email,
            aec.email_count AS email_used_count,
-           e.corp_num,
+           ev.corp_num,
            cn.corp_name,
            c.corp_type_cd,
            CASE WHEN c.corp_frozen_type_cd is null THEN 'N' ELSE 'Y' END AS is_frozen,
            cs.is_active,
            cs.in_dissolution,
-            CASE
-                WHEN NOT EXISTS (
-                    SELECT 1
-                    FROM event e2
-                    LEFT JOIN filing f2 ON e2.event_id = f2.event_id
-                    WHERE e2.corp_num = e.corp_num
-                      AND (e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL'))
-                          NOT IN ('FILE_ICORP', 'FILE_ICORU', 'FILE_ICORC', -- IA
-                                  'FILE_ANNBC', 'FILE_AM_AR', -- AR
-                                  'FILE_NOCAD', 'FILE_APTRA', 'FILE_NOERA', 'FILE_AM_DO', 'FILE_AM_RR', -- CoA
-                                  'FILE_NOCDR', 'FILE_AM_DI', -- CoD
-                                  'FILE_NOALA', 'FILE_NOALB', 'FILE_NOALU', 'FILE_NOALC', 'FILE_AM_BC', 'FILE_AM_LI', 'FILE_AM_RM', 'FILE_AM_SS', -- Alteration
-                                  'ADCORP_NULL',
-                                  -- Skipped events/filing types
-                                  'FILE_COGS1', 'FILE_CHGJU', 'FILE_NWPTA', 'FILE_PARES', 'FILE_TILAT', 'FILE_TILHO', 'FILE_TILMA',
-                                  'SYST_CANPS', 'SYST_CHGJU', 'SYST_CHGPN', 'SYST_CO_PN', 'SYST_LNKPS', 'SYST_NWPTA',
-                                  'SYST_PARES', 'SYST_RIPFL', 'SYST_TILAT', 'SYST_TILHO', 'SYST_NULL',
-                                  'SYSD1_NULL', 'SYSD2_NULL', 'SYST1_NULL', 'SYST2_NULL',
-                                  'TRESP_NULL', 'TRESP_COUTI'
-                          )
-                )
-                THEN 'Y'
-                ELSE 'N'
-            END AS meets_main_criteria,
+           CASE WHEN COALESCE(ev.has_disallowed_event, false) THEN 'N' ELSE 'Y' END AS meets_main_criteria,
            c.recognition_dts::date,
            c.last_ar_filed_dt::date,
            CASE
@@ -804,25 +913,21 @@ FROM (
                WHEN c.last_ar_filed_dt IS NOT NULL AND c.last_ar_filed_dt < CURRENT_DATE - INTERVAL '1 year' THEN 'Y'
                ELSE 'N'
            END AS ar_unfiled_over_1yr,
-           COUNT(e.corp_num) AS filing_cnt,
-           -- last time this corporation had a FILE event
-            -- number of filing events in the last 2 years
-           SUM(CASE WHEN e.event_type_cd = 'FILE'
-               AND e.event_timerstamp >= CURRENT_DATE - INTERVAL '2 years'
-               THEN 1 ELSE 0 END) AS file_cnt_last_2yrs,
-           MAX(CASE WHEN e.event_type_cd = 'FILE' THEN e.event_timerstamp END) AS last_file_event_ts,
-           MAX(e.event_timerstamp) AS last_event_ts,
-           STRING_AGG(e.event_type_cd || '_' || COALESCE(f.filing_type_cd, 'NULL'), ',' ORDER BY e.event_id) AS event_file_types,
-           fe.failed_events,
+           ev.event_count AS filing_cnt,
+           ev.file_event_count_last_2yrs AS file_cnt_last_2yrs,
+           ev.last_file_event_ts,
+           ev.last_event_ts,
+           ev.event_file_types,
+           ev.failed_events,
            COALESCE(cprt_dir.director_count, 0) AS director_count,
            CASE WHEN cow.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_officers,
            CASE WHEN cowtp.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_3rd_party,
            CASE WHEN cowtp.corp_num IS NOT NULL THEN cowtp.vendor ELSE '' END AS vendor,
            CASE WHEN c.corp_password IS NOT NULL THEN 'Y' ELSE 'N' END AS has_password,
            c.send_ar_ind,
-           mvaqc.address_all_any_bad_count,
-           mvaqc.office_all_any_bad_count,
-           mvaqc.party_all_any_bad_count,
+           mvaqs.address_all_any_bad_count,
+           mvaqs.office_all_any_bad_count,
+           mvaqs.party_all_any_bad_count,
            CASE WHEN bc.identifier IS NOT NULL THEN 'Y' ELSE 'N' END AS has_bar_filing,
            bc.latest_fiscal_year AS last_bar_fiscal_year,
            bc.last_ar_filing_date AS last_bar_filing_date,
@@ -837,8 +942,8 @@ FROM (
            bc.payment_account as bar_account_id,
            bc.bar_account_has_mailing_address as bar_account_has_mailing_address,
            ciaml.ting_corps as ting_corps
-    FROM event e
-    JOIN corporation c ON c.corp_num = e.corp_num
+    FROM mv_corp_event_filing_rollup ev
+    JOIN corporation c ON c.corp_num = ev.corp_num
     INNER JOIN (
       SELECT
         corp_num,
@@ -861,7 +966,6 @@ FROM (
            ON cn.corp_num = c.corp_num
           AND cn.end_event_id IS NULL
           AND cn.corp_name_typ_cd IN ('CO', 'NB')
-    LEFT OUTER JOIN filing f ON e.event_id = f.event_id
     LEFT OUTER JOIN mv_corps_with_officers cow ON c.corp_num = cow.corp_num
     LEFT OUTER JOIN corps_with_third_party cowtp ON c.corp_num = cowtp.corp_num
     LEFT OUTER JOIN (
@@ -871,60 +975,14 @@ FROM (
       GROUP BY corp_num
     ) cprt_dir ON cprt_dir.corp_num = c.corp_num
     LEFT OUTER JOIN mv_admin_email_count aec ON c.admin_email = aec.admin_email
-    LEFT OUTER JOIN mv_addr_quality_by_corp mvaqc ON c.corp_num = mvaqc.corp_num
+    LEFT OUTER JOIN mv_addr_quality_screening_by_corp mvaqs ON c.corp_num = mvaqs.corp_num
     LEFT OUTER JOIN bar_corps bc ON c.corp_num = bc.identifier
     LEFT OUTER JOIN (
       SELECT ted_corp_num, array_agg(ting_corp_num) AS ting_corps
       FROM corp_involved_amalgamating
       GROUP BY ted_corp_num
     ) ciaml ON c.corp_num = ciaml.ted_corp_num
-    LEFT OUTER JOIN (
-        SELECT
-          fe_sub.corp_num,
-          STRING_AGG(fe_sub.failed_event, ',' ORDER BY fe_sub.failed_event) AS failed_events
-              FROM (
-                SELECT DISTINCT
-                  e2.corp_num,
-                  e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL') AS failed_event
-                FROM event e2
-                LEFT JOIN filing f2 ON e2.event_id = f2.event_id
-                WHERE (e2.event_type_cd || '_' || COALESCE(f2.filing_type_cd, 'NULL'))
-                    NOT IN ('FILE_ICORP', 'FILE_ICORU', 'FILE_ICORC', -- IA
-                            'FILE_ANNBC', 'FILE_AM_AR', -- AR
-                            'FILE_NOCAD', 'FILE_APTRA', 'FILE_NOERA', 'FILE_AM_DO', 'FILE_AM_RR', -- CoA
-                            'FILE_NOCDR', 'FILE_AM_DI', -- CoD
-                            'FILE_NOALA', 'FILE_NOALB', 'FILE_NOALU', 'FILE_NOALC', 'FILE_AM_BC', 'FILE_AM_LI', 'FILE_AM_RM', 'FILE_AM_SS', -- Alteration
-                            'ADCORP_NULL',
-                            -- Skipped events/filing types
-                            'FILE_COGS1', 'FILE_CHGJU', 'FILE_NWPTA', 'FILE_PARES', 'FILE_TILAT', 'FILE_TILHO', 'FILE_TILMA',
-                            'SYST_CANPS', 'SYST_CHGJU', 'SYST_CHGPN', 'SYST_CO_PN', 'SYST_LNKPS', 'SYST_NWPTA',
-                            'SYST_PARES', 'SYST_RIPFL', 'SYST_TILAT', 'SYST_TILHO', 'SYST_NULL',
-                            'SYSD1_NULL', 'SYSD2_NULL', 'SYST1_NULL', 'SYST2_NULL',
-                            'TRESP_NULL', 'TRESP_COUTI')
-                ) fe_sub
-                GROUP BY fe_sub.corp_num
-      ) fe on c.corp_num = fe.corp_num
     WHERE 1 = 1
-    GROUP BY e.corp_num, cn.corp_name, c.corp_type_cd, c.corp_frozen_type_cd, c.recognition_dts, c.last_ar_filed_dt,
-             LOWER(SPLIT_PART(c.admin_email, '@', 2)), c.admin_email, cow.corp_num,
-             cowtp.corp_num, cowtp.vendor, cprt_dir.director_count, aec.email_count, c.corp_password, c.send_ar_ind,
-             cs.is_active, cs.in_dissolution,
-           mvaqc.address_all_any_bad_count,
-           mvaqc.address_all_stub_count,
-           mvaqc.address_all_any_bad_key_fields_count,
-           mvaqc.address_all_null_count,
-           mvaqc.office_all_any_bad_count,
-           mvaqc.office_all_stub_count,
-           mvaqc.office_all_any_bad_key_fields_count,
-           mvaqc.office_all_null_count,
-           mvaqc.party_all_any_bad_count,
-           mvaqc.party_all_stub_count,
-           mvaqc.party_all_any_bad_key_fields_count,
-           mvaqc.party_all_null_count,
-           bc.identifier, bc.latest_fiscal_year, bc.last_ar_filing_date, bc.sub, bc.idp_userid, bc.payment_account,
-           bc.bar_account_has_mailing_address,
-           ciaml.ting_corps,
-           fe.failed_events
 ) tblFe
 LEFT JOIN mig_status ms USING (corp_num)
 LEFT JOIN mig_batch  mb ON mb.id = ms.mig_batch_id
@@ -932,7 +990,6 @@ LEFT JOIN mig_group  mg ON mg.id = mb.mig_group_id
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
 LEFT JOIN mv_share_class_issue_flags sif USING (corp_num)
 where 1=1
-ORDER BY email_domain, filing_cnt desc
 WITH NO DATA
 ;
 
@@ -1306,8 +1363,11 @@ REFRESH MATERIALIZED VIEW mv_corps_with_officers;
 REFRESH MATERIALIZED VIEW mv_corps_party_role_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_domain_count;
+REFRESH MATERIALIZED VIEW mv_addr_issue_counts_by_entity;
 REFRESH MATERIALIZED VIEW mv_addr_quality_by_corp;
+REFRESH MATERIALIZED VIEW mv_addr_quality_screening_by_corp;
 REFRESH MATERIALIZED VIEW mv_share_class_issue_flags;
+REFRESH MATERIALIZED VIEW mv_corp_event_filing_rollup;
 REFRESH MATERIALIZED VIEW mv_legacy_corps_data;
 REFRESH MATERIALIZED VIEW mv_corp_issue_flags;
 REFRESH MATERIALIZED VIEW mv_issue_counts_by_corp_type;
@@ -1316,10 +1376,12 @@ ANALYZE mv_corps_with_officers;
 ANALYZE mv_corps_party_role_count;
 ANALYZE mv_admin_email_count;
 ANALYZE mv_admin_email_domain_count;
+ANALYZE mv_addr_issue_counts_by_entity;
 ANALYZE mv_addr_quality_by_corp;
+ANALYZE mv_addr_quality_screening_by_corp;
 ANALYZE mv_share_class_issue_flags;
+ANALYZE mv_corp_event_filing_rollup;
 ANALYZE mv_legacy_corps_data;
 ANALYZE mv_corp_issue_flags;
 ANALYZE mv_issue_counts_by_corp_type;
-
 

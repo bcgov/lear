@@ -1218,6 +1218,17 @@ CREATE INDEX IF NOT EXISTS ix_mig_batch_mig_group_id
 
 CREATE INDEX IF NOT EXISTS ix_corp_state_curr ON corp_state (corp_num, op_state_type_cd) WHERE end_event_id IS NULL;
 
+-- Supports v_addr_links / address-quality materialized views by covering current-row address lookups.
+CREATE INDEX IF NOT EXISTS ix_corp_party_curr_addr_cover
+	ON corp_party (corp_num)
+	INCLUDE (party_typ_cd, mailing_addr_id, delivery_addr_id)
+	WHERE end_event_id IS NULL;
+
+CREATE INDEX IF NOT EXISTS ix_office_curr_addr_cover
+	ON office (corp_num)
+	INCLUDE (office_typ_cd, mailing_addr_id, delivery_addr_id)
+	WHERE end_event_id IS NULL;
+
 CREATE INDEX IF NOT EXISTS ix_corporation_corpnum ON corporation (corp_num);
 
 CREATE INDEX IF NOT EXISTS ix_corporation_type ON corporation (corp_type_cd);
@@ -1236,4 +1247,7 @@ CREATE INDEX IF NOT EXISTS ix_mig_corp_batch_corp_num
 CREATE INDEX IF NOT EXISTS ix_mig_batch_target_env_dates
 	ON mig_batch (target_environment, migrated_date DESC NULLS LAST, requested_date DESC NULLS LAST, created_date DESC NULLS LAST, id DESC);
 
-
+-- Supports mv_corp_event_filing_rollup and downstream legacy event rollups.
+CREATE INDEX IF NOT EXISTS ix_event_corpnum_eventid_cover
+	ON event (corp_num, event_id)
+	INCLUDE (event_type_cd, event_timerstamp);

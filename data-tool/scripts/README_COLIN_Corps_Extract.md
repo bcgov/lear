@@ -133,6 +133,83 @@ Safety rules:
 
 ---
 
+## Refreshing selected materialized views for data-only changes
+
+Use this when the **derived MV definitions have not changed** and you only need to rebuild the affected materialized views in dependency order.
+
+Files:
+- Wrapper: `data-tool/refresh_colin_extract_views.sh`
+- MV DDL reference: `data-tool/scripts/colin_corps_extract_postgres_views_ddl`
+
+Usage summary:
+```text
+./data-tool/refresh_colin_extract_views.sh [options]
+
+Options:
+  --mode <plan|refresh>      plan=print SQL only (default)
+                             refresh=execute generated refresh SQL
+  --targets <csv>            comma-separated refresh profiles (default: legacy)
+  --skip-analyze             omit ANALYZE statements after refresh
+  --list-targets             print the available refresh profiles and exit
+  --db, --dbname <name>      target database name (default: colin-mig-corps-test)
+  --host <host>              PostgreSQL host (default: localhost)
+  --port <port>              PostgreSQL port (default: 5432)
+  --user <user>              PostgreSQL user (default: postgres)
+  --schema <schema>          target schema (default: public)
+  --psql-bin <path>          psql binary to use (default: psql or $PSQL_BIN)
+```
+
+Refresh profiles:
+- `legacy`: refresh `mv_corp_event_filing_rollup`, then `mv_legacy_corps_data` (safe/default legacy-screening refresh; keeps rolling time-windowed counts current)
+- `legacy-direct`: refresh `mv_legacy_corps_data` only (advanced/leaf-only path when all upstream derived MVs are already current)
+- `event-filing`: alias of `legacy`; refresh `mv_corp_event_filing_rollup`, then `mv_legacy_corps_data`
+- `share`: refresh `mv_share_class_issue_flags`, plus the event/filing rollup, then `mv_legacy_corps_data`
+- `address`: refresh `mv_addr_issue_counts_by_entity`, then the legacy-only address screening chain: `mv_addr_quality_screening_by_corp`, then the event/filing rollup, then `mv_legacy_corps_data`
+- `address-full`: refresh `mv_addr_issue_counts_by_entity`, both address-quality layers, then the event/filing rollup, legacy MV, and corp issue reporting MVs
+- `party`: refresh the legacy-only `corp_party` screening chain: `mv_corps_with_officers`, `mv_corps_party_role_count`, `mv_addr_issue_counts_by_entity`, `mv_addr_quality_screening_by_corp`, then the event/filing rollup, then `mv_legacy_corps_data`
+- `party-full`: refresh the `corp_party` chain, `mv_addr_issue_counts_by_entity`, both address-quality layers, event/filing rollup, legacy MV, and corp issue reporting MVs
+- `admin-email`: refresh `mv_admin_email_count`, plus the event/filing rollup, then `mv_legacy_corps_data`
+- `email-domain`: refresh `mv_admin_email_domain_count` only
+- `corp-issues`: refresh `mv_addr_issue_counts_by_entity`, `mv_addr_quality_by_corp`, `mv_corp_issue_flags`, then `mv_issue_counts_by_corp_type`
+- `all`: refresh the full COLIN MV layer in dependency order, including `mv_addr_issue_counts_by_entity`
+
+Examples:
+```bash
+# Safe preview: refresh the full legacy-screening chain
+./data-tool/refresh_colin_extract_views.sh \
+  --targets legacy \
+  --db colin-mig-corps-test-subset \
+  --user postgres
+
+# Rebuild event/filing-derived data first, then mv_legacy_corps_data
+./data-tool/refresh_colin_extract_views.sh \
+  --mode refresh \
+  --targets event-filing \
+  --db colin-mig-corps-test-subset \
+  --user postgres
+
+# Refresh address-driven legacy screening data and issue reporting together
+./data-tool/refresh_colin_extract_views.sh \
+  --mode refresh \
+  --targets address-full \
+  --db colin-mig-corps-test-subset \
+  --user postgres
+```
+
+Notes:
+- Use `reset_colin_extract_views.sh` only when the view/MV DDL itself has changed.
+- BAR data is static and should no longer be treated as a reason to refresh `mv_legacy_corps_data`.
+- Any profile that refreshes `mv_legacy_corps_data` now refreshes the event/filing rollup first, except `legacy-direct`.
+- `legacy` is the safe/default profile for legacy-screening data.
+- `legacy-direct` is an advanced/leaf-only path that assumes all upstream derived MVs are already current; otherwise `mv_legacy_corps_data` can be refreshed against stale inputs.
+- `event-filing` is kept as an explicit alias of `legacy` for event/filing-driven refreshes.
+- Address-driven profiles now refresh `mv_addr_issue_counts_by_entity` first so the slim and full address-quality MVs share the same upstream aggregation.
+- `address` / `party` stop at the slim screening MV for legacy-only refreshes.
+- `address-full` / `party-full` / `corp-issues` continue through `mv_addr_quality_by_corp` for full-wide address issue reporting.
+- The refresh helper assumes the materialized views already exist and now preflights the selected targets before generating/executing the plan.
+
+---
+
 ## Subset refresh / subset load (corp-id list; 10k+ supported)
 
 This workflow is for when you want to:
