@@ -38,8 +38,11 @@ VALUES
   ('mv_corps_party_role_count', 'm'),
   ('mv_admin_email_count', 'm'),
   ('mv_admin_email_domain_count', 'm'),
+  ('mv_addr_issue_counts_by_entity', 'm'),
   ('mv_addr_quality_by_corp', 'm'),
+  ('mv_addr_quality_screening_by_corp', 'm'),
   ('mv_share_class_issue_flags', 'm'),
+  ('mv_corp_event_filing_rollup', 'm'),
   ('mv_legacy_corps_data', 'm'),
   ('mv_corp_issue_flags', 'm'),
   ('mv_issue_counts_by_corp_type', 'm');
