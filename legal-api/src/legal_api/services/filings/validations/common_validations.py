@@ -1203,7 +1203,7 @@ def validate_certified_by(filing_json: dict, business: Business) -> list:
     else:
         legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
 
-    if legal_type in Business.CORPS:
+    if legal_type in [*Business.CORPS, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
         return msg  # certifiedBy is not required for corporations
 
     if not certified_by:
