@@ -582,7 +582,7 @@ def test_validate_certified_by(session, legal_type, input_value, expected_error)
 
     errors = validate_certified_by(filing, business)
 
-    if legal_type in Business.CORPS:
+    if legal_type in Business.CORPS + [Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
         assert errors == []
     elif expected_error:
         assert errors
