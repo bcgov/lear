@@ -1824,7 +1824,7 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
 
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
-    errors = validate_authorization_received(filing, business, legal_type)
+    errors = validate_authorization_received(filing, legal_type)
 
     if legal_type in Business.CORPS and expected_error:
         assert errors
