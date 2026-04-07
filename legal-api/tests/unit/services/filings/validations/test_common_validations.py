@@ -17,6 +17,7 @@ from datetime import datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
+from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.models import Business, Party, PartyRole
 from legal_api.services import flags
@@ -554,8 +555,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party_role):
     assert edited_result['address_changed'] == False
     assert edited_result['delivery_address_changed'] == True
 
-@pytest.mark.parametrize('legal_type', Business.CORPS + [
-    Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
+@pytest.mark.parametrize('legal_type', Business.CORPS)
 @pytest.mark.parametrize('input_value, expected_error', [
     ('John   Doe', False),
     ('   \t   ', False),
@@ -563,20 +563,12 @@ def test_find_updated_keys_for_firms(mock_address, mock_party_role):
     ('  John Doe', True),
     ('John Doe   ', True),    
 ])
-def test_validate_certified_by(session, legal_type, input_value, expected_error):
+def test_validate_certified_by_corps(session, legal_type, input_value, expected_error):
     """Test that certified by field can be validated."""
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = input_value
-
-    if legal_type == Business.LegalTypes.COOP:
-        identifier = 'CP1234567'
-        filing['filing']['incorporationApplication'] = INCORPORATION
-    elif legal_type in [Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
-        identifier = 'FM1234567'
-        filing['filing']['registration'] = REGISTRATION
-    else:
-        identifier = 'BC1234567'
-        filing['filing']['incorporationApplication'] = INCORPORATION
+    filing['filing']['incorporationApplication'] = INCORPORATION
+    identifier = 'BC1234567'
 
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
@@ -590,6 +582,140 @@ def test_validate_certified_by(session, legal_type, input_value, expected_error)
             assert errors[0]['error'] == 'Certified by field cannot start or end with whitespace.'
         else:
             assert errors[0]['error'] == 'Certified by field is required.'
+        assert errors[0]['path'] == '/filing/header/certifiedBy'
+
+@pytest.mark.parametrize(
+    'legal_type',
+    [
+        Business.LegalTypes.SOLE_PROP,
+        Business.LegalTypes.PARTNERSHIP,
+    ]
+)
+@pytest.mark.parametrize(
+    'filing_type, sub_type, certified_by, expected_required, expected_error',
+    [
+        # Firm filing types that require certification
+        (CoreFiling.FilingTypes.ANNUALREPORT, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.CHANGEOFREGISTRATION, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.CORRECTION, 'CLIENT', '', True, 'required'),
+        (CoreFiling.FilingTypes.DISSOLUTION, 'voluntary', '', True, 'required'),
+        (CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.REGISTRATION, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.REGISTRATION, None, 'John Doe', True, None),
+        (CoreFiling.FilingTypes.REGISTRATION, None, '  John Doe', True, 'whitespace'),
+        (CoreFiling.FilingTypes.REGISTRATION, None, 'John Doe  ', True, 'whitespace'),
+
+        # Firm filing types that do NOT require certification
+        (CoreFiling.FilingTypes.CONVERSION, None, '', False, None),
+        (CoreFiling.FilingTypes.CORRECTION, 'STAFF', '', False, None),
+        (CoreFiling.FilingTypes.COURTORDER, None, '', False, None),
+        (CoreFiling.FilingTypes.DISSOLUTION, 'administrative', '', False, None),
+        (CoreFiling.FilingTypes.PUTBACKON, None, '', False, None),
+        (CoreFiling.FilingTypes.REGISTRARSNOTATION, None, '', False, None),
+    ]
+)
+def test_validate_certified_by_firms(
+    session,
+    legal_type,
+    filing_type,
+    sub_type,
+    certified_by,
+    expected_required,
+    expected_error
+):
+    """Test certifiedBy validation for firms across filing types."""
+
+    filing = copy.deepcopy(FILING_HEADER)
+
+    # Set filing type
+    filing['filing']['header']['name'] = filing_type
+    filing['filing']['header']['certifiedBy'] = certified_by
+
+    if filing_type == CoreFiling.FilingTypes.CORRECTION:
+        filing['filing']['correction'] = {'type': sub_type}
+    elif filing_type == CoreFiling.FilingTypes.DISSOLUTION:
+        filing['filing']['dissolution'] = {'dissolutionType': sub_type}    
+    else:
+        filing['filing']['registration'] = REGISTRATION
+
+    identifier = 'FM1234567'
+    business = factory_business(identifier=identifier, entity_type=legal_type)
+
+    errors = validate_certified_by(filing, business)
+
+    if not expected_required:
+        assert errors == []
+        return
+    
+    elif expected_error:
+        assert errors
+        if expected_error == 'required':
+            assert errors[0]['error'] == 'Certified by field is required.'
+        elif expected_error == 'whitespace':
+            assert errors[0]['error'] == 'Certified by field cannot start or end with whitespace.'
+
+        assert errors[0]['path'] == '/filing/header/certifiedBy'
+
+@pytest.mark.parametrize(
+    'filing_type, sub_type, certified_by, expected_required, expected_error',
+    [
+        # COOP filing types that require certification
+        (CoreFiling.FilingTypes.ANNUALREPORT, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.CHANGEOFADDRESS, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.CHANGEOFDIRECTORS, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.CORRECTION, 'CLIENT', '', True, 'required'),
+        (CoreFiling.FilingTypes.DISSOLUTION, 'voluntary', '', True, 'required'),
+        (CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.SPECIALRESOLUTION, None, '', True, 'required'),
+        (CoreFiling.FilingTypes.SPECIALRESOLUTION, None, 'John Doe', True, None),
+        (CoreFiling.FilingTypes.SPECIALRESOLUTION, None, '  John Doe', True, 'whitespace'),
+        (CoreFiling.FilingTypes.SPECIALRESOLUTION, None, 'John Doe  ', True, 'whitespace'),
+
+        # COOP filing types that do NOT require certification
+        (CoreFiling.FilingTypes.CORRECTION, 'STAFF', '', False, None),
+        (CoreFiling.FilingTypes.COURTORDER, None, '', False, None),
+        (CoreFiling.FilingTypes.DISSOLUTION, 'administrative', '', False, None),
+        (CoreFiling.FilingTypes.REGISTRARSNOTATION, None, '', False, None),
+    ]
+)
+def test_validate_certified_by_coops(
+    session,
+    filing_type,
+    sub_type,
+    certified_by,
+    expected_required,
+    expected_error
+):
+    """Test certifiedBy validation for coops across filing types."""
+
+    filing = copy.deepcopy(FILING_HEADER)
+
+    filing['filing']['header']['name'] = filing_type
+    filing['filing']['header']['certifiedBy'] = certified_by
+
+    if filing_type == CoreFiling.FilingTypes.CORRECTION:
+        filing['filing']['correction'] = {'type': sub_type}
+    elif filing_type == CoreFiling.FilingTypes.DISSOLUTION:
+        filing['filing']['dissolution'] = {'dissolutionType': sub_type}    
+    else:
+        filing['filing']['registration'] = INCORPORATION
+
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COOP)
+
+    errors = validate_certified_by(filing, business)
+
+    if not expected_required:
+        assert errors == []
+        return
+    
+    elif expected_error:
+        assert errors
+        if expected_error == 'required':
+            assert errors[0]['error'] == 'Certified by field is required.'
+        elif expected_error == 'whitespace':
+            assert errors[0]['error'] == 'Certified by field cannot start or end with whitespace.'
+
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
 @pytest.mark.parametrize(
