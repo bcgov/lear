@@ -1702,7 +1702,7 @@ def test_validate_share_currency_valid_iso_passes(session):
         'series': []
     }])
     result = validate_share_currency(filing, 'incorporationApplication')
-    assert result is None
+    assert result == []
 
 
 def test_validate_share_currency_invalid_currency_rejected(session):
@@ -1757,7 +1757,7 @@ def test_validate_share_currency_existing_other_passthrough(session):
         'series': []
     }])
     result = validate_share_currency(filing, 'alteration', business)
-    assert result is None
+    assert result == []
 
 
 def test_validate_share_currency_new_other_rejected_with_business(session):
@@ -1807,7 +1807,7 @@ def test_validate_share_currency_mixed_classes_unchanged_other_passes(session):
         }
     ])
     result = validate_share_currency(filing, 'alteration', business)
-    assert result is None
+    assert result == []
 
 
 def test_validate_share_currency_new_series_under_other_rejected(session):
@@ -1878,7 +1878,7 @@ def test_validate_share_currency_existing_series_under_other_passes(session):
         }]
     }])
     result = validate_share_currency(filing, 'alteration', business)
-    assert result is None
+    assert result == []
 
 
 def test_validate_share_currency_non_other_changed_to_other_rejected(session):
@@ -1917,5 +1917,5 @@ def test_validate_share_currency_skips_no_par_value(session):
         'series': []
     }])
     result = validate_share_currency(filing, 'incorporationApplication')
-    assert result is None
+    assert result == []
 

@@ -410,7 +410,7 @@ def validate_share_currency(filing_json, filing_type, business=None):
                 "path": f"{err_path}/currency/"
             })
 
-    return msg if msg else None
+    return msg
 
 
 def validate_court_order(court_order_path, court_order):
