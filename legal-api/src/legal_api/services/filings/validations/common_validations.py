@@ -1202,7 +1202,7 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_certified_by(filing_json: dict, business: Business, legal_type: str) -> list:
+def validate_certified_by(filing_json: dict, legal_type: str) -> list:
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
@@ -1237,7 +1237,7 @@ def validate_certified_by(filing_json: dict, business: Business, legal_type: str
 
     return msg
 
-def validate_authorization_received(filing_json: dict, business: Business, legal_type: str) -> list:
+def validate_authorization_received(filing_json: dict, legal_type: str) -> list:
     """Validate authorizationReceived field."""
     msg = []
 
