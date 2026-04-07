@@ -571,9 +571,7 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
     filing['filing']['incorporationApplication'] = INCORPORATION
     identifier = 'BC1234567'
 
-    business = factory_business(identifier=identifier, entity_type=legal_type)
-
-    errors = validate_certified_by(filing, business, legal_type)
+    errors = validate_certified_by(filing, legal_type)
 
     if legal_type in Business.CORPS:
         assert errors == []
