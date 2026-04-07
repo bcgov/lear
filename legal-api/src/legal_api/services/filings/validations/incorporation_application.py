@@ -76,12 +76,8 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     msg.extend(validate_name_request(incorporation_json, legal_type, filing_type))
 
     if legal_type in Business.CORPS:
-        err = validate_share_structure(incorporation_json, filing_type, legal_type)
-        if err:
-            msg.extend(err)
-        err = validate_share_currency(incorporation_json, filing_type)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_share_structure(incorporation_json, filing_type, legal_type) or [])
+        msg.extend(validate_share_currency(incorporation_json, filing_type))
 
     elif legal_type == Business.LegalTypes.COOP.value:
         msg.extend(validate_cooperative_documents(incorporation_json))
