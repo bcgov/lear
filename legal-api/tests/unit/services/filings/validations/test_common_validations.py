@@ -645,7 +645,6 @@ def test_validate_certified_by_firms(
 
     if not expected_required:
         assert errors == []
-        return
     
     elif expected_error:
         assert errors
@@ -707,7 +706,6 @@ def test_validate_certified_by_coops(
 
     if not expected_required:
         assert errors == []
-        return
     
     elif expected_error:
         assert errors
