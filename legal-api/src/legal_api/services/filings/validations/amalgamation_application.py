@@ -31,8 +31,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_addresses,
     validate_parties_names,
     validate_permission_and_completing_party,
-    validate_share_currency,
     validate_phone_number,
+    validate_share_currency,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (

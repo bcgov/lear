@@ -346,6 +346,29 @@ def _is_valid_currency(code: str) -> bool:
     return pycountry.currencies.get(alpha_3=code) is not None
 
 
+def _get_grandfathered_other_classes(business):
+    """Get lookup of existing share classes with currency OTHER and their series IDs."""
+    existing_other_classes = {}
+    if not business:
+        return existing_other_classes
+    for sc in business.share_classes:
+        if sc.currency and sc.currency.upper() == "OTHER":
+            existing_other_classes[sc.id] = {s.id for s in sc.series}
+    return existing_other_classes
+
+
+def _validate_grandfathered_other_series(item, existing_series_ids, err_path):
+    """Block new series added under a grandfathered OTHER share class."""
+    msg = []
+    for series_index, series in enumerate(item.get("series", [])):
+        if series.get("id", None) not in existing_series_ids:
+            msg.append({
+                "error": "Cannot add new series under a share class with currency type OTHER.",
+                "path": f"{err_path}/series/{series_index}"
+            })
+    return msg
+
+
 def validate_share_currency(filing_json, filing_type, business=None):
     """Validate share class currency codes are valid ISO 4217 codes.
 
@@ -359,14 +382,7 @@ def validate_share_currency(filing_json, filing_type, business=None):
     share_classes = filing_json["filing"][filing_type] \
         .get("shareStructure", {}).get("shareClasses", [])
     msg = []
-
-    # Build lookup of existing OTHER share classes and their series by ID
-    existing_other_classes = {}
-    if business:
-        for sc in business.share_classes:
-            if sc.currency and sc.currency.upper() == "OTHER":
-                existing_series_ids = {s.id for s in sc.series}
-                existing_other_classes[sc.id] = existing_series_ids
+    existing_other_classes = _get_grandfathered_other_classes(business)
 
     for index, item in enumerate(share_classes):
         if not item.get("hasParValue", False):
@@ -382,14 +398,8 @@ def validate_share_currency(filing_json, filing_type, business=None):
         if currency.upper() == "OTHER":
             share_class_id = item.get("id", None)
             if share_class_id and share_class_id in existing_other_classes:
-                # Existing OTHER class allowed, but block new series
-                existing_series_ids = existing_other_classes[share_class_id]
-                for series_index, series in enumerate(item.get("series", [])):
-                    if series.get("id", None) not in existing_series_ids:
-                        msg.append({
-                            "error": "Cannot add new series under a share class with currency type OTHER.",
-                            "path": f"{err_path}/series/{series_index}"
-                        })
+                msg.extend(_validate_grandfathered_other_series(
+                    item, existing_other_classes[share_class_id], err_path))
                 continue
 
         # Reject invalid currency codes (includes OTHER on new/unmatched share classes)

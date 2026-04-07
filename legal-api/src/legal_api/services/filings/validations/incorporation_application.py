@@ -32,8 +32,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_names,
     validate_pdf,
     validate_permission_and_completing_party,
-    validate_share_currency,
     validate_phone_number,
+    validate_share_currency,
     validate_share_structure,
 )
 from legal_api.services.utils import get_str

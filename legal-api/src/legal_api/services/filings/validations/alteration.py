@@ -28,10 +28,10 @@ from .common_validations import (
     validate_effective_date,
     validate_name_request,
     validate_name_translation,
-    validate_share_currency,
     validate_pdf,
     validate_phone_number,
     validate_resolution_date_in_share_structure,
+    validate_share_currency,
     validate_share_structure,
 )
 

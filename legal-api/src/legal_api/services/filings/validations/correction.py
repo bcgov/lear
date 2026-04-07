@@ -27,12 +27,12 @@ from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
-    validate_share_currency,
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
     validate_relationships,
     validate_resolution_date_in_share_structure,
+    validate_share_currency,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
