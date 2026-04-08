@@ -65,6 +65,18 @@ EXCLUDED_WORDS_FOR_SERIES = ["share", "shares"]
 SHARE_NAME_SUFFIX = " Shares"
 MAX_SHARE_DIGITS = 16
 
+# Note:
+# - Corrections are handled separately (CLIENT only)
+# - Dissolution is handled separately (voluntary only)
+FILINGS_REQUIRING_CERTIFICATION = {
+    CoreFiling.FilingTypes.ANNUALREPORT,
+    CoreFiling.FilingTypes.CHANGEOFADDRESS,
+    CoreFiling.FilingTypes.CHANGEOFDIRECTORS,
+    CoreFiling.FilingTypes.CHANGEOFREGISTRATION,
+    CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL,
+    CoreFiling.FilingTypes.REGISTRATION,
+    CoreFiling.FilingTypes.SPECIALRESOLUTION,
+}
 
 def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
     """Validate the resolution date of a share structure.
@@ -1191,6 +1203,7 @@ def validate_certify_name(filing_json) -> bool:
     return True
 
 def validate_certified_by(filing_json: dict, business: Business) -> list:
+    from legal_api.services.filings.validations.dissolution import DissolutionTypes
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
@@ -1205,17 +1218,31 @@ def validate_certified_by(filing_json: dict, business: Business) -> list:
 
     if legal_type in Business.CORPS:
         return msg  # certifiedBy is not required for corporations
+    is_cert_filing = filing_type in FILINGS_REQUIRING_CERTIFICATION
 
-    if not certified_by:
-        msg.append({
-            "error": "Certified by field is required.",
-            "path": "/filing/header/certifiedBy"
-        })
-    elif certified_by.strip() and certified_by != certified_by.strip():
-        msg.append({
-            "error": "Certified by field cannot start or end with whitespace.",
-            "path": "/filing/header/certifiedBy"
-        })
+    is_client_correction = (
+        filing_type == CoreFiling.FilingTypes.CORRECTION
+        and filing_json["filing"].get("correction", {}).get("type") == "CLIENT"
+    )
+
+    is_voluntary_dissolution = (
+        filing_type == CoreFiling.FilingTypes.DISSOLUTION
+        and filing_json["filing"].get("dissolution", {}).get("dissolutionType") == DissolutionTypes.VOLUNTARY.value
+    )
+
+    certification_required = (is_cert_filing or is_client_correction or is_voluntary_dissolution)
+
+    if certification_required:
+        if not certified_by:
+            msg.append({
+                "error": "Certified by field is required.",
+                "path": "/filing/header/certifiedBy"
+            })
+        elif certified_by.strip() and certified_by != certified_by.strip():
+            msg.append({
+                "error": "Certified by field cannot start or end with whitespace.",
+                "path": "/filing/header/certifiedBy"
+            })
 
     return msg
 
