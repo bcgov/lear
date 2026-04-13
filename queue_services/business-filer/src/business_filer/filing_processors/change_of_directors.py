@@ -43,7 +43,7 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import create_party, create_role, update_director
 
 
-def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0912
+def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0915, PLR0912
     """Render the change_of_directors onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     if not (directors := filing_json["filing"]["changeOfDirectors"].get("directors")):
