@@ -63,13 +63,16 @@ def _make_cloudsql_getconn():  # pragma: no cover
         if _connector is None:
             _connector = Connector()
 
+        ip_type_str = os.getenv("CLOUDSQL_IP_TYPE", "PRIVATE").upper()
+        ip_type = IPTypes.PRIVATE if ip_type_str == "PRIVATE" else IPTypes.PUBLIC
+
         return _connector.connect(
             os.environ["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
             "pg8000",
             user=os.environ["DATABASE_USERNAME"],
             db=os.environ["DATABASE_NAME"],
             enable_iam_auth=True,
-            ip_type=IPTypes.PRIVATE,
+            ip_type=ip_type,
         )
 
     return getconn

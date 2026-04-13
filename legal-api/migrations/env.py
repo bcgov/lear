@@ -79,7 +79,7 @@ def run_migrations_online():
 
     with connectable.connect() as connection:
 
-        owner_role = os.getenv("DB_OWNER_ROLE")
+        owner_role = os.getenv("DATABASE_OWNER_ROLE")
         if owner_role:
             safe_role = owner_role.replace('"', '""')  # Escape any quotes for SQL safety
             connection.execute(sa.text(f'SET ROLE "{safe_role}"'))
