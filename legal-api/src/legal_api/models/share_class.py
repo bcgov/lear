@@ -67,6 +67,7 @@ class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
             "hasParValue": self.par_value_flag,
             "parValue": self.par_value,
             "currency": self.currency,
+            "currencyAdditional": self.currency_additional,
             "hasRightsOrRestrictions": self.special_rights_flag
         }
 

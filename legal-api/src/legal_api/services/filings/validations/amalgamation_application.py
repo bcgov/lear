@@ -32,6 +32,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_names,
     validate_permission_and_completing_party,
     validate_phone_number,
+    validate_share_currency,
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
@@ -83,6 +84,9 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
         msg.extend(validate_offices(amalgamation_json, legal_type, filing_type))
         msg.extend(validate_offices_addresses(amalgamation_json, filing_type))
         err = validate_share_structure(amalgamation_json, filing_type, legal_type)
+        if err:
+            msg.extend(err)
+        err = validate_share_currency(amalgamation_json, filing_type)
         if err:
             msg.extend(err)
 

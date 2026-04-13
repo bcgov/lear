@@ -19,7 +19,8 @@ from unittest.mock import patch
 
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models import Business, Party, PartyRole
+from legal_api.models import Business, Party, PartyRole, ShareClass
+from legal_api.models.share_series import ShareSeries
 from legal_api.services import flags
 from legal_api.services.permissions import PermissionService
 import pytest
@@ -55,6 +56,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_email,
     validate_offices,
     validate_offices_addresses,
+    validate_share_currency,
     validate_parties_addresses,
     validate_party_name,
     validate_party_role_firms,
@@ -1797,4 +1799,247 @@ def test_share_series_max_number_of_shares_validation(session, max_shares, expec
     memoize_names = ['Class A Shares']
     result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
     assert any(expected_error in e.get('error', '') for e in result)
+
+
+# === validate_share_currency tests ===
+
+
+def _build_filing_with_share_classes(filing_type, share_classes):
+    """Helper to build a minimal filing JSON with share structure."""
+    return {
+        'filing': {
+            filing_type: {
+                'shareStructure': {
+                    'shareClasses': share_classes
+                }
+            }
+        }
+    }
+
+
+def test_validate_share_currency_valid_iso_passes(session):
+    """Assert that share classes with valid ISO 4217 currency pass validation."""
+    filing = _build_filing_with_share_classes('incorporationApplication', [{
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'CAD',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'incorporationApplication')
+    assert result == []
+
+
+def test_validate_share_currency_invalid_currency_rejected(session):
+    """Assert that an invalid (non-ISO 4217) currency is rejected."""
+    filing = _build_filing_with_share_classes('incorporationApplication', [{
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'BANANA',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'incorporationApplication')
+    assert result is not None
+    assert any('ISO 4217' in e.get('error', '') for e in result)
+
+
+def test_validate_share_currency_other_rejected_no_business(session):
+    """Assert that OTHER currency is rejected when no business (not a valid ISO code)."""
+    filing = _build_filing_with_share_classes('incorporationApplication', [{
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'OTHER',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'incorporationApplication')
+    assert result is not None
+    assert any('ISO 4217' in e.get('error', '') for e in result)
+
+
+def test_validate_share_currency_existing_other_passthrough(session):
+    """Assert that an existing OTHER share class passes through when ID matches."""
+    business = factory_business('BC1234567', entity_type='BC')
+    share_class = ShareClass(
+        name='Class A Shares',
+        priority=1,
+        max_share_flag=False,
+        par_value_flag=True,
+        par_value=1.0,
+        currency='OTHER',
+        currency_additional='Bitcoin',
+        special_rights_flag=False,
+        business_id=business.id
+    )
+    share_class.skip_share_class_listener = True
+    share_class.save()
+
+    filing = _build_filing_with_share_classes('alteration', [{
+        'id': share_class.id,
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'OTHER',
+        'currencyAdditional': 'Bitcoin',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'alteration', business)
+    assert result == []
+
+
+def test_validate_share_currency_new_other_rejected_with_business(session):
+    """Assert that a new share class with OTHER is rejected even when business exists."""
+    business = factory_business('BC1234567', entity_type='BC')
+
+    filing = _build_filing_with_share_classes('alteration', [{
+        'name': 'New Other Shares',
+        'hasParValue': True,
+        'currency': 'OTHER',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'alteration', business)
+    assert result is not None
+    assert any('ISO 4217' in e.get('error', '') for e in result)
+
+
+def test_validate_share_currency_mixed_classes_unchanged_other_passes(session):
+    """Assert that modifying a non-OTHER class while OTHER class is unchanged passes."""
+    business = factory_business('BC1234567', entity_type='BC')
+    other_class = ShareClass(
+        name='Class B Shares',
+        priority=2,
+        max_share_flag=False,
+        par_value_flag=True,
+        par_value=1.0,
+        currency='OTHER',
+        special_rights_flag=False,
+        business_id=business.id
+    )
+    other_class.skip_share_class_listener = True
+    other_class.save()
+
+    filing = _build_filing_with_share_classes('alteration', [
+        {
+            'name': 'Class A Shares',
+            'hasParValue': True,
+            'currency': 'CAD',
+            'series': []
+        },
+        {
+            'id': other_class.id,
+            'name': 'Class B Shares',
+            'hasParValue': True,
+            'currency': 'OTHER',
+            'series': []
+        }
+    ])
+    result = validate_share_currency(filing, 'alteration', business)
+    assert result == []
+
+
+def test_validate_share_currency_new_series_under_other_rejected(session):
+    """Assert that adding a new series under an OTHER share class is rejected."""
+    business = factory_business('BC1234567', entity_type='BC')
+    other_class = ShareClass(
+        name='Class A Shares',
+        priority=1,
+        max_share_flag=False,
+        par_value_flag=True,
+        par_value=1.0,
+        currency='OTHER',
+        special_rights_flag=True,
+        business_id=business.id
+    )
+    other_class.skip_share_class_listener = True
+    other_class.save()
+
+    filing = _build_filing_with_share_classes('alteration', [{
+        'id': other_class.id,
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'OTHER',
+        'series': [{
+            'name': 'New Series Shares',
+            'hasMaximumShares': False
+        }]
+    }])
+    result = validate_share_currency(filing, 'alteration', business)
+    assert result is not None
+    assert any('series' in e.get('error', '').lower() for e in result)
+
+
+def test_validate_share_currency_existing_series_under_other_passes(session):
+    """Assert that existing series under an OTHER share class pass through."""
+    business = factory_business('BC1234567', entity_type='BC')
+    other_class = ShareClass(
+        name='Class A Shares',
+        priority=1,
+        max_share_flag=False,
+        par_value_flag=True,
+        par_value=1.0,
+        currency='OTHER',
+        special_rights_flag=True,
+        business_id=business.id
+    )
+    other_class.skip_share_class_listener = True
+    other_class.save()
+
+    series = ShareSeries(
+        name='Series 1 Shares',
+        priority=1,
+        max_share_flag=False,
+        special_rights_flag=False,
+        share_class_id=other_class.id
+    )
+    series.save()
+
+    filing = _build_filing_with_share_classes('alteration', [{
+        'id': other_class.id,
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'OTHER',
+        'series': [{
+            'id': series.id,
+            'name': 'Series 1 Shares',
+            'hasMaximumShares': False
+        }]
+    }])
+    result = validate_share_currency(filing, 'alteration', business)
+    assert result == []
+
+
+def test_validate_share_currency_non_other_changed_to_other_rejected(session):
+    """Assert that changing an existing non-OTHER share class to OTHER is rejected."""
+    business = factory_business('BC1234567', entity_type='BC')
+    cad_class = ShareClass(
+        name='Class A Shares',
+        priority=1,
+        max_share_flag=False,
+        par_value_flag=True,
+        par_value=1.0,
+        currency='CAD',
+        special_rights_flag=False,
+        business_id=business.id
+    )
+    cad_class.save()
+
+    filing = _build_filing_with_share_classes('alteration', [{
+        'id': cad_class.id,
+        'name': 'Class A Shares',
+        'hasParValue': True,
+        'currency': 'OTHER',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'alteration', business)
+    assert result is not None
+    assert any('ISO 4217' in e.get('error', '') for e in result)
+
+
+def test_validate_share_currency_skips_no_par_value(session):
+    """Assert that share classes without par value skip currency validation."""
+    filing = _build_filing_with_share_classes('incorporationApplication', [{
+        'name': 'Class A Shares',
+        'hasParValue': False,
+        'currency': 'GARBAGE',
+        'series': []
+    }])
+    result = validate_share_currency(filing, 'incorporationApplication')
+    assert result == []
 
