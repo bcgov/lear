@@ -569,9 +569,8 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = input_value
     filing['filing']['incorporationApplication'] = INCORPORATION
-    identifier = 'BC1234567'
 
-    errors = validate_certified_by(filing, legal_type)
+    errors = validate_certified_by(filing, "incorporationApplication", legal_type)
 
     if legal_type in Business.CORPS:
         assert errors == []
@@ -640,7 +639,7 @@ def test_validate_certified_by_firms(
     identifier = 'FM1234567'
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
-    errors = validate_certified_by(filing, business)
+    errors = validate_certified_by(filing, filing_type, legal_type)
 
     if not expected_required:
         assert errors == []
@@ -701,7 +700,7 @@ def test_validate_certified_by_coops(
     identifier = 'CP1234567'
     business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COOP)
 
-    errors = validate_certified_by(filing, business)
+    errors = validate_certified_by(filing, filing_type, Business.LegalTypes.COOP)
 
     if not expected_required:
         assert errors == []

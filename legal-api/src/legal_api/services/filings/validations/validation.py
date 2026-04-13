@@ -79,7 +79,7 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
     else:
         legal_type = filing_json["filing"].get(filing_type, {}).get("nameRequest", {}).get("legalType")
 
-    cert_errs = validate_certified_by(filing_json, legal_type)
+    cert_errs = validate_certified_by(filing_json, filing_type, legal_type)
     if cert_errs:
         return Error(HTTPStatus.BAD_REQUEST, cert_errs)
     

@@ -1202,13 +1202,15 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_certified_by(filing_json: dict, legal_type: str) -> list:
+def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) -> list:
+    from legal_api.services.filings.validations.dissolution import DissolutionTypes
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
 
     if legal_type in Business.CORPS:
         return msg  # certifiedBy is not required for corporations
+
     is_cert_filing = filing_type in FILINGS_REQUIRING_CERTIFICATION
 
     is_client_correction = (
