@@ -842,6 +842,8 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(recognition_dts as date) as recognition_dts,
         CAST(last_ar_filed_dt as date) as last_ar_filed_dt,
         CAST(director_count as integer) as director_count,
+        CAST(directors_within_bc as boolean) as directors_within_bc,
+        CAST(directors_within_ca as boolean) as directors_within_ca,
         CAST(filing_cnt as integer) as filing_cnt,
         CAST(months_since_last_ar_filing as integer) as months_since_last_ar_filing,
         CAST(ar_unfiled_over_1yr as boolean) as ar_unfiled_over_1yr,
@@ -920,6 +922,18 @@ FROM (
            ev.event_file_types,
            ev.failed_events,
            COALESCE(cprt_dir.director_count, 0) AS director_count,
+           CASE
+            WHEN COALESCE(dir_mail_loc.dir_cnt, 0) > 0
+              AND COALESCE(dir_mail_loc.dir_bc_mailing_cnt, 0) = dir_mail_loc.dir_cnt
+            THEN 'Y'
+            ELSE 'N'
+           END AS directors_within_bc,
+           CASE
+            WHEN COALESCE(dir_mail_loc.dir_cnt, 0) > 0
+              AND COALESCE(dir_mail_loc.dir_ca_mailing_cnt, 0) = dir_mail_loc.dir_cnt
+            THEN 'Y'
+            ELSE 'N'
+           END AS directors_within_ca,
            CASE WHEN cow.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_officers,
            CASE WHEN cowtp.corp_num IS NOT NULL THEN 'Y' ELSE 'N' END AS has_3rd_party,
            CASE WHEN cowtp.corp_num IS NOT NULL THEN cowtp.vendor ELSE '' END AS vendor,
@@ -974,6 +988,26 @@ FROM (
       WHERE party_typ_cd = 'DIR'
       GROUP BY corp_num
     ) cprt_dir ON cprt_dir.corp_num = c.corp_num
+    LEFT OUTER JOIN (
+      SELECT 
+        cp.corp_num,
+        COUNT(*) AS dir_cnt,
+        COUNT(*) Filter (
+          WHERE cp.mailing_addr_id IS NOT NULL 
+            AND cp.mailing_addr_id <> 1 
+            AND UPPER(TRIM(ma.province)) = 'BC'
+        ) AS dir_bc_mailing_cnt,
+        COUNT(*) Filter (
+          WHERE cp.mailing_addr_id IS NOT NULL
+            AND cp.mailing_addr_id <> 1 
+            AND UPPER(TRIM(ma.country_typ_cd)) = 'CA'
+        ) AS dir_ca_mailing_cnt
+      FROM corp_party cp
+      LEFT JOIN address ma ON ma.addr_id = cp.mailing_addr_id
+      WHERE cp.end_event_id is NULL
+        AND cp.party_typ_cd = 'DIR'
+      GROUP BY cp.corp_num
+    ) dir_mail_loc ON dir_mail_loc.corp_num = c.corp_num
     LEFT OUTER JOIN mv_admin_email_count aec ON c.admin_email = aec.admin_email
     LEFT OUTER JOIN mv_addr_quality_screening_by_corp mvaqs ON c.corp_num = mvaqs.corp_num
     LEFT OUTER JOIN bar_corps bc ON c.corp_num = bc.identifier
