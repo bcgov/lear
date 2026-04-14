@@ -43,8 +43,9 @@ from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import (
     create_party,
     create_role,
-    update_director
+    update_director,
 )
+
 
 def _update_director_using_name(director: dict, business_id: int):
     """Update director information based on name matching."""
