@@ -35,13 +35,16 @@
 import copy
 from datetime import UTC, datetime
 
-from flask import current_app
-
 from business_model.models import Business, Filing, PartyRole
+from flask import current_app
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import create_party, create_role, update_director
+from business_filer.filing_processors.filing_components import (
+    create_party,
+    create_role,
+    update_director
+)
 
 def _update_director_using_name(director: dict, business_id: int):
     """Update director information based on name matching."""
@@ -84,7 +87,7 @@ def _update_director_using_party_id(director: dict, business_id: int):
                                 party_id, business_id)
         raise QueueException
 
-def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
+def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0912 
     """Render the change_of_directors onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     if not (directors := filing_json["filing"]["changeOfDirectors"].get("directors")):
