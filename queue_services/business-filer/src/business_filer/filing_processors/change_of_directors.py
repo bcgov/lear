@@ -42,8 +42,48 @@ from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import create_party, create_role, update_director
 
+def _update_director_using_name(director: dict, business_id: int):
+    """Update director information based on name matching."""
+    if "nameChanged" in director["actions"]:
+        director_name = (director["officer"].get("prevFirstName") +
+                        director["officer"].get("prevMiddleInitial", "") +
+                        director["officer"].get("prevLastName"))
+    else:
+        director_name = (director["officer"].get("firstName") +
+                        director["officer"].get("middleInitial", "") +
+                        director["officer"].get("lastName"))
+    if not director_name:
+        current_app.logger.error("Could not resolve director name from json %s.", director)
+        raise QueueException
 
-def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0915, PLR0912
+    for current_director in PartyRole.get_parties_by_role(business_id, PartyRole.RoleTypes.DIRECTOR.value):
+        current_director_name = (current_director.party.first_name +
+                                (current_director.party.middle_initial or "") +
+                                current_director.party.last_name)
+        if current_director_name.upper() == director_name.upper() and current_director.cessation_date is None:
+            update_director(director=current_director, new_info=director)
+            break    
+
+def _update_director_using_party_id(director: dict, business_id: int):
+    """Update director information based on party ID matching."""
+    party_id = director["officer"].get("id")
+    if not party_id:
+        current_app.logger.error("Could not resolve party id from json %s.", director)
+        raise QueueException
+
+    matched = False
+    for current_director in PartyRole.get_parties_by_role(business_id, PartyRole.RoleTypes.DIRECTOR.value):
+        if current_director.party_id == party_id and current_director.cessation_date is None:
+            update_director(director=current_director, new_info=director)
+            matched = True
+            break
+
+    if not matched:
+        current_app.logger.error("Could not find active director with party id %s for business %s.",
+                                party_id, business_id)
+        raise QueueException
+
+def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0912
     """Render the change_of_directors onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     if not (directors := filing_json["filing"]["changeOfDirectors"].get("directors")):
@@ -90,43 +130,10 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
         elif any([action != "appointed" for action in director["actions"]]):  # noqa: C419
             if filing_rec.colin_event_ids:
                 # Colin path: retain name-based matching for now.
-                if "nameChanged" in director["actions"]:
-                    director_name = (director["officer"].get("prevFirstName") +
-                                    director["officer"].get("prevMiddleInitial", "") +
-                                    director["officer"].get("prevLastName"))
-                else:
-                    director_name = (director["officer"].get("firstName") +
-                                    director["officer"].get("middleInitial", "") +
-                                    director["officer"].get("lastName"))
-                if not director_name:
-                    current_app.logger.error("Could not resolve director name from json %s.", director)
-                    raise QueueException
-
-                for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
-                    current_director_name = (current_director.party.first_name +
-                                            (current_director.party.middle_initial or "") +
-                                            current_director.party.last_name)
-                    if current_director_name.upper() == director_name.upper() and current_director.cessation_date is None:
-                        update_director(director=current_director, new_info=director)
-                        break
+                _update_director_using_name(director=director, business_id=business.id)
             else:
-                # Lear path: match by party ID
-                party_id = director["officer"].get("id")
-                if not party_id:
-                    current_app.logger.error("Could not resolve party id from json %s.", director)
-                    raise QueueException
-
-                matched = False
-                for current_director in PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value):
-                    if current_director.party_id == party_id and current_director.cessation_date is None:
-                        update_director(director=current_director, new_info=director)
-                        matched = True
-                        break
-
-                if not matched:
-                    current_app.logger.error("Could not find active director with party id %s for business %s.",
-                                            party_id, business.id)
-                    raise QueueException
+                # Lear path: match by party ID instead of name
+                _update_director_using_party_id(director=director, business_id=business.id)
 
     for director in new_directors:
         # add new diretor party role to the business
