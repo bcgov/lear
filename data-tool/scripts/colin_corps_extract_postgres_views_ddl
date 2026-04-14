@@ -994,10 +994,12 @@ FROM (
         COUNT(*) AS dir_cnt,
         COUNT(*) Filter (
           WHERE cp.mailing_addr_id IS NOT NULL 
+            AND cp.mailing_addr_id <> 1 
             AND UPPER(TRIM(ma.province)) = 'BC'
         ) AS dir_bc_mailing_cnt,
         COUNT(*) Filter (
-          WHERE cp.mailing_addr_id IS NOT NULL 
+          WHERE cp.mailing_addr_id IS NOT NULL
+            AND cp.mailing_addr_id <> 1 
             AND UPPER(TRIM(ma.country_typ_cd)) = 'CA'
         ) AS dir_ca_mailing_cnt
       FROM corp_party cp
