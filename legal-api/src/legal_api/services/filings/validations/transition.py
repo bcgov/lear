@@ -40,6 +40,7 @@ from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (
     validate_offices,
     validate_relationships,
+    validate_share_currency,
     validate_share_structure,
 )
 
@@ -65,6 +66,10 @@ def validate(business: Business, filing_json: dict) -> Optional[Error]:
                                 True))
 
     err = validate_share_structure(filing_json, filing_type, business.legal_type)
+    if err:
+        msg.extend(err)
+
+    err = validate_share_currency(filing_json, filing_type, business)
     if err:
         msg.extend(err)
 

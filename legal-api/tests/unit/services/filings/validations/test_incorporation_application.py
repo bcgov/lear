@@ -2111,4 +2111,39 @@ def test_coop_incorporation_does_not_validate_shares(session, mocker):
 
     mock_share_structure.assert_not_called()
     assert err is None
+
+
+@pytest.mark.parametrize('test_name, currency, expect_error', [
+    ('INVALID_CURRENCY', 'INVALID', True),
+    ('VALID_CURRENCY', 'CAD', False),
+])
+def test_incorporation_share_currency_validation(session, mocker, test_name, currency, expect_error):
+    """Assert that incorporation validates share class currency through the full validate() path."""
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
+                                       'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
+    filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
+    filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    filing_json['filing'][incorporation_application_name]['shareStructure']['shareClasses'][0]['currency'] = currency
+
+    # Mock everything except share currency validation
+    for func_name in ['validate_offices', 'validate_offices_addresses', 'validate_roles',
+                      'validate_parties_names', 'validate_parties_addresses',
+                      'validate_coop_parties_mailing_address', 'validate_parties_delivery_address',
+                      'validate_name_request', 'validate_share_structure',
+                      'validate_effective_date', 'validate_ia_court_order',
+                      'validate_phone_number', 'validate_email', 'validate_name_translation']:
+        mocker.patch.object(incorporation_application, func_name, return_value=[])
+    mocker.patch.object(flags, 'is_on', return_value=False)
+
+    err = incorporation_application.validate(filing_json)
+
+    if expect_error:
+        assert err is not None
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert any('ISO 4217' in e.get('error', '') for e in err.msg)
+    else:
+        assert err is None
  
