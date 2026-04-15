@@ -487,7 +487,7 @@ def format_filings_data(data: dict) -> dict:
         else:
             status = 'COMPLETED'
             completion_date = effective_date
-        is_electronic_filing = (x.get('f_old_type_cd') or '').upper() == 'F'
+        is_electronic_filing = (x.get('f_ods_type_cd') or '').upper() == 'F'
         paper_only = not (is_electronic_filing and status == 'COMPLETED' and not hide_in_ledger)
         filing_body = {
             **filing_body,
