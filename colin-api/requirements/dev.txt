@@ -6,7 +6,7 @@ pytest-mock
 pytest-cov
 requests
 pyhamcrest
-sqlalchemy<=1.4.44
+sqlalchemy>=2.0.0
 
 # Lint and code style
 flake8
@@ -22,4 +22,4 @@ pydocstyle<4.0
 pylint
 pylint-flask
 isort<5,>=4.2.5
-sqlalchemy<=1.4.44
+sqlalchemy>=2.0.0
