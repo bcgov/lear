@@ -487,7 +487,8 @@ def format_filings_data(data: dict) -> dict:
         else:
             status = 'COMPLETED'
             completion_date = effective_date
-
+        is_electronic_filing = (x.get('f_old_type_cd') or '').upper() == 'F'
+        paper_only = not (is_electronic_filing and status == 'COMPLETED' and not hide_in_ledger)
         filing_body = {
             **filing_body,
             'filing_date': filing_date,
@@ -498,6 +499,7 @@ def format_filings_data(data: dict) -> dict:
             'filing_json': filing_json,
             'meta_data': meta_data,
             'hide_in_ledger': hide_in_ledger,
+            'paper_only': paper_only,
             'status': status,
             'submitter_id': user_id,  # will be updated to real user_id when loading data into db
             'submitter_roles': 'staff' if x.get('u_role_typ_cd') and x['u_role_typ_cd'].lower() == 'staff' else None,

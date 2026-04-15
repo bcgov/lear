@@ -709,6 +709,7 @@ def get_filings_query(corp_num):
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
+            f.ods_type_cd          as f_ods_type_cd,
             to_char(f.effective_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_effective_dt_str,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             case
