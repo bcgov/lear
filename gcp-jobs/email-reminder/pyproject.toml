@@ -9,7 +9,7 @@ license = {text = "BSD-3-Clause"}
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "flask (>=3.1.0,<4.0.0)",
+    "flask (>=3.0.0,<4.0.0)",
     "launchdarkly-server-sdk (>=9.10.0,<10.0.0)",
     "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
