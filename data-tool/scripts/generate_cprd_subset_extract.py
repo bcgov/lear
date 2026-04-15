@@ -1148,8 +1148,9 @@ def run(cfg: cfg_GenerationConfig) -> int:
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
         print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
-        print(" - Address loads use shared staging table public.subset_address_stage and merge into public.address by addr_id.")
-        print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to create/drop that helper table.")
+        print(" - Address loads use the predeclared helper table public.subset_address_stage and merge into public.address by addr_id.")
+        print("   - BCOMPS purge keysets also use predeclared helper tables in the extract schema (subset_excluded_*).")
+        print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to truncate/read/write those helper tables.")
         if cfg.pg_debug_session_probes:
             print(" - Postgres session probes: ENABLED (--pg-debug-session-probes)")
             print("   - master + nested execute files will print pg_backend_pid/current_user/session_replication_role.")
@@ -1201,8 +1202,9 @@ def run(cfg: cfg_GenerationConfig) -> int:
     print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
     print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
     print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
-    print(" - Address loads use shared staging table public.subset_address_stage and merge into public.address by addr_id.")
-    print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to create/drop that helper table.")
+    print(" - Address loads use the predeclared helper table public.subset_address_stage and merge into public.address by addr_id.")
+    print("   - BCOMPS purge keysets also use predeclared helper tables in the extract schema (subset_excluded_*).")
+    print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to truncate/read/write those helper tables.")
     if cfg.pg_debug_session_probes:
         print(" - Postgres session probes: ENABLED (--pg-debug-session-probes)")
         print("   - master + nested execute files will print pg_backend_pid/current_user/session_replication_role.")
