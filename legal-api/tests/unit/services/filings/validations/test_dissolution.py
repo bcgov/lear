@@ -248,6 +248,51 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
 
 
 @pytest.mark.parametrize(
+    'test_name, legal_type, address_in_bc, address_in_ca, expected_errors',
+    [
+        ('COOP_CA_OK', 'CP', 0, 1, []),
+        ('COOP_NO_CA_FAILS_CA', 'CP', 0, 0, ['Address must be in Canada.']),
+        ('CORP_BC_AND_CA_OK', 'BC', 1, 1, []),
+        ('CORP_NO_BC_FAILS_BC', 'BC', 0, 1, ['Address must be in BC.']),
+        ('CORP_BC_REGION_NON_CA_COUNTRY_FAILS_CA', 'BC', 1, 0, ['Address must be in Canada.']),
+        ('CORP_NO_BC_NO_CA_FAILS_BOTH', 'BC', 0, 0,
+            ['Address must be in Canada.', 'Address must be in BC.']),
+    ]
+)
+def test_validate_dissolution_parties_address_location_counts(
+        test_name, legal_type, address_in_bc, address_in_ca, expected_errors):
+    """Atomic test for the Canada/BC count checks in validate_dissolution_parties_address.
+
+    Mocks _validate_address_location to return arbitrary counts so the two guard lines
+    (CA and BC) can be exercised independently of address-parsing logic.
+    """
+    filing_json = {
+        'filing': {
+            'dissolution': {
+                'parties': [
+                    {'roles': [{'roleType': 'Custodian'}]}
+                ]
+            }
+        }
+    }
+
+    with patch.object(dissolution, '_validate_custodian_email', return_value=[]), \
+            patch.object(dissolution, 'validate_custodian_org_name', return_value=[]), \
+            patch.object(dissolution, '_validate_address_location',
+                         return_value=(None, address_in_bc, address_in_ca)):
+        result = dissolution.validate_dissolution_parties_address(
+            filing_json, legal_type, dissolution.DissolutionTypes.VOLUNTARY)
+
+    if not expected_errors:
+        assert result is None
+    else:
+        assert result is not None
+        assert [m['error'] for m in result] == expected_errors
+        for m in result:
+            assert m['path'] == '/filing/dissolution/parties'
+
+
+@pytest.mark.parametrize(
     'test_name, legal_type, dissolution_type, identifier, has_special_resolution_filing, expected_code, expected_msg',
     [
         ('SUCCESS', 'BC', 'voluntary', 'BC1234567', False, None, None),

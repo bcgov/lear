@@ -282,9 +282,10 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
     else:
         msg.append({"error": "Dissolution party is required.", "path": party_path})
 
-    if legal_type == Business.LegalTypes.COOP.value and address_in_ca == 0:
+    if address_in_ca == 0:
         msg.append({"error": "Address must be in Canada.", "path": party_path})
-    elif legal_type in Business.CORPS and address_in_bc == 0:
+
+    if legal_type in Business.CORPS and address_in_bc == 0:
         msg.append({"error": "Address must be in BC.", "path": party_path})
 
     if msg:
