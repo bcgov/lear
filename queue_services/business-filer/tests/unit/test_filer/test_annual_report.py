@@ -182,6 +182,11 @@ def test_process_combined_filing(app, session, mocker):
     directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
     assert len(directors) == 4
     business_id = business.id
+    COMBINED_FILING['filing']['changeOfDirectors']['directors'][0]['officer']['id'] = director_party1.id
+    COMBINED_FILING['filing']['changeOfDirectors']['directors'][1]['officer']['id'] = director_party2.id
+    COMBINED_FILING['filing']['changeOfDirectors']['directors'][2]['officer']['id'] = director_party3.id
+    COMBINED_FILING['filing']['changeOfDirectors']['directors'][3]['officer']['id'] = director_party4.id
+
     filing_id = (create_filing(payment_id, COMBINED_FILING, business.id)).id
     filing_msg = FilingMessage(filing_identifier=filing_id)
 
