@@ -99,7 +99,8 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
     new_directors = []
 
     for director in directors:  # pylint: disable=too-many-nested-blocks;
-        # Applies only for filings coming from colin.
+        # Applies to CoD filings originating from COLIN (currently COOPs only).
+        # Continue using name-based matching for directors.
         if filing_rec.colin_event_ids:
             director_found = False
             director_name = (director["officer"].get("firstName") +
