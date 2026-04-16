@@ -1,4 +1,2 @@
 -- Cleanup the shared address staging table used by subset_transfer_chunk.sql.
-
-DROP TABLE IF EXISTS public.subset_address_stage;
-
+-- No-op: the helper table is predeclared in the COLIN extract DDL and is truncated during prepare/chunk execution.
