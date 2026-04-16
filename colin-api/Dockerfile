@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.9
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
