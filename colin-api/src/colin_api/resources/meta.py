@@ -15,10 +15,11 @@
 
 Currently this only provides API versioning information
 """
-from flask import jsonify
-from flask_restx import Namespace, Resource
-
 from colin_api.utils.run_version import get_run_version
+
+from flask import jsonify
+
+from flask_restx import Namespace, Resource
 
 
 API = Namespace('Meta', description='Metadata')

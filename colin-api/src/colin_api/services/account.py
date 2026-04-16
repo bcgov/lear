@@ -14,8 +14,9 @@
 
 """This class provides the service for auth calls."""
 
-import requests
 from flask import current_app
+
+import requests
 
 
 # pylint: disable=too-few-public-methods

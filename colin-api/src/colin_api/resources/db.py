@@ -16,6 +16,7 @@
 These will get initialized by the application.
 """
 import cx_Oracle
+
 from flask import current_app, g
 
 

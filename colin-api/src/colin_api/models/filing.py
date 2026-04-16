@@ -22,9 +22,6 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Dict, List, Optional
 
-from flask import current_app
-from registry_schemas.utils import get_schema
-
 from colin_api.exceptions import (  # noqa: I001
     FilingNotFoundException,  # noqa: I001
     GenericException,  # noqa: I001
@@ -47,6 +44,10 @@ from colin_api.models import (  # noqa: I001
 )  # noqa: I001
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, convert_to_snake
+
+from flask import current_app
+
+from registry_schemas.utils import get_schema
 
 
 # Code smells:

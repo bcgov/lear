@@ -13,6 +13,7 @@
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
 from flask import current_app
+
 from ldclient import get as ldclient_get, set_config as ldclient_set_config  # noqa: I001
 from ldclient.config import Config  # noqa: I005
 from ldclient.impl.integrations.files.file_data_source import _FileDataSource
@@ -64,9 +65,9 @@ class Flags():  # pylint: disable=too-few-public-methods
         self.app = app
         self.sdk_key = app.config.get('LD_SDK_KEY')
 
-        if self.sdk_key or app.env != 'production':
+        if self.sdk_key or app.debug or app.testing:
 
-            if app.env == 'production':
+            if not app.debug and not app.testing:
                 config = Config(sdk_key=self.sdk_key)
             else:
                 factory = FileDataSource.factory(paths=['flags.json'],

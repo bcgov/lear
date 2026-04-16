@@ -18,6 +18,7 @@ import copy
 import json
 
 import pytest
+
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from tests import oracle_integration, skip_coop_ia

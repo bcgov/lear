@@ -17,14 +17,15 @@ Currently this only provides API versioning information
 """
 from http import HTTPStatus
 
-from flask import current_app, jsonify, request
-from flask_restx import Namespace, Resource, cors
-
 from colin_api.exceptions import GenericException
 from colin_api.models import Business, CorpName
 from colin_api.resources.db import DB
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
 from colin_api.utils.util import cors_preflight
+
+from flask import current_app, jsonify, request
+
+from flask_restx import Namespace, Resource, cors
 
 
 API = Namespace('businesses', description='Colin API Services - Businesses')

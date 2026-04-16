@@ -20,6 +20,7 @@ import json
 from datetime import datetime
 
 from dateutil.relativedelta import relativedelta
+
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from tests import oracle_integration

@@ -20,10 +20,10 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Optional
 
-from flask import current_app
-
 from colin_api.resources.db import DB
 from colin_api.utils import get_max_value
+
+from flask import current_app
 
 
 class CorpName:

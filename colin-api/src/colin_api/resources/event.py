@@ -12,14 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Event info endpoint for colin db."""
-from flask import current_app, jsonify
-from flask_restx import Resource, cors
-
 from colin_api.models import Business
 from colin_api.resources.business import API
 from colin_api.resources.db import DB
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
 from colin_api.utils.util import cors_preflight
+
+from flask import current_app, jsonify
+
+from flask_restx import Resource, cors
 
 
 @cors_preflight('GET, POST')

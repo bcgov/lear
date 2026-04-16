@@ -14,13 +14,14 @@
 """Program account details from BNIT link."""
 from http import HTTPStatus
 
-from flask import current_app, jsonify, request
-from flask_restx import Namespace, Resource, cors
-
 from colin_api.exceptions import GenericException
 from colin_api.models import ProgramAccount
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
 from colin_api.utils.util import cors_preflight
+
+from flask import current_app, jsonify, request
+
+from flask_restx import Namespace, Resource, cors
 
 
 API = Namespace('ProgramAccount', description='ProgramAccount endpoint to get BNI DB link data.')

@@ -14,8 +14,9 @@
 """decorators used to skip/run pytests based on local setup."""
 import os
 
-import pytest
 from dotenv import find_dotenv, load_dotenv
+
+import pytest
 
 
 # this will load all the envars from a .env file located in the project root (api)

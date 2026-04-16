@@ -19,12 +19,13 @@ from __future__ import annotations
 
 from typing import Optional
 
-import pycountry
-from flask import current_app
-
 from colin_api.exceptions import AddressNotFoundException
 from colin_api.resources.db import DB
 from colin_api.utils import stringify_list
+
+from flask import current_app
+
+import pycountry
 
 
 class Address:  # pylint: disable=too-many-instance-attributes; need all these fields
