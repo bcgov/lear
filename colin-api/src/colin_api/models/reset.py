@@ -15,11 +15,11 @@
 
 Currently this only provides API versioning information
 """
+from flask import current_app
+
 from colin_api.models.filing import Business, Filing, Office, Party, ShareObject
 from colin_api.resources.db import DB
 from colin_api.utils import stringify_list
-
-from flask import current_app
 
 
 class Reset:

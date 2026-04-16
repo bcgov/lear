@@ -17,11 +17,11 @@ Currently this only provides API versioning information
 """
 from typing import Dict, List, Optional
 
+from flask import current_app
+
 from colin_api.models import Address  # pylint: disable=cyclic-import
 from colin_api.resources.db import DB
 from colin_api.utils import delete_from_table_by_event_ids, stringify_list
-
-from flask import current_app
 
 
 class Office:

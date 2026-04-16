@@ -19,10 +19,10 @@ from __future__ import annotations
 
 from typing import List, Optional
 
+from flask import current_app
+
 from colin_api.resources.db import DB
 from colin_api.utils import stringify_list
-
-from flask import current_app
 
 
 # pylint: disable=too-few-public-methods

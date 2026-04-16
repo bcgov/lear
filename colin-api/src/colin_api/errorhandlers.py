@@ -24,9 +24,7 @@ import re
 import sys
 
 from flask import jsonify, request
-
 from flask_jwt_oidc import AuthError
-
 from werkzeug.exceptions import HTTPException
 from werkzeug.routing import RoutingException
 

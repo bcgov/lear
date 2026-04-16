@@ -16,9 +16,9 @@ from __future__ import annotations
 
 from typing import Dict, Optional
 
-from colin_api.resources.db import DB
-
 from flask import current_app
+
+from colin_api.resources.db import DB
 
 
 class ProgramAccount:  # pylint: disable=too-many-instance-attributes; need all these fields

@@ -18,7 +18,6 @@ Test-Suite to ensure that the version utilities are working as expected.
 """
 from colin_api import utils
 from colin_api.version import __version__
-
 from tests import skip_in_pod
 
 

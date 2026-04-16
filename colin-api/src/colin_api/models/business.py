@@ -21,14 +21,13 @@ from datetime import datetime
 from enum import Enum
 from typing import Dict, List, Optional
 
+from datedelta import datedelta
+from flask import current_app
+
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.models.corp_name import CorpName
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, convert_to_json_datetime, convert_to_pacific_time, stringify_list
-
-from datedelta import datedelta
-
-from flask import current_app
 
 
 class Business:  # pylint: disable=too-many-instance-attributes, too-many-public-methods

@@ -16,9 +16,9 @@
 
 Test-Suite to ensure that the CORS decorator is working as expected.
 """
-from colin_api.utils.util import cors_preflight
-
 import pytest
+
+from colin_api.utils.util import cors_preflight
 
 
 TEST_CORS_METHODS_DATA = [

@@ -21,12 +21,12 @@ import datetime
 import itertools
 from typing import Dict, List, Optional
 
+from flask import current_app
+
 from colin_api.exceptions import PartiesNotFoundException
 from colin_api.models import Address, Business  # pylint: disable=cyclic-import
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, delete_from_table_by_event_ids, stringify_list
-
-from flask import current_app
 
 
 class Party:  # pylint: disable=too-many-instance-attributes; need all these fields

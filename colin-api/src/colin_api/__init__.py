@@ -18,14 +18,14 @@ This module is the API for the Legal Entity system.
 
 import os
 
+from flask import Flask
+
 from colin_api import config, errorhandlers
 from colin_api.resources import API, API_BLUEPRINT, OPS_BLUEPRINT
 from colin_api.services import flags
 from colin_api.utils.auth import jwt
 from colin_api.utils.logging import setup_logging
 from colin_api.utils.run_version import get_run_version
-
-from flask import Flask
 
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), 'logging.conf'))  # important to do this first
