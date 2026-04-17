@@ -17,6 +17,12 @@ MIG_CORP_FILTER_BASE = """
     {group_filter}
 """
 
+colin_update_ar_ind_query = """
+    UPDATE corporation c
+    SET c.SEND_AR_IND = 'Y'
+    WHERE c.corp_num IN ({corps})
+"""
+
 def _parse_csv(csv_val: str) -> List[int]:
     if not csv_val:
         return []
@@ -72,6 +78,17 @@ def chunk_list(data, size=1000):
     for i in range(0, len(data), size):
         yield data[i:i + size]
 
+# --- TASK: UPDATE ONE CHUNK ---
+@task(retries=2, retry_delay_seconds=5)
+def update_chunk(ids_chunk):
+    corps_str = ",".join(f"'{corp}'" for corp in ids_chunk)
+    sql = colin_update_ar_ind_query.format(corps=corps_str)
+
+    with colin_oracle_init(get_config()).connect() as conn:
+        result = conn.execute(text(sql))
+        conn.commit()
+        return result.rowcount
+
 @flow(
     name='Update-Colin-AR-Indicator-Flow',
     log_prints=True,
@@ -79,7 +96,6 @@ def chunk_list(data, size=1000):
 def update_colin_ar_ind_flow():
     try:
         config = get_config()
-        colin_oracle_engine = colin_oracle_init(config)
         colin_extract_engine = colin_extract_init(config)
 
         # Get candidates
@@ -90,6 +106,10 @@ def update_colin_ar_ind_flow():
 
         for chunk in chunk_list(candidates, 1000):
             print(f"Chunk length: {len(chunk)}")
+            updated = update_chunk(chunk)
+            total_updated += updated
+
+        print(f"Total records processed: {total_updated}")
 
     except Exception as e:
         raise e  
