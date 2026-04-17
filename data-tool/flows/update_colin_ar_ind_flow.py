@@ -37,40 +37,39 @@ def _parse_csv(csv_val: str) -> List[int]:
 @task(cache_policy=NO_CACHE)
 def get_candidates(config, colin_engine: Engine) -> List[str]:
     """
-    Build the candidate corp list purely from MIG metadata (COLIN).
-    This is used to *replace* suffix-based selection when USE_MIGRATION_FILTER is True.
+    Build the candidate corp list from MIG metadata when USE_MIGRATION_FILTER is True.
     """
     if not config.USE_MIGRATION_FILTER:
         return []
 
-    # Parse CSV env strings into integer lists for expanding binds
-    batch_ids = _parse_csv(config.MIG_BATCH_IDS) if config.MIG_BATCH_IDS else []
-    group_ids = _parse_csv(config.MIG_GROUP_IDS) if config.MIG_GROUP_IDS else []
+    batch_ids = _parse_csv(config.MIG_BATCH_IDS or "")
+    group_ids = _parse_csv(config.MIG_GROUP_IDS or "")
 
-    batch_filter = "AND b.id IN :batch_ids" if batch_ids else ""
-    group_filter = "AND g.id IN :group_ids" if group_ids else ""
-    sql = MIG_CORP_FILTER_BASE.format(batch_filter=batch_filter, group_filter=group_filter)
-
-    # Conditionally bind lists with expanding (environment not used by this query)
-    stmt = text(sql)
+    filters = []
     params = {}
-
     if batch_ids:
-        stmt = stmt.bindparams(bindparam('batch_ids', expanding=True))
+        filters.append("AND b.id = ANY(:batch_ids)")
         params['batch_ids'] = batch_ids
     if group_ids:
-        stmt = stmt.bindparams(bindparam('group_ids', expanding=True))
+        filters.append("AND g.id = ANY(:group_ids)")
         params['group_ids'] = group_ids
 
+    sql = MIG_CORP_FILTER_BASE.format(
+        batch_filter=" ".join(filters[:1]),  # Only one filter, but keeping structure
+        group_filter=" ".join(filters[1:]) if len(filters) > 1 else ""
+    )
+
     with colin_engine.connect() as conn:
-        rows = conn.execute(stmt, params).fetchall()
-        candidates = [r[0] for r in rows]
+        rows = conn.execute(text(sql), params).fetchall()
+        candidates = [row[0] for row in rows]
         print(f'👷 MIG corp candidates found: {len(candidates)}')
-        cleaned = [
+
+        # Strip "BC" prefix if present, as COLIN corp_num does not include it.
+        colin_identifiers = [
             ",".join(item[2:] if item.startswith("BC") else item for item in row.split(","))
             for row in candidates
         ]
-        return cleaned
+        return colin_identifiers
 
 
 # --- HELPER: CHUNK LIST ---
@@ -94,25 +93,19 @@ def update_chunk(ids_chunk):
     log_prints=True,
 )
 def update_colin_ar_ind_flow():
-    try:
-        config = get_config()
-        colin_extract_engine = colin_extract_init(config)
+    config = get_config()
+    colin_extract_engine = colin_extract_init(config)
 
-        # Get candidates
-        candidates = get_candidates(config, colin_extract_engine)
-        print(f'👷 Using MIG filter mode with {len(candidates)} candidates')
+    candidates = get_candidates(config, colin_extract_engine)
+    print(f'👷 Using MIG filter mode with {len(candidates)} candidates')
 
-        total_updated = 0
+    total_updated = 0
+    for chunk in chunk_list(candidates, 1000):
+        print(f"Chunk length: {len(chunk)}")
+        updated = update_chunk(chunk)
+        total_updated += updated
 
-        for chunk in chunk_list(candidates, 1000):
-            print(f"Chunk length: {len(chunk)}")
-            updated = update_chunk(chunk)
-            total_updated += updated
-
-        print(f"Total records processed: {total_updated}")
-
-    except Exception as e:
-        raise e  
+    print(f"Total records processed: {total_updated}")  
 
 if __name__ == '__main__':
     update_colin_ar_ind_flow()
