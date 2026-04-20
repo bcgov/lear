@@ -299,27 +299,31 @@ def _validate_address_location(parties, legal_type):
     require_bc = legal_type in Business.CORPS
     for idx, party in enumerate(parties):
         for address_type in Address.JSON_ADDRESS_TYPES:
-            if address_type not in party:
-                msg.append({"error": _(f"{address_type} is required."),
-                            "path": f"/filing/dissolution/parties/{idx}"})
-                continue
+            msg.extend(_validate_party_address(party, idx, address_type, require_bc))
+    return msg
 
-            address_path = f"/filing/dissolution/parties/{idx}/{address_type}"
-            country = get_str(party, f"/{address_type}/addressCountry")
-            try:
-                country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
-            except LookupError:
-                msg.append({"error": _("Address Country must resolve to a valid ISO-2 country."),
-                            "path": f"{address_path}/addressCountry"})
-                continue
 
-            if country_code != "CA":
-                msg.append({"error": _("Address must be in Canada."),
-                            "path": f"{address_path}/addressCountry"})
+def _validate_party_address(party, idx, address_type, require_bc):
+    address_path = f"/filing/dissolution/parties/{idx}/{address_type}"
+    if address_type not in party:
+        return [{"error": _(f"{address_type} is required."),
+                 "path": address_path}]
 
-            if require_bc and get_str(party, f"/{address_type}/addressRegion") != "BC":
-                msg.append({"error": _("Address must be in BC."),
-                            "path": f"{address_path}/addressRegion"})
+    country = get_str(party, f"/{address_type}/addressCountry")
+    try:
+        country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
+    except LookupError:
+        return [{"error": _("Address Country must resolve to a valid ISO-2 country."),
+                 "path": f"{address_path}/addressCountry"}]
+
+    msg = []
+    if country_code != "CA":
+        msg.append({"error": _("Address must be in Canada."),
+                    "path": f"{address_path}/addressCountry"})
+
+    if require_bc and get_str(party, f"/{address_type}/addressRegion") != "BC":
+        msg.append({"error": _("Address must be in BC."),
+                    "path": f"{address_path}/addressRegion"})
 
     return msg
 
