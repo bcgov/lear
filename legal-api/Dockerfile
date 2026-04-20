@@ -40,7 +40,7 @@ ENV APP_ENV=${APP_ENV} \
 
 SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
-RUN apt-get update && apt-get upgrade -y \
+RUN apt-get update \
   && apt-get install --no-install-recommends -y \
     bash \
     brotli \
