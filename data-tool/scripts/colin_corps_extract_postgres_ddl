@@ -62,6 +62,51 @@ create table if not exists address
 alter table address
     owner to postgres;
 
+create table if not exists subset_address_stage
+(
+    addr_id         numeric(10),
+    province        varchar(2),
+    country_typ_cd  varchar(2),
+    postal_cd       varchar(15),
+    addr_line_1     varchar(50),
+    addr_line_2     varchar(50),
+    addr_line_3     varchar(50),
+    city            varchar(40)
+);
+
+alter table subset_address_stage
+    owner to postgres;
+
+create table if not exists subset_excluded_corps
+(
+    corp_num varchar(10)
+        constraint pk_subset_excluded_corps
+            primary key
+);
+
+alter table subset_excluded_corps
+    owner to postgres;
+
+create table if not exists subset_excluded_events
+(
+    event_id numeric(9)
+        constraint pk_subset_excluded_events
+            primary key
+);
+
+alter table subset_excluded_events
+    owner to postgres;
+
+create table if not exists subset_excluded_corp_parties
+(
+    corp_party_id numeric(9)
+        constraint pk_subset_excluded_corp_parties
+            primary key
+);
+
+alter table subset_excluded_corp_parties
+    owner to postgres;
+
 create table if not exists corporation
 (
     corp_num            varchar(10)
