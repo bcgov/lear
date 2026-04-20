@@ -269,7 +269,7 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
     custodians = list(filter(lambda x: _is_custodian_role(x.get("roles", [])), parties_json))
 
     if not custodians:
-        # Handle case where there are no custodians, but there is a liquidator role 
+        # Handle case where there are no custodians, but there is a liquidator role
         # (this is not implemented in the Create UI, keeping behavior here)
         if any(_is_liquidator_role(p.get("roles", [])) for p in parties_json):
             return None
