@@ -70,7 +70,8 @@ def run_cprd_subset_extract_generator(
     threads: int,
     pg_fastload: bool,
     pg_disable_method: str,
-    out: str | None
+    out: str | None,
+    include_cp: bool = False,
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
@@ -94,6 +95,8 @@ def run_cprd_subset_extract_generator(
     ]
     if pg_fastload:
         argv.append('--pg-fastload')
+    if include_cp:
+        argv.append('--include-cp')
     out_path = Path(out).expanduser().resolve() if out is not None else _SUBSET.resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     argv.extend(['--out', str(out)])
@@ -130,6 +133,7 @@ def extract_pull_flow(
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
     reset_extract_postgres: bool = True,
+    include_cp: bool = False,
 ) -> None:
     """
     Generate files
@@ -144,6 +148,7 @@ def extract_pull_flow(
         chunk_size=chunk_size,
         threads=threads,
         pg_fastload=pg_fastload,
+        include_cp=include_cp,
         pg_disable_method=pg_disable_method,
         out=out,
     )
@@ -169,6 +174,7 @@ if __name__ == '__main__':
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
+    p.add_argument('--include-cp', action='store_true', help='Include corp type CP in subset extract queries')
     p.add_argument('--pg-disable-method', default='replica_role', choices=('table_triggers', 'replica_role'))
     p.add_argument('--out', default=None, help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_true')

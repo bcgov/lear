@@ -268,6 +268,19 @@ Generated scripts (gitignored by default):
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
    ```
 
+   **Refresh mode with CP corps included**:
+   ```bash
+   python <lear-repo-base-path>/data-tool/scripts/generate_cprd_subset_extract.py \
+     --corp-file <lear-repo-base-path>/data-tool/scripts/corp_ids.txt \
+     --mode refresh \
+     --chunk-size 500 \
+     --threads 4 \
+     --include-cp \
+     --pg-fastload \ 
+     --pg-disable-method table_triggers \   
+     --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
+   ```
+
    **Load mode** (load only those corps; no deletes):
    ```bash
    python <lear-repo-base-path>/data-tool/scripts/generate_cprd_subset_extract.py \
@@ -279,6 +292,10 @@ Generated scripts (gitignored by default):
      --pg-disable-method table_triggers \      
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_load.sql
    ```
+
+   Optional flags:
+   - Add `--include-cp` to opt in corp type `CP` for the subset transfer queries.
+   - `--include-cp` affects the **subset workflow only**. Full refresh (`transfer_cprd_corps.sql`) and downstream reservation flows still use the historical corp-type cohort unless updated separately.
 
    Optional performance flags:
    - Add `--pg-fastload` to enable Postgres session settings for faster bulk writes (templates `subset_pg_fastload_begin.sql` / `subset_pg_fastload_end.sql`).

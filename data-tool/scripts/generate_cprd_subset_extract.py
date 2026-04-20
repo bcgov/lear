@@ -74,6 +74,7 @@ class cfg_GenerationConfig:
     threads: int
     prefix_numeric_bc: bool
     include_cars: bool
+    include_cp: bool
 
     pg_fastload: bool
     pg_disable_method: cfg_PgDisableMethod
@@ -96,6 +97,7 @@ class cfg_GenerationConfig:
 TMPL_TOKEN_CORP_IDS = "&corp_ids_in"  # used by delete template (Postgres-side)
 TMPL_TOKEN_TARGET_PRED = "&target_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_PRED = "&oracle_corp_num_predicate"  # used by transfer template (Oracle-side)
+TMPL_TOKEN_ORACLE_CORP_TYPE_PRED = "&oracle_corp_type_predicate"  # used by transfer template (Oracle-side)
 
 
 @dataclass(frozen=True)
@@ -207,6 +209,13 @@ def corp_to_oracle_ids(target_ids: Sequence[str]) -> List[str]:
 def sql_quote_literal(val: str) -> str:
     escaped = val.replace("'", "''")
     return f"'{escaped}'"
+
+
+def sql_render_oracle_corp_type_predicate(*, include_cp: bool) -> str:
+    supported_types = ['BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE']
+    if include_cp:
+        supported_types.append('CP')
+    return f"c.CORP_TYP_CD in ({sql_render_in_list(supported_types, multiline=False)})"
 
 
 def sql_render_in_list(values: Sequence[str], *, multiline: bool = True, indent: str = "    ") -> str:
@@ -338,7 +347,7 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     transfer_chunk = tmpl_TemplateSpec(
         name="subset_transfer_chunk",
         path=subset_dir / "subset_transfer_chunk.sql",
-        required_tokens=(TMPL_TOKEN_TARGET_PRED, TMPL_TOKEN_ORACLE_PRED),
+        required_tokens=(TMPL_TOKEN_TARGET_PRED, TMPL_TOKEN_ORACLE_PRED, TMPL_TOKEN_ORACLE_CORP_TYPE_PRED),
     )
     delete_cars = tmpl_TemplateSpec(
         name="subset_delete_cars",
@@ -451,12 +460,14 @@ def gen_build_chunk_sql(
     corp_ids_sql: str,
     target_predicate_sql: str,
     oracle_predicate_sql: str,
+    oracle_corp_type_predicate_sql: str,
     pg_debug_session_probes: bool,
 ) -> str:
     replacements = {
         TMPL_TOKEN_CORP_IDS: corp_ids_sql,
         TMPL_TOKEN_TARGET_PRED: target_predicate_sql,
         TMPL_TOKEN_ORACLE_PRED: oracle_predicate_sql,
+        TMPL_TOKEN_ORACLE_CORP_TYPE_PRED: oracle_corp_type_predicate_sql,
     }
 
     parts: List[str] = []
@@ -484,7 +495,9 @@ def gen_build_chunk_sql(
 
     if include_transfer:
         rendered_transfer = tmpl_render(transfer_template_text, replacements=replacements)
-        if TMPL_TOKEN_TARGET_PRED in rendered_transfer or TMPL_TOKEN_ORACLE_PRED in rendered_transfer:
+        if (TMPL_TOKEN_TARGET_PRED in rendered_transfer or
+                TMPL_TOKEN_ORACLE_PRED in rendered_transfer or
+                TMPL_TOKEN_ORACLE_CORP_TYPE_PRED in rendered_transfer):
             raise SystemExit(
                 f"Internal error: token(s) remained after rendering transfer template for chunk {chunk.index:03d}."
             )
@@ -503,9 +516,11 @@ def gen_write_chunk_files(
     delete_template_text: str,
     transfer_template_text: str,
     max_in_list: int,
+    include_cp: bool,
     pg_debug_session_probes: bool,
 ) -> List[Path]:
     out_paths: List[Path] = []
+    oracle_corp_type_predicate_sql = sql_render_oracle_corp_type_predicate(include_cp=include_cp)
     for ch in chunks:
         corp_ids_sql = sql_render_in_list(ch.target_ids, multiline=True, indent="    ")
         target_predicate_sql = sql_render_in_predicate(
@@ -533,6 +548,7 @@ def gen_write_chunk_files(
             corp_ids_sql=corp_ids_sql,
             target_predicate_sql=target_predicate_sql,
             oracle_predicate_sql=oracle_predicate_sql,
+            oracle_corp_type_predicate_sql=oracle_corp_type_predicate_sql,
             pg_debug_session_probes=pg_debug_session_probes,
         )
         gen_write_text(ch.chunk_file, chunk_sql)
@@ -783,8 +799,10 @@ def gen_build_master_script_vset(
             multiline=False,
             indent="",
         )
+        oracle_corp_type_pred = sql_render_oracle_corp_type_predicate(include_cp=cfg.include_cp)
         lines.append(f"vset target_corp_num_predicate={target_pred}")
         lines.append(f"vset oracle_corp_num_predicate={oracle_pred}")
+        lines.append(f"vset oracle_corp_type_predicate={oracle_corp_type_pred}")
 
     if cfg.mode == cfg_GenerationMode.REFRESH:
         lines.append("-- delete subset (chunked to keep SQL size manageable)")
@@ -898,6 +916,11 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
         help="Skip global cars* refresh step (carsfile/carsbox/carsrept/carindiv).",
     )
     parser.set_defaults(include_cars=True)
+    parser.add_argument(
+        "--include-cp",
+        action="store_true",
+        help="Include corp type CP in subset extract queries.",
+    )
 
     parser.add_argument(
         "--pg-fastload",
@@ -990,6 +1013,7 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
         threads=int(args.threads),
         prefix_numeric_bc=bool(args.prefix_numeric_bc),
         include_cars=bool(args.include_cars),
+        include_cp=bool(args.include_cp),
         pg_fastload=bool(args.pg_fastload),
         pg_disable_method=pg_disable_method,
         pg_debug_session_probes=bool(args.pg_debug_session_probes),
@@ -1061,6 +1085,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 delete_template_text=delete_template_text,
                 transfer_template_text=transfer_template_text,
                 max_in_list=cfg.chunk_size,
+                include_cp=cfg.include_cp,
                 pg_debug_session_probes=cfg.pg_debug_session_probes,
             )
             transfer_files = combined_files
@@ -1077,6 +1102,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                     delete_template_text=delete_template_text,
                     transfer_template_text=transfer_template_text,
                     max_in_list=cfg.chunk_size,
+                    include_cp=cfg.include_cp,
                     pg_debug_session_probes=cfg.pg_debug_session_probes,
                 )
 
@@ -1096,6 +1122,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 delete_template_text=delete_template_text,
                 transfer_template_text=transfer_template_text,
                 max_in_list=cfg.chunk_size,
+                include_cp=cfg.include_cp,
                 pg_debug_session_probes=cfg.pg_debug_session_probes,
             )
 
@@ -1145,6 +1172,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
             print(" - cars* tables will be globally refreshed (truncate + reload from Oracle).")
         else:
             print(" - cars* tables will NOT be refreshed (--no-cars was set).")
+        print(f" - CP corp type inclusion: {'ENABLED' if cfg.include_cp else 'disabled'} (--include-cp)")
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
         print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")

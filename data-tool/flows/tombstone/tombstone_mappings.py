@@ -28,6 +28,10 @@ class EventFilings(str, Enum):
     FILE_AMALH = 'FILE_AMALH'
     FILE_AMALR = 'FILE_AMALR'
     FILE_AMALV = 'FILE_AMALV'
+    FILE_OTAMA = 'FILE_OTAMA'
+
+    # CONVOTHER Amalgamation Application
+    CONVOTHER_OTAMA = 'CONVOTHER_OTAMA'
 
     FILE_AMLHU = 'FILE_AMLHU'
     FILE_AMLRU = 'FILE_AMLRU'
@@ -40,17 +44,29 @@ class EventFilings(str, Enum):
 
     # Annual Report
     FILE_ANNBC = 'FILE_ANNBC'
+    FILE_OTANN = 'FILE_OTANN'
+
+    # CONVOTHER Annual Report
+    CONVOTHER_OTANN = 'CONVOTHER_OTANN'
 
     # Change of Address
     FILE_APTRA = 'FILE_APTRA'
     FILE_NOERA = 'FILE_NOERA'
     FILE_NOCAD = 'FILE_NOCAD'
+    FILE_OTADD = 'FILE_OTADD'
     FILE_AM_DO = 'FILE_AM_DO'
     FILE_AM_RR = 'FILE_AM_RR'
 
+    # CONVOTHER Change of Address
+    CONVOTHER_OTADD = 'CONVOTHER_OTADD'
+
     # Change of Directors
     FILE_NOCDR = 'FILE_NOCDR'
+    FILE_OTCDR = 'FILE_OTCDR'
     FILE_AM_DI = 'FILE_AM_DI'
+
+    # CONVOTHER Change of Directors
+    CONVOTHER_OTCDR = 'CONVOTHER_OTCDR'
 
     # Consent Continuation Out
     FILE_CONTO = 'FILE_CONTO'
@@ -68,6 +84,7 @@ class EventFilings(str, Enum):
 
     # Conversion
     CONVAMAL_NULL = 'CONVAMAL_NULL'
+    CONVOTHER_NULL = 'CONVOTHER_NULL'
     CONVCIN_NULL = 'CONVCIN_NULL'
     CONVCOUT_NULL = 'CONVCOUT_NULL'
     CONVDS_NULL = 'CONVDS_NULL'
@@ -98,6 +115,12 @@ class EventFilings(str, Enum):
     # Court Order
     FILE_COURT = 'FILE_COURT'
 
+    # Special Resolution
+    FILE_OTSPE = 'FILE_OTSPE'
+
+    # CONVOTHER Special Resolution
+    CONVOTHER_OTSPE = 'CONVOTHER_OTSPE'
+
     # TODO: Delay of Dissolution - unsupported (need confirmation)
     DISD1_DISDE = 'DISD1_DISDE'
     DISD2_DISDE = 'DISD2_DISDE'
@@ -106,6 +129,10 @@ class EventFilings(str, Enum):
     ## voluntary
     FILE_ADVD2 = 'FILE_ADVD2'
     FILE_ADVDS = 'FILE_ADVDS'
+    FILE_OTVDS = 'FILE_OTVDS'
+
+    # CONVOTHER Dissolution
+    CONVOTHER_OTVDS = 'CONVOTHER_OTVDS'
     ## admin
     SYSDA_NULL = 'SYSDA_NULL'
     SYSDS_NULL = 'SYSDS_NULL'
@@ -122,6 +149,10 @@ class EventFilings(str, Enum):
     FILE_ICORP = 'FILE_ICORP'
     FILE_ICORU = 'FILE_ICORU'
     FILE_ICORC = 'FILE_ICORC'
+    FILE_OTINC = 'FILE_OTINC'
+
+    # CONVOTHER Incorporation Application
+    CONVOTHER_OTINC = 'CONVOTHER_OTINC'
 
     # TODO: Legacy Other - unsupported
     ADCORP_NULL = 'ADCORP_NULL'
@@ -158,6 +189,12 @@ class EventFilings(str, Enum):
 
     # Registrar's Order
     FILE_REGSO = 'FILE_REGSO'
+
+    # Restoration Application (Coop)
+    FILE_OTRES = 'FILE_OTRES'
+
+    # CONVOTHER Restoration Application
+    CONVOTHER_OTRES = 'CONVOTHER_OTRES'
 
     # Restoration
     FILE_RESTL = 'FILE_RESTL'
@@ -207,6 +244,11 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AMALH: ['amalgamationApplication', 'horizontal'],
     EventFilings.FILE_AMALR: ['amalgamationApplication', 'regular'],
     EventFilings.FILE_AMALV: ['amalgamationApplication', 'vertical'],
+    EventFilings.FILE_OTAMA: ['amalgamationApplication', 'unknown'],
+
+    # CONVOTHER Amalgamation Application
+    EventFilings.CONVOTHER_OTAMA: ['amalgamationApplication', 'unknown'],
+
     EventFilings.FILE_AMLHU: ['amalgamationApplication', 'horizontal'],
     EventFilings.FILE_AMLRU: ['amalgamationApplication', 'regular'],
     EventFilings.FILE_AMLVU: ['amalgamationApplication', 'vertical'],
@@ -215,15 +257,27 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AMLVC: ['amalgamationApplication', 'vertical'],
 
     EventFilings.FILE_ANNBC: 'annualReport',
+    EventFilings.FILE_OTANN: 'annualReport',
+
+    # CONVOTHER Annual Report
+    EventFilings.CONVOTHER_OTANN: 'annualReport',
 
     EventFilings.FILE_APTRA: 'changeOfAddress',
     EventFilings.FILE_NOERA: 'changeOfAddress',
     EventFilings.FILE_NOCAD: 'changeOfAddress',
+    EventFilings.FILE_OTADD: 'changeOfAddress',
     EventFilings.FILE_AM_DO: 'changeOfAddress',
     EventFilings.FILE_AM_RR: 'changeOfAddress',
 
+    # CONVOTHER Change of Address
+    EventFilings.CONVOTHER_OTADD: 'changeOfAddress',
+
     EventFilings.FILE_NOCDR: 'changeOfDirectors',
+    EventFilings.FILE_OTCDR: 'changeOfDirectors',
     EventFilings.FILE_AM_DI: 'changeOfDirectors',
+
+    # CONVOTHER Change of Directors
+    EventFilings.CONVOTHER_OTCDR: 'changeOfDirectors',
 
     EventFilings.FILE_CONTO: 'consentContinuationOut',
     EventFilings.FILE_COUTI: 'continuationOut',
@@ -235,6 +289,7 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CONVL: 'conversionLedger',
 
     EventFilings.CONVAMAL_NULL: ['conversion', ('amalgamationApplication', 'unknown')],
+    EventFilings.CONVOTHER_NULL: 'legacyOther',
     EventFilings.CONVCIN_NULL: ['conversion', 'continuationIn'],
     EventFilings.CONVCOUT_NULL: ['conversion', 'continuationOut'],
     EventFilings.CONVDS_NULL: ['conversion', ('dissolution', 'voluntary')],
@@ -262,6 +317,10 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_CORRT: 'correction',
 
     EventFilings.FILE_COURT: 'courtOrder',
+    EventFilings.FILE_OTSPE: 'specialResolution',
+
+    # CONVOTHER Special Resolution
+    EventFilings.CONVOTHER_OTSPE: 'specialResolution',
 
     # TODO: Delay of Dissolution - unsupported (need confirmation)
     EventFilings.DISD1_DISDE: 'delayOfDissolution',
@@ -269,6 +328,11 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
+    EventFilings.FILE_OTVDS: ['dissolution', 'voluntary'],
+
+    # CONVOTHER Dissolution
+    EventFilings.CONVOTHER_OTVDS: ['dissolution', 'voluntary'],
+
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDF_NULL: ['dissolution', 'involuntary'],
@@ -279,8 +343,13 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ICORP: 'incorporationApplication',
     EventFilings.FILE_ICORU: 'incorporationApplication',
     EventFilings.FILE_ICORC: 'incorporationApplication',
+    EventFilings.FILE_OTINC: 'incorporationApplication',
 
-    # TODO: Legacy Other - unsupported
+    # CONVOTHER Incorporation Application
+    EventFilings.CONVOTHER_OTINC: 'incorporationApplication',
+
+    # Legacy Other
+    EventFilings.CONVOTHER_NULL: 'legacyOther',
     EventFilings.ADCORP_NULL: 'legacyOther',
     EventFilings.ADFIRM_NULL: 'legacyOther',
     EventFilings.ADMIN_NULL: 'legacyOther',
@@ -309,6 +378,10 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
 
     EventFilings.FILE_REGSN: 'registrarsNotation',
     EventFilings.FILE_REGSO: 'registrarsOrder',
+    EventFilings.FILE_OTRES: 'restorationApplication',
+
+    # CONVOTHER Restoration Application
+    EventFilings.CONVOTHER_OTRES: 'restorationApplication',
 
     EventFilings.FILE_RESTL: ['restoration', 'limitedRestoration'],
     EventFilings.FILE_RESTF: ['restoration', 'fullRestoration'],
@@ -346,6 +419,11 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AMALH: 'Amalgamation Application Short Form (Horizontal)',
     EventFilings.FILE_AMALR: 'Amalgamation Application (Regular)',
     EventFilings.FILE_AMALV: 'Amalgamation Application Short Form (Vertical)',
+    EventFilings.FILE_OTAMA: 'Amalgamation Application',
+
+    # CONVOTHER Amalgamation Application
+    EventFilings.CONVOTHER_OTAMA: 'Amalgamation Application',
+
     EventFilings.FILE_AMLHU: 'Amalgamation Application Short Form (Horizontal) for a BC Unlimited Liability Company',
     EventFilings.FILE_AMLRU: 'Amalgamation Application (Regular) for a BC Unlimited Liability Company',
     EventFilings.FILE_AMLVU: 'Amalgamation Application Short Form (Vertical) for a BC Unlimited Liability Company',
@@ -354,15 +432,27 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_AMLVC: 'Amalgamation Application Short Form (Vertical) for a Community Contribution Company',
 
     EventFilings.FILE_ANNBC: 'BC Annual Report',  # has suffix of date, dynamically add it during formatting
+    EventFilings.FILE_OTANN: 'Annual Report',
+
+    # CONVOTHER Annual Report
+    EventFilings.CONVOTHER_OTANN: 'Annual Report',
 
     EventFilings.FILE_APTRA: 'Application to Transfer Registered Office',
     EventFilings.FILE_NOERA: 'Notice of Elimination of Registered Office',
     EventFilings.FILE_NOCAD: 'Notice of Change of Address',
+    EventFilings.FILE_OTADD: 'Notice of Change of Address',
     EventFilings.FILE_AM_DO: 'Amendment - Dissolved Office',
     EventFilings.FILE_AM_RR: 'Amendment - Registered and Records Offices',
 
+    # CONVOTHER Change of Address
+    EventFilings.CONVOTHER_OTADD: 'Notice of Change of Address',
+
     EventFilings.FILE_NOCDR: 'Notice of Change of Directors', # dynamically add suffix for some scenarios
+    EventFilings.FILE_OTCDR: 'Notice of Change of Directors',
     EventFilings.FILE_AM_DI: 'Amendment - Director',
+
+    # CONVOTHER Change of Directors
+    EventFilings.CONVOTHER_OTCDR: 'Notice of Change of Directors',
 
     EventFilings.FILE_CONTO: '6 Months Consent to Continue Out',
     EventFilings.FILE_COUTI: 'Instrument of Continuation Out',
@@ -384,6 +474,10 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_CORRT: 'Correction',
 
     EventFilings.FILE_COURT: 'Court Order',
+    EventFilings.FILE_OTSPE: 'Special Resolution',
+
+    # CONVOTHER Special Resolution
+    EventFilings.CONVOTHER_OTSPE: 'Special Resolution',
 
     # TODO: Delay of Dissolution - unsupported (need confirmation)
     # no ledger item in colin
@@ -393,6 +487,11 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
+    EventFilings.FILE_OTVDS: 'Voluntary Dissolution',
+
+    # CONVOTHER Dissolution
+    EventFilings.CONVOTHER_OTVDS: 'Voluntary Dissolution',
+
     EventFilings.SYSDA_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDS_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDF_NULL: None,  # invol - no ledger in lear & colin
@@ -403,8 +502,13 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_ICORP: 'Incorporation Application',
     EventFilings.FILE_ICORU: 'Incorporation Application for a BC Unlimited Liability Company',
     EventFilings.FILE_ICORC: 'Incorporation Application for a Community Contribution Company',
+    EventFilings.FILE_OTINC: 'Incorporation Application',
 
-    # TODO: Legacy Other - unsupported
+    # CONVOTHER Incorporation Application
+    EventFilings.CONVOTHER_OTINC: 'Incorporation Application',
+
+    # Legacy Other
+    EventFilings.CONVOTHER_NULL: 'Legacy Other',
     EventFilings.ADCORP_NULL: None,
     EventFilings.ADFIRM_NULL: None,
     EventFilings.ADMIN_NULL: None,
@@ -442,6 +546,10 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     EventFilings.FILE_REGSN: "Registrar's Notation",
     EventFilings.FILE_REGSO: "Registrar's Order",
+    EventFilings.FILE_OTRES: 'Restoration Application',
+
+    # CONVOTHER Restoration Application
+    EventFilings.CONVOTHER_OTRES: 'Restoration Application',
 
     EventFilings.FILE_RESTL: 'Restoration Application - Limited',
     EventFilings.FILE_RESTF: 'Restoration Application - Full',
