@@ -2,7 +2,7 @@ cx-Oracle==8.3.0
 greenlet==3.1.1
 pandas==2.0.3
 python-dateutil==2.9.0.post0
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 pytz==2024.2
 six==1.16.0
 SQLAlchemy==2.0.36
