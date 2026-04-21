@@ -26,7 +26,7 @@ all_unsupported_types = set()
 date_format_with_tz: Final = '%Y-%m-%d %H:%M:%S%z'
 
 
-def format_business_data(data: dict) -> dict:
+def format_business_data(data: dict, config=None) -> dict:
     business_data = data['businesses'][0]
     # Note: only ACT or HIS
     state = business_data['state']
@@ -89,7 +89,7 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
     return formatted_address
 
 
-def format_offices_data(data: dict) -> list[dict]:
+def format_offices_data(data: dict, config=None) -> list[dict]:
     offices_data = data['offices']
     formatted_offices = []
     # TODO: support other office types
@@ -123,7 +123,7 @@ def format_offices_data(data: dict) -> list[dict]:
     return formatted_offices
 
 
-def format_parties_data(data: dict) -> list[dict]:
+def format_parties_data(data: dict, config=None) -> list[dict]:
     parties_data = data['parties']
     offices_data = data['offices']
 
@@ -282,7 +282,7 @@ def format_share_series_data(share_series_data: dict) -> dict:
     return formatted_series
 
 
-def format_share_classes_data(data: dict) -> list[dict]:
+def format_share_classes_data(data: dict, config=None) -> list[dict]:
     share_classes_data = data['share_classes']
 
     if not share_classes_data:
@@ -341,7 +341,7 @@ def format_share_name(name: str):
     return f'{name}{expected_suffix}'
 
 
-def format_aliases_data(data: dict) -> list[dict]:
+def format_aliases_data(data: dict, config=None) -> list[dict]:
     aliases_data = data['aliases']
     formatted_aliases = []
 
@@ -356,7 +356,7 @@ def format_aliases_data(data: dict) -> list[dict]:
     return formatted_aliases
 
 
-def format_resolutions_data(data: dict) -> list[dict]:
+def format_resolutions_data(data: dict, config=None) -> list[dict]:
     resolutions_data = data['resolutions']
     formatted_resolutions = []
 
@@ -411,7 +411,8 @@ def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
     return formatted_jurisdiction
 
 
-def format_filings_data(data: dict) -> dict:
+def format_filings_data(data: dict, config=None) -> dict:
+    use_source_paper_only = getattr(config, 'TOMBSTONE_USE_SOURCE_PAPER_ONLY', False)
     # filing info in business
     business_update_dict = {}
     current_unsupported_types = set()
@@ -490,6 +491,13 @@ def format_filings_data(data: dict) -> dict:
 
         filing_body = {
             **filing_body,
+            # Preserve legacy tombstone behavior by default, and only flip to False when
+            # the source-aware paper_only config is enabled for eligible visible filings.
+            'paper_only': (
+                False
+                if use_source_paper_only and not hide_in_ledger and x.get('f_ods_type_cd') == 'F'
+                else filing_body['paper_only']
+            ),
             'filing_date': filing_date,
             'filing_type': raw_filing_type,
             'filing_sub_type': raw_filing_subtype,
@@ -667,7 +675,7 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
     return formatted_filing_comments
 
 
-def format_business_comments_data(data: dict) -> list:
+def format_business_comments_data(data: dict, config=None) -> list:
     business_comments_data = data['business_comments']
     formatted_business_comments = []
 
@@ -684,7 +692,7 @@ def format_business_comments_data(data: dict) -> list:
     return formatted_business_comments
 
 
-def format_in_dissolution_data(data: dict) -> dict:
+def format_in_dissolution_data(data: dict, config=None) -> dict:
     if not (in_dissolution_data := data['in_dissolution']):
         return None
 
@@ -774,7 +782,7 @@ def format_users_data(users_data: list) -> list:
     return formatted_users
 
 
-def format_out_data_data(data: dict) -> dict:
+def format_out_data_data(data: dict, config=None) -> dict:
     out_data = data.get('out_data')
     if not out_data:
         return {}
@@ -827,7 +835,7 @@ def formatted_data_cleanup(data: dict) -> dict:
     return data
 
 
-def get_data_formatters() -> dict:
+def get_data_formatters(config=None) -> dict:
     ret = {
         'businesses': format_business_data,
         'offices': format_offices_data,

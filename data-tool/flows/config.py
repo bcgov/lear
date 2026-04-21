@@ -162,6 +162,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     # tombstone flow
     TOMBSTONE_BATCHES = _get_int('TOMBSTONE_BATCHES', 0)
     TOMBSTONE_BATCH_SIZE = _get_int('TOMBSTONE_BATCH_SIZE', 0)
+    # When enabled, use source ODS values to flip eligible tombstone filings to paper_only=False.
+    # Default False preserves legacy tombstone behavior (paper_only=True for all migrated filings).
+    TOMBSTONE_USE_SOURCE_PAPER_ONLY = _get_bool('TOMBSTONE_USE_SOURCE_PAPER_ONLY', False)
 
     # reservation (reserve_for_flow) query statement timeout (Postgres statement_timeout, in ms).
     # When set, long-running reservation queries fail fast instead of tying up a worker indefinitely.

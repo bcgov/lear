@@ -720,7 +720,7 @@ def get_filings_query(corp_num):
                     where we.event_id = f.withdrawn_event_id
                 )
             end as f_withdrawn_event_ts_str,
---          paper only now -> f_ods_type
+            f.ods_type_cd         as f_ods_type_cd,
             f.nr_num               as f_nr_num,
             to_char(f.period_end_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM') as f_period_end_dt_str,
             to_char(f.change_dt::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM')     as f_change_at_str,

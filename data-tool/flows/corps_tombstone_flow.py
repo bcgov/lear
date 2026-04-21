@@ -128,13 +128,13 @@ def get_snapshot_filings_data(config, colin_engine: Engine, corp_num: str) -> di
 
 
 @task(name='2.2-Corp-Snapshot-Placeholder-Filings-Cleanup-Task', cache_policy=NO_CACHE)
-def clean_snapshot_filings_data(data: dict) -> dict:
+def clean_snapshot_filings_data(config, data: dict) -> dict:
     """Clean corp snapshot and placeholder filings data."""
     # TODO: raise error for none
     tombstone = {}
-    formatters = get_data_formatters()
+    formatters = get_data_formatters(config)
     for k, f in formatters.items():
-        tombstone[k] = f(data)
+        tombstone[k] = f(data, config)
 
     tombstone = formatted_data_cleanup(tombstone)
 
@@ -374,7 +374,7 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
             raise Exception(f"""Failed to create entity in auth {business_data['identifier']}""")
 
         # Update the contact email when one is provided/configured
-        # Send email to unaffiliated entities if configured 
+        # Send email to unaffiliated entities if configured
         if admin_email:
             update_email_status = AuthService.update_contact_email(
                 config=config,
@@ -453,7 +453,7 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
         print(f'👷 Start collecting corp snapshot and filings data for {corp_num}...')
         raw_data = get_snapshot_filings_data(config, colin_engine, corp_num)
         # print(f'raw data: {raw_data}')
-        clean_data = clean_snapshot_filings_data(raw_data)
+        clean_data = clean_snapshot_filings_data(config, raw_data)
         # print(f'clean data: {clean_data}')
         print(f'👷 Complete collecting corp snapshot and filings data for {corp_num}!')
         return corp_num, clean_data
