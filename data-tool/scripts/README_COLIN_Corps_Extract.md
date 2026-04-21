@@ -268,6 +268,19 @@ Generated scripts (gitignored by default):
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
    ```
 
+   **Refresh mode with CP corps included**:
+   ```bash
+   python <lear-repo-base-path>/data-tool/scripts/generate_cprd_subset_extract.py \
+     --corp-file <lear-repo-base-path>/data-tool/scripts/corp_ids.txt \
+     --mode refresh \
+     --chunk-size 500 \
+     --threads 4 \
+     --include-cp \
+     --pg-fastload \ 
+     --pg-disable-method table_triggers \   
+     --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
+   ```
+
    **Load mode** (load only those corps; no deletes):
    ```bash
    python <lear-repo-base-path>/data-tool/scripts/generate_cprd_subset_extract.py \
@@ -280,6 +293,10 @@ Generated scripts (gitignored by default):
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_load.sql
    ```
 
+   Optional flags:
+   - Add `--include-cp` to opt in corp type `CP` for the subset transfer queries.
+   - `--include-cp` affects the **subset workflow only**. Full refresh (`transfer_cprd_corps.sql`) and downstream reservation flows still use the historical corp-type cohort unless updated separately.
+
    Optional performance flags:
    - Add `--pg-fastload` to enable Postgres session settings for faster bulk writes (templates `subset_pg_fastload_begin.sql` / `subset_pg_fastload_end.sql`).
    - `--pg-disable-method` currently accepts only `table_triggers` and `replica_role`.
@@ -288,8 +305,10 @@ Generated scripts (gitignored by default):
    - Subset load/refresh scripts now acquire a session-level Postgres advisory lock at the start and release it at the end so overlapping subset runs on the same target DB serialize instead of interleaving. The same lock key is also used by the full refresh script.
    - `table_triggers` changes table trigger state globally while the refresh runs, so use it against a quiesced/disposable extract DB and with a role that can disable the relevant triggers.
    - If you use `replica_role`, remember it is session-local. If FK errors still occur, verify `current_setting('session_replication_role')` inside the nested delete/purge scripts being executed by DbSchemaCLI.
-   - `address` is treated as a shared/global table during subset refresh/load. The generator now prepares a helper staging table, transfers incoming Oracle addresses into it, and merges them into `public.address` by `addr_id` instead of deleting/reinserting address rows directly. The address extract also includes `notification_resend` references.
-   - The helper stage table is `public.subset_address_stage`. Do not overlap subset runs against the same target DB, and ensure the runtime role can create/drop that helper table.
+   - `address` is treated as a shared/global table during subset refresh/load. The generator now reuses the predeclared helper staging table `public.subset_address_stage`, transfers incoming Oracle addresses into it, and merges them into `public.address` by `addr_id` instead of deleting/reinserting address rows directly. The address extract also includes `notification_resend` references.
+   - BCOMPS purge keysets also use predeclared helper tables in the extract schema: `public.subset_excluded_corps`, `public.subset_excluded_events`, and `public.subset_excluded_corp_parties`.
+   - Do not overlap subset runs against the same target DB, and ensure the runtime role can truncate/read/write those helper tables.
+   - Existing extract DBs created from older DDL must be refreshed or updated with the latest `colin_corps_extract_postgres_ddl` before running the subset workflow, otherwise the first helper-table `TRUNCATE` will fail.
    - Refresh mode now pre-cleans orphan event/corp-party child rows that can survive the parent-keyed delete phase from earlier failed/interleaved runs (for example a stale `filing` row whose parent `event` row is missing in target).
    - For diagnostics, add `--pg-debug-session-probes` (inline mode only). The generated SQL will print `pg_backend_pid()`, `current_user`, and `current_setting('session_replication_role')` in the master script and nested execute files so you can verify the master/nested `execute` session context during refresh. This does not directly instrument any separate DbSchemaCLI transfer writer sessions.
 
