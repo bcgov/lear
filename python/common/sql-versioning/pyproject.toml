@@ -8,7 +8,7 @@ packages = [{include = "sql_versioning"}]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-sqlalchemy = "^2.0.0"
+sqlalchemy = "1.4.44"
 
 
 [tool.poetry.group.dev.dependencies]
