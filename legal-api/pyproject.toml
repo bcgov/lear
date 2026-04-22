@@ -54,8 +54,8 @@ dependencies = [
 
     "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.65#egg=registry_schemas",
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
-    "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@2a3d5a2#subdirectory=python/gcp-queue",
-    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@2a3d5a2#subdirectory=python/structured-logging",
+    "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@e82cd710c818e55f7b468472b4908e4d14a25a79#subdirectory=python/gcp-queue",
+    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@e82cd710c818e55f7b468472b4908e4d14a25a79#subdirectory=python/structured-logging",
     "cloud-sql-python-connector (>=1.18.0,<2.0.0)",
     "pg8000 (>=1.31.2,<2.0.0)",
 ]

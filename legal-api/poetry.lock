@@ -1281,8 +1281,8 @@ simple-cloudevent = {git = "https://github.com/daxiom/simple-cloudevent.py.git"}
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/sbc-connect-common.git"
-reference = "2a3d5a2"
-resolved_reference = "2a3d5a2d5b5ff3c905626f3193db5ed0af6d4952"
+reference = "e82cd710c818e55f7b468472b4908e4d14a25a79"
+resolved_reference = "e82cd710c818e55f7b468472b4908e4d14a25a79"
 subdirectory = "python/gcp-queue"
 
 [[package]]
@@ -3748,8 +3748,8 @@ structlog = "^24.1.0"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/sbc-connect-common.git"
-reference = "2a3d5a2"
-resolved_reference = "2a3d5a2d5b5ff3c905626f3193db5ed0af6d4952"
+reference = "e82cd710c818e55f7b468472b4908e4d14a25a79"
+resolved_reference = "e82cd710c818e55f7b468472b4908e4d14a25a79"
 subdirectory = "python/structured-logging"
 
 [[package]]
@@ -4209,4 +4209,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9.22,<3.10"
-content-hash = "9928bedace0bc97d157f3fbf53b176d172785878a686df89b9e96687ad7cd9cf"
+content-hash = "962ac5ea24dcb104305e1d46d9cb1aeefbe83d56b084b3732a4bf3046de44883"
