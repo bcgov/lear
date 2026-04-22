@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "sql-versioning"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Hongjing Chen <Hongjing.Chen@gov.bc.ca>"]
 readme = "README.md"
 packages = [{include = "sql_versioning"}]
 
 [tool.poetry.dependencies]
-python = "^3.8"
-sqlalchemy = "1.4.44"
+python = "^3.9"
+sqlalchemy = "^2.0.0"
 
 
 [tool.poetry.group.dev.dependencies]
