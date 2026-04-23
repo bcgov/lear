@@ -52,3 +52,27 @@ def test_amalgamation_notification(app, session, mocker, status):
         assert mock_get_pdfs.call_args[0][0] == status
         assert mock_get_pdfs.call_args[0][1] == token
         assert mock_get_pdfs.call_args[0][3] == filing
+
+
+def test_amalgamation_notification_paid_without_business(app, session, mocker):
+    """Assert PAID amalgamation falls back to nameRequest when filing has no business_id."""
+    legal_name = 'test business'
+    filing = prep_amalgamation_filing(session, 'BC1234567', '1', Filing.Status.PAID.value, legal_name)
+    filing.business_id = None
+    filing.save()
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.amalgamation_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(amalgamation_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        email = amalgamation_notification.process(
+            {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': Filing.Status.PAID.value}, token)
+
+        assert 'test@test.com' in email['recipients']
+        assert 'comp_party@email.com' in email['recipients']
+        assert email['content']['subject'] == legal_name + ' - Amalgamation'
+        assert email['content']['body']
+        # business dict passed to _get_pdfs should come from nameRequest with temp_reg identifier
+        passed_business = mock_get_pdfs.call_args[0][2]
+        assert passed_business['legalName'] == legal_name
+        assert passed_business['identifier'] == filing.temp_reg
