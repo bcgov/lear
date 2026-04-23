@@ -9,6 +9,10 @@
 --                              Examples:
 --                                c.CORP_NUM in ('0460007','A1234567')
 --                                (c.CORP_NUM in (...) OR c.CORP_NUM in (...))
+--   oracle_corp_type_predicate : SQL predicate restricting Oracle corporation.corp_typ_cd (NO trailing semicolon).
+--                              Examples:
+--                                c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
+--                                c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE','CP')
 --
 -- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (cprd_pg).
 --
@@ -35,7 +39,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		-- altered from BC to BEN then BEN to BC before directed launch
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
@@ -90,7 +94,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -123,7 +127,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -154,7 +158,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -186,7 +190,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -233,7 +237,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -270,7 +274,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -393,7 +397,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -425,7 +429,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -459,7 +463,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -490,7 +494,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -533,7 +537,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -562,7 +566,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -591,7 +595,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -624,7 +628,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -665,7 +669,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -695,7 +699,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -728,7 +732,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -767,7 +771,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -798,7 +802,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -866,7 +870,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -897,7 +901,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -931,7 +935,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -961,7 +965,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -996,7 +1000,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1027,7 +1031,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1056,7 +1060,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1105,7 +1109,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1147,7 +1151,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1183,7 +1187,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1219,7 +1223,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1256,7 +1260,7 @@ with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
 	where &oracle_corp_num_predicate
-		and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
+		and &oracle_corp_type_predicate
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (

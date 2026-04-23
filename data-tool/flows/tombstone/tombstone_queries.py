@@ -103,7 +103,7 @@ def get_unprocessed_corps_query(flow_name, config, batch_size, *, include_accoun
 
     cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
 
-    corp_type_filter = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
+    corp_type_filter = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'CP')"
 
     mig_extra_where = ""
     if use_mig_filter:
@@ -229,7 +229,7 @@ def get_total_reservable_count_query(flow_name: str, config) -> str:
 
     cte_clause, where_clause = get_unprocessed_corps_subquery(flow_name, environment)
 
-    corp_type_filter = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
+    corp_type_filter = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'CP')"
 
     mig_extra_where = ""
     if use_mig_filter:
