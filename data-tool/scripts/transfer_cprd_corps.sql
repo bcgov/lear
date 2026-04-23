@@ -388,13 +388,13 @@ with corporation_cte as (
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 )
 select distinct ADDR_ID,
-                PROVINCE,
-                COUNTRY_TYP_CD,
-                replace(POSTAL_CD, CHR(0), '') as POSTAL_CD,
-                ADDR_LINE_1,
-                replace(ADDR_LINE_2, CHR(0), '') as ADDR_LINE_2,
-                ADDR_LINE_3,
-                CITY
+				trim(PROVINCE) as PROVINCE,
+				trim(COUNTRY_TYP_CD) as COUNTRY_TYP_CD,
+				trim(replace(POSTAL_CD, CHR(0), '')) as POSTAL_CD,
+				trim(ADDR_LINE_1) as ADDR_LINE_1,
+				trim(replace(ADDR_LINE_2, CHR(0), '')) as ADDR_LINE_2,
+				trim(ADDR_LINE_3) as ADDR_LINE_3,
+				trim(CITY) as CITY
 from (select a.*
       from address a
          , corp_party x
