@@ -459,7 +459,7 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
         print(f'👷 Start collecting corp snapshot and filings data for {corp_num}...')
         raw_data = get_snapshot_filings_data(config, colin_engine, corp_num)
         # print(f'raw data: {raw_data}')
-        clean_data = clean_snapshot_filings_data(config, raw_data)
+        clean_data = clean_snapshot_filings_data(raw_data, config)
         # print(f'clean data: {clean_data}')
         print(f'👷 Complete collecting corp snapshot and filings data for {corp_num}!')
         return corp_num, clean_data
