@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Incorporation email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import filing_notification
@@ -124,3 +126,177 @@ def test_maintenance_notification(app, session, mocker, status, filing_type, sub
             assert mock_get_recipients.call_args[0][0] == status
             assert mock_get_recipients.call_args[0][1] == filing.filing_json
             assert mock_get_recipients.call_args[0][2] == token
+
+
+def test_filing_attachments_ia_paid(session, mocker, config):
+    """IA PAID: filing PDF + receipt."""
+    identifier = 'BC1234567'
+    filing = prep_incorp_filing(session, identifier, '1', 'PAID', 'BC')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/incorporationApplication',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.post(
+            f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+            content=b'pdf_content_2',
+            status_code=201,
+        )
+        output = filing_notification.process(
+            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Incorporation Application.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_filing_attachments_ia_completed_bc(session, mocker, config):
+    """IA COMPLETED BC: Notice of Articles + Certificate of Incorporation."""
+    identifier = 'BC1234567'
+    filing = prep_incorp_filing(session, identifier, '1', 'COMPLETED', 'BC')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/noticeOfArticles',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/certificateOfIncorporation',
+            content=b'pdf_content_2',
+            status_code=200,
+        )
+        output = filing_notification.process(
+            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Notice of Articles.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Certificate Of Incorporation.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_filing_attachments_ia_completed_coop(session, mocker, config):
+    """IA COMPLETED COOP: Certificate + Certified Rules + Certified Memorandum (no NOA)."""
+    identifier = 'CP1234567'
+    filing = prep_incorp_filing(session, identifier, '1', 'COMPLETED', 'CP')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/certificateOfIncorporation',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/certifiedRules',
+            content=b'pdf_content_2',
+            status_code=200,
+        )
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/memorandum',
+            content=b'pdf_content_3',
+            status_code=200,
+        )
+        output = filing_notification.process(
+            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 3
+    assert attachments[0]['fileName'] == 'Certificate Of Incorporation.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Certified Rules.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+    assert attachments[2]['fileName'] == 'Certified Memorandum.pdf'
+    assert base64.b64decode(attachments[2]['fileBytes']).decode('utf-8') == 'pdf_content_3'
+
+
+def test_filing_attachments_change_of_address_paid(session, mocker, config):
+    """changeOfAddress PAID: filing PDF + receipt."""
+    identifier = 'BC1234567'
+    filing = prep_maintenance_filing(session, identifier, '1', 'PAID', 'changeOfAddress')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
+        with requests_mock.Mocker() as m:
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                f'/filings/{filing.id}/documents/changeOfAddress',
+                content=b'pdf_content_1',
+                status_code=200,
+            )
+            m.post(
+                f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_2',
+                status_code=201,
+            )
+            output = filing_notification.process(
+                {'filingId': filing.id, 'type': 'changeOfAddress', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Change Of Address.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_filing_attachments_alteration_completed_name_change(session, mocker, config):
+    """alteration COMPLETED (BC, with name change): NOA + Certificate of Name Change."""
+    identifier = 'BC1234567'
+    filing = prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'alteration')
+    # force the name-change branch via meta_data
+    filing._meta_data = {'alteration': {'toLegalName': 'new name'}}
+    filing.save()
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_user_email_from_auth',
+        return_value='user@email.com')
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
+        with requests_mock.Mocker() as m:
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                f'/filings/{filing.id}/documents/noticeOfArticles',
+                content=b'pdf_content_1',
+                status_code=200,
+            )
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                f'/filings/{filing.id}/documents/certificateOfNameChange',
+                content=b'pdf_content_2',
+                status_code=200,
+            )
+            output = filing_notification.process(
+                {'filingId': filing.id, 'type': 'alteration', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Notice of Articles.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Certificate of Name Change.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'

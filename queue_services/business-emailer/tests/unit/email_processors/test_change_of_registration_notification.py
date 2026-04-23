@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Change of Registration email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import change_of_registration_notification
@@ -76,3 +78,67 @@ def test_change_of_registration_notification(app, session, mocker, status, legal
         if status == 'COMPLETED':
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'FM1234567'
         assert mock_get_pdfs.call_args[0][3] == filing
+
+
+def _cor_filing(session, identifier='FM1234567'):
+    parties = [{
+        'firstName': 'Jane', 'lastName': 'Doe', 'middleInitial': 'A',
+        'partyType': 'person', 'organizationName': ''
+    }]
+    return prep_change_of_registration_filing(
+        session, identifier, '1', Business.LegalTypes.SOLE_PROP.value, 'test business', None, parties)
+
+
+def test_change_of_registration_attachments_paid(session, mocker, config):
+    """Assert PAID path attaches the filing PDF and the receipt."""
+    identifier = 'FM1234567'
+    filing = _cor_filing(session, identifier)
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.change_of_registration_notification.get_user_email_from_auth',
+        return_value='user@email.com')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/changeOfRegistration',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.post(
+            f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+            content=b'pdf_content_2',
+            status_code=201,
+        )
+        output = change_of_registration_notification.process(
+            {'filingId': filing.id, 'type': 'changeOfRegistration', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Change of Registration.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_change_of_registration_attachments_completed(session, mocker, config):
+    """Assert COMPLETED path attaches only the Amended Registration Statement."""
+    identifier = 'FM1234567'
+    filing = _cor_filing(session, identifier)
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.change_of_registration_notification.get_user_email_from_auth',
+        return_value='user@email.com')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/amendedRegistrationStatement',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        output = change_of_registration_notification.process(
+            {'filingId': filing.id, 'type': 'changeOfRegistration', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'AmendedRegistrationStatement.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'

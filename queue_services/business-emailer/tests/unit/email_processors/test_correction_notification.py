@@ -22,6 +22,7 @@ from business_model.models import Business
 from business_emailer.email_processors import correction_notification
 from tests.unit import (
     prep_cp_special_resolution_correction_filing,
+    prep_cp_special_resolution_correction_upload_memorandum_filing,
     prep_cp_special_resolution_filing,
     prep_firm_correction_filing,
     prep_incorp_filing,
@@ -267,3 +268,52 @@ def test_paid_special_resolution_correction_on_correction(session, config, legal
         assert 'cp_sr@test.com' in email['recipients']
         assert email['content']['body']
         assert email['content']['attachments'] == []
+
+
+def test_complete_special_resolution_correction_memorandum_attachments(session, config):
+    """Completed CP SR correction with memorandumFileKey → Certified Memorandum attached.
+
+    The upload_memorandum prep adds `memorandumFileKey` but leaves the template's
+    default `rulesFileKey` in place, so `rules_changed` is also True in the
+    processor — we expect Special Resolution + Certified Rules + Certified
+    Memorandum (3 attachments). The point of this test is to exercise the
+    `if memorandum_changed:` branch in special_resolution_helper.get_completed_pdfs.
+    """
+    legal_type = Business.LegalTypes.COOP.value
+    legal_name = 'test cp sr business'
+    token = 'token'
+    original_filing = prep_cp_special_resolution_filing(
+        CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
+    business = Business.find_by_identifier(CP_IDENTIFIER)
+    filing = prep_cp_special_resolution_correction_upload_memorandum_filing(
+        session, business, original_filing.id, '1', 'COMPLETED', SPECIAL_RESOLUTION_FILING_TYPE)
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}'
+            f'/filings/{filing.id}/documents/specialResolution',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}'
+            f'/filings/{filing.id}/documents/certifiedRules',
+            content=b'pdf_content_2',
+            status_code=200,
+        )
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{CP_IDENTIFIER}'
+            f'/filings/{filing.id}/documents/certifiedMemorandum',
+            content=b'pdf_content_3',
+            status_code=200,
+        )
+        output = correction_notification.process(
+            {'filingId': filing.id, 'type': 'correction', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 3
+    assert attachments[0]['fileName'] == 'Special Resolution.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Certified Rules.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+    assert attachments[2]['fileName'] == 'Certified Memorandum.pdf'
+    assert base64.b64decode(attachments[2]['fileBytes']).decode('utf-8') == 'pdf_content_3'

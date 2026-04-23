@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Amalgamation email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Filing
 
 from business_emailer.email_processors import amalgamation_notification
@@ -76,3 +78,67 @@ def test_amalgamation_notification_paid_without_business(app, session, mocker):
         passed_business = mock_get_pdfs.call_args[0][2]
         assert passed_business['legalName'] == legal_name
         assert passed_business['identifier'] == filing.temp_reg
+
+
+def test_amalgamation_attachments_paid(session, mocker, config):
+    """PAID regular: Amalgamation Application (Regular) PDF + receipt."""
+    identifier = 'BC1234567'
+    filing = prep_amalgamation_filing(session, identifier, '1', Filing.Status.PAID.value, 'test business')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.amalgamation_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/amalgamationApplication',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.post(
+            f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+            content=b'pdf_content_2',
+            status_code=201,
+        )
+        output = amalgamation_notification.process(
+            {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': Filing.Status.PAID.value}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Amalgamation Application (Regular).pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_amalgamation_attachments_completed(session, mocker, config):
+    """COMPLETED: Certificate Of Amalgamation + Notice of Articles."""
+    identifier = 'BC1234567'
+    filing = prep_amalgamation_filing(session, identifier, '1', Filing.Status.COMPLETED.value, 'test business')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.amalgamation_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/certificateOfAmalgamation',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/noticeOfArticles',
+            content=b'pdf_content_2',
+            status_code=200,
+        )
+        output = amalgamation_notification.process(
+            {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': Filing.Status.COMPLETED.value},
+            token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Certificate Of Amalgamation.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Notice of Articles.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
