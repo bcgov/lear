@@ -56,7 +56,7 @@ dependencies = [
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
-    "cloud-sql-python-connector (>=1.18.0,<2.0.0)",
+    "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@cloud-sql-connector-python3.9#subdirectory=python/cloud-sql-connector",
     "pg8000 (>=1.31.2,<2.0.0)",
 ]
 

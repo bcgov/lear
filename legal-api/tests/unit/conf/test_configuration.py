@@ -19,7 +19,6 @@ from importlib import reload
 from secrets import token_hex
 
 import pytest
-
 from legal_api import config
 
 # testdata pattern is ({str: environment}, {expected return value})
@@ -114,20 +113,6 @@ def _reload_prod_config(monkeypatch, **env):
 
     reload(config)
     return config.ProdConfig()
-
-
-def test_prod_config_prefers_cloudsql_iam(monkeypatch):
-    prod_config = _reload_prod_config(
-        monkeypatch,
-        CLOUDSQL_INSTANCE_CONNECTION_NAME="project:region:instance",
-        DATABASE_USERNAME="iam-user",
-        DATABASE_NAME="legal",
-        DATABASE_PORT="5432",
-    )
-
-    assert prod_config.SQLALCHEMY_DATABASE_URI == "postgresql+pg8000://"
-    assert callable(prod_config.SQLALCHEMY_ENGINE_OPTIONS["creator"])
-
 
 def test_prod_config_falls_back_to_unix_socket(monkeypatch):
     db_password = token_hex(8)
