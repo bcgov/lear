@@ -122,6 +122,10 @@ run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
 	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" --mode refresh --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
 
+run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
+	. $(VENV_DIR)/bin/activate && \
+	python flows/update_colin_ar_ind_flow.py
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
