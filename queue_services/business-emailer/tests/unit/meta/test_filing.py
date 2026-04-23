@@ -24,14 +24,14 @@ from business_emailer.meta.filing import FilingMeta
 
 def _filing(**kw):
     """Build a lightweight filing stand-in with sensible defaults."""
-    defaults = dict(
-        filing_type=None,
-        filing_sub_type=None,
-        meta_data=None,
-        transaction_id=None,
-        filing_json=None,
-        json_legal_type=None,
-    )
+    defaults = {
+        'filing_type': None,
+        'filing_sub_type': None,
+        'meta_data': None,
+        'transaction_id': None,
+        'filing_json': None,
+        'json_legal_type': None,
+    }
     defaults.update(kw)
     return SimpleNamespace(**defaults)
 

@@ -25,7 +25,7 @@ def test_appoint_receiver_notification(app, session, status, legal_name, is_numb
     """Assert that the appoint_receiver email processor builds the expected email."""
     # setup filing + business for email
     filing = prep_appoint_receiver_filing(
-        session, 'BC1234567', '1', Business.LegalTypes.COMP.value, legal_name)
+        'BC1234567', '1', Business.LegalTypes.COMP.value, legal_name)
     token = 'token'
     # test processor
     with patch.object(appoint_receiver_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
@@ -55,7 +55,7 @@ def test_appoint_receiver_attachments(session, config):
     """Assert _get_pdfs assembles the Appoint Receiver filing PDF and receipt."""
     identifier = 'BC1234567'
     filing = prep_appoint_receiver_filing(
-        session, identifier, '1', Business.LegalTypes.COMP.value, 'test business')
+        identifier, '1', Business.LegalTypes.COMP.value, 'test business')
     token = 'token'
     with patch.object(appoint_receiver_notification, 'get_recipient_from_auth',
                       return_value='recipient@email.com'):

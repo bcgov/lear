@@ -810,7 +810,7 @@ def prep_intent_to_liquidate_filing(session, identifier, payment_id, legal_type,
     return filing
 
 
-def prep_cease_receiver_filing(session, identifier, payment_id, legal_type, legal_name):
+def prep_cease_receiver_filing(identifier, payment_id, legal_type, legal_name):
     """Return a new Cease Receiver filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
@@ -836,7 +836,7 @@ def prep_cease_receiver_filing(session, identifier, payment_id, legal_type, lega
     return filing
 
 
-def prep_appoint_receiver_filing(session, identifier, payment_id, legal_type, legal_name):
+def prep_appoint_receiver_filing(identifier, payment_id, legal_type, legal_name):
     """Return a new Appoint Receiver filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)

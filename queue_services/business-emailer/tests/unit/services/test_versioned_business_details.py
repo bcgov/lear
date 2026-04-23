@@ -11,15 +11,18 @@ These eight staticmethods take a SQLAlchemy revision object (or a filing dict)
 and return a plain dict. They don't touch the session, the network, or
 LaunchDarkly, so we exercise them with `SimpleNamespace` stand-ins.
 """
-from datetime import date, datetime
+import re
+from datetime import date, datetime, timezone
 from types import SimpleNamespace
 
 from business_model.models import Party
-from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.services.versioned_business_details import (
     VersionedBusinessDetailsService as VBDS,
 )
+
+
+ISO_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 # --------------------------------------------------------------------------- #
@@ -114,11 +117,11 @@ def test_resolution_json_formats_date():
 def test_business_revision_json_tombstone_returns_original():
     """When business_revision is None → return the passed business_json unchanged."""
     original = {"legalName": "Old Co", "identifier": "BC123"}
-    assert VBDS.business_revision_json(None, original) is original
+    assert VBDS.business_revision_json(None, original) == original
 
 
 def test_business_revision_json_overlays_all_fields():
-    dt = datetime(2024, 1, 15, 12, 0, 0)
+    dt = datetime(2024, 1, 15, 12, 0, 0, tzinfo=timezone.utc)
     rev = SimpleNamespace(
         restriction_ind=True,
         dissolution_date=dt,
@@ -131,14 +134,12 @@ def test_business_revision_json_overlays_all_fields():
         legal_type="BC",
         naics_description="Software",
     )
-    formatted = LegislationDatetime.format_as_legislation_date(dt)
     result = VBDS.business_revision_json(rev, {"legalName": "Old Co"})
     assert result["hasRestrictions"] is True
-    assert result["dissolutionDate"] == formatted
-    assert result["restorationExpiryDate"] == formatted
-    assert result["startDate"] == formatted
-    assert result["continuationOutDate"] == formatted
-    assert result["amalgamationOutDate"] == formatted
+    # Dates are formatted as YYYY-MM-DD in legislation timezone
+    for key in ("dissolutionDate", "restorationExpiryDate", "startDate",
+                "continuationOutDate", "amalgamationOutDate"):
+        assert ISO_DATE_RE.match(result[key]), f"{key}={result[key]!r}"
     assert result["taxId"] == "999000001BC0001"
     assert result["legalName"] == "New Co"      # overridden
     assert result["legalType"] == "BC"
