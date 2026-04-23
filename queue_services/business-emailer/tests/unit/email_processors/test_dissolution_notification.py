@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Dissolution email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import dissolution_notification
@@ -116,3 +118,155 @@ def test_firms_dissolution_notification(app, session, status, legal_type, submit
                 assert mock_get_pdfs.call_args[0][2]['legalName'] == 'JANE A DOE'
                 assert mock_get_pdfs.call_args[0][2]['legalType'] == legal_type
                 assert mock_get_pdfs.call_args[0][3] == filing
+
+
+def test_dissolution_attachments_paid_bc(session, config):
+    """PAID BC: Voluntary Dissolution Application + receipt."""
+    identifier = 'BC1234567'
+    filing = prep_dissolution_filing(
+        session, identifier, '1', 'PAID', Business.LegalTypes.COMP.value, 'test business', None)
+    token = 'token'
+    with patch.object(dissolution_notification, 'get_recipient_from_auth', return_value='recipient@email.com'):
+        with patch.object(dissolution_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with requests_mock.Mocker() as m:
+                m.get(
+                    f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                    f'/filings/{filing.id}/documents/dissolution',
+                    content=b'pdf_content_1',
+                    status_code=200,
+                )
+                m.post(
+                    f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                    content=b'pdf_content_2',
+                    status_code=201,
+                )
+                output = dissolution_notification.process(
+                    {'filingId': filing.id, 'type': 'dissolution', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Voluntary Dissolution Application.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_dissolution_attachments_paid_sp_receipt_only(session, config):
+    """PAID SP: no filing PDF (SP/GP excluded) — receipt only."""
+    identifier = 'FM1234567'
+    parties = [{
+        'firstName': 'Jane', 'lastName': 'Doe', 'middleInitial': 'A',
+        'partyType': 'person', 'organizationName': ''
+    }]
+    filing = prep_dissolution_filing(
+        session, identifier, '1', 'PAID', Business.LegalTypes.SOLE_PROP.value,
+        'test business', None, parties)
+    token = 'token'
+    with patch.object(dissolution_notification, 'get_recipient_from_auth', return_value='recipient@email.com'):
+        with patch.object(dissolution_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with requests_mock.Mocker() as m:
+                m.post(
+                    f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                    content=b'pdf_content_1',
+                    status_code=201,
+                )
+                output = dissolution_notification.process(
+                    {'filingId': filing.id, 'type': 'dissolution', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+
+
+def test_dissolution_attachments_completed_sp(session, config):
+    """COMPLETED SP: Statement of Dissolution only."""
+    identifier = 'FM1234567'
+    parties = [{
+        'firstName': 'Jane', 'lastName': 'Doe', 'middleInitial': 'A',
+        'partyType': 'person', 'organizationName': ''
+    }]
+    filing = prep_dissolution_filing(
+        session, identifier, '1', 'COMPLETED', Business.LegalTypes.SOLE_PROP.value,
+        'test business', None, parties)
+    token = 'token'
+    with patch.object(dissolution_notification, 'get_recipient_from_auth', return_value='recipient@email.com'):
+        with patch.object(dissolution_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with requests_mock.Mocker() as m:
+                m.get(
+                    f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                    f'/filings/{filing.id}/documents/dissolution',
+                    content=b'pdf_content_1',
+                    status_code=200,
+                )
+                output = dissolution_notification.process(
+                    {'filingId': filing.id, 'type': 'dissolution', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'Statement of Dissolution.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+
+
+def test_dissolution_attachments_completed_bc(session, config):
+    """COMPLETED BC (non-admin): Certificate of Dissolution."""
+    identifier = 'BC1234567'
+    filing = prep_dissolution_filing(
+        session, identifier, '1', 'COMPLETED', Business.LegalTypes.COMP.value, 'test business', None)
+    token = 'token'
+    with patch.object(dissolution_notification, 'get_recipient_from_auth', return_value='recipient@email.com'):
+        with patch.object(dissolution_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with requests_mock.Mocker() as m:
+                m.get(
+                    f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                    f'/filings/{filing.id}/documents/certificateOfDissolution',
+                    content=b'pdf_content_1',
+                    status_code=200,
+                )
+                output = dissolution_notification.process(
+                    {'filingId': filing.id, 'type': 'dissolution', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'Certificate of Dissolution.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+
+
+def test_dissolution_attachments_completed_coop(session, config):
+    """COMPLETED COOP: Certificate of Dissolution + Certified Affidavit + Certified Special Resolution."""
+    identifier = 'CP1234567'
+    filing = prep_dissolution_filing(
+        session, identifier, '1', 'COMPLETED', Business.LegalTypes.COOP.value, 'test business', None)
+    token = 'token'
+    with patch.object(dissolution_notification, 'get_recipient_from_auth', return_value='recipient@email.com'):
+        with patch.object(dissolution_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with requests_mock.Mocker() as m:
+                m.get(
+                    f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                    f'/filings/{filing.id}/documents/certificateOfDissolution',
+                    content=b'pdf_content_1',
+                    status_code=200,
+                )
+                m.get(
+                    f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                    f'/filings/{filing.id}/documents/affidavit',
+                    content=b'pdf_content_2',
+                    status_code=200,
+                )
+                m.get(
+                    f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                    f'/filings/{filing.id}/documents/specialResolution',
+                    content=b'pdf_content_3',
+                    status_code=200,
+                )
+                output = dissolution_notification.process(
+                    {'filingId': filing.id, 'type': 'dissolution', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 3
+    assert attachments[0]['fileName'] == 'Certificate of Dissolution.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Certified Affidavit.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+    assert attachments[2]['fileName'] == 'Certified Special Resolution.pdf'
+    assert base64.b64decode(attachments[2]['fileBytes']).decode('utf-8') == 'pdf_content_3'

@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Amalgamation Out email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import amalgamation_out_notification
@@ -56,3 +58,26 @@ def test_amalgamation_out_notification(app, session, status, legal_type, submitt
             assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
             assert mock_get_pdfs.call_args[0][1]['legalType'] == legal_type
             assert mock_get_pdfs.call_args[0][2] == filing
+
+
+def test_amalgamation_out_attachments(session, config):
+    """Assert _get_pdfs assembles just the receipt (no filing PDF for Amalgamation Out)."""
+    identifier = 'BC1234567'
+    filing = prep_amalgamation_out_filing(
+        session, identifier, '1', Business.LegalTypes.COMP.value, 'test business', None)
+    token = 'token'
+    with patch.object(amalgamation_out_notification, 'get_recipient_from_auth',
+                      return_value='recipient@email.com'):
+        with requests_mock.Mocker() as m:
+            m.post(
+                f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_1',
+                status_code=201,
+            )
+            output = amalgamation_out_notification.process(
+                {'filingId': filing.id, 'type': 'amalgamationOut', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
