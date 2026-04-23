@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-emailer"
-version = "0.1.4"
+version = "0.1.5"
 description = "This module is the service worker for sending emails about entity related events."
 authors = ["Hrvoje Fekete <hrvoje.fekete@mindpoweredtech.com>"]
 license = "BSD-3-Clause"
@@ -51,7 +51,6 @@ multidict = "6.2.0"
 Pillow = "11.1.0"
 pkgutil-resolve-name = "1.3.10"
 protobuf = "==3.20.*"
-psycopg2-binary = "2.9.10"
 pyasn1 = "0.4.8"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
@@ -88,6 +87,7 @@ structured-logging = { git = "https://github.com/bcgov/sbc-connect-common.git", 
 business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model" }
 business-registry-account = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account" }
 business-registry-common = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common" }
+cloud-sql-connector = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/cloud-sql-connector", branch = "main" }
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
