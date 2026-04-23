@@ -75,11 +75,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
         SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
 
-    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
-    else:
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # GCP Pub/Sub configuration
