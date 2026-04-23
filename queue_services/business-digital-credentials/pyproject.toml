@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-digital-credentials"
-version = "0.1.5"
+version = "0.1.6"
 description = "This module is the service worker for handling events that deal with Digital Business Card credential tasks."
 authors = ["Lucas O'Neil <lucasoneil@gmail.com>"]
 license = "BSD-3-Clause"
@@ -11,8 +11,10 @@ readme = "README.md"
 python = ">=3.13,<3.14"
 gunicorn = "23.0.0"
 launchdarkly-server-sdk = "9.15.0"
-psycopg2-binary = "2.9.11"
 Flask = "^3.1.2"
+
+grpcio = ">=1.78.2"
+grpcio-status = ">=1.78.2"
 
 # Git-based dependencies
 gcp-queue = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/gcp-queue", branch = "main" }
@@ -21,6 +23,7 @@ business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "pyt
 business-registry-account = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account", branch = "main" }
 business-registry-common = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common", branch = "main" }
 business-registry-digital-credentials = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-digital-credentials", branch = "main"}
+cloud-sql-connector = { git = "https://github.com/bcgov/sbc-connect-common.git", subdirectory = "python/cloud-sql-connector", branch = "main" }
 
 
 
@@ -34,7 +37,6 @@ requests-mock = "1.12.1"
 freezegun = "^1.5.5"
 ruff = "^0.15.2"
 deptry = "^0.24.0"
-
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
