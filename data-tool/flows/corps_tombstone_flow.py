@@ -134,7 +134,7 @@ def clean_snapshot_filings_data(data: dict, config) -> dict:
     tombstone = {}
     formatters = get_data_formatters(config)
     for k, f in formatters.items():
-        tombstone[k] = f(data)
+        tombstone[k] = f(data, config)
 
     tombstone = formatted_data_cleanup(tombstone)
 

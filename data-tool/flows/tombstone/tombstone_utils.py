@@ -356,7 +356,7 @@ def format_aliases_data(data: dict, config=None) -> list[dict]:
     return formatted_aliases
 
 
-def format_resolutions_data(data: dict) -> list[dict]:
+def format_resolutions_data(data: dict, config=None) -> list[dict]:
     resolutions_data = data['resolutions']
     formatted_resolutions = []
 
@@ -811,7 +811,7 @@ def map_country_region(can_jur_typ_cd):
     return country, region
 
 
-def formatted_data_cleanup(data: dict) -> dict:
+def formatted_data_cleanup(data: dict, config=None) -> dict:
     filings_business = data['filings']
     data['updates'] = {
         'businesses': filings_business['update_business_info'],
