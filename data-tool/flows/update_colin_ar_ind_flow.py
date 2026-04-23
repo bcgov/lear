@@ -54,6 +54,7 @@ def get_candidates(config, colin_engine: Engine) -> List[str]:
         return colin_identifiers
 
 def chunk_list(data: List[str], size: int = 1000):
+    # chunk size is set to 1000 to avoid hitting limit on oracle database
     for i in range(0, len(data), size):
         yield data[i:i + size]
 
