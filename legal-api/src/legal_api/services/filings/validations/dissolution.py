@@ -261,72 +261,71 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
 
     if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
         return None
-    
+
     if "parties" not in filing_json["filing"]["dissolution"]:
         return None
 
     parties_json = filing_json["filing"]["dissolution"]["parties"]
-    parties = list(filter(lambda x: _is_dissolution_party_role(x.get("roles", [])), parties_json))
+    custodians = list(filter(lambda x: _is_custodian_role(x.get("roles", [])), parties_json))
+
+    if not custodians:
+        # Handle case where there are no custodians, but there is a liquidator role
+        # (this is not implemented in the Create UI, keeping behavior here)
+        if any(_is_liquidator_role(p.get("roles", [])) for p in parties_json):
+            return None
+        return [{"error": "Dissolution party is required.", "path": "/filing/dissolution/parties"}]
+
     msg = []
-    address_in_bc = 0
-    address_in_ca = 0
-    party_path = "/filing/dissolution/parties"
+    msg.extend(_validate_custodian_email(custodians, dissolution_type, legal_type))
+    msg.extend(validate_custodian_org_name(custodians, dissolution_type, legal_type))
+    msg.extend(_validate_address_location(custodians, legal_type))
 
-    if len(parties) > 0:
-        msg.extend(_validate_custodian_email(parties, dissolution_type, legal_type))
-        msg.extend(validate_custodian_org_name(parties, dissolution_type, legal_type))
-
-        err, address_in_bc, address_in_ca = _validate_address_location(parties)
-        if err:
-            msg.extend(err)
-    else:
-        msg.append({"error": "Dissolution party is required.", "path": party_path})
-
-    if legal_type == Business.LegalTypes.COOP.value and address_in_ca == 0:
-        msg.append({"error": "Address must be in Canada.", "path": party_path})
-    elif legal_type in Business.CORPS and address_in_bc == 0:
-        msg.append({"error": "Address must be in BC.", "path": party_path})
-
-    if msg:
-        return msg
-
-    return None
+    return msg or None
 
 
-def _is_dissolution_party_role(roles: list) -> bool:
-    return any(role.get("roleType", "").lower() in
-               [PartyRole.RoleTypes.CUSTODIAN.value,
-                PartyRole.RoleTypes.LIQUIDATOR.value] for role in roles)
+def _is_custodian_role(roles: list) -> bool:
+    return any(role.get("roleType", "").lower() == PartyRole.RoleTypes.CUSTODIAN.value
+               for role in roles)
 
 
-def _validate_address_location(parties):
+def _is_liquidator_role(roles: list) -> bool:
+    return any(role.get("roleType", "").lower() == PartyRole.RoleTypes.LIQUIDATOR.value
+               for role in roles)
+
+
+def _validate_address_location(parties, legal_type):
+    """Every party address must be in Canada; CORP types also require the BC province."""
     msg = []
-    address_in_bc = 0
-    address_in_ca = 0
-    for idx, party in enumerate(parties):  # pylint: disable=too-many-nested-blocks;
+    require_bc = legal_type in Business.CORPS
+    for idx, party in enumerate(parties):
         for address_type in Address.JSON_ADDRESS_TYPES:
-            if address_type in party:
-                try:
-                    region = get_str(party, f"/{address_type}/addressRegion")
-                    if region == "BC":
-                        address_in_bc += 1
+            msg.extend(_validate_party_address(party, idx, address_type, require_bc))
+    return msg
 
-                    country = get_str(party, f"/{address_type}/addressCountry")
-                    country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
-                    if country_code == "CA":
-                        address_in_ca += 1
 
-                except LookupError:
-                    msg.append({"error": _("Address Country must resolve to a valid ISO-2 country."),
-                                "path": f"/filing/dissolution/parties/{idx}/{address_type}/addressCountry"})
-            else:
-                msg.append({"error": _(f"{address_type} is required."),
-                            "path": f"/filing/dissolution/parties/{idx}"})
+def _validate_party_address(party, idx, address_type, require_bc):
+    address_path = f"/filing/dissolution/parties/{idx}/{address_type}"
+    if address_type not in party:
+        return [{"error": _(f"{address_type} is required."),
+                 "path": address_path}]
 
-    if msg:
-        return msg, address_in_bc, address_in_ca
+    country = get_str(party, f"/{address_type}/addressCountry")
+    try:
+        country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
+    except LookupError:
+        return [{"error": _("Address Country must resolve to a valid ISO-2 country."),
+                 "path": f"{address_path}/addressCountry"}]
 
-    return None, address_in_bc, address_in_ca
+    msg = []
+    if country_code != "CA":
+        msg.append({"error": _("Address must be in Canada."),
+                    "path": f"{address_path}/addressCountry"})
+
+    if require_bc and get_str(party, f"/{address_type}/addressRegion") != "BC":
+        msg.append({"error": _("Address must be in BC."),
+                    "path": f"{address_path}/addressRegion"})
+
+    return msg
 
 
 def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
