@@ -740,14 +740,6 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
     else:
         filing['filing']['header'].pop('authorizationReceived', None)
 
-    if legal_type == Business.LegalTypes.COOP:
-        identifier = 'CP1234567'
-    elif legal_type in [Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP]:
-        identifier = 'FM1234567'
-        filing['filing']['registration'] = REGISTRATION
-    else:
-        identifier = 'BC1234567'
-
     errors = validate_authorization_received(filing, filing_type, legal_type)
 
     if legal_type in Business.CORPS and requires_authorization and expected_error:
