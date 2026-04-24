@@ -356,7 +356,7 @@ def format_aliases_data(data: dict, config=None) -> list[dict]:
     return formatted_aliases
 
 
-def format_resolutions_data(data: dict) -> list[dict]:
+def format_resolutions_data(data: dict, config=None) -> list[dict]:
     resolutions_data = data['resolutions']
     formatted_resolutions = []
 
