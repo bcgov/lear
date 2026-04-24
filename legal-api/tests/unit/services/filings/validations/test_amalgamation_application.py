@@ -394,14 +394,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'BEN',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
@@ -452,14 +452,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'BC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BC',
@@ -510,14 +510,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'ULC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'ULC',
@@ -568,14 +568,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CC',

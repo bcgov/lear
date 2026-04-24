@@ -172,9 +172,10 @@ def _series_name_has_reserved_words(series_name: str) -> bool:
     return any(word in EXCLUDED_WORDS_FOR_SERIES for word in series_name_words)
 
 
-def validate_series(item, memoize_names, filing_type, index) -> Error: # noqa: PLR0912
+def validate_series(item, filing_type, index) -> Error: # noqa: PLR0912
     """Validate shareStructure includes a wellformed series."""
     msg = []
+    series_names = []
     for series_index, series in enumerate(item.get("series", [])):
         err_path = f"/filing/{filing_type}/shareClasses/{index}/series/{series_index}"
 
@@ -192,24 +193,24 @@ def validate_series(item, memoize_names, filing_type, index) -> Error: # noqa: P
                 "error": "Share series name cannot start or end with whitespace.",
                 "path": f"{err_path}/name/"
             })
-        
+
         elif not series_name.endswith(SHARE_NAME_SUFFIX):
             msg.append({
                 "error": f"Share series name '{series_name}' must end with '{SHARE_NAME_SUFFIX}'.",
                 "path": f"{err_path}/name/"
             })
-        
+
         elif _series_name_has_reserved_words(series_name):
             msg.append({
                 "error": "Share series name cannot contain the words 'share' or 'shares'.",
                 "path": f"{err_path}/name/"
             })
 
-        elif series_name in memoize_names:
-            msg.append({"error": f"Share series {series_name} name already used in a share class or series.",
+        elif series_name in series_names:
+            msg.append({"error": f"Share series {series_name} name already used in this share class.",
                         "path": err_path})
         else:
-            memoize_names.append(series_name)
+            series_names.append(series_name)
 
 
         if series["hasMaximumShares"]:
@@ -295,7 +296,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
 
     elif share_name in memoize_names:
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-        msg.append({"error": f"Share class {share_name} name already used in a share class or series.",
+        msg.append({"error": f"Share class {share_name} name already used in another share class.",
                     "path": err_path})
     else:
         memoize_names.append(share_name)
@@ -346,7 +347,7 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
             })
             return msg
 
-    series_msg = validate_series(item, memoize_names, filing_type, index)
+    series_msg = validate_series(item, filing_type, index)
     if series_msg:
         msg.extend(series_msg)
 

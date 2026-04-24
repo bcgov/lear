@@ -1280,7 +1280,7 @@ def test_share_class_name_duplicate(session):
     result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
 
     assert len(result) >= 1
-    assert any('already used in a share class or series' in e.get('error', '') for e in result)
+    assert any('already used in another share class' in e.get('error', '') for e in result)
 
 
 @pytest.mark.parametrize('reserved_word', EXCLUDED_WORDS_FOR_CLASS)
@@ -1353,9 +1353,7 @@ def test_series_name_must_end_with_shares(session, series_name, expected_valid):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     suffix_errors = [e for e in result if "must end with ' Shares'" in e.get('error', '')]
 
@@ -1395,9 +1393,7 @@ def test_series_name_reserved_words(session, series_name, expected_valid):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     reserved_word_errors = [e for e in result if "cannot contain the words 'share' or 'shares'" in e.get('error', '')]
 
@@ -1425,9 +1421,7 @@ def test_series_name_empty(session, series_name):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     assert len(result) >= 1
     assert any('Share series name is required' in e.get('error', '') for e in result)
@@ -1452,32 +1446,29 @@ def test_series_name_whitespace(session, series_name):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     assert len(result) >= 1
     assert any('cannot start or end with whitespace' in e.get('error', '') for e in result)
 
 
 def test_series_name_duplicate(session):
-    """Test that duplicate series names are rejected."""
+    """Test that duplicate series names within a single class are rejected."""
     share_class = {
         'name': 'Class A Shares',
         'hasMaximumShares': False,
         'hasParValue': False,
         'hasRightsOrRestrictions': True,
-        'series': [{
-            'name': 'Series A Shares',
-            'hasMaximumShares': False
-        }]
+        'series': [
+            {'name': 'Series A Shares', 'hasMaximumShares': False},
+            {'name': 'Series A Shares', 'hasMaximumShares': False},
+        ]
     }
-    memoize_names = ['Class A Shares', 'Series A Shares']  # Series A Shares already used
 
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     assert len(result) >= 1
-    assert any('already used in a share class or series' in e.get('error', '') for e in result)
+    assert any('already used in this share class' in e.get('error', '') for e in result)
 
 
 @pytest.mark.parametrize('reserved_word', EXCLUDED_WORDS_FOR_SERIES)
@@ -1494,9 +1485,7 @@ def test_series_name_each_reserved_word(session, reserved_word):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     reserved_word_errors = [e for e in result if "cannot contain the words 'share' or 'shares'" in e.get('error', '')]
     assert len(reserved_word_errors) == 1
@@ -1523,9 +1512,7 @@ def test_series_name_reserved_word_case_insensitive(session, series_name):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     reserved_word_errors = [e for e in result if "cannot contain the words 'share' or 'shares'" in e.get('error', '')]
     assert len(reserved_word_errors) == 1, f"Failed for: {series_name}"
@@ -1543,9 +1530,7 @@ def test_series_allows_value_word(session):
             'hasMaximumShares': False
         }]
     }
-    memoize_names = ['Class A Shares']
-
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
 
     reserved_word_errors = [e for e in result if "cannot contain" in e.get('error', '')]
     assert len(reserved_word_errors) == 0
@@ -1689,8 +1674,8 @@ def test_share_structure_multiple_errors(session):
     assert len(result) >= 2  # At least errors for class name and series name
 
 
-def test_share_structure_duplicate_names_between_class_and_series(session):
-    """Test that a series cannot have the same name as a class."""
+def test_share_structure_series_can_share_name_with_class(session):
+    """A series may share a name with a class — uniqueness is scoped per class for series."""
     filing_json = {
         'filing': {
             'incorporationApplication': {
@@ -1701,7 +1686,7 @@ def test_share_structure_duplicate_names_between_class_and_series(session):
                         'hasParValue': False,
                         'hasRightsOrRestrictions': True,
                         'series': [{
-                            'name': 'Class A Shares',  # Same as class name
+                            'name': 'Class A Shares',  # matches class name — allowed
                             'hasMaximumShares': False
                         }]
                     }]
@@ -1712,8 +1697,39 @@ def test_share_structure_duplicate_names_between_class_and_series(session):
 
     result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
 
-    assert result is not None
-    assert any('already used' in e.get('error', '') for e in result)
+    assert result is None
+
+
+def test_share_structure_series_can_repeat_across_classes(session):
+    """A series name may repeat across different classes — only in-class uniqueness is enforced."""
+    filing_json = {
+        'filing': {
+            'incorporationApplication': {
+                'shareStructure': {
+                    'shareClasses': [
+                        {
+                            'name': 'Class A Shares',
+                            'hasMaximumShares': False,
+                            'hasParValue': False,
+                            'hasRightsOrRestrictions': True,
+                            'series': [{'name': 'Series 1 Shares', 'hasMaximumShares': False}],
+                        },
+                        {
+                            'name': 'Class B Shares',
+                            'hasMaximumShares': False,
+                            'hasParValue': False,
+                            'hasRightsOrRestrictions': True,
+                            'series': [{'name': 'Series 1 Shares', 'hasMaximumShares': False}],
+                        },
+                    ]
+                }
+            }
+        }
+    }
+
+    result = validate_share_structure(filing_json, 'incorporationApplication', 'BEN')
+
+    assert result is None
 
 
 def test_share_structure_empty_share_classes_for_ia(session):
@@ -1796,8 +1812,7 @@ def test_share_series_max_number_of_shares_validation(session, max_shares, expec
             'maxNumberOfShares': max_shares
         }]
     }
-    memoize_names = ['Class A Shares']
-    result = validate_series(share_class, memoize_names, 'incorporationApplication', 0)
+    result = validate_series(share_class, 'incorporationApplication', 0)
     assert any(expected_error in e.get('error', '') for e in result)
 
 
