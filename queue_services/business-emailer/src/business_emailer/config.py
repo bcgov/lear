@@ -106,10 +106,14 @@ class Config:  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
-    else:
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME", "")
+    DB_IP_TYPE = os.getenv("DATABASE_IP_TYPE", "private").lower()
+
+    if DB_HOST:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"    
+    elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
+
 
 
 class DevConfig(Config):  # pylint: disable=too-few-public-methods
@@ -136,7 +140,7 @@ class TestConfig(Config):  # pylint: disable=too-few-public-methods
     DEPLOYMENT_ENV = "testing"
     LEGAL_API_URL = "https://legal-api-url/"
     PAY_API_URL = "https://pay-api-url/"
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
     TEMPLATE_PATH = os.getenv("TEMPLATE_PATH", "src/business_emailer/email_templates")
     DASHBOARD_URL = os.getenv("DASHBOARD_URL", "https://dev.bcregistry.ca/businesses/")
 
