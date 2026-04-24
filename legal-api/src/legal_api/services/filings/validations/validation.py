@@ -16,6 +16,7 @@ from http import HTTPStatus
 
 from flask_babel import _ as babel
 
+from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.models import Business, Filing
 from legal_api.services import flags
@@ -37,7 +38,7 @@ from .change_of_name import validate as con_validate
 from .change_of_officers import validate as coo_validate
 from .change_of_receivers import validate as cor_validate
 from .change_of_registration import validate as change_of_registration_validate
-from .common_validations import validate_certified_by
+from .common_validations import validate_authorization_received, validate_certified_by
 from .consent_amalgamation_out import validate as consent_amalgamation_out_validate
 from .consent_continuation_out import validate as consent_continuation_out_validate
 from .continuation_in import validate as continuation_in_validate
@@ -68,10 +69,23 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
     err = validate_against_schema(filing_json)
     if err:
         return err
+    
+    filing_type = filing_json["filing"]["header"].get("name")
 
-    cert_errs = validate_certified_by(filing_json, business)
+    if isinstance(business, Business):
+        legal_type = business.legal_type
+    elif filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
+        legal_type = filing_json["filing"].get("business", {}).get("legalType")
+    else:
+        legal_type = filing_json["filing"].get(filing_type, {}).get("nameRequest", {}).get("legalType")
+
+    cert_errs = validate_certified_by(filing_json, filing_type, legal_type)
     if cert_errs:
         return Error(HTTPStatus.BAD_REQUEST, cert_errs)
+    
+    auth_received_errs = validate_authorization_received(filing_json, filing_type, legal_type)
+    if auth_received_errs:
+        return Error(HTTPStatus.BAD_REQUEST, auth_received_errs)
 
     if validate_staff_payment(filing_json) and flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.STAFF_PAYMENT.value
