@@ -747,7 +747,6 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
         filing['filing']['registration'] = REGISTRATION
     else:
         identifier = 'BC1234567'
-    business = factory_business(identifier=identifier, entity_type=legal_type)
 
     errors = validate_authorization_received(filing, filing_type, legal_type)
 
