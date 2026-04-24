@@ -37,13 +37,14 @@ from legal_api.utils.util import cors_preflight
 # noqa: I003; the multiple route decorators cause an erroneous error in line space counting
 
 
-DOCUMENTS_BASE_ROUTE: Final = "/<string:identifier>/filings/<int:filing_id>/documents"
-PARAM_REPORT_TYPE: str = "reportType"
-PARAM_DOC_CLASS = "documentClass"
-PARAM_DRS_ID = "drsId"
-APP_PDF =  "application/pdf"
-CONTENT_JSON = {"Content-Type": "application/json"}
-CONTENT_PDF = {"Content-Type": APP_PDF}
+DOCUMENTS_BASE_ROUTE: Final[str] = "/<string:identifier>/filings/<int:filing_id>/documents"
+PARAM_REPORT_TYPE: Final[str] = "reportType"
+PARAM_DOC_CLASS: Final[str] = "documentClass"
+PARAM_DRS_ID: Final[str] = "drsId"
+PARAM_REGENERATE: Final[str] = "regenerate"
+APP_PDF: Final[str] =  "application/pdf"
+CONTENT_JSON: Final = {"Content-Type": "application/json"}
+CONTENT_PDF: Final = {"Content-Type": APP_PDF}
 
 
 @cors_preflight("GET, POST")
@@ -101,6 +102,9 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                                           file_name=file_name, filing_id=filing_id, identifier=identifier)
             ), HTTPStatus.NOT_FOUND
 
+        if _regenerate(legal_filing_name):
+            return get_pdf(filing.storage, legal_filing_name, True)
+
         if drs_params := _get_drs_params():
             return _get_drs_documents(drs_params)
 
@@ -131,6 +135,13 @@ def _get_drs_params() -> dict:
     if request.args.get(PARAM_DOC_CLASS):
         params["documentClass"] = request.args.get(PARAM_DOC_CLASS)
     return params
+
+
+def _regenerate(legal_filing_name: str) -> bool:
+    """Determine if individual report request should regenerate and update the DRS."""
+    if legal_filing_name and legal_filing_name.lower().startswith("receipt"):
+        return False
+    return request.args.get(PARAM_REGENERATE, False)
 
 
 def _get_drs_documents(drs_params: dict):
@@ -179,7 +190,7 @@ def _get_document_list(business: Business, filing: Filing):
         identifier = business.identifier if business else storage.temp_reg
         doc_service: DocumentService = DocumentService()
         drs_docs: list = doc_service.get_documents_by_filing_id(identifier, drs_filing_id)
-        document_list = doc_service.update_document_list(drs_docs, document_list)
+        document_list = doc_service.update_document_list(drs_docs, document_list, filing)
     return jsonify(document_list), HTTPStatus.OK
 
 

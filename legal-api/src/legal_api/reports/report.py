@@ -59,12 +59,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._report_date_time = LegislationDatetime.now()
         self._document_service = DocumentService()
 
-    def get_pdf(self, report_type=None):
-        """Render a pdf for the report."""
+    def get_pdf(self, report_type=None, regenerate: bool=False):
+        """
+        Render a pdf for the report.
+        Regenerate if true will replace a report in the DRS if a DRS record already exists.
+        """
         self._report_key = report_type if report_type else self._filing.filing_type
         if self._report_key in ReportMeta.static_reports:
             return self._get_static_report()
-        return self._get_report()
+        return self._get_report(regenerate)
 
     def _get_static_report(self):
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
@@ -77,7 +80,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             mimetype="application/pdf"
         )
 
-    def _get_report(self):
+    def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
@@ -87,7 +90,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
         report_type = report_meta.get("reportType")
-        if business_identifier:
+        if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
                 business_identifier,
                 self._filing.id,
@@ -117,12 +120,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
 
-        response_drs = self._document_service.create_filing_report(
-            business_identifier,
-            self._filing,
-            report_meta,
-            response
-        )
+        if regenerate:
+            response_drs = self._document_service.replace_filing_report(
+                business_identifier,
+                self._filing,
+                report_meta,
+                response
+            )
+        else:
+            response_drs = self._document_service.create_filing_report(
+                business_identifier,
+                self._filing,
+                report_meta,
+                response
+            )
         return current_app.response_class(
             response=response_drs.content,
             status=response_drs.status_code,
@@ -289,7 +300,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_meta_info(filing)
         self._set_registrar_info(filing)
         self._set_completing_party(filing)
-        self._set_corp_flag(filing)
 
         filing["enable_new_ben_statements"] = flags.is_on("enable-new-ben-statements")
         filing["enable_sandbox"] = flags.is_on("enable-sandbox")
@@ -359,16 +369,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_special_resolution(filing)
         elif self._report_key == "specialResolutionApplication":
             self._format_special_resolution_application(filing, "alteration")
-
-    def _set_corp_flag(self, filing):
-        """Set a flag indicating whether the entity is a corporation."""
-        if self._business:
-            legal_type = self._business.legal_type
-        else:
-            filing_json = self._filing.filing_json.get("filing", {})
-            filing_type = self._filing.filing_type
-            legal_type = filing_json.get(filing_type, {}).get("nameRequest", {}).get("legalType")
-        filing["business"]["isCorp"] = legal_type in Business.CORPS
 
     def _set_completing_party(self, filing):
         completing_party_role = PartyRole.get_party_roles_by_filing(
@@ -477,14 +477,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["listOfDirectors"] = filing["changeOfDirectors"]
         else:
             filing["listOfDirectors"] = {
-                "directors": filing["annualReport"].get("directors", [])
+                "directors": filing["annualReport"]["directors"]
             }
-
-        if filing["listOfDirectors"]["directors"]:
-            # create helper lists of appointed and ceased directors
-            directors = self._format_directors(filing["listOfDirectors"]["directors"])
-            filing["listOfDirectors"]["directorsAppointed"] = [el for el in directors if "appointed" in el["actions"]]
-            filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
+        # create helper lists of appointed and ceased directors
+        directors = self._format_directors(filing["listOfDirectors"]["directors"])
+        filing["listOfDirectors"]["directorsAppointed"] = [el for el in directors if "appointed" in el["actions"]]
+        filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
 
     def _format_directors(self, directors):
         for director in directors:
@@ -1603,7 +1601,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "specialResolutionApplication": {
             "filingDescription": "Special Resolution Application",
             "fileName": "specialResolutionApplication",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "voluntaryDissolution": {
             "filingDescription": "Voluntary Dissolution",
@@ -1638,12 +1636,12 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "amendedRegistrationStatement": {
             "filingDescription": "Amended Registration Statement",
             "fileName": "amendedRegistrationStatement",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "correctedRegistrationStatement": {
             "filingDescription": "Corrected Registration Statement",
             "fileName": "amendedRegistrationStatement",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "changeOfRegistration": {
             "filingDescription": "Change of Registration",
@@ -1677,22 +1675,22 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "letterOfConsent": {
             "filingDescription": "Letter Of Consent",
             "fileName": "letterOfConsent",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "letterOfConsentAmalgamationOut": {
             "filingDescription": "Letter Of Consent",
             "fileName": "letterOfConsentAmalgamationOut",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",
             "fileName": "letterOfAgmExtension",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "letterOfAgmLocationChange": {
             "filingDescription": "Letter Of AGM Location Change",
             "fileName": "letterOfAgmLocationChange",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "continuationIn": {
             "filingDescription": "Continuation Application",

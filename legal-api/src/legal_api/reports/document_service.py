@@ -17,6 +17,7 @@ from typing import Optional
 import requests
 from flask import current_app, jsonify
 
+from legal_api.core.meta.filing import FILINGS
 from legal_api.exceptions import BusinessException
 from legal_api.models import Business, Document, Filing
 from legal_api.services import AccountService
@@ -24,6 +25,7 @@ from legal_api.utils.base import BaseEnum
 
 BUSINESS_DOCS_PATH: str = "{url}/application-reports/history/{product}/{business_id}?includeDocuments=true"
 GET_REPORT_PATH: str = "{url}/application-reports/{product}/{drsId}"
+PUT_REPORT_PATH: str = "{url}/application-reports/{product}/{drsId}"
 GET_REPORT_CERTIFIED_PATH: str = "{url}/application-reports/{product}/{drsId}?certifiedCopy=true"
 POST_REPORT_PATH: str = "{url}/application-reports/{product}/{bus_id}/{filing_id}/{report_type}"
 POST_REPORT_PARAMS: str = "?consumerFilingDate={filing_date}&consumerFilename={filename}"
@@ -68,6 +70,9 @@ class ReportTypes(BaseEnum):
 
     CERT = "CERT"
     FILING = "FILING"
+    FILING_2 = "FILING-2"
+    FILING_3 = "FILING-3"
+    FILING_4 = "FILING-4"
     NOA = "NOA"
     RECEIPT = "RECEIPT"
 
@@ -251,7 +256,7 @@ class DocumentService:
         except Exception:
             return []
 
-    def update_document_list(self, drs_docs: list, document_list: list) -> list:
+    def update_document_list(self, drs_docs: list, document_list: list, filing: Filing) -> list:
         """
         Update document_list urls with DRS information if a filing document maps to a DRS output or document.
 
@@ -262,26 +267,27 @@ class DocumentService:
         if not drs_docs or not document_list or not document_list.get("documents"):
             return document_list
         doc_list = document_list.get("documents")
+        receipt_exists: bool = False  # Some colin filings have no receipt - remove if not found.
         for doc in drs_docs:
-            if doc.get("reportType") and doc.get("reportType") == "RECEIPT" and doc_list.get("receipt"):
-                query_params: str = DRS_REPORT_PARAMS.format(report_type="RECEIPT", drs_id=doc.get("identifier"))
+            report_type: str = doc.get("reportType", "")
+            query_params: str = DRS_REPORT_PARAMS.format(report_type=report_type, drs_id=doc.get("identifier"))
+            if report_type == "RECEIPT" and doc_list.get("receipt"):
                 doc_list["receipt"] = doc_list["receipt"] + query_params
-            elif doc.get("reportType") and doc.get("reportType") == "NOA" and doc_list.get("noticeOfArticles"):
-                query_params: str = DRS_REPORT_PARAMS.format(report_type="NOA", drs_id=doc.get("identifier"))
+                receipt_exists = True
+            elif report_type == "NOA" and doc_list.get("noticeOfArticles"):
                 doc_list["noticeOfArticles"] = doc_list["noticeOfArticles"] + query_params
-            elif doc.get("reportType") and doc.get("reportType") == "FILING" and doc_list.get("legalFilings"):
-                query_params: str = DRS_REPORT_PARAMS.format(report_type="FILING", drs_id=doc.get("identifier"))
-                filing = doc_list["legalFilings"][0]
-                filing_key = next(iter(filing.keys()))
-                filing[filing_key] = filing[filing_key] + query_params
-            elif doc.get("reportType") and doc.get("reportType") == "CERT":
-                query_params: str = DRS_REPORT_PARAMS.format(report_type="CERT", drs_id=doc.get("identifier"))
-                for key in doc_list:
-                    if str(key).find("certificate") > -1:
-                        doc_list[key] = doc_list[key] + query_params
-                        break
+            elif report_type == "FILING":
+                doc_list = self._update_legal_filing(doc_list, query_params)
+            elif report_type.startswith("FILING"):
+                # Additional filings
+                doc_list = self._update_additional_filing(doc_list, query_params)
+            elif report_type == "CERT":
+                doc_list = self._update_certificate(doc_list, query_params)
             elif doc.get("documentClass"):
                 doc_list = self._update_static_document(doc, doc_list)
+        colin_filing: bool = filing and filing.storage and filing.storage.source == filing.storage.Source.COLIN.value
+        if colin_filing and not receipt_exists and doc_list.get("receipt"):
+            del doc_list["receipt"]
         return document_list
 
     def update_filing_documents(self, drs_docs: list, filing_docs: list, filing: Filing) -> list:  # noqa: PLR0912
@@ -304,27 +310,27 @@ class DocumentService:
             if meta_data and meta_data.get("colinFilingInfo") and meta_data["colinFilingInfo"].get("eventId"):
                 drs_filing_id = meta_data["colinFilingInfo"].get("eventId")
 
+        receipt_exists: bool = False  # Some colin filings have no receipt - remove if not found.
         for doc in drs_docs:
             if doc.get("eventIdentifier", 0) == drs_filing_id:
-                if doc.get("reportType") and doc.get("reportType") == "RECEIPT" and doc_list.get("receipt"):
-                    query_params: str = DRS_REPORT_PARAMS.format(report_type="RECEIPT", drs_id=doc.get("identifier"))
+                report_type: str = doc.get("reportType", "")
+                query_params: str = DRS_REPORT_PARAMS.format(report_type=report_type, drs_id=doc.get("identifier"))
+                if report_type == "RECEIPT" and doc_list.get("receipt"):
                     doc_list["receipt"] = doc_list["receipt"] + query_params
-                elif doc.get("reportType") and doc.get("reportType") == "NOA" and doc_list.get("noticeOfArticles"):
-                    query_params: str = DRS_REPORT_PARAMS.format(report_type="NOA", drs_id=doc.get("identifier"))
+                    receipt_exists = True
+                elif report_type == "NOA" and doc_list.get("noticeOfArticles"):
                     doc_list["noticeOfArticles"] = doc_list["noticeOfArticles"] + query_params
-                elif doc.get("reportType") and doc.get("reportType") == "FILING" and doc_list.get("legalFilings"):
-                    query_params: str = DRS_REPORT_PARAMS.format(report_type="FILING", drs_id=doc.get("identifier"))
-                    legal_filing = doc_list["legalFilings"][0]
-                    filing_key = next(iter(legal_filing.keys()))
-                    legal_filing[filing_key] = legal_filing[filing_key] + query_params
-                elif doc.get("reportType") and doc.get("reportType") == "CERT":
-                    query_params: str = DRS_REPORT_PARAMS.format(report_type="CERT", drs_id=doc.get("identifier"))
-                    for key in doc_list:
-                        if str(key).find("certificate") > -1:
-                            doc_list[key] = doc_list[key] + query_params
-                            break
+                elif report_type == "FILING":
+                    doc_list = self._update_legal_filing(doc_list, query_params)
+                elif report_type.startswith("FILING"):
+                    # Additional filings
+                    doc_list = self._update_additional_filing(doc_list, query_params)
+                elif report_type == "CERT":
+                    doc_list = self._update_certificate(doc_list, query_params)
                 elif doc.get("documentClass"):
                     doc_list = self._update_static_document(doc, doc_list)
+        if not receipt_exists and doc_list.get("receipt") and filing and filing.source == filing.Source.COLIN.value:
+            del doc_list["receipt"]
         return doc_list
 
     def get_filing_report(self, drs_id: str, report_type: str):
@@ -338,7 +344,7 @@ class DocumentService:
         headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID, APP_PDF)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
-        if report_type in (ReportTypes.FILING.value, ReportTypes.NOA.value):
+        if report_type.startswith(ReportTypes.FILING.value) or report_type == ReportTypes.NOA.value:
             get_url = GET_REPORT_CERTIFIED_PATH
         get_url = get_url.format(url=url, product=self.product_code, drsId=drs_id)
         response = requests.get(url=get_url, headers=headers)
@@ -346,17 +352,16 @@ class DocumentService:
             current_app.logger.error(f"DRS call {get_url} failed status={response.status_code}: {response.content}")
         return response
 
-    def get_filing_report_by_filing_id(self, business_identifier: str, filing_identifier: int, report_type: str):
+    def get_drs_id(self, business_identifier: str, filing_identifier: int, report_type: str) -> str:
         """
-        Try to get a filing report document from the DRS by filing identifier and report type.
+        Try to get a DRS ID by business identifier, filing identifier and report type.
 
         business_identifier: The business identifier.
         filing_identifier: The filing identifier.
         report_type: The report type.
-        return: The report binary data status is OK.
+        return: The DRS identifier if matching record data found.
         """
-        if not business_identifier or not filing_identifier or not report_type:
-            return None, HTTPStatus.NOT_FOUND
+        drs_id = None
         headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = FILING_DOCS_PATH.format(
@@ -369,11 +374,24 @@ class DocumentService:
         if response.status_code != HTTPStatus.OK:
             return response.content, response.status_code
         response_json = json.loads(response.content)
-        drs_id = None
         for doc in response_json:
             if doc.get("reportType") == report_type and doc.get("eventIdentifier") == filing_identifier:
                 drs_id = doc.get("identifier")
                 break
+        return drs_id
+
+    def get_filing_report_by_filing_id(self, business_identifier: str, filing_identifier: int, report_type: str):
+        """
+        Try to get a filing report document from the DRS by filing identifier and report type.
+
+        business_identifier: The business identifier.
+        filing_identifier: The filing identifier.
+        report_type: The report type.
+        return: The report binary data status is OK.
+        """
+        if not business_identifier or not filing_identifier or not report_type:
+            return None, HTTPStatus.NOT_FOUND
+        drs_id = self.get_drs_id(business_identifier, filing_identifier, report_type)
         if drs_id:
             response = self.get_filing_report(drs_id, report_type)
             return response.content, response.status_code
@@ -445,6 +463,48 @@ class DocumentService:
                 return response2
         return report_response
 
+    def replace_filing_report(
+        self,
+        business_identifier: str,
+        filing: Filing,
+        report_meta: dict,
+        report_response
+    ):
+        """
+        Replace an existing DRS application report record document with a report service report.
+
+        business_identifier: Required - associates the report with the business.
+        filing: Required - contains the filing ID and filing date.
+        report_type: Required - the DRS report type.
+        report_response: Required - contains the report binary data
+        return: The DRS API response.
+        """
+        if not business_identifier or not filing or not report_meta or not report_meta.get("reportType"):
+            return report_response
+
+        report_type: str = report_meta.get("reportType")
+        drs_id = self.get_drs_id(business_identifier, filing.id, report_type)
+        if not drs_id:
+            return self.create_filing_report(business_identifier, filing, report_meta, report_response)
+
+        headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID)
+        url: str = self.url.replace(DOC_PATH, "")
+        put_url = PUT_REPORT_PATH.format(url=url, product=self.product_code, drsId=drs_id)
+        response = requests.put(url=put_url, headers=headers, data=report_response.content)
+        if response.status_code not in (HTTPStatus.OK, HTTPStatus.CREATED):
+            current_app.logger.error(f"DRS call {put_url} failed status={response.status_code}: {response.content}")
+            return report_response
+        if report_type == ReportTypes.CERT.value:
+            return report_response
+        # Get the certified copy of the NOA and FILING report types.
+        response_json = json.loads(response.content)
+        if response_json and response_json.get("identifier"):
+            response2 = self.get_filing_report(response_json.get("identifier"), report_type)
+            if response2.status_code == HTTPStatus.OK:
+                return response2
+        return report_response
+
+
     def _update_static_document(self, doc: dict, doc_list: list) -> list:
         """
         Update static document urls in the document_list if a DRS match is found.
@@ -477,7 +537,6 @@ class DocumentService:
                 break
         return doc_list
 
-
     def _get_request_headers(self, account_id: str, accept_mime_type = None) -> dict:
         """
         Get request headers for the DRS api call.
@@ -495,3 +554,41 @@ class DocumentService:
         if accept_mime_type:
             headers["Accept"] = accept_mime_type
         return headers
+
+    def _update_legal_filing(self, doc_list: dict, drs_params: str) -> dict:
+        """Add the DRS params to the legal filing document url."""
+        if doc_list and doc_list.get("legalFilings"):
+            legal_filing = doc_list["legalFilings"][0]
+            filing_key = next(iter(legal_filing.keys()))
+            legal_filing[filing_key] = legal_filing[filing_key] + drs_params
+        return doc_list
+
+    def _update_additional_filing(self, doc_list: dict, drs_params: str) -> dict:
+        """Conditionally add the DRS params to the additional filing document url."""
+        if doc_list.get("specialResolutionApplication"):  # Not in configuration
+            doc_list["specialResolutionApplication"] = doc_list["specialResolutionApplication"] + drs_params
+            return doc_list
+        if doc_list.get("legalFilings"):
+            legal_filing = doc_list["legalFilings"][0]
+            filing_key = next(iter(legal_filing.keys()))
+            if FILINGS.get(filing_key) and FILINGS[filing_key].get("additional"):
+                for add in FILINGS[filing_key].get("additional"):
+                    if add.get("outputs"):
+                        for output in add.get("outputs"):
+                            if (
+                                output != "noticeOfArticles" and
+                                not str(output).startswith("certificate") and
+                                doc_list.get(output)
+                            ):
+                                doc_list[output] = doc_list[output] + drs_params
+                                break
+        return doc_list
+
+    def _update_certificate(self, doc_list: dict, drs_params: str) -> dict:
+        """Add the DRS params to the certificate document url."""
+        if doc_list:
+            for key in list(doc_list.keys()):
+                if str(key).find("certificate") > -1:
+                    doc_list[key] = doc_list[key] + drs_params
+                    break
+        return doc_list
