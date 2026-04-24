@@ -811,7 +811,7 @@ def map_country_region(can_jur_typ_cd):
     return country, region
 
 
-def formatted_data_cleanup(data: dict, config=None) -> dict:
+def formatted_data_cleanup(data: dict) -> dict:
     filings_business = data['filings']
     data['updates'] = {
         'businesses': filings_business['update_business_info'],
