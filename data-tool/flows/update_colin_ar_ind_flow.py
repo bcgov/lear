@@ -58,7 +58,7 @@ def chunk_list(data: List[str], size: int = 1000):
     for i in range(0, len(data), size):
         yield data[i:i + size]
 
-@task(retries=2, retry_delay_seconds=5)
+@task
 def update_chunk(ids_chunk: List[str]) -> int:
     corps_str = ",".join(f"'{corp}'" for corp in ids_chunk)
     sql = UPDATE_AR_IND_QUERY.format(corps=corps_str)
