@@ -36,10 +36,11 @@ import os
 
 from business_model.models import db
 from flask import Flask
-
-from email_reminder.config import DevelopmentConfig, ProductionConfig, UnitTestingConfig
-from email_reminder.services import flags, gcp_queue
 from structured_logging import StructuredLogging
+
+from email_reminder.config import (DevelopmentConfig, ProductionConfig,
+                                   UnitTestingConfig)
+from email_reminder.services import flags, gcp_queue
 
 CONFIG_MAP = {
     "development": DevelopmentConfig,
@@ -53,6 +54,19 @@ def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **k
     app.logger = StructuredLogging(app).get_logger()
     app.config.from_object(CONFIG_MAP.get(environment, "production"))
     flags.init_app(app, kwargs.get("ld_test_data"))
+
+    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):
+        from cloud_sql_connector import DBConfig
+        db_config = DBConfig(
+            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+            database=app.config.get("DB_NAME", ""),
+            user=app.config.get("DB_USER", ""),
+            ip_type=app.config["DB_IP_TYPE"],
+            pool_recycle=60,
+            schema="public",
+        )
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
+
     db.init_app(app)
     gcp_queue.init_app(app)
 
@@ -67,4 +81,4 @@ def register_shellcontext(app: Flask):
         """Shell context objects."""
         return {"app": app}
 
-    app.shell_context_processor(shell_context)
+    app.shell_context_processor(shell_context)    app.shell_context_processor(shell_context)
