@@ -1336,7 +1336,7 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
         return msg  # authorizationReceived is only required for corporations
     
     if filing_type not in FILINGS_REQUIRING_AUTHORIZATION:
-        return msg  # authorizationReceived is only required for non-staff filings
+        return msg  # authorizationReceived is only required for specific filings
 
     authorization_received = filing_json["filing"]["header"].get("authorizationReceived")
 
