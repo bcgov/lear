@@ -36,11 +36,10 @@ import os
 
 from business_model.models import db
 from flask import Flask
-from structured_logging import StructuredLogging
 
-from email_reminder.config import (DevelopmentConfig, ProductionConfig,
-                                   UnitTestingConfig)
+from email_reminder.config import DevelopmentConfig, ProductionConfig, UnitTestingConfig
 from email_reminder.services import flags, gcp_queue
+from structured_logging import StructuredLogging
 
 CONFIG_MAP = {
     "development": DevelopmentConfig,
