@@ -138,6 +138,9 @@ def extract_pull_flow(
     """
     Generate files
     """
+    if mode == 'refresh':
+        reset_extract_postgres = False
+        print('Running in refresh mode: skipping Postgres DB reset')
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
 
