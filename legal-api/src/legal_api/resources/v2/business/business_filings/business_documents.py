@@ -141,7 +141,10 @@ def _regenerate(legal_filing_name: str) -> bool:
     """Determine if individual report request should regenerate and update the DRS."""
     if legal_filing_name and legal_filing_name.lower().startswith("receipt"):
         return False
-    return request.args.get(PARAM_REGENERATE, False)
+    regen_doc = request.args.get(PARAM_REGENERATE)
+    if regen_doc is not None and isinstance(regen_doc, bool) and regen_doc:
+       return True
+    return regen_doc is not None and isinstance(regen_doc, str) and regen_doc.lower() in ["true", "1", "y", "yes"]
 
 
 def _get_drs_documents(drs_params: dict):
