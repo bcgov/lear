@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "involuntary_dissolutions"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
@@ -21,7 +21,8 @@ business-registry-common = {git = "https://github.com/bcgov/lear.git", subdirect
 business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
 business-registry-dissolution = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-dissolution"}
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
-psycopg2 = "^2.9.10"
+cloud-sql-connector = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/cloud-sql-connector"}
+
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.2"
