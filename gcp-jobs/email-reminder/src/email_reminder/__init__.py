@@ -81,4 +81,4 @@ def register_shellcontext(app: Flask):
         """Shell context objects."""
         return {"app": app}
 
-    app.shell_context_processor(shell_context)    app.shell_context_processor(shell_context)
+    app.shell_context_processor(shell_context)
