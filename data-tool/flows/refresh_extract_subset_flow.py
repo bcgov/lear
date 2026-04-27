@@ -9,6 +9,7 @@ from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
 from config import get_named_config
+from common.colin_queries import get_updated_identifiers
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -62,6 +63,18 @@ def _reset_extract_postgres_db() -> None:
 def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
+@task(name='Get-Updated-Identifiers-Colin')
+def get_updated_identifiers_colin() -> None:
+    """
+    Get updated corp nums from colin with cutoff timestamp
+    """
+    timestamp = '1234'
+    corp_list = ['12345','5678']
+    updated_corp_nums = [get_updated_identifiers(timestamp, corp_list )]
+    print(updated_corp_nums.size())
+    return updated_corp_nums
+
+    
 @task(name='Run-CPRD-Subset-Generator', cache_policy=NO_CACHE)
 def run_cprd_subset_extract_generator(
     corp_file: str,
