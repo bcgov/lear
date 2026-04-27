@@ -78,6 +78,24 @@ FILINGS_REQUIRING_CERTIFICATION = {
     CoreFiling.FilingTypes.SPECIALRESOLUTION,
 }
 
+FILINGS_REQUIRING_AUTHORIZATION = {
+    CoreFiling.FilingTypes.AGMEXTENSION,
+    CoreFiling.FilingTypes.AGMLOCATIONCHANGE,
+    CoreFiling.FilingTypes.ALTERATION,
+    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
+    CoreFiling.FilingTypes.AMALGAMATIONOUT,
+    CoreFiling.FilingTypes.ANNUALREPORT,
+    CoreFiling.FilingTypes.CHANGEOFADDRESS,
+    CoreFiling.FilingTypes.CHANGEOFDIRECTORS,
+    CoreFiling.FilingTypes.CONSENTAMALGAMATIONOUT,
+    CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT,
+    CoreFiling.FilingTypes.CONTINUATIONIN,
+    CoreFiling.FilingTypes.CONTINUATIONOUT,
+    CoreFiling.FilingTypes.CORRECTION,
+    CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL,
+    CoreFiling.FilingTypes.RESTORATION,
+}
+
 def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
     """Validate the resolution date of a share structure.
 
@@ -1274,19 +1292,11 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_certified_by(filing_json: dict, business: Business) -> list:
+def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) -> list:
     from legal_api.services.filings.validations.dissolution import DissolutionTypes
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
-    filing_type = filing_json["filing"]["header"].get("name")
-
-    if isinstance(business, Business):
-        legal_type = business.legal_type
-    elif filing_type == CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL:
-        legal_type = filing_json["filing"].get("business", None).get("legalType")
-    else:
-        legal_type = filing_json["filing"][filing_type]["nameRequest"].get("legalType")
 
     if legal_type in Business.CORPS:
         return msg  # certifiedBy is not required for corporations
@@ -1315,6 +1325,24 @@ def validate_certified_by(filing_json: dict, business: Business) -> list:
                 "error": "Certified by field cannot start or end with whitespace.",
                 "path": "/filing/header/certifiedBy"
             })
+
+    return msg
+
+def validate_authorization_received(filing_json: dict, filing_type: str, legal_type: str) -> list:
+    """Validate authorizationReceived field."""
+    msg = []
+
+    if legal_type not in Business.CORPS:
+        return msg  # authorizationReceived is only required for corporations
+    
+    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION:
+        return msg  # authorizationReceived is only required for specific filings
+
+    authorization_received = filing_json["filing"]["header"].get("authorizationReceived")
+
+    if not authorization_received:
+            msg.append({"error": "Authorization received must be true to authorize the filing submission.",
+                        "path": "/filing/header/authorizationReceived"})
 
     return msg
 

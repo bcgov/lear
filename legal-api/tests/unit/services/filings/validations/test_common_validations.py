@@ -50,6 +50,7 @@ from legal_api.services.filings.validations.common_validations import (
     EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
     is_officer_proprietor_replace_valid,
+    validate_authorization_received,
     validate_certify_name,
     validate_certified_by,
     validate_court_order,
@@ -574,7 +575,7 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
 
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
-    errors = validate_certified_by(filing, business)
+    errors = validate_certified_by(filing, "incorporationApplication", legal_type)
 
     if legal_type in Business.CORPS:
         assert errors == []
@@ -643,7 +644,7 @@ def test_validate_certified_by_firms(
     identifier = 'FM1234567'
     business = factory_business(identifier=identifier, entity_type=legal_type)
 
-    errors = validate_certified_by(filing, business)
+    errors = validate_certified_by(filing, filing_type, legal_type)
 
     if not expected_required:
         assert errors == []
@@ -704,7 +705,7 @@ def test_validate_certified_by_coops(
     identifier = 'CP1234567'
     business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COOP)
 
-    errors = validate_certified_by(filing, business)
+    errors = validate_certified_by(filing, filing_type, Business.LegalTypes.COOP)
 
     if not expected_required:
         assert errors == []
@@ -717,6 +718,36 @@ def test_validate_certified_by_coops(
             assert errors[0]['error'] == 'Certified by field cannot start or end with whitespace.'
 
         assert errors[0]['path'] == '/filing/header/certifiedBy'
+
+@pytest.mark.parametrize('legal_type', Business.CORPS + [
+    Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
+@pytest.mark.parametrize('authorization_received, expected_error', [
+    (True, False),
+    (False, True),
+    (None, True),
+])
+@pytest.mark.parametrize('filing_type, requires_authorization', [
+    (CoreFiling.FilingTypes.ALTERATION, True),
+    (CoreFiling.FilingTypes.ANNUALREPORT, True),
+    (CoreFiling.FilingTypes.REGISTRARSORDER, False), # staff filing
+    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False),  # not in FILINGS_REQUIRING_AUTHORIZATION
+])
+def test_validate_authorization_received(session, legal_type, authorization_received, expected_error, filing_type, requires_authorization):
+    """Test that authorizationReceived is enforced for Corps filings in FILINGS_REQUIRING_AUTHORIZATION only."""
+    filing = copy.deepcopy(FILING_HEADER)
+    if authorization_received is not None:
+        filing['filing']['header']['authorizationReceived'] = authorization_received
+    else:
+        filing['filing']['header'].pop('authorizationReceived', None)
+
+    errors = validate_authorization_received(filing, filing_type, legal_type)
+
+    if legal_type in Business.CORPS and requires_authorization and expected_error:
+        assert errors
+        assert errors[0]['error'] == 'Authorization received must be true to authorize the filing submission.'
+        assert errors[0]['path'] == '/filing/header/authorizationReceived'
+    else:
+        assert errors == []
 
 @pytest.mark.parametrize(
     ('party_type', 'organization_name','officer_override', 'expected_errors'),
