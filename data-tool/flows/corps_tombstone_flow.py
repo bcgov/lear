@@ -128,13 +128,13 @@ def get_snapshot_filings_data(config, colin_engine: Engine, corp_num: str) -> di
 
 
 @task(name='2.2-Corp-Snapshot-Placeholder-Filings-Cleanup-Task', cache_policy=NO_CACHE)
-def clean_snapshot_filings_data(data: dict) -> dict:
+def clean_snapshot_filings_data(data: dict, config) -> dict:
     """Clean corp snapshot and placeholder filings data."""
     # TODO: raise error for none
     tombstone = {}
-    formatters = get_data_formatters()
+    formatters = get_data_formatters(config)
     for k, f in formatters.items():
-        tombstone[k] = f(data)
+        tombstone[k] = f(data, config)
 
     tombstone = formatted_data_cleanup(tombstone)
 
@@ -252,6 +252,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     state_filing_index = update_info['state_filing_index']
     update_business_data = update_info['businesses']
     filing_ids_mapper = {}
+    electronic_filing_ids = []
     last_historical_filing_id = None
     # load placeholder filings
     for i, data in enumerate(filings_data):
@@ -272,6 +273,8 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
         data['colin_event_ids']['filing_id'] = filing_id
         load_data(conn, 'colin_event_ids', data['colin_event_ids'], expecting_id=False, versioned=False)
+        if f.get('paper_only') is False:
+            electronic_filing_ids.append(data['colin_event_ids']['colin_event_id'])
 
         if i == state_filing_index:
             update_info['businesses']['state_filing_id'] = filing_id
@@ -305,6 +308,9 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()}, versioned=False)
     epoch_filing_data['transaction_id'] = transaction_id
     load_data(conn, 'filings', epoch_filing_data, versioned=False)
+    
+    for filing_id in electronic_filing_ids:
+        update_data(conn, 'filings', {'paper_only': False}, 'id', filing_id, versioned=False)
 
     # load updates for business
     if update_business_data:
@@ -453,7 +459,7 @@ def get_tombstone_data(config, colin_engine: Engine, corp_num: str) -> tuple[str
         print(f'👷 Start collecting corp snapshot and filings data for {corp_num}...')
         raw_data = get_snapshot_filings_data(config, colin_engine, corp_num)
         # print(f'raw data: {raw_data}')
-        clean_data = clean_snapshot_filings_data(raw_data)
+        clean_data = clean_snapshot_filings_data(raw_data, config)
         # print(f'clean data: {clean_data}')
         print(f'👷 Complete collecting corp snapshot and filings data for {corp_num}!')
         return corp_num, clean_data

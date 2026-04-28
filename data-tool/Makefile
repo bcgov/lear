@@ -120,7 +120,7 @@ run-extract-load:
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" --mode refresh --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
+	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" $(if $(strip $(OUT)), --out "$(OUT)",) --mode refresh --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
 
 #################################################################################
 # Self Documenting Commands                                                     #

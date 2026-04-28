@@ -208,15 +208,23 @@ def has_party_changed(filing: Filing) -> bool:
 
     party_version = VersioningProxy.version_class(db.session(), Party)
     for party_role in party_roles:
+        try:
+            party_id = int(party_role["id"])
+        except (TypeError, ValueError):
+            return True  # Unresolvable ID — treat as changed
+
         parties_query = (db.session.query(party_version)
                          .filter(or_(party_version.transaction_id == filing.transaction_id,
                                      party_version.end_transaction_id == filing.transaction_id))
-                         .filter(party_version.id == party_role["id"])
+                         .filter(party_version.id == party_id)
                          .exists())
         if db.session.query(parties_query).scalar():  # Modified party
             return True
 
-        party = VersionedBusinessDetailsService.get_party_revision(filing, party_role["id"])
+        party = VersionedBusinessDetailsService.get_party_revision(filing, party_id)
+        if party is None:
+            return True  # Party revision missing — treat as changed
+
         address_version = VersioningProxy.version_class(db.session(), Address)
         # Has party delivery/mailing address modified
         address_query = (db.session.query(address_version)
@@ -258,7 +266,7 @@ def has_share_changed(filing: Filing) -> bool:
                           .filter(or_(series_version.transaction_id == filing.transaction_id,
                                       series_version.end_transaction_id == filing.transaction_id))
                           .filter(series_version.share_class_id.in_(
-                              [share_class["id"] for share_class in share_classes]))
+                              [int(share_class["id"]) for share_class in share_classes]))
                           .exists())
     return bool(db.session.query(share_series_query).scalar())
 

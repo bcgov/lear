@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the Registration email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import registration_notification
@@ -59,3 +61,52 @@ def test_registration_notification(app, session, mocker, status, legal_type):
         if status == 'COMPLETED':
             assert mock_get_pdfs.call_args[0][2]['identifier'] == 'FM1234567'
         assert mock_get_pdfs.call_args[0][3] == filing
+
+
+def test_registration_attachments_paid(session, mocker, config):
+    """Assert PAID path attaches only the receipt (no filing PDF)."""
+    identifier = 'FM1234567'
+    filing = prep_registration_filing(
+        session, identifier, '1', 'PAID', Business.LegalTypes.SOLE_PROP.value, 'test business')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.registration_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.post(
+            f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+            content=b'pdf_content_1',
+            status_code=201,
+        )
+        output = registration_notification.process(
+            {'filingId': filing.id, 'type': 'registration', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+
+
+def test_registration_attachments_completed(session, mocker, config):
+    """Assert COMPLETED path attaches only the Statement of Registration (no receipt)."""
+    identifier = 'FM1234567'
+    filing = prep_registration_filing(
+        session, identifier, '1', 'COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'test business')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.registration_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with requests_mock.Mocker() as m:
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/registration',
+            content=b'pdf_content_1',
+            status_code=200,
+        )
+        output = registration_notification.process(
+            {'filingId': filing.id, 'type': 'registration', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 1
+    assert attachments[0]['fileName'] == 'Statement of Registration.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'

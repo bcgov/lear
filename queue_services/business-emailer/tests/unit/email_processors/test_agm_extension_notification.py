@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for AGM extension email processor."""
+import base64
 from unittest.mock import patch
 
 import pytest
+import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import agm_extension_notification
@@ -52,3 +54,34 @@ def test_agm_extension_notification(app, session, status, legal_name, is_numbere
             assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
             assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.COMP.value
             assert mock_get_pdfs.call_args[0][2] == filing
+
+
+def test_agm_extension_attachments(session, config):
+    """Assert _get_pdfs assembles the AGM Extension letter and receipt."""
+    identifier = 'BC1234567'
+    filing = prep_agm_extension_filing(
+        identifier, '1', Business.LegalTypes.COMP.value, 'test business')
+    token = 'token'
+    with patch.object(agm_extension_notification, 'get_recipient_from_auth',
+                      return_value='recipient@email.com'):
+        with requests_mock.Mocker() as m:
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                f'/filings/{filing.id}/documents/letterOfAgmExtension',
+                content=b'pdf_content_1',
+                status_code=200,
+            )
+            m.post(
+                f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_2',
+                status_code=201,
+            )
+            output = agm_extension_notification.process(
+                {'filingId': filing.id, 'type': 'agmExtension', 'option': 'COMPLETED'}, token)
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Letter of AGM Extension Approval.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'

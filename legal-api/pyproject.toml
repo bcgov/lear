@@ -1,6 +1,6 @@
 [project]
 name = "legal-api"
-version = "3.0.1"
+version = "3.0.3"
 description = ""
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
@@ -52,11 +52,11 @@ dependencies = [
     "blinker (==1.4)",
     "pyjwt (==2.8.0)",
 
-    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.65#egg=registry_schemas",
+    "registry_schemas @ git+https://github.com/bcgov/business-schemas.git@2.18.67#egg=registry_schemas",
     "sql-versioning @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/sql-versioning",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@e82cd710c818e55f7b468472b4908e4d14a25a79#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@e82cd710c818e55f7b468472b4908e4d14a25a79#subdirectory=python/structured-logging",
-    "cloud-sql-python-connector (>=1.18.0,<2.0.0)",
+    "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@cloud-sql-connector-python3.9#subdirectory=python/cloud-sql-connector",
     "pg8000 (>=1.31.2,<2.0.0)",
 ]
 

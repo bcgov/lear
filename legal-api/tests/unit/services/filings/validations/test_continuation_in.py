@@ -63,7 +63,8 @@ def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
         )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -110,7 +111,8 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
     }
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
@@ -152,6 +154,7 @@ def test_continuation_in_parties_invalid_role(mocker, app, session, parties, exp
         'name': 'continuationIn',
         'date': '2019-04-08',
         'certifiedBy': 'full name',
+        'authorizationReceived': True,
         'email': 'no_one@never.get',
         'filingId': 1
     }
@@ -357,7 +360,8 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
@@ -415,14 +419,14 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CBEN',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CBEN',
@@ -473,14 +477,14 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'C',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'C',
@@ -531,14 +535,14 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CUL',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CUL',
@@ -589,14 +593,14 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/continuationIn/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CCC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/continuationIn/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CCC',
@@ -649,7 +653,8 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
@@ -722,7 +727,8 @@ def test_continuation_in_court_orders(mocker, app, session,
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
@@ -767,7 +773,8 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
@@ -799,7 +806,8 @@ def test_validate_business_in_colin(mocker, app, session, monkeypatch):
 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -818,7 +826,8 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
     """Assert continuation EXPRO business with founding date mismatch."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     
     # Add the EXPRO business data to simulate a mismatch in founding date
@@ -849,7 +858,8 @@ def test_validate_business_in_colin_founding_date_match(mocker, app, session):
     """Assert continuation EXPRO business with matching founding date."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     
     # Add the EXPRO business data with a matching founding date
@@ -891,6 +901,7 @@ def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
                 'name': 'continuationIn',
                 'date': '2019-04-08',
                 'certifiedBy': 'full name',
+                'authorizationReceived': True,
                 'email': 'no_one@never.get',
                 'filingId': 1
             }
@@ -924,7 +935,8 @@ def test_validate_before_and_after_approval(mocker, app, session, test_status, i
     )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = is_approved
     del filing['filing']['continuationIn']['offices']
@@ -978,7 +990,8 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
@@ -1026,7 +1039,8 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
         ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
@@ -1085,7 +1099,8 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
         ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
 
     if effective_date is not None:
         filing['filing']['header']['effectiveDate'] = effective_date
@@ -1145,7 +1160,8 @@ def test_validate_continuation_in_name_translation(mocker, session, test_name, n
         ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
 
     filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True

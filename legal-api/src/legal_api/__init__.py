@@ -36,6 +36,7 @@
 This module is the API for the Legal Entity system.
 """
 import os
+from typing import Optional
 
 from flask import Flask, jsonify
 from registry_schemas import __version__ as registry_schemas_version
@@ -45,11 +46,6 @@ from legal_api import config, models
 from legal_api.models import db
 from legal_api.models.db import init_db
 from legal_api.resources import endpoints
-from structured_logging import StructuredLogging
-
-from legal_api.scripts.document_service_import import document_service_bp  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
-from typing import Optional
-
 from legal_api.schemas import rsbc_schemas
 from legal_api.services import digital_credentials, flags, gcp_queue
 from legal_api.services.authz import cache
@@ -57,6 +53,10 @@ from legal_api.translations import babel
 from legal_api.utils.auth import jwt
 from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
+from structured_logging import StructuredLogging
+
+from legal_api.scripts.document_service_import import document_service_bp  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
+
 
 setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
 
@@ -71,6 +71,18 @@ def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
         app.config.from_object(_config)
     else:
         app.config.from_object(config.CONFIGURATION[run_mode])
+
+    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+        from cloud_sql_connector import DBConfig
+        db_config = DBConfig(
+            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+            database=app.config.get("DB_NAME", ""),
+            user=app.config.get("DB_USER", ""),
+            ip_type=app.config["DB_IP_TYPE"],
+            pool_recycle = 60,
+            schema="public",
+        )
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
 
     app.logger = StructuredLogging(app).get_logger()
     init_db(app)

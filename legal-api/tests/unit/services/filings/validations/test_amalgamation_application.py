@@ -60,7 +60,8 @@ def test_invalid_nr_amalgamation(mocker, app, session):
     """Assert that nr is invalid."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -94,7 +95,8 @@ def test_amalgamation_parties_missing_role(mocker, app, session, amalgamation_ty
     """Assert that amalgamation party roles can be validated for missing roles."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -133,6 +135,7 @@ def test_amalgamation_parties_invalid_role(mocker, app, session, parties, expect
         'name': 'amalgamationApplication',
         'date': '2019-04-08',
         'certifiedBy': 'full name',
+        'authorizationReceived': True,
         'email': 'no_one@never.get',
         'filingId': 1
     }
@@ -339,7 +342,8 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
     """Assert that amalgamation offices can be validated."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
     filing['filing']['amalgamationApplication']['nameRequest'] = {}
@@ -394,14 +398,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'BEN',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
@@ -452,14 +456,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'BC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BC',
@@ -510,14 +514,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'ULC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'ULC',
@@ -568,14 +572,14 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 1 Shares', None,
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class Class 1 Shares name already used in a share class or series.',
+             'error': 'Share class Class 1 Shares name already used in another share class.',
              'path': '/filing/amalgamationApplication/shareClasses/1/name/'
          }]),
         ('FAIL-SERIES2', 'CC',
          'Class 1 Shares', False, None, False, None, None, 'Series 1 Shares', False, None,
          'Class 2 Shares', 'Series 1 Shares',
          HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series Series 1 Shares name already used in a share class or series.',
+             'error': 'Share series Series 1 Shares name already used in this share class.',
              'path': '/filing/amalgamationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'CC',
@@ -624,7 +628,8 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
     """Assert that validator validates share class correctly."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
 
     filing['filing']['amalgamationApplication']['nameRequest'] = {}
@@ -679,7 +684,8 @@ def test_validate_amalgamation_office_or_share_required(session, mocker, amalgam
     """Assert that amalgamation offices/shareStructure required can be validated."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -713,7 +719,8 @@ def test_amalgamation_court_orders(mocker, app, session,
     """Assert valid court orders."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -748,7 +755,8 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -788,7 +796,8 @@ def test_has_pending_filing(mocker, app, session, jwt, test_status, expected_cod
     """Assert valid amalgamating businesses has draft, pending or future effective filing."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -824,7 +833,8 @@ def test_in_future_effective_amalgamation_filing(mocker, app, session, jwt,
     """Assert valid amalgamating businesses is part of a future effective amalgamation filing."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -862,7 +872,8 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
@@ -932,7 +943,8 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
@@ -1002,7 +1014,8 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
@@ -1060,7 +1073,8 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -1117,7 +1131,8 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(mocker, app, sessi
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     if test_status == 'FAIL':
@@ -1165,7 +1180,8 @@ def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jw
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -1212,7 +1228,8 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'CC'
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -1256,7 +1273,8 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -1315,7 +1333,8 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     adoptable_name = f'Test adoptable name {legal_type}'
@@ -1385,7 +1404,8 @@ def test_duplicate_amalgamating_businesses(mocker, app, session, jwt, test_statu
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = amalgamating_businesses
@@ -1471,7 +1491,8 @@ def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_typ
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
@@ -1524,7 +1545,8 @@ def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type,
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
@@ -1571,7 +1593,8 @@ def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_
     account_id = '123456'
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.horizontal.name
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][0]['role'] = \
@@ -1625,7 +1648,8 @@ def test_amalgamation_share_class_series_validation(mocker, app, session, jwt, a
     """Test share class/series validation in amalgamation application with different amalgamation types."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
@@ -1692,6 +1716,7 @@ def test_validate_amalgamation_effective_date(
         'name': 'amalgamationApplication',
         'date': '2019-04-08',
         'certifiedBy': 'full name',
+        'authorizationReceived': True,
         'email': 'no_one@never.get',
         'filingId': 1
     }
@@ -1765,6 +1790,7 @@ def test_validate_amalgamation_name_translation(mocker, session, test_name, amal
         'name': 'amalgamationApplication',
         'date': '2019-04-08',
         'certifiedBy': 'full name',
+        'authorizationReceived': True,
         'email': 'no_one@never.get',
         'filingId': 1
     }
@@ -1816,6 +1842,7 @@ def test_amalgamation_permission_and_completing_party_flag(mocker, app, session,
         'name': 'amalgamationApplication',
         'date': '2019-04-08',
         'certifiedBy': 'fname mname lname',
+        'authorizationReceived': True,
         'email': 'test@email.com',
         'filingId': 1
     }

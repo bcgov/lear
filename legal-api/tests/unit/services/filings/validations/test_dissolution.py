@@ -203,7 +203,9 @@ def test_dissolution_party_roles(session, legal_type, dissolution_type, roles, e
         ('FAIL', 'BC', 'party_address_required', 'BC1234567',
          HTTPStatus.BAD_REQUEST, 'Dissolution party is required.'),
         ('FAIL', 'CP', 'lookup_error', 'CP1234567',
-         HTTPStatus.BAD_REQUEST, 'Address Country must resolve to a valid ISO-2 country.')
+         HTTPStatus.BAD_REQUEST, 'Address Country must resolve to a valid ISO-2 country.'),
+        ('PASS', 'CP', 'liquidator_only', 'CP1234567', None, None),
+        ('PASS', 'CP', 'liquidator_only_non_ca_address', 'CP1234567', None, None),
     ]
 )
 def test_dissolution_address(session, test_status, legal_type, address_validation,
@@ -233,6 +235,13 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
         filing['filing']['dissolution']['parties'] = []
     elif address_validation == 'lookup_error':
         filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'adssadkj'
+    elif address_validation in ['liquidator_only', 'liquidator_only_non_ca_address']:
+        # COOP voluntary dissolution may appoint a liquidator instead of a custodian.
+        # The address-location rules apply only to custodians, so a liquidator-only
+        # filing — including one with non-CA addresses — should validate.
+        filing['filing']['dissolution']['parties'][1]['roles'][0]['roleType'] = 'Liquidator'
+        if address_validation == 'liquidator_only_non_ca_address':
+            filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'US'
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
@@ -245,6 +254,38 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
         assert expected_msg == err.msg[0]['error']
     else:
         assert not err
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, country, region, per_address_errors',
+    [
+        ('COOP_CA_ANY_PROVINCE_OK', 'CP', 'CA', 'ON', []),
+        ('COOP_US_FAILS_CA', 'CP', 'US', 'ON', ['Address must be in Canada.']),
+        ('CORP_CA_BC_OK', 'BC', 'CA', 'BC', []),
+        ('CORP_CA_AB_FAILS_BC', 'BC', 'CA', 'AB', ['Address must be in BC.']),
+        ('CORP_US_BC_FAILS_CA', 'BC', 'US', 'BC', ['Address must be in Canada.']),
+        ('CORP_US_AB_FAILS_BOTH', 'BC', 'US', 'AB',
+            ['Address must be in Canada.', 'Address must be in BC.']),
+    ]
+)
+def test_validate_dissolution_parties_address_location_per_address(
+        test_name, legal_type, country, region, per_address_errors):
+    """Every party address must be CA; CORP types additionally require BC.
+
+    Calls the helper directly with a single custodian party whose mailing and
+    delivery addresses share the same country/region, so expected errors are
+    the per-address list doubled.
+    """
+    parties = [{
+        'roles': [{'roleType': 'Custodian'}],
+        'mailingAddress': {'addressCountry': country, 'addressRegion': region},
+        'deliveryAddress': {'addressCountry': country, 'addressRegion': region},
+    }]
+
+    result = dissolution._validate_address_location(parties, legal_type)
+
+    expected = per_address_errors * 2
+    assert [m['error'] for m in result] == expected
 
 
 @pytest.mark.parametrize(

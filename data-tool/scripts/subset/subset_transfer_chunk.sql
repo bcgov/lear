@@ -292,13 +292,13 @@ corporation_cte as (
 )
 select distinct
 		addr_id,
-		province,
-		country_typ_cd,
-		replace(postal_cd, CHR(0), '') as POSTAL_CD,
-		addr_line_1,
-		replace(addr_line_2, CHR(0), '') as ADDR_LINE_2,
-		addr_line_3,
-		city
+		trim(province) as province,
+		trim(country_typ_cd) as country_typ_cd,
+		trim(replace(postal_cd, CHR(0), '')) as POSTAL_CD,
+		trim(addr_line_1) as addr_line_1,
+		trim(replace(addr_line_2, CHR(0), '')) as ADDR_LINE_2,
+		trim(addr_line_3) as addr_line_3,
+		trim(city) as city
 from (
 	select a.*
 	from corporation_cte c

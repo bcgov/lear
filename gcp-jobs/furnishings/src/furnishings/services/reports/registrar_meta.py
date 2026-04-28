@@ -68,6 +68,14 @@ class RegistrarInfo:
             "signatureImage": "registrar_signature_6.png",
             "signatureImageAndText": "registrar_signature_and_text_6.png",
             "startDate": "2025-11-19T00:00:00",
+            "endDate": "2026-04-27T23:59:59"
+        },
+        {
+            "name": "KATHLEEN ASSAF",
+            "title": "Registrar of Companies",
+            "signatureImage": "registrar_signature_7.png",
+            "signatureImageAndText": "registrar_signature_and_text_7.png",
+            "startDate": "2026-04-28T00:00:00",
             "endDate": None
         }
     ]

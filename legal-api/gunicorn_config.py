@@ -23,10 +23,9 @@ import gunicorn_server
 workers = int(os.environ.get("GUNICORN_PROCESSES", "1"))  # gunicorn default - 1
 worker_class = os.environ.get("GUNICORN_WORKER_CLASS", "sync")  # gunicorn default - sync
 worker_connections = int(os.environ.get("GUNICORN_WORKER_CONNECTIONS", "1000"))  # gunicorn default - 1000
-threads = int(os.environ.get("GUNICORN_THREADS", "3"))  # gunicorn default - 1
-timeout = int(os.environ.get("GUNICORN_TIMEOUT", "100"))  # gunicorn default - 30
+threads = int(os.environ.get("GUNICORN_THREADS", "8"))  # gunicorn default - 1
+timeout = int(os.environ.get("GUNICORN_TIMEOUT", "0"))  # gunicorn default - 30
 keepalive = int(os.environ.get("GUNICORN_KEEPALIVE", "2"))  # gunicorn default - 2
-# WHEN MIGRATING TO GCP -  GUNICORN_THREADS = 8, GUNICORN_TIMEOUT = 0, GUNICORN_PROCESSES = 1
 
 
 forwarded_allow_ips = "*"  # pylint: disable=invalid-name

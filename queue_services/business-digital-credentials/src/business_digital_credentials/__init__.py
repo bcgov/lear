@@ -18,6 +18,7 @@ This module is the service worker for handling events that deal with Digital Bus
 import os
 
 from business_registry_digital_credentials import digital_credentials
+from cloud_sql_connector import DBConfig
 from flask import Flask
 
 from business_model.models.db import db
@@ -48,6 +49,17 @@ def create_app(
     # Configure LaunchDarkly
     if app.config.get("LD_SDK_KEY", None):
         flags.init_app(app)
+
+    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+        db_config = DBConfig(
+            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+            database=app.config.get("DB_NAME", ""),
+            user=app.config.get("DB_USER", ""),
+            ip_type=app.config["DB_IP_TYPE"],
+            pool_recycle=60,
+            schema="public",
+        )
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
 
     db.init_app(app)
     register_endpoints(app)
