@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.8
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"
@@ -13,7 +13,7 @@ USER root
 
 # Installing Oracle instant client
 WORKDIR    /opt/oracle
-RUN        apt-get update && apt-get install -y libaio1t64 gdb wget unzip \
+RUN        apt-get update && apt-get install -y libaio1 gdb wget unzip \
     && wget https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-basiclite-linux.x64-21.1.0.0.0.zip \
     && wget https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-sqlplus-linux.x64-21.1.0.0.0.zip \
     && unzip instantclient-basiclite-linux.x64-21.1.0.0.0.zip \
