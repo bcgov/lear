@@ -124,6 +124,131 @@ def test_manage_share_structure__share_classes(
     assert not err
 
 
+def test_manage_share_structure__create_persists_currency_additional(app, session):
+    """Assert that a created share class persists currencyAdditional (grandfathered OTHER)."""
+    share_structure = {
+        "shareClasses": [{
+            "name": "Class A",
+            "priority": 1,
+            "maxNumberOfShares": 100,
+            "parValue": 1,
+            "currency": "OTHER",
+            "currencyAdditional": "Bitcoin",
+            "hasMaximumShares": True,
+            "hasParValue": True,
+            "hasRightsOrRestrictions": False,
+            "series": []
+        }]
+    }
+    business = Business()
+    business.save()
+
+    err = shares.update_share_structure(business, share_structure)
+    business.save()
+
+    assert not err
+    check_business = Business.find_by_internal_id(business.id)
+    persisted = check_business.share_classes.all()
+    assert len(persisted) == 1
+    assert persisted[0].currency == "OTHER"
+    assert persisted[0].currency_additional == "Bitcoin"
+
+
+def test_manage_share_structure_correction__update_clears_currency_additional(app, session):
+    """Assert that switching OTHER -> CAD via correction clears currency_additional."""
+    from business_model.models import ShareClass
+
+    # setup: existing grandfathered OTHER class
+    business = Business()
+    existing = ShareClass(
+        name="Class A",
+        priority=1,
+        max_share_flag=True,
+        max_shares=100,
+        par_value_flag=True,
+        par_value=1,
+        currency="OTHER",
+        currency_additional="Bitcoin",
+        special_rights_flag=False
+    )
+    business.share_classes.append(existing)
+    business.save()
+    existing_id = existing.id
+
+    # correction submits: same class, currency replaced, currencyAdditional null
+    share_structure = {
+        "shareClasses": [{
+            "id": existing_id,
+            "name": "Class A",
+            "priority": 1,
+            "maxNumberOfShares": 100,
+            "parValue": 1,
+            "currency": "CAD",
+            "currencyAdditional": None,
+            "hasMaximumShares": True,
+            "hasParValue": True,
+            "hasRightsOrRestrictions": False,
+            "series": []
+        }]
+    }
+
+    err = shares.update_share_structure_correction(business, share_structure)
+    business.save()
+
+    assert not err
+    updated = ShareClass.find_by_share_class_id(existing_id)
+    assert updated.currency == "CAD"
+    assert updated.currency_additional is None
+
+
+def test_manage_share_structure_correction__update_preserves_currency_additional(app, session):
+    """Assert that correcting an OTHER class without changing currency preserves currency_additional."""
+    from business_model.models import ShareClass
+
+    # setup: existing grandfathered OTHER class
+    business = Business()
+    existing = ShareClass(
+        name="Class A",
+        priority=1,
+        max_share_flag=True,
+        max_shares=100,
+        par_value_flag=True,
+        par_value=1,
+        currency="OTHER",
+        currency_additional="Bitcoin",
+        special_rights_flag=False
+    )
+    business.share_classes.append(existing)
+    business.save()
+    existing_id = existing.id
+
+    # correction submits: same class with name change, currency still OTHER, freetext preserved
+    share_structure = {
+        "shareClasses": [{
+            "id": existing_id,
+            "name": "Class A Renamed",
+            "priority": 1,
+            "maxNumberOfShares": 100,
+            "parValue": 1,
+            "currency": "OTHER",
+            "currencyAdditional": "Bitcoin",
+            "hasMaximumShares": True,
+            "hasParValue": True,
+            "hasRightsOrRestrictions": False,
+            "series": []
+        }]
+    }
+
+    err = shares.update_share_structure_correction(business, share_structure)
+    business.save()
+
+    assert not err
+    updated = ShareClass.find_by_share_class_id(existing_id)
+    assert updated.name == "Class A Renamed"
+    assert updated.currency == "OTHER"
+    assert updated.currency_additional == "Bitcoin"
+
+
 def test_manage_share_structure__delete_shares(app, session):
     """Assert that the share structures are deleted."""
     from business_model.models import ShareClass, ShareSeries
