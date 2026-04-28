@@ -321,7 +321,7 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdi
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "cd7ebab1c899da77ed6f1977dac23375094e5f30"
+resolved_reference = "b13466258991143dabd20ace0e252219771ea573"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -3773,4 +3773,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "aded37744b0dc5a52f976ba995f3af20b22ff284fe0625f59a5270d855d844e8"
+content-hash = "80819912d44f8c7fb530d4e6f5773438a9eda32f4dde14800daa23cf435c241c"
