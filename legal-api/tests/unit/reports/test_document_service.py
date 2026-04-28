@@ -258,22 +258,22 @@ TEST_REPORT_META_DATA = [
     (True, "annualReport", "FILING"),
     (True, "changeOfName", "FILING"),
     (True, "specialResolution", "FILING"),
-    (True, "specialResolutionApplication", "FILING"),
+    (True, "specialResolutionApplication", "FILING-2"),
     (True, "voluntaryDissolution", "FILING"),
     (True, "certificateOfNameChange", "CERT"),
     (True, "certificateOfNameCorrection", "CERT"),
     (True, "certificateOfDissolution", "CERT"),
     (True, "dissolution", "FILING"),
     (True, "registration", "FILING"),
-    (True, "amendedRegistrationStatement", "FILING"),
-    (True, "correctedRegistrationStatement", "FILING"),
+    (True, "amendedRegistrationStatement", "FILING-2"),
+    (True, "correctedRegistrationStatement", "FILING-2"),
     (True, "changeOfRegistration", "FILING"),
     (True, "correction", "FILING"),
     (True, "certificateOfRestoration", "CERT"),
-    (True, "letterOfConsent", "FILING"),
-    (True, "letterOfConsentAmalgamationOut", "FILING"),
-    (True, "letterOfAgmExtension", "FILING"),
-    (True, "letterOfAgmLocationChange", "FILING"),
+    (True, "letterOfConsent", "FILING-2"),
+    (True, "letterOfConsentAmalgamationOut", "FILING-2"),
+    (True, "letterOfAgmExtension", "FILING-2"),
+    (True, "letterOfAgmLocationChange", "FILING-2"),
     (True, "continuationIn", "FILING"),
     (True, "certificateOfContinuation", "CERT"),
     (True, "noticeOfWithdrawal", "FILING"),
@@ -299,7 +299,7 @@ def test_update_filing_docs(session, desc, doc_data, drs_data, receipt, filing, 
     """Assert that updating filing output url's with DRS info works as expected."""
     doc_service: DocumentService = DocumentService()
     filing_docs = copy.deepcopy(doc_data)
-    results = doc_service.update_document_list(drs_data, filing_docs)
+    results = doc_service.update_document_list(drs_data, filing_docs, None)
     assert results
     text_results: str = json.dumps(results)
     if not receipt:
