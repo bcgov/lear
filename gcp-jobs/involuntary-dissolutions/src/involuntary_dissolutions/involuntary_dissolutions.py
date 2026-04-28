@@ -24,15 +24,7 @@ from sqlalchemy import Date, cast, func
 from sqlalchemy.orm import aliased
 
 from business_common.core.filing import Filing as CoreFiling
-from business_model.models import (
-    Batch,
-    BatchProcessing,
-    Business,
-    Configuration,
-    Filing,
-    Furnishing,
-    db,
-)
+from business_model.models import Batch, BatchProcessing, Business, Configuration, Filing, Furnishing, db
 from business_model.models.db import init_db
 from dissolution_service import InvoluntaryDissolutionService
 from gcp_queue import GcpQueue
@@ -57,6 +49,19 @@ def create_app(run_mode=env):
     app = Flask(__name__)
     app.config.from_object(get_named_config(run_mode))
     app.env = run_mode
+    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+        from cloud_sql_connector import DBConfig
+
+        db_config = DBConfig(
+            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
+            database=app.config.get("DB_NAME", ""),
+            user=app.config.get("DB_USER", ""),
+            ip_type=app.config["DB_IP_TYPE"],
+            pool_recycle=60,
+            schema="public",
+        )
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
+
     init_db(app)
 
     if app.config.get("LD_SDK_KEY", None):
