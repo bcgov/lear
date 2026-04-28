@@ -294,7 +294,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.3.23"
+version = "3.3.25"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"

@@ -85,6 +85,7 @@ SINGLE_SHARE_CLASS = {
             'maxNumberOfShares': 600,
             'parValue': 1,
             'currency': 'CAD',
+            'currencyAdditional': None,
             'hasMaximumShares': True,
             'hasParValue': True,
             'hasRightsOrRestrictions': False,
@@ -275,7 +276,7 @@ def test_manage_share_structure__delete_shares(app, session):
     assert not share_classes
 
     share_class_version = version_class(ShareClass)
-    share_class_versions = session.query(share_class_version).all()
+    share_class_versions = session.query(share_class_version).filter_by(business_id=business_id).all()
     assert len(share_class_versions) > 0
     for scv in share_class_versions:
         assert scv.operation_type in (0, 2)
