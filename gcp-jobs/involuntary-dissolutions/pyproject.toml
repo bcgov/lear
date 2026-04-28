@@ -70,8 +70,8 @@ exclude = [
 line-length = 120
 indent-width = 4
 
-# Assume Python 3.12
-target-version = "py312"
+# Assume Python 3.13
+target-version = "py313"
 
 [tool.ruff.format]
 # Like Black, use double quotes for strings.
