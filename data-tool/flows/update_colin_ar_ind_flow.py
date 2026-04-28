@@ -18,6 +18,7 @@ UPDATE_AR_IND_QUERY = """
     UPDATE corporation c
     SET c.SEND_AR_IND = 'N'
     WHERE c.corp_num IN ({corps})
+    AND c.SEND_AR_IND <> 'N'
 """
 
 def parse_csv(csv_val: str) -> List[int]:
