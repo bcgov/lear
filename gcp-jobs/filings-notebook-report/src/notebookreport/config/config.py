@@ -22,8 +22,8 @@ class Config:
 
     # Cloud SQL Connector / Postgres
     CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME")
-    DATABASE_NAME = os.getenv("DATABASE_NAME") or os.getenv("PG_DB_NAME")
-    DATABASE_USERNAME = os.getenv("DATABASE_USERNAME") or os.getenv("PG_USER") or os.getenv("JOB_DATABASE_USERNAME")
+    DATABASE_NAME = os.getenv("DATABASE_NAME")
+    DATABASE_USERNAME = os.getenv("DATABASE_USERNAME")
     DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
     DATABASE_HOST = os.getenv("DATABASE_HOST", "")
     DATABASE_PORT = os.getenv("DATABASE_PORT", "5432")
