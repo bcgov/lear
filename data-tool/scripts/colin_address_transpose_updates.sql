@@ -939,11 +939,11 @@ BEGIN
        and (a.province is null or trim(a.province) = '')
        and (a.country_typ_cd is null or trim(a.country_typ_cd) = '' or a.country_typ_cd = 'CA')
        and a.addr_line_2 is not null and trim(a.addr_line_2) != ''
-       and (right(a.addr_line_3, 2) in ('BC', 'AB', 'QC', 'MB', 'SK', 'ON', 'NS', 'YK') or
-            right(a.addr_line_3, 3) in ('B.C', 'B C', 'BC.', 'BC,', 'BC)') or
-            right(a.addr_line_3, 4) in ('B.C.', 'QUE.', 'B,C.', 'BC..','BC .') or
-            right(a.addr_line_3, 5) in ('B.C.,', 'B .C.', 'B.C..', 'B.C .') or
-            a.addr_line_3 like '% B.C. )' or
+       and (right(a.addr_line_2, 2) in ('BC', 'AB', 'QC', 'MB', 'SK', 'ON', 'NS', 'YK') or
+            right(a.addr_line_2, 3) in ('B.C', 'B C', 'BC.', 'BC,', 'BC)') or
+            right(a.addr_line_2, 4) in ('B.C.', 'QUE.', 'B,C.', 'BC..','BC .') or
+            right(a.addr_line_2, 5) in ('B.C.,', 'B .C.', 'B.C..', 'B.C .') or
+            a.addr_line_2 like '% B.C. )' or
             a.addr_line_2 like '% B. C.%' or
             a.addr_line_2 like '%BRITISH COLUMBIA' or
             a.addr_line_2 like '% QUEBEC' or
