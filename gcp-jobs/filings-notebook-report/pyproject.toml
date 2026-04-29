@@ -44,6 +44,7 @@ cloud-sql-connector = {git = "https://github.com/bcgov/sbc-connect-common.git", 
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
 freezegun = "^1.5.1"
 business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
 flask_migrate = "^4.0.5"
