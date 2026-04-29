@@ -40,24 +40,23 @@ class Config:
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DATABASE_TEST_USERNAME}:{DATABASE_TEST_PASSWORD}@{DATABASE_TEST_HOST}:{DATABASE_TEST_PORT}/{DATABASE_TEST_NAME}"
 
 
-# Helper for SQLAlchemy engine with cloud-sql-connector
+def get_conn():
+    """Return a new DBAPI connection via Cloud SQL Connector."""
+    from cloud_sql_connector import DBConfig, getconn
+    config = DBConfig(
+        instance_name=Config.CLOUDSQL_INSTANCE_CONNECTION_NAME,
+        database=Config.DATABASE_NAME,
+        user=Config.DATABASE_USERNAME,
+        ip_type=Config.IP_TYPE,
+        schema="public"
+    )
+    return getconn(config)
+
+
 def get_sqlalchemy_engine():
-    """
-    Returns a SQLAlchemy engine using cloud-sql-connector if configured, else standard connection string.
-    """
+    """Return a SQLAlchemy engine using cloud-sql-connector if configured, else a direct connection string."""
     from sqlalchemy import create_engine
     if Config.CLOUDSQL_INSTANCE_CONNECTION_NAME and Config.DATABASE_NAME and Config.DATABASE_USERNAME:
-        from cloud_sql_connector import DBConfig, getconn
-        config = DBConfig(
-            instance_name=Config.CLOUDSQL_INSTANCE_CONNECTION_NAME,
-            database=Config.DATABASE_NAME,
-            user=Config.DATABASE_USERNAME,
-            ip_type=Config.IP_TYPE,
-            schema="public"
-        )
-        return create_engine(
-            Config.SQLALCHEMY_DATABASE_URI,
-            creator=lambda: getconn(config)
-        )
+        return create_engine("postgresql+pg8000://", creator=get_conn)
     else:
         return create_engine(Config.SQLALCHEMY_DATABASE_URI)
