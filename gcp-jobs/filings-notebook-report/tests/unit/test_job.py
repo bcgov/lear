@@ -54,13 +54,18 @@ test_filings_monthly_data = [
     ("daily"), ("monthly"),
 ]
 
+@patch('requests.post')
 @patch('requests.get')
 @pytest.mark.parametrize("report_type", test_filings_monthly_data)
-def test_filings_monthly_notebook_report(mock_get,report_type):
+def test_filings_monthly_notebook_report(mock_get, mock_post, report_type, app):
     # Mock setup
-    mock_response = mock_get.return_value
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'key': 'value'}
+    mock_get_response = mock_get.return_value
+    mock_get_response.status_code = 200
+    mock_get_response.json.return_value = {'key': 'value'}
+
+    mock_post_response = mock_post.return_value
+    mock_post_response.status_code = 200
+    mock_post_response.json.return_value = {'access_token': 'fake-token'}
 
     days = ""
     for i in range(1, 32):
