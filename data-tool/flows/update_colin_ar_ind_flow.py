@@ -18,7 +18,7 @@ UPDATE_AR_IND_QUERY = """
     UPDATE corporation c
     SET c.SEND_AR_IND = 'N'
     WHERE c.corp_num IN ({corps})
-    AND c.SEND_AR_IND <> 'N'
+    AND (c.SEND_AR_IND IS NULL OR c.SEND_AR_IND <> 'N')
 """
 
 def parse_csv(csv_val: str) -> List[int]:
@@ -59,20 +59,26 @@ def chunk_list(data: List[str], size: int = 1000):
     for i in range(0, len(data), size):
         yield data[i:i + size]
 
-@task
-def update_chunk(ids_chunk: List[str]) -> int:
+@task(cache_policy=NO_CACHE)
+def update_chunk(ids_chunk: List[str], colin_oracle_engine: Engine) -> int:
     corps_str = ",".join(f"'{corp}'" for corp in ids_chunk)
     sql = UPDATE_AR_IND_QUERY.format(corps=corps_str)
 
-    with colin_oracle_init(get_config()).connect() as conn:
-        result = conn.execute(text(sql))
-        conn.commit()
-        return result.rowcount
+    with colin_oracle_engine.connect() as conn:
+        transaction = conn.begin()
+        try:
+            result = conn.execute(text(sql))
+            transaction.commit()
+            return result.rowcount
+        except Exception as e:
+            transaction.rollback()
+            raise
 
 @flow(name='Update-Colin-AR-Indicator-Flow', log_prints=True)
 def update_colin_ar_ind_flow():
     config = get_config()
     colin_extract_engine = colin_extract_init(config)
+    colin_oracle_engine = colin_oracle_init(config)
 
     candidates = get_candidates(config, colin_extract_engine)
     print(f'👷 Using MIG filter mode with {len(candidates)} candidates')
@@ -80,7 +86,7 @@ def update_colin_ar_ind_flow():
     total_updated = 0
     for chunk in chunk_list(candidates, 1000):
         print(f"Processing chunk of {len(chunk)} records")
-        updated = update_chunk(chunk)
+        updated = update_chunk(chunk, colin_oracle_engine)
         total_updated += updated
 
     print(f"Total records updated: {total_updated}")
