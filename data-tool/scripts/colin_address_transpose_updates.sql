@@ -287,7 +287,7 @@ declare
                             ARRAY['ALABAMA','AL'],
                             ARRAY['TEXAS','TX'],
                             ARRAY['TX','TX'],
-                            ARRAY['VIRGINIA','VI'],
+                            ARRAY['VIRGINIA','VA'],
                             ARRAY['WI','WI']];
   us_state text[];
   test_text varchar(50);
@@ -854,7 +854,73 @@ CREATE OR REPLACE PROCEDURE public.colin_address_transpose_region()
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Corp party skipping city: no mailing/delivery addresses exist with a CA/US region in the city.
+    -- Corp party city - some instances after previous transpose steps.
+    update address
+       set province = colin_update_address_ca_province(city, false),
+           city = colin_update_address_ca_province(city, true)
+    where addr_id in
+    (
+    select distinct a.addr_id
+      from corp_state cs, corp_party cp, address a
+     where cs.corp_num = cp.corp_num
+       and cs.op_state_type_cd = 'ACT'
+       and cs.end_event_id is null
+       and (cp.end_event_id is null or cp.end_event_id = 0)
+       and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
+       and (a.province is null or trim(a.province) = '')
+       and (a.country_typ_cd is null or trim(a.country_typ_cd) = '' or a.country_typ_cd = 'CA')
+       and a.city is not null and trim(a.city) != ''
+       and (right(a.city, 2) in ('BC', 'AB', 'QC', 'MB', 'SK', 'ON', 'NS', 'YK') or
+            right(a.city, 3) in ('B.C', 'B C', 'BC.', 'BC,', 'BC)') or
+            right(a.city, 4) in ('B.C.', 'QUE.', 'B,C.', 'BC..','BC .') or
+            right(a.city, 5) in ('B.C.,', 'B .C.', 'B.C..', 'B.C .') or
+            a.city like '% B.C. )' or
+            a.city like '% B. C.%' or
+            a.city like '%BRITISH COLUMBIA' or
+            a.city like '% QUEBEC' or
+            a.city like '%SASKATCHEWAN' or
+            a.city like '% ONTARIO' or
+            a.city like '% NEWFOUNDLAND' or
+            a.city like '% ALBERTA%' or 
+            a.city like '% NOVA SCOTIA' or
+            a.city like '% YUKON')
+    )
+      and colin_update_address_ca_province(city, false) is not null;
+    COMMIT;
+    update address
+       set province = colin_update_address_us_state(city, false),
+           city = colin_update_address_us_state(city, true)
+    where addr_id in
+    (
+    select distinct a.addr_id
+      from corp_state cs, corp_party cp, address a
+     where cs.corp_num = cp.corp_num
+       and cs.op_state_type_cd = 'ACT'
+       and cs.end_event_id is null
+       and (cp.end_event_id is null or cp.end_event_id = 0)
+       and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
+       and (a.province is null or trim(a.province) = '')
+       and (a.country_typ_cd is null or trim(a.country_typ_cd) = '' or a.country_typ_cd = 'US')
+       and a.city is not null and trim(a.city) != ''
+       and (right(a.city, 2) in ('WA') or
+            right(a.city, 3) in (' CA',' OR', ' NY', ' TX', ' WI') or
+            a.city like '% OR %' or
+            a.city like '% WA %' or
+            a.city like '% CA %' or
+            a.city like '% TX%' or
+            a.city like '% CALIFORNIA%' or
+            a.city like '% HAWAII%' or
+            a.city like '% ALABAMA%' or
+            a.city like '% COLORADO%' or
+            a.city like '% OREGON%' or
+            a.city like '% TEXAS%' or
+            a.city like '% VIRGINIA%' or
+            a.city like '% FLORIDA%' or
+            a.city like '% NY %')
+    )
+      and colin_update_address_us_state(city, false) is not null;
+    COMMIT;
+
 
     -- Corp party delivery/mailing line 3
     update address
@@ -1014,7 +1080,7 @@ BEGIN
        and (cp.end_event_id is null or cp.end_event_id = 0)
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
        and (a.country_typ_cd is null or trim(a.country_typ_cd) = '' or a.country_typ_cd = 'CA')
-       and a.province is not null and a.province in ('BC', 'AB', 'SK', 'MN', 'ON', 'QC', 'NS', 'NL', 'YK')
+       and a.province is not null and a.province in ('BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NS', 'NL', 'YK')
        and a.city is not null and trim(a.city) != ''
        and (right(a.city, 2) in ('BC', 'AB', 'QC', 'MB', 'SK', 'ON', 'NS', 'YK') or
             right(a.city, 3) in ('B.C', 'B C', 'BC.','BC,') or
@@ -1046,7 +1112,7 @@ BEGIN
        and (cp.end_event_id is null or cp.end_event_id = 0)
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
        and (a.country_typ_cd is null or trim(a.country_typ_cd) = '' or a.country_typ_cd = 'CA')
-       and a.province is not null and a.province in ('BC', 'AB', 'SK', 'MN', 'ON', 'QC', 'NS', 'NL', 'YK')
+       and a.province is not null and a.province in ('BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NS', 'NL', 'YK')
        and a.addr_line_3 is not null and trim(a.addr_line_3) != ''
        and (right(a.addr_line_3, 2) in ('BC', 'AB', 'QC', 'MB', 'SK', 'ON', 'NS', 'YK') or
             right(a.addr_line_3, 3) in ('B.C', 'B C', 'BC.','BC,') or
@@ -1078,7 +1144,7 @@ BEGIN
        and (cp.end_event_id is null or cp.end_event_id = 0)
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
        and (a.country_typ_cd is null or trim(a.country_typ_cd) = '' or a.country_typ_cd = 'CA')
-       and a.province is not null and a.province in ('BC', 'AB', 'SK', 'MN', 'ON', 'QC', 'NS', 'NL', 'YK')
+       and a.province is not null and a.province in ('BC', 'AB', 'SK', 'MB', 'ON', 'QC', 'NS', 'NL', 'YK')
        and a.addr_line_2 is not null and trim(a.addr_line_2) != ''
        and (right(a.addr_line_2, 2) in ('BC', 'AB', 'QC', 'MB', 'SK', 'ON', 'NS', 'YK') or
             right(a.addr_line_2, 3) in ('B.C', 'B C', 'BC.','BC,') or
@@ -1207,7 +1273,6 @@ $$;
 
 --
 -- Final transpose step: cleanup.
--- Trim address city, address lines 1,2,3
 -- Remove trailing comma characters from city, addresses lines 2 and 3.
 -- call colin_address_transpose_cleanup();
 --
@@ -1215,142 +1280,6 @@ CREATE OR REPLACE PROCEDURE public.colin_address_transpose_cleanup()
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Trim corp party delivery/mailing city: 104613
-    update address
-       set city = trim(city)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, corp_party cp, address a
-     where cs.corp_num = cp.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (cp.end_event_id is null or cp.end_event_id = 0)
-       and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.city is not null 
-       and a.city != trim(a.city)
-    );
-    COMMIT;
-
-    -- Trim corp party delivery/mailing line 3: 1032
-    update address
-       set addr_line_3 = trim(addr_line_3)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, corp_party cp, address a
-     where cs.corp_num = cp.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (cp.end_event_id is null or cp.end_event_id = 0)
-       and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.addr_line_3 is not null 
-       and a.addr_line_3 != trim(a.addr_line_3)
-    );
-    COMMIT;
-
-    -- Trim corp party delivery/mailing line 2: 9951
-    update address
-       set addr_line_2 = trim(addr_line_2)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, corp_party cp, address a
-     where cs.corp_num = cp.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (cp.end_event_id is null or cp.end_event_id = 0)
-       and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.addr_line_2 is not null 
-       and a.addr_line_2 != trim(a.addr_line_2)
-    );
-    COMMIT;
-
-    -- Trim corp party delivery/mailing line 1: 153445
-    update address
-       set addr_line_1 = trim(addr_line_1)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, corp_party cp, address a
-     where cs.corp_num = cp.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (cp.end_event_id is null or cp.end_event_id = 0)
-       and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.addr_line_1 is not null 
-       and a.addr_line_1 != trim(a.addr_line_1)
-    );
-    COMMIT;
-
-    -- Trim office delivery/mailing city: 48497
-    update address
-       set city = trim(city)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, office o, address a
-     where cs.corp_num = o.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (o.end_event_id is null or o.end_event_id = 0)
-       and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.city is not null 
-       and a.city != trim(a.city)
-    );
-    COMMIT;
-
-    -- Trim office delivery/mailing line 3: 532
-    update address
-       set addr_line_3 = trim(addr_line_3)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, office o, address a
-     where cs.corp_num = o.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (o.end_event_id is null or o.end_event_id = 0)
-       and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.addr_line_3 is not null 
-       and a.addr_line_3 != trim(a.addr_line_3)
-    );
-    COMMIT;
-
-    -- Trim office delivery/mailing line 2: 5926
-    update address
-       set addr_line_2 = trim(addr_line_2)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, office o, address a
-     where cs.corp_num = o.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (o.end_event_id is null or o.end_event_id = 0)
-       and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.addr_line_2 is not null 
-       and a.addr_line_2 != trim(a.addr_line_2)
-    );
-    COMMIT;
-
-    -- Trim office delivery/mailing line 1: 69062
-    update address
-       set addr_line_1 = trim(addr_line_1)
-    where addr_id in
-    (
-    select distinct a.addr_id
-      from corp_state cs, office o, address a
-     where cs.corp_num = o.corp_num
-       and cs.op_state_type_cd = 'ACT'
-       and cs.end_event_id is null
-       and (o.end_event_id is null or o.end_event_id = 0)
-       and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.addr_line_1 is not null 
-       and a.addr_line_1 != trim(a.addr_line_1)
-    );
-    COMMIT;
-
     -- Remove trailing comma corp party delivery/mailing city: 20928
     update address
        set city = substr(city, 1, length(city) - 1)
