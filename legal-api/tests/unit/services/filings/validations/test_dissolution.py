@@ -510,36 +510,52 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
         assert err is None
 
 @pytest.mark.parametrize(
-    'test_status, legal_type, dissolution_type, party_type, org_name, expected_code, expected_msg',
+    'test_status, legal_type, dissolution_type, party_type, org_name, first_name, expected_code, expected_msg',
     [
         # Required organization name cases
-        ('FAIL', 'BC', 'voluntary', 'organization', '', HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'BC', 'voluntary', 'organization', '', None, HTTPStatus.BAD_REQUEST,
          'Organization name is required.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', '   ', HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'BC', 'voluntary', 'organization', '   ', None, HTTPStatus.BAD_REQUEST,
          'Organization name is required.'),
 
-        # Leading/trailing whitespace
-        ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', HTTPStatus.BAD_REQUEST,
+        # Leading/trailing whitespace - organization
+        ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, HTTPStatus.BAD_REQUEST,
          'Organization name cannot have leading or trailing spaces.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', None, HTTPStatus.BAD_REQUEST,
          'Organization name cannot have leading or trailing spaces.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', HTTPStatus.BAD_REQUEST,
+        ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', None, HTTPStatus.BAD_REQUEST,
          'Organization name cannot have leading or trailing spaces.'),
 
-        # Valid name
-        ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None),
+        # Valid organization name
+        ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None, None),
 
-        # Non-organization party types should skip validation
-        ('SUCCESS', 'BC', 'voluntary', 'person', None, None, None),
+        # Required first name cases
+        ('FAIL', 'BC', 'voluntary', 'person', None, '', HTTPStatus.BAD_REQUEST,
+         'Custodian first name is required.'),
+        ('FAIL', 'BC', 'voluntary', 'person', None, '   ', HTTPStatus.BAD_REQUEST,
+         'Custodian first name is required.'),
+
+        # Leading/trailing whitespace - person
+        ('FAIL', 'BC', 'voluntary', 'person', None, '  LeadingSpace', HTTPStatus.BAD_REQUEST,
+         'Custodian first name cannot have leading or trailing spaces.'),
+        ('FAIL', 'BC', 'voluntary', 'person', None, 'TrailingSpace  ', HTTPStatus.BAD_REQUEST,
+         'Custodian first name cannot have leading or trailing spaces.'),
+        ('FAIL', 'BC', 'voluntary', 'person', None, '  BothSides  ', HTTPStatus.BAD_REQUEST,
+         'Custodian first name cannot have leading or trailing spaces.'),
+
+        # Valid first name
+        ('SUCCESS', 'BC', 'voluntary', 'person', None, 'Test Person', None, None),
 
         # Legal types other than CORP should skip validation
-        ('SUCCESS', 'CP', 'voluntary', 'organization', None, None, None),
-        ('SUCCESS', 'BC', 'administrative', 'organization', None, None, None),
+        ('SUCCESS', 'CP', 'voluntary', 'organization', None, None, None, None),
+        ('SUCCESS', 'BC', 'administrative', 'organization', None, None, None, None),
+        ('SUCCESS', 'CP', 'voluntary', 'person', None, None, None, None),
+        ('SUCCESS', 'BC', 'administrative', 'person', None, None, None, None),
     ]
 )
-def test_dissolution_custodian_org_name(session, test_status, legal_type, dissolution_type,
-                                        party_type, org_name, expected_code, expected_msg):
-    """Test custodian organization name validation and trimming."""
+def test_dissolution_custodian_name(session, test_status, legal_type, dissolution_type,
+                                    party_type, org_name, first_name, expected_code, expected_msg):
+    """Test custodian name validation for both person and organization party types."""
 
     business = Business(identifier='BC1234567', legal_type=legal_type)
     filing = copy.deepcopy(FILING_HEADER)
@@ -556,10 +572,14 @@ def test_dissolution_custodian_org_name(session, test_status, legal_type, dissol
 
     officer = filing['filing']['dissolution']['parties'][1]['officer']
     officer['partyType'] = party_type
+
     if org_name is not None:
         officer['organizationName'] = org_name
     elif 'organizationName' in officer:
         del officer['organizationName']
+
+    if first_name is not None:
+        officer['firstName'] = first_name
 
     with patch.object(dissolution, 'validate_affidavit', return_value=None), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
