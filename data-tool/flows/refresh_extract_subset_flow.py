@@ -8,8 +8,10 @@ from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
+from sqlalchemy import create_engine, text
+
 from config import get_named_config
-from common.colin_queries import get_updated_identifiers, get_updated_identifiers_for_batch
+from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers, get_updated_identifiers_for_batch
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -68,9 +70,18 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> s
     """
     Get updated corp nums from colin with cutoff timestamp
     """
-    updated_corp_nums = get_updated_identifiers_for_batch(cutoff_timestamp, mig_batch_id )
-    print(len(updated_corp_nums))
-    return updated_corp_nums
+    cfg = get_named_config()
+    mig_sql = get_identifiers_per_batch(mig_batch_id)
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+        row = conn.execute(text(mig_sql)).fetchone()
+    
+    corp_list = row[0] if row else None
+    
+    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE).connnect() as conn:
+        result = conn.execute(text(colin_sql))
+        rows = [dict(row) for row in result.mappings()]
+    return rows
 
     
 @task(name='Run-CPRD-Subset-Generator', cache_policy=NO_CACHE)
