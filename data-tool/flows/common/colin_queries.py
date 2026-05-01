@@ -34,3 +34,7 @@ def get_identifiers_per_batch(mig_batch_id):
     WHERE mcb.mig_batch_id = {mig_batch_id}
     """
     return query
+
+def get_updated_identifiers_for_batch(timestamp: str, mig_batch_id: int) -> str:
+    """per batch get identifiers"""
+    return get_updated_identifiers(timestamp, get_identifiers_per_batch(mig_batch_id))
