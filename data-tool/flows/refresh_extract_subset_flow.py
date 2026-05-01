@@ -64,14 +64,13 @@ def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
 @task(name='Get-Updated-Identifiers-Colin')
-def get_updated_identifiers_colin() -> None:
+def get_updated_identifiers_colin(cutoff_timestamp: str, corp_list_sql: str) -> str:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
-    timestamp = '1234'
-    corp_list = ['12345','5678']
-    updated_corp_nums = [get_updated_identifiers(timestamp, corp_list )]
-    print(updated_corp_nums.size())
+
+    updated_corp_nums = [get_updated_identifiers(cutoff_timestamp, corp_list_sql )]
+    print(len(updated_corp_nums))
     return updated_corp_nums
 
     
