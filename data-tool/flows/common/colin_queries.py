@@ -1,4 +1,8 @@
+
 def get_updated_identifiers(timestamp, corp_list):
+    if not str(corp_list).strip():
+        raise ValueError('empty corp_list')
+    
     query = f"""
     SELECT e.event_id,
             e.corp_num,
@@ -10,9 +14,10 @@ def get_updated_identifiers(timestamp, corp_list):
             ORDER BY e.event_timestmp DESC, e.event_id DESC
             ) AS rn
     FROM event e
-    JOIN {corp_list} c
+    JOIN (SELECT column_value AS corp_num
+            FROM TABLE(sys.odcivarchar2list({corp_list})) c
         ON c.corp_num = e.corp_num
-    WHERE e.event_timestmp > TIMESTAMP '{timestamp}' -- reduce by 1 hour
+    WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '1' HOUR
     )
     SELECT le.EVENT_ID,
         le.corp_num,
@@ -23,13 +28,13 @@ def get_updated_identifiers(timestamp, corp_list):
     FROM latest_event le
     left join filing f on le.EVENT_ID = f.EVENT_ID
     WHERE rn = 1
-    ORDER BY le.event_timestmp DESC, le.EVENT_ID DESC;
+    ORDER BY le.event_timestmp DESC, le.EVENT_ID DESC
     """
     return query
 
 def get_identifiers_per_batch(mig_batch_id):
     query = f"""
-    SELECT mcb.corp_num
+    SELECT string_agg(qoute_literal(trim(mcb.corp_num:::text)), ',') AS corp_list
     FROM mig_corp_batch mcb
     WHERE mcb.mig_batch_id = {mig_batch_id}
     """
