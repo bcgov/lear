@@ -66,7 +66,7 @@ def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
 @task(name='Get-Updated-Identifiers-Colin')
-def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> str:
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
@@ -78,7 +78,7 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> s
     corp_list = row[0] if row else None
     
     colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE).connnect() as conn:
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE).connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
     return rows
