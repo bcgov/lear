@@ -26,3 +26,11 @@ def get_updated_identifiers(timestamp, corp_list):
     ORDER BY le.event_timestmp DESC, le.EVENT_ID DESC;
     """
     return query
+
+def get_identifiers_per_batch(mig_batch_id):
+    query = f"""
+    SELECT mcb.corp_num
+    FROM mig_corp_batch mcb
+    WHERE mcb.mig_batch_id = {mig_batch_id}
+    """
+    return query
