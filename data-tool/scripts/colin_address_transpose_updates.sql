@@ -106,9 +106,6 @@ declare
   countries text[] := ARRAY[ARRAY['U.S.A.', 'US'],
                             ARRAY['USA','US'],
                             ARRAY['CANADA','CA'],
-                            ARRAY['SOUTH AUSTRALIA','AU'],
-                            ARRAY['WEST AUSTRALIA','AU'],
-                            ARRAY['WESTERN AUSTRALIA','AU'],
                             ARRAY['AUSTRALIA','AU'],
                             ARRAY['BARBADOS','BB'],
                             ARRAY['PEOPLES REPUBLIC OF CHINA','CN'],
@@ -347,6 +344,8 @@ BEGIN
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
        and (a.country_typ_cd is null or trim(a.country_typ_cd) = '')
        and a.addr_line_3 is not null and trim(a.addr_line_3) != ''
+       and upper(a.addr_line_3) not like '%WEST%AUSTRALIA%'
+       and upper(a.addr_line_3) not like '%SOUTH%AUSTRALIA%'
        and (a.addr_line_3 like '%AUSTRALIA%' or
             a.addr_line_3 like '%BARBADOS%' or
             a.addr_line_3 like '%CANADA%' or
@@ -390,6 +389,8 @@ BEGIN
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
        and (a.country_typ_cd is null or trim(a.country_typ_cd) = '')
        and a.addr_line_2 is not null and trim(a.addr_line_2) != ''
+       and upper(a.addr_line_2) not like '%WEST%AUSTRALIA%'
+       and upper(a.addr_line_2) not like '%SOUTH%AUSTRALIA%'
        and (a.addr_line_2 like '%AUSTRALIA%' or
             a.addr_line_2 like '%BARBADOS%' or
             a.addr_line_2 like '%CANADA%' or
@@ -451,6 +452,8 @@ BEGIN
        and upper(a.city) not like '%CANADA SQUARE%'
        and upper(a.city) not like '%HONG KONG%'
        and upper(a.city) not like '%SINGAPORE%'
+       and upper(a.city) not like '%WEST%AUSTRALIA%'
+       and upper(a.city) not like '%SOUTH%AUSTRALIA%'
        and a.country_typ_cd not in ('HK', 'SG', 'MC')
        and (a.city like '%AUSTRALIA%' or
             a.city like '%BARBADOS%' or
@@ -499,6 +502,8 @@ BEGIN
        and upper(a.addr_line_3) not like '%CANADA PLACE%'
        and upper(a.addr_line_3) not like '%PETRO CANADA%'
        and upper(a.addr_line_3) not like '%CANADA SQUARE%'
+       and upper(a.addr_line_3) not like '%WEST%AUSTRALIA%'
+       and upper(a.addr_line_3) not like '%SOUTH%AUSTRALIA%'
        and a.country_typ_cd not in ('HK', 'SG', 'MC')
        and (a.addr_line_3 like '%AUSTRALIA%' or
             a.addr_line_3 like '%BARBADOS%' or
@@ -547,6 +552,8 @@ BEGIN
        and upper(a.addr_line_2) not like '%CANADA PLACE%'
        and upper(a.addr_line_2) not like '%PETRO CANADA%'
        and upper(a.addr_line_2) not like '%CANADA SQUARE%'
+       and upper(a.addr_line_2) not like '%WEST%AUSTRALIA%'
+       and upper(a.addr_line_2) not like '%SOUTH%AUSTRALIA%'
        and a.country_typ_cd not in ('HK', 'SG', 'MC')
        and (a.addr_line_2 like '%AUSTRALIA%' or
             a.addr_line_2 like '%BARBADOS%' or
@@ -1395,7 +1402,7 @@ $$;
 -- 5. Transpose corp_party address mailing and delivery CA and US province/region codes from city, addr_line3, and addr_line2.
 -- 6. Remove duplicate corp_party address mailing and delivery CA province/region codes from city, addr_line3, and addr_line2.
 -- 7. Transpose office and corp_party address mailing and delivery null city from addr_line3 and addr_line2.
--- 8. Trim address city, addr_line3, addr_line2, addr_line1. Remove trailing comma characters from city, addr_line3, addr_line2.
+-- 8. Remove trailing comma characters from city, addr_line3, addr_line2.
 -- call colin_address_transpose();
 --
 CREATE OR REPLACE PROCEDURE public.colin_address_transpose()
