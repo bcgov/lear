@@ -59,12 +59,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._report_date_time = LegislationDatetime.now()
         self._document_service = DocumentService()
 
-    def get_pdf(self, report_type=None):
-        """Render a pdf for the report."""
+    def get_pdf(self, report_type=None, regenerate: bool=False):
+        """
+        Render a pdf for the report.
+        Regenerate if true will replace a report in the DRS if a DRS record already exists.
+        """
         self._report_key = report_type if report_type else self._filing.filing_type
         if self._report_key in ReportMeta.static_reports:
             return self._get_static_report()
-        return self._get_report()
+        return self._get_report(regenerate)
 
     def _get_static_report(self):
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
@@ -77,7 +80,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             mimetype="application/pdf"
         )
 
-    def _get_report(self):
+    def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
         if self._filing.business_id:
             self._business = Business.find_by_internal_id(self._filing.business_id)
@@ -87,7 +90,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
         report_type = report_meta.get("reportType")
-        if business_identifier:
+        if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
                 business_identifier,
                 self._filing.id,
@@ -117,12 +120,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
 
-        response_drs = self._document_service.create_filing_report(
-            business_identifier,
-            self._filing,
-            report_meta,
-            response
-        )
+        if regenerate:
+            response_drs = self._document_service.replace_filing_report(
+                business_identifier,
+                self._filing,
+                report_meta,
+                response
+            )
+        else:
+            response_drs = self._document_service.create_filing_report(
+                business_identifier,
+                self._filing,
+                report_meta,
+                response
+            )
         return current_app.response_class(
             response=response_drs.content,
             status=response_drs.status_code,
@@ -1603,7 +1614,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "specialResolutionApplication": {
             "filingDescription": "Special Resolution Application",
             "fileName": "specialResolutionApplication",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "voluntaryDissolution": {
             "filingDescription": "Voluntary Dissolution",
@@ -1638,12 +1649,12 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "amendedRegistrationStatement": {
             "filingDescription": "Amended Registration Statement",
             "fileName": "amendedRegistrationStatement",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "correctedRegistrationStatement": {
             "filingDescription": "Corrected Registration Statement",
             "fileName": "amendedRegistrationStatement",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value
         },
         "changeOfRegistration": {
             "filingDescription": "Change of Registration",
@@ -1677,22 +1688,22 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "letterOfConsent": {
             "filingDescription": "Letter Of Consent",
             "fileName": "letterOfConsent",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_3.value
         },
         "letterOfConsentAmalgamationOut": {
             "filingDescription": "Letter Of Consent",
             "fileName": "letterOfConsentAmalgamationOut",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",
             "fileName": "letterOfAgmExtension",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
         "letterOfAgmLocationChange": {
             "filingDescription": "Letter Of AGM Location Change",
             "fileName": "letterOfAgmLocationChange",
-            "reportType": ReportTypes.FILING.value
+            "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
         "continuationIn": {
             "filingDescription": "Continuation Application",

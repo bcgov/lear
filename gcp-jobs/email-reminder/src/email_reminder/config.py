@@ -58,10 +58,12 @@ class _Config:
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
-    else:
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME", "")
+    DB_IP_TYPE = os.getenv("DATABASE_IP_TYPE", "private").lower()
+    if DB_HOST:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
 
     TESTING = False
     DEBUG = False
@@ -86,7 +88,7 @@ class UnitTestingConfig(_Config):
     DB_NAME = os.getenv("DATABASE_TEST_NAME", "")
     DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
     PAYMENT_SVC_FEES_URL = "http://test.PAY_API_URL.fake/fees"
 

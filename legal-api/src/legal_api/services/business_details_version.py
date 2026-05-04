@@ -593,6 +593,7 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             "hasParValue": share_class_revision.par_value_flag,
             "parValue": share_class_revision.par_value,
             "currency": share_class_revision.currency,
+            "currencyAdditional": share_class_revision.currency_additional,
             "hasRightsOrRestrictions": share_class_revision.special_rights_flag
         }
         return share_class

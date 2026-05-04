@@ -47,7 +47,12 @@ class _Config:
     DB_NAME = os.getenv("DATABASE_NAME", "")
     DB_HOST = os.getenv("DATABASE_HOST", "")
     DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME", "")
+    DB_IP_TYPE = os.getenv("DATABASE_IP_TYPE", "private").lower()
+    if DB_HOST:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
 
     # Used to setup IapDbConnection when set. Will override ^ SQLALCHEMY_DATABASE_URI
     DB_CONNECTION_NAME = os.getenv("DATABASE_CONNECTION_NAME")  # project:region:instance-name
@@ -116,7 +121,7 @@ class UnitTestingConfig(_Config):
     DB_HOST = os.getenv("DATABASE_TEST_HOST", "")
     DB_PORT = os.getenv("DATABASE_TEST_PORT", "5432")
     DB_CONNECTION_NAME = os.getenv("LEAR_DB_CONNECTION_TEST_NAME")
-    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"
 
     # BCLaws SFTP
     BCLAWS_SFTP_STORAGE_DIRECTORY = "bclaws"

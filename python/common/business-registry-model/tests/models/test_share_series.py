@@ -96,6 +96,7 @@ def test_share_series_json(session):
         'hasParValue': share_class.par_value_flag,
         'parValue': share_class.par_value,
         'currency': share_class.currency,
+        'currencyAdditional': share_class.currency_additional,
         'hasRightsOrRestrictions': share_class.special_rights_flag,
         'series': [
             {

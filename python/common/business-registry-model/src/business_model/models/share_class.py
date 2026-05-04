@@ -67,6 +67,7 @@ class ShareClass(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
             'hasParValue': self.par_value_flag,
             'parValue': self.par_value,
             'currency': self.currency,
+            'currencyAdditional': self.currency_additional,
             'hasRightsOrRestrictions': self.special_rights_flag
         }
 
@@ -119,6 +120,8 @@ def receive_before_change(mapper, connection, target):  # pylint: disable=unused
                 error=f'The share class {share_class.name} must specify currency.',
                 status_code=HTTPStatus.BAD_REQUEST
             )
+        if share_class.currency.upper() != 'OTHER':
+            share_class.currency_additional = None
     else:
         share_class.par_value = None
         share_class.currency = None
