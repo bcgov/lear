@@ -8,7 +8,10 @@ from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
+from sqlalchemy import create_engine, text
+from datetime import datetime, timezone
 from config import get_named_config
+from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers, get_updated_identifiers_for_batch
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -62,6 +65,25 @@ def _reset_extract_postgres_db() -> None:
 def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
+@task(name='Get-Updated-Identifiers-Colin')
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> list[dict]:
+    """
+    Get updated corp nums from colin with cutoff timestamp
+    """
+    cfg = get_named_config()
+    mig_sql = get_identifiers_per_batch(mig_batch_id)
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+        row = conn.execute(text(mig_sql)).fetchone()
+    
+    corp_list = row[0] if row else None
+    
+    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE).connect() as conn:
+        result = conn.execute(text(colin_sql))
+        rows = [dict(row) for row in result.mappings()]
+    return rows
+
+    
 @task(name='Run-CPRD-Subset-Generator', cache_policy=NO_CACHE)
 def run_cprd_subset_extract_generator(
     corp_file: str,
@@ -159,6 +181,9 @@ def extract_pull_flow(
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
 
+    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=128)
+    print(f'Colin updated identifiers : {len(updated_rows)} rows')
     if run_dbschemacli:
         master_script = _resolve_master_script_path(out=out)
         run_result = run_dbschemacli_task(
