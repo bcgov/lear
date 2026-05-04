@@ -9,7 +9,7 @@ from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
 from sqlalchemy import create_engine, text
-
+from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers, get_updated_identifiers_for_batch
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -181,6 +181,9 @@ def extract_pull_flow(
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
 
+    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=128)
+    print(f'Colin updated identifiers : {len(updated_rows)} rows')
     if run_dbschemacli:
         master_script = _resolve_master_script_path(out=out)
         run_result = run_dbschemacli_task(
