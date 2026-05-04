@@ -20,7 +20,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str) -> str:
                 ) AS rn
         FROM event e
         JOIN (SELECT column_value AS corp_num
-                FROM TABLE(sys.odcivarchar2list({corp_list})) c
+                FROM corp_list c
             ON c.corp_num = e.corp_num
         WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '1' HOUR
     )
