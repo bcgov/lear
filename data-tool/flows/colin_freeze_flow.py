@@ -131,7 +131,7 @@ def convert_to_colin_format(corp_num: str) -> str:
 
 
 @task(cache_policy=NO_CACHE)
-def update_colin_oracle(config, colin_oracle_engine: Engine, corp_num: str):
+def update_colin_oracle(config, colin_oracle_engine: Engine, corp_num: str, corp_nums: list[str]):
     with colin_oracle_engine.connect() as conn:
         transaction = conn.begin()
         try:
