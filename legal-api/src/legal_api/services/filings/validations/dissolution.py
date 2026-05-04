@@ -405,14 +405,13 @@ def _validate_custodian_name(parties, dissolution_type, legal_type) -> list:
 
         else:
             first_name = get_str(party, "/officer/firstName")
-            stripped_first_name = first_name.strip()
 
-            if not stripped_first_name:
+            if first_name is None or not first_name.strip():
                 msg.append({
                     "error": "Custodian first name is required.",
                     "path": f"/filing/dissolution/parties/{idx}/officer/firstName"
                 })
-            elif first_name != stripped_first_name:
+            elif first_name != first_name.strip():
                 msg.append({
                     "error": "Custodian first name cannot have leading or trailing spaces.",
                     "path": f"/filing/dissolution/parties/{idx}/officer/firstName"

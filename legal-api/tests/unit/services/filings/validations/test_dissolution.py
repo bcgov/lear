@@ -534,6 +534,8 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
          'Custodian first name is required.'),
         ('FAIL', 'BC', 'voluntary', 'person', None, '   ', HTTPStatus.BAD_REQUEST,
          'Custodian first name is required.'),
+        ('FAIL', 'BC', 'voluntary', 'person', None, None, HTTPStatus.BAD_REQUEST,
+         'Custodian first name is required.'),
 
         # Leading/trailing whitespace - person
         ('FAIL', 'BC', 'voluntary', 'person', None, '  LeadingSpace', HTTPStatus.BAD_REQUEST,
