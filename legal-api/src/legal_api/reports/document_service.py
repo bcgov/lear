@@ -344,7 +344,7 @@ class DocumentService:
         headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID, APP_PDF)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
-        if report_type.startswith(ReportTypes.FILING.value) or report_type == ReportTypes.NOA.value:
+        if report_type in [ReportTypes.FILING.value, ReportTypes.FILING_2.value, ReportTypes.NOA.value]:
             get_url = GET_REPORT_CERTIFIED_PATH
         get_url = get_url.format(url=url, product=self.product_code, drsId=drs_id)
         response = requests.get(url=get_url, headers=headers)
