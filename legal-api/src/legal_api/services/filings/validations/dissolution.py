@@ -277,7 +277,7 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
 
     msg = []
     msg.extend(_validate_custodian_email(custodians, dissolution_type, legal_type))
-    msg.extend(validate_custodian_org_name(custodians, dissolution_type, legal_type))
+    msg.extend(_validate_custodian_name(custodians, dissolution_type, legal_type))
     msg.extend(_validate_address_location(custodians, legal_type))
 
     return msg or None
@@ -379,8 +379,8 @@ def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
             })
     return msg
 
-def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
-    """Validate custodian organization name of the dissolution filing and trim it."""
+def _validate_custodian_name(parties, dissolution_type, legal_type) -> list:
+    """Validate custodian name of the dissolution filing and trim it."""
     # Only validate for CORP voluntary dissolution
     if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
         return []
@@ -388,9 +388,7 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
     msg = []
     for idx, party in enumerate(parties):
         party_type = get_str(party, "/officer/partyType")
-        # Only validate if partyType is organization
         if party_type == "organization":
-
             org_name = get_str(party, "/officer/organizationName")
             stripped_org_name = org_name.strip()
 
@@ -403,6 +401,20 @@ def validate_custodian_org_name(parties, dissolution_type, legal_type) -> list:
                 msg.append({
                     "error": "Organization name cannot have leading or trailing spaces.",
                     "path": f"/filing/dissolution/parties/{idx}/officer/organizationName"
+                })
+
+        else:
+            first_name = get_str(party, "/officer/firstName")
+
+            if first_name is None or not first_name.strip():
+                msg.append({
+                    "error": "Custodian first name is required.",
+                    "path": f"/filing/dissolution/parties/{idx}/officer/firstName"
+                })
+            elif first_name != first_name.strip():
+                msg.append({
+                    "error": "Custodian first name cannot have leading or trailing spaces.",
+                    "path": f"/filing/dissolution/parties/{idx}/officer/firstName"
                 })
 
     return msg
