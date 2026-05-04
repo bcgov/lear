@@ -17,6 +17,7 @@ from http import HTTPStatus
 from typing import Final
 
 from dateutil.relativedelta import relativedelta
+from flask.globals import request_ctx
 from flask_babel import _
 
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
@@ -58,7 +59,8 @@ def validate(business: Business, filing: dict) -> Error:
     filing_type = "correction"
 
     is_comment_only_correction = get_bool(filing, "/filing/correction/commentOnly")
-    is_staff_or_system_role = jwt.validate_roles([STAFF_ROLE]) or jwt.validate_roles([SYSTEM_ROLE])
+    is_staff_or_system_role = (jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE])
+                               or jwt.validate_roles(request_ctx.current_user, [SYSTEM_ROLE]))
 
     # check if comment only correction filed by staff or system
     if is_comment_only_correction and not is_staff_or_system_role:
@@ -268,7 +270,7 @@ def validate_start_date(business: Business, filing: dict) -> list:
     greater = registration_date + timedelta(days=90)
     lesser = registration_date + relativedelta(years=-10)
 
-    if not jwt.validate_roles([STAFF_ROLE]) and start_date < lesser:
+    if not jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]) and start_date < lesser:
         msg.append({"error": "Start date must be less than or equal to 10 years.",
                     "path": start_date_path})
     if start_date > greater:

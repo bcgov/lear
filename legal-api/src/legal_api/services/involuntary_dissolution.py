@@ -199,14 +199,14 @@ def _has_no_transition_filed_after_restoration():
     """
     from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
-    new_act_date = func.date("2004-03-29 00:00:00+00:00")
+    new_act_date = func.date('2004-03-29 00:00:00+00:00')
 
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)
 
     restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
 
-    return select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))]).where(
+    return select(func.max(func.coalesce(restoration_filing_effective_cutoff, restoration_filing.effective_date))).where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 Business.founding_date < new_act_date,

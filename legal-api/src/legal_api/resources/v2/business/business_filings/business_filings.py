@@ -24,6 +24,7 @@ from typing import Generic, Optional, TypeVar, Union
 
 import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
 from flask import current_app, g, jsonify, request
+from flask.globals import request_ctx
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
@@ -78,8 +79,8 @@ from legal_api.utils.legislation_datetime import LegislationDatetime
 class QueryModel(BaseModel):
     """Query string model."""
 
-    draft: Optional[bool]
-    only_validate: Optional[bool]
+    draft: Optional[bool] = None
+    only_validate: Optional[bool] = None
 
 
 FilingT = TypeVar("FilingT")
@@ -88,7 +89,7 @@ FilingT = TypeVar("FilingT")
 class FilingModel(GenericModel, Generic[FilingT]):
     """Generic model to alow pydantic validation."""
 
-    data: Optional[FilingT]
+    data: Optional[FilingT] = None
 
 
 @bp.route("/<string:identifier>/filings", methods=["GET"])
@@ -745,8 +746,8 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return bool(filing.filing_type == "adminFreeze" or
                     (filing.filing_type == "dissolution" and
                      filing.filing_sub_type == "involuntary") or
-                    (jwt.validate_roles([SYSTEM_ROLE]) and hide_in_ledger == "true") or
-                    (jwt.validate_roles([STAFF_ROLE]) and
+                    (jwt.validate_roles(request_ctx.current_user, [SYSTEM_ROLE]) and hide_in_ledger == "true") or
+                    (jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]) and
                      hide_in_ledger == "true" and
                      filing.filing_type == "dissolution" and
                      filing.filing_sub_type == "delay"))
@@ -1026,9 +1027,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         if folio_number:
             payload["filingInfo"]["folioNumber"] = folio_number
 
-        if user_jwt.validate_roles([STAFF_ROLE]):
+        if user_jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]):
             special_role = UserRoles.staff
-        elif user_jwt.validate_roles([SYSTEM_ROLE]):
+        elif user_jwt.validate_roles(request_ctx.current_user, [SYSTEM_ROLE]):
             special_role = UserRoles.system
         else:
             special_role = None

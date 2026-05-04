@@ -18,6 +18,7 @@ from typing import Final, Optional
 
 import pycountry
 from dateutil.relativedelta import relativedelta
+from flask.globals import request_ctx
 from flask_babel import _ as babel
 
 from legal_api.core.filing import Filing
@@ -173,7 +174,7 @@ def validate_start_date(filing: dict) -> list:
     greater = now + timedelta(days=90)
     lesser = now + relativedelta(years=-10)
 
-    if not jwt.validate_roles([STAFF_ROLE]) and start_date < lesser:
+    if not jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]) and start_date < lesser:
         if flags.is_on("enabled-deeper-permission-action"):
             permission_error = PermissionService.check_user_permission(
                 ListActionsPermissionsAllowed.FIRM_NO_MIN_START_DATE.value,

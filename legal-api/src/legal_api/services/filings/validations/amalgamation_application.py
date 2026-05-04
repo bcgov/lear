@@ -15,6 +15,7 @@
 from http import HTTPStatus
 from typing import Final, Optional
 
+from flask.globals import request_ctx
 from flask_babel import _ as babel
 
 from legal_api.errors import Error
@@ -121,7 +122,7 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         amalgamation_type,
         account_id) -> list:
     """Validate amalgamating businesses."""
-    is_staff = jwt.validate_roles([STAFF_ROLE])
+    is_staff = jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE])
     enabled_filings = flags.value("supported-amalgamation-entities").split()
     if legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,

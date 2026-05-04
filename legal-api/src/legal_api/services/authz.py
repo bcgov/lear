@@ -20,6 +20,7 @@ from http import HTTPStatus
 from typing import Optional
 
 from flask import Response, current_app, request
+from flask.globals import request_ctx
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -112,22 +113,22 @@ def authorized(  # noqa: PLR0911
     if not action or not identifier or not jwt:
         return False
 
-    if jwt.validate_roles([STAFF_ROLE]) \
-            or jwt.validate_roles([SYSTEM_ROLE]) \
-            or jwt.validate_roles([COLIN_SVC_ROLE]):
+    if jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]) \
+            or jwt.validate_roles(request_ctx.current_user, [SYSTEM_ROLE]) \
+            or jwt.validate_roles(request_ctx.current_user, [COLIN_SVC_ROLE]):
         return True
 
     # Temporary, until granular permission in authorized_role_permissions table is implemented
-    if (jwt.validate_roles([MAXIMUS_STAFF_ROLE]) or
-        jwt.validate_roles([SBC_STAFF_ROLE]) or
-            jwt.validate_roles([CONTACT_CENTRE_STAFF_ROLE])):
+    if (jwt.validate_roles(request_ctx.current_user, [MAXIMUS_STAFF_ROLE]) or
+        jwt.validate_roles(request_ctx.current_user, [SBC_STAFF_ROLE]) or
+            jwt.validate_roles(request_ctx.current_user, [CONTACT_CENTRE_STAFF_ROLE])):
         return True
 
     # allow IDIM and Competent Authorities view access on everything
     if (
         len(action) == 1 and action[0] == "view" and
         (
-            jwt.validate_roles([ACCOUNT_IDENTITY]) or
+            jwt.validate_roles(request_ctx.current_user, [ACCOUNT_IDENTITY]) or
             has_product("CA_SEARCH", jwt.get_token_auth_header())
         )
     ):
@@ -152,7 +153,7 @@ def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
 
     Assumes the JWT is already validated.
     """
-    return bool(jwt.validate_roles(roles))
+    return bool(jwt.validate_roles(request_ctx.current_user, roles))
 
 
 def get_allowable_filings_dict(is_authorization: bool = False):
@@ -780,7 +781,7 @@ def get_could_file(legal_type: str,
     from legal_api.core.meta import FilingMeta
 
     user_role = "general"
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+    if jwt.contains_role(request_ctx.current_user, [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = "staff"
 
     bs_state = getattr(Business.State, state, "")
@@ -831,7 +832,7 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
     from legal_api.core.meta import FilingMeta
 
     user_role = "general"
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+    if jwt.contains_role(request_ctx.current_user, [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = "staff"
 
     state_filing = None
@@ -1142,7 +1143,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
     user_role = "general"
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+    if jwt.contains_role(request_ctx.current_user, [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = "staff"
 
     allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})

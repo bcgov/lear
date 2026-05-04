@@ -16,6 +16,7 @@
 
 
 from flask import g
+from flask.globals import request_ctx
 
 from flask_jwt_oidc import JwtManager
 from legal_api.models.business import Business
@@ -27,7 +28,7 @@ STAFF_ROLE = "staff"
 
 def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:
     """Return True if the business is allowed to have/view digital credentials."""
-    is_staff = jwt.contains_role([STAFF_ROLE])
+    is_staff = jwt.contains_role(request_ctx.current_user, [STAFF_ROLE])
     if is_staff:
         # Staff do not have digital credentials
         return False

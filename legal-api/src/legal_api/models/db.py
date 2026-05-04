@@ -18,16 +18,13 @@ These will get initialized by the application using the models
 from datetime import datetime
 
 from flask import current_app
-from flask_sqlalchemy import SignallingSession, SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy.session import Session
 from sql_versioning import TransactionManager
 from sql_versioning import disable_versioning as _new_disable_versioning
 from sql_versioning import enable_versioning as _new_enable_versioning
 from sql_versioning import version_class as _new_version_class
 from sqlalchemy import event, orm
-from sqlalchemy.orm import Session, mapper
-from sqlalchemy_continuum import make_versioned
-from sqlalchemy_continuum import version_class as _old_version_class
-from sqlalchemy_continuum.manager import VersioningManager
 
 # by convention in the Flask community these are lower case,
 # whereas pylint wants them upper case
@@ -82,40 +79,6 @@ def init_db(app):
         print_versioning_info()
 
 
-# TODO: remove versioning switching logic
-# TODO: remove debugging variables, messages, and decorators
-versioning_manager = VersioningManager(transaction_cls=Transaction)
-
-
-def _old_enable_versioning():
-    """Enable old versioning.
-
-    :return: None
-    """
-    versioning_manager.track_operations(mapper)
-    versioning_manager.track_session(Session)
-
-
-def _old_disable_versioning():
-    """Disable old versioning.
-
-    :return: None
-    """
-    versioning_manager.remove_operations_tracking(mapper)
-    versioning_manager.remove_session_tracking(Session)
-
-
-def _old_get_transaction_id(session):
-    """Get the transaction ID using the old versioning.
-
-    :param session: The database session instance.
-    :return: The transaction ID
-    """
-    uow = versioning_manager.unit_of_work(session)
-    transaction = uow.create_transaction(session)
-    return transaction.id
-
-
 def _new_get_transaction_id(session):
     """Get the transaction ID using the new versioning.
 
@@ -133,12 +96,6 @@ class VersioningProxy:
     _is_initialized = False
 
     _versioning_control = {
-        "old": {
-            "enable": _old_enable_versioning,
-            "disable": _old_disable_versioning,
-            "version_class": _old_version_class,
-            "get_transaction_id": _old_get_transaction_id
-        },
         "new": {
             "enable": _new_enable_versioning,
             "disable": _new_disable_versioning,
@@ -167,21 +124,7 @@ class VersioningProxy:
         """
         cls._is_initialized = True
         cls._check_versioning()
-        disabled = "new" if cls._current_versioning == "old" else "old"
-        cls._versioning_control[disabled]["disable"]()
-
-    @classmethod
-    def _switch_versioning(cls, previous, current):
-        """Switch versioning from one to the other.
-
-        :param previous: The previously used versioning.
-        :param current: The versioning system to switch to.
-        :return: None
-        """
-        cls._versioning_control[previous]["disable"]()
-        cls._versioning_control[current]["enable"]()
-        # Print when versioning changes
-        current_app.logger.info(f"\033[31mVersioning changed: {previous} -> {current}\033[0m")
+        cls._versioning_control["new"]["disable"]()
 
     @classmethod
     def lock_versioning(cls, session, transaction):
@@ -232,10 +175,7 @@ class VersioningProxy:
         :param session: The database session instance.
         :return: The transaction ID.
         """
-        transaction_id = None
-        current_versioning = session.info["_versioning_locked"]
-
-        transaction_id = cls._versioning_control[current_versioning]["get_transaction_id"](session)
+        transaction_id = cls._versioning_control["new"]["get_transaction_id"](session)
 
         return transaction_id
 
@@ -250,9 +190,7 @@ class VersioningProxy:
         if not session.in_transaction():  # trigger versioning setup listener
             session.begin()
 
-        current_versioning = session.info["_versioning_locked"]
-
-        return cls._versioning_control[current_versioning]["version_class"](obj)
+        return cls._versioning_control["new"]["version_class"](obj)
 
 
 def setup_versioning():
@@ -260,19 +198,16 @@ def setup_versioning():
 
     :return: None
     """
-    # use SignallingSession to skip events for continuum's internal session/txn operations
-    @event.listens_for(SignallingSession, "after_transaction_create")
+    # use Session to skip events for continuum's internal session/txn operations
+    @event.listens_for(Session, 'after_transaction_create')
     def after_transaction_create(session, transaction):
         VersioningProxy.lock_versioning(session, transaction)
 
-    @event.listens_for(SignallingSession, "after_transaction_end")
+    @event.listens_for(Session, 'after_transaction_end')
     def clear_transaction(session, transaction):
         VersioningProxy.unlock_versioning(session, transaction)
 
     _new_enable_versioning(transaction_cls=Transaction)
-    make_versioned(user_cls=None, manager=versioning_manager)
 
 
-# TODO: enable versioning switching
-# it should be called before data model initialized, otherwise, old versioning doesn't work properly
 setup_versioning()
