@@ -4,7 +4,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str) -> str:
         raise ValueError('empty corp_list')
     
     query = f"""
-    WITH corp_;list AS (
+    WITH corp_list AS (
         SELECT column_value AS corp_num
         FROM TABLE(sys.odcivarchar2list({corp_list}))
     ),
