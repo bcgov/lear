@@ -132,29 +132,32 @@ def convert_to_colin_format(corp_num: str) -> str:
 
 @task(cache_policy=NO_CACHE)
 def update_colin_oracle(config, colin_oracle_engine: Engine, corp_num: str, corp_nums: list[str]):
+    results = []
     with colin_oracle_engine.connect() as conn:
         transaction = conn.begin()
         try:
-            res1, res2 = None, None
-            colin_corp_num = convert_to_colin_format(corp_num)
-            if config.FREEZE_COLIN_CORPS:
-                res1 = conn.execute(
-                    text(colin_freeze_query),
-                    {'corp_num': colin_corp_num}
-                )
-            if config.FREEZE_ADD_EARLY_ADOPTER:
-                res2 = conn.execute(
-                    text(colin_add_early_adopters_query),
-                    {'corp_num': colin_corp_num}
-                )
-            frozen = res1.rowcount > 0 if res1 else False
-            in_early_adopter = res2.rowcount > 0 if res2 else False
+            for corp_num in corp_nums:
+                res1, res2 = None, None
+                colin_corp_num = convert_to_colin_format(corp_num)
+                if config.FREEZE_COLIN_CORPS:
+                    res1 = conn.execute(
+                        text(colin_freeze_query),
+                        {'corp_num': colin_corp_num}
+                    )
+                if config.FREEZE_ADD_EARLY_ADOPTER:
+                    res2 = conn.execute(
+                        text(colin_add_early_adopters_query),
+                        {'corp_num': colin_corp_num}
+                    )
+                frozen = res1.rowcount > 0 if res1 else False
+                in_early_adopter = res2.rowcount > 0 if res2 else False
+                results.append((corp_num, frozen, in_early_adopter, None))
             transaction.commit()
-            return corp_num, frozen, in_early_adopter, None
+            return results
         except Exception as e:
             transaction.rollback()
-            print(f'❌ Error updating {corp_num} in colin: {repr(e)}')
-            return corp_num, False, False, e
+            print(f'❌ Error updating colin batch: {repr(e)}')
+            return [(corp_num, False, False, e) for c in corp_nums]
 
 
 @flow(
