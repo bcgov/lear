@@ -85,7 +85,7 @@ def create_test_db(
         : bool
             If the create database succeeded.
     """
-    db_uri = database_uri if database_uri else f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    db_uri = database_uri if database_uri else f"postgresql+pg8000://{user}:{password}@{host}:{port}/{user}"
 
     db_uri = db_uri[: db_uri.rfind("/")] + "/postgres"
 
@@ -110,7 +110,7 @@ def drop_test_db(
     database_uri: str = None,
 ) -> bool:
     """Delete the database in our .devcontainer launched postgres DB."""
-    db_uri = database_uri if database_uri else f"postgresql://{user}:{password}@{host}:{port}/{user}"
+    db_uri = database_uri if database_uri else f"postgresql+pg8000://{user}:{password}@{host}:{port}/{user}"
 
     db_uri = db_uri[: db_uri.rfind("/")] + "/postgres"
 
@@ -138,7 +138,7 @@ def db(app: Flask):
         DATABASE_TEST_NAME = os.getenv("DATABASE_TEST_NAME")
         DATABASE_TEST_HOST = os.getenv("DATABASE_TEST_HOST")
         DATABASE_TEST_PORT = os.getenv("DATABASE_TEST_PORT")
-        conn_string = f"postgresql://{DATABASE_TEST_USERNAME}:{DATABASE_TEST_PASSWORD}@{DATABASE_TEST_HOST}:{DATABASE_TEST_PORT}/{DATABASE_TEST_NAME}"
+        conn_string = f"postgresql+pg8000://{DATABASE_TEST_USERNAME}:{DATABASE_TEST_PASSWORD}@{DATABASE_TEST_HOST}:{DATABASE_TEST_PORT}/{DATABASE_TEST_NAME}"
         create_test_db(
             database=DATABASE_TEST_NAME,
             database_uri=conn_string,

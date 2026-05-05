@@ -146,6 +146,7 @@ def create_share_class(share_class_info: dict) -> ShareClass:
         par_value_flag=share_class_info["hasParValue"],
         par_value=share_class_info.get("parValue"),
         currency=share_class_info.get("currency"),
+        currency_additional=share_class_info.get("currencyAdditional"),
         special_rights_flag=share_class_info["hasRightsOrRestrictions"]
     )
     share_class.series = []
@@ -190,6 +191,7 @@ def update_share_class(share_class: ShareClass, share_class_info: dict):
     share_class.par_value_flag = share_class_info["hasParValue"]
     share_class.par_value = share_class_info.get("parValue")
     share_class.currency = share_class_info.get("currency")
+    share_class.currency_additional = share_class_info.get("currencyAdditional")
     share_class.special_rights_flag = share_class_info["hasRightsOrRestrictions"]
 
     # array of ids for share series instance from db

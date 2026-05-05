@@ -20,21 +20,43 @@ class Config:
     ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
 
-    # POSTGRESQL
-    DB_USER = os.getenv("DATABASE_USERNAME", "")
-    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
-    DB_NAME = os.getenv("DATABASE_NAME", "")
-    DB_HOST = os.getenv("DATABASE_HOST", "")
-    DB_PORT = os.getenv("DATABASE_PORT", "5432")
-    if DB_USER != "":
-        if DB_UNIX_SOCKET := os.getenv("DATABASE_UNIX_SOCKET", None):
-            SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
-        else:
-            SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    # Cloud SQL Connector / Postgres
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME")
+    DATABASE_NAME = os.getenv("DATABASE_NAME")
+    DATABASE_USERNAME = os.getenv("DATABASE_USERNAME")
+    DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
+    DATABASE_HOST = os.getenv("DATABASE_HOST", "")
+    DATABASE_PORT = os.getenv("DATABASE_PORT", "5432")
+    IP_TYPE = os.getenv("IP_TYPE", "private")
+
+    if CLOUDSQL_INSTANCE_CONNECTION_NAME and DATABASE_NAME and DATABASE_USERNAME:
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
     else:
         DATABASE_TEST_USERNAME = os.getenv("DATABASE_TEST_USERNAME")
         DATABASE_TEST_PASSWORD = os.getenv("DATABASE_TEST_PASSWORD")
         DATABASE_TEST_NAME = os.getenv("DATABASE_TEST_NAME")
         DATABASE_TEST_HOST = os.getenv("DATABASE_TEST_HOST")
         DATABASE_TEST_PORT = os.getenv("DATABASE_TEST_PORT")
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{DATABASE_TEST_USERNAME}:{DATABASE_TEST_PASSWORD}@{DATABASE_TEST_HOST}:{DATABASE_TEST_PORT}/{DATABASE_TEST_NAME}"
+        SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DATABASE_TEST_USERNAME}:{DATABASE_TEST_PASSWORD}@{DATABASE_TEST_HOST}:{DATABASE_TEST_PORT}/{DATABASE_TEST_NAME}"
+
+
+def get_conn():
+    """Return a new DBAPI connection via Cloud SQL Connector."""
+    from cloud_sql_connector import DBConfig, getconn
+    config = DBConfig(
+        instance_name=Config.CLOUDSQL_INSTANCE_CONNECTION_NAME,
+        database=Config.DATABASE_NAME,
+        user=Config.DATABASE_USERNAME,
+        ip_type=Config.IP_TYPE,
+        schema="public"
+    )
+    return getconn(config)
+
+
+def get_sqlalchemy_engine():
+    """Return a SQLAlchemy engine using cloud-sql-connector if configured, else a direct connection string."""
+    from sqlalchemy import create_engine
+    if Config.CLOUDSQL_INSTANCE_CONNECTION_NAME and Config.DATABASE_NAME and Config.DATABASE_USERNAME:
+        return create_engine("postgresql+pg8000://", creator=get_conn)
+    else:
+        return create_engine(Config.SQLALCHEMY_DATABASE_URI)

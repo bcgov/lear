@@ -1688,22 +1688,22 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "letterOfConsent": {
             "filingDescription": "Letter Of Consent",
             "fileName": "letterOfConsent",
-            "reportType": ReportTypes.FILING_2.value
+            "reportType": ReportTypes.FILING_3.value
         },
         "letterOfConsentAmalgamationOut": {
             "filingDescription": "Letter Of Consent",
             "fileName": "letterOfConsentAmalgamationOut",
-            "reportType": ReportTypes.FILING_2.value
+            "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",
             "fileName": "letterOfAgmExtension",
-            "reportType": ReportTypes.FILING_2.value
+            "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
         "letterOfAgmLocationChange": {
             "filingDescription": "Letter Of AGM Location Change",
             "fileName": "letterOfAgmLocationChange",
-            "reportType": ReportTypes.FILING_2.value
+            "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
         "continuationIn": {
             "filingDescription": "Continuation Application",

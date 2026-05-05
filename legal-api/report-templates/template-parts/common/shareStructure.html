@@ -44,8 +44,11 @@
             </td>
             <td>
                {% if share_class.hasParValue %}
-               {{ share_class.currency }}
-               {% else %}
+                  {% if share_class.currency == 'OTHER' %}
+                     {{ share_class.currencyAdditional or 'Other' }}
+                  {% else %}
+                     {{ share_class.currency }}
+                  {% endif %}
                {% endif %}
             </td>
             <td>
@@ -90,8 +93,11 @@
                </td>
                <td>
                   {% if share_class.hasParValue %}
-                  {{ share_class.currency }}
-                  {% else %}
+                     {% if share_class.currency == 'OTHER' %}
+                        {{ share_class.currencyAdditional or 'Other' }}
+                     {% else %}
+                        {{ share_class.currency }}
+                     {% endif %}
                   {% endif %}
                </td>
                <td>

@@ -1,6 +1,6 @@
 [project]
 name = "business-filer"
-version = "3.0.15"
+version = "3.0.16"
 description = "Business Registry Filer Service"
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
@@ -21,15 +21,12 @@ dependencies = [
     "dpath (>=2.2.0,<3.0.0)",
     "pg8000 (>=1.31.2,<2.0.0)",
     "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/cloud-sql-connector",
-  #  "business-model @ file:///Users/thor/Developer/thorwolpert/ServiceBC/GCP/lear/python/common/business-registry-model",
-  "gunicorn (>=23.0.0,<24.0.0)",
-  "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
-
+    "gunicorn (>=23.0.0,<24.0.0)",
+    "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
 ]
 
 [tool.poetry]
-packages = [{include = "business_filer", from = "src"}
-           ]
+packages = [{include = "business_filer", from = "src"}]
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.4"
@@ -44,9 +41,6 @@ pytest-mock = "^3.14.0"
 requests-mock = "^1.12.1"
 pytest-cov = "^7.0.0"
 
-
-[tool.poetry.dependencies]
-business-model = {develop = true}
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"

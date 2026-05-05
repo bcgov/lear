@@ -270,7 +270,7 @@ TEST_REPORT_META_DATA = [
     (True, "changeOfRegistration", "FILING"),
     (True, "correction", "FILING"),
     (True, "certificateOfRestoration", "CERT"),
-    (True, "letterOfConsent", "FILING-2"),
+    (True, "letterOfConsent", "FILING-3"),
     (True, "letterOfConsentAmalgamationOut", "FILING-2"),
     (True, "letterOfAgmExtension", "FILING-2"),
     (True, "letterOfAgmLocationChange", "FILING-2"),

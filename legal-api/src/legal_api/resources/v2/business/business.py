@@ -262,7 +262,6 @@ def search_businesses():
             identifiers=business_identifiers,
             search_filters=search_filters) or ([], False)
         draft_results, draft_hasmore = BusinessSearchService.get_search_filtered_filings_results(
-            business_json=json_input,
             identifiers=temp_identifiers,
             search_filters=search_filters) or ([], False)
         has_more = bus_hasmore or draft_hasmore
