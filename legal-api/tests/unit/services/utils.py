@@ -13,6 +13,7 @@
 # limitations under the License.
 """Utility functions for tests."""
 
+from contextlib import contextmanager
 from flask_jwt_oidc import JwtManager
 import random
 from datetime import datetime, timezone
@@ -61,6 +62,22 @@ def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user
     token = helper_create_jwt(jwt_manager, roles=roles, username=username)
     headers = {**kwargs, **{'Authorization': 'Bearer ' + token}}
     return headers
+
+
+@contextmanager
+def jwt_request_context(app, jwt_manager: JwtManager,
+                        roles: List[str] = [], username: str = 'test-user',
+                        account_id: str = '1'):
+    """Push a Flask request context with a valid JWT and populate
+    request_ctx.current_user the way the @jwt.has_one_of_roles decorator
+    would in production. Used by tests that call authz functions directly
+    instead of routing through a JWT-decorated view.
+    """
+    token = helper_create_jwt(jwt_manager, roles=roles, username=username)
+    headers = {'Authorization': f'Bearer {token}', 'Account-Id': account_id}
+    with app.test_request_context(headers=headers):
+        jwt_manager._require_auth_validation()
+        yield
 
 
 def create_test_user(first_name: Union[str, None] = None, last_name: Union[str, None] = None,

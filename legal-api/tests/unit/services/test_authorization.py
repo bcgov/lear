@@ -46,6 +46,7 @@ from registry_schemas.example_data import (
 )
 
 from business_model.models import Business, Filing
+from legal_api import create_app
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
     PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
     authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
@@ -54,7 +55,7 @@ from legal_api.services.warnings.business.business_checks import WarningType
 from legal_api.utils.datetime import datetime
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
-from tests.unit.services.utils import create_business, create_header, helper_create_jwt
+from tests.unit.services.utils import create_business, create_header, helper_create_jwt, jwt_request_context
 
 
 DELAY_DISSOLUTION = {
@@ -518,17 +519,7 @@ TEST_INTEG_AUTHZ_DATA = [
 def test_authorized_user_integ(monkeypatch, app, jwt,
                                test_name, identifier, username, roles, allowed_actions, requested_actions, expected):
     """Assert that the type of user authorization is correct, based on the expected outcome."""
-    import flask  # noqa: F401; import actually used in mock
-    # setup
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers['Authorization']
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         rv = authorized(identifier, jwt, ['view'])
 
 # check it
@@ -556,19 +547,10 @@ def test_authorized_missing_args():
 
 def test_authorized_bad_url(monkeypatch, app, jwt):
     """Assert that an invalid auth service URL returns False."""
-    import flask  # noqa: F401; import actually used in mock
-    # setup
     identifier = 'CP1234567'
     username = 'username'
     roles = [BASIC_USER]
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': '1'}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         auth_svc_url = app.config['AUTH_SVC_URL']
         app.config['AUTH_SVC_URL'] = 'http://no.way.this.works/dribble'
 
@@ -600,19 +582,10 @@ def test_get_authorized_user_role(app, test_name, roles_in_token, expected_role)
 
 def test_authorized_invalid_roles(monkeypatch, app, jwt):
     """Assert that an invalid role returns False."""
-    import flask  # noqa: F401 ; import actually used in mock
-    # setup noqa: I003
     identifier = 'CP1234567'
     username = 'username'
     roles = ['NONE']
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': '1'}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         rv = authorized(identifier, jwt, ['view'])
 
     assert not rv
@@ -683,14 +656,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
 )
 def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': '1'}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -1019,14 +985,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
 def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_type, sub_filing_type,
                     legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -1217,17 +1176,10 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
                              test_name, business_exists, state, legal_types, username, roles, expected):
     """Assert that get_allowed_actions returns the expected allowable filing info."""
     is_comp_auth = username == 'comp-auth'
-    token = helper_create_jwt(jwt, roles=roles, username=username)
     # NOTE: it is important for the account id to be different for comp_auth due to the caching of account product subscriptions
     account_id = '1' if not is_comp_auth else '2'
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': account_id}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
+    with jwt_request_context(app, jwt, roles=roles, username=username, account_id=account_id):
         app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': '123'}
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -1547,14 +1499,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
 )
 def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business_exists, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -1657,14 +1602,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
 def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt, test_name, business_exists, state,
                                                   legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is frozen."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -1729,14 +1667,7 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
 def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app, session, jwt, test_name, business_exists, state,
                                                                legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is not in good standing."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -1903,14 +1834,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
 def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, session, jwt, test_name, business_exists, state,
                                                           legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business is not in good standing."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2031,14 +1955,7 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
        A blocker filing in this instance is any filing that has a status of DRAFT, PENDING, PENDING CORRECTION,
        ERROR or PAID.
     """
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2164,14 +2081,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
        A blocker filing in this instance is any filing incomplete filing where filing type is an alteration or a
        correction.  Note that this should also test unexpected incomplete status values.
     """
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2235,14 +2145,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
 
        A blocker filing in this instance is a pending future effective dissolution filing.
     """
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2444,14 +2347,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
 )
 def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, state, legal_types, username, roles, expected):
     """Assert that get allowed returns valid filings when business has warnings."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2801,14 +2697,7 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
        A filing with invalidStateFiling defined should only return a target filing if the business state filing does
        not match one of the state filing types defined in invalidStateFiling.
     """
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2858,14 +2747,7 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
 def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_name, state, filing_type, sub_filing_type,
                                         legal_types, username, roles, filing_status, expected):
     """Assert that get allowed returns valid filings when filing status is draft."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -2903,14 +2785,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
 ])
 def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, expected):
     """Assert that a filing can be resubmitted."""
-    token = helper_create_jwt(jwt, roles=[BASIC_USER], username='username')
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=[BASIC_USER], username='username'):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -3063,14 +2938,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
        A filing with completedFilings defined should only return a target filing if the business state filing matches
        one of the state filing types defined in completedFiling.
     """
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -3247,14 +3115,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
 def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, jwt, test_name, business_exists, state,
                                                     legal_types, username, roles, num_dods, expected):
     """Assert that get allowed returns valid filings when business is in dissolution."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -3451,14 +3312,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
 def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, test_name, state, legal_types, username,
                                               roles, blocker_status, expected):
     """Assert that get allowed returns valid filings for notice of withdrawal."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -3551,14 +3405,7 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
 def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
                                            test_name, state, legal_types, username, roles, enabled_filings, expected):
     """Assert that filings requiring the enabled-specific-filings flag are not allowed when the flag doesn't specifiy them."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: enabled_filings
@@ -3694,14 +3541,7 @@ def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
 )
 def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, test_name, username, roles, dods, expected):
     """Assert that get allowed returns valid filings when business is in dissolution."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
@@ -3834,14 +3674,7 @@ def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, 
 )
 def test_get_allowed_filings_in_liquidation(monkeypatch, app, session, jwt, test_name, username, roles, in_liquidation_date, last_lr_year, expected):
     """Assert that get allowed returns valid filings when business is in liquidation."""
-    token = helper_create_jwt(jwt, roles=roles, username=username)
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
