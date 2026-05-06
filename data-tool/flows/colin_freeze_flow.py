@@ -1,7 +1,7 @@
 import math
 from prefect import flow, task
 from common.init_utils import colin_extract_init, colin_oracle_init, get_config
-from common.colin_utils import colin_oracle_chunks
+from common.colin_utils import colin_oracle_chunks, colin_oracle_corp_num_list_format
 from sqlalchemy import Engine, text
 
 from prefect.cache_policies import NO_CACHE
@@ -17,7 +17,8 @@ FLOW_NAME = 'colin-freeze-flow'
 colin_freeze_query = """
 UPDATE corporation c
 SET corp_frozen_typ_cd = 'C'
-WHERE c.corp_num = :corp_num
+WHERE c.corp_num = IN {corp_nums}
+RETURNING corp_num
 """
 
 colin_add_early_adopters_query = """
@@ -133,33 +134,51 @@ def convert_to_colin_format(corp_num: str) -> str:
 
 @task(cache_policy=NO_CACHE)
 def update_colin_oracle(config, colin_oracle_engine: Engine, corp_nums: list[str]):
-    results = []
+    colin_corp_num_list = [convert_to_colin_format(corp_num) for corp_num in corp_nums]
     with colin_oracle_engine.connect() as conn:
         transaction = conn.begin()
         try:
-            for corp_num in corp_nums:
-                res1, res2 = None, None
-                colin_corp_num = convert_to_colin_format(corp_num)
-                if config.FREEZE_COLIN_CORPS:
+            frozen_colin_nums = set()
+            if config.FREEZE_COLIN_CORPS:
                     res1 = conn.execute(
-                        text(colin_freeze_query),
-                        {'corp_num': colin_corp_num}
-                    )
-                if config.FREEZE_ADD_EARLY_ADOPTER:
-                    res2 = conn.execute(
-                        text(colin_add_early_adopters_query),
-                        {'corp_num': colin_corp_num}
-                    )
-                frozen = res1.rowcount > 0 if res1 else False
-                in_early_adopter = res2.rowcount > 0 if res2 else False
-                results.append((corp_num, frozen, in_early_adopter, None))
-            transaction.commit()
-            return results
+                        text(colin_freeze_query.format(corp_nums=colin_oracle_corp_num_list_format(colin_corp_num_list)))
+                    ).fetchall()
+                    frozen_colin_nums = {res1[0] for res1 in res1}                
+                
+            if config.FREEZE_ADD_EARLY_ADOPTER:
+                res2 = conn.execute(
+                    text(colin_add_early_adopters_query),
+                    [{'corp_num': corp_num} for corp_num in colin_corp_num_list]
+                )
         except Exception as e:
-            transaction.rollback()
-            print(f'❌ Error updating colin batch: {repr(e)}')
+            print(f'❌ Chunk statement error for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(e)}')
+            try:
+                transaction.commit()
+                print(f'⚠️ Chunk statement-error-path commit succeeded for {len(corp_nums)} corps ({corp_nums[:5]})')
+            except Exception as commit_error:
+                print(f'❌ Chunk statement-error-path commit failed for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(commit_error)}')
+            return [
+                (
+                    corp_num,
+                    convert_to_colin_format(corp_num) in frozen_colin_nums if config.FREEZE_COLIN_CORPS else False,
+                    False,
+                    e,
+                )
+                for corp_num in corp_nums
+            ]
+
+        try:
+            transaction.commit()
+        except Exception as e:
+            print(f'❌ Chunk commit error for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(e)}')
             return [(corp_num, False, False, e) for corp_num in corp_nums]
 
+        results = []
+        for original_corp_num, colin_corp_num in zip(corp_nums, colin_corp_num_list):
+            frozen = colin_corp_num in frozen_colin_nums if config.FREEZE_COLIN_CORPS else False
+            in_early_adopter = config.FREEZE_ADD_EARLY_ADOPTER
+            results.append((original_corp_num, frozen, in_early_adopter, None))
+        return results
 
 @flow(
     name='Colin-Freeze-Flow',
@@ -209,7 +228,7 @@ def colin_freeze_flow():
             print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
 
             futures = []
-            for corp_chunk in colin_oracle_chunks(corp_nums):
+            for corp_chunk in colin_oracle_chunks(corp_nums, 999):
                 futures.append(
                     update_colin_oracle.submit(
                         config, colin_oracle_engine, corp_chunk)
