@@ -17,7 +17,7 @@ FLOW_NAME = 'colin-freeze-flow'
 colin_freeze_query = """
 UPDATE corporation c
 SET corp_frozen_typ_cd = 'C'
-WHERE c.corp_num = IN {corp_nums}
+WHERE c.corp_num IN {corp_nums}
 RETURNING corp_num
 """
 
