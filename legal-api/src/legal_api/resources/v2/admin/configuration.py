@@ -18,7 +18,7 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import any_
 
-from legal_api.models import Configuration, UserRoles, db
+from business_model.models import Configuration, UserRoles, db
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin

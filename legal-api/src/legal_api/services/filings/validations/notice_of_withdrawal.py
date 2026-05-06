@@ -17,9 +17,9 @@ from typing import Final, Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001, I003;
 
+from business_model.models import Filing
+from business_model.models.db import db
 from legal_api.errors import Error
-from legal_api.models import Filing
-from legal_api.models.db import db
 from legal_api.services.utils import get_bool, get_int
 from legal_api.utils.datetime import datetime as dt
 

@@ -20,7 +20,7 @@ import pytest
 from http import HTTPStatus
 from unittest.mock import patch
 
-from legal_api.models import UserRoles
+from business_model.models import UserRoles
 from legal_api.reports.report_v2 import ReportV2
 from tests.unit.models import factory_business_with_stage_one_furnishing
 from tests.unit.services.utils import create_header

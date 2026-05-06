@@ -17,8 +17,8 @@ from typing import Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
+from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.models import Business
 from legal_api.services.utils import (
     get_bool,  # noqa: I003; needed as the linter gets confused from the babel override above.
 )

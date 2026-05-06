@@ -19,8 +19,8 @@ from typing import Final, Optional
 import pycountry
 from flask_babel import _
 
+from business_model.models import Address, Business, PartyRole
 from legal_api.errors import Error
-from legal_api.models import Address, Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     check_good_standing_permission,

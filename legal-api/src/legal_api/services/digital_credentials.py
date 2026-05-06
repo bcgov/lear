@@ -24,7 +24,7 @@ from typing import Optional
 import requests
 
 from legal_api.decorators import requires_traction_auth
-from legal_api.models import DCDefinition, DCRevocationReason
+from business_model.models import DCDefinition, DCRevocationReason
 
 
 class DigitalCredentialsService:

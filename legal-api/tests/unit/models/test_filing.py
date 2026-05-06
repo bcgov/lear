@@ -37,11 +37,11 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     SPECIAL_RESOLUTION,
 )
-from sqlalchemy.exc import DataError
+from sqlalchemy.exc import DataError, IntegrityError
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Filing, User
-from legal_api.models.db import VersioningProxy
+from business_model.models import Business, Filing, User
+from business_model.models.db import VersioningProxy
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 from tests.unit.models import (
@@ -202,7 +202,7 @@ def test_filing_dump_json(session):
     filings = factory_filing(b, ar)
     filings.save()
     filings.submitter_id = -1  # some bogus id to throw an error
-    with pytest.raises(KeyError):
+    with pytest.raises(IntegrityError):
         filings.json()
 
 
@@ -530,8 +530,8 @@ def test_get_filings_by_status_before_go_live_date(session, test_type, days, exp
 
 def test_get_completed_filings_for_colin(session, client, jwt):
     """Assert that the get_completed_filings_for_colin returns completed filings with no colin ids set."""
-    from legal_api.models import Filing
-    from legal_api.models.colin_event_id import ColinEventId
+    from business_model.models import Filing
+    from business_model.models.colin_event_id import ColinEventId
     from tests.unit.models import factory_completed_filing
     # setup
     identifier = 'CP7654321'
@@ -587,7 +587,7 @@ def test_get_completed_filings_skipped_for_colin(session, client, jwt, filing_ty
 
 def test_get_most_recent_filing(session):
     """Assert that the most recent completed filing of a specified type is returned."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     from tests.unit.models import factory_completed_filing
     # setup
     identifier = 'CP7654321'
@@ -610,7 +610,7 @@ def test_get_most_recent_filing(session):
 
 def test_save_filing_with_colin_id(session):
     """Assert that saving a filing from the coops-updater-job user is set to paid and source is colin."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     # setup
     filing = Filing()
     filing.filing_json = ANNUAL_REPORT
@@ -624,7 +624,7 @@ def test_save_filing_with_colin_id(session):
 
 def test_save_filing_colin_only(session):
     """Assert that the in colin only flag is retrieved and saved."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     # setup
     filing = Filing()
     filing.filing_json = FILING_HEADER
@@ -637,7 +637,7 @@ def test_save_filing_colin_only(session):
 
 def test_uncorrected_filing(session):
     """Assert that a uncorrected filing is unaffected."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     # setup
     filing = Filing()
     filing.filing_json = ANNUAL_REPORT
@@ -652,7 +652,7 @@ def test_is_corrected_filing(session):
 
     Assert linkage is set from parent to child and otherway.
     """
-    from legal_api.models import Filing
+    from business_model.models import Filing
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT
@@ -677,7 +677,7 @@ def test_is_pending_correction_filing(session):
 
     Assert linkage is set from parent to child and otherway.
     """
-    from legal_api.models import Filing
+    from business_model.models import Filing
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT
@@ -702,7 +702,7 @@ def test_is_pending_correction_filing(session):
 
 def test_linked_not_correction(session):
     """Assert that if a filing has a parent that is not a correction, the isCorrected flag is not set."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     # setup
     filing1 = Filing()
     filing1.filing_json = ANNUAL_REPORT

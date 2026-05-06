@@ -16,7 +16,7 @@
 
 from typing import Union
 
-from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, User
+from business_model.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 

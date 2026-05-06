@@ -19,7 +19,7 @@ Test-Suite to ensure that the RegistrationBootstrap Model is working as expected
 import pytest
 import sqlalchemy
 
-from legal_api.models import RegistrationBootstrap
+from business_model.models import RegistrationBootstrap
 
 
 def test_only_one_registration_bootstrap(session):

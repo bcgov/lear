@@ -18,7 +18,7 @@ from http import HTTPStatus
 
 import pytest
 
-from legal_api.models import Filing, RegistrationBootstrap
+from business_model.models import Filing, RegistrationBootstrap
 from legal_api.services.filings import validate
 from legal_api.services.filings.validations.notice_of_withdrawal import (
     validate_withdrawn_filing,

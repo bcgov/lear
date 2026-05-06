@@ -23,7 +23,7 @@ from ldclient.config import Config
 from ldclient.context import Context
 from ldclient.integrations.test_data import TestData
 
-from legal_api.models import User
+from business_model.models import User
 
 
 class Flags:

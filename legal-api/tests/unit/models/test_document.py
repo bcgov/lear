@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the Document Model is working as expected.
 """
-from legal_api.models.document import Document, DocumentType
+from business_model.models.document import Document, DocumentType
 
 
 def test_document_save_and_find(session):

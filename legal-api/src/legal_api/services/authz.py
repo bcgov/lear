@@ -25,8 +25,8 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from business_model.models import Business, Filing
 from flask_jwt_oidc import JwtManager
-from legal_api.models import Business, Filing
 from legal_api.services import flags
 from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (

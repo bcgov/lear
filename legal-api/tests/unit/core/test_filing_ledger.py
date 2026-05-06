@@ -21,8 +21,8 @@ from flask import current_app
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Comment, Filing, UserRoles
-from legal_api.models.user import UserRoles
+from business_model.models import Business, Comment, Filing, UserRoles
+from business_model.models.user import UserRoles
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.datetime import datetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_user

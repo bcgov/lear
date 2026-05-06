@@ -24,7 +24,7 @@ import requests
 from flask import current_app, jsonify
 from jwt import ExpiredSignatureError
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.authz import are_digital_credentials_allowed
 from legal_api.utils.auth import jwt
 

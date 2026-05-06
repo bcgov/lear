@@ -21,7 +21,7 @@ import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import CONTINUATION_IN
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction

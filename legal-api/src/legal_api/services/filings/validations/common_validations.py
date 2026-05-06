@@ -23,10 +23,10 @@ from flask import current_app, g, request
 from flask_babel import _
 from pypdf import PdfReader
 
+from business_model.models import Address, Business, PartyRole
+from business_model.models.configuration import EMAIL_PATTERN
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models import Address, Business, PartyRole
-from legal_api.models.configuration import EMAIL_PATTERN
 from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService

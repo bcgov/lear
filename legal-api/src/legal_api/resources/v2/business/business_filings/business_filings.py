@@ -35,12 +35,7 @@ from requests import exceptions  # noqa: I001; grouping out of order to make bot
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
-from flask_jwt_oidc import JwtManager
-from legal_api.constants import BOB_DATE
-from legal_api.core import Filing as CoreFiling
-from legal_api.core.constants import REDACTED_STAFF_SUBMITTER
-from legal_api.exceptions import BusinessException
-from legal_api.models import (
+from business_model.models import (
     Address,
     Business,
     Filing,
@@ -53,7 +48,12 @@ from legal_api.models import (
     UserRoles,
     db,
 )
-from legal_api.models.colin_event_id import ColinEventId
+from business_model.models.colin_event_id import ColinEventId
+from flask_jwt_oidc import JwtManager
+from legal_api.constants import BOB_DATE
+from legal_api.core import Filing as CoreFiling
+from legal_api.core.constants import REDACTED_STAFF_SUBMITTER
+from legal_api.exceptions import BusinessException
 from legal_api.resources.v2.business.bp import bp
 from legal_api.services import (
     STAFF_ROLE,

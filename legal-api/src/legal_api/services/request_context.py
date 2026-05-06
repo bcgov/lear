@@ -17,7 +17,7 @@ from typing import Optional
 
 from flask import g, has_request_context, request
 
-from legal_api.models import User
+from business_model.models import User
 
 
 @dataclass(frozen=True)

@@ -21,7 +21,7 @@ import json
 
 import pytest
 
-from legal_api.models import Filing
+from business_model.models import Filing
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import ReportMeta
 from tests.unit.models import factory_business, factory_completed_filing

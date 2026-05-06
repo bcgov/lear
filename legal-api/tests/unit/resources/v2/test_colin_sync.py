@@ -25,8 +25,8 @@ from registry_schemas.example_data import (
     CORRECTION_COR
 )
 
-from legal_api.models import Business, Filing, PartyRole
-from legal_api.models.colin_event_id import ColinEventId
+from business_model.models import Business, Filing, PartyRole
+from business_model.models.colin_event_id import ColinEventId
 from legal_api.services.authz import COLIN_SVC_ROLE
 from tests.unit.services.utils import create_header
 from tests.unit.models import (

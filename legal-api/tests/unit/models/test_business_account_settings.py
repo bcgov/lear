@@ -30,7 +30,7 @@ from http import HTTPStatus
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import BusinessAccountSettings
+from business_model.models import BusinessAccountSettings
 from tests.unit.models import factory_business
 
 

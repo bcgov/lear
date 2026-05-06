@@ -18,27 +18,28 @@ Test-Suite to ensure that the Configuration Model is working as expected.
 """
 import pytest
 
-from legal_api.models import Configuration
+from business_model.models import Configuration
 
-def test_valid_configuration_save(session):
-    """Assert that a valid configuration can be saved."""
-    configuration = Configuration(
-        name='NEW_TEST_CONFIGURATION',
-        val='100',
-    )
-    configuration.save()
-    assert configuration.id
+# Test removed in common model tests because creating configs on the fly is flagged as an unnecesarry use case
+# def test_valid_configuration_save(session):
+#     """Assert that a valid configuration can be saved."""
+#     configuration = Configuration(
+#         name='NEW_TEST_CONFIGURATION',
+#         val='100',
+#     )
+#     configuration.save()
+#     assert configuration.id
 
-
-def test_find_configuration_by_id(session):
-    """Assert that the method returns correct value."""
-    configuration = Configuration(
-        name='NEW_TEST_CONFIGURATION',
-        val='100',
-    )
-    configuration.save()
-    res = Configuration.find_by_id(configuration.id)
-    assert res
+# Test removed in common model tests as it is flagged as an unnecesarry usecase
+# def test_find_configuration_by_id(session):
+#     """Assert that the method returns correct value."""
+#     configuration = Configuration(
+#         name='NEW_TEST_CONFIGURATION',
+#         val='100',
+#     )
+#     configuration.save()
+#     res = Configuration.find_by_id(configuration.id)
+#     assert res
 
 def test_find_existing_configuration_by_id(session):
     """Assert that the method returns correct value."""
@@ -49,12 +50,12 @@ def test_find_existing_configuration_by_id(session):
 
 def test_find_configuration_by_name(session):
     """Assert that the method returns correct value."""
-    configuration = Configuration(
-        name='NEW_TEST_CONFIGURATION',
-        val='100',
-    )
-    configuration.save()
-    res = Configuration.find_by_name(configuration.name)
+    # configuration = Configuration(
+    #     name='NEW_TEST_CONFIGURATION',
+    #     val='100',
+    # )
+    # configuration.save()
+    res = Configuration.find_by_name(Configuration.Names.NUM_DISSOLUTIONS_ALLOWED)
     assert res
 
 

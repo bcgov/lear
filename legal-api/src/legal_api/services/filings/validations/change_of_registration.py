@@ -17,8 +17,8 @@ from typing import Optional
 
 from flask_babel import _ as babel
 
+from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,

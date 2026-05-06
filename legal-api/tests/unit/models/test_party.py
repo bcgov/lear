@@ -21,7 +21,7 @@ from http import HTTPStatus
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Party
+from business_model.models import Party
 
 
 def test_party_json(session):

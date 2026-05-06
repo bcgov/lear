@@ -19,7 +19,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.core import Filing
-from legal_api.models.user import UserRoles
+from business_model.models.user import UserRoles
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
 from legal_api.utils.datetime import datetime, timezone
 

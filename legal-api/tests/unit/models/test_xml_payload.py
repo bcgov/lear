@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the XmlPayload Model is working as expected.
 """
-from legal_api.models import XmlPayload
+from business_model.models import XmlPayload
 
 def test_valid_xml_payload_save(session):
     """Assert that a valid xml payload can be saved."""

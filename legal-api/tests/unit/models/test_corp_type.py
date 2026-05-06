@@ -17,7 +17,7 @@
 Test-Suite to ensure that the CorpType Model is working as expected.
 """
 
-from legal_api.models import Business, CorpType
+from business_model.models import Business, CorpType
 
 
 corp_type_json = {

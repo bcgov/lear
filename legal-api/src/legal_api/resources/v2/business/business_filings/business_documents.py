@@ -22,10 +22,9 @@ import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
+from business_model.models import Business, Filing as FilingModel, Document
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Document
-from legal_api.models import Filing as FilingModel
 from legal_api.reports import get_pdf
 from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp

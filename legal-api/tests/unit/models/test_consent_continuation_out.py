@@ -26,7 +26,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
 )
 
-from legal_api.models.consent_continuation_out import ConsentContinuationOut
+from business_model.models.consent_continuation_out import ConsentContinuationOut
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from tests.unit.models import (

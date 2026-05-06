@@ -18,8 +18,8 @@ from typing import Final, Optional
 from flask.globals import request_ctx
 from flask_babel import _ as babel
 
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.errors import Error
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (

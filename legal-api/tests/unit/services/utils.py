@@ -17,9 +17,9 @@ from flask_jwt_oidc import JwtManager
 import random
 from datetime import datetime, timezone
 from typing import List, Union
-from legal_api.models.address import Address
-from legal_api.models.business import Business
-from legal_api.models.party_role import PartyRole
+from business_model.models.address import Address
+from business_model.models.business import Business
+from business_model.models.party_role import PartyRole
 from tests.unit.models import factory_business, factory_party_role
 
 

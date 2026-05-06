@@ -21,7 +21,7 @@ from registry_schemas.example_data import (
     CONTINUATION_IN,
 )
 
-from legal_api.models import Jurisdiction
+from business_model.models import Jurisdiction
 
 from tests.unit.models import factory_business, factory_completed_filing
 

@@ -18,7 +18,7 @@ import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations.change_of_directors import validate_effective_date
 from legal_api.utils.datetime import datetime, timezone

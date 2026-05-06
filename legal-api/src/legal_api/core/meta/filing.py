@@ -18,8 +18,8 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final, Optional
 
-from legal_api.models import Business
-from legal_api.models import Filing as FilingStorage
+from business_model.models import Business
+from business_model.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService
 
 

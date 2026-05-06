@@ -21,14 +21,15 @@ import datetime
 import pytest
 from sqlalchemy.orm import Session
 
-from legal_api.models import PartyClass, PartyRole
+from business_model.models import PartyClass, PartyRole
+from business_model.models.party_class import PartyClassType
 
 
 @pytest.mark.skip('All PartyClassTypes already set in bulk_insert migration file')
 def test_party_class_save(session: Session):
     """Assert that the party class saves correctly."""
     party_class = PartyClass(
-        class_type=PartyClass.PartyClassType.DIRECTOR,
+        class_type=PartyClassType.DIRECTOR,
         short_description="Short Description",
         full_description="Full Description"
     )
@@ -40,7 +41,7 @@ def test_party_class_save(session: Session):
 
 def test_party_class_json(session: Session):
     """Assert the json format of party class."""
-    party_class = PartyClass.find_by_class_type(PartyClass.PartyClassType.DIRECTOR)
+    party_class = PartyClass.find_by_class_type(PartyClassType.DIRECTOR)
 
     json = party_class.json
     
@@ -55,7 +56,7 @@ def test_party_class_json(session: Session):
 
 def test_party_class_find_by_internal_id(session: Session):
     """Assert the party class can be found by id."""
-    for i in range(len(PartyClass.PartyClassType)):
+    for i in range(len(PartyClassType)):
         target_id = i + 1
         found = PartyClass.find_by_internal_id(target_id)
 
@@ -65,7 +66,7 @@ def test_party_class_find_by_internal_id(session: Session):
 
 def test_party_class_find_by_class_type(session: Session):
     """Assert the party class can be found by its class type."""
-    class_type_list = list(PartyClass.PartyClassType)
+    class_type_list = list(PartyClassType)
 
     for type in class_type_list:
         found = PartyClass.find_by_class_type(type)
@@ -80,20 +81,20 @@ def test_party_class_party_role_relationship(session: Session):
         role=PartyRole.RoleTypes.CEO.value,
         appointment_date=datetime.datetime(2022, 5, 17),
         cessation_date=None,
-        party_class_type=PartyClass.PartyClassType.OFFICER
+        party_class_type=PartyClassType.OFFICER
     )
 
     role_2 = PartyRole(
         role=PartyRole.RoleTypes.CHAIR.value,
         appointment_date=datetime.datetime(2022, 5, 17),
         cessation_date=None,
-        party_class_type=PartyClass.PartyClassType.OFFICER
+        party_class_type=PartyClassType.OFFICER
     )
 
     session.add_all([role_1, role_2])
     session.flush()
 
-    parent = PartyClass.find_by_class_type(PartyClass.PartyClassType.OFFICER)
+    parent = PartyClass.find_by_class_type(PartyClassType.OFFICER)
 
     assert parent.id
 
@@ -103,7 +104,7 @@ def test_party_class_party_role_relationship(session: Session):
 def test_all_party_classes_in_db(session: Session):
     """Assert that all Party Classes are in the DB"""
 
-    class_type_list = list(PartyClass.PartyClassType)
+    class_type_list = list(PartyClassType)
     
     for type in class_type_list:
         found = session.query(PartyClass).filter_by(class_type=type).one_or_none()
@@ -118,6 +119,6 @@ def test_party_class_type_is_valid_enum(session: Session):
     pct = session.query(PartyClass).all()
     for pc in pct:
         assert pc.class_type is not None
-        assert pc.class_type in PartyClass.PartyClassType
+        assert pc.class_type in PartyClassType
 
-    assert len(pct) == len(PartyClass.PartyClassType)    
+    assert len(pct) == len(PartyClassType)    

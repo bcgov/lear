@@ -19,8 +19,8 @@ from unittest.mock import patch
 
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models import Business, Party, PartyRole, ShareClass
-from legal_api.models.share_series import ShareSeries
+from business_model.models import Business, Party, PartyRole, ShareClass
+from business_model.models.share_series import ShareSeries
 from legal_api.services import flags
 from legal_api.services.permissions import PermissionService
 import pytest

@@ -59,7 +59,7 @@ from registry_schemas.example_data import (
     TRANSITION_FILING_TEMPLATE
 )
 
-from legal_api.models import (
+from business_model.models import (
     Address,
     Batch,
     BatchProcessing,
@@ -637,7 +637,7 @@ def test_post_cod_with_empty_directors_array(session, client, jwt, only_validate
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
@@ -667,7 +667,7 @@ def test_post_valid_ar(session, client, jwt):
 @integration_payment
 def test_payment_header(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     payment_account = '12345'
     business = factory_business(identifier,
@@ -696,7 +696,7 @@ def test_payment_header(session, client, jwt):
 @integration_payment
 def test_cancel_payment_for_pending_filing(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)
@@ -734,7 +734,7 @@ def test_cancel_payment_for_pending_filing(session, client, jwt):
 @integration_payment
 def test_post_valid_ar_with_routing_slip(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
                                 founding_date=(datetime.utcnow() - datedelta.YEAR)

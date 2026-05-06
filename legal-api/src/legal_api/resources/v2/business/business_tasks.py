@@ -26,7 +26,7 @@ from flask import current_app, jsonify
 from flask_cors import cross_origin
 from requests import exceptions
 
-from legal_api.models import Business, Filing
+from business_model.models import Business, Filing
 from legal_api.services import check_warnings, namex
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt

@@ -25,7 +25,7 @@ from flask import current_app, has_request_context
 from flask_babel import _ as babel
 from sqlalchemy.orm.exc import FlushError
 
-from legal_api.models import RegistrationBootstrap
+from business_model.models import RegistrationBootstrap
 from legal_api.services import Flags, flags
 from legal_api.utils.auth import jwt
 

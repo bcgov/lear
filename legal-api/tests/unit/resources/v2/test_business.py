@@ -31,7 +31,7 @@ from registry_schemas.example_data import (
     INCORPORATION
 )
 
-from legal_api.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
+from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.services import flags
 from legal_api.utils.datetime import datetime
@@ -54,7 +54,7 @@ def factory_business_model(legal_name,
                            legal_type=None,
                            no_dissolution=False):
     """Return a valid Business object stamped with the supplied designation."""
-    from legal_api.models import Business as BusinessModel
+    from business_model.models import Business as BusinessModel
     b = BusinessModel(legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
@@ -907,7 +907,7 @@ def test_get_could_file(session, client, jwt, monkeypatch):
         if flag == 'enabled-specific-filings' else {}
     )
     monkeypatch.setattr(
-        'legal_api.models.User.get_or_create_user_by_jwt',
+        'business_model.models.User.get_or_create_user_by_jwt',
         lambda _: None
     )
     identifier = 'BC0000001'

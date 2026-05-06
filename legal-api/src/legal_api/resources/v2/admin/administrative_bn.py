@@ -18,7 +18,7 @@ from typing import Optional
 from flask import current_app
 from flask_cors import cross_origin
 
-from legal_api.models import Business, UserRoles
+from business_model.models import Business, UserRoles
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.utils.auth import jwt
 

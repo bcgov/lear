@@ -17,7 +17,7 @@
 Test-Suite to ensure that the RequestTracker Model is working as expected.
 """
 
-from legal_api.models import RequestTracker
+from business_model.models import RequestTracker
 
 from tests.unit.models import factory_business, factory_filing
 

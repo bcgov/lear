@@ -18,9 +18,9 @@
 from flask import g
 from flask.globals import request_ctx
 
+from business_model.models.business import Business
+from business_model.models.user import User
 from flask_jwt_oidc import JwtManager
-from legal_api.models.business import Business
-from legal_api.models.user import User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 
 STAFF_ROLE = "staff"

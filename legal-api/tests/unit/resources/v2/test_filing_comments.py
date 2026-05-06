@@ -22,7 +22,7 @@ from http import HTTPStatus
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 
-from legal_api.models import User
+from business_model.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils import datetime
 from tests.unit.models import factory_business, factory_comment, factory_filing

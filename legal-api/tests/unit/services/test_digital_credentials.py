@@ -21,7 +21,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from legal_api.models import DCDefinition, DCBusinessUser, Party, PartyRole
+from business_model.models import DCDefinition, DCBusinessUser, Party, PartyRole
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials import DigitalCredentialsService
 from legal_api.services.digital_credentials_helpers import get_digital_credential_data

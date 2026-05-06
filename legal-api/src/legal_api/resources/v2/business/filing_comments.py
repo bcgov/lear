@@ -21,8 +21,8 @@ from http import HTTPStatus
 from flask import g, jsonify, request
 from flask_cors import cross_origin
 
+from business_model.models import Business, Comment, Filing, User, db
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment, Filing, User, db
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt

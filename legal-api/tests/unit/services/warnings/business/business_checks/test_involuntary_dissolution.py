@@ -18,7 +18,7 @@ import pytest
 from datedelta import datedelta
 from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
 
-from legal_api.models import Batch, BatchProcessing, Business
+from business_model.models import Batch, BatchProcessing, Business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
 from legal_api.services.warnings.business.business_checks.involuntary_dissolution import (
     _get_modified_warning_data,

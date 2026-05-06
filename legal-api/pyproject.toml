@@ -141,7 +141,16 @@ unfixable = [
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [tool.ruff.lint.isort]
-known-first-party = ["flask_jwt_oidc", "structured_logging", "gcp_queue", "business_account"]
+known-first-party = [
+   "business_account",
+   "business_model",
+   "business_model_migrations",
+   "cloud-sql-connector",
+   "flask_jwt_oidc",
+   "gcp_queue",
+   "registry_schemas",
+   "structured_logging"
+]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "double"
@@ -155,7 +164,7 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-addopts = "--cov=src/legal_api"
+# addopts = "--cov=src/legal_api"
 python_files = [
    "test*.py"
 ]

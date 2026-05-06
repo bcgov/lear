@@ -22,8 +22,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_
 
-from legal_api.exceptions import BusinessException
-from legal_api.models import (
+from business_model.models import (
     Address,
     Alias,
     AmalgamatingBusiness,
@@ -40,8 +39,9 @@ from legal_api.models import (
     UserRoles,
     db,
 )
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import VersioningProxy
+from business_model.models.colin_event_id import ColinEventId
+from business_model.models.db import VersioningProxy
+from legal_api.exceptions import BusinessException
 from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime

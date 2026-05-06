@@ -45,7 +45,7 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from legal_api.models import Business, Filing
+from business_model.models import Business, Filing
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
     PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
     authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
@@ -1234,7 +1234,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -1561,7 +1561,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -1671,7 +1671,7 @@ def test_get_allowed_filings_blocker_admin_freeze(monkeypatch, app, session, jwt
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -1743,7 +1743,7 @@ def test_get_allowed_filings_blocker_for_amalgamating_business(monkeypatch, app,
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -1917,7 +1917,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -2045,7 +2045,7 @@ def test_allowed_filings_blocker_filing_incomplete(monkeypatch, app, session, jw
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -2178,7 +2178,7 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -2249,7 +2249,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -2458,7 +2458,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
         for legal_type in legal_types:
@@ -2815,7 +2815,7 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -2872,7 +2872,7 @@ def test_is_allowed_ignore_draft_filing(monkeypatch, app, session, jwt, test_nam
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
         for legal_type in legal_types:
@@ -2917,7 +2917,7 @@ def test_is_allowed_to_resubmit(monkeypatch, app, session, jwt, filing_status, e
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
         filing_type = 'continuationIn'
@@ -3082,7 +3082,7 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -3261,7 +3261,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -3465,7 +3465,7 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -3565,7 +3565,7 @@ def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
         for legal_type in legal_types:
@@ -3708,7 +3708,7 @@ def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, 
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 
@@ -3848,7 +3848,7 @@ def test_get_allowed_filings_in_liquidation(monkeypatch, app, session, jwt, test
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
-            'legal_api.models.User.get_or_create_user_by_jwt',
+            'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
 

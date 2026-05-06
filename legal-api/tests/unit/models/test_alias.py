@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Alias Model is working as expected.
 """
 
-from legal_api.models import Alias
+from business_model.models import Alias
 from tests.unit.models import factory_business
 
 

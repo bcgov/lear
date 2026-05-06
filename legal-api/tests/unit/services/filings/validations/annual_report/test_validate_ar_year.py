@@ -19,7 +19,7 @@ from http import HTTPStatus
 import datedelta
 import pytest
 from freezegun import freeze_time
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings.validations.annual_report import validate_ar_year
 from registry_schemas.example_data import ANNUAL_REPORT
 

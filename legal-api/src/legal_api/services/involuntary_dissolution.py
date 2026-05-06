@@ -19,7 +19,7 @@ from typing import Final, Optional
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
-from legal_api.models import Batch, BatchProcessing, Business, Filing, db
+from business_model.models import Batch, BatchProcessing, Business, Filing, db
 from legal_api.services.request_context import get_request_context
 
 from .bootstrap import AccountService

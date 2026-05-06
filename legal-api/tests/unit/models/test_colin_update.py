@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the ColinLastUpdate Class is working as expected.
 """
-from legal_api.models import ColinLastUpdate
+from business_model.models import ColinLastUpdate
 
 
 def test_last_update(session):

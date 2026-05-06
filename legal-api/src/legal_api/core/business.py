@@ -20,7 +20,7 @@ import re
 from enum import Enum, EnumMeta
 from typing import Final, Optional
 
-from legal_api.models import Business
+from business_model.models import Business
 
 
 class BaseMeta(EnumMeta):

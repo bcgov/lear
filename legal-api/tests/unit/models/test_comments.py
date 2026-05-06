@@ -24,7 +24,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Comment
+from business_model.models import Comment
 from tests import EPOCH_DATETIME
 from tests.unit.models import factory_business, factory_comment, factory_filing
 

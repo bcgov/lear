@@ -25,7 +25,7 @@ from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORAT
 from registry_schemas.example_data.schema_data import FILING_HEADER
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings import validate
 
 from tests.unit.services.filings.test_utils import _upload_file

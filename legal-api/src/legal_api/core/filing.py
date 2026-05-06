@@ -23,9 +23,9 @@ from typing import TYPE_CHECKING, Final
 from flask import current_app, url_for
 from sqlalchemy import desc
 
+from business_model.models import Business, Document, DocumentType, UserRoles
+from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
-from legal_api.models import Business, Document, DocumentType, UserRoles
-from legal_api.models import Filing as FilingStorage
 from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_roles, is_competent_authority

@@ -26,7 +26,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import MinioService, flags
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate

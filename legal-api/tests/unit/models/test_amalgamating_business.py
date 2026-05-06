@@ -29,7 +29,7 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
 )
 
-from legal_api.models import AmalgamatingBusiness, Business, Amalgamation
+from business_model.models import AmalgamatingBusiness, Business, Amalgamation
 from tests.unit.models import (
     factory_business,
     factory_business_mailing_address,

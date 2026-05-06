@@ -21,7 +21,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.exceptions.error_messages import ErrorCode
-from legal_api.models import (
+from business_model.models import (
     Address,
     Alias,
     Batch,
@@ -42,8 +42,9 @@ from legal_api.models import (
     amalgamation,
     db,
 )
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import VersioningProxy
+from business_model.models.colin_event_id import ColinEventId
+from business_model.models.db import VersioningProxy
+from business_model.models.party_class import PartyClassType
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -354,7 +355,7 @@ def factory_comment(
 
 
 def factory_party_role(delivery_address: Address, mailing_address: Address, officer: dict, appointment_date: datetime,
-                       cessation_date: datetime, role_type: PartyRole.RoleTypes, class_type: PartyClass.PartyClassType = None):
+                       cessation_date: datetime, role_type: PartyRole.RoleTypes, class_type: PartyClassType = None):
     """Create a role."""
     party = Party(
         first_name=officer['firstName'],

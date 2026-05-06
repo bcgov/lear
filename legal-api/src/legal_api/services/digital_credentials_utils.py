@@ -18,7 +18,7 @@ from typing import Union
 
 from flask import current_app
 
-from legal_api.models import Party, User
+from business_model.models import Party, User
 
 DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
 

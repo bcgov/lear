@@ -20,8 +20,7 @@ from typing import Union
 from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.decorators import can_access_digital_credentials
-from legal_api.models import (
+from business_model.models import (
     Business,
     DCBusinessUser,
     DCConnection,
@@ -30,6 +29,7 @@ from legal_api.models import (
     DCRevocationReason,
     User,
 )
+from legal_api.decorators import can_access_digital_credentials
 from legal_api.services import digital_credentials
 from legal_api.services.digital_credentials_helpers import (
     extract_invitation_message_id,

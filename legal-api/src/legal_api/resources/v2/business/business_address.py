@@ -20,7 +20,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Address, Business, db
+from business_model.models import Address, Business, db
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 

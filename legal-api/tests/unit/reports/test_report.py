@@ -42,8 +42,8 @@ from registry_schemas.example_data import (
 )
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, db  # noqa:I001
-from legal_api.models.db import VersioningProxy
+from business_model.models import Business, db  # noqa:I001
+from business_model.models.db import VersioningProxy
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001

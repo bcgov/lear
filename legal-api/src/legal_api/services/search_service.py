@@ -23,8 +23,8 @@ from flask import current_app
 from requests import Request
 from sqlalchemy import func
 
+from business_model.models import Business, Filing, RegistrationBootstrap, db
 from legal_api.core.filing import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap, db
 
 
 @dataclass

@@ -22,8 +22,8 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel
 from flask_cors import cross_origin
 
+from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (  # noqa: I001;
     ACCOUNT_IDENTITY,

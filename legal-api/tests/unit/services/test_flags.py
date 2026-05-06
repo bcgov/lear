@@ -18,7 +18,7 @@ Test-Suite to ensure that the Flag Service is working as expected.
 import pytest
 from flask import Flask
 
-from legal_api.models import User
+from business_model.models import User
 from legal_api.services import Flags
 
 

@@ -18,7 +18,7 @@ from typing import Final
 from flask import current_app
 from pypdf import PdfWriter
 
-from legal_api.models import Furnishing, db
+from business_model.models import Furnishing, db
 from legal_api.reports.report_v2 import ReportTypes, ReportV2
 
 COVER_REPORT_DATE_FORMAT: Final = "%B %d, %Y %I:%M:%S %p"

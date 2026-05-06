@@ -18,8 +18,8 @@ Test suite to ensure that auth functions for digital credentials are working as 
 
 from unittest.mock import patch
 
-from legal_api.models.business import Business
-from legal_api.models.user import User
+from business_model.models.business import Business
+from business_model.models.user import User
 from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
 from legal_api.services.digital_credentials_auth import are_digital_credentials_allowed, get_digital_credentials_preconditions
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
@@ -28,7 +28,7 @@ from tests.unit.services.utils import create_business, helper_create_jwt
 token_json = {'username': 'test'}
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed(mock_rule, mock_user, monkeypatch, app, session, jwt):
     token = helper_create_jwt(
@@ -63,7 +63,7 @@ def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, monkeypa
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt, monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
@@ -82,7 +82,7 @@ def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt,
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, mock_jwt, monkeypatch, app, session, jwt):
     token_json = {'username': 'test'}
@@ -101,7 +101,7 @@ def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, moc
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['proprietor', 'director'])
 def test_get_digital_credentials_preconditions(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -116,7 +116,7 @@ def test_get_digital_credentials_preconditions(mock_preconditions, mock_user, ap
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['proprietor', 'director'])
 def test_get_digital_credentials_preconditions_business_no_name(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -130,7 +130,7 @@ def test_get_digital_credentials_preconditions_business_no_name(mock_preconditio
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=[])
 def test_get_digital_credentials_preconditions_no_user(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -145,7 +145,7 @@ def test_get_digital_credentials_preconditions_no_user(mock_preconditions, mock_
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=[])
 def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -160,7 +160,7 @@ def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_use
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 def test_get_digital_credentials_preconditions_no_user(mock_user, app):
     with app.test_request_context():
         app.app_ctx_globals_class.jwt_oidc_token_info = {'username': 'test'}

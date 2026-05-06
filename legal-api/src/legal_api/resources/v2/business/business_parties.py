@@ -18,7 +18,8 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, PartyClass, PartyRole
+from business_model.models import Business, PartyRole
+from business_model.models.party_class import PartyClassType
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -55,9 +56,9 @@ def get_parties(identifier, party_id=None):  # noqa: PLR0912
         class_type_str = request.args.get("classType")
         if class_type_str:
             try:
-                class_type_enum = PartyClass.PartyClassType[class_type_str.upper()]
+                class_type_enum = PartyClassType[class_type_str.upper()]
             except KeyError:
-                valid_types = [e.name for e in PartyClass.PartyClassType]
+                valid_types = [e.name for e in PartyClassType]
                 return jsonify(
                     {"message": f"Invalid classType '{class_type_str}'. Valid types: {valid_types}"}
                 ), HTTPStatus.BAD_REQUEST

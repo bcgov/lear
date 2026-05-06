@@ -19,7 +19,7 @@ from enum import Enum
 
 from flask import current_app
 
-from legal_api.models import Business, Filing, Party, PartyRole, User
+from business_model.models import Business, Filing, Party, PartyRole, User
 from legal_api.services.digital_credentials_utils import FormattedUser, determine_allowed_business_types
 
 
