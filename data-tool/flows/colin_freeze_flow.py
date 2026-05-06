@@ -18,7 +18,6 @@ colin_freeze_query = """
 UPDATE corporation c
 SET corp_frozen_typ_cd = 'C'
 WHERE c.corp_num IN {corp_nums}
-RETURNING corp_num
 """
 
 colin_add_early_adopters_query = """
