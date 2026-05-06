@@ -12,7 +12,8 @@ from common.extract_tracking_service \
     import ExtractTrackingService as ColinTrackingService, ProcessingStatuses
 
 FLOW_NAME = 'colin-freeze-flow'
-
+ORACLE_IN_LIMIT = 1000
+DEFAULT_ORACLE_CHUNK_SIZE = 1000
 
 colin_freeze_query = """
 UPDATE corporation c
@@ -133,6 +134,16 @@ def convert_to_colin_format(corp_num: str) -> str:
 
 @task(cache_policy=NO_CACHE)
 def update_colin_oracle(config, colin_oracle_engine: Engine, corp_nums: list[str]):
+    if not corp_nums:
+        return []
+
+    if len(corp_nums) > ORACLE_IN_LIMIT:
+        error = ValueError(f'Chunk size {len(corp_nums)} exceeds ORACLE_IN_LIMIT {ORACLE_IN_LIMIT}')
+        return [(corp_num, False, False, error) for corp_num in corp_nums]
+
+    if not config.FREEZE_COLIN_CORPS and not config.FREEZE_ADD_EARLY_ADOPTER:
+        return [(corp_num, False, False, None) for corp_num in corp_nums]
+    
     colin_corp_num_list = [convert_to_colin_format(corp_num) for corp_num in corp_nums]
     with colin_oracle_engine.connect() as conn:
         transaction = conn.begin()
@@ -178,6 +189,9 @@ def colin_freeze_flow():
         config = get_config()
         colin_oracle_engine = colin_oracle_init(config)
         colin_extract_engine = colin_extract_init(config)
+        oracle_chunk_size = getattr(config, 'FREEZE_ORACLE_CHUNK_SIZE', DEFAULT_ORACLE_CHUNK_SIZE)
+        if oracle_chunk_size < 1 or oracle_chunk_size > ORACLE_IN_LIMIT:
+            raise ValueError(f'FREEZE_ORACLE_CHUNK_SIZE must be between 1 and {ORACLE_IN_LIMIT}')
 
         total = get_incomplete_count(config, colin_extract_engine)
         print(f'👷 Statistics: {total} incomplete corps (unprocessed or failed)')
@@ -217,7 +231,7 @@ def colin_freeze_flow():
             print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
 
             futures = []
-            for corp_chunk in colin_oracle_chunks(corp_nums, 999):
+            for corp_chunk in colin_oracle_chunks(corp_nums, oracle_chunk_size):
                 futures.append(
                     update_colin_oracle.submit(
                         config, colin_oracle_engine, corp_chunk)
