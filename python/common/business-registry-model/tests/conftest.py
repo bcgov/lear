@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
-import contextlib
 import os
 from contextlib import contextmanager
 
 import pytest
-import sqlalchemy
 from flask import Flask
 from flask_migrate import Migrate, upgrade
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import event, text
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.functions import now as _sqla_now
 from testcontainers.postgres import PostgresContainer
 
 import business_model_migrations
@@ -29,6 +28,16 @@ from business_model.models import db as _db
 from config import Testing
 
 postgres = PostgresContainer("postgres:16-alpine")
+
+
+# Models default many timestamp columns to ``func.now()`` which Postgres
+# resolves to the transaction start time. Per-test transaction isolation
+# means every row a test creates would share the same timestamp, breaking
+# any ``ORDER BY created_date`` query. Substitute ``clock_timestamp()`` so
+# each row gets a distinct wall-clock value at insert time. Test-only.
+@compiles(_sqla_now, 'postgresql')
+def _compile_now_to_clock_timestamp(element, compiler, **kw):
+    return 'clock_timestamp()'
 
 
 @contextmanager
@@ -93,26 +102,39 @@ def database_setup(database_service, app):
 
 @pytest.fixture(scope='function')
 def session(database_setup):
-    """DB and build tables"""
-   # Connect to the database
+    """Per-test DB session with SAVEPOINT-based isolation.
+
+    Opens a dedicated connection with an outer transaction, starts a
+    SAVEPOINT inside it, and re-issues a fresh SAVEPOINT every time one
+    ends. Production code that commits (every model's `.save()` calls
+    `db.session.commit()`) only releases the inner SAVEPOINT — it
+    never escapes the outer transaction. Teardown rolls back the outer
+    transaction, wiping everything the test wrote.
+    """
     connection = _db.engine.connect()
-
-    # Begin a non-ORM transaction
     transaction = connection.begin()
-    
-    options = dict(bind=connection,
-                   join_transaction_mode="create_savepoint",
-                   binds={})
-    session = _db._make_scoped_session(options=options)
 
-    _db.session = session
+    scoped = _db._make_scoped_session(options=dict(bind=connection, binds={}))
+    _db.session = scoped
 
-    # ping the connection
-    session.execute(text("SET TIME ZONE 'UTC';"))
+    sess = scoped()
+    # Flask-SQLAlchemy's Session.get_bind() ignores the Session's `bind=` and
+    # returns db.engines[None]; force it to use our test connection so writes
+    # land inside the outer transaction we just opened.
+    sess.get_bind = lambda *args, **kwargs: connection
+    sess.begin_nested()
 
-    yield session  # this is where the test runs
+    # Needed for extra save points in factory functions etc.
+    @event.listens_for(sess, 'after_transaction_end')
+    def restart_savepoint(s, trans):
+        if trans.nested and not trans._parent.nested:
+            s.begin_nested()
 
-    # Teardown: close session, rollback transaction, close connection
-    session.close()
+    sess.execute(text("SET TIME ZONE 'UTC';"))
+
+    yield scoped
+
+    event.remove(sess, 'after_transaction_end', restart_savepoint)
+    scoped.close()
     transaction.rollback()
     connection.close()
