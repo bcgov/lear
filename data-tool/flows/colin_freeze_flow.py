@@ -139,10 +139,10 @@ def update_colin_oracle(config, colin_oracle_engine: Engine, corp_nums: list[str
         try:
             frozen_colin_nums = set()
             if config.FREEZE_COLIN_CORPS and colin_corp_num_list:
-                    res1 = conn.execute(
+                    conn.execute(
                         text(colin_freeze_query.format(corp_nums=colin_oracle_corp_num_list_format(colin_corp_num_list)))
                     )
-                    frozen_colin_nums = {res1[0] for res1 in res1.fetchall()}                
+                    frozen_colin_nums = set(colin_corp_num_list)             
                 
             if config.FREEZE_ADD_EARLY_ADOPTER:
                 conn.execute(
