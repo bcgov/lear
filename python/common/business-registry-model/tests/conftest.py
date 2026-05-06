@@ -114,27 +114,28 @@ def session(database_setup):
     connection = _db.engine.connect()
     transaction = connection.begin()
 
-    scoped = _db._make_scoped_session(options=dict(bind=connection, binds={}))
+    options = dict(bind=connection, binds={})
+    scoped = _db._make_scoped_session(options=options)
     _db.session = scoped
 
-    sess = scoped()
+    session = scoped()
     # Flask-SQLAlchemy's Session.get_bind() ignores the Session's `bind=` and
     # returns db.engines[None]; force it to use our test connection so writes
     # land inside the outer transaction we just opened.
-    sess.get_bind = lambda *args, **kwargs: connection
-    sess.begin_nested()
+    session.get_bind = lambda *args, **kwargs: connection
+    session.begin_nested()
 
     # Needed for extra save points in factory functions etc.
-    @event.listens_for(sess, 'after_transaction_end')
+    @event.listens_for(session, 'after_transaction_end')
     def restart_savepoint(s, trans):
         if trans.nested and not trans._parent.nested:
             s.begin_nested()
 
-    sess.execute(text("SET TIME ZONE 'UTC';"))
+    session.execute(text("SET TIME ZONE 'UTC';"))
 
     yield scoped
 
-    event.remove(sess, 'after_transaction_end', restart_savepoint)
+    event.remove(session, 'after_transaction_end', restart_savepoint)
     scoped.close()
     transaction.rollback()
     connection.close()
