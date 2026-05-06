@@ -139,40 +139,30 @@ def update_colin_oracle(config, colin_oracle_engine: Engine, corp_nums: list[str
         transaction = conn.begin()
         try:
             frozen_colin_nums = set()
-            if config.FREEZE_COLIN_CORPS:
+            if config.FREEZE_COLIN_CORPS and colin_corp_num_list:
                     res1 = conn.execute(
                         text(colin_freeze_query.format(corp_nums=colin_oracle_corp_num_list_format(colin_corp_num_list)))
-                    ).fetchall()
-                    frozen_colin_nums = {res1[0] for res1 in res1}                
+                    )
+                    frozen_colin_nums = {res1[0] for res1 in res1.fetchall()}                
                 
             if config.FREEZE_ADD_EARLY_ADOPTER:
-                res2 = conn.execute(
+                conn.execute(
                     text(colin_add_early_adopters_query),
                     [{'corp_num': corp_num} for corp_num in colin_corp_num_list]
                 )
+            transaction.commit()
         except Exception as e:
+            transaction.rollback()
             print(f'❌ Chunk statement error for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(e)}')
-            try:
-                transaction.commit()
-                print(f'⚠️ Chunk statement-error-path commit succeeded for {len(corp_nums)} corps ({corp_nums[:5]})')
-            except Exception as commit_error:
-                print(f'❌ Chunk statement-error-path commit failed for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(commit_error)}')
             return [
                 (
                     corp_num,
-                    convert_to_colin_format(corp_num) in frozen_colin_nums if config.FREEZE_COLIN_CORPS else False,
+                    False,
                     False,
                     e,
                 )
                 for corp_num in corp_nums
             ]
-
-        try:
-            transaction.commit()
-        except Exception as e:
-            print(f'❌ Chunk commit error for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(e)}')
-            return [(corp_num, False, False, e) for corp_num in corp_nums]
-
         results = []
         for original_corp_num, colin_corp_num in zip(corp_nums, colin_corp_num_list):
             frozen = colin_corp_num in frozen_colin_nums if config.FREEZE_COLIN_CORPS else False
