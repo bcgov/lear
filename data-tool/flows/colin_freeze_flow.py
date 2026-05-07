@@ -3,6 +3,7 @@ from prefect import flow, task
 from common.init_utils import colin_extract_init, colin_oracle_init, get_config
 from common.colin_utils import colin_oracle_chunks, colin_oracle_corp_num_list_format
 from sqlalchemy import Engine, text
+from prefect.task_runners import ConcurrentTaskRunner
 
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
@@ -182,6 +183,7 @@ def update_colin_oracle(config, colin_oracle_engine: Engine, corp_nums: list[str
 
 @flow(
     name='Colin-Freeze-Flow',
+    task_runner=ConcurrentTaskRunner(max_workers=10),
     log_prints=True,
 )
 def colin_freeze_flow():
