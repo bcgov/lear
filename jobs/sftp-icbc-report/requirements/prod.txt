@@ -1,5 +1,5 @@
 Flask==2.3.3
-paramiko==3.3.1
+paramiko==4.0.0
 papermill==2.6.0
 pg8000==1.31.4
 pandas==2.3.1
