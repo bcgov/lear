@@ -726,19 +726,24 @@ def test_validate_certified_by_coops(
     (False, True),
     (None, True),
 ])
-@pytest.mark.parametrize('filing_type, requires_authorization', [
-    (CoreFiling.FilingTypes.ALTERATION, True),
-    (CoreFiling.FilingTypes.ANNUALREPORT, True),
-    (CoreFiling.FilingTypes.REGISTRARSORDER, False), # staff filing
-    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False),  # not in FILINGS_REQUIRING_AUTHORIZATION
+@pytest.mark.parametrize('filing_type, requires_authorization, dissolution_type', [
+    (CoreFiling.FilingTypes.ALTERATION, True, None),
+    (CoreFiling.FilingTypes.ANNUALREPORT, True, None),
+    (CoreFiling.FilingTypes.DISSOLUTION, True, "voluntary"),
+    (CoreFiling.FilingTypes.DISSOLUTION, False, "administrative"),
+    (CoreFiling.FilingTypes.REGISTRARSORDER, False, None),  # staff filing
+    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None),  # not in FILINGS_REQUIRING_AUTHORIZATION
 ])
-def test_validate_authorization_received(session, legal_type, authorization_received, expected_error, filing_type, requires_authorization):
-    """Test that authorizationReceived is enforced for Corps filings in FILINGS_REQUIRING_AUTHORIZATION only."""
+def test_validate_authorization_received(session, legal_type, authorization_received, expected_error, filing_type, requires_authorization, dissolution_type):
+    """Test that authorizationReceived is enforced for required Corps filings."""
     filing = copy.deepcopy(FILING_HEADER)
     if authorization_received is not None:
         filing['filing']['header']['authorizationReceived'] = authorization_received
     else:
         filing['filing']['header'].pop('authorizationReceived', None)
+
+    if dissolution_type:
+        filing['filing']['dissolution'] = {'dissolutionType': dissolution_type}
 
     errors = validate_authorization_received(filing, filing_type, legal_type)
 
