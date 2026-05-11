@@ -1572,6 +1572,61 @@ def test_series_allows_value_word(session):
     assert len(reserved_word_errors) == 0
 
 
+@pytest.mark.parametrize('par_value, expected_error', [
+    # valid values
+    (1, None),
+    (1.0, None),
+    (0.875, None),
+    (1.234567890123456, None),       # exactly 16 significant digits
+    (100, None),                     # trailing zeros count as 1 significant digit
+    (100000000000000000, None),      # 18 chars, 1 significant digit
+    (1e-30, None),                   # small magnitude within limits
+    # required
+    (None, 'must specify par value'),
+    # not a valid number (NaN/Inf and bools rejected)
+    (float('nan'), 'Must be a valid number'),
+    (float('inf'), 'Must be a valid number'),
+    (float('-inf'), 'Must be a valid number'),
+    (True, 'Must be a valid number'),
+    (False, 'Must be a valid number'),
+    # must be greater than 0
+    (0, 'Must be greater than 0'),
+    (-1, 'Must be greater than 0'),
+    (-0.5, 'Must be greater than 0'),
+    # plain-decimal length cap (38 chars)
+    (10**38, 'Maximum 38 characters'),          # 39-digit integer
+    (1e38, 'Maximum 38 characters'),
+    (1e-38, 'Maximum 38 characters'),
+    # significant digits cap (16)
+    (12345678901234567, 'Too many significant digits'),         # 17 sig digits
+    (1234567890123456789, 'Too many significant digits'),       # 19 sig digits
+])
+def test_share_class_par_value_validation(session, par_value, expected_error):
+    """Par value validation aligns with business-create-ui / business-edit-ui ShareStructure rules."""
+    share_class = {
+        'name': 'Class A Shares',
+        'hasMaximumShares': False,
+        'hasParValue': True,
+        'parValue': par_value,
+        'currency': 'CAD',
+        'hasRightsOrRestrictions': False,
+        'series': []
+    }
+    memoize_names = []
+
+    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+    par_value_errors = [
+        e for e in result
+        if e.get('path') == '/filing/incorporationApplication/shareClasses/0/parValue/'
+    ]
+
+    if expected_error is None:
+        assert par_value_errors == [], f'Expected no par value errors, got: {par_value_errors}'
+    else:
+        assert any(expected_error in e['error'] for e in par_value_errors), \
+            f"Expected '{expected_error}' in errors, got: {par_value_errors}"
+
+
 def test_valid_share_structure(session):
     """Test a completely valid share structure."""
     filing_json = {
@@ -1805,15 +1860,30 @@ def test_share_structure_empty_share_classes_allowed_for_non_ia(session):
     assert result is None
 
 @pytest.mark.parametrize("max_shares,expected_error", [
+    # valid values
+    (1, None),
+    (10000, None),
+    (9999999999999999, None),         # 16 digits, 16 significant digits (max sig digits)
+    (1234567890123456, None),         # 16 digits, 16 significant digits
+    (10**19, None),                   # 20 digits, 1 significant digit (max length, trailing zeros)
+    (10**15, None),                   # 16 digits, 1 significant digit
+    # required
     (None, "must provide value for maximum number of shares"),
+    # not a whole number
     ("1000", "Must be a whole number"),
     (10.5, "Must be a whole number"),
     (True, "Must be a whole number"),
+    # must be greater than 0
     (0, "Number must be greater than 0"),
     (-5, "Number must be greater than 0"),
-    (10**16, "Number must be less than 16 digits"),
+    # digit length cap (20)
+    (10**20, "Maximum 20 characters"),                                # 21 digits
+    # significant digits cap (16)
+    (12345678901234567, "Too many significant digits"),           # 17 sig digits
+    (int("9" * 17), "Too many significant digits"),               # 17 sig digits
 ])
 def test_share_class_max_number_of_shares_validation(session, max_shares, expected_error):
+    """Max number of shares validation aligns with business-create-ui / business-edit-ui ShareStructure rules."""
     share_class = {
         'name': 'Class A Shares',
         'hasMaximumShares': True,
@@ -1824,22 +1894,44 @@ def test_share_class_max_number_of_shares_validation(session, max_shares, expect
     }
     memoize_names = []
     result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
-    assert any(expected_error in e.get('error', '') for e in result)
+    max_shares_errors = [
+        e for e in result
+        if e.get('path') == '/filing/incorporationApplication/shareClasses/0/maxNumberOfShares/'
+    ]
+
+    if expected_error is None:
+        assert max_shares_errors == [], f'Expected no max shares errors, got: {max_shares_errors}'
+    else:
+        assert any(expected_error in e['error'] for e in max_shares_errors), \
+            f"Expected '{expected_error}' in errors, got: {max_shares_errors}"
 
 @pytest.mark.parametrize("max_shares,expected_error", [
+    # valid values (class max is 10**19, the largest class cap allowed by the validator)
+    (1, None),
+    (5000, None),
+    (10**19, None),                   # 20 digits, 1 significant digit
+    (int("9" * 16), None),            # 16 sig digits (max)
+    # required
     (None, "must provide value for maximum number of shares"),
+    # not a whole number
     ("1000", "Must be a whole number"),
     (10.5, "Must be a whole number"),
     (True, "Must be a whole number"),
+    # must be greater than 0
     (0, "Number must be greater than 0"),
     (-5, "Number must be greater than 0"),
-    (10**16, "Number must be less than 16 digits"),
+    # digit length cap (20)
+    (10**20, "Maximum 20 characters"),
+    # significant digits cap (16)
+    (12345678901234567, "Too many significant digits"),
+    (int("9" * 17), "Too many significant digits"),
 ])
 def test_share_series_max_number_of_shares_validation(session, max_shares, expected_error):
+    """Series maxNumberOfShares validation aligns with business-create-ui / business-edit-ui ShareStructure rules."""
     share_class = {
         'name': 'Class A Shares',
         'hasMaximumShares': True,
-        'maxNumberOfShares': 10000,
+        'maxNumberOfShares': 10**19,   # max valid class cap (20 digits, 1 sig digit) — large enough not to bound series cases
         'hasParValue': False,
         'hasRightsOrRestrictions': True,
         'series': [{
@@ -1849,7 +1941,16 @@ def test_share_series_max_number_of_shares_validation(session, max_shares, expec
         }]
     }
     result = validate_series(share_class, 'incorporationApplication', 0)
-    assert any(expected_error in e.get('error', '') for e in result)
+    series_errors = [
+        e for e in result
+        if e.get('path') == '/filing/incorporationApplication/shareClasses/0/series/0/maxNumberOfShares'
+    ]
+
+    if expected_error is None:
+        assert series_errors == [], f'Expected no series max shares errors, got: {series_errors}'
+    else:
+        assert any(expected_error in e['error'] for e in series_errors), \
+            f"Expected '{expected_error}' in errors, got: {series_errors}"
 
 
 # === validate_share_currency tests ===
