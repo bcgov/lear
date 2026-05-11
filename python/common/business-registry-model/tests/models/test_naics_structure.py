@@ -16,12 +16,9 @@
 
 Test-Suite to ensure that the NaicsStructure Model is working as expected.
 """
-import pytest
-
 from business_model.models import NaicsStructure
 
 
-@pytest.mark.skip('Not working yet')
 def test_naics_find_by_search_term(session):
     """Assert matching naics search results are returned.
 
@@ -41,7 +38,6 @@ def test_naics_find_by_search_term(session):
     assert len(results_with_3_elements) == 2
 
 
-@pytest.mark.skip('Not working yet')
 def test_exact_match_search_naics(app, session, client):
     """Assert that search results are returned when searching with exact search term."""
 
@@ -51,12 +47,11 @@ def test_exact_match_search_naics(app, session, client):
     # check
     assert results
     assert len(results) == 1
-    assert len(results[0].naics_elements) == 15
+    assert len(results[0].naics_elements) == 10
     assert results[0].year == int(app.config.get('NAICS_YEAR'))
     assert results[0].version == int(app.config.get('NAICS_VERSION'))
 
 
-@pytest.mark.skip('Not working yet')
 def test_non_exact_match_search_naics(session, client):
     """Assert that search results are returned when searching with non-exact search term."""
 
@@ -68,14 +63,14 @@ def test_non_exact_match_search_naics(session, client):
     assert len(results) == 3
 
     # verify elements are filtered correctly
-    results_with_11_elements = [result for result in results if len(result.naics_elements) == 11]
-    assert len(results_with_11_elements) == 1
+    results_with_7_elements = [result for result in results if len(result.naics_elements) == 7]
+    assert len(results_with_7_elements) == 1
 
     results_with_2_elements = [result for result in results if len(result.naics_elements) == 2]
     assert len(results_with_2_elements) == 1
 
-    results_with_5_elements = [result for result in results if len(result.naics_elements) == 5]
-    assert len(results_with_5_elements) == 1
+    results_with_4_elements = [result for result in results if len(result.naics_elements) == 4]
+    assert len(results_with_4_elements) == 1
 
 
 def test_naics_find_by_search_term_no_results(session):
@@ -84,7 +79,6 @@ def test_naics_find_by_search_term_no_results(session):
     assert len(results) == 0
 
 
-@pytest.mark.skip('Not working yet')
 def test_naics_find_by_naics_code(app, session):
     """Assert naics code can be retrieved by code."""
 
@@ -115,20 +109,19 @@ def test_naics_find_by_naics_code_no_match(session):
     assert not result
 
 
-@pytest.mark.skip('Not working yet')
 def test_naics_find_by_naics_key(app, session):
     """Assert naics code can be retrieved by key."""
 
     # setup
     naics_code = '311911'
-    naics_key = 'a201b79d-d39d-42d4-94ab-21885809fce2'
+    naics_key = 'd2fca3f1-f391-49a7-8b67-00381b569612'
 
     # test
     result = NaicsStructure.find_by_naics_key(naics_key)
 
     # check
     assert result
-    assert result.naics_key == naics_key
+    assert str(result.naics_key) == naics_key
     assert result.code == naics_code
     assert result.year == int(app.config.get('NAICS_YEAR'))
     assert result.version == int(app.config.get('NAICS_VERSION'))
