@@ -9,9 +9,11 @@ from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers, get_updated_identifiers_for_batch
+from common.init_utils import colin_oracle_init, get_config
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -65,8 +67,8 @@ def _reset_extract_postgres_db() -> None:
 def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
-@task(name='Get-Updated-Identifiers-Colin')
-def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> list[dict]:
+@task(name='Get-Updated-Identifiers-Colin', cache_policy=NO_CACHE)
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
@@ -78,7 +80,7 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> l
     corp_list = row[0] if row else None
     
     colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE).connect() as conn:
+    with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
     return rows
@@ -94,6 +96,7 @@ def run_cprd_subset_extract_generator(
     pg_disable_method: str,
     out: str | None,
     include_cp: bool = False,
+    target_connection: str = 'ctst_pg'
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
@@ -115,6 +118,7 @@ def run_cprd_subset_extract_generator(
         '--pg-disable-method',
         pg_disable_method,
     ]
+    argv.extend(['--target-connection', target_connection])
     if pg_fastload:
         argv.append('--pg-fastload')
     if include_cp:
@@ -150,12 +154,13 @@ def extract_pull_flow(
     chunk_size: int = 900,
     threads: int = 4,
     pg_fastload: bool = False,
-    pg_disable_method: str = 'replica_role',
+    pg_disable_method: str = 'table_triggers',
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
+    target_connection: str = 'ctst_pg',
 ) -> None:
     """
     Generate files
@@ -176,36 +181,44 @@ def extract_pull_flow(
         include_cp=include_cp,
         pg_disable_method=pg_disable_method,
         out=out,
+        target_connection=target_connection,
     )
     if result.returncode != 0:
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
 
     cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=128)
+
+    config = get_config()
+    colin_oracle_engine = colin_oracle_init(config)
+    
+    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
     print(f'Colin updated identifiers : {len(updated_rows)} rows')
-    if run_dbschemacli:
-        master_script = _resolve_master_script_path(out=out)
-        run_result = run_dbschemacli_task(
-            master_script=str(master_script),
-            dbschemacli_cmd=dbschemacli_cmd,
-        )
-        if run_result.returncode != 0:
-            raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+    for row in updated_rows:
+        print(row)
+    # if run_dbschemacli:
+    #     master_script = _resolve_master_script_path(out=out)
+    #     run_result = run_dbschemacli_task(
+    #         master_script=str(master_script),
+    #         dbschemacli_cmd=dbschemacli_cmd,
+    #     )
+    #     if run_result.returncode != 0:
+    #         raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
 
     
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
-    p.add_argument('corp_file', help='Path to newline-delimited corp identifiers')
-    p.add_argument('--mode', default='load', choices=('refresh', 'load'))
+    p.add_argument('--corp_file', default='../delta_ctst.txt', help='Path to newline-delimited corp identifiers')
+    p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
     p.add_argument('--include-cp', action='store_true', help='Include corp type CP in subset extract queries')
-    p.add_argument('--pg-disable-method', default='replica_role', choices=('table_triggers', 'replica_role'))
-    p.add_argument('--out', default=None, help='Output path for generated master script.')
-    p.add_argument('--run-dbschemacli', action='store_true')
+    p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
+    p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
+    p.add_argument('--run-dbschemacli', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
+    p.add_argument('--target-connection', default='ctst_pg')
     extract_pull_flow(**vars(p.parse_args()))

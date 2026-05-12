@@ -1,4 +1,7 @@
 
+from sqlalchemy import text
+
+
 def get_updated_identifiers(timestamp: str, corp_list: str) -> str:
     if not str(corp_list).strip():
         raise ValueError('empty corp_list')
@@ -19,10 +22,9 @@ def get_updated_identifiers(timestamp: str, corp_list: str) -> str:
                 ORDER BY e.event_timestmp DESC, e.event_id DESC
                 ) AS rn
         FROM event e
-        JOIN (SELECT column_value AS corp_num
-                FROM corp_list c
+        JOIN corp_list c
             ON c.corp_num = e.corp_num
-        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '1' HOUR
+        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '5' HOUR
         AND NOT (
             EXISTS (
             SELECT 1
@@ -36,9 +38,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str) -> str:
             WHERE cea.corp_num = e.corp_num
             )
         )
-    ) 
-    
-    SELECT le.EVENT_ID,
+    ) SELECT le.EVENT_ID,
         le.corp_num,
         le.event_typ_cd,
         le.event_timestmp,
