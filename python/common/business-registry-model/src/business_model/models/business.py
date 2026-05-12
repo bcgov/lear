@@ -851,7 +851,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @classmethod
     def get_expired_restoration(cls):
         """Return all identifier with an expired restoration_expiry_date."""
-        businesses = (db.session.query(Business.identifier)
+        businesses = (db.session.query(Business.identifier, Business.legal_type)
                       .filter(Business.restoration_expiry_date <= datetime.utcnow())
                       .all())
         return businesses
