@@ -14,20 +14,20 @@
 
 """Tests to assure the colin sync end-point."""
 import copy
-from datetime import datetime
 from http import HTTPStatus
 
-import pytest
+from sqlalchemy import text
+
+from business_model.models import Business, Filing, PartyRole
+from business_model.models.colin_event_id import ColinEventId
+from business_model.models.db import VersioningProxy
+from legal_api.services.authz import COLIN_SVC_ROLE
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CORRECTION_AR,
     CORRECTION_COL,
     CORRECTION_COR
 )
-
-from business_model.models import Business, Filing, PartyRole
-from business_model.models.colin_event_id import ColinEventId
-from legal_api.services.authz import COLIN_SVC_ROLE
 from tests.unit.services.utils import create_header
 from tests.unit.models import (
     factory_address,
@@ -134,12 +134,12 @@ def test_get_colin_last_update(session, client, jwt):
     """Assert the get endpoint for ColinLastUpdate returns last updated colin id."""
     # setup
     colin_id = 1234
-    db.session.execute(
+    db.session.execute(text(
         f"""
         insert into colin_last_update (last_update, last_event_id)
         values (current_timestamp, {colin_id})
         """
-    )
+    ))
 
     rv = client.get('/api/v2/businesses/internal/filings/colin_id',
                     headers=create_header(jwt, [COLIN_SVC_ROLE]))
@@ -205,6 +205,11 @@ def test_get_completed_filings_for_colin_corps_correction(session, client, jwt):
             )
             b.party_roles.append(party_role)
             b.save()
+        # need to set the filing transaction id to match the transaction id of the last 'save'
+        # - symptom of having separate transactions per 'save' during the test setup
+        # - in reality these are set to the same id during the filer processing
+        filing.transaction_id = VersioningProxy.get_transaction_id(db.session()) - 1
+        filing.save()
 
     assert filing_col.status == Filing.Status.COMPLETED.value
     assert filing_cor.status == Filing.Status.COMPLETED.value

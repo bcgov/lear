@@ -30,7 +30,6 @@ from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
 from html_sanitizer import Sanitizer  # noqa: I001;
 from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
-from pydantic.generics import GenericModel
 from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
 from werkzeug.local import LocalProxy
 
@@ -86,7 +85,7 @@ class QueryModel(BaseModel):
 FilingT = TypeVar("FilingT")
 
 
-class FilingModel(GenericModel, Generic[FilingT]):
+class FilingModel(BaseModel, Generic[FilingT]):
     """Generic model to alow pydantic validation."""
 
     data: Optional[FilingT] = None
@@ -123,7 +122,7 @@ def get_filings(identifier: str, filing_id: Optional[int] = None):
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["POST", "PUT"])
 @cross_origin(origin="*")
 @jwt.requires_auth
-@pydantic_validate()
+@pydantic_validate(get_json_params={'silent': True})
 def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
                    query: QueryModel,
                    identifier,
@@ -135,7 +134,8 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
     err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing, request, business)
     if err_msg:
         return jsonify({"errors": [err_msg, ]}), err_code
-    json_input = copy.deepcopy(request.get_json())  # used for validation
+
+    json_input = copy.deepcopy(request.get_json(silent=True))  # used for validation
     ListFilingResource.modify_filing_json(json_input, filing)
 
     # check authorization
@@ -537,7 +537,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:
         """Perform basic checks to ensure put can do something."""
-        json_input = client_request.get_json()
+        json_input = client_request.get_json(silent=True)
         if not json_input:
             return ({"message":
                      f"No filing json data in body of post for {identifier}."},

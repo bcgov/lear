@@ -60,13 +60,19 @@ def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: 
 def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user', **kwargs):
     """Return a header containing a JWT bearer token."""
     token = helper_create_jwt(jwt_manager, roles=roles, username=username)
-    headers = {**kwargs, **{'Authorization': 'Bearer ' + token}}
+    headers = {
+        'content-type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+        **kwargs,
+    }
     return headers
 
 
 @contextmanager
-def jwt_request_context(app, jwt_manager: JwtManager,
-                        roles: List[str] = [], username: str = 'test-user',
+def jwt_request_context(app,
+                        jwt_manager: JwtManager,
+                        roles: List[str] = [],
+                        username: str = 'test-user',
                         account_id: str = '1'):
     """Push a Flask request context with a valid JWT and populate
     request_ctx.current_user the way the @jwt.has_one_of_roles decorator

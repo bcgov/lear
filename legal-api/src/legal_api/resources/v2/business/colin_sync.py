@@ -20,7 +20,7 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 
 from business_model.models import (
     Address,
@@ -424,12 +424,12 @@ def get_colin_event_id(colin_id=None):
         current_app.logger.Error(f"Failed to get last updated colin event id: {err!r}")
         raise err
 
-    query = db.session.execute(
+    query = db.session.execute(text(
         """
         select last_event_id from colin_last_update
         order by id desc
         """
-    )
+    ))
     last_event_id = query.fetchone()
     if not last_event_id or not last_event_id[0]:
         return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
@@ -442,7 +442,7 @@ def get_colin_event_id(colin_id=None):
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_last_event_id(identifier):
     """Get the last colin event id for the identifier."""
-    query = db.session.execute(
+    query = db.session.execute(text(
         f"""
         select max(colin_event_id) from colin_event_ids
             join filings on filings.id = colin_event_ids.filing_id
@@ -450,7 +450,7 @@ def get_last_event_id(identifier):
         where businesses.identifier = '{identifier}'
         limit 1
         """
-    )
+    ))
     last_event_id = query.scalar()
     if not last_event_id:
         return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
@@ -464,12 +464,12 @@ def get_last_event_id(identifier):
 def update_colin_event_id(colin_id):
     """Add a row to the colin_last_update table."""
     try:
-        db.session.execute(
+        db.session.execute(text(
             f"""
             insert into colin_last_update (last_update, last_event_id)
             values (current_timestamp, {colin_id})
             """
-        )
+        ))
         db.session.commit()
         return get_colin_event_id()
 

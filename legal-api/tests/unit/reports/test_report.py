@@ -407,8 +407,7 @@ def test_document_service_not_create_document(session, mock_doc_service, mocker)
     assert report
     document_service = DocumentService()
     try:
-        document_service.get_document('BC9999999',
-                                      report._filing.id,
+        document_service.get_document(report._filing.id,
                                       'annualReport',
                                       '3113')
         # Expectation is that the above call SHOULD fail in this case as document was not created

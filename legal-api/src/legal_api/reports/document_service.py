@@ -116,9 +116,8 @@ class DocumentService:
 
     def has_document(
       self,
-      business_identifier: str,
       filing_identifier: int,
-      report_type: str):
+      report_type: str) -> Document | bool:
         """
         Check if a document exists in the document service.
 
@@ -128,12 +127,11 @@ class DocumentService:
         account_id: The account id.
         return: True if the document exists, False otherwise.
         """
-        business_id = Business.find_by_identifier(business_identifier).id
-        document = Document.find_one_by(
-          business_id,
+        document = Document.find_all_by(
           filing_identifier,
           report_type)
-        return document if document else False
+        # Return first element - should never be more than 1
+        return document[0] if document else False
 
     # pylint: disable=too-many-arguments
     def create_document(
@@ -152,7 +150,7 @@ class DocumentService:
         account_id: The account id.
         binary_or_url: The binary (pdf) or url of the document.
         """
-        if self.has_document(business_identifier, filing_identifier, report_type):
+        if self.has_document(filing_identifier, report_type):
             raise BusinessException("Document already exists", HTTPStatus.CONFLICT)
         headers = self._get_request_headers(account_id)
         filename: str = f"{business_identifier}_{filing_identifier}_{report_type}.pdf"
@@ -175,7 +173,6 @@ class DocumentService:
     # pylint: disable=too-many-arguments
     def get_document(
       self,
-      business_identifier: str,
       filing_identifier: int,
       report_type: str,
       account_id: str,
@@ -195,7 +192,7 @@ class DocumentService:
         if file_key is not None:
             get_url = f"{url}/application-reports/{self.product_code}/{file_key}"
         else:
-            document = self.has_document(business_identifier, filing_identifier, report_type)
+            document = self.has_document(filing_identifier, report_type)
             if document is False:
                 raise BusinessException("Document not found", HTTPStatus.NOT_FOUND)
             get_url = f"{url}/application-reports/{self.product_code}/{document.file_key}"

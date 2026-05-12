@@ -239,7 +239,7 @@ def set_ar_reminder(identifier):
 
 @bp.route("/search", methods=["POST"])
 @cross_origin(origin="*")
-# @jwt.requires_roles([SYSTEM_ROLE])
+@jwt.requires_roles([SYSTEM_ROLE])
 def search_businesses():
     """Return the list of businesses and draft businesses."""
     try:

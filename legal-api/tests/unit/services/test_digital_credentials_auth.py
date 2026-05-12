@@ -23,41 +23,23 @@ from business_model.models.user import User
 from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
 from legal_api.services.digital_credentials_auth import are_digital_credentials_allowed, get_digital_credentials_preconditions
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
-from tests.unit.services.utils import create_business, helper_create_jwt
+from tests.unit.services.utils import create_business, jwt_request_context
 
 token_json = {'username': 'test'}
 
 
 @patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed(mock_rule, mock_user, monkeypatch, app, session, jwt):
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        app.app_ctx_globals_class.jwt_oidc_token_info = token_json
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
+def test_are_digital_credentials_allowed(mock_rule, mock_user, app, session, jwt):
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is True
 
 
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, monkeypatch, app, session, jwt):
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
+def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, app, session, jwt):
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': None}
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
@@ -65,18 +47,9 @@ def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, monkeypa
 
 @patch('business_model.models.User.find_by_jwt_token', return_value=None)
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt, monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
+def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt, app, session, jwt):
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         app.app_ctx_globals_class.jwt_oidc_token_info = token_json
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
@@ -84,19 +57,8 @@ def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt,
 
 @patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, mock_jwt, monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[STAFF_ROLE], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        app.app_ctx_globals_class.jwt_oidc_token_info = token_json
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
+def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, mock_jwt, app, session, jwt):
+    with jwt_request_context(app, jwt, [STAFF_ROLE], token_json['username']):
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
 

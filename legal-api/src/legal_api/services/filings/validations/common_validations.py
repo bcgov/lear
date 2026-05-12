@@ -1567,6 +1567,8 @@ def validate_permission_and_completing_party(business: Optional[Business], filin
     completing_party_exists = has_completing_party(filing_json, filing_type)
     completing_party_result = None
     account_id = None
+    print('get_request_context()', get_request_context())
+    print(hasattr(request, "headers"))
     if get_request_context() and hasattr(request, "headers"):
         account_id = request.headers.get("account-id",
                                             request.headers.get("accountId", None))

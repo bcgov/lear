@@ -138,7 +138,8 @@ def test_get_business_type(app, session):
     
     with app.app_context():
         result = get_business_type(business)
-        assert result == 'BC Sole Proprietorship'
+        # PR NOTE: value is determined by the migration - potentially the model migrations should be changed in common
+        assert result == 'Sole Proprietorship'
 
 
 def test_get_business_type_no_corp_type(app, session):

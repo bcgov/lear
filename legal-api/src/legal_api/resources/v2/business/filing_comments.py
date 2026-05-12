@@ -18,7 +18,7 @@ Provides all the search and retrieval from the business entity datastore.
 import datetime
 from http import HTTPStatus
 
-from flask import g, jsonify, request
+from flask import Request, g, jsonify, request
 from flask_cors import cross_origin
 
 from business_model.models import Business, Comment, Filing, User, db
@@ -46,8 +46,10 @@ def not_allowed_filing_comments(identifier, filing_id, comment_id=None):  # pyli
 @jwt.requires_auth
 def get_filing_comments(identifier, filing_id, comment_id=None):
     """Return a JSON object with meta information about the Service."""
+    print('get_filing_comments')
     # basic checks
     err_msg, err_code = _basic_checks(identifier, filing_id, request)
+    print(f'_basic_checks {err_msg}, {err_code}')
     if err_msg:
         return jsonify(err_msg), err_code
 
@@ -117,9 +119,9 @@ def post_filing_comments(identifier, filing_id):
     return jsonify(comment.json), HTTPStatus.CREATED
 
 
-def _basic_checks(identifier, filing_id, client_request) -> tuple[dict, int]:
+def _basic_checks(identifier, filing_id, client_request: Request) -> tuple[dict, int]:
     """Perform basic checks to ensure put can do something."""
-    json_input = client_request.get_json()
+    json_input = client_request.get_json(silent=True)
     if client_request.method == "POST" and not json_input:
         return ({"message": f"No filing json data in body of post for {identifier}."},
                 HTTPStatus.BAD_REQUEST)

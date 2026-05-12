@@ -17,6 +17,7 @@ from typing import Final
 
 from flask import current_app
 from pypdf import PdfWriter
+from sqlalchemy import text
 
 from business_model.models import Furnishing, db
 from legal_api.reports.report_v2 import ReportTypes, ReportV2
@@ -95,4 +96,4 @@ class FurnishingDocumentsService:
 
     @staticmethod
     def _get_batch_custom_identifier() -> int:
-        return db.session.execute("SELECT nextval('batch_custom_identifier')").scalar()
+        return db.session.execute(text("SELECT nextval('batch_custom_identifier')")).scalar()

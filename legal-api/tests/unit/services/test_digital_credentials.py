@@ -213,7 +213,8 @@ def assert_credential_data(credential_data, business_user, expected):
         'user': test_user,
         'user_extra': test_user_extra
     }, base_expected + [
-        {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
+        # PR NOTE: value for business_type is determined by the migration - potentially the model migrations should be changed in common
+        {'name': 'business_type', 'value': 'Sole Proprietorship'},
         {'name': 'role', 'value': 'Proprietor'}
     ]),
     # In this second test the user does not have a business party role
@@ -243,7 +244,8 @@ def assert_credential_data(credential_data, business_user, expected):
         {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
         {'name': 'business_name', 'value': ''},
-        {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
+        # PR NOTE: value for business_type is determined by the migration - potentially the model migrations should be changed in common
+        {'name': 'business_type', 'value': 'Sole Proprietorship'},
         {'name': 'cra_business_number', 'value': ''},
         {'name': 'registered_on_dateint', 'value': '19700101'},
         {'name': 'company_status', 'value': 'HISTORICAL'},
@@ -294,7 +296,8 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         'user': test_user,
         'user_extra': test_user_extra,
     }, base_expected + [
-        {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
+        # PR NOTE: value for business_type is determined by the migration - potentially the model migrations should be changed in common
+        {'name': 'business_type', 'value': 'Sole Proprietorship'},
         {'name': 'role', 'value': 'Proprietor'}
     ]),
     # In this second test the user does not have a business party role but has a filing party role
@@ -324,7 +327,8 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         {'name': 'credential_id', 'value': ''},
         {'name': 'identifier', 'value': 'FM1234567'},
         {'name': 'business_name', 'value': ''},
-        {'name': 'business_type', 'value': 'BC Sole Proprietorship'},
+        # PR NOTE: value for business_type is determined by the migration - potentially the model migrations should be changed in common
+        {'name': 'business_type', 'value': 'Sole Proprietorship'},
         {'name': 'cra_business_number', 'value': ''},
         {'name': 'registered_on_dateint', 'value': '19700101'},
         {'name': 'company_status', 'value': 'HISTORICAL'},

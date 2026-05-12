@@ -97,13 +97,13 @@ def test_business_comment_json_output(session, client, jwt):
     with freeze_time(now):
         factory_business_comment(b, 'some specific text', u)
 
-        rv = client.get(f'/api/v2/businesses/{identifier}/comments',
-                        headers=create_header(jwt, [STAFF_ROLE]))
+    rv = client.get(f'/api/v2/businesses/{identifier}/comments',
+                    headers=create_header(jwt, [STAFF_ROLE]))
 
-        assert HTTPStatus.OK == rv.status_code
-        assert 'some specific text' == rv.json.get('comments')[0].get('comment').get('comment')
-        assert 'firstname lastname' == rv.json.get('comments')[0].get('comment').get('submitterDisplayName')
-        assert now.isoformat() == rv.json.get('comments')[0].get('comment').get('timestamp')
+    assert HTTPStatus.OK == rv.status_code
+    assert 'some specific text' == rv.json.get('comments')[0].get('comment').get('comment')
+    assert 'firstname lastname' == rv.json.get('comments')[0].get('comment').get('submitterDisplayName')
+    assert now.isoformat() == rv.json.get('comments')[0].get('comment').get('timestamp')
 
 
 def test_get_comments_invalid_business_error(session, client, jwt):

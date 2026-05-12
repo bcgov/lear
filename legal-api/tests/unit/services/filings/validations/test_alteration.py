@@ -694,10 +694,11 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
-            HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
-                'path': '/filing/header/effectiveDate'
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
+            HTTPStatus.UNPROCESSABLE_CONTENT, [{
+                'path': 'filing/header/effectiveDate',
+                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                'context': []
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{

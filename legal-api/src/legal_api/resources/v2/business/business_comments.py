@@ -109,7 +109,7 @@ def post_comments(identifier):
 
 def _basic_checks(identifier: str, business: Business, client_request) -> tuple[dict, int]:
     """Perform basic checks to ensure put can do something."""
-    json_input = client_request.get_json()
+    json_input = client_request.get_json(silent=True)
     if client_request.method == "POST" and not json_input:
         return ({"message": f"No comment json data in body of post for {identifier}."},
                 HTTPStatus.BAD_REQUEST)
