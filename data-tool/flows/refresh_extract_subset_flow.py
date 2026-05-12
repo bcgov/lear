@@ -170,7 +170,11 @@ def extract_pull_flow(
         print('Running in refresh mode: skipping Postgres DB reset')
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
-
+    # Get Identifiers
+    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
+    print(f'Colin updated identifiers : {len(updated_rows)} rows')
+    for row in updated_rows:
+        print(row)
     print(f'Running CPRD subset extract generator {corp_file}')
     result = run_cprd_subset_extract_generator(
         corp_file=corp_file,
@@ -192,10 +196,6 @@ def extract_pull_flow(
     config = get_config()
     colin_oracle_engine = colin_oracle_init(config)
     
-    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
-    print(f'Colin updated identifiers : {len(updated_rows)} rows')
-    for row in updated_rows:
-        print(row)
     # if run_dbschemacli:
     #     master_script = _resolve_master_script_path(out=out)
     #     run_result = run_dbschemacli_task(
