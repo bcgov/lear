@@ -9,7 +9,7 @@ def convert_result_set_to_dict(rs):
     result_dict = df.to_dict('records')
     return result_dict
 
-def corpnum_to_oracle_ids(target_ids: Sequence[str]) -> List[str]:
+def corpnum_to_oracle_ids(target_ids: str | bytes | tuple | list | None) -> List[str]:
     """
     Convert TARGET/Postgres corp ids into Oracle corporation.corp_num values.
 
@@ -18,6 +18,23 @@ def corpnum_to_oracle_ids(target_ids: Sequence[str]) -> List[str]:
 
     De-dupe while preserving order (avoid wasting Oracle IN-list slots).
     """
+    if target_ids is None:
+        return None
+    
+    if isinstance(target_ids, (tuple, list)) and len(target_ids) == 1:
+        target_ids = target_ids[0]
+    
+    if isinstance(target_ids, bytes):
+        target_ids = target_ids.decode()
+    
+    raw = str(target_ids).strip()
+    if not raw:
+        return None
+    parsed = re.findall(r"'((?:''|[^'])*)'", raw)
+    if not parsed:
+        return None
+    target_ids = [p.strip() for p in parsed if p.strip()]
+
     out: List[str] = []
     seen: set[str] = set()
 
@@ -29,4 +46,6 @@ def corpnum_to_oracle_ids(target_ids: Sequence[str]) -> List[str]:
             out.append(oracle_id)
             seen.add(oracle_id)
 
-    return out
+    if not out:
+        return None
+    return ",".join("'" + x.replace("'", "'") + "'" for x in out)
