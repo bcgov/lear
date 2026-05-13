@@ -19,19 +19,19 @@ dependencies = [
     "gunicorn (>=23.0.0,<24.0.0)",
     "dpath (>=2.2.0,<3.0.0)",
     "psycopg2-binary (>=2.9.10)",
-    # TODO: look at removing
+    # FUTURE: look at removing
     "python-dateutil (>=2.8.2)",
     "python-dotenv (>=1.1.0,<2.0.0)",
-    # TODO: look at removing
+    # FUTURE: look at removing
     "strict-rfc3339 (==0.7)",
-    # TODO: look at removing restriction
+    # FUTURE: look at removing restriction
     "minio (==7.0.2)",
-    # TODO: look at removing restriction
+    # FUTURE: look at removing restriction
     "pypdf (==6.7.2)",
     "reportlab (>=4.5.0)",
-    # TODO: look at removing restriction
+    # FUTURE: look at removing restriction
     "html-sanitizer (==2.4.1)",
-    # TODO: look at removing restriction
+    # FUTURE: look at removing restriction
     "lxml (==5.2.2)",
 
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
@@ -164,7 +164,7 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-# addopts = "--cov=src/legal_api"
+addopts = "--cov=src/legal_api"
 python_files = [
    "test*.py"
 ]

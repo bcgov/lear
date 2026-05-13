@@ -54,11 +54,10 @@ class Flags:
         """
         self.app = app
         self.sdk_key = app.config.get("LD_SDK_KEY")
-        environment = app.config.get("ENVIRONMENT")
         # Switch to Flask's logger once we have the app.
         self.logger = app.logger
 
-        self.logger.info("starting feature flags init; has sdk key: %s, env: %s", bool(self.sdk_key), environment)
+        self.logger.info("starting feature flags init; has sdk key: %s, has test data: %s", bool(self.sdk_key), bool(td))
 
         if td:
             client = LDClient(config=Config("testing", update_processor_class=td))
