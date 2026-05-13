@@ -48,4 +48,4 @@ def corpnum_to_oracle_ids(target_ids: str | bytes | tuple | list | None) -> List
 
     if not out:
         return None
-    return ",".join("'" + x.replace("'", "'") + "'" for x in out)
+    return ",".join("'" + x.replace("'", "''") + "'" for x in out)

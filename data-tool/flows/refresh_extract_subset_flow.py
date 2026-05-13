@@ -99,7 +99,8 @@ def run_cprd_subset_extract_generator(
     pg_disable_method: str,
     out: str | None,
     include_cp: bool = False,
-    target_connection: str = 'ctst_pg'
+    target_connection: str = 'ctst_pg',
+    prefix_numeric_bc: bool = False,
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
@@ -126,6 +127,8 @@ def run_cprd_subset_extract_generator(
         argv.append('--pg-fastload')
     if include_cp:
         argv.append('--include-cp')
+    if prefix_numeric_bc:
+        argv.append('--prefix-numeric-bc')
     out_path = Path(out).expanduser().resolve() if out is not None else _SUBSET.resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
     argv.extend(['--out', str(out)])
@@ -181,21 +184,45 @@ def extract_pull_flow(
     # Get Identifiers
     updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
     print(f'Colin updated identifiers : {len(updated_rows)} rows')
-    for row in updated_rows:
-        print(row)
+    feed_path: Path | None = None
+    if mode == 'refresh':
+        _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+        feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
+        seen = set()
+        lines = []
+        for row in updated_rows:
+            for k, v in row.items():
+                if k is None or v is None:
+                    continue
+                if str(k).lower() == 'corp_num':
+                    c = str(v).strip()
+                    if c and c not in seen:
+                        seen.add(c)
+                        lines.append(c)
+                    break
+        if  not lines:
+            raise ValueError('refresh: no corp_num in updated_rows')
+        feed_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        corp_file = str(feed_path)
+    result: subprocess.CompletedProcess | None = None
     print(f'Running CPRD subset extract generator {corp_file}')
-    result = run_cprd_subset_extract_generator(
-        corp_file=corp_file,
-        mode=mode,
-        chunk_size=chunk_size,
-        threads=threads,
-        pg_fastload=pg_fastload,
-        include_cp=include_cp,
-        pg_disable_method=pg_disable_method,
-        out=out,
-        target_connection=target_connection,
-    )
-    if result.returncode != 0:
+    try:
+        result = run_cprd_subset_extract_generator(
+            corp_file=corp_file,
+            mode=mode,
+            chunk_size=chunk_size,
+            threads=threads,
+            pg_fastload=pg_fastload,
+            include_cp=include_cp,
+            pg_disable_method=pg_disable_method,
+            out=out,
+            target_connection=target_connection,
+            prefix_numeric_bc=(mode=='refresh'),
+        )
+    finally:
+        if feed_path is not None:
+            feed_path.unlink(missing_ok=True)
+    if result.returncode != 0 and result is not None:
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
     
