@@ -363,6 +363,27 @@ def test_user_business_party_roles_non_empty(app, session, user, proprietor, rul
     assert len(rules.user_business_party_roles(user, business)) > 0
 
 
+@pytest.mark.parametrize('invalid_role', [
+    PartyRole.RoleTypes.OFFICER,
+    PartyRole.RoleTypes.SECRETARY,
+    PartyRole.RoleTypes.CUSTODIAN,
+    PartyRole.RoleTypes.INCORPORATOR,
+])
+def test_user_business_party_roles_excludes_invalid_roles(app, session, invalid_role, rules):
+    user_data, party_data = valid_data[0]
+    user = factory_user(**user_data)
+    business = create_business(
+        Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
+    party_role = create_party_role(
+        invalid_role,
+        **create_test_user(**party_data, default_middle=False)
+    )
+    party_role.business_id = business.id
+    party_role.save()
+
+    assert rules.user_business_party_roles(user, business) == []
+
+
 @pytest.mark.parametrize('user, party', invalid_data)
 def test_user_filing_party_roles_empty_when_user_not_matching_filer(app, session, user, party, rules):
     user = factory_user(**user)
@@ -424,6 +445,32 @@ def test_user_filing_party_roles_non_empty(app, session, user, party, rules):
     filing.save()
 
     assert len(rules.user_filing_party_roles(user, business)) > 0
+
+
+@pytest.mark.parametrize('invalid_role', [
+    PartyRole.RoleTypes.INCORPORATOR,
+    PartyRole.RoleTypes.OFFICER,
+    PartyRole.RoleTypes.APPLICANT,
+])
+def test_user_filing_party_roles_excludes_invalid_roles(app, session, invalid_role, rules):
+    user_data, party_data = valid_data[0]
+    user = factory_user(**user_data)
+    business = create_business(
+        Business.LegalTypes.BCOMP.value, Business.State.ACTIVE)
+    party_role = create_party_role(
+        invalid_role,
+        **create_test_user(**party_data, default_middle=False)
+    )
+    filing = factory_completed_filing(
+        business=business,
+        data_dict={'filing': {'header': {'name': 'incorporationApplication'}}},
+        filing_date=datetime.now(timezone.utc), filing_type='incorporationApplication'
+    )
+    filing.filing_party_roles.append(party_role)
+    filing.submitter_id = user.id
+    filing.save()
+
+    assert rules.user_filing_party_roles(user, business) == []
 
 
 @pytest.mark.parametrize('user, party', valid_data)
