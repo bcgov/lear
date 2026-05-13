@@ -333,7 +333,7 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         {'name': 'role', 'value': ''}
     ])
 ])
-def test_data_helper_user_has_filing_party_role(app, session, test_data, expected):
+def test_data_helper_user_filing_party_roles(app, session, test_data, expected):
     """Assert that the data helper returns the correct data when the user has a filing party role."""
     # Arrange
     credential_type = DCDefinition.CredentialType.business
