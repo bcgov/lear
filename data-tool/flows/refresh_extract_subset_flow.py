@@ -185,10 +185,10 @@ def extract_pull_flow(
     config = get_config()
     colin_oracle_engine = colin_oracle_init(config)
     # Get Identifiers
-    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
-    print(f'Colin updated identifiers : {len(updated_rows)} rows')
     feed_path: Path | None = None
     if mode == 'refresh':
+        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
+        print(f'Colin updated identifiers : {len(updated_rows)} rows')
         _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
         seen = set()
