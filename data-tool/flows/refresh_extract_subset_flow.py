@@ -12,8 +12,10 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from datetime import datetime, timezone
 from config import get_named_config
-from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers, get_updated_identifiers_for_batch
+from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
 from common.init_utils import colin_oracle_init, get_config
+from common.query_utils import corpnum_to_oracle_ids
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -77,7 +79,8 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
         row = conn.execute(text(mig_sql)).fetchone()
     
-    corp_list = row[0] if row else None
+    corp_list = corpnum_to_oracle_ids(row[0]) if row else None
+    # oracle_ids = corpnum_to_oracle_ids(corp_list)
     
     colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
     with colin_oracle_engine.connect() as conn:
@@ -170,6 +173,11 @@ def extract_pull_flow(
         print('Running in refresh mode: skipping Postgres DB reset')
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
+    
+    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    config = get_config()
+    colin_oracle_engine = colin_oracle_init(config)
     # Get Identifiers
     updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
     print(f'Colin updated identifiers : {len(updated_rows)} rows')
@@ -190,20 +198,15 @@ def extract_pull_flow(
     if result.returncode != 0:
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
-
-    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    config = get_config()
-    colin_oracle_engine = colin_oracle_init(config)
     
-    # if run_dbschemacli:
-    #     master_script = _resolve_master_script_path(out=out)
-    #     run_result = run_dbschemacli_task(
-    #         master_script=str(master_script),
-    #         dbschemacli_cmd=dbschemacli_cmd,
-    #     )
-    #     if run_result.returncode != 0:
-    #         raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+    if run_dbschemacli:
+        master_script = _resolve_master_script_path(out=out)
+        run_result = run_dbschemacli_task(
+            master_script=str(master_script),
+            dbschemacli_cmd=dbschemacli_cmd,
+        )
+        if run_result.returncode != 0:
+            raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
 
     
 
