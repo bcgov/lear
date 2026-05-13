@@ -14,13 +14,11 @@
 """Validation for the Registrars Notation filing."""
 from http import HTTPStatus
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
 from business_model.models import Business
 from legal_api.errors import Error
 from legal_api.services.utils import get_str
-
-# noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(business: Business, registrars_notation: dict) -> Error | None:

@@ -509,7 +509,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 Filing.Status.CHANGE_REQUESTED,
                 Filing.Status.APPROVED,
                 Filing.Status.REJECTED,
-            ):  # noqa: E125; lint conflicts on the indenting
+            ):
             return None
 
         base_url = current_app.config.get("LEGAL_API_BASE_URL")

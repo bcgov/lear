@@ -15,14 +15,12 @@
 from http import HTTPStatus
 
 import pycountry
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
 from business_model.models import Address, Business
 from legal_api.errors import Error
 from legal_api.services.filings.validations.common_validations import validate_parties_addresses
 from legal_api.services.utils import get_str
-
-# noqa: I003; needed as the linter gets confused from the babel override above.
 
 
 def validate(business: Business, coo: dict) -> Error:

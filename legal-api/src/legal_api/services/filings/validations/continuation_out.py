@@ -15,7 +15,7 @@
 from http import HTTPStatus
 from typing import Final
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
 from business_model.models import Business, ConsentContinuationOut
 from legal_api.errors import Error
@@ -26,8 +26,6 @@ from legal_api.services.filings.validations.common_validations import (
 )
 from legal_api.services.utils import get_date
 from legal_api.utils.legislation_datetime import LegislationDatetime
-
-# noqa: I003;
 
 
 def validate(business: Business, filing: dict) -> Error | None:

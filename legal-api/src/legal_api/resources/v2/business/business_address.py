@@ -26,8 +26,6 @@ from legal_api.utils.auth import jwt
 
 from .bp import bp
 
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 @bp.route("/<string:identifier>/addresses", methods=["GET", "OPTIONS"], strict_slashes=False)
 @bp.route("/<string:identifier>/addresses/<int:addresses_id>", methods=["GET", "OPTIONS"], strict_slashes=False)

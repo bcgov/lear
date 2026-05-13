@@ -30,8 +30,6 @@ from legal_api.utils.auth import jwt
 
 from .bp import bp
 
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 @bp.route("/<string:identifier>/comments", methods=["GET"])
 @bp.route("/<string:identifier>/comments/<int:comment_id>", methods=["GET"])
