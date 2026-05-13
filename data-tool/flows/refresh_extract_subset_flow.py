@@ -23,9 +23,12 @@ _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postg
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 
 def _resolve_master_script_path(out: str | None) -> Path:
-    if out:
-        return Path(out).expanduser().resolve()
-    return _SUBSET.resolve()
+    if not out:
+        return _SUBSET.resolve()
+    p = Path(out).expanduser()
+    if p.is_absolute():
+        return p.resolve()
+    return (_REPO_ROOT / p).resolve()
 
 def _run_cmd(argv: list[str], env: dict[str, str] | None = None) -> None:
     r = subprocess.run(argv, cwd=str(_REPO_ROOT), capture_output=False, text=True, env=env)
@@ -129,9 +132,9 @@ def run_cprd_subset_extract_generator(
         argv.append('--include-cp')
     if prefix_numeric_bc:
         argv.append('--prefix-numeric-bc')
-    out_path = Path(out).expanduser().resolve() if out is not None else _SUBSET.resolve()
+    out_path = _resolve_master_script_path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    argv.extend(['--out', str(out)])
+    argv.extend(['--out', str(out_path)])
     
     return subprocess.run(
         argv,
