@@ -18,9 +18,9 @@ Currently this only provides API versioning information
 from importlib.metadata import version
 
 from flask import Blueprint, jsonify
-from registry_schemas import __version__ as registry_schemas_version
 
 from legal_api.utils.run_version import get_run_version
+from registry_schemas import __version__ as registry_schemas_version
 
 bp = Blueprint("META2", __name__, url_prefix="/api/v2/meta")
 

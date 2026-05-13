@@ -15,9 +15,9 @@
 """This provides the service for getting business details as of a filing."""
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from operator import and_, or_
-from typing import Final, Optional
+from typing import Final
 
 from flask import current_app
 from requests import Request
@@ -31,10 +31,10 @@ from legal_api.core.filing import Filing as CoreFiling
 class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
     """Used for filtering Identifiers based on filters passed."""
 
-    identifier: Optional[str]
-    status: Optional[list[str]]
-    name: Optional[str]
-    type: Optional[list[str]]
+    identifier: str | None
+    status: list[str] | None
+    name: str | None
+    type: list[str] | None
     page: int
     limit: int
 
@@ -42,7 +42,7 @@ class AffiliationSearchDetails:  # pylint: disable=too-many-instance-attributes
     def from_request_args(cls, req: Request):
         """Create an instance from request arguments."""
 
-        def clean_str(value: Optional[str]) -> Optional[str]:
+        def clean_str(value: str | None) -> str | None:
             return value.strip() if value and value.strip() else None
 
         def clean_list(values: list[str]) -> list[str]:
@@ -142,7 +142,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_search_filtered_businesses_results(business_json,
                                                identifiers: list[str],
-                                               search_filters: AffiliationSearchDetails) -> Optional[tuple[list, bool]]:
+                                               search_filters: AffiliationSearchDetails) -> tuple[list, bool] | None:
         """Return contact point from business json."""
         if not identifiers:
             return None
@@ -210,7 +210,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
     # pylint: disable=too-many-locals
     @staticmethod
     def get_search_filtered_filings_results(identifiers: list[str],
-                                            search_filters: AffiliationSearchDetails) -> Optional[tuple[list, bool]]:
+                                            search_filters: AffiliationSearchDetails) -> tuple[list, bool] | None:
         """Return contact point from business json."""
         if not identifiers:
             return None
@@ -282,7 +282,7 @@ class BusinessSearchService:  # pylint: disable=too-many-public-methods
                 "draftStatus": draft_dao.status
             }
             if (draft_dao.status == Filing.Status.PAID.value and
-                    draft_dao.effective_date and draft_dao.effective_date > datetime.now(timezone.utc)):
+                    draft_dao.effective_date and draft_dao.effective_date > datetime.now(UTC)):
                 draft["effectiveDate"] = draft_dao.effective_date.isoformat()
             if draft_dao.json_nr:
                 draft["nrNumber"] = draft_dao.json_nr  # Name request number, if available

@@ -14,7 +14,7 @@
 """Validation for the Registration filing."""
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 from dateutil.relativedelta import relativedelta
@@ -39,7 +39,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-def validate(registration_json: dict) -> Optional[Error]:
+def validate(registration_json: dict) -> Error | None:
     """Validate the Registration filing."""
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])

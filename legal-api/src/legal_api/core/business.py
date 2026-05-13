@@ -18,7 +18,7 @@ It is used to represent a business and its historical values.
 """
 import re
 from enum import Enum, EnumMeta
-from typing import Final, Optional
+from typing import Final
 
 from business_model.models import Business
 
@@ -49,7 +49,7 @@ class BusinessType(str, Enum, metaclass=BaseMeta):
     DEFAULT = "OT" # noqa: PIE796
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
@@ -71,7 +71,7 @@ class BusinessIdentifier:
         return not (legal_type not in BusinessType or not value[value.find(legal_type) + len(legal_type):].isdigit())
 
     @staticmethod
-    def next_identifier(business_type: BusinessType) -> Optional[str]:
+    def next_identifier(business_type: BusinessType) -> str | None:
         """Get the next identifier."""
         if not (business_type in BusinessType and
                 (sequence_val := Business.get_next_value_from_sequence(business_type))):

@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Amalgamation Application filing."""
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
 from flask.globals import request_ctx
 from flask_babel import _ as babel
@@ -45,7 +45,7 @@ from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
 
-def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
+def validate(amalgamation_json: dict, account_id) -> Error | None:
     """Validate the Amalgamation Application filing."""
     filing_type = "amalgamationApplication"
     if not amalgamation_json:

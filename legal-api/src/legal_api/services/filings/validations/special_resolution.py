@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Special Resolution filing."""
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
 from flask_babel import _
 
@@ -64,7 +64,7 @@ def validate_resolution_content(filing_json, filing_type: str = "specialResoluti
     return msg
 
 
-def validate_resolution_date(business: Business, filing_json: dict) -> Optional[list]:
+def validate_resolution_date(business: Business, filing_json: dict) -> list | None:
     """Validate resolution date."""
     msg = []
     resolution_date_path = "/filing/specialResolution/resolutionDate"
@@ -87,7 +87,7 @@ def validate_resolution_date(business: Business, filing_json: dict) -> Optional[
     return msg
 
 
-def validate_signing_date(filing_json: dict, filing_type: str = "specialResolution") -> Optional[list]:
+def validate_signing_date(filing_json: dict, filing_type: str = "specialResolution") -> list | None:
     """Validate signing date."""
     msg = []
     signing_date_path = f"/filing/{filing_type}/signingDate"
@@ -115,7 +115,7 @@ def validate_signing_date(filing_json: dict, filing_type: str = "specialResoluti
     return msg
 
 
-def validate_signatory_name(filing_json: dict, filing_type: str = "specialResolution") -> Optional[list]:
+def validate_signatory_name(filing_json: dict, filing_type: str = "specialResolution") -> list | None:
     """Validate signatory name."""
     msg = []
     signatory_given_name_path = f"/filing/{filing_type}/signatory/givenName"

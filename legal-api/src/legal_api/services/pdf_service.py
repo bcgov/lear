@@ -16,7 +16,6 @@
 import io
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from flask import current_app
 from pypdf import PdfReader, PdfWriter
@@ -35,7 +34,7 @@ class RegistrarStampData:
 
     certify_date: datetime
     identifier: str
-    file_name: Optional[str] = None
+    file_name: str | None = None
     is_correction: bool = False
 
 

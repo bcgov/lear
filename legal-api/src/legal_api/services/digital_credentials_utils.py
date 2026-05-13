@@ -14,7 +14,6 @@
 
 """This provides utility functions for specific actions related to digital credentials."""
 
-from typing import Union
 
 from flask import current_app
 
@@ -51,13 +50,13 @@ class FormattedUser:
     first_name: str
     last_name: str
 
-    def __init__(self, user: Union[User, Party]):
+    def __init__(self, user: User | Party):
         """Initialize the formatted user."""
         first_name, last_name = self._formatted_user(user)
         self.first_name = first_name
         self.last_name = last_name
 
-    def _formatted_user(self, user: Union[User, Party]) -> dict:
+    def _formatted_user(self, user: User | Party) -> dict:
         """Return the formatted name of the user."""
         first_name = (getattr(user, "firstname", "") or getattr(
             user, "first_name", "") or "").lower()

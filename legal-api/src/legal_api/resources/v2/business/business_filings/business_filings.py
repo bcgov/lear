@@ -15,22 +15,21 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-# pylint: disable=too-many-lines
 import copy
 from contextlib import suppress
 from datetime import datetime as _datetime
 from http import HTTPStatus
-from typing import Generic, Optional, TypeVar, Union
+from typing import Generic, TypeVar
 
-import requests  # noqa: I001; grouping out of order to make both pylint & isort happy
+import requests
 from flask import current_app, g, jsonify, request
 from flask.globals import request_ctx
 from flask_babel import _
 from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
-from html_sanitizer import Sanitizer  # noqa: I001;
-from pydantic import BaseModel  # noqa: I001; pylint: disable=E0611; not sure why pylint is unable to scan module
-from requests import exceptions  # noqa: I001; grouping out of order to make both pylint & isort happy
+from html_sanitizer import Sanitizer
+from pydantic import BaseModel
+from requests import exceptions
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
@@ -72,14 +71,12 @@ from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 class QueryModel(BaseModel):
     """Query string model."""
 
-    draft: Optional[bool] = None
-    only_validate: Optional[bool] = None
+    draft: bool | None = None
+    only_validate: bool | None = None
 
 
 FilingT = TypeVar("FilingT")
@@ -88,7 +85,7 @@ FilingT = TypeVar("FilingT")
 class FilingModel(BaseModel, Generic[FilingT]):
     """Generic model to alow pydantic validation."""
 
-    data: Optional[FilingT] = None
+    data: FilingT | None = None
 
 
 @bp.route("/<string:identifier>/filings", methods=["GET"])
@@ -96,7 +93,7 @@ class FilingModel(BaseModel, Generic[FilingT]):
 @cross_origin(origin="*")
 @jwt.requires_auth
 @pydantic_validate(query=QueryModel)
-def get_filings(identifier: str, filing_id: Optional[int] = None):
+def get_filings(identifier: str, filing_id: int | None = None):
     """Return a JSON object with meta information about the Filing Submission."""
     if filing_id or identifier.startswith("T"):
         if str(request.args.get("public", None)).lower() == "true":
@@ -122,11 +119,11 @@ def get_filings(identifier: str, filing_id: Optional[int] = None):
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["POST", "PUT"])
 @cross_origin(origin="*")
 @jwt.requires_auth
-@pydantic_validate(get_json_params={'silent': True})
+@pydantic_validate(get_json_params={"silent": True})
 def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
                    query: QueryModel,
                    identifier,
-                   filing_id: Optional[int] = None):
+                   filing_id: int | None = None):
     """Modify an incomplete filing for the business."""
     business, filing = ListFilingResource.get_business_and_filing(identifier, filing_id)
 
@@ -512,7 +509,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return None, None
 
     @staticmethod
-    def get_business_and_filing(identifier, filing_id=None) -> tuple[Optional[Business], Optional[Filing]]:
+    def get_business_and_filing(identifier, filing_id=None) -> tuple[Business | None, Filing | None]:
         """Retrieve business and filing."""
         business = None
         filing = None
@@ -527,7 +524,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return business, filing
 
     @staticmethod
-    def get_notice_of_withdrawal(filing_id: Optional[str] = None):
+    def get_notice_of_withdrawal(filing_id: str | None = None):
         """Return a NoW by the withdrawn filing id."""
         filing = db.session.query(Filing). \
             filter(Filing.withdrawn_filing_id == filing_id).one_or_none()
@@ -670,7 +667,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     def save_filing(client_request: LocalProxy,  # noqa: PLR0912
                     business_identifier: str,
                     user: User,
-                    filing: Filing = None) -> tuple[Union[Business, RegistrationBootstrap], Filing, dict, int]:
+                    filing: Filing = None) -> tuple[Business | RegistrationBootstrap, Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -753,7 +750,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                      filing.filing_sub_type == "delay"))
 
     @staticmethod
-    def _save_colin_event_ids(filing: Filing, business: Union[Business, RegistrationBootstrap]):
+    def _save_colin_event_ids(filing: Filing, business: Business | RegistrationBootstrap):
         try:
             filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json["filing"]["header"]["colinDate"] or
                                                                  filing.filing_json["filing"]["header"]["date"])
@@ -951,7 +948,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                        filing: Filing,
                        filing_types: list,
                        user_jwt: JwtManager,
-                       payment_account_id: Optional[str] = None) \
+                       payment_account_id: str | None = None) \
             -> tuple[int, dict, int]:
         """Create the invoice for the filing submission.
 
@@ -1186,7 +1183,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 filing.filing_json["filing"][filing_type]["foreignJurisdiction"]
 
     @staticmethod
-    def submit_filing_for_review(business: Union[Business, RegistrationBootstrap], filing: Filing):
+    def submit_filing_for_review(business: Business | RegistrationBootstrap, filing: Filing):
         """Submit filing for review."""
         filing_data = filing.filing_json["filing"][filing.filing_type]
         submission_date = datetime.datetime.utcnow()

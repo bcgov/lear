@@ -18,7 +18,6 @@ import json
 import secrets
 import string
 from http import HTTPStatus
-from typing import Optional, Union
 
 import requests
 from flask import current_app, has_request_context
@@ -34,7 +33,7 @@ class RegistrationBootstrapService:
     """Provides services to bootstrap the IA registration and account affiliation."""
 
     @staticmethod
-    def create_bootstrap(account: int) -> Union[dict, RegistrationBootstrap]:
+    def create_bootstrap(account: int) -> dict | RegistrationBootstrap:
         """Return either a new bootstrap registration or an error struct."""
         if not account:
             return {"error": babel("An account number must be provided.")}
@@ -75,9 +74,9 @@ class RegistrationBootstrapService:
     @staticmethod
     def register_bootstrap(bootstrap: RegistrationBootstrap,
                            business_name: str,
-                           nr_number: Optional[str] = None,
+                           nr_number: str | None = None,
                            corp_type_code: str = "TMP",
-                           corp_sub_type_code: Optional[str] = None) -> Union[HTTPStatus, dict]:
+                           corp_sub_type_code: str | None = None) -> HTTPStatus | dict:
         """Return either a new bootstrap registration or an error struct."""
         if not bootstrap:
             return {"error": babel("An account number must be provided.")}
@@ -150,12 +149,12 @@ class AccountService:
     @classmethod
     def create_affiliation(cls, account: int, # noqa: PLR0913
                            business_registration: str,
-                           business_name: Optional[str] = None,
+                           business_name: str | None = None,
                            corp_type_code: str = "TMP",
-                           corp_sub_type_code: Optional[str] = None,
+                           corp_sub_type_code: str | None = None,
                            pass_code: str = "",
-                           details: Optional[dict] = None,
-                           flags: Optional[any] = None):
+                           details: dict | None = None,
+                           flags: Flags | None = None):
         """Affiliate a business to an account."""
         current_app.logger.info(f"Creating affiliation of {business_registration} for {account}")
         auth_url = current_app.config.get("AUTH_SVC_URL")
@@ -215,7 +214,7 @@ class AccountService:
                       business_registration: str,
                       business_name: str,
                       corp_type_code: str,
-                      state: Optional[str] = None):
+                      state: str | None = None):
         """Update an entity."""
         auth_url = current_app.config.get("AUTH_SVC_URL")
         account_svc_entity_url = f"{auth_url}/entities"
@@ -323,7 +322,7 @@ class AccountService:
         return None
     
     @classmethod
-    def get_contacts(cls, config, org_id: str, user_token: Optional[str] = None):
+    def get_contacts(cls, config, org_id: str, user_token: str | None = None):
         """Get contacts for the business.
         Fetch Completing Party Details from Auth API.
         - GET /orgs/{org_id}/memeberships for user contacts details

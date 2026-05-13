@@ -29,12 +29,9 @@ from .bp import bp_admin
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_configurations():
     """Return a list of configurations, optionally filtered by names."""
-    print('get_configurations')
     filter_names = request.args.get("names", None)
-    print('filter_names', filter_names)
     if filter_names:
         names_list = [name.strip().upper() for name in filter_names.split(",") if name.strip()]
-        print('names_list', names_list)
         if not names_list:
             return {"message": "Configuration names are invalid"}, HTTPStatus.BAD_REQUEST
 

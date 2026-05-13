@@ -13,7 +13,6 @@
 # limitations under the License.
 """Validation for the Conversion filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Optional
 
 from flask_babel import _ as babel
 
@@ -28,7 +27,7 @@ from legal_api.services.filings.validations.registration import validate_offices
 from legal_api.services.utils import get_str
 
 
-def validate(business: Business, filing: dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Error | None:
     """Validate the Conversion filing."""
     filing_type = "conversion"
     if not filing:

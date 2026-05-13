@@ -16,13 +16,14 @@
 Provides all the search and retrieval from the business entity documents.
 """
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
 import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
-from business_model.models import Business, Filing as FilingModel, Document
+from business_model.models import Business, Document
+from business_model.models import Filing as FilingModel
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.reports import get_pdf
@@ -32,9 +33,6 @@ from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
-
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 DOCUMENTS_BASE_ROUTE: Final[str] = "/<string:identifier>/filings/<int:filing_id>/documents"
 PARAM_REPORT_TYPE: Final[str] = "reportType"
@@ -54,8 +52,8 @@ CONTENT_PDF: Final = {"Content-Type": APP_PDF}
 @jwt.requires_auth
 def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                   filing_id: int,
-                  legal_filing_name: Optional[str] = None,
-                  file_key: Optional[str] = None):
+                  legal_filing_name: str | None = None,
+                  file_key: str | None = None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
     if not authorized(identifier, jwt, ["view", ]):

@@ -38,14 +38,14 @@ This module is the API for the Legal Entity system.
 import os
 from uuid import uuid4
 
+from cloud_sql_connector import DBConfig
 from flask import Flask, Response, current_app, jsonify, request
 from flask_migrate import Migrate
 
-import business_model.models as models
 import business_model_migrations
+from business_model import models
 from business_model.models import db
 from business_model.models.db import init_db
-from cloud_sql_connector import DBConfig
 from legal_api.config import DevConfig, MigrationConfig, ProdConfig, TestConfig
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas

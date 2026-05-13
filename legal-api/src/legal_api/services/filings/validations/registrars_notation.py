@@ -13,7 +13,6 @@
 # limitations under the License.
 """Validation for the Registrars Notation filing."""
 from http import HTTPStatus
-from typing import Optional
 
 from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
 
@@ -24,7 +23,7 @@ from legal_api.services.utils import get_str
 # noqa: I003; needed as the linter gets confused from the babel override above.
 
 
-def validate(business: Business, registrars_notation: dict) -> Optional[Error]:
+def validate(business: Business, registrars_notation: dict) -> Error | None:
     """Validate the Registrars Notation filing."""
     if not business or not registrars_notation:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])

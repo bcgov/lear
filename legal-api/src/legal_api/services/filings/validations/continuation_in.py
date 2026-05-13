@@ -13,7 +13,7 @@
 # limitations under the License.
 """Validation for the Continuation In filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Final, Optional
+from typing import Final
 
 from flask_babel import _ as babel
 
@@ -42,7 +42,7 @@ from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
 
 
-def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
+def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-branches;
     """Validate the Continuation In filing."""
     filing_type = "continuationIn"
     if not filing_json:

@@ -14,7 +14,7 @@
 
 """This provides the service for determining access rules to digital credentials."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 
 from flask import current_app
@@ -180,7 +180,7 @@ class DigitalCredentialsRulesService:
         """Return the completing parties of a filing."""
         return PartyRole.get_party_roles_by_filing(
             filing.id,
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
             PartyRole.RoleTypes.COMPLETING_PARTY.value,
         )
 
@@ -188,5 +188,5 @@ class DigitalCredentialsRulesService:
         """Return the party roles of a filing."""
         return PartyRole.get_party_roles_by_filing(
             filing.id,
-            datetime.now(timezone.utc),
+            datetime.now(UTC),
         )

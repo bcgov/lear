@@ -14,7 +14,7 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Final, Optional
+from typing import Final
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
@@ -57,7 +57,7 @@ class InvoluntaryDissolutionService:
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, eligibility_filters: Optional[EligibilityFilters] = None
+        cls, identifier: str, eligibility_filters: EligibilityFilters | None = None
     ) -> tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -77,7 +77,7 @@ class InvoluntaryDissolutionService:
         return True, eligibility_details
 
     @classmethod
-    def get_businesses_eligible(cls, num_allowed: Optional[int] = None):
+    def get_businesses_eligible(cls, num_allowed: int | None = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query()
         eligible_businesses = query.limit(num_allowed).all() if num_allowed else query.all()
@@ -102,7 +102,7 @@ class InvoluntaryDissolutionService:
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(eligibility_filters: Optional[EligibilityFilters] = None):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters | None = None):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -199,7 +199,7 @@ def _has_no_transition_filed_after_restoration():
     """
     from legal_api.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
 
-    new_act_date = func.date('2004-03-29 00:00:00+00:00')
+    new_act_date = func.date("2004-03-29 00:00:00+00:00")
 
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)

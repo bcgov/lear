@@ -12,7 +12,6 @@
 
 import json
 from http import HTTPStatus
-from typing import Optional
 
 import requests
 from flask import current_app, jsonify
@@ -176,7 +175,7 @@ class DocumentService:
       filing_identifier: int,
       report_type: str,
       account_id: str,
-      file_key: Optional[str] = None):
+      file_key: str | None = None):
         """
         Get a document from the document service.
 

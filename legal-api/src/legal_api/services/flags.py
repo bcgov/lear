@@ -13,7 +13,7 @@
 # limitations under the License.
 """Manage the Feature Flags initialization, setup and service."""
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from flask import Flask
 from ldclient import LDClient
@@ -114,7 +114,7 @@ class Flags:
         # Use Context.create(key, kind) to explicitly set non-default kind 'account'
         return Context.create(account_id, "account")
 
-    def build_context(self, user: Optional[User], account_id: Optional[str]) -> Context:
+    def build_context(self, user: User | None, account_id: str | None) -> Context:
         """Compose the appropriate LD context (single or multi) from user/account inputs.
 
         - user and account_id -> multi-context ('user' + 'account')
@@ -139,7 +139,7 @@ class Flags:
         return Flags._get_anonymous_user()
 
 
-    def is_on(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> bool:
+    def is_on(self, flag: str, user: User | None = None, account_id: str | None = None) -> bool:
         """Assert that the flag is set for this user."""
         self.logger.debug("check if flag %s is on for user %s, account %s",
                                  flag, user.sub if user else "-", account_id)
@@ -164,7 +164,7 @@ class Flags:
             self.logger.error(f"Unable to read flags: {err!r}", exc_info=True)
             return False
 
-    def value(self, flag: str, user: Optional[User] = None, account_id: Optional[str] = None) -> Any:
+    def value(self, flag: str, user: User | None = None, account_id: str | None = None) -> Any:
         """Retrieve the value  of the (flag, user) tuple."""
         client = self._get_client()
 

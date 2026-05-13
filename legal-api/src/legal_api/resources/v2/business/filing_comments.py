@@ -29,8 +29,6 @@ from legal_api.utils.auth import jwt
 
 from .bp import bp
 
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["PUT", "PATCH", "DELETE"])
 @cross_origin(origin="*")
@@ -46,10 +44,8 @@ def not_allowed_filing_comments(identifier, filing_id, comment_id=None):  # pyli
 @jwt.requires_auth
 def get_filing_comments(identifier, filing_id, comment_id=None):
     """Return a JSON object with meta information about the Service."""
-    print('get_filing_comments')
     # basic checks
     err_msg, err_code = _basic_checks(identifier, filing_id, request)
-    print(f'_basic_checks {err_msg}, {err_code}')
     if err_msg:
         return jsonify(err_msg), err_code
 

@@ -14,10 +14,9 @@
 
 # pylint: disable=too-many-lines
 """This manages all of the authentication and authorization service."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from http import HTTPStatus
-from typing import Optional
 
 from flask import Response, current_app, request
 from flask.globals import request_ctx
@@ -705,7 +704,7 @@ def is_allowed(business: Business, # noqa: PLR0913
                filing_type: str,
                legal_type: str,
                jwt: JwtManager,
-               sub_filing_type: Optional[str] = None,
+               sub_filing_type: str | None = None,
                filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
@@ -1077,7 +1076,7 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
                                                        [Filing.Status.PENDING.value, Filing.Status.PAID.value],
                                                        True)
 
-    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    now = datetime.utcnow().replace(tzinfo=UTC)
     is_fed = any(f.effective_date > now for f in pending_filings)
 
     return is_fed
@@ -1135,7 +1134,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
     if any(blocker_filing_matches):
         return True
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     paid_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
     return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
@@ -1164,8 +1163,8 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
 
 
 def add_allowable_filing_type(is_allowable: bool = False,
-                              allowable_filing_types: Optional[list] = None,
-                              allowable_filing_type: Optional[dict] = None):
+                              allowable_filing_types: list | None = None,
+                              allowable_filing_type: dict | None = None):
     """Append allowable filing type."""
     if is_allowable:
         allowable_filing_types.append(allowable_filing_type)
@@ -1173,13 +1172,13 @@ def add_allowable_filing_type(is_allowable: bool = False,
     return allowable_filing_types
 
 
-def get_account_id(_, account_id: Optional[str] = None) -> str:
+def get_account_id(_, account_id: str | None = None) -> str:
     """Return the account id."""
     return account_id or request.headers.get("Account-Id", None)
 
 
 @cache.cached(timeout=600, make_cache_key=get_account_id, cache_none=True)
-def get_account_products(token: str, account_id: Optional[str] = None) -> list:
+def get_account_products(token: str, account_id: str | None = None) -> list:
     """Return the account products of the org identified by the account id."""
     account_id = account_id or request.headers.get("Account-Id", None)
     resp = _call_auth_api(f"orgs/{account_id}/products?include_hidden=true", token)

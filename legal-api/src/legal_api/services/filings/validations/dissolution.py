@@ -14,7 +14,7 @@
 """Validation for the Voluntary Dissolution filing."""
 from enum import Enum
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 from flask_babel import _
@@ -67,7 +67,7 @@ DISSOLUTION_MAPPING = {
 }
 
 
-def validate(business: Business, dissolution: dict) -> Optional[Error]:
+def validate(business: Business, dissolution: dict) -> Error | None:
     """Validate the dissolution filing."""
     if not business or not dissolution:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": _("A valid business and filing are required.")}])
@@ -120,7 +120,7 @@ def validate(business: Business, dissolution: dict) -> Optional[Error]:
     return None
 
 
-def validate_dissolution_details(filing_json) -> Optional[list]:
+def validate_dissolution_details(filing_json) -> list | None:
     """Validate details for administrative dissolution."""
     msg = []
     dissolution_type_path = "/filing/dissolution/dissolutionType"
@@ -134,7 +134,7 @@ def validate_dissolution_details(filing_json) -> Optional[list]:
     return None
 
 
-def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
+def validate_dissolution_type(filing_json, legal_type) -> list | None:
     """Validate dissolution type of the filing."""
     msg = []
     dissolution_type_path = "/filing/dissolution/dissolutionType"
@@ -156,7 +156,7 @@ def validate_dissolution_type(filing_json, legal_type) -> Optional[list]:
     return None
 
 
-def validate_dissolution_statement_type(filing_json, legal_type, dissolution_type) -> Optional[list]:
+def validate_dissolution_statement_type(filing_json, legal_type, dissolution_type) -> list | None:
     """Validate dissolution statement type of the filing.
 
     This needs not to be validated for administrative dissolution
@@ -180,7 +180,7 @@ def validate_dissolution_statement_type(filing_json, legal_type, dissolution_typ
 
     return None
 
-def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type) -> Optional[list]: # noqa: PLR0912
+def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type) -> list | None: # noqa: PLR0912
     """Validate that all party roles in the dissolution are valid.
 
     This needs not to be validated for administrative dissolution
@@ -248,7 +248,7 @@ def validate_dissolution_parties_roles(filing_json, legal_type, dissolution_type
 
     return msg
 
-def validate_dissolution_parties_address(filing_json, legal_type, dissolution_type) -> Optional[list]:
+def validate_dissolution_parties_address(filing_json, legal_type, dissolution_type) -> list | None:
     """Validate the person data of the dissolution filing.
 
     Address must be in Canada for COOP and BC for CORP.
@@ -328,7 +328,7 @@ def _validate_party_address(party, idx, address_type, require_bc):
     return msg
 
 
-def validate_affidavit(filing_json, legal_type, dissolution_type) -> Optional[list]:
+def validate_affidavit(filing_json, legal_type, dissolution_type) -> list | None:
     """Validate affidavit document of the filing.
 
     This needs not to be validated for administrative dissolution
@@ -419,12 +419,12 @@ def _validate_custodian_name(parties, dissolution_type, legal_type) -> list:
 
     return msg
 
-def _check_dissolution_permission(required_permission: str, dissolution_type: str, filing_type: str) -> Optional[Error]:
+def _check_dissolution_permission(required_permission: str, dissolution_type: str, filing_type: str) -> Error | None:
     """Check if the user has the required permission for the dissolution filing."""
     message = "Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing."
     return PermissionService.check_user_permission(required_permission, message=message)
 
-def _validate_dissolution_permission(business: Business, dissolution: dict, dissolution_type: str, filing_type: str, msg: list) -> Optional[Error]:
+def _validate_dissolution_permission(business: Business, dissolution: dict, dissolution_type: str, filing_type: str, msg: list) -> Error | None:
     """Validate dissolution permission based on business and dissolution type."""
 
     if dissolution_type != DissolutionTypes.DELAY.value:
