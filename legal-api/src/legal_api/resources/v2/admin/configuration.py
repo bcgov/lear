@@ -38,8 +38,8 @@ def get_configurations():
         if not names_list:
             return {"message": "Configuration names are invalid"}, HTTPStatus.BAD_REQUEST
 
-        configurations = Configuration.find_by_names(names_list)
-        print('configurations', configurations)
+        valid_names = [name for name in names_list if name in Configuration.Names.__members__]
+        configurations = Configuration.find_by_names(valid_names)
         if not configurations:
             return {"message": "Configurations not found"}, HTTPStatus.NOT_FOUND
     else:

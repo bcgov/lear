@@ -67,7 +67,7 @@ def test_validate_effective_date_invalid_format(session):
     business, filing = common_setup(identifier, now)
 
     # Set an invalid ISO effectiveDate value
-    filing['filing']['header']['effectiveDate'] = "2026-01-21T08:00:00Z"
+    filing['filing']['header']['effectiveDate'] = "2026-01-44T08:00:00Z"
 
     with freeze_time(now):
         err = validate_effective_date(business, filing)
