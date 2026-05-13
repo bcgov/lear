@@ -43,6 +43,17 @@ def _get_bool(name: str, default: bool = False) -> bool:
     return val.strip().lower() == 'true'
 
 
+def _get_strict_int(name: str, default: int) -> int:
+    """Strict int env parsing: unset uses default, invalid values raise."""
+    val = os.getenv(name)
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except ValueError as exc:
+        raise ValueError(f'{name} must be a valid integer, got: {val!r}') from exc
+
+
 def get_named_config(config_name: str = 'production'):
     """Return the configuration object based on the name.
 
@@ -179,6 +190,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)
     FREEZE_BATCH_SIZE = _get_int('FREEZE_BATCH_SIZE', 0)
+    FREEZE_ORACLE_CHUNK_SIZE = _get_strict_int('FREEZE_ORACLE_CHUNK_SIZE', 1000)
 
     # ORACLE COLIN DB
     DB_USER_COLIN_ORACLE = os.getenv('DATABASE_USERNAME_COLIN_ORACLE', '')
