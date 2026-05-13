@@ -288,7 +288,7 @@ def test_registration_parties_missing_role(app, session, jwt, test_name, filing,
         ),
         (
             copy.deepcopy(GP_REGISTRATION),
-            Business.LegalTypes.SOLE_PROP.value,
+            Business.LegalTypes.PARTNERSHIP.value,
             [
                 {'partyName': 'gp1_party', 'roles': ['Completing Party', 'Partner', 'Proprietor']},
                 {'partyName': 'gp2_party', 'roles': ['Partner']} 
@@ -310,7 +310,6 @@ def test_registration_parties_invalid_role(app, session, jwt, filing, legal_type
         p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
         filing['filing']['registration']['parties'].append(p)
 
-    legal_type = filing['filing']['registration']['nameRequest']['legalType']
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(legal_type)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             with jwt_request_context(app, jwt, [BASIC_USER]):
