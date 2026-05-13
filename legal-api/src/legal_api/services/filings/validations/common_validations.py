@@ -78,6 +78,7 @@ FILINGS_REQUIRING_CERTIFICATION = {
     CoreFiling.FilingTypes.SPECIALRESOLUTION,
 }
 
+# - Dissolution is handled separately (voluntary only)
 FILINGS_REQUIRING_AUTHORIZATION = {
     CoreFiling.FilingTypes.AGMEXTENSION,
     CoreFiling.FilingTypes.AGMLOCATIONCHANGE,
@@ -1293,8 +1294,17 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) -> list:
+def is_voluntary_dissolution(filing_json: dict, filing_type: str) -> bool:
+    """Return True if the filing is a voluntary dissolution."""
     from legal_api.services.filings.validations.dissolution import DissolutionTypes
+    return (
+        filing_type == CoreFiling.FilingTypes.DISSOLUTION
+        and filing_json["filing"].get("dissolution", {}).get("dissolutionType")
+           == DissolutionTypes.VOLUNTARY.value
+    )
+
+
+def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
@@ -1307,13 +1317,8 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
         filing_type == CoreFiling.FilingTypes.CORRECTION
         and filing_json["filing"].get("correction", {}).get("type") == "CLIENT"
     )
-
-    is_voluntary_dissolution = (
-        filing_type == CoreFiling.FilingTypes.DISSOLUTION
-        and filing_json["filing"].get("dissolution", {}).get("dissolutionType") == DissolutionTypes.VOLUNTARY.value
-    )
-
-    certification_required = (is_cert_filing or is_client_correction or is_voluntary_dissolution)
+    certification_required = (is_cert_filing or is_client_correction or
+                              is_voluntary_dissolution(filing_json, filing_type))
 
     if certification_required:
         if not certified_by:
@@ -1336,7 +1341,7 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
     if legal_type not in Business.CORPS:
         return msg  # authorizationReceived is only required for corporations
     
-    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION:
+    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION and not is_voluntary_dissolution(filing_json, filing_type):
         return msg  # authorizationReceived is only required for specific filings
 
     authorization_received = filing_json["filing"]["header"].get("authorizationReceived")
