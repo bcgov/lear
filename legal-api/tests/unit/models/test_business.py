@@ -26,7 +26,7 @@ from flask import current_app
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import (
+from business_model.models import (
     AmalgamatingBusiness,
     Amalgamation,
     Batch,
@@ -37,7 +37,7 @@ from legal_api.models import (
     PartyRole,
     db,
 )
-from legal_api.models.db import VersioningProxy
+from business_model.models.db import VersioningProxy
 from legal_api.services import flags
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import EPOCH_DATETIME, TIMEZONE_OFFSET
@@ -161,12 +161,11 @@ def test_business_find_by_legal_name_missing(session):
     assert b is None
 
 
-def test_business_find_by_legal_name_no_database_connection(app_request):
+def test_business_find_by_legal_name_no_database_connection(app):
     """Assert that None is return even if the database connection does not exist."""
-    app_request.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://does:not@exist:5432/nada'
-    with app_request.app_context():
-        b = Business.find_by_legal_name('failure to find')
-        assert b is None
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://does:not@exist:5432/nada'
+    b = Business.find_by_legal_name('failure to find')
+    assert b is None
 
 
 def test_delete_business_with_dissolution(session):
@@ -640,7 +639,7 @@ def test_business_alternate_names(session, test_name, businesses_info, alternate
 
 def test_business_relationships_json(session):
     """Assert that the business model is saved correctly."""
-    from legal_api.models import Address, Office
+    from business_model.models import Address, Office
 
     business = Business(legal_name='legal_name',
                         founding_date=EPOCH_DATETIME,
@@ -672,7 +671,7 @@ def test_business_relationships_json(session):
 ])
 def test_get_next_value_from_sequence(session, business_type, expected):
     """Assert that the sequence value is generated successfully."""
-    from legal_api.models import Business
+    from business_model.models import Business
 
     if expected:
         first_val = Business.get_next_value_from_sequence(business_type)

@@ -18,7 +18,7 @@ Test-Suite to ensure that the Batch Processing Model is working as expected.
 """
 import json
 
-from legal_api.models import BatchProcessing
+from business_model.models import BatchProcessing
 
 from tests.unit.models import factory_business, factory_batch
 

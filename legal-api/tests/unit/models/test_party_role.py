@@ -22,7 +22,8 @@ from unittest.mock import patch
 
 import pytest
 
-from legal_api.models import Filing, Party, PartyRole, PartyClass
+from business_model.models import Filing, Party, PartyRole, PartyClass
+from business_model.models.party_class import PartyClassType
 from legal_api.services import flags
 from tests.unit.models import factory_business
 
@@ -363,10 +364,10 @@ def test_get_party_roles_unsupported_list(session):
 
 
 get_by_party_class_scenarios = [
-    (PartyClass.PartyClassType.OFFICER, ['ceo', 'chair']),
-    (PartyClass.PartyClassType.DIRECTOR, ['treasurer']),
-    (PartyClass.PartyClassType.AGENT, ['assistant_secretary', 'secretary']),
-    (PartyClass.PartyClassType.ATTORNEY, [])
+    (PartyClassType.OFFICER, ['ceo', 'chair']),
+    (PartyClassType.DIRECTOR, ['treasurer']),
+    (PartyClassType.AGENT, ['assistant_secretary', 'secretary']),
+    (PartyClassType.ATTORNEY, [])
 ]
 
 
@@ -383,7 +384,7 @@ def test_get_party_roles_by_class_type(session, class_type, expected_roles):
     # sanity check
     assert member.id
 
-    def _factory_party_class_role(role: PartyRole.RoleTypes, class_type: PartyClass.PartyClassType, cessation_date: datetime.date = None):
+    def _factory_party_class_role(role: PartyRole.RoleTypes, class_type: PartyClassType, cessation_date: datetime.date = None):
         party_role = PartyRole(
             role=role.value,
             appointment_date=datetime.datetime(2017, 5, 17),
@@ -397,28 +398,28 @@ def test_get_party_roles_by_class_type(session, class_type, expected_roles):
 
     _factory_party_class_role(
         PartyRole.RoleTypes.CEO,
-        PartyClass.PartyClassType.OFFICER
+        PartyClassType.OFFICER
     )
     _factory_party_class_role(
         PartyRole.RoleTypes.CHAIR,
-        PartyClass.PartyClassType.OFFICER
+        PartyClassType.OFFICER
     )
     _factory_party_class_role(
         PartyRole.RoleTypes.CFO,
-        PartyClass.PartyClassType.OFFICER,
+        PartyClassType.OFFICER,
         datetime.datetime(2020, 5, 17)  # this officer should not be found
     )
     _factory_party_class_role(
         PartyRole.RoleTypes.TREASURER,
-        PartyClass.PartyClassType.DIRECTOR
+        PartyClassType.DIRECTOR
     )
     _factory_party_class_role(
         PartyRole.RoleTypes.SECRETARY,
-        PartyClass.PartyClassType.AGENT
+        PartyClassType.AGENT
     )
     _factory_party_class_role(
         PartyRole.RoleTypes.ASSISTANT_SECRETARY,
-        PartyClass.PartyClassType.AGENT
+        PartyClassType.AGENT
     )
 
     # Find by party class type

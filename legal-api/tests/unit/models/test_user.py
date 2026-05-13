@@ -19,7 +19,7 @@ Test-Suite to ensure that the User Class is working as expected.
 import pytest
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import User
+from business_model.models import User
 
 
 def test_user(session):

@@ -16,33 +16,27 @@
 
 Test-Suite to ensure that the /meta endpoint is working as expected.
 """
+from importlib.metadata import version
+from registry_schemas import __version__ as registry_schemas_version
 
 
 def test_meta_no_commit_hash(client):
     """Assert that the endpoint returns just the services __version__."""
-    from flask import __version__ as framework_version
-    from legal_api.version import __version__
-    from registry_schemas import __version__ as registry_schemas_version
-
     rv = client.get('/api/v2/meta/info')
 
     assert rv.status_code == 200
-    assert rv.json == {'API': f'legal_api/{__version__}',
+    assert rv.json == {'API': f'legal_api/{version("legal_api")}',
                        'SCHEMAS': f'registry_schemas/{registry_schemas_version}',
-                       'FrameWork': f'{framework_version}'}
+                       'FrameWork': f'{version("flask")}'}
 
 
 def test_meta_with_commit_hash(monkeypatch, client):
     """Assert that the endpoint return __version__ and the last git hash used to build the services image."""
-    from flask import __version__ as framework_version
-    from legal_api.version import __version__
-    from registry_schemas import __version__ as registry_schemas_version
-
     commit_hash = 'deadbeef_ha'
-    monkeypatch.setenv('OPENSHIFT_BUILD_COMMIT', commit_hash)
+    monkeypatch.setenv('VCS_REF', commit_hash)
 
     rv = client.get('/api/v2/meta/info')
     assert rv.status_code == 200
-    assert rv.json == {'API': f'legal_api/{__version__}-{commit_hash}',
+    assert rv.json == {'API': f'legal_api/{version("legal_api")}-{commit_hash}',
                        'SCHEMAS': f'registry_schemas/{registry_schemas_version}',
-                       'FrameWork': f'{framework_version}'}
+                       'FrameWork': f'{version("flask")}'}

@@ -20,7 +20,7 @@ import pytest
 from registry_schemas.example_data import ANNUAL_REPORT
 
 from legal_api.exceptions import BusinessException
-from legal_api.models import Filing
+from business_model.models import Filing
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
 

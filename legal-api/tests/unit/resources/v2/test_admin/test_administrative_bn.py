@@ -20,7 +20,7 @@ Test-Suite to ensure that the /admin/bn endpoint is working as expected.
 from http import HTTPStatus
 from unittest.mock import patch
 
-from legal_api.models import Business, UserRoles
+from business_model.models import Business, UserRoles
 from legal_api.resources.v2.admin import administrative_bn
 
 from tests.unit.models import factory_business

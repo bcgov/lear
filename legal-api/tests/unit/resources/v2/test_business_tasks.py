@@ -25,7 +25,7 @@ import datedelta
 import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests import integration_payment
@@ -213,7 +213,7 @@ def test_get_empty_tasks_with_invalid_business(session, client, jwt):
 
 def test_get_tasks_error_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     from tests.unit.models import AR_FILING, factory_business_mailing_address
     # setup
     identifier = 'CP7654321'
@@ -233,7 +233,7 @@ def test_get_tasks_error_filings(session, client, jwt):
 def test_get_tasks_pending_correction_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
     from freezegun import freeze_time
-    from legal_api.models import Filing
+    from business_model.models import Filing
     from tests import FROZEN_2018_DATETIME
     from registry_schemas.example_data import CORRECTION_AR
     # setup

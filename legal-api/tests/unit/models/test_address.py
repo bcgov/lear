@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the Address Model is working as expected.
 """
-from legal_api.models import Address, Office
+from business_model.models import Address, Office
 from tests.unit.models import factory_business
 
 

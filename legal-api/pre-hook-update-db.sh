@@ -1,4 +1,6 @@
 #! /bin/sh
-echo 'starting upgrade'
-poetry run python manage.py db upgrade
-echo 'upgrade completed'
+COMMAND=${1:-upgrade}
+REVISION=${2:-}
+echo starting $COMMAND $REVISION
+export DEPLOYMENT_ENV=migration
+flask db $COMMAND $REVISION

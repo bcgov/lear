@@ -26,7 +26,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import MinioService, flags
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
@@ -602,9 +602,9 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00Z',
             HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'error': '2020-09-44T00:00:00Z is an invalid ISO format for effectiveDate.',
                 'path': '/filing/header/effectiveDate'
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
@@ -640,7 +640,7 @@ def test_dissolution_effective_date(session, test_name,
 
     if expected_code:
         assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
+        assert err.msg == expected_msg
     else:
         assert err is None
 

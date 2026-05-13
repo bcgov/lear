@@ -25,7 +25,7 @@ from registry_schemas.example_data import (
     FILING_HEADER,
 )
 
-from legal_api.models import Business, Filing, UserRoles
+from business_model.models import Business, Filing, UserRoles
 from legal_api.resources.v2 import internal_services
 from legal_api.resources.v2.internal_services import ListFilingResource
 from tests.unit.models import factory_business, factory_business_mailing_address

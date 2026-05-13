@@ -24,7 +24,7 @@ from unittest.mock import patch
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from sqlalchemy.sql import true
 
-from legal_api.models import Batch, Business
+from business_model.models import Batch, Business
 from legal_api.services import flags, InvoluntaryDissolutionService
 from legal_api.utils.datetime import datetime
 from tests.unit.models import (

@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the Permission Model is working as expected.
 """
-from legal_api.models import Permission
+from business_model.models import Permission
 
 def test_permission_save(session):
     """Assert that an Permission saves correctly."""

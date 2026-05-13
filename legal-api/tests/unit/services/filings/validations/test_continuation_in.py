@@ -19,13 +19,13 @@ from datetime import date
 
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import CONTINUATION_IN
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
 from legal_api.utils.datetime import datetime as dt, timedelta
+from registry_schemas.example_data import CONTINUATION_IN
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
@@ -837,7 +837,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
         'foundingDate': '2009-07-23T07:00:00.000+00:00'
     }
 
-    mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
+    mocker.patch('legal_api.services.colin.ColinService.query_business', return_value=mocker.Mock(
         status_code=HTTPStatus.OK,
         json=lambda: {
             'business': {
@@ -869,7 +869,7 @@ def test_validate_business_in_colin_founding_date_match(mocker, app, session):
         'foundingDate': '2009-07-23T18:31:24-00:00'
     }
 
-    mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
+    mocker.patch('legal_api.services.colin.ColinService.query_business', return_value=mocker.Mock(
         status_code=HTTPStatus.OK,
         json=lambda: {
             'business': {
@@ -1074,10 +1074,11 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
-            HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
-                'path': '/filing/header/effectiveDate'
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
+            HTTPStatus.UNPROCESSABLE_CONTENT, [{
+                'path': 'filing/header/effectiveDate',
+                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                'context': []
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
@@ -1090,7 +1091,7 @@ now = date(2020, 9, 17)
                 'path': '/filing/header/effectiveDate'
             }])
     ])
-def test_validate_continuation_in_effective_date(mocker, app, session, test_name,
+def test_validate_continuation_in_effective_date(mocker, app, session, jwt, test_name,
                                                effective_date, expected_code, expected_msg, monkeypatch):
     """Test effective date validation in continuation in application."""
     monkeypatch.setattr(
@@ -1122,8 +1123,9 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
         err = validate(None, filing)
 
     if expected_code:
+        assert err
         assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
+        assert err.msg == expected_msg
     else:
         assert err is None
 

@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Resolution Model is working as expected.
 """
 
-from legal_api.models import Party, Resolution
+from business_model.models import Party, Resolution
 from tests.unit.models import factory_business
 
 

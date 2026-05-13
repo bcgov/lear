@@ -15,13 +15,13 @@ import os
 from datetime import datetime
 from http import HTTPStatus
 from pathlib import Path
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 import requests
 from flask import current_app, jsonify
 
-from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
+from business_model.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.resources.v2.business import get_addresses, get_directors
@@ -732,9 +732,9 @@ class BusinessDocument:
 
     @staticmethod
     def _get_summary_display_name(filing_type: str,
-                                  filing_sub_type: Optional[str],
-                                  legal_type: Optional[str],
-                                  reason: Optional[str]
+                                  filing_sub_type: str | None,
+                                  legal_type: str | None,
+                                  reason: str | None
                                   ) -> str:
         if filing_type == "dissolution":
             if filing_sub_type == "voluntary":

@@ -22,7 +22,7 @@ from legal_api.services.warnings.business.business_checks import firms
 from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, factory_party_roles, \
     create_business, factory_address, create_filing
 
-from legal_api.models import Address, Business, Office, PartyRole
+from business_model.models import Address, Business, Office, PartyRole
 
 
 

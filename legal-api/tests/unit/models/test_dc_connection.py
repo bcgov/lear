@@ -17,7 +17,7 @@
 Test-Suite to ensure that the DCConnection Model is working as expected.
 """
 
-from legal_api.models import DCConnection, DCBusinessUser
+from business_model.models import DCConnection, DCBusinessUser
 
 from tests.unit.models import factory_business, factory_user
 from tests.unit.models.test_dc_business_user import create_dc_business_user

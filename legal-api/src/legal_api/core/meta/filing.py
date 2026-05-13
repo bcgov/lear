@@ -16,10 +16,10 @@ import re
 from collections.abc import MutableMapping
 from contextlib import suppress
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final
 
-from legal_api.models import Business
-from legal_api.models import Filing as FilingStorage
+from business_model.models import Business
+from business_model.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService
 
 
@@ -925,7 +925,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
+    def display_name(business: Business, filing: FilingStorage) -> str | None:
         """Return the name of the filing to display on outputs."""
         # if filing is imported from COLIN and has custom disaply name
         if filing.meta_data and\
@@ -974,7 +974,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return name
 
     @staticmethod
-    def get_effective_display_year(filing_meta_data: dict) -> Optional[str]:
+    def get_effective_display_year(filing_meta_data: dict) -> str | None:
         """Render a year as a string, given all filing mechanisms."""
         with suppress(IndexError, KeyError, TypeError):
             return str(filing_meta_data["annualReport"]["annualReportFilingYear"])
@@ -1082,7 +1082,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return outputs
 
     @staticmethod
-    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: Optional[str] = None) -> str:
+    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str | None = None) -> str:
         """Return display name for filing."""
         filing_dict = FILINGS.get(filing_type, None)
 

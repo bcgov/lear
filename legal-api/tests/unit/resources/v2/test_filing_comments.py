@@ -22,7 +22,7 @@ from http import HTTPStatus
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 
-from legal_api.models import User
+from business_model.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.utils import datetime
 from tests.unit.models import factory_business, factory_comment, factory_filing
@@ -103,13 +103,13 @@ def test_comment_json_output(session, client, jwt):
     with freeze_time(now):
         c = factory_comment(b, f, 'some specific text', u)
 
-        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{f.id}/comments/{c.id}',
-                        headers=create_header(jwt, [STAFF_ROLE]))
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{f.id}/comments/{c.id}',
+                    headers=create_header(jwt, [STAFF_ROLE]))
 
-        assert HTTPStatus.OK == rv.status_code
-        assert 'some specific text' == rv.json.get('comment').get('comment')
-        assert 'firstname lastname' == rv.json.get('comment').get('submitterDisplayName')
-        assert now.isoformat() == rv.json.get('comment').get('timestamp')
+    assert HTTPStatus.OK == rv.status_code
+    assert 'some specific text' == rv.json.get('comment').get('comment')
+    assert 'firstname lastname' == rv.json.get('comment').get('submitterDisplayName')
+    assert now.isoformat() == rv.json.get('comment').get('timestamp')
 
 
 def test_get_comments_mismatch_business_filing_error(session, client, jwt):

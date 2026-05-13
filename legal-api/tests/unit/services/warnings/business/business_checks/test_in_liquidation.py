@@ -18,7 +18,7 @@ import pytest
 from psycopg2.tz import FixedOffsetTimezone
 from datedelta import datedelta
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.warnings.business import check_business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
 from legal_api.utils.datetime import datetime, date

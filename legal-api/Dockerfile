@@ -1,4 +1,4 @@
-FROM python:3.9.22-bullseye AS development_build
+FROM python:3.13-bullseye AS development_build
 
 USER root
 
@@ -32,7 +32,7 @@ ENV APP_ENV=${APP_ENV} \
   PIP_DEFAULT_TIMEOUT=100 \
   PIP_ROOT_USER_ACTION=ignore \
   # poetry:
-  POETRY_VERSION=2.1.1 \
+  POETRY_VERSION=2.3.1 \
   POETRY_NO_INTERACTION=1 \
   POETRY_VIRTUALENVS_CREATE=false \
   POETRY_CACHE_DIR='/var/cache/pypoetry' \
@@ -88,7 +88,5 @@ FROM development_build AS production_build
 ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 COPY --chown=web:web . /code
-
-# ENV PYTHONPATH=/opt/app-root/src
 
 CMD gunicorn --bind 0.0.0.0:${PORT} --preload --config /code/gunicorn_config.py wsgi:application

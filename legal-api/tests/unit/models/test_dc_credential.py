@@ -17,10 +17,10 @@
 Test-Suite to ensure that the DCCredential Model is working as expected.
 """
 
-from legal_api.models import DCCredential
+from business_model.models import DCCredential
 
-from legal_api.models.business import Business
-from legal_api.models.user import User
+from business_model.models.business import Business
+from business_model.models.user import User
 from tests.unit.models import factory_business, factory_user
 from tests.unit.models.test_dc_business_user import create_dc_business_user
 from tests.unit.models.test_dc_connection import create_dc_connection

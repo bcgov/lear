@@ -27,7 +27,7 @@ import pytz
 
 from legal_api.services import flags, namex
 from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.models import UserRoles
+from business_model.models import UserRoles
 
 from tests import integration_namerequests
 

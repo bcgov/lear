@@ -17,7 +17,7 @@
 Test-Suite to ensure that the DCDefinition Model is working as expected.
 """
 
-from legal_api.models import DCDefinition
+from business_model.models import DCDefinition
 
 
 def test_valid_dc_definition_save(session):

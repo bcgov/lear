@@ -20,7 +20,7 @@ import pytest
 from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, factory_party_roles,\
     create_business, factory_address, create_filing
 
-from legal_api.models import Address, Business, Office, PartyRole
+from business_model.models import Address, Business, Office, PartyRole
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import check_address, check_firm_party, check_firm_parties, \
     check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business,\

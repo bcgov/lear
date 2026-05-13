@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import jwt as pyjwt
 from legal_api.services.authz import BASIC_USER
-from legal_api.models import DCConnection, DCDefinition, User
+from business_model.models import DCConnection, DCDefinition, User
 from legal_api.services.digital_credentials import DigitalCredentialsService
 
 from tests.unit.models import factory_business

@@ -17,7 +17,7 @@
 Test-Suite to ensure that the Batch Model is working as expected.
 """
 
-from legal_api.models import Batch
+from business_model.models import Batch
 
 
 def test_valid_batch_save(session):

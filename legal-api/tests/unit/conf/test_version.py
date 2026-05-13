@@ -16,11 +16,11 @@
 
 Test-Suite to ensure that the version utilities are working as expected.
 """
-from legal_api import utils
-from legal_api.version import __version__
+from importlib.metadata import version
+
+from legal_api.utils.run_version import get_run_version
 
 
 def test_get_version():
     """Assert thatThe version is returned correctly."""
-    rv = utils.run_version.get_run_version()
-    assert rv == __version__
+    assert get_run_version() == version("legal_api")

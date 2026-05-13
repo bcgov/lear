@@ -22,7 +22,7 @@ from registry_schemas.example_data import (
     CONTINUATION_IN,
 )
 
-from legal_api.models import Review, ReviewResult, ReviewStatus, User
+from business_model.models import Review, ReviewResult, ReviewStatus, User
 
 from tests.unit.models import factory_filing
 
@@ -71,6 +71,7 @@ def test_review_result_save(session):
     review.review_results.append(change_requested)
     review.save()
     assert change_requested.id
+    print(change_requested.creation_date)
 
     review.status = ReviewStatus.APPROVED
     review.submission_date = datetime.now(timezone.utc)
@@ -83,6 +84,8 @@ def test_review_result_save(session):
     approved.submission_date = review.submission_date
     review.review_results.append(approved)
     review.save()
+    assert approved.id
+    print(approved.creation_date)
 
     review_results = ReviewResult.get_review_results(review.id)
     assert len(review_results) == 2

@@ -22,9 +22,9 @@ from tests.unit.models import (
     factory_filing,
     factory_user,
 )
-from legal_api.models import Filing
-from legal_api.models import Business
-from legal_api.models import Amalgamation
+from business_model.models import Filing
+from business_model.models import Business
+from business_model.models import Amalgamation
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
@@ -36,7 +36,7 @@ from registry_schemas.example_data import (
 )
 from datetime import datetime
 
-from legal_api.models import amalgamation
+from business_model.models import amalgamation
 
 
 def test_valid_amalgamation_save(session):

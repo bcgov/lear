@@ -40,7 +40,7 @@ import datedelta
 import pytest
 from registry_schemas.example_data import TRANSITION_FILING_TEMPLATE
 
-from legal_api.models import Address, Business, PartyRole
+from business_model.models import Address, Business, PartyRole
 from legal_api.services.filings.validations.transition import validate
 from tests.unit.models import factory_business, factory_party_role
 from tests.unit.services.warnings import factory_address
