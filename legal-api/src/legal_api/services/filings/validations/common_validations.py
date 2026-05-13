@@ -13,8 +13,10 @@
 # limitations under the License.
 """Common validations share through the different filings."""
 import io
+import math
 import re
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from http import HTTPStatus
 from typing import Final, Optional
 
@@ -63,7 +65,12 @@ PARTY_NAME_MAX_LENGTH = 30
 EXCLUDED_WORDS_FOR_CLASS = ["share", "shares", "value"]
 EXCLUDED_WORDS_FOR_SERIES = ["share", "shares"]
 SHARE_NAME_SUFFIX = " Shares"
-MAX_SHARE_DIGITS = 16
+# match create-ui/edit-ui ShareStructure max number of shares rules
+MAX_SHARE_DIGITS = 20
+MAX_SHARE_SIG_DIGITS = 16
+# match create-ui/edit-ui ShareStructure par value rules
+MAX_PAR_VALUE_LENGTH = 38
+MAX_PAR_VALUE_SIG_DIGITS = 16
 
 # Note:
 # - Corrections are handled separately (CLIENT only)
@@ -78,6 +85,7 @@ FILINGS_REQUIRING_CERTIFICATION = {
     CoreFiling.FilingTypes.SPECIALRESOLUTION,
 }
 
+# - Dissolution is handled separately (voluntary only)
 FILINGS_REQUIRING_AUTHORIZATION = {
     CoreFiling.FilingTypes.AGMEXTENSION,
     CoreFiling.FilingTypes.AGMLOCATIONCHANGE,
@@ -248,23 +256,31 @@ def validate_series(item, filing_type, index) -> Error: # noqa: PLR0912
                     "error": "Number must be greater than 0",
                     "path": f"{err_path}/maxNumberOfShares"
                 })
-            elif len(str(abs(max_shares))) >= MAX_SHARE_DIGITS:
-                msg.append({
-                    "error": "Number must be less than 16 digits",
-                    "path": f"{err_path}/maxNumberOfShares"
-                })
-            # Check series shares do not exceed class shares
-            elif (
-                item["hasMaximumShares"]
-                and item.get("maxNumberOfShares", None)
-                and isinstance(item["maxNumberOfShares"], int)
-                and not isinstance(item["maxNumberOfShares"], bool)
-                and max_shares > item["maxNumberOfShares"]
-            ):
-                msg.append({
-                    "error": f"Series {series['name']} share quantity must be less than or equal to that of its class {item['name']}",
-                    "path": f"{err_path}/maxNumberOfShares"
-                })
+            else:
+                abs_str = str(abs(max_shares))
+                if len(abs_str) > MAX_SHARE_DIGITS:
+                    msg.append({
+                        "error": f"Maximum {MAX_SHARE_DIGITS} characters",
+                        "path": f"{err_path}/maxNumberOfShares"
+                    })
+                # rstrip strips trailing zeros, so check significant digits (matches UI SignificantDigits)
+                if len(abs_str.rstrip("0")) > MAX_SHARE_SIG_DIGITS:
+                    msg.append({
+                        "error": "Too many significant digits",
+                        "path": f"{err_path}/maxNumberOfShares"
+                    })
+                # Check series shares do not exceed class shares
+                if (
+                    item["hasMaximumShares"]
+                    and item.get("maxNumberOfShares", None)
+                    and isinstance(item["maxNumberOfShares"], int)
+                    and not isinstance(item["maxNumberOfShares"], bool)
+                    and max_shares > item["maxNumberOfShares"]
+                ):
+                    msg.append({
+                        "error": f"Series {series['name']} share quantity must be less than or equal to that of its class {item['name']}",
+                        "path": f"{err_path}/maxNumberOfShares"
+                    })
     return msg
 
 
@@ -320,32 +336,11 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
         memoize_names.append(share_name)
 
     if item["hasMaximumShares"]:
-        max_shares = item.get("maxNumberOfShares", None)
-        err_path = f"/filing/{filing_type}/shareClasses/{index}/maxNumberOfShares/"
-        if max_shares is None:
-            msg.append({
-                "error": f"Share class {item['name']} must provide value for maximum number of shares",
-                "path": err_path
-            })
-        elif not (isinstance(max_shares, int) and not isinstance(max_shares, bool)):
-            msg.append({
-                "error": "Must be a whole number",
-                "path": err_path
-            })
-        elif max_shares <= 0:
-            msg.append({
-                "error": "Number must be greater than 0",
-                "path": err_path
-            })
-        elif len(str(abs(max_shares))) >= MAX_SHARE_DIGITS:
-            msg.append({
-                "error": "Number must be less than 16 digits",
-                "path": err_path
-            })
+        max_shares_err_path = f"/filing/{filing_type}/shareClasses/{index}/maxNumberOfShares/"
+        msg.extend(_validate_max_number_of_shares(item.get("maxNumberOfShares"), item["name"], max_shares_err_path))
     if item["hasParValue"]:
-        if not item.get("parValue", None):
-            err_path = f"/filing/{filing_type}/shareClasses/{index}/parValue/"
-            msg.append({"error": "Share class {} must specify par value".format(item["name"]), "path": err_path})
+        par_value_err_path = f"/filing/{filing_type}/shareClasses/{index}/parValue/"
+        msg.extend(_validate_par_value(item.get("parValue"), item["name"], par_value_err_path))
         if not item.get("currency", None):
             err_path = f"/filing/{filing_type}/shareClasses/{index}/currency/"
             msg.append({"error": "Share class {} must specify currency".format(item["name"]), "path": err_path})
@@ -369,6 +364,60 @@ def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Erro
     if series_msg:
         msg.extend(series_msg)
 
+    return msg
+
+
+def _validate_max_number_of_shares(max_shares, share_class_name: str, err_path: str):
+    """Validate the maximum number of shares for a share class."""
+    msg = []
+    if max_shares is None:
+        msg.append({
+            "error": f"Share class {share_class_name} must provide value for maximum number of shares",
+            "path": err_path
+        })
+    elif not (isinstance(max_shares, int) and not isinstance(max_shares, bool)):
+        msg.append({
+            "error": "Must be a whole number",
+            "path": err_path
+        })
+    elif max_shares <= 0:
+        msg.append({
+            "error": "Number must be greater than 0",
+            "path": err_path
+        })
+    else:
+        abs_str = str(abs(max_shares))
+        if len(abs_str) > MAX_SHARE_DIGITS:
+            msg.append({"error": f"Maximum {MAX_SHARE_DIGITS} characters", "path": err_path})
+        # rstrip strips trailing zeros, so check significant digits (matches UI SignificantDigits)
+        if len(abs_str.rstrip("0")) > MAX_SHARE_SIG_DIGITS:
+            msg.append({"error": "Too many significant digits", "path": err_path})
+    return msg
+
+
+def _validate_par_value(par_value, share_class_name: str, err_path: str):
+    """Validate a share class par value against number format rules."""
+    msg = []
+    if par_value is None:
+        msg.append({"error": f"Share class {share_class_name} must specify par value", "path": err_path})
+        return msg
+    if not isinstance(par_value, (int, float)) or isinstance(par_value, bool):
+        msg.append({"error": "Must be a valid number", "path": err_path})
+        return msg
+    # only floats can be non-finite; calling math.isfinite on a huge int raises OverflowError
+    if isinstance(par_value, float) and not math.isfinite(par_value):
+        msg.append({"error": "Must be a valid number", "path": err_path})
+        return msg
+    if par_value <= 0:
+        msg.append({"error": "Must be greater than 0", "path": err_path})
+        return msg
+    normalized = Decimal(str(par_value)).normalize()
+    # "f" forces plain-decimal form (no scientific notation)
+    if len(format(normalized, "f")) > MAX_PAR_VALUE_LENGTH:
+        msg.append({"error": f"Maximum {MAX_PAR_VALUE_LENGTH} characters", "path": err_path})
+    # normalize strips leading/trailing zeros, so the digits tuple length is the significant-digit count
+    if len(normalized.as_tuple().digits) > MAX_PAR_VALUE_SIG_DIGITS:
+        msg.append({"error": "Too many significant digits", "path": err_path})
     return msg
 
 
@@ -1293,8 +1342,17 @@ def validate_certify_name(filing_json) -> bool:
         return True
     return True
 
-def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) -> list:
+def is_voluntary_dissolution(filing_json: dict, filing_type: str) -> bool:
+    """Return True if the filing is a voluntary dissolution."""
     from legal_api.services.filings.validations.dissolution import DissolutionTypes
+    return (
+        filing_type == CoreFiling.FilingTypes.DISSOLUTION
+        and filing_json["filing"].get("dissolution", {}).get("dissolutionType")
+           == DissolutionTypes.VOLUNTARY.value
+    )
+
+
+def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate certifiedBy field."""
     msg = []
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
@@ -1307,13 +1365,8 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
         filing_type == CoreFiling.FilingTypes.CORRECTION
         and filing_json["filing"].get("correction", {}).get("type") == "CLIENT"
     )
-
-    is_voluntary_dissolution = (
-        filing_type == CoreFiling.FilingTypes.DISSOLUTION
-        and filing_json["filing"].get("dissolution", {}).get("dissolutionType") == DissolutionTypes.VOLUNTARY.value
-    )
-
-    certification_required = (is_cert_filing or is_client_correction or is_voluntary_dissolution)
+    certification_required = (is_cert_filing or is_client_correction or
+                              is_voluntary_dissolution(filing_json, filing_type))
 
     if certification_required:
         if not certified_by:
@@ -1336,7 +1389,7 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
     if legal_type not in Business.CORPS:
         return msg  # authorizationReceived is only required for corporations
     
-    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION:
+    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION and not is_voluntary_dissolution(filing_json, filing_type):
         return msg  # authorizationReceived is only required for specific filings
 
     authorization_received = filing_json["filing"]["header"].get("authorizationReceived")

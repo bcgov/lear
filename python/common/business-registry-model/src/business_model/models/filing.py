@@ -1363,10 +1363,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                 ~Business.legal_type.in_(excluded_businesses),
                 ~Filing._filing_type.in_(excluded_filings),
                 ~and_(Filing._filing_type == 'dissolution', Filing._filing_sub_type == 'delay'),
-                Filing.colin_event_ids == None,  # pylint: disable=singleton-comparison
+                or_(~Filing.lear_only, Filing.lear_only == None),
+                Filing.colin_event_ids == None,
                 Filing._status == Filing.Status.COMPLETED.value,
                 Filing._source == Filing.Source.LEAR.value,
-                Filing.effective_date != None   # pylint: disable=singleton-comparison
+                Filing.effective_date != None
             ).order_by(Filing.transaction_id).limit(limit).offset(offset).all()
 
         return filings
