@@ -171,8 +171,9 @@ def validate_share_structure(incorporation_json, filing_type, legal_type) -> Err
     msg = []
     memoize_names = []
 
-    # For incorporation applications, at least one share class is required, for Alteration can not include if not changing
-    if filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value and len(share_classes) == 0:
+    # For incorporation and amalgamation applications, at least one share class is required, for Alteration can not include if not changing
+    if filing_type in (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION.value,
+                       CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION.value) and len(share_classes) == 0:
         msg.append({
             "error": "A company must have at least one Class of Shares.",
             "path": f"/filing/{filing_type}/shareStructure/shareClasses"
