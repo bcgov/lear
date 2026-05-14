@@ -116,11 +116,11 @@ OUT ?=
 RESET_EXTRACT_POSTGRES ?=
 run-extract-load:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" $(if $(strip $(OUT)), --out "$(OUT)",) --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
+	python flows/refresh_extract_subset_flow.py --mode load
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py "$(CORP_FILE)" $(if $(strip $(OUT)), --out "$(OUT)",) --mode refresh --run-dbschemacli --dbschemacli-cmd "$${DBSCHEMACLI_CMD:-dbschemacli}"
+	python flows/refresh_extract_subset_flow.py  --mode refresh 
 
 run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
 	. $(VENV_DIR)/bin/activate && \

@@ -242,8 +242,8 @@ def extract_pull_flow(
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
-    p.add_argument('--corp_file', default='../delta_ctst.txt', help='Path to newline-delimited corp identifiers')
-    p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
+    p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
+    p.add_argument('--mode', default='load', choices=('refresh', 'load'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
