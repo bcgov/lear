@@ -55,6 +55,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_certified_by,
     validate_court_order,
     validate_email,
+    validate_foreign_jurisdiction,
     validate_offices,
     validate_offices_addresses,
     validate_share_currency,
@@ -2195,3 +2196,100 @@ def test_validate_share_currency_skips_no_par_value(session):
     result = validate_share_currency(filing, 'incorporationApplication')
     assert result == []
 
+@pytest.mark.parametrize('test_name, foreign_jurisdiction, is_region_bc_valid, is_region_for_us_required, expected_errors', [
+    (
+        'invalid country code',
+        {'country': 'XX', 'region': ''},
+        False,
+        True,
+        [{'error': 'Invalid country.', 'path': '/filing/continuationIn/foreignJurisdiction/country'}]
+    ),
+    (
+        'BC region provided when not allowed',
+        {'country': 'CA', 'region': 'BC'},
+        False,
+        True,
+        [{'error': 'Region should not be BC.', 'path': '/filing/continuationIn/foreignJurisdiction/region'}]
+    ),
+    (
+        'valid CA region provided',
+        {'country': 'CA', 'region': 'BC'},
+        True,
+        True,
+        []
+    ),
+    (
+        'valid CA region provided other than BC',
+        {'country': 'CA', 'region': 'ON'},
+        False,
+        True,
+        []
+    ),
+    (
+        'valid CA FEDERAL region provided',
+        {'country': 'CA', 'region': 'FEDERAL'},
+        False,
+        True,
+        []
+    ),
+    (
+        'invalid CA region provided',
+        {'country': 'CA', 'region': 'XX'},
+        False,
+        True,
+        [{'error': 'Invalid region.', 'path': '/filing/continuationIn/foreignJurisdiction/region'}]
+    ),
+    (
+        'valid US region provided',
+        {'country': 'US', 'region': 'WA'},
+        False,
+        True,
+        []
+    ),
+    (
+        'invalid US region provided when region is required',
+        {'country': 'US', 'region': 'XX'},
+        False,
+        True,
+        [{'error': 'Invalid region.', 'path': '/filing/continuationIn/foreignJurisdiction/region'}]
+    ),
+    (
+        'invalid US region provided when region is not required',
+        {'country': 'US', 'region': 'XX'},
+        False,
+        False,
+        []
+    ),
+    (
+        'international with no region',
+        {'country': 'AU', 'region': ''},
+        False,
+        True,
+        []
+    ),
+    (
+        'international with null region',
+        {'country': 'AU', 'region': None},
+        False,
+        True,
+        []
+    ),
+    (
+        'international with region provided',
+        {'country': 'AU', 'region': 'NSW'},
+        False,
+        True,
+        [{'error': 'Region must not be provided for this jurisdiction.', 'path': '/filing/continuationIn/foreignJurisdiction/region'}]
+    ),
+])
+def test_validate_foreign_jurisdiction(session, test_name, foreign_jurisdiction, is_region_bc_valid,
+                                       is_region_for_us_required, expected_errors):
+    """Test foreign jurisdiction validation."""
+    path = '/filing/continuationIn/foreignJurisdiction'
+    errors = validate_foreign_jurisdiction(
+        foreign_jurisdiction,
+        path,
+        is_region_bc_valid=is_region_bc_valid,
+        is_region_for_us_required=is_region_for_us_required
+    )
+    assert errors == expected_errors

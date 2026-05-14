@@ -954,10 +954,13 @@ def validate_foreign_jurisdiction(foreign_jurisdiction: dict,
             msg.append({"error": "Region should not be BC.", "path": f"{foreign_jurisdiction_path}/region"})
         elif not (region == "FEDERAL" or pycountry.subdivisions.get(code=f"{country_code}-{region}")):
             msg.append({"error": "Invalid region.", "path": f"{foreign_jurisdiction_path}/region"})
-    elif (country_code == "US" and
-          is_region_for_us_required and
-          not pycountry.subdivisions.get(code=f"{country_code}-{region}")):
-        msg.append({"error": "Invalid region.", "path": f"{foreign_jurisdiction_path}/region"})
+    elif country_code == "US":
+        if (is_region_for_us_required and
+                not pycountry.subdivisions.get(code=f"{country_code}-{region}")):
+            msg.append({"error": "Invalid region.", "path": f"{foreign_jurisdiction_path}/region"})
+    elif region:
+        msg.append({"error": "Region must not be provided for this jurisdiction.",
+                    "path": f"{foreign_jurisdiction_path}/region"})
 
     return msg
 
