@@ -179,6 +179,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)
     FREEZE_BATCH_SIZE = _get_int('FREEZE_BATCH_SIZE', 0)
+    FREEZE_ORACLE_CHUNK_SIZE = _get_int('FREEZE_ORACLE_CHUNK_SIZE', 1000)
 
     # ORACLE COLIN DB
     DB_USER_COLIN_ORACLE = os.getenv('DATABASE_USERNAME_COLIN_ORACLE', '')
