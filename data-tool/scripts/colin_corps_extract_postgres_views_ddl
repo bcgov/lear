@@ -832,6 +832,12 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         tblFe.email_domain,
         admin_email,
         CAST(email_used_count as integer) as email_used_count,
+        CAST(EXISTS (
+          SELECT 1
+          FROM bad_emails be
+          WHERE btrim(tblFe.admin_email) <> ''
+            AND lower(btrim(be.email)) = lower(btrim(tblFe.admin_email))
+        ) AS boolean) AS is_bad_email,
         corp_num,
         corp_name,
         corp_type_cd,
@@ -989,17 +995,17 @@ FROM (
       GROUP BY corp_num
     ) cprt_dir ON cprt_dir.corp_num = c.corp_num
     LEFT OUTER JOIN (
-      SELECT 
+      SELECT
         cp.corp_num,
         COUNT(*) AS dir_cnt,
         COUNT(*) Filter (
-          WHERE cp.mailing_addr_id IS NOT NULL 
-            AND cp.mailing_addr_id <> 1 
+          WHERE cp.mailing_addr_id IS NOT NULL
+            AND cp.mailing_addr_id <> 1
             AND UPPER(TRIM(ma.province)) = 'BC'
         ) AS dir_bc_mailing_cnt,
         COUNT(*) Filter (
           WHERE cp.mailing_addr_id IS NOT NULL
-            AND cp.mailing_addr_id <> 1 
+            AND cp.mailing_addr_id <> 1
             AND UPPER(TRIM(ma.country_typ_cd)) = 'CA'
         ) AS dir_ca_mailing_cnt
       FROM corp_party cp
