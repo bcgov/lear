@@ -49,6 +49,12 @@ class DigitalCredentialsRulesService:
         Business.LegalTypes.BCOMP_CONTINUE_IN.value
     ]
 
+    valid_role_types = [
+        PartyRole.RoleTypes.PROPRIETOR.value,
+        PartyRole.RoleTypes.DIRECTOR.value,
+        PartyRole.RoleTypes.PARTNER.value,
+    ]
+
     def are_digital_credentials_allowed(self, user: User, business: Business) -> bool:
         """Return True if the user is allowed to access digital credentials."""
         return self._has_general_access(user) and self._has_specific_access(user, business)
@@ -61,10 +67,8 @@ class DigitalCredentialsRulesService:
         """
         preconditions = []
         if not self.user_is_completing_party(user, business):
-            if self.user_has_business_party_role(user, business):
-                preconditions += self.user_business_party_roles(user, business)
-            if self.user_has_filing_party_role(user, business):
-                preconditions += self.user_filing_party_roles(user, business)
+            preconditions += self.user_business_party_roles(user, business)
+            preconditions += self.user_filing_party_roles(user, business)
         return [party_role.role for party_role in preconditions]
 
     def _has_general_access(self, user: User) -> bool:
@@ -94,8 +98,8 @@ class DigitalCredentialsRulesService:
         )
 
         if business.legal_type in allowed_business_types:
-            return (self.user_has_filing_party_role(user, business)
-                    or self.user_has_business_party_role(user, business))
+            return bool(self.user_filing_party_roles(user, business)
+                        or self.user_business_party_roles(user, business))
 
         current_app.logger.debug("No specific DBC access rules are met.")
         return False
@@ -110,24 +114,11 @@ class DigitalCredentialsRulesService:
         filing = filings.pop(0)
         return self.user_submitted_filing(user, filing) and self.user_matches_completing_party(user, filing)
 
-    def user_has_filing_party_role(self, user: User, business: Business) -> bool:
-        """
-        Return True if the user has a filing party role in the business. Excludes the completing party role.
-
-        For example: if a user is an incorporator.
-        """
-        return len(self.user_filing_party_roles(user, business)) > 0
-
-    def user_has_business_party_role(self, user: User, business: Business) -> bool:
-        """
-        Return True if the user has a business party role in the business.
-
-        For example: if a user is a director.
-        """
-        return len(self.user_business_party_roles(user, business)) > 0
-
     def user_filing_party_roles(self, user: User, business: Business) -> list[PartyRole]:
-        """Return the filing roles of the user for the business, if any."""
+        """Return the valid filing roles of the user for the business, if any.
+
+        Only returns roles that are in valid_role_types (proprietor, director, partner).
+        """
         if len(filings := self.valid_filings(business)) <= 0:
             current_app.logger.debug(
                 "No registration or incorporation filing found for the business.")
@@ -139,12 +130,19 @@ class DigitalCredentialsRulesService:
         filing = filings.pop(0)
         roles = filing.filing_party_roles.filter(
             PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value).all()
-        return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
+        return list(
+            filter(lambda role: role.role in self.valid_role_types and self.user_matches_party(user, role.party), roles)
+        )
 
     def user_business_party_roles(self, user: User, business: Business) -> list[PartyRole]:
-        """Return the party roles of the user for the business, if any."""
+        """Return the valid party roles of the user for the business, if any.
+
+        Only returns roles that are in valid_role_types (proprietor, director, partner).
+        """
         roles = business.party_roles.all()
-        return list(filter(lambda role: self.user_matches_party(user, role.party), roles))
+        return list(
+            filter(lambda role: role.role in self.valid_role_types and self.user_matches_party(user, role.party), roles)
+        )
 
     def user_submitted_filing(self, user: User, filing: Filing) -> bool:
         """Return True if the user submitted the filing."""

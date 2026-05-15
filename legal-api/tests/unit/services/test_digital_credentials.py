@@ -282,7 +282,7 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         'user_extra': test_user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
-        {'name': 'role', 'value': 'Director, Incorporator'}
+        {'name': 'role', 'value': 'Director, Director'}
     ]),
     ({
         'business': sp_business,
@@ -309,7 +309,7 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         'user_extra': test_user_extra,
     }, base_expected + [
         {'name': 'business_type', 'value': 'BC Benefit Company'},
-        {'name': 'role', 'value': 'Incorporator'}
+        {'name': 'role', 'value': 'Director'}
     ]),
     ({
         'business': sp_business_historical,
@@ -333,7 +333,7 @@ def test_data_helper_user_with_business_party_role(app, session, test_data, expe
         {'name': 'role', 'value': ''}
     ])
 ])
-def test_data_helper_user_has_filing_party_role(app, session, test_data, expected):
+def test_data_helper_user_filing_party_roles(app, session, test_data, expected):
     """Assert that the data helper returns the correct data when the user has a filing party role."""
     # Arrange
     credential_type = DCDefinition.CredentialType.business
@@ -343,7 +343,7 @@ def test_data_helper_user_has_filing_party_role(app, session, test_data, expecte
     type = 'registration'
 
     if test_data['business']['entity_type'] == 'BEN':
-        roles.append(PartyRole.RoleTypes.INCORPORATOR)
+        roles.append(PartyRole.RoleTypes.DIRECTOR)
         type = 'incorporationApplication'
 
     setup_filing(business, user, roles, type)
@@ -429,7 +429,7 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
     credential_type = DCDefinition.CredentialType.business
 
     test_preconditions = [
-        PartyRole.RoleTypes.INCORPORATOR.value
+        PartyRole.RoleTypes.PARTNER.value
     ]
     test_data = {
         'user': test_user,
@@ -445,7 +445,7 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
     setup_parties_and_roles(business, [test_party_data])
     setup_filing(business, user, [
         PartyRole.RoleTypes.COMPLETING_PARTY,
-        PartyRole.RoleTypes.INCORPORATOR
+        PartyRole.RoleTypes.PARTNER
     ], 'incorporationApplication')
 
     with patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=test_preconditions):
@@ -453,5 +453,5 @@ def test_data_helper_role_added_if_preconditions_met(app, session):
         credential_data = get_digital_credential_data(business_user, credential_type, test_preconditions + [PartyRole.RoleTypes.DIRECTOR.value])
 
         # Assert
-        assert {'name': 'role', 'value': 'Incorporator'} in credential_data
-        assert {'name': 'role', 'value': 'Director, Incorporator'} not in credential_data
+        assert {'name': 'role', 'value': 'Partner'} in credential_data
+        assert {'name': 'role', 'value': 'Director, Partner'} not in credential_data
