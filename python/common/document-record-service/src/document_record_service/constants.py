@@ -26,6 +26,41 @@ class DocumentTypes(Enum):
     REGN = "REGN"
     REGO = "REGO"
     SYSR = "SYSR"
+    FZE_ADMIN = 'FZE_ADMIN'
+    AGMEX = 'AGMEX'
+    NOALA = 'NOALA'
+    AGMLC = 'AGMLC'
+    AGMAM = 'AGMAM'
+    RECV_APPOINT = 'RECV_APPOINT'
+    RECV_CEASE = 'RECV_CEASE'
+    CHANGE_NAME = 'CHANGE_NAME'
+    CHANGE_OFF = 'CHANGE_OFF'
+    CHANGE_REG = 'CHANGE_REG'
+    CNV_LEDGER = 'CNV_LEDGER'
+    CRTO_LIQ = 'CRTO_LIQ'
+    DISS_VOL = 'DISS_VOL'
+    DISS_ADMIN = 'DISS_ADMIN'
+    ICORP = 'ICORP'
+    CORP_AFFIDAVIT = 'CORP_AFFIDAVIT'
+    COMP = 'COMP'
+    INTENT_LIQ = 'INTENT_LIQ'
+    OTHER_LEGACY = 'OTHER_LEGACY'
+    NWITH = 'NWITH'
+    PB_OFF = 'PB_OFF'
+    PB_ON = 'PB_ON'
+    REG_BUS = 'REG_BUS'
+    RSLN_SPEC = 'RSLN_SPEC'
+    TRANSP_REG = 'TRANSP_REG'
+    # FIRM
+    ADDR = 'ADDR'
+    CNVF = 'CNVF'
+    CONT = 'CONT'
+    COPN = 'COPN'
+    CORR = 'CORR'
+    DISS = 'DISS'
+    FILE = 'FILE'
+    FIRM_MISC = 'FIRM_MISC'
+    PART = 'PART'
 
 
 # Map between filing and DRS document type
