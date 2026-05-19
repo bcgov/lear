@@ -21,7 +21,7 @@ _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extr
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
 _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
-
+_REFRESH_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'refresh_colin_extract_views.sh'
 def _resolve_master_script_path(out: str | None) -> Path:
     if not out:
         return _SUBSET.resolve()
@@ -157,6 +157,32 @@ def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli
         text=True,
     )
 
+@task(name='Refresh-Views', cache_policy=NO_CACHE)
+def run_refresh_views(mode: str = 'refresh', targets: str =  'all') -> subprocess.CompletedProcess:
+    cfg = get_named_config()
+    script = require_file(_REFRESH_VIEWS_SCRIPT, 'refresh_colin_extract_views.sh')
+    argv = [
+        str(script),
+        '--mode', mode,
+        '--targets', targets,
+        '--db', cfg.DB_NAME_COLIN_MIGR,
+        '--host', cfg.DB_HOST_COLIN_MIGR,
+        '--port', str(cfg.DB_PORT_COLIN_MIGR),
+        '--user', cfg.DB_USER_COLIN_MIGR
+    ]
+    run_env = dict(os.environ)
+    if cfg.DB_PASSWORD_COLIN_MIGR and 'PGPASSWORD' not in run_env:
+        run_env['PGPASSWORD'] = cfg.DB_PASSWORD_COLIN_MIGR
+    print(f'Running: {" ".join(argv)}')
+    return subprocess.run(argv,
+                          cwd=str(_REPO_ROOT),
+                          capture_output=False,
+                          text=True,
+                          env=run_env
+                          )
+# if no views build them
+
+
 @flow(name='Extract-Subset-Flow', log_prints=True, persist_result=False)
 def extract_pull_flow(
     corp_file: str,
@@ -168,6 +194,7 @@ def extract_pull_flow(
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
+    refresh_views: bool = True,
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
     target_connection: str = 'ctst_pg',
@@ -238,6 +265,11 @@ def extract_pull_flow(
         )
         if run_result.returncode != 0:
             raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+        
+    if refresh_views:
+        refresh_result = run_refresh_views('refresh', 'all')
+        if refresh_result.returncode !=0:
+            raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
 
     
 
@@ -252,6 +284,7 @@ if __name__ == '__main__':
     p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
     p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_false')
+    p.add_argument('--refresh-views', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
     p.add_argument('--target-connection', default='ctst_pg')
