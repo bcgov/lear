@@ -1,4 +1,5 @@
 {% if shareClasses|length > 0 %}
+{% set dollar_currencies = ['USD', 'CAD', 'AUD'] %}
 <div class="no-page-break">
    <div class="separator mt-4"></div>
    <div class="section-title mt-4">Authorized Share Structure</div>
@@ -34,12 +35,15 @@
             </td>
             <td class="right-align">
                {% if share_class.hasParValue %}
-               {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
-                  $
-               {% endif %}
-               {{ share_class.parValue }}
+                  {% if share_class.currency in dollar_currencies %}
+                     {% set pv_parts = (share_class.parValue|string).split('.') %}
+                     {% set frac_part = pv_parts[1] if pv_parts|length > 1 else '' %}
+                     $ {{ '{:,}'.format(pv_parts[0]|int) }}.{{ frac_part.ljust(2, '0') }}
+                  {% else %}
+                     {{ share_class.parValue }}
+                  {% endif %}
                {% else %}
-               No Par Value
+                  No Par Value
                {% endif %}
             </td>
             <td>
@@ -83,12 +87,15 @@
                <td class="right-align">
                   <!-- hasParValue, parValue and currency are in share_class -->
                   {% if share_class.hasParValue %}
-                  {% if share_class.currency == 'USD' or share_class.currency == 'CAD' %}
-                     $
-                  {% endif %}
-                  {{ share_class.parValue }}
+                     {% if share_class.currency in dollar_currencies %}
+                        {% set pv_parts = (share_class.parValue|string).split('.') %}
+                        {% set frac_part = pv_parts[1] if pv_parts|length > 1 else '' %}
+                        $ {{ '{:,}'.format(pv_parts[0]|int) }}.{{ frac_part.ljust(2, '0') }}
+                     {% else %}
+                        {{ share_class.parValue }}
+                     {% endif %}
                   {% else %}
-                  No Par Value
+                     No Par Value
                   {% endif %}
                </td>
                <td>

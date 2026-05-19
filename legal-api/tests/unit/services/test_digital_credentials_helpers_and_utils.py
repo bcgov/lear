@@ -277,13 +277,12 @@ def test_get_roles_no_preconditions(mock_rules_class, app):
     
     mock_rules = MagicMock()
     mock_rules.get_preconditions.return_value = []
-    mock_rules.user_has_business_party_role.return_value = True
-    mock_rules.user_has_filing_party_role.return_value = False
-    
+
     mock_party_role = MagicMock()
     mock_party_role.role = 'proprietor'
     mock_rules.user_business_party_roles.return_value = [mock_party_role]
-    
+    mock_rules.user_filing_party_roles.return_value = []
+
     with app.app_context():
         result = get_roles(user, business, mock_rules, None)
         assert result == ['Proprietor']
@@ -297,15 +296,14 @@ def test_get_roles_with_self_attested(mock_rules_class, app):
     
     mock_rules = MagicMock()
     mock_rules.get_preconditions.return_value = ['proprietor', 'director']
-    mock_rules.user_has_business_party_role.return_value = True
-    mock_rules.user_has_filing_party_role.return_value = False
-    
+
     mock_party_role1 = MagicMock()
     mock_party_role1.role = 'proprietor'
     mock_party_role2 = MagicMock()
     mock_party_role2.role = 'director'
     mock_rules.user_business_party_roles.return_value = [mock_party_role1, mock_party_role2]
-    
+    mock_rules.user_filing_party_roles.return_value = []
+
     with app.app_context():
         result = get_roles(user, business, mock_rules, ['proprietor'])
         assert result == ['Proprietor']
@@ -321,9 +319,9 @@ def test_get_digital_credential_data(mock_rules_class, app, session):
     mock_rules = MagicMock()
     mock_rules_class.return_value = mock_rules
     mock_rules.get_preconditions.return_value = []
-    mock_rules.user_has_business_party_role.return_value = False
-    mock_rules.user_has_filing_party_role.return_value = False
-    
+    mock_rules.user_business_party_roles.return_value = []
+    mock_rules.user_filing_party_roles.return_value = []
+
     with app.app_context():
         result = get_digital_credential_data(business_user, DCDefinition.CredentialType.business, None)
         

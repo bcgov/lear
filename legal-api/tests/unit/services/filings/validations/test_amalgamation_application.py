@@ -379,6 +379,34 @@ def test_validate_amalgamation_office(session, mocker, test_name, legal_type, de
         assert err is None
 
 
+def test_amalgamation_regular_requires_at_least_one_share_class(mocker, app, session):
+    """Assert that a regular amalgamation with empty shareClasses returns a validation error."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {
+        'name': 'amalgamationApplication',
+        'date': '2019-04-08',
+        'certifiedBy': 'full name',
+        'authorizationReceived': True,
+        'email': 'no_one@never.get',
+        'filingId': 1
+    }
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.regular.name
+    filing['filing']['amalgamationApplication']['shareStructure'] = {'shareClasses': []}
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+
+    err = validate(None, filing)
+
+    assert err is not None
+    assert any(e['error'] == 'A company must have at least one Class of Shares.' and
+               e['path'] == '/filing/amalgamationApplication/shareStructure/shareClasses'
+               for e in err.msg)
+
+
 @pytest.mark.parametrize(
     'test_name, legal_type,'
     'class_name_1,class_has_max_shares,class_max_shares,has_par_value,par_value,currency,'

@@ -1,7 +1,9 @@
 import math
 from prefect import flow, task
 from common.init_utils import colin_extract_init, colin_oracle_init, get_config
+from common.colin_utils import colin_oracle_chunks, colin_oracle_corp_num_list_format
 from sqlalchemy import Engine, text
+from prefect.task_runners import ConcurrentTaskRunner
 
 from prefect.cache_policies import NO_CACHE
 from prefect.context import get_run_context
@@ -11,12 +13,13 @@ from common.extract_tracking_service \
     import ExtractTrackingService as ColinTrackingService, ProcessingStatuses
 
 FLOW_NAME = 'colin-freeze-flow'
-
+ORACLE_IN_LIMIT = 1000
+DEFAULT_ORACLE_CHUNK_SIZE = 1000
 
 colin_freeze_query = """
 UPDATE corporation c
 SET corp_frozen_typ_cd = 'C'
-WHERE c.corp_num = :corp_num
+WHERE c.corp_num IN {corp_nums}
 """
 
 colin_add_early_adopters_query = """
@@ -131,34 +134,56 @@ def convert_to_colin_format(corp_num: str) -> str:
 
 
 @task(cache_policy=NO_CACHE)
-def update_colin_oracle(config, colin_oracle_engine: Engine, corp_num: str):
+def update_colin_oracle(config, colin_oracle_engine: Engine, corp_nums: list[str]):
+    if not corp_nums:
+        return []
+
+    if len(corp_nums) > ORACLE_IN_LIMIT:
+        error = ValueError(f'Chunk size {len(corp_nums)} exceeds ORACLE_IN_LIMIT {ORACLE_IN_LIMIT}')
+        return [(corp_num, False, False, error) for corp_num in corp_nums]
+
+    if not config.FREEZE_COLIN_CORPS and not config.FREEZE_ADD_EARLY_ADOPTER:
+        return [(corp_num, False, False, None) for corp_num in corp_nums]
+    
+    colin_corp_num_list = [convert_to_colin_format(corp_num) for corp_num in corp_nums]
     with colin_oracle_engine.connect() as conn:
         transaction = conn.begin()
         try:
-            res1, res2 = None, None
-            colin_corp_num = convert_to_colin_format(corp_num)
-            if config.FREEZE_COLIN_CORPS:
-                res1 = conn.execute(
-                    text(colin_freeze_query),
-                    {'corp_num': colin_corp_num}
-                )
+            frozen_colin_nums = set()
+            if config.FREEZE_COLIN_CORPS and colin_corp_num_list:
+                    conn.execute(
+                        text(colin_freeze_query.format(corp_nums=colin_oracle_corp_num_list_format(colin_corp_num_list)))
+                    )
+                    frozen_colin_nums = set(colin_corp_num_list)             
+                
             if config.FREEZE_ADD_EARLY_ADOPTER:
-                res2 = conn.execute(
+                conn.execute(
                     text(colin_add_early_adopters_query),
-                    {'corp_num': colin_corp_num}
+                    [{'corp_num': corp_num} for corp_num in colin_corp_num_list]
                 )
-            frozen = res1.rowcount > 0 if res1 else False
-            in_early_adopter = res2.rowcount > 0 if res2 else False
             transaction.commit()
-            return corp_num, frozen, in_early_adopter, None
         except Exception as e:
             transaction.rollback()
-            print(f'❌ Error updating {corp_num} in colin: {repr(e)}')
-            return corp_num, False, False, e
-
+            print(f'❌ Chunk statement error for {len(corp_nums)} corps ({corp_nums[:5]}): {repr(e)}')
+            return [
+                (
+                    corp_num,
+                    False,
+                    False,
+                    e,
+                )
+                for corp_num in corp_nums
+            ]
+        results = []
+        for original_corp_num, colin_corp_num in zip(corp_nums, colin_corp_num_list):
+            frozen = colin_corp_num in frozen_colin_nums if config.FREEZE_COLIN_CORPS else False
+            in_early_adopter = config.FREEZE_ADD_EARLY_ADOPTER
+            results.append((original_corp_num, frozen, in_early_adopter, None))
+        return results
 
 @flow(
     name='Colin-Freeze-Flow',
+    task_runner=ConcurrentTaskRunner(max_workers=10),
     log_prints=True,
 )
 def colin_freeze_flow():
@@ -166,6 +191,9 @@ def colin_freeze_flow():
         config = get_config()
         colin_oracle_engine = colin_oracle_init(config)
         colin_extract_engine = colin_extract_init(config)
+        oracle_chunk_size = getattr(config, 'FREEZE_ORACLE_CHUNK_SIZE', DEFAULT_ORACLE_CHUNK_SIZE)
+        if oracle_chunk_size < 1 or oracle_chunk_size > ORACLE_IN_LIMIT:
+            raise ValueError(f'FREEZE_ORACLE_CHUNK_SIZE must be between 1 and {ORACLE_IN_LIMIT}')
 
         total = get_incomplete_count(config, colin_extract_engine)
         print(f'👷 Statistics: {total} incomplete corps (unprocessed or failed)')
@@ -205,35 +233,35 @@ def colin_freeze_flow():
             print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
 
             futures = []
-            for corp_num in corp_nums:
+            for corp_chunk in colin_oracle_chunks(corp_nums, oracle_chunk_size):
                 futures.append(
                     update_colin_oracle.submit(
-                        config, colin_oracle_engine, corp_num)
+                        config, colin_oracle_engine, corp_chunk)
                 )
             complete = 0
             failed = 0
             for f in futures:
-                corp_num, frozen, in_early_adopter, error = f.result()
-                if error:
-                    failed += 1
-                    colin_tracking_service.update_corp_status(
-                       flow_run_id,
-                       corp_num,
-                       ProcessingStatuses.FAILED,
-                       repr(error),
-                       frozen=frozen,
-                       in_early_adopter=in_early_adopter
-                    )
-                else:
-                    complete += 1
-                    colin_tracking_service.update_corp_status(
+                for corp_num, frozen, in_early_adopter, error in f.result():
+                    if error:
+                        failed += 1
+                        colin_tracking_service.update_corp_status(
                         flow_run_id,
                         corp_num,
-                        ProcessingStatuses.COMPLETED,
-                        error=None,
+                        ProcessingStatuses.FAILED,
+                        repr(error),
                         frozen=frozen,
                         in_early_adopter=in_early_adopter
-                    )
+                        )
+                    else:
+                        complete += 1
+                        colin_tracking_service.update_corp_status(
+                            flow_run_id,
+                            corp_num,
+                            ProcessingStatuses.COMPLETED,
+                            error=None,
+                            frozen=frozen,
+                            in_early_adopter=in_early_adopter
+                        )
 
             total_failed += failed
             cnt += 1
