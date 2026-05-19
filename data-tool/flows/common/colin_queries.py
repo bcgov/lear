@@ -1,16 +1,38 @@
 
+from math import ceil
+import re
+
 from sqlalchemy import text
 
-
-def get_updated_identifiers(timestamp: str, corp_list: str) -> str:
+def build_corp_list(corp_list: str, chunksize: int) -> str:
     if not str(corp_list).strip():
         raise ValueError('empty corp_list')
-    
+    corp_nums = re.findall(r"'([^']*)'", corp_list)
+    batch_size = min(chunksize, 999)
+    num_batches = ceil(len(corp_nums) / batch_size)
+
+    batch_ctes: list[str] = []
+    batch_names: list[str] = []
+    for idx in range(num_batches):
+        batch = corp_nums[idx * batch_size: (idx +1)* batch_size]
+        name = f'corp_list_{idx+1}'
+        batch_names.append(name)
+        args_sql = ",".join("'" + x.replace("'", "''") + "'" for x in batch)
+        batch_ctes.append(
+            f'{name} AS (SELECT column_value AS corp_num FROM TABLE(sys.odcivarchar2list({args_sql})))'
+        )
+
+    union_lines = [f' SELECT corp_num FROM {batch_names[0]}']
+    union_lines.extend(f' UNION ALL SELECT corp_num FROM {name}' for name in batch_names[1:])
+    corp_list_cte = 'corp_list AS (\n'+ '\n'.join(union_lines) + '\n)'
+    return ',\n'.join([*batch_ctes, corp_list_cte])
+
+def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> str:
+    if not str(corp_list).strip():
+        raise ValueError('empty corp_list')
+    corp_list_ctes = build_corp_list(corp_list, chunk_size)
     query = f"""
-    WITH corp_list AS (
-        SELECT column_value AS corp_num
-        FROM TABLE(sys.odcivarchar2list({corp_list}))
-    ),
+    WITH {corp_list_ctes},
     latest_event AS (
         SELECT e.event_id,
                 e.corp_num,
@@ -58,6 +80,6 @@ def get_identifiers_per_batch(mig_batch_id: int) -> str:
     WHERE mcb.mig_batch_id = {mig_batch_id}
     """
 
-def get_updated_identifiers_for_batch(timestamp: str, corp_list: str) -> str:
+def get_updated_identifiers_for_batch(timestamp: str, corp_list: str, chunk_size: int) -> str:
     """per batch get identifiers"""
-    return get_updated_identifiers(timestamp, corp_list)
+    return get_updated_identifiers(timestamp, corp_list, 999)

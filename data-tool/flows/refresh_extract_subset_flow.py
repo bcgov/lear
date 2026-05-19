@@ -73,7 +73,7 @@ def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
 @task(name='Get-Updated-Identifiers-Colin', cache_policy=NO_CACHE)
-def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine) -> list[dict]:
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine, chunk_size: int) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
@@ -85,7 +85,8 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     corp_list = corpnum_to_oracle_ids(row[0]) if row else None
     # oracle_ids = corpnum_to_oracle_ids(corp_list)
     
-    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
+    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list), chunk_size)
+    print(colin_sql)
     with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
@@ -187,7 +188,7 @@ def extract_pull_flow(
     # Get Identifiers
     feed_path: Path | None = None
     if mode == 'refresh':
-        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
+        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine, chunk_size=chunk_size)
         print(f'Colin updated identifiers : {len(updated_rows)} rows')
         _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
@@ -243,7 +244,7 @@ def extract_pull_flow(
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
     p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
-    p.add_argument('--mode', default='load', choices=('refresh', 'load'))
+    p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
