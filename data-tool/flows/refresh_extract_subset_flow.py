@@ -9,9 +9,13 @@ from prefect.cache_policies import NO_CACHE
 from prefect.states import Failed
 from flask import current_app
 from sqlalchemy import create_engine, text
+from sqlalchemy.engine import Engine
 from datetime import datetime, timezone
 from config import get_named_config
-from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers, get_updated_identifiers_for_batch
+from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
+from common.init_utils import colin_oracle_init, get_config
+from common.query_utils import corpnum_to_oracle_ids
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -19,9 +23,12 @@ _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postg
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 
 def _resolve_master_script_path(out: str | None) -> Path:
-    if out:
-        return Path(out).expanduser().resolve()
-    return _SUBSET.resolve()
+    if not out:
+        return _SUBSET.resolve()
+    p = Path(out).expanduser()
+    if p.is_absolute():
+        return p.resolve()
+    return (_REPO_ROOT / p).resolve()
 
 def _run_cmd(argv: list[str], env: dict[str, str] | None = None) -> None:
     r = subprocess.run(argv, cwd=str(_REPO_ROOT), capture_output=False, text=True, env=env)
@@ -65,8 +72,8 @@ def _reset_extract_postgres_db() -> None:
 def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
-@task(name='Get-Updated-Identifiers-Colin')
-def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> list[dict]:
+@task(name='Get-Updated-Identifiers-Colin', cache_policy=NO_CACHE)
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
@@ -75,10 +82,11 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int) -> l
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
         row = conn.execute(text(mig_sql)).fetchone()
     
-    corp_list = row[0] if row else None
+    corp_list = corpnum_to_oracle_ids(row[0]) if row else None
+    # oracle_ids = corpnum_to_oracle_ids(corp_list)
     
     colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE).connect() as conn:
+    with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
     return rows
@@ -94,6 +102,8 @@ def run_cprd_subset_extract_generator(
     pg_disable_method: str,
     out: str | None,
     include_cp: bool = False,
+    target_connection: str = 'ctst_pg',
+    prefix_numeric_bc: bool = False,
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
@@ -115,13 +125,16 @@ def run_cprd_subset_extract_generator(
         '--pg-disable-method',
         pg_disable_method,
     ]
+    argv.extend(['--target-connection', target_connection])
     if pg_fastload:
         argv.append('--pg-fastload')
     if include_cp:
         argv.append('--include-cp')
-    out_path = Path(out).expanduser().resolve() if out is not None else _SUBSET.resolve()
+    if prefix_numeric_bc:
+        argv.append('--prefix-numeric-bc')
+    out_path = _resolve_master_script_path(out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    argv.extend(['--out', str(out)])
+    argv.extend(['--out', str(out_path)])
     
     return subprocess.run(
         argv,
@@ -150,12 +163,13 @@ def extract_pull_flow(
     chunk_size: int = 900,
     threads: int = 4,
     pg_fastload: bool = False,
-    pg_disable_method: str = 'replica_role',
+    pg_disable_method: str = 'table_triggers',
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
+    target_connection: str = 'ctst_pg',
 ) -> None:
     """
     Generate files
@@ -165,25 +179,56 @@ def extract_pull_flow(
         print('Running in refresh mode: skipping Postgres DB reset')
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
+    
+    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+    config = get_config()
+    colin_oracle_engine = colin_oracle_init(config)
+    # Get Identifiers
+    feed_path: Path | None = None
+    if mode == 'refresh':
+        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
+        print(f'Colin updated identifiers : {len(updated_rows)} rows')
+        _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+        feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
+        seen = set()
+        lines = []
+        for row in updated_rows:
+            for k, v in row.items():
+                if k is None or v is None:
+                    continue
+                if str(k).lower() == 'corp_num':
+                    c = str(v).strip()
+                    if c and c not in seen:
+                        seen.add(c)
+                        lines.append(c)
+                    break
+        if  not lines:
+            raise ValueError('refresh: no corp_num in updated_rows')
+        feed_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
+        corp_file = str(feed_path)
+    result: subprocess.CompletedProcess | None = None
     print(f'Running CPRD subset extract generator {corp_file}')
-    result = run_cprd_subset_extract_generator(
-        corp_file=corp_file,
-        mode=mode,
-        chunk_size=chunk_size,
-        threads=threads,
-        pg_fastload=pg_fastload,
-        include_cp=include_cp,
-        pg_disable_method=pg_disable_method,
-        out=out,
-    )
-    if result.returncode != 0:
+    try:
+        result = run_cprd_subset_extract_generator(
+            corp_file=corp_file,
+            mode=mode,
+            chunk_size=chunk_size,
+            threads=threads,
+            pg_fastload=pg_fastload,
+            include_cp=include_cp,
+            pg_disable_method=pg_disable_method,
+            out=out,
+            target_connection=target_connection,
+            prefix_numeric_bc=(mode=='refresh'),
+        )
+    finally:
+        if feed_path is not None:
+            feed_path.unlink(missing_ok=True)
+    if result.returncode != 0 and result is not None:
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
-
-    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=128)
-    print(f'Colin updated identifiers : {len(updated_rows)} rows')
+    
     if run_dbschemacli:
         master_script = _resolve_master_script_path(out=out)
         run_result = run_dbschemacli_task(
@@ -197,15 +242,16 @@ def extract_pull_flow(
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
-    p.add_argument('corp_file', help='Path to newline-delimited corp identifiers')
+    p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
     p.add_argument('--mode', default='load', choices=('refresh', 'load'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
     p.add_argument('--include-cp', action='store_true', help='Include corp type CP in subset extract queries')
-    p.add_argument('--pg-disable-method', default='replica_role', choices=('table_triggers', 'replica_role'))
-    p.add_argument('--out', default=None, help='Output path for generated master script.')
-    p.add_argument('--run-dbschemacli', action='store_true')
+    p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
+    p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
+    p.add_argument('--run-dbschemacli', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
+    p.add_argument('--target-connection', default='ctst_pg')
     extract_pull_flow(**vars(p.parse_args()))
