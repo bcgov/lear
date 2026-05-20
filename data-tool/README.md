@@ -48,6 +48,10 @@ DATABASE_PASSWORD=
 DATABASE_NAME=
 DATABASE_HOST=
 DATABASE_PORT=
+
+# Reservation safety: fail long-running reserve_for_flow queries after 5 minutes.
+# Required for colin freeze and recommended for all migration flows.
+RESERVE_STATEMENT_TIMEOUT_MS=300000
 ```
 5. Install prefect server and migration flow related dependencies.
 ```bash

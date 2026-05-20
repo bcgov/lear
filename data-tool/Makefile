@@ -120,11 +120,15 @@ run-extract-load:
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py  --mode refresh 
+	python flows/refresh_extract_subset_flow.py  --mode refresh
 
 run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/update_colin_ar_ind_flow.py
+
+run-verify-colin-updates: ## Run verify COLIN updates flow
+	. $(VENV_DIR)/bin/activate && \
+	python flows/verify_colin_updates_flow.py
 
 #################################################################################
 # Self Documenting Commands                                                     #
