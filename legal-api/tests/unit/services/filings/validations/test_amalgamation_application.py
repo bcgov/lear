@@ -28,6 +28,7 @@ from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filin
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
 from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_identifier
 from legal_api.services.filings.validations.validation import validate
+from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_businesses
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
@@ -1144,6 +1145,35 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         assert expected_code == err.code
         error_msg = err.msg[0].get('error') or err.msg[0].get('message')
         assert expected_msg == error_msg
+
+
+@pytest.mark.parametrize(
+    'legal_name, expects_error',
+    [
+        ('AB', True),          # 2 chars - below the 3 minimum
+        ('ABC', False),        # 3 chars - minimum boundary
+        ('A' * 150, False),    # 150 chars - maximum boundary
+        ('A' * 151, True),     # 151 chars - above the 150 maximum
+    ]
+)
+def test_foreign_business_legal_name_length(legal_name, expects_error):
+    """Assert _validate_foreign_businesses enforces a 3 to 150 character legal name."""
+    path = '/filing/amalgamationApplication/amalgamatingBusinesses/0'
+    msg = _validate_foreign_businesses(
+        is_staff=True,
+        is_any_bc_company=False,
+        is_any_ulc=False,
+        legal_type=Business.LegalTypes.BCOMP.value,
+        foreign_legal_name=legal_name,
+        amalgamating_business={'role': AmalgamatingBusiness.Role.amalgamating.name,
+                               'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
+        amalgamating_business_path=path)
+
+    length_error = {
+        'error': 'Length of foreign business legal name must be from 3 to 150 characters.',
+        'path': f'{path}/legalName'
+    }
+    assert (length_error in msg) is expects_error
 
 
 @pytest.mark.parametrize(

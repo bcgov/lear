@@ -269,6 +269,16 @@ def _validate_foreign_businesses(  # noqa: PLR0913
         amalgamating_business_path) -> list:
     msg = []
     msg.extend(_validate_foreign_identifier(amalgamating_business, amalgamating_business_path))
+
+    # Frontend enforces these bounds on the foreign business legal name; mirror them here.
+    min_legal_name_length: Final = 3
+    max_legal_name_length: Final = 150
+    if not min_legal_name_length <= len(foreign_legal_name) <= max_legal_name_length:
+        msg.append({
+            "error": "Length of foreign business legal name must be from 3 to 150 characters.",
+            "path": f"{amalgamating_business_path}/legalName"
+        })
+
     if is_staff:
         msg.extend(validate_foreign_jurisdiction(amalgamating_business["foreignJurisdiction"],
                                                  f"{amalgamating_business_path}/foreignJurisdiction",
