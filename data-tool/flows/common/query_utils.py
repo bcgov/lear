@@ -100,3 +100,10 @@ def prune_candidates_from_batch(pruning_corps_list: list) -> str:
     DELETE FROM mig_corp_batch
     WHERE corp_num IN {in_list}
     """
+
+def prune_candidates_from_account(pruning_corps_list: list) -> str:
+    in_list = colin_oracle_corp_num_list_format(pruning_corps_list)
+    return f"""
+    DELETE FROM mig_corp_account
+    WHERE corp_num IN {in_list}
+    """

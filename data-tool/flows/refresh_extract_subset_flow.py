@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
 from common.init_utils import colin_oracle_init, get_config
-from common.query_utils import corpnum_to_oracle_ids, get_fallout_corp_nums, prune_candidates_from_batch, prune_candidates_from_cp
+from common.query_utils import corpnum_to_oracle_ids, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
@@ -86,21 +86,23 @@ def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
     return rows
 
 @task(name='Prune-Fallen-Out-Identifiers', cache_policy=NO_CACHE)
-def prune_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
+def prune_fallen_identifiers(fallenout_corp_nums: list) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
+    if not fallenout_corp_nums:
+        print(f"No fallout corps to prune")
+        return
     cfg = get_named_config()
-    
-    fallen_out_identifiers_list = get_fallen_identifiers(updated_corp_nums)
+    fallen_out_identifiers_list = get_fallen_identifiers(fallenout_corp_nums)
     cp_query = prune_candidates_from_cp(fallen_out_identifiers_list)
     batch_query = prune_candidates_from_batch(fallen_out_identifiers_list)
-    print(batch_query)
+    account_query = prune_candidates_from_account(fallen_out_identifiers_list)
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
         prune_cp = conn.execute(text(cp_query))
         prune_batch = conn.execute(text(batch_query))
-    
-    print(f"Pruned corp_processing={prune_cp.rowcount}, mig_corp_batch={prune_batch.rowcount}")
+        prune_account = conn.execute(text(account_query))
+    print(f"Pruned corp_processing={prune_cp.rowcount}, mig_corp_batch={prune_batch.rowcount}, mig_corp_account={prune_account.rowcount}")
     
 
 @task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
@@ -117,10 +119,9 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
         row = conn.execute(text(mig_sql)).fetchone()
     
-    corp_list = corpnum_to_oracle_ids(row[0]) if row else None
-    # oracle_ids = corpnum_to_oracle_ids(corp_list)
-    
+    corp_list = corpnum_to_oracle_ids(row[0]) if row else None    
     colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list), chunk_size)
+
     with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
@@ -305,6 +306,7 @@ def extract_pull_flow(
         refresh_result = run_refresh_views('refresh', 'all')
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
+    if mode == 'refresh':
         prune_identifiers = get_fallen_identifiers(updated_corp_nums)
         prune_fallen_identifiers(prune_identifiers)
     
