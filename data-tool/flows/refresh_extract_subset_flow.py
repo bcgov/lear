@@ -81,8 +81,8 @@ def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
     
     corp_nums_prune_list_query = get_fallout_corp_nums('SAF', updated_corp_nums)
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
-        result = conn.execute(text(corp_nums_prune_list_query))
-        rows = [dict(row) for row in result.mappings()]
+        result = conn.execute(text(corp_nums_prune_list_query)).scalars().all()
+        rows = [str(row).strip() for row in result]
     return rows
 
 @task(name='Prune-Fallen-Out-Identifiers', cache_policy=NO_CACHE)
@@ -95,11 +95,12 @@ def prune_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
     fallen_out_identifiers_list = get_fallen_identifiers(updated_corp_nums)
     cp_query = prune_candidates_from_cp(fallen_out_identifiers_list)
     batch_query = prune_candidates_from_batch(fallen_out_identifiers_list)
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+    print(batch_query)
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
         prune_cp = conn.execute(text(cp_query))
-        print(f"Complete Pruning {prune_cp}")
         prune_batch = conn.execute(text(batch_query))
-        print(f"Complete Pruning {prune_batch}")
+    
+    print(f"Pruned corp_processing={prune_cp.rowcount}, mig_corp_batch={prune_batch.rowcount}")
     
 
 @task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
@@ -291,23 +292,22 @@ def extract_pull_flow(
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
     
-    # if run_dbschemacli:
-    #     master_script = _resolve_master_script_path(out=out)
-    #     run_result = run_dbschemacli_task(
-    #         master_script=str(master_script),
-    #         dbschemacli_cmd=dbschemacli_cmd,
-    #     )
-    #     if run_result.returncode != 0:
-    #         raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+    if run_dbschemacli:
+        master_script = _resolve_master_script_path(out=out)
+        run_result = run_dbschemacli_task(
+            master_script=str(master_script),
+            dbschemacli_cmd=dbschemacli_cmd,
+        )
+        if run_result.returncode != 0:
+            raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
         
     if refresh_views:
         refresh_result = run_refresh_views('refresh', 'all')
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
-        prune_identifiers = prune_fallen_identifiers(updated_corp_nums)
-        print(f'Pruning list {prune_identifiers}')
+        prune_identifiers = get_fallen_identifiers(updated_corp_nums)
+        prune_fallen_identifiers(prune_identifiers)
     
-
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
     p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
