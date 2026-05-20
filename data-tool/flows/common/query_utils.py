@@ -2,6 +2,9 @@ import pandas as pd
 from typing import Dict, Iterable, List, Sequence
 import re
 
+from sqlalchemy import Engine
+from common.colin_utils import colin_oracle_corp_num_list_format
+
 BC_PREFIX_RE = re.compile(r"^BC(\d+)$", re.IGNORECASE)
 
 def convert_result_set_to_dict(rs):
@@ -50,8 +53,13 @@ def corpnum_to_oracle_ids(target_ids: str | bytes | tuple | list | None) -> List
         return None
     return ",".join("'" + x.replace("'", "''") + "'" for x in out)
 
-def get_saf_criteria_query(updated_corp_nums: list) -> str:
-    return """
+def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list) -> str:
+    in_list = colin_oracle_corp_num_list_format(updated_corp_nums)
+    return f"""
+    SELECT corp_num FROM mv_legacy_corps_data
+    WHERE 1 = 1
+    AND corp_num IN {in_list}
+    AND corp_num NOT IN (
     SELECT corp_num FROM mv_legacy_corps_data
     WHERE 1 = 1
     AND is_active = true
@@ -62,7 +70,7 @@ def get_saf_criteria_query(updated_corp_nums: list) -> str:
     AND has_officers = false
     AND meets_main_criteria = true
     AND has_3rd_party = false
-    AND admin_email is not null
+    AND admin_email IS NOT NULL
     AND email_used_count = 1
     AND director_count = 1
     AND address_all_any_bad_count = 0
@@ -70,11 +78,25 @@ def get_saf_criteria_query(updated_corp_nums: list) -> str:
     AND has_bar_filing = false
     AND directors_within_bc = true
     AND is_bad_email = false
-    AND corp_num in {updated_corp_nums}
+    )
 """
 
-def get_criteria_query(criteria: str, updated_corp_nums: list) -> str:
+def get_fallout_corp_nums(criteria: str, updated_corp_nums: list) -> str:
     key = (criteria or '').strip().upper()
     if key == 'SAF':
-        return get_saf_criteria_query(updated_corp_nums)
+        return get_candidates_not_matching_saf_criteria_query(updated_corp_nums)
     raise ValueError(f'unsupported criteria: {criteria}')
+
+def prune_candidates_from_cp(pruning_corps_list: list) -> str:
+    in_list = colin_oracle_corp_num_list_format(pruning_corps_list)
+    return f"""
+    DELETE FROM corp_processing
+    WHERE corp_num IN {in_list}
+    """
+
+def prune_candidates_from_batch(pruning_corps_list: list) -> str:
+    in_list = colin_oracle_corp_num_list_format(pruning_corps_list)
+    return f"""
+    DELETE FROM mig_corp_batch
+    WHERE corp_num IN {in_list}
+    """
