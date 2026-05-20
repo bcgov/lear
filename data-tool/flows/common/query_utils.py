@@ -53,28 +53,28 @@ def corpnum_to_oracle_ids(target_ids: str | bytes | tuple | list | None) -> List
 def get_saf_criteria_query(updated_corp_nums: list) -> str:
     return """
     SELECT corp_num FROM mv_legacy_corps_data
-    where 1 = 1
-    and is_active = true
-    and is_frozen = false
-    and in_dissolution = false
-    and migrated <> 'Y'
-    and has_password = true
-    and has_officers = false
-    and meets_main_criteria = true
-    and has_3rd_party = false
-    and admin_email is not null
-    and email_used_count = 1
-    and director_count = 1
-    and address_all_any_bad_count = 0
-    and meets_share_criteria = true
-    and has_bar_filing = false
-    and directors_within_bc = true
-    and is_bad_email = false
-    and corp_num in {updated_corp_nums}
+    WHERE 1 = 1
+    AND is_active = true
+    AND is_frozen = false
+    AND in_dissolution = false
+    AND migrated <> 'Y'
+    AND has_password = true
+    AND has_officers = false
+    AND meets_main_criteria = true
+    AND has_3rd_party = false
+    AND admin_email is not null
+    AND email_used_count = 1
+    AND director_count = 1
+    AND address_all_any_bad_count = 0
+    AND meets_share_criteria = true
+    AND has_bar_filing = false
+    AND directors_within_bc = true
+    AND is_bad_email = false
+    AND corp_num in {updated_corp_nums}
 """
 
-def get_criteria_query(criteria: str) -> str:
+def get_criteria_query(criteria: str, updated_corp_nums: list) -> str:
     key = (criteria or '').strip().upper()
     if key == 'SAF':
-        return get_saf_criteria_query()
+        return get_saf_criteria_query(updated_corp_nums)
     raise ValueError(f'unsupported criteria: {criteria}')

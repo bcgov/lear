@@ -91,7 +91,6 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     # oracle_ids = corpnum_to_oracle_ids(corp_list)
     
     colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list), chunk_size)
-    print(colin_sql)
     with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
