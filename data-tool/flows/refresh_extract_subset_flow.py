@@ -22,6 +22,9 @@ _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
 _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 _REFRESH_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'refresh_colin_extract_views.sh'
+_BUILD_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_views_ddl'
+
+
 def _resolve_master_script_path(out: str | None) -> Path:
     if not out:
         return _SUBSET.resolve()
@@ -67,6 +70,8 @@ def _reset_extract_postgres_db() -> None:
     _run_cmd(['dropdb', *pg_flags, '--maintenance-db=postgres', '--if-exists', dbname ], env=run_env)
     _run_cmd(['createdb', *pg_flags, '--maintenance-db=postgres', '-T', 'template0', dbname ], env=run_env)
     _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_DEFAULT_DDL) ], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_BUILD_VIEWS_SCRIPT) ], env=run_env)
+
 
 @task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
 def cleanup_extract_postgres_db() -> None:
