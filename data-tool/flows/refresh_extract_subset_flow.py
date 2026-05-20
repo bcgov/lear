@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
 from common.init_utils import colin_oracle_init, get_config
-from common.query_utils import corpnum_to_oracle_ids
+from common.query_utils import corpnum_to_oracle_ids, get_criteria_query
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
@@ -225,6 +225,7 @@ def extract_pull_flow(
         feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
         seen = set()
         lines = []
+        updated_corp_nums = []
         for row in updated_rows:
             for k, v in row.items():
                 if k is None or v is None:
@@ -234,6 +235,7 @@ def extract_pull_flow(
                     if c and c not in seen:
                         seen.add(c)
                         lines.append(c)
+                        updated_corp_nums.append('BC'+c)
                     break
         if  not lines:
             raise ValueError('refresh: no corp_num in updated_rows')
@@ -261,19 +263,22 @@ def extract_pull_flow(
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
     
-    if run_dbschemacli:
-        master_script = _resolve_master_script_path(out=out)
-        run_result = run_dbschemacli_task(
-            master_script=str(master_script),
-            dbschemacli_cmd=dbschemacli_cmd,
-        )
-        if run_result.returncode != 0:
-            raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+    # if run_dbschemacli:
+    #     master_script = _resolve_master_script_path(out=out)
+    #     run_result = run_dbschemacli_task(
+    #         master_script=str(master_script),
+    #         dbschemacli_cmd=dbschemacli_cmd,
+    #     )
+    #     if run_result.returncode != 0:
+    #         raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
         
     if refresh_views:
         refresh_result = run_refresh_views('refresh', 'all')
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
+        corp_nums_prune_list = get_criteria_query('SAF', updated_corp_nums)
+        print(f'Pruning list {corp_nums_prune_list}')
+
 
     
 
