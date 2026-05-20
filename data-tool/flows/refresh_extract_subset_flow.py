@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
 from common.init_utils import colin_oracle_init, get_config
-from common.query_utils import corpnum_to_oracle_ids, get_criteria_query
+from common.query_utils import corpnum_to_oracle_ids, get_fallout_corp_nums
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
@@ -276,7 +276,7 @@ def extract_pull_flow(
         refresh_result = run_refresh_views('refresh', 'all')
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
-        corp_nums_prune_list = get_criteria_query('SAF', updated_corp_nums)
+        corp_nums_prune_list = get_fallout_corp_nums('SAF', updated_corp_nums)
         print(f'Pruning list {corp_nums_prune_list}')
 
 
