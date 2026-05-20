@@ -28,6 +28,10 @@ from business_model.models import (
     BatchProcessing,
     Business,
     Comment,
+    DCBusinessUser,
+    DCConnection,
+    DCCredential,
+    DCDefinition,
     Filing,
     Furnishing,
     FurnishingGroup,
@@ -45,6 +49,7 @@ from business_model.models import (
 from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 from business_model.models.party_class import PartyClassType
+from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
@@ -501,3 +506,78 @@ def factory_furnishing_group():
     furnishing_group = FurnishingGroup()
     furnishing_group.save()
     return furnishing_group
+
+
+def get_cco_expiry_date(filing_effective_date):
+    effective_date = LegislationDatetime.as_legislation_timezone(filing_effective_date)
+    _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
+    _date += datedelta(months=6)
+
+    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
+    _date = LegislationDatetime.as_legislation_timezone(_date)
+
+    # Adjust day light savings. Handle DST +-1 hour changes
+    dst_offset_diff = effective_date.dst() - _date.dst()
+    _date += dst_offset_diff
+
+    return LegislationDatetime.as_utc_timezone(_date)
+
+
+def create_dc_business_user(business, user) -> DCBusinessUser:
+    """Create new dc_business_user object."""
+    business_user = DCBusinessUser(
+        business_id=business.id,
+        user_id=user.id
+    )
+    business_user.save()
+    return business_user
+
+
+def create_dc_connection(business_user: DCBusinessUser, is_active=False) -> DCConnection:
+    """Create new dc_connection object."""
+    connection = DCConnection(
+        connection_id='0d94e18b-3a52-4122-8adf-33e2ccff681f',
+        invitation_url="""http://192.168.65.3:8020?c_i=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL2Nvbm5lY3Rpb
+25zLzEuMC9pbnZpdGF0aW9uIiwgIkBpZCI6ICIyZjU1M2JkZS01YWJlLTRkZDctODIwZi1mNWQ2Mjc1OWQxODgi
+LCAicmVjaXBpZW50S2V5cyI6IFsiMkFHSjVrRDlVYU45OVpSeUFHZVZKNDkxclZhNzZwZGZYdkxXZkFyc2lKWjY
+iXSwgImxhYmVsIjogImZhYmVyLmFnZW50IiwgInNlcnZpY2VFbmRwb2ludCI6ICJodHRwOi8vMTkyLjE2OC42NS4zOjgwMjAifQ==""",
+        is_active=is_active,
+        connection_state=DCConnection.State.ACTIVE.value if is_active else DCConnection.State.INVITATION_SENT.value,
+        business_user_id=business_user.id,
+        # Kept for legacy reasons, remove when possible
+        business_id=business_user.business_id
+    )
+    connection.save()
+    return connection
+
+
+def create_dc_credential(business: Business = None, user: User = None) -> DCCredential:
+    """Create new dc_credential object."""
+    if not business:
+        identifier = 'FM1234567'
+        business = factory_business(identifier)
+    if not user:
+        user = factory_user('test', 'Test', 'User')
+    business_user = create_dc_business_user(business, user)
+    definition = create_dc_definition()
+    connection = create_dc_connection(business_user, is_active=True)
+    issued_credential = DCCredential(
+        definition_id=definition.id,
+        connection_id=connection.id,
+        credential_exchange_id='8dbdce35-d47a-40cc-96b0-90ec263b162b'
+    )
+    issued_credential.save()
+    return issued_credential
+
+
+def create_dc_definition():
+    """Create new dc_definition object."""
+    definition = DCDefinition(
+        credential_type=DCDefinition.CredentialType.business,
+        schema_name='test_business_schema',
+        schema_version='1.0.0',
+        schema_id='test_schema_id',
+        credential_definition_id='test_credential_definition_id'
+    )
+    definition.save()
+    return definition

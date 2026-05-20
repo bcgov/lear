@@ -23,9 +23,8 @@ from registry_schemas.example_data import FILING_HEADER, CONSENT_AMALGAMATION_OU
 from business_model.models import Business, ConsentContinuationOut
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.datetime import datetime
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import factory_business, factory_completed_filing, get_cco_expiry_date
 
-from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
 legal_name = 'Test name request'
 
 
