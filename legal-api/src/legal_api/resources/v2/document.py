@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Document, Filing
+from business_model.models import Document, Filing
 from legal_api.services.minio import MinioService
 from legal_api.utils.auth import jwt
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from random import randint
 
 from datedelta import datedelta
-from legal_api.models import db, Address, Business, Office, Party, PartyRole, Filing
+from business_model.models import db, Address, Business, Office, Party, PartyRole, Filing
 
 
 def factory_party_person(first_name: str,

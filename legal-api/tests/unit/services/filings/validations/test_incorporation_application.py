@@ -25,7 +25,7 @@ from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORAT
 from registry_schemas.example_data.schema_data import FILING_HEADER
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings import validate
 
 from tests.unit.services.filings.test_utils import _upload_file
@@ -1635,10 +1635,11 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
-            HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
-                'path': '/filing/header/effectiveDate'
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00Z',
+            HTTPStatus.UNPROCESSABLE_CONTENT, [{
+                'error': "'2020-09-44T00:00:00Z' is not a 'date-time'",
+                'path': 'filing/header/effectiveDate',
+                'context': []
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
@@ -1675,7 +1676,7 @@ def test_validate_incorporation_effective_date(session, mocker, test_name, effec
     # validate outcomes
     if expected_code:
         assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
+        assert err.msg == expected_msg
     else:
         if err:
             print(err, err.code, err.msg)

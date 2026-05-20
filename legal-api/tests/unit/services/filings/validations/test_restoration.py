@@ -21,7 +21,7 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
-from legal_api.models import Business, Filing
+from business_model.models import Business, Filing
 from legal_api.services.filings.validations.validation import validate
 from legal_api.utils.legislation_datetime import LegislationDatetime
 

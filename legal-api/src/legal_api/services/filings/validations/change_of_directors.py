@@ -17,8 +17,8 @@ from http import HTTPStatus
 import pycountry
 from flask_babel import _ as babel  # importing camelcase '_' as a name
 
+from business_model.models import Address, Business, Filing
 from legal_api.errors import Error
-from legal_api.models import Address, Business, Filing
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import PARTY_NAME_MAX_LENGTH, validate_parties_addresses
 from legal_api.services.utils import get_str

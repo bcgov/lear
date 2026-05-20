@@ -14,21 +14,20 @@
 """Test Firms Correction validations."""
 
 import copy
-from http import HTTPStatus
 from unittest.mock import patch
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 import pytest
-from registry_schemas.example_data import CORRECTION_REGISTRATION, CHANGE_OF_REGISTRATION_TEMPLATE
 
 from legal_api.services import NaicsService, NameXService
 from legal_api.services.filings import validate
-from legal_api.services.authz import STAFF_ROLE, BASIC_USER
-from tests.unit.models import factory_business, factory_completed_filing
-from tests.unit import MockResponse
+from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from registry_schemas.example_data import CORRECTION_REGISTRATION, CHANGE_OF_REGISTRATION_TEMPLATE
 
-from ...utils import helper_create_jwt
+from tests.unit import MockResponse
+from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.services.utils import jwt_request_context
 
 CHANGE_OF_REGISTRATION_APPLICATION = copy.deepcopy(CHANGE_OF_REGISTRATION_TEMPLATE)
 
@@ -79,10 +78,8 @@ naics_response = {
         ('gp_correction', GP_CORRECTION_REGISTRATION_APPLICATION),
     ]
 )
-def test_valid_firms_correction(mocker, app, session, jwt, test_name, filing):
+def test_valid_firms_correction(app, session, jwt, test_name, filing):
     """Test that a valid Firms correction passes validation."""
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
-    
     # setup
     identifier = 'FM1234567'
     founding_date = datetime(2022, 1, 1)
@@ -98,10 +95,9 @@ def test_valid_firms_correction(mocker, app, session, jwt, test_name, filing):
     nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
-
-            if err:
-                print(err.msg)
+            with jwt_request_context(app, jwt, [BASIC_USER]):
+                if err := validate(business, f):
+                    print(err.msg)
 
     # check that validation passed
     assert None is err
@@ -114,10 +110,8 @@ def test_valid_firms_correction(mocker, app, session, jwt, test_name, filing):
         ('gp_invalid_party', GP_CORRECTION_REGISTRATION_APPLICATION, '2 Partners and a Completing Party are required.'),
     ]
 )
-def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, filing, expected_msg):
+def test_firms_correction_invalid_parties(app, session, jwt, test_name, filing, expected_msg):
     """Test that a invalid Firms correction fails validation."""
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
-    
     # setup
     identifier = 'FM1234567'
     f = copy.deepcopy(filing)
@@ -133,10 +127,9 @@ def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, 
     nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
-
-            if err:
-                print(err.msg)
+            with jwt_request_context(app, jwt, [BASIC_USER]):
+                if err := validate(business, f):
+                    print(err.msg)
 
     # check that validation passed
     assert err
@@ -182,11 +175,9 @@ def test_firms_correction_invalid_parties(mocker, app, session, jwt, test_name, 
          'Invalid naics code or description.'),
     ]
 )
-def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, existing_naics_code, existing_naics_desc,
+def test_firms_correction_naics(app, session, jwt, test_name, filing, existing_naics_code, existing_naics_desc,
                                 correction_naics_code, correction_naics_desc, naics_response, expected_msg):
     """Test that NAICS code and description are correctly validated."""
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
-    
     # setup
     identifier = 'FM1234567'
     founding_date = datetime(2022, 1, 1)
@@ -211,10 +202,9 @@ def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, ex
     nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
-
-            if err:
-                print(err.msg)
+            with jwt_request_context(app, jwt, [BASIC_USER]):
+                if err := validate(business, f):
+                    print(err.msg)
 
     # check for expected validation resultsn
     if expected_msg:
@@ -226,14 +216,14 @@ def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, ex
 
 @pytest.mark.parametrize('test_name, filing, username, roles, founding_date_str, delta_date, is_valid', 
                          [
-                             ('sp_no_correction_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', None, True),
-                             ('gp_no_correction_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', None, True),
-                             ('sp_correction_greater_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', timedelta(days=90), True),
-                             ('gp_correction_greater_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', timedelta(days=90), True),
-                             ('sp_correction_invalid_greater_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', timedelta(days=91), False),
-                             ('gp_correction_invalid_greater_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', timedelta(days=91), False),
-                             ('sp_correction_lesser_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', relativedelta(years=-20), True),
-                             ('gp_correction_lesser_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', STAFF_ROLE, '2022-01-01', relativedelta(years=-20), True),
+                             ('sp_no_correction_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', None, True),
+                             ('gp_no_correction_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', None, True),
+                             ('sp_correction_greater_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=90), True),
+                             ('gp_correction_greater_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=90), True),
+                             ('sp_correction_invalid_greater_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=91), False),
+                             ('gp_correction_invalid_greater_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', timedelta(days=91), False),
+                             ('sp_correction_lesser_by_staff', SP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', relativedelta(years=-20), True),
+                             ('gp_correction_lesser_by_staff', GP_CORRECTION_REGISTRATION_APPLICATION, 'staff', [STAFF_ROLE], '2022-01-01', relativedelta(years=-20), True),
 
                              ('sp_no_correction_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', None, True),
                              ('gp_no_correction_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', None, True),
@@ -246,14 +236,8 @@ def test_firms_correction_naics(mocker, app, session, jwt, test_name, filing, ex
                              ('sp_correction_invalid_lesser_by_general_user', SP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', relativedelta(years=-10, days=-1), False),
                              ('gp_correction_invalid_lesser_by_general_user', GP_CORRECTION_REGISTRATION_APPLICATION, 'general user', [BASIC_USER], '2022-01-01', relativedelta(years=-10, days=-1), False),
                          ])
-def test_firms_correction_start_date(mocker, app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid):
+def test_firms_correction_start_date(app, session, jwt, test_name, filing, username, roles, founding_date_str, delta_date, is_valid):
     """Test that start date of firms is correctly validated."""
-    def mock_validate_roles(required_roles):
-        if roles in required_roles:
-            return True
-        return False
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)  # Client
-    
     identifier = 'FM1234567'
     founding_date = datetime.strptime(founding_date_str, '%Y-%m-%d')
     f = copy.deepcopy(filing)
@@ -274,7 +258,8 @@ def test_firms_correction_start_date(mocker, app, session, jwt, test_name, filin
     nr_res['legalType'] = legal_type
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, f)
+            with jwt_request_context(app, jwt, roles):
+                err = validate(business, f)
 
     if is_valid:
         assert not err

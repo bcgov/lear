@@ -13,12 +13,13 @@
 # limitations under the License.
 """Validation for the Amalgamation Application filing."""
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
+from flask.globals import request_ctx
 from flask_babel import _ as babel
 
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.errors import Error
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, flags
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
@@ -44,7 +45,7 @@ from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
 
-def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
+def validate(amalgamation_json: dict, account_id) -> Error | None:
     """Validate the Amalgamation Application filing."""
     filing_type = "amalgamationApplication"
     if not amalgamation_json:
@@ -121,7 +122,7 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         amalgamation_type,
         account_id) -> list:
     """Validate amalgamating businesses."""
-    is_staff = jwt.validate_roles([STAFF_ROLE])
+    is_staff = jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE])
     enabled_filings = flags.value("supported-amalgamation-entities").split()
     if legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,

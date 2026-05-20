@@ -28,29 +28,6 @@ from dotenv import find_dotenv, load_dotenv
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
-CONFIGURATION = {
-    "development": "legal_api.config.DevConfig",
-    "testing": "legal_api.config.TestConfig",
-    "production": "legal_api.config.ProdConfig",
-    "default": "legal_api.config.ProdConfig",
-}
-
-
-def get_named_config(config_name: str = "production"):
-    """Return the configuration object based on the name.
-
-    :raise: KeyError: if an unknown configuration is requested
-    """
-    if config_name in ["production", "staging", "default"]:
-        config = ProdConfig()
-    elif config_name == "testing":
-        config = TestConfig()
-    elif config_name == "development":
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration: {config_name}")
-    return config
-
 
 class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
@@ -331,10 +308,11 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     MINIO_BUCKET_BUSINESSES = "businesses"
     MINIO_SECURE = False
 
-    # determines which year of NAICS data will be used to drive NAICS search
-    NAICS_YEAR = 2022
+    # determines which year of NAICS data will be used to drive NAICS search;
+    # matches the test seed data loaded by business_model_migrations
+    NAICS_YEAR = 2017
     # determines which version of NAICS data will be used to drive NAICS search
-    NAICS_VERSION = 1
+    NAICS_VERSION = 3
 
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
@@ -364,3 +342,27 @@ class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
 
     TESTING = False
     DEBUG = False
+
+
+class MigrationConfig:  # pylint: disable=too-few-public-methods
+    """Config object for migration environment."""
+
+    ALEMBIC_INI = "migrations/alembic.ini"
+
+    # POSTGRESQL
+    DB_USER = os.getenv("DATABASE_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_NAME", "")
+    DB_HOST = os.getenv("DATABASE_HOST", "")
+    DB_PORT = os.getenv("DATABASE_PORT", "5432")
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME", "")
+    DB_IP_TYPE = os.getenv("DATABASE_IP_TYPE", "private").lower()
+
+    # POSTGRESQL
+    DB_UNIX_SOCKET = os.getenv("DATABASE_UNIX_SOCKET", None)
+    if DB_UNIX_SOCKET:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
+    elif DB_HOST:
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"

@@ -26,7 +26,7 @@ from freezegun import freeze_time
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import flags, NameXService
 from legal_api.services.filings import validate
 from legal_api.utils.datetime import datetime, timezone
@@ -192,7 +192,7 @@ def create_mock_directors(count=3):
     (True, 'legal_name-BC1234567_Changed', 'CCC', 'CUL', 'ULCC', True, False, 2)
 ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-@patch('legal_api.models.PartyRole.get_parties_by_role')
+@patch('business_model.models.PartyRole.get_parties_by_role')
 def test_alteration(mock_get_parties, session, use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors):
     """Test that a valid Alteration without NR correction passes validation."""
     # setup
@@ -297,7 +297,7 @@ def test_alteration(mock_get_parties, session, use_nr, new_name, legal_type, new
     ('named_to_numbered', 'CUL', 'CUL', None),
 ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-@patch('legal_api.models.PartyRole.get_parties_by_role')
+@patch('business_model.models.PartyRole.get_parties_by_role')
 def test_validate_numbered_name(mock_get_parties, session, test_name, legal_type, new_legal_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
@@ -345,7 +345,7 @@ def test_validate_numbered_name(mock_get_parties, session, test_name, legal_type
     ('legal_name-BC1234567_Changed', 'BEN', 'ULC', 'BECV', 'Name Request legal type is not same as the business legal type.')
 ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-@patch('legal_api.models.PartyRole.get_parties_by_role')
+@patch('business_model.models.PartyRole.get_parties_by_role')
 def test_validate_nr_type(mock_get_parties, session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
     """Test that validator validates the alteration with legal type change."""
     # setup
@@ -655,7 +655,7 @@ def test_validate_cooperative_documents(session, mocker, minio_server, test_name
     ]
 )
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-@patch('legal_api.models.PartyRole.get_parties_by_role')
+@patch('business_model.models.PartyRole.get_parties_by_role')
 def test_alteration_share_class_series_validation(mock_get_parties, session, legal_type, new_legal_type, has_rights_or_restrictions,
                                                   has_series, should_pass):
     """Test corps-type share class/series validation in alteration."""
@@ -694,10 +694,11 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
-            HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
-                'path': '/filing/header/effectiveDate'
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
+            HTTPStatus.UNPROCESSABLE_CONTENT, [{
+                'path': 'filing/header/effectiveDate',
+                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                'context': []
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{

@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Alias, Business
+from business_model.models import Alias, Business
 from legal_api.utils.auth import jwt
 
 from .bp import bp

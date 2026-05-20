@@ -19,7 +19,7 @@ from http import HTTPStatus
 import pytest
 from registry_schemas.example_data import FILING_HEADER, SPECIAL_RESOLUTION
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings.validations.special_resolution import validate
 from . import create_utc_future_date_str
 

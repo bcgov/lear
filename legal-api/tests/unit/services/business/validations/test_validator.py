@@ -15,7 +15,7 @@
 import datedelta
 import pytest
 from legal_api.services.business import validate_document_request
-from legal_api.models import Business
+from business_model.models import Business
 from tests.unit.models import factory_business
 from datetime import datetime, timezone
 
