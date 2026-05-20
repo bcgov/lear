@@ -77,8 +77,9 @@ def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
+    if not updated_corp_nums:
+        return []
     cfg = get_named_config()
-    
     corp_nums_prune_list_query = get_fallout_corp_nums('SAF', updated_corp_nums)
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
         result = conn.execute(text(corp_nums_prune_list_query)).scalars().all()
