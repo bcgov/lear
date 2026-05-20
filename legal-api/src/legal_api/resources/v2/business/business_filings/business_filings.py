@@ -343,7 +343,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
         if str(request.accept_mimetypes) == "application/pdf":
             report_type = request.args.get("type", None)
-            return legal_api.reports.get_pdf(rv.storage, report_type, True)
+            return legal_api.reports.get_pdf(rv.storage, report_type)
 
         filing_json = rv.json
         submitter_displayname = REDACTED_STAFF_SUBMITTER
