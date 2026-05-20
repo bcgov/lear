@@ -9,6 +9,7 @@
     "enable-document-records": false,
     "enable-involuntary-dissolution-filter": false,
     "enable-new-ben-statements": false,
+    "enable-new-feature": ["incorporationApplication-completingParty"],
     "enable-auth-v2-business": true,
     "enable-auth-v2-filing": true,
     "enable-permissions-for-action": false,

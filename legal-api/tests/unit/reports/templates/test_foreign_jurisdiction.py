@@ -12,19 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Foreign Jurisdiction template tests."""
-
-from pathlib import Path
-
 import pytest
-from flask import current_app
-from jinja2 import Template
+
+from . import get_template
 
 
-def get_template():
-    """Returns the template."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}/template-parts/continuation/foreignJurisdiction.html').read_text()
-    return Template(template_code)
+FOREIGN_JUR_TEMPLATE = '/template-parts/continuation/foreignJurisdiction.html'
 
 
 @pytest.mark.parametrize('foreign_jurisdiction', [
@@ -55,7 +48,7 @@ def get_template():
 ])
 def test_render_foreign_jurisdiction(session, foreign_jurisdiction):
     """Test Foreign Jurisdiction rendering."""
-    template = get_template()
+    template = get_template(FOREIGN_JUR_TEMPLATE)
     rendered = template.render(foreignJurisdiction=foreign_jurisdiction)
 
     # Static fields always present
