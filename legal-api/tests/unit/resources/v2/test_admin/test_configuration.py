@@ -118,6 +118,22 @@ def test_get_configurations_with_filter_names_no_matching_configurations(app, se
     assert rv.json['message'] == 'Configurations not found'
 
 
+def test_get_configurations_with_filter_names_partial_matching_configurations(app, session, client, jwt):
+    """Assert that not found is returned when configuration names have partial matches."""
+    filter_names = 'NON_EXISTENT_CONFIGURATION_NAME, NUM_DISSOLUTIONS_ALLOWED'
+
+    # Test
+    rv = client.get(f'/api/v2/admin/configurations?names={filter_names}',
+                    headers=create_header(jwt, [STAFF_ROLE], 'user'))
+
+    # Check
+    assert rv.status_code == HTTPStatus.OK
+    assert 'configurations' in rv.json
+    results = rv.json['configurations']
+    assert len(results) == 1
+    assert results[0]['name'] == 'NUM_DISSOLUTIONS_ALLOWED'
+
+
 def test_put_configurations_with_valid_data(app, session, client, jwt):
     """Assert that update values successfully."""
 

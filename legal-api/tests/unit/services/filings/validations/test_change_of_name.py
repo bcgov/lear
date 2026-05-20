@@ -20,7 +20,7 @@ import pytest
 from registry_schemas.example_data import CHANGE_OF_NAME, FILING_HEADER
 
 from legal_api.services import NameXService
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings.validations.change_of_name import validate
 from tests.unit.models import factory_business
 

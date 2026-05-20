@@ -22,7 +22,7 @@ import requests
 from flask import current_app
 from jinja2 import Template
 
-from legal_api.models import Address, Business
+from business_model.models import Address, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.utils.base import BaseEnum
 from legal_api.utils.legislation_datetime import LegislationDatetime

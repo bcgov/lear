@@ -20,7 +20,7 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-from legal_api.models import Business, DCBusinessUser, DCDefinition, Party, User
+from business_model.models import Business, DCBusinessUser, DCDefinition, Party, User
 from legal_api.services.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_business_type,
@@ -138,7 +138,8 @@ def test_get_business_type(app, session):
     
     with app.app_context():
         result = get_business_type(business)
-        assert result == 'BC Sole Proprietorship'
+        # PR NOTE: value is determined by the migration - potentially the model migrations should be changed in common
+        assert result == 'Sole Proprietorship'
 
 
 def test_get_business_type_no_corp_type(app, session):
@@ -204,7 +205,7 @@ def test_get_given_names_empty(app):
         assert result == ''
 
 
-@patch('legal_api.models.DCBusinessUser.find_by')
+@patch('business_model.models.DCBusinessUser.find_by')
 def test_get_or_create_business_user_existing(mock_find, app, session):
     """Test get_or_create_business_user returns existing user."""
     user = User(id=1)
@@ -218,8 +219,8 @@ def test_get_or_create_business_user_existing(mock_find, app, session):
         mock_find.assert_called_once_with(business_id=1, user_id=1)
 
 
-@patch('legal_api.models.DCBusinessUser.find_by')
-@patch('legal_api.models.DCBusinessUser.save')
+@patch('business_model.models.DCBusinessUser.find_by')
+@patch('business_model.models.DCBusinessUser.save')
 def test_get_or_create_business_user_new(mock_save, mock_find, app, session):
     """Test get_or_create_business_user creates new user."""
     user = User(id=1)

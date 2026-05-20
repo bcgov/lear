@@ -23,9 +23,9 @@ import jwt as pyjwt
 import pytest
 import requests
 
-from legal_api.models.business import Business
-from legal_api.models.party_role import PartyRole
-from legal_api.models.user import User
+from business_model.models.business import Business
+from business_model.models.party_role import PartyRole
+from business_model.models.user import User
 from legal_api.services import DigitalCredentialsRulesService
 from legal_api.services.authz import PUBLIC_USER
 from tests.unit.models import factory_completed_filing, factory_user
@@ -81,7 +81,7 @@ def setup_mock_auth(monkeypatch, jwt, token_json):
     return token
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 def test_has_general_access_false_when_no_user(monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
@@ -91,7 +91,7 @@ def test_has_general_access_false_when_no_user(monkeypatch, app, session, jwt, r
         assert rules._has_general_access(user) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='NOT_BCSC'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='NOT_BCSC'))
 def test_has_general_access_false_when_login_source_not_bcsc(monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
@@ -101,7 +101,7 @@ def test_has_general_access_false_when_login_source_not_bcsc(monkeypatch, app, s
         assert rules._has_general_access(user) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
 def test_has_general_access_true(monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
@@ -111,11 +111,11 @@ def test_has_general_access_true(monkeypatch, app, session, jwt, rules):
         assert rules._has_general_access(user) is True
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'user_filing_party_roles', return_value=[MagicMock()])
-@patch.object(DigitalCredentialsRulesService, 'user_business_party_roles', return_value=[MagicMock()])
-def test_has_specific_access_false_when_no_business(mock_user_business_party_roles,
-                                                    mock_user_filing_party_roles,
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
+def test_has_specific_access_false_when_no_business(mock_user_has_business_party_role,
+                                                    mock_user_has_filing_party_role,
                                                     monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
@@ -125,11 +125,11 @@ def test_has_specific_access_false_when_no_business(mock_user_business_party_rol
         assert rules._has_specific_access(user, None) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'user_filing_party_roles', return_value=[MagicMock()])
-@patch.object(DigitalCredentialsRulesService, 'user_business_party_roles', return_value=[MagicMock()])
-def test_has_specific_access_false_when_wrong_business_type(mock_user_business_party_roles,
-                                                            mock_user_filing_party_roles,
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
+def test_has_specific_access_false_when_wrong_business_type(mock_user_has_business_party_role,
+                                                            mock_user_has_filing_party_role,
                                                             monkeypatch, app, session, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
@@ -147,11 +147,11 @@ def test_has_specific_access_false_when_wrong_business_type(mock_user_business_p
     Business.LegalTypes.PARTNERSHIP.value,
     Business.LegalTypes.BCOMP.value,
 ])
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'user_filing_party_roles', return_value=[])
-@patch.object(DigitalCredentialsRulesService, 'user_business_party_roles', return_value=[])
-def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_business_party_roles,
-                                                                          mock_user_filing_party_roles,
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
+def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_user_has_business_party_role,
+                                                                          mock_user_has_filing_party_role,
                                                                           monkeypatch, app, session, legal_type, jwt, rules):
     token_json = {'username': 'test'}
     setup_mock_auth(monkeypatch, jwt, token_json)
@@ -169,9 +169,9 @@ def test_has_specific_access_false_when_correct_business_type_but_no_role(mock_u
     Business.LegalTypes.PARTNERSHIP.value,
     Business.LegalTypes.BCOMP.value,
 ])
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'user_filing_party_roles', return_value=[MagicMock()])
-@patch.object(DigitalCredentialsRulesService, 'user_business_party_roles', return_value=[])
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=True)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=False)
 @patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
 def test_has_specific_access_true_when_correct_business_type_and_filing_role(mock_determine_allowed_business_types,
                                                                              mock_user_business_party_roles,
@@ -193,9 +193,9 @@ def test_has_specific_access_true_when_correct_business_type_and_filing_role(moc
     Business.LegalTypes.PARTNERSHIP.value,
     Business.LegalTypes.BCOMP.value,
 ])
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
-@patch.object(DigitalCredentialsRulesService, 'user_filing_party_roles', return_value=[])
-@patch.object(DigitalCredentialsRulesService, 'user_business_party_roles', return_value=[MagicMock()])
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, login_source='BCSC'))
+@patch.object(DigitalCredentialsRulesService, 'user_has_filing_party_role', return_value=False)
+@patch.object(DigitalCredentialsRulesService, 'user_has_business_party_role', return_value=True)
 @patch('legal_api.services.digital_credentials_rules.determine_allowed_business_types', return_value=['SP', 'BEN', 'GP'])
 def test_has_specific_access_true_when_correct_business_type_and_party_role(mock_determine_allowed_business_types,
                                                                             mock_user_business_party_roles,
@@ -211,7 +211,7 @@ def test_has_specific_access_true_when_correct_business_type_and_party_role(mock
         assert rules._has_specific_access(user, business) is True
 
 
-@patch('legal_api.models.Filing.get_filings_by_types', return_value=[])
+@patch('business_model.models.Filing.get_filings_by_types', return_value=[])
 def test_user_is_completing_party_false_when_no_valid_filing(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
     business = create_business(
@@ -236,7 +236,7 @@ def test_user_is_completing_party_false_when_no_completing_parties(app, session,
     assert rules.user_is_completing_party(user, business) is False
 
 
-@patch('legal_api.models.PartyRole.get_party_roles_by_filing',
+@patch('business_model.models.PartyRole.get_party_roles_by_filing',
        return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
 def test_is_compleing_party_false_when_user_not_completing_party(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
@@ -274,7 +274,7 @@ def test_user_is_completing_party_false_when_user_is_not_submitter(app, session,
     assert rules.user_is_completing_party(user, business) is False
 
 
-@patch('legal_api.models.PartyRole.get_party_roles_by_filing',
+@patch('business_model.models.PartyRole.get_party_roles_by_filing',
        return_value=[PartyRole(role=PartyRole.RoleTypes.COMPLETING_PARTY.value)])
 def test_user_is_completing_party_false_when_user_not_in_completing_party(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')
@@ -322,7 +322,7 @@ def test_user_business_party_roles_empty_when_no_proprietors(app, session, rules
     assert rules.user_business_party_roles(user, business) == []
 
 
-@patch('legal_api.models.PartyRole.get_parties_by_role',
+@patch('business_model.models.PartyRole.get_parties_by_role',
        return_value=[PartyRole(role=PartyRole.RoleTypes.PROPRIETOR.value)])
 def test_user_business_party_roles_empty_when_no_proprietor(app, session, rules):
     user = factory_user(username='test', firstname='Test', lastname='User')

@@ -18,7 +18,7 @@ Test-Suite to ensure that admin/dissolutions endpoints are working as expected.
 """
 from http import HTTPStatus
 
-from legal_api.models import UserRoles
+from business_model.models import UserRoles
 from tests.unit.services.utils import create_header
 
 

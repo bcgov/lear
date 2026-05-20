@@ -21,7 +21,7 @@ import pytest
 from freezegun import freeze_time
 from registry_schemas.example_data import CHANGE_OF_OFFICERS, FILING_HEADER
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings import validate
 from legal_api.utils.datetime import datetime, timezone
 from legal_api.utils.legislation_datetime import LegislationDatetime

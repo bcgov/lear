@@ -37,7 +37,7 @@ def test_check_business(session, has_amalgamation, expected_warning):
         mock_filing.effective_date = datetime.now()
         mock_filing.payment_completion_date = datetime.now()
 
-    with patch('legal_api.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
+    with patch('business_model.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
         result = check_business(business)
 
         if expected_warning:

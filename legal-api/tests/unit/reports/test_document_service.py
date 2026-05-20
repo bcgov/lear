@@ -21,7 +21,7 @@ import json
 
 import pytest
 
-from legal_api.models import Filing
+from business_model.models import Filing
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import ReportMeta
 from tests.unit.models import factory_business, factory_completed_filing
@@ -371,12 +371,12 @@ def test_create_document(session, mock_doc_service, mocker):
     completed_filing = \
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     document_service = DocumentService()
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') == False
+    assert document_service.has_document(completed_filing.id, 'annualReport') == False
     response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', '3113', completed_filing.filing_type)
     assert status == HTTPStatus.CREATED
     assert response['identifier'] == 1
     assert response['url'] == 'https://document-service.com/document/1'
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
+    assert document_service.has_document(completed_filing.id, 'annualReport') != False
 
 
 def test_get_document(session, mock_doc_service, mocker):
@@ -388,10 +388,10 @@ def test_get_document(session, mock_doc_service, mocker):
     completed_filing = \
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     document_service = DocumentService()
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') == False
+    assert document_service.has_document(completed_filing.id, 'annualReport') == False
     response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', '3113', completed_filing.filing_type)
     assert response
-    response, status = document_service.get_document(business.identifier, completed_filing.id, 'annualReport', '3113')
+    response, status = document_service.get_document(completed_filing.id, 'annualReport', '3113')
     assert response
     assert status == HTTPStatus.OK
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
+    assert document_service.has_document(completed_filing.id, 'annualReport') != False

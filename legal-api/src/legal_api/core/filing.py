@@ -23,9 +23,9 @@ from typing import TYPE_CHECKING, Final
 from flask import current_app, url_for
 from sqlalchemy import desc
 
+from business_model.models import Business, Document, DocumentType, UserRoles
+from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
-from legal_api.models import Business, Document, DocumentType, UserRoles
-from legal_api.models import Filing as FilingStorage
 from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_roles, is_competent_authority
@@ -509,7 +509,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 Filing.Status.CHANGE_REQUESTED,
                 Filing.Status.APPROVED,
                 Filing.Status.REJECTED,
-            ):  # noqa: E125; lint conflicts on the indenting
+            ):
             return None
 
         base_url = current_app.config.get("BUSINESS_API_GW_URL")

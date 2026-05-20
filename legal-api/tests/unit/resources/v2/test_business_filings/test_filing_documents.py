@@ -52,7 +52,7 @@ from registry_schemas.example_data import (
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION, CONTINUATION_IN
 
 from legal_api.core import Filing
-from legal_api.models import Business, RegistrationBootstrap
+from business_model.models import Business, RegistrationBootstrap
 from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from tests.unit.models import (  # noqa:E501,I001
     factory_business,

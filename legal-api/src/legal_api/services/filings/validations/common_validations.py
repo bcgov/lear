@@ -15,20 +15,24 @@
 import io
 import math
 import re
+<<<<<<< HEAD
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
+=======
+from datetime import UTC, datetime, timedelta
+>>>>>>> 910637aae (33247 legal api dep upgrade (#4387))
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 from flask import current_app, g, request
 from flask_babel import _
 from pypdf import PdfReader
 
+from business_model.models import Address, Business, PartyRole
+from business_model.models.configuration import EMAIL_PATTERN
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models import Address, Business, PartyRole
-from legal_api.models.configuration import EMAIL_PATTERN
 from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
@@ -537,7 +541,7 @@ def validate_court_order(court_order_path, court_order):
 
     return None
 
-def check_good_standing_permission(business: Business) -> Optional[Error]:
+def check_good_standing_permission(business: Business) -> Error | None:
     """Check if user has permission to file for a business not in good standing."""
     if business.good_standing:
         return None
@@ -549,7 +553,7 @@ def check_good_standing_permission(business: Business) -> Optional[Error]:
     message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
     return PermissionService.check_user_permission(required_permission, message=message)
 
-def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> Optional[list]:
+def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list | None:
     """Validate the PDF file."""
     msg = []
     try:
@@ -699,7 +703,7 @@ def validate_relationships( # noqa: PLR0913
     role_types: list[PartyRole.RoleTypes],
     allow_new: bool,
     allow_edits: bool,
-    role_types_for_colin_sync: Optional[list[PartyRole.RoleTypes]] = None
+    role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -707,7 +711,7 @@ def validate_relationships( # noqa: PLR0913
     party_path = f"/filing/{filing_type}/relationships"
 
     # get relevant parties for the business
-    today = datetime.now(tz=timezone.utc).date()
+    today = datetime.now(tz=UTC).date()
     party_roles: list[PartyRole] = []
     for role_type in role_types:
         if roles := PartyRole.get_party_roles(business.id, today, role_type.value):
@@ -884,7 +888,7 @@ def validate_relationship_roles(roles: list[dict[str, str]],
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
-                          accepted_request_types: Optional[list] = None) -> list:
+                          accepted_request_types: list | None = None) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -1311,7 +1315,7 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
    ]
    return all(is_same_str(addr1.get(key), addr2.get(key)) for key in keys)
 
-def check_completing_party_permission(msg: list, filing_type:str) -> Optional[Error]:
+def check_completing_party_permission(msg: list, filing_type:str) -> Error | None:
     """Check completing party permission and append error message if not allowed."""
     permission_error = PermissionService.check_user_permission(
         ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
@@ -1411,14 +1415,41 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
 
     return msg
 
+<<<<<<< HEAD
 def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> Optional[str]:
+=======
+def validate_name_translation(filing_json: dict, filing_type: str) -> list:
+    """Validate name translations fields."""
+    msg = []
+    translations = filing_json["filing"][filing_type].get("nameTranslations", [])
+
+    for idx, translation in enumerate(translations):
+
+        name = translation.get("name")
+        stripped_name = name.strip()
+
+        if not stripped_name:
+            msg.append({
+                "error": "Name translation cannot be an empty string.",
+                "path": f"/filing/{filing_type}/nameTranslations/{idx}/name/"
+            })
+        elif name != stripped_name:
+            msg.append({
+                "error": "Name translation cannot start or end with whitespace.",
+                "path": f"/filing/{filing_type}/nameTranslations/{idx}/name/"
+            })
+
+    return msg
+
+def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> str | None:
+>>>>>>> 910637aae (33247 legal api dep upgrade (#4387))
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
         # Validation only for sole proprietorships
         return False
     
     # Existing proprietor in DB
-    existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
+    existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=UTC).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
     existing_proprietor = None
     for role in existing_party_roles:
         existing_proprietor = role.party
@@ -1588,8 +1619,8 @@ def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
 
     return result
 
-def validate_permission_and_completing_party(business: Optional[Business], filing_json: dict, filing_type: str, msg: list, check_options: Optional[dict] = None
-) -> Optional[Error]:
+def validate_permission_and_completing_party(business: Business | None, filing_json: dict, filing_type: str, msg: list, check_options: dict | None = None
+) -> Error | None:
     """Validate completing party permission and changes."""
     if not flags.is_on("enable-edit-completing-party-permission"):
         return None
@@ -1633,7 +1664,7 @@ def check_document_email_changes(
         filing_type: str,
         account_id: int,
         msg: list
-) -> Optional[Error]:
+) -> Error | None:
     """Check if document delivery email has changed."""
     document_optional_email = filing_json.get("filing", {}).get("header", {}).get("documentOptionalEmail")
     if not (document_optional_email and account_id):

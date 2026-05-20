@@ -14,15 +14,16 @@
 """Validation for the Registration filing."""
 from datetime import timedelta
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 from dateutil.relativedelta import relativedelta
+from flask.globals import request_ctx
 from flask_babel import _ as babel
 
+from business_model.models import Business, PartyRole
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
@@ -38,7 +39,7 @@ from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
-def validate(registration_json: dict) -> Optional[Error]:
+def validate(registration_json: dict) -> Error | None:
     """Validate the Registration filing."""
     if not registration_json:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid filing is required.")}])
@@ -173,7 +174,7 @@ def validate_start_date(filing: dict) -> list:
     greater = now + timedelta(days=90)
     lesser = now + relativedelta(years=-10)
 
-    if not jwt.validate_roles([STAFF_ROLE]) and start_date < lesser:
+    if not jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]) and start_date < lesser:
         if flags.is_on("enabled-deeper-permission-action"):
             permission_error = PermissionService.check_user_permission(
                 ListActionsPermissionsAllowed.FIRM_NO_MIN_START_DATE.value,

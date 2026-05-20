@@ -16,8 +16,8 @@ from http import HTTPStatus
 
 from flask_babel import _
 
+from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.models import Business
 from legal_api.services.utils import get_date
 from legal_api.utils.datetime import datetime
 

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Date time utilities."""
-from datetime import date, datetime as _datetime, timedelta, timezone  # noqa: F401, I001
+from datetime import date, datetime as _datetime, timedelta, timezone, UTC  # noqa: F401, I001
 from typing import Final
 
 
@@ -22,7 +22,7 @@ class datetime(_datetime):  # noqa: N801
     @classmethod
     def utcnow(cls):
         """Construct a timezone-aware UTC datetime, which includes timezone from time.time()."""
-        return super().now(tz=timezone.utc)
+        return super().now(tz=UTC)
 
     @classmethod
     def from_date(cls, date_obj):

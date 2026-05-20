@@ -13,7 +13,7 @@
 # limitations under the License.
 
 """Service to check warnings for a business."""
-from legal_api.models import Business
+from business_model.models import Business
 
 from .business import check_business
 

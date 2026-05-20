@@ -19,12 +19,11 @@ import json
 import secrets
 from contextlib import suppress
 from datetime import datetime
-from typing import Optional
 
 import requests
 
+from business_model.models import DCDefinition, DCRevocationReason
 from legal_api.decorators import requires_traction_auth
-from legal_api.models import DCDefinition, DCRevocationReason
 
 
 class DigitalCredentialsService:
@@ -118,7 +117,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def _fetch_schema(self, schema_id: str) -> Optional[str]:
+    def _fetch_schema(self, schema_id: str) -> str | None:
         """Find a schema in Traction storage."""
         try:
             response = requests.get(self.api_url + f"/schemas/{schema_id}",
@@ -131,7 +130,7 @@ class DigitalCredentialsService:
             raise err
 
     @requires_traction_auth
-    def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
+    def _fetch_credential_definition(self, cred_def_id: str) -> str | None:
         """Find a published credential definition."""
         try:
             response = requests.get(self.api_url + f"/credential-definitions/{cred_def_id}",
@@ -145,7 +144,7 @@ class DigitalCredentialsService:
             raise err
 
     @requires_traction_auth
-    def create_invitation(self) -> Optional[dict]:
+    def create_invitation(self) -> dict | None:
         """Create a new connection invitation."""
         try:
             response = requests.post(self.api_url + "/out-of-band/create-invitation",
@@ -163,7 +162,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def attest_connection(self, connection_id: str) -> Optional[dict]:
+    def attest_connection(self, connection_id: str) -> dict | None:
         """Perform an attestation to ensure that interactions only happen with connections on a trusted app."""
         try:
             current_timestamp = int(datetime.now().timestamp())
@@ -220,7 +219,7 @@ class DigitalCredentialsService:
                          connection_id: str,
                          definition: DCDefinition,
                          data: list,  # list of { 'name': 'business_name', 'value': 'test_business' }
-                         comment: str = "") -> Optional[dict]:
+                         comment: str = "") -> dict | None:
         """Send holder a credential, automating entire flow."""
         try:
             response = requests.post(self.api_url + "/issue-credential-2.0/send",
@@ -252,7 +251,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def fetch_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+    def fetch_credential_exchange_record(self, cred_ex_id: str) -> dict | None:
         """Fetch a credential exchange record."""
         try:
             response = requests.get(self.api_url + "/issue-credential-2.0/records/" + cred_ex_id,
@@ -267,7 +266,7 @@ class DigitalCredentialsService:
     def revoke_credential(self, connection_id,
                           cred_rev_id: str,
                           rev_reg_id: str,
-                          reason: DCRevocationReason) -> Optional[dict]:
+                          reason: DCRevocationReason) -> dict | None:
         """Revoke a credential."""
         try:
             response = requests.post(self.api_url + "/revocation/revoke",
@@ -288,7 +287,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def remove_connection_record(self, connection_id: str) -> Optional[dict]:
+    def remove_connection_record(self, connection_id: str) -> dict | None:
         """Delete a connection."""
         try:
             response = requests.delete(self.api_url + "/connections/" + connection_id,
@@ -300,7 +299,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def remove_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+    def remove_credential_exchange_record(self, cred_ex_id: str) -> dict | None:
         """Delete a credential exchange."""
         try:
             response = requests.delete(self.api_url + "/issue-credential-2.0/records/" + cred_ex_id,

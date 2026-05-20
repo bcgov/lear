@@ -14,9 +14,9 @@
 """This has the core domain used by the application."""
 from __future__ import annotations
 
-from collections.abc import MutableMapping, MutableSequence
+from collections.abc import Callable, MutableMapping, MutableSequence
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 
 @dataclass

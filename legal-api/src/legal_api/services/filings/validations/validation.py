@@ -16,9 +16,9 @@ from http import HTTPStatus
 
 from flask_babel import _ as babel
 
+from business_model.models import Business, Filing
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models import Business, Filing
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import validate_staff_payment
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService

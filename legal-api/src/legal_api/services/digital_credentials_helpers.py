@@ -14,16 +14,15 @@
 
 """This provides helper functions for digital credentials."""
 
-from typing import Union
 
-from legal_api.models import Business, CorpType, DCBusinessUser, DCDefinition, User
+from business_model.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def get_digital_credential_data(business_user: DCBusinessUser,
                                 credential_type: DCDefinition.CredentialType,
-                                self_attested_roles: Union[list[str], None] = None) -> list[str]:
+                                self_attested_roles: list[str] | None = None) -> list[str]:
     """Get the data for a digital credential."""
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
@@ -129,7 +128,7 @@ def get_given_names(user: User) -> str:
 def get_roles(user: User,
               business: Business,
               rules: DigitalCredentialsRulesService,
-              self_attested_roles: Union[list[str], None]) -> list[str]:
+              self_attested_roles: list[str] | None) -> list[str]:
     """Get roles for the user in the business."""
 
     def valid_party_role_filter(party_role) -> bool:

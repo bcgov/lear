@@ -14,12 +14,12 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Final, Optional
+from typing import Final
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
-from legal_api.models import Batch, BatchProcessing, Business, Filing, db
+from business_model.models import Batch, BatchProcessing, Business, Filing, db
 from legal_api.services.request_context import get_request_context
 
 from .bootstrap import AccountService
@@ -57,7 +57,7 @@ class InvoluntaryDissolutionService:
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, eligibility_filters: Optional[EligibilityFilters] = None
+        cls, identifier: str, eligibility_filters: EligibilityFilters | None = None
     ) -> tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -77,7 +77,7 @@ class InvoluntaryDissolutionService:
         return True, eligibility_details
 
     @classmethod
-    def get_businesses_eligible(cls, num_allowed: Optional[int] = None):
+    def get_businesses_eligible(cls, num_allowed: int | None = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query()
         eligible_businesses = query.limit(num_allowed).all() if num_allowed else query.all()
@@ -102,7 +102,7 @@ class InvoluntaryDissolutionService:
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(eligibility_filters: Optional[EligibilityFilters] = None):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters | None = None):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -206,7 +206,7 @@ def _has_no_transition_filed_after_restoration():
 
     restoration_filing_effective_cutoff = restoration_filing.effective_date + text("""INTERVAL '1 YEAR'""")
 
-    return select([func.max(func.coalesce(restoration_filing_effective_cutoff, None))]).where(
+    return select(func.max(func.coalesce(restoration_filing_effective_cutoff, restoration_filing.effective_date))).where(
             and_(
                 Business.legal_type != Business.LegalTypes.EXTRA_PRO_A.value,
                 Business.founding_date < new_act_date,
