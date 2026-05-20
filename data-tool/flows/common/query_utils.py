@@ -49,3 +49,32 @@ def corpnum_to_oracle_ids(target_ids: str | bytes | tuple | list | None) -> List
     if not out:
         return None
     return ",".join("'" + x.replace("'", "''") + "'" for x in out)
+
+def get_saf_criteria_query(updated_corp_nums: list) -> str:
+    return """
+    SELECT corp_num FROM mv_legacy_corps_data
+    where 1 = 1
+    and is_active = true
+    and is_frozen = false
+    and in_dissolution = false
+    and migrated <> 'Y'
+    and has_password = true
+    and has_officers = false
+    and meets_main_criteria = true
+    and has_3rd_party = false
+    and admin_email is not null
+    and email_used_count = 1
+    and director_count = 1
+    and address_all_any_bad_count = 0
+    and meets_share_criteria = true
+    and has_bar_filing = false
+    and directors_within_bc = true
+    and is_bad_email = false
+    and corp_num in {updated_corp_nums}
+"""
+
+def get_criteria_query(criteria: str) -> str:
+    key = (criteria or '').strip().upper()
+    if key == 'SAF':
+        return get_saf_criteria_query()
+    raise ValueError(f'unsupported criteria: {criteria}')
