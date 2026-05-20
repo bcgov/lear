@@ -1054,6 +1054,12 @@ create table if not exists colin_tracking
 alter table colin_tracking
     owner to postgres;
 
+create index if not exists idx_colin_tracking_claim_batch
+	on colin_tracking (environment, flow_name, flow_run_id, processed_status, claimed_at);
+
+create index if not exists idx_colin_tracking_flow_env_status
+	on colin_tracking (flow_name, environment, processed_status, corp_num);
+
 create table if not exists colin_extract_version (
     extracted_at timestamp with time zone not null default current_timestamp
 );
