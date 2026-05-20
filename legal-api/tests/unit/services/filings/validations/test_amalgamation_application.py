@@ -26,6 +26,7 @@ from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
+from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_identifier
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_businesses
 
@@ -1947,4 +1948,56 @@ def test_amalgamation_permission_and_completing_party_flag(mocker, app, session,
         assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, amalgamating_business, expected_errors',
+    [
+        (
+            'baseline_valid_mras',
+            {'identifier': 'A1234567',
+             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
+            []
+        ),
+        (
+            'mras_missing_identifier',
+            {'identifier': '',
+             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
+            [{'error': 'Identifier is required for foreign businesses from MRAS jurisdictions.',
+              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
+        ),
+        (
+            'identifier_too_short',
+            {'identifier': 'AB',
+             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
+            [{'error': 'Foreign business identifier must be between 3 and 40 characters.',
+              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
+        ),
+        (
+            'identifier_too_long',
+            {'identifier': 'A' * 41,
+             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
+            [{'error': 'Foreign business identifier must be between 3 and 40 characters.',
+              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
+        ),
+        (
+            'identifier_disallowed_char',
+            {'identifier': 'SK#99001',
+             'foreignJurisdiction': {'country': 'CA', 'region': 'SK'}},
+            [{'error': 'Foreign business identifier may only contain letters, numbers, and hyphens.',
+              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
+        ),
+        (
+            'non_mras_no_identifier_ok',
+            {'identifier': '',
+             'foreignJurisdiction': {'country': 'CA', 'region': 'NB'}},
+            []
+        ),
+    ]
+)
+def test_validate_foreign_identifier(test_name, amalgamating_business, expected_errors):
+    """Assert _validate_foreign_identifier mirrors the frontend MRAS + format rules."""
+    path = '/filing/amalgamationApplication/amalgamatingBusinesses/1'
+    errors = _validate_foreign_identifier(amalgamating_business, path)
+    assert errors == expected_errors
  
