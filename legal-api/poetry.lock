@@ -3120,7 +3120,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.67"
+version = "2.18.69"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
