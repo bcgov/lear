@@ -1824,7 +1824,7 @@ fqdn = {version = "*", optional = true, markers = "extra == \"format\""}
 idna = {version = "*", optional = true, markers = "extra == \"format\""}
 isoduration = {version = "*", optional = true, markers = "extra == \"format\""}
 jsonpointer = {version = ">1.13", optional = true, markers = "extra == \"format\""}
-jsonschema-specifications = ">=2023.03.6"
+jsonschema-specifications = ">=2023.3.6"
 referencing = ">=0.28.4"
 rfc3339-validator = {version = "*", optional = true, markers = "extra == \"format\""}
 rfc3987 = {version = "*", optional = true, markers = "extra == \"format\""}
@@ -3120,7 +3120,7 @@ typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.13\""}
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.67"
+version = "2.18.68"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -3138,8 +3138,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.67"
-resolved_reference = "bd6808dbb26807ab2e5dc8bcdf0d28276b1f8e39"
+reference = "2.18.68"
+resolved_reference = "3cd771a26e1ed74cc5e45c10235526be3f0ee7cb"
 
 [[package]]
 name = "reportlab"
@@ -4201,4 +4201,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9.22,<3.10"
-content-hash = "a9a28e335903ce44bd9ecec5f7762c55497591ab685a9585c9f627c77bf7b46d"
+content-hash = "08e9b370c31d98dc62e820737af9d3663b65c0c3595fd4d340b4c05d36c3dc20"

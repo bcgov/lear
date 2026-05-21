@@ -35,6 +35,17 @@ def _get_int(name: str, default: int = 0) -> int:
     return int(val) if (val and val.isnumeric()) else default
 
 
+def _get_strict_int(name: str, default: int = 0) -> int:
+    """Parse an integer env var, raising when a non-blank value is invalid."""
+    val = os.getenv(name)
+    if val is None or val.strip() == '':
+        return default
+    try:
+        return int(val)
+    except ValueError as exc:
+        raise ValueError(f'{name} must be a valid integer') from exc
+
+
 def _get_bool(name: str, default: bool = False) -> bool:
     """Safe bool env parsing (case-insensitive)."""
     val = os.getenv(name)
@@ -167,19 +178,27 @@ class _Config():  # pylint: disable=too-few-public-methods
     TOMBSTONE_USE_SOURCE_PAPER_ONLY = _get_bool('TOMBSTONE_USE_SOURCE_PAPER_ONLY', False)
 
     # reservation (reserve_for_flow) query statement timeout (Postgres statement_timeout, in ms).
-    # When set, long-running reservation queries fail fast instead of tying up a worker indefinitely.
-    RESERVE_STATEMENT_TIMEOUT_MS = os.getenv('RESERVE_STATEMENT_TIMEOUT_MS', '')
-    RESERVE_STATEMENT_TIMEOUT_MS = int(RESERVE_STATEMENT_TIMEOUT_MS) if RESERVE_STATEMENT_TIMEOUT_MS.isnumeric() else None
+    # Default to 5 minutes so reservation queries fail fast instead of tying up a worker indefinitely.
+    RESERVE_STATEMENT_TIMEOUT_MS = _get_strict_int('RESERVE_STATEMENT_TIMEOUT_MS', 300000)
 
     # verify flow
     VERIFY_BATCHES = _get_int('VERIFY_BATCHES', 0)
     VERIFY_BATCH_SIZE = _get_int('VERIFY_BATCH_SIZE', 0)
     VERIFY_SUMMARY_PATH = os.getenv('VERIFY_SUMMARY_PATH')
 
+    # verify COLIN updates flow
+    VERIFY_COLIN_UPDATES_BATCHES = _get_strict_int('VERIFY_COLIN_UPDATES_BATCHES', 0)
+    VERIFY_COLIN_UPDATES_BATCH_SIZE = _get_strict_int('VERIFY_COLIN_UPDATES_BATCH_SIZE', 0)
+    VERIFY_COLIN_UPDATES_CHECK_FREEZE = _get_bool('VERIFY_COLIN_UPDATES_CHECK_FREEZE', True)
+    VERIFY_COLIN_UPDATES_CHECK_EARLY_ADOPTER = _get_bool('VERIFY_COLIN_UPDATES_CHECK_EARLY_ADOPTER', True)
+    VERIFY_COLIN_UPDATES_CHECK_AR_IND_IS_NO = _get_bool('VERIFY_COLIN_UPDATES_CHECK_AR_IND_IS_NO', False)
+    VERIFY_COLIN_UPDATES_DETAIL_PATH = os.getenv('VERIFY_COLIN_UPDATES_DETAIL_PATH')
+    VERIFY_COLIN_UPDATES_SUMMARY_PATH = os.getenv('VERIFY_COLIN_UPDATES_SUMMARY_PATH')
+
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)
     FREEZE_BATCH_SIZE = _get_int('FREEZE_BATCH_SIZE', 0)
-    FREEZE_ORACLE_CHUNK_SIZE = _get_int('FREEZE_ORACLE_CHUNK_SIZE', 1000)
+    FREEZE_ORACLE_CHUNK_SIZE = _get_strict_int('FREEZE_ORACLE_CHUNK_SIZE', 1000)
 
     # ORACLE COLIN DB
     DB_USER_COLIN_ORACLE = os.getenv('DATABASE_USERNAME_COLIN_ORACLE', '')

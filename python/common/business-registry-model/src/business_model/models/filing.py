@@ -46,7 +46,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         CONTINUATION_IN = 'continuationIn'
         INCORPORATION = 'incorporationApplication'
         REGISTRATION = 'registration'
-        
+
     class Status(str, Enum):
         """Render an Enum of the Filing Statuses."""
 
@@ -340,7 +340,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'amendReceiver': {
                 'name': 'amendReceiver',
                 'title': 'Amend Receiver Filing',
-                'displayName': 'Amend Receiver',
+                'displayName': 'Amend Receiver Information',
                 'codes': {
                     'BEN': 'AMEND',
                     'BC': 'AMEND',
@@ -1018,10 +1018,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         insp = inspect(self)
         attr_state = insp.attrs._payment_token  # pylint: disable=protected-access;
         # inspect requires the member, and the hybrid decorator doesn't help us here
-        if (self._payment_token and not attr_state.history.added) or self.colin_event_ids:
-            return True
-
-        return False
+        return bool((self._payment_token and not attr_state.history.added) or self.colin_event_ids)
 
     def set_processed(self):
         """Assign the completion and effective dates, unless they are already set."""
@@ -1059,24 +1056,16 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     @property
     def is_corrected(self):
         """Has this filing been corrected."""
-        if (
-                self.parent_filing and
-                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
-                self.parent_filing.status == Filing.Status.COMPLETED.value
-        ):
-            return True
-        return False
+        return bool(self.parent_filing and
+                    self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
+                    self.parent_filing.status == Filing.Status.COMPLETED.value)
 
     @property
     def is_correction_pending(self):
         """Is there a pending correction for this filing."""
-        if (
-                self.parent_filing and
-                self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
-                self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value
-        ):
-            return True
-        return False
+        return bool(self.parent_filing and
+                    self.parent_filing.filing_type == Filing.FILINGS['correction'].get('name') and
+                    self.parent_filing.status == Filing.Status.PENDING_CORRECTION.value)
 
     @property
     def is_amalgamation_application(self):
@@ -1393,7 +1382,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
         """Return the previous completed filing."""
         query = db.session.query(Filing). \
             filter(Filing.business_id == filing.business_id). \
-            filter(Filing._status == Filing.Status.COMPLETED.value)
+            filter(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.TOMBSTONE.value]))
 
         if filing.transaction_id:  # transaction_id will be None for the pending filings (intermediate state)
             query = query.filter(Filing.transaction_id < filing.transaction_id)
