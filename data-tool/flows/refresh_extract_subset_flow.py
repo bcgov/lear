@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
 from common.init_utils import colin_oracle_init, get_config
-from common.query_utils import corpnum_to_oracle_ids, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
+from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
@@ -104,6 +104,15 @@ def prune_fallen_identifiers(fallenout_corp_nums: list) -> list[dict]:
         prune_batch = conn.execute(text(batch_query))
         prune_account = conn.execute(text(account_query))
     print(f"Pruned corp_processing={prune_cp.rowcount}, mig_corp_batch={prune_batch.rowcount}, mig_corp_account={prune_account.rowcount}")
+
+def get_cuttoff_timestamp() -> datetime:
+
+    cfg = get_named_config()
+    cuttoff_timestamp = get_cutoff_timestamp_query()
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
+        cuttoff_timestamp_result = conn.execute(text(cuttoff_timestamp)).scalar()
+    print(f"cuttoff timestamp is {cuttoff_timestamp_result}")
+    return cuttoff_timestamp_result
     
 
 @task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
@@ -243,7 +252,7 @@ def extract_pull_flow(
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
     
-    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = get_cuttoff_timestamp()
 
     config = get_config()
     colin_oracle_engine = colin_oracle_init(config)
@@ -268,7 +277,7 @@ def extract_pull_flow(
                         lines.append(c)
                         updated_corp_nums.append('BC'+c)
                     break
-        if  not lines:
+        if not lines:
             raise ValueError('refresh: no corp_num in updated_rows')
         feed_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
         corp_file = str(feed_path)

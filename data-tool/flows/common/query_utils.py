@@ -107,3 +107,8 @@ def prune_candidates_from_account(pruning_corps_list: list) -> str:
     DELETE FROM mig_corp_account
     WHERE corp_num IN {in_list}
     """
+
+def get_cutoff_timestamp_query() -> str:
+    return f"""
+    SELECT extracted_at FROM colin_extract_version
+    """

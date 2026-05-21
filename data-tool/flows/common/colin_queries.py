@@ -46,7 +46,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> 
         FROM event e
         JOIN corp_list c
             ON c.corp_num = e.corp_num
-        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '5' HOUR
+        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
         AND NOT (
             EXISTS (
             SELECT 1

@@ -13,8 +13,10 @@ SELECT pg_advisory_lock(
 
 learn schema public;
 
-insert into colin_subset_extract (extracted_at)
+-- cutoff timestamp
+insert into public.colin_subset_extract (extracted_at)
 values (current_timestamp);
+
 
 
 -- disable triggers

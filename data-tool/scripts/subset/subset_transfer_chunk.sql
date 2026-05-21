@@ -32,6 +32,9 @@
 -- vset target_corp_num_predicate=target_corp_num in ('BC1111585','BC1226175');
 -- vset oracle_corp_num_predicate=c.CORP_NUM in ('1111585','1226175');
 
+-- cuttoff timestamp
+insert into public.colin_subset_extract (extracted_at)
+values (current_timestamp);
 
 -- corporation
 transfer public.corporation from cprd using
