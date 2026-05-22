@@ -1404,29 +1404,6 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
 
     return msg
 
-def validate_name_translation(filing_json: dict, filing_type: str) -> list:
-    """Validate name translations fields."""
-    msg = []
-    translations = filing_json["filing"][filing_type].get("nameTranslations", [])
-
-    for idx, translation in enumerate(translations):
-
-        name = translation.get("name")
-        stripped_name = name.strip()
-
-        if not stripped_name:
-            msg.append({
-                "error": "Name translation cannot be an empty string.",
-                "path": f"/filing/{filing_type}/nameTranslations/{idx}/name/"
-            })
-        elif name != stripped_name:
-            msg.append({
-                "error": "Name translation cannot start or end with whitespace.",
-                "path": f"/filing/{filing_type}/nameTranslations/{idx}/name/"
-            })
-
-    return msg
-
 def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> Optional[str]:
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
