@@ -899,13 +899,17 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     # pylint: disable=too-many-arguments; one extra
     def _create_party_roles(cls, cursor, party: Dict, business: Dict, event_id: str, corrected_id: str = None):
         """Create a corp_party for each role."""
+        has_completing_party = False
         for role in party['roles']:
             party['role_type'] = Party.role_types[(role['roleType'])]
-            if party['role_type'] == 'CPRTY' and corrected_id:
-                # set to old event id for update
-                party['prev_event_id'] = corrected_id
+            if party['role_type'] == 'CPRTY':
+                has_completing_party = True
+                if corrected_id:
+                    # set to old event id for update
+                    party['prev_event_id'] = corrected_id
             party['appointmentDate'] = role['appointmentDate']
             Party.create_new_corp_party(cursor, event_id, party, business)
+        return has_completing_party
 
     @classmethod
     def _get_ar_component_event(cls, cursor, corp_num: str, type_code: str, ar_filing_event_info: Dict) -> str:
@@ -944,8 +948,33 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             submitting_party_query,
             event_id=filing.event_id,
             mailing_addr_id=mailing_addr_id,
-            last_nme=last_name[:20],
-            first_nme=first_name[:20]
+            last_nme=last_name[:20] if last_name else None,
+            first_nme=first_name[:20] if first_name else None
+        )
+
+    @classmethod
+    def _create_completing_party(cls, cursor, filing):
+        """Create a completing party for filing."""
+        first_name = None
+        if filing.header.get('isStaff'):
+            last_name = filing.get_certified_by()
+        elif filed_by := filing.header.get('filedBy'):
+            last_name = filed_by.get('lastName')
+            first_name = filed_by.get('firstName')
+            if not first_name and not last_name:
+                last_name = filed_by.get('userName')  # if no names, use userName for last name
+
+        completing_party_query = \
+            """
+            insert into completing_party (event_id, last_nme, first_nme)
+            values (:event_id, :last_nme, :first_nme)
+            """
+
+        cursor.execute(
+            completing_party_query,
+            event_id=filing.event_id,
+            last_nme=last_name[:20] if last_name else None,
+            first_nme=first_name[:20] if first_name else None
         )
 
     # pylint: disable=too-many-branches, too-many-locals, too-many-statements, too-many-nested-blocks;
@@ -1454,10 +1483,15 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             if parties := filing.body.get('parties', []):
                 for party in parties:
-                    cls._create_party_roles(cursor=cursor,
-                                            party=party,
-                                            business=business,
-                                            event_id=filing.event_id)
+                    has_completing_party = cls._create_party_roles(cursor=cursor,
+                                                                   party=party,
+                                                                   business=business,
+                                                                   event_id=filing.event_id)
+                if (filing.filing_type == 'incorporationApplication' and
+                        filing.business.corp_type != Business.TypeCodes.COOP.value and
+                        not has_completing_party
+                ):
+                    cls._create_completing_party(cursor=cursor, filing=filing)
 
             # add shares if not coop
             cls._process_share_structure(cursor, filing, corp_num)

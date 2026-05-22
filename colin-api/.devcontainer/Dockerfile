@@ -1,5 +1,5 @@
 # platform=linux/amd64
-FROM python:buster
+FROM python:3.8
 
 # Avoid warnings by switching to noninteractive
 ENV DEBIAN_FRONTEND=noninteractive
