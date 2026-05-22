@@ -15,7 +15,7 @@
 """Test-Suite to ensure that the Report class is working as expected."""
 import copy
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -47,7 +47,7 @@ from business_model.models.db import VersioningProxy
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import Report  # noqa:I001
 from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing  # noqa:E501,I001
 
 
@@ -368,7 +368,7 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     test_business = factory_business(identifier=identifier, entity_type=entity_type)
     
     # file a FE filing
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
     withdrawn_json = copy.deepcopy(FILING_HEADER)

@@ -52,7 +52,7 @@ from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_
     authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
 from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
-from legal_api.utils.datetime import datetime
+from business_common.utils.datetime import datetime
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
 from tests.unit.services.utils import create_business, create_header, helper_create_jwt, jwt_request_context

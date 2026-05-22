@@ -24,7 +24,7 @@ from legal_api.services.warnings.business.business_checks.involuntary_dissolutio
     _get_modified_warning_data,
     check_business,
 )
-from legal_api.utils.datetime import datetime
+from business_common.utils.datetime import datetime
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,

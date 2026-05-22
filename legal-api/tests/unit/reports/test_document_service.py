@@ -14,7 +14,7 @@
 
 """Test-Suite to ensure that the Report class is working as expected."""
 import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 import datedelta
 import json
@@ -364,7 +364,7 @@ def test_update_ledger_docs(session, desc, doc_data, drs_data, receipt, filing, 
 
 def test_create_document(session, mock_doc_service, mocker):
     mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
-    founding_date = datetime.utcnow()
+    founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = 'Involuntary Dissolution'
@@ -381,7 +381,7 @@ def test_create_document(session, mock_doc_service, mocker):
 
 def test_get_document(session, mock_doc_service, mocker):
     mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
-    founding_date = datetime.utcnow()
+    founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = 'Involuntary Dissolution'

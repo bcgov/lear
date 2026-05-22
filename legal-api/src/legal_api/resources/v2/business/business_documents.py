@@ -17,6 +17,7 @@ from http import HTTPStatus
 from flask import Response, current_app, jsonify, request, url_for
 from flask_cors import cross_origin
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from business_model.models.document import Document, DocumentType
 from legal_api.exceptions import ErrorCode, get_error_message
@@ -25,7 +26,6 @@ from legal_api.services import authorized, flags
 from legal_api.services.business import validate_document_request
 from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 

@@ -23,7 +23,7 @@ from registry_schemas.example_data import FILING_HEADER, RESTORATION
 
 from business_model.models import Business, Filing
 from legal_api.services.filings.validations.validation import validate
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 
 from tests.unit.services.filings.validations import lists_are_equal
 

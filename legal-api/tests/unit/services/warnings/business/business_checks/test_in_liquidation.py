@@ -21,7 +21,7 @@ from datedelta import datedelta
 from business_model.models import Business
 from legal_api.services.warnings.business import check_business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
-from legal_api.utils.datetime import datetime, date
+from business_common.utils.datetime import datetime, date
 from tests.unit.models import factory_business
 
 FOUNDING_DATE = datetime(2023, 3, 3)

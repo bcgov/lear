@@ -22,6 +22,7 @@ import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Document
 from business_model.models import Filing as FilingModel
 from legal_api.core import Filing
@@ -31,7 +32,6 @@ from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp
 from legal_api.services import MinioService, authorized
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 from legal_api.utils.util import cors_preflight
 
 DOCUMENTS_BASE_ROUTE: Final[str] = "/<string:identifier>/filings/<int:filing_id>/documents"

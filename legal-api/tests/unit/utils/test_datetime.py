@@ -17,24 +17,28 @@ from datetime import date, datetime, timezone
 
 import pytest
 
+from business_common.utils import datetime as _datetime
+
 
 def test_datetime_utcnow(freeze_datetime_utcnow):
     """Assert that datetime.utcnow returns a non-naive datetime object."""
-    import legal_api.utils.datetime as _datetime
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
     with freeze_datetime_utcnow(now):
-        d = _datetime.datetime.utcnow()
+        print(1)
+        print(_datetime)
+        print(_datetime.__dict__)
+        print(_datetime.utcnow)
+        d = _datetime.utcnow()
         assert d == now.replace(tzinfo=timezone.utc)
 
 
 def test_datetime_isoformat(freeze_datetime_utcnow):
     """Assert that the isoformat has the tzinfo set to +00:00."""
-    import legal_api.utils.datetime as _datetime
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
     with freeze_datetime_utcnow(now):
-        d = _datetime.datetime.utcnow()
+        d = _datetime.utcnow()
         iso = d.isoformat()
         tz = iso[iso.find('+'):]
         assert tz == '+00:00'
@@ -70,7 +74,6 @@ def test_datetime_isoformat(freeze_datetime_utcnow):
 )
 def test_datetime_add_business_days(test_name, from_date_str, num_days, expected_date_str):
     """Assert that business days are added to a date correctly."""
-    import legal_api.utils.datetime as _datetime
     from_date = date.fromisoformat(from_date_str)
-    new_date = _datetime.datetime.add_business_days(from_date, num_days)
+    new_date = _datetime.add_business_days(from_date, num_days)
     assert new_date == date.fromisoformat(expected_date_str)

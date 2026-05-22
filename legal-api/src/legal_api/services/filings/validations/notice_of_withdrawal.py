@@ -17,11 +17,11 @@ from typing import Final
 
 from flask_babel import _ as babel
 
+from business_common.utils.datetime import datetime as dt
 from business_model.models import Filing
 from business_model.models.db import db
 from legal_api.errors import Error
 from legal_api.services.utils import get_bool, get_int
-from legal_api.utils.datetime import datetime as dt
 
 
 def validate(filing: dict) -> Error | None:

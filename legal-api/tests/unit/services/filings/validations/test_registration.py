@@ -25,7 +25,7 @@ from business_model.models import Business
 from legal_api.services import NaicsService, NameXService, flags 
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 
 from tests.unit.services.filings.validations import create_party, create_party_address
 

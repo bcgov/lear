@@ -26,7 +26,7 @@ from sqlalchemy.sql import true
 
 from business_model.models import Batch, Business
 from legal_api.services import flags, InvoluntaryDissolutionService
-from legal_api.utils.datetime import datetime
+from business_common.utils.datetime import datetime
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,

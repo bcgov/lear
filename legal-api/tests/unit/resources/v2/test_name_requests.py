@@ -26,7 +26,7 @@ from pytest_mock import mocker
 import pytz
 
 from legal_api.services import flags, namex
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import UserRoles
 
 from tests import integration_namerequests

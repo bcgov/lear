@@ -16,11 +16,11 @@ from http import HTTPStatus
 import requests
 from flask import current_app, jsonify
 
+from business_common.utils.base import BaseEnum
 from business_model.models import Business, Document, Filing
 from legal_api.core.meta.filing import FILINGS
 from legal_api.exceptions import BusinessException
 from legal_api.services import AccountService
-from legal_api.utils.base import BaseEnum
 
 BUSINESS_DOCS_PATH: str = "{url}/application-reports/history/{product}/{business_id}?includeDocuments=true"
 GET_REPORT_PATH: str = "{url}/application-reports/{product}/{drsId}"

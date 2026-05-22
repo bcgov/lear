@@ -20,6 +20,7 @@ from typing import Final
 import pycountry
 from sqlalchemy import or_
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,
     Alias,
@@ -34,7 +35,6 @@ from business_model.models import (
     db,
 )
 from business_model.models.db import VersioningProxy
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 OPERATION_TYPE_DELETE: Final = 2
 

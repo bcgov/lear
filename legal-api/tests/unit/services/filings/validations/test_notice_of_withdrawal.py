@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test suite to ensure the Notice of Withdrawal filing is validated correctly."""
 import copy
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 
 import pytest
@@ -53,7 +53,7 @@ MISSING_FILING_DICT_MSG = {'error': 'A valid filing is required.'}
 )
 def test_validate_notice_of_withdrawal(session, test_name, is_filing_exist, withdrawn_filing_status, is_future_effective, has_filing_id, has_taken_effect, part_of_poa, expected_code, expected_msg):
     """Assert that notice of withdrawal flings can be validated"""
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
     identifier = 'BC1234567'
@@ -70,7 +70,7 @@ def test_validate_notice_of_withdrawal(session, test_name, is_filing_exist, with
         if is_future_effective:
             withdrawn_filing.effective_date = future_effective_date
         if withdrawn_filing_status == Filing.Status.PAID:
-            withdrawn_filing.payment_completion_date = datetime.utcnow().isoformat()
+            withdrawn_filing.payment_completion_date = datetime.now(UTC).isoformat()
         withdrawn_filing.save()
         withdrawn_filing_id = withdrawn_filing.id
 

@@ -49,8 +49,8 @@ from business_model.models import (
 from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 from business_model.models.party_class import PartyClassType
-from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.utils.datetime import datetime, timezone
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.datetime import datetime, timezone
 from tests import EPOCH_DATETIME, FROZEN_DATETIME
 
 

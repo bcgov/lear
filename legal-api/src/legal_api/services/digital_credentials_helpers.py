@@ -15,9 +15,9 @@
 """This provides helper functions for digital credentials."""
 
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def get_digital_credential_data(business_user: DCBusinessUser,

@@ -25,8 +25,8 @@ from business_model.models import Business
 from legal_api.services import flags
 from legal_api.services.filings import validate
 from legal_api.services.filings.validations.change_of_directors import get_cod_date_bounds
-from legal_api.utils.datetime import datetime, timezone
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.datetime import datetime, timezone
+from business_common.utils.legislation_datetime import LegislationDatetime
 from tests.unit.services.filings.validations import lists_are_equal
 
 NOW = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from random import randint
 
 from datedelta import datedelta
@@ -92,7 +92,7 @@ def factory_business(legal_type: str, identifier: str):
 def factory_filing(filing_type: str):
     filing = Filing(_filing_type=filing_type,
                     _status=Filing.Status.COMPLETED.value,
-                    filing_date=(datetime.utcnow() - datedelta(days=5)))
+                    filing_date=(datetime.now(UTC) - datedelta(days=5)))
 
     filing.filing_json = {
         "filing": {

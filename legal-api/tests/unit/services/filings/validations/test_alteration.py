@@ -29,7 +29,7 @@ from reportlab.lib.pagesizes import letter
 from business_model.models import Business
 from legal_api.services import flags, NameXService
 from legal_api.services.filings import validate
-from legal_api.utils.datetime import datetime, timezone
+from business_common.utils.datetime import datetime, timezone
 from tests.unit.models import factory_business
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal

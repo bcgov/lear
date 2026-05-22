@@ -22,10 +22,10 @@ import requests
 from flask import current_app
 from jinja2 import Template
 
+from business_common.utils.base import BaseEnum
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.utils.base import BaseEnum
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 POSTAL_CODE_REGEX: Final = r"^[A-Z]\d[A-Z]\d[A-Z]\d$"
 OUTPUT_DATE_FORMAT: Final = "%B %-d, %Y"

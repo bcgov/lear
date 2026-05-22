@@ -32,6 +32,7 @@ from sqlalchemy.sql.functions import now as _sqla_now
 from testcontainers.postgres import PostgresContainer
 
 import business_model_migrations
+from business_common.utils import datetime as common_datetime
 from business_model.models import db as _db
 from legal_api import create_app, jwt as _jwt
 from legal_api.config import TestConfig
@@ -70,8 +71,8 @@ def freeze_datetime_utcnow():
     """
     @contextmanager
     def _freeze_time(frozen_datetime):
-        with patch('legal_api.utils.datetime.datetime') as mock_datetime:
-            mock_datetime.utcnow.return_value = frozen_datetime.replace(tzinfo=timezone.utc)
+        with patch.object(common_datetime, 'utcnow') as mock_datetime_utcnow:
+            mock_datetime_utcnow.return_value = frozen_datetime.replace(tzinfo=timezone.utc)
             yield
     return _freeze_time
 
@@ -109,13 +110,13 @@ def app(monkey_session, ld, database_service):
     def _utcnow_side_effect():
         """super().now(tz=timezone.utc) is not supported by freezegun, so we mock datetime.utcnow() directly."""
         return datetime.now(tz=timezone.utc)
-    monkey_session.setattr('legal_api.utils.datetime.datetime.utcnow', _utcnow_side_effect)
+    monkey_session.setattr(common_datetime, 'utcnow', _utcnow_side_effect)
 
 
     def _now_side_effect():
         """super().now() is not supported by freezegun, so we mock datetime.now() directly."""
         return datetime.now()
-    monkey_session.setattr('legal_api.utils.datetime.datetime.now', _now_side_effect)
+    monkey_session.setattr(common_datetime, 'now', _now_side_effect)
 
     with _app.app_context():
         yield _app

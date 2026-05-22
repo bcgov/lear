@@ -23,6 +23,9 @@ from flask import current_app, g, request
 from flask_babel import _
 from pypdf import PdfReader
 
+from business_common.utils.datetime import date
+from business_common.utils.datetime import datetime as dt
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
 from business_model.models.configuration import EMAIL_PATTERN
 from legal_api.core.filing import Filing as CoreFiling
@@ -32,9 +35,6 @@ from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
-from legal_api.utils.datetime import date
-from legal_api.utils.datetime import datetime as dt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 NO_POSTAL_CODE_COUNTRY_CODES = {
     "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
@@ -470,7 +470,7 @@ def validate_court_order(court_order_path, court_order):
     if "orderDate" in court_order:
         try:
             court_order_date = dt.fromisoformat(court_order["orderDate"])
-            if court_order_date.timestamp() > datetime.utcnow().timestamp():
+            if court_order_date.timestamp() > datetime.now(UTC).timestamp():
                 err_path = court_order_date_path
                 msg.append({"error": "Court order date cannot be in the future.", "path": err_path})
         except ValueError:

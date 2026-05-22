@@ -18,7 +18,7 @@ Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is
 """
 import copy
 import json
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from http import HTTPStatus
 from typing import Final, Tuple
 
@@ -46,7 +46,7 @@ from registry_schemas.example_data import (
 from legal_api.core import Filing, FilingMeta, FILINGS
 from business_model.models import Business, Comment, Filing as FilingStorage, UserRoles
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from tests import api_v2, integration_payment
 from tests.unit.core.test_filing_ledger import load_ledger
 from tests.unit.models import (  # noqa:E501,I001
@@ -119,7 +119,7 @@ def test_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service,
     """Assert that the ledger returns values for all the expected keys."""
     # setup
     identifier = 'BC1234567'
-    founding_date = datetime.utcnow() - datedelta.datedelta(months=len(FILINGS.keys()))
+    founding_date = datetime.now(UTC) - datedelta.datedelta(months=len(FILINGS.keys()))
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
     headers=create_header(jwt, [UserRoles.system], identifier)
@@ -164,7 +164,7 @@ def test_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service,
 
 def ledger_element_setup_help(identifier: str, filing_name: str = 'brokenFiling') -> Tuple[Business, FilingStorage]:
     """Render common setup for the element tests."""
-    founding_date = datetime.utcnow()
+    founding_date = datetime.now(UTC)
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     return business, ledger_element_setup_filing(business, filing_name, filing_date=founding_date + datedelta.datedelta(months=1))
 
@@ -247,13 +247,13 @@ def test_get_all_business_filings_permitted_statuses(app, session, client, jwt, 
 
 
 @pytest.mark.parametrize('test_name, file_number, order_date, effect_of_order, order_details, expected', [
-    ('all_elements', 'ABC123', datetime.utcnow(), 'effect', 'details',
+    ('all_elements', 'ABC123', datetime.now(UTC), 'effect', 'details',
         ['effectOfOrder', 'fileNumber', 'orderDate', 'orderDetails']),
     ('no_elements', None, None, None, None,
         []),
-    ('no-file-number-or-details', None, datetime.utcnow(), None, None,
+    ('no-file-number-or-details', None, datetime.now(UTC), None, None,
         []),
-    ('date', 'ABC123', datetime.utcnow(), None, None,
+    ('date', 'ABC123', datetime.now(UTC), None, None,
         ['fileNumber', 'orderDate']),
     ('effect', 'ABC123', None, 'effect', None,
         ['effectOfOrder', 'fileNumber']),
@@ -394,7 +394,7 @@ def test_ledger_display_restoration(app, session, client, jwt, restoration_type,
     """Assert that the ledger returns the correct names of the four restoration types."""
     # setup
     identifier = 'BC1234567'
-    founding_date = datetime.utcnow()
+    founding_date = datetime.now(UTC)
     filing_date = founding_date
     filing_name = 'restoration'
     business_name = 'Skinners Fine Saves'
@@ -439,7 +439,7 @@ def test_ledger_display_incorporation(app, session, client, jwt, test_name, enti
     # setup
     identifier = 'BC1234567'
     nr_number = 'NR000001'
-    founding_date = datetime.utcnow()
+    founding_date = datetime.now(UTC)
     filing_date = founding_date
     filing_name = 'incorporationApplication'
     business_name = 'The Truffle House'
@@ -567,7 +567,7 @@ def test_ledger_redaction(app, session, client, jwt, test_name, submitter_role, 
     from legal_api.core.filing import Filing as CoreFiling
     try:
         identifier = 'BC1234567'
-        founding_date = datetime.utcnow()
+        founding_date = datetime.now(UTC)
         business_name = 'The Truffle House'
         entity_type = Business.LegalTypes.BCOMP.value
 

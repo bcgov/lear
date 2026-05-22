@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Consent Amalgamation Out filing."""
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Final
 
@@ -50,7 +50,7 @@ def validate(business: Business, filing: dict) -> Error | None:
     if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
     else:
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         country_code = foreign_jurisdiction.get("country")
         region = foreign_jurisdiction.get("region")
         ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region,
