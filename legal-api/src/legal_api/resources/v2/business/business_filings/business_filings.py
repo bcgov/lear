@@ -609,7 +609,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return None, None
 
     @staticmethod
-    def is_before_epoch_filing(filing_json: str, business: Business):
+    def is_before_epoch_filing(filing_json: dict, business: Business):
         """Is the filings before the launch of COOPS."""
         if not business or not filing_json:
             return False
