@@ -17,14 +17,15 @@
 Test-Suite to ensure that the filings/<filing_id>/comments endpoint is working as expected.
 """
 import copy
+from datetime import UTC
 from http import HTTPStatus
 
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 
+from business_common.utils import datetime
 from business_model.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from legal_api.utils import datetime
+from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 from tests.unit.models import factory_business, factory_comment, factory_filing
 from tests.unit.services.utils import create_header
 
@@ -99,7 +100,7 @@ def test_comment_json_output(session, client, jwt):
     u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     u.save()
 
-    now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
+    now = datetime(1970, 1, 1, 0, 0).replace(tzinfo=UTC)
     with freeze_time(now):
         c = factory_comment(b, f, 'some specific text', u)
 

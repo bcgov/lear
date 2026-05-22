@@ -17,6 +17,7 @@ Provides all the search and retrieval from the business entity datastore.
 """
 import copy
 from contextlib import suppress
+from datetime import UTC
 from datetime import datetime as _datetime
 from http import HTTPStatus
 from typing import Generic, TypeVar
@@ -33,6 +34,8 @@ from requests import exceptions
 from werkzeug.local import LocalProxy
 
 import legal_api.reports
+from business_common.utils import datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,
     Business,
@@ -67,9 +70,7 @@ from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.permissions import PermissionService
 from legal_api.services.utils import get_str
-from legal_api.utils import datetime
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 class QueryModel(BaseModel):
@@ -470,7 +471,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             nr_number = filing.json["filing"][filing.filing_type]["nameRequest"].get("nrNumber", None)
             effective_date = filing.json["filing"]["header"].get("effectiveDate", None)
             if effective_date:
-                effective_date = datetime.datetime.fromisoformat(effective_date)
+                effective_date = datetime.fromisoformat(effective_date)
             if nr_number:
                 nr_response = namex.query_nr_number(nr_number)
                 # If there is an effective date, check if we need to extend the NR expiration
@@ -608,7 +609,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return None, None
 
     @staticmethod
-    def is_before_epoch_filing(filing_json: str, business: Business):
+    def is_before_epoch_filing(filing_json: dict, business: Business):
         """Is the filings before the launch of COOPS."""
         if not business or not filing_json:
             return False
@@ -616,8 +617,8 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         if len(epoch_filing) != 1:
             current_app.logger.error("Business:%s either none or too many epoch filings", business.identifier)
             return False
-        filing_date = datetime.datetime.fromisoformat(
-            filing_json["filing"]["header"]["date"]).replace(tzinfo=datetime.timezone.utc)
+        filing_date = datetime.fromisoformat(
+            filing_json["filing"]["header"]["date"]).replace(tzinfo=UTC)
         return filing_date < epoch_filing[0].filing_date
 
     @staticmethod
@@ -717,12 +718,12 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 if err_code:
                     return None, None, err_msg, err_code
             else:
-                filing.filing_date = datetime.datetime.utcnow()
+                filing.filing_date = datetime.utcnow()
 
             # for any legal type, set effective date as set in json; otherwise leave as default
             filing.effective_date = \
-                datetime.datetime.fromisoformat(filing.filing_json["filing"]["header"]["effectiveDate"]) \
-                if filing.filing_json["filing"]["header"].get("effectiveDate", None) else datetime.datetime.utcnow()
+                datetime.fromisoformat(filing.filing_json["filing"]["header"]["effectiveDate"]) \
+                if filing.filing_json["filing"]["header"].get("effectiveDate", None) else datetime.utcnow()
 
             filing.hide_in_ledger = ListFilingResource._hide_in_ledger(filing)
 
@@ -752,8 +753,8 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def _save_colin_event_ids(filing: Filing, business: Business | RegistrationBootstrap):
         try:
-            filing.filing_date = datetime.datetime.fromisoformat(filing.filing_json["filing"]["header"]["colinDate"] or
-                                                                 filing.filing_json["filing"]["header"]["date"])
+            filing.filing_date = datetime.fromisoformat(filing.filing_json["filing"]["header"]["colinDate"] or
+                                                        filing.filing_json["filing"]["header"]["date"])
             for colin_id in filing.filing_json["filing"]["header"]["colinIds"]:
                 colin_event_id = ColinEventId()
                 colin_event_id.colin_event_id = colin_id
@@ -1098,10 +1099,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     def is_future_effective_filing(filing_json: dict) -> bool:
         """Return True if the filing is a FED."""
         is_future_effective = False
-        effective_date = datetime.datetime.fromisoformat(filing_json["filing"]["header"]["effectiveDate"]) \
+        effective_date = datetime.fromisoformat(filing_json["filing"]["header"]["effectiveDate"]) \
             if filing_json["filing"]["header"].get("effectiveDate", None) else None
         if effective_date:
-            is_future_effective = effective_date > datetime.datetime.utcnow().replace(tzinfo=datetime.timezone.utc)
+            is_future_effective = effective_date > datetime.utcnow().replace(tzinfo=UTC)
         return is_future_effective
 
     @staticmethod
@@ -1186,7 +1187,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     def submit_filing_for_review(business: Business | RegistrationBootstrap, filing: Filing):
         """Submit filing for review."""
         filing_data = filing.filing_json["filing"][filing.filing_type]
-        submission_date = datetime.datetime.utcnow()
+        submission_date = datetime.utcnow()
         if filing.status == Filing.Status.DRAFT.value:
             review = Review()
             review.filing_id = filing.id

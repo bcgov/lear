@@ -26,14 +26,14 @@ dependencies = [
     "strict-rfc3339 (==0.7)",
     # FUTURE: look at removing restriction
     "minio (==7.0.2)",
-    # FUTURE: look at removing restriction
-    "pypdf (==6.7.2)",
+    "pypdf (>=6.12.1)",
     "reportlab (>=4.5.0)",
     # FUTURE: look at removing restriction
     "html-sanitizer (==2.4.1)",
     "lxml (>=6.1.1)",
 
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
+    "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
     "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@cloud-sql-connector-python3.9#subdirectory=python/cloud-sql-connector"
@@ -142,6 +142,7 @@ dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 [tool.ruff.lint.isort]
 known-first-party = [
    "business_account",
+   "business_common",
    "business_model",
    "business_model_migrations",
    "cloud-sql-connector",

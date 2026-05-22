@@ -24,6 +24,7 @@ from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from flask_jwt_oidc import JwtManager
 from legal_api.services import flags
@@ -34,7 +35,6 @@ from legal_api.services.digital_credentials_auth import (
 )
 from legal_api.services.request_context import get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 SYSTEM_ROLE = "system"
 SBC_STAFF_ROLE = "sbc_staff"
@@ -1076,7 +1076,7 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
                                                        [Filing.Status.PENDING.value, Filing.Status.PAID.value],
                                                        True)
 
-    now = datetime.utcnow().replace(tzinfo=UTC)
+    now = datetime.now(UTC)
     is_fed = any(f.effective_date > now for f in pending_filings)
 
     return is_fed

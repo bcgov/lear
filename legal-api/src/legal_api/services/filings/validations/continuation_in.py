@@ -17,6 +17,7 @@ from typing import Final
 
 from flask_babel import _ as babel
 
+from business_common.utils.datetime import datetime as dt
 from business_model.models import Business, PartyRole
 from legal_api.errors import Error
 from legal_api.services import colin, flags
@@ -38,7 +39,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_delivery_address,
 )
 from legal_api.services.utils import get_bool, get_str
-from legal_api.utils.datetime import datetime as dt
 
 FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH = 50
 FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH = 1000

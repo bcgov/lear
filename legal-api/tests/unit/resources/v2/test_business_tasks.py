@@ -17,17 +17,17 @@
 Test-Suite to ensure that the /tasks endpoint is working as expected.
 """
 import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
+
 from business_model.models import Business
 from legal_api.services.authz import STAFF_ROLE
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
@@ -486,7 +486,7 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
                         filing_types=['registration'],
                         filing_has_completing_party=[True],
                         create_completing_party_address=[True],
-                        start_date=datetime.utcnow())
+                        start_date=datetime.now(UTC))
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -511,7 +511,7 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
 ])
 def test_transition_application_task(session, client, jwt, test_name, business_restored, transition_completed, transition_task_expected):
     identifier = 'BC1234567'
-    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.now(UTC))
     if business_restored:
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration', filing_sub_type='fullRestoration')
     if transition_completed:

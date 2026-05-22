@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
 from unittest.mock import patch
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
@@ -37,10 +37,10 @@ from business_model.models import Address, Business, Office, PartyRole
         ('FAIL_NO_PROPRIETOR', 'SP', 'FM0000001', True, 0, 0, ['registration'], [True], [None], [None], 'NO_PROPRIETOR', 'A proprietor is required.'),
         ('FAIL_NO_OFFICE', 'SP', 'FM0000001', False, 1, 0, ['registration'], [True], [None], [None], 'NO_BUSINESS_OFFICE', 'A business office is required.'),
         ('FAIL_NO_COMPLETING_PARTY', 'SP', 'FM0000001', True, 1, 0, ['registration'], [False], [None], [None], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
-        ('FAIL_CEASED_PROPRIETOR', 'SP', 'FM0000001', True, 1, 0, ['registration'], [True], [datetime.utcnow()], [None], 'NO_PROPRIETOR', 'A proprietor is required.'),
-        ('FAIL_CEASED_PROPRIETOR', 'SP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [False, True], [datetime.utcnow(), datetime.utcnow()], [None, None], 'NO_PROPRIETOR', 'A proprietor is required.'),
-        ('SUCCESS_CEASED_PROP', 'SP', 'FM0000001', True, 0, 1, ['registration'], [True], [datetime.utcnow()], [None], None, None),
-        ('SUCCESS_CEASED_PROP', 'SP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [datetime.utcnow(), datetime.utcnow()], [None, None], None, None),
+        ('FAIL_CEASED_PROPRIETOR', 'SP', 'FM0000001', True, 1, 0, ['registration'], [True], [datetime.now(UTC)], [None], 'NO_PROPRIETOR', 'A proprietor is required.'),
+        ('FAIL_CEASED_PROPRIETOR', 'SP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [False, True], [datetime.now(UTC), datetime.now(UTC)], [None, None], 'NO_PROPRIETOR', 'A proprietor is required.'),
+        ('SUCCESS_CEASED_PROP', 'SP', 'FM0000001', True, 0, 1, ['registration'], [True], [datetime.now(UTC)], [None], None, None),
+        ('SUCCESS_CEASED_PROP', 'SP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [datetime.now(UTC), datetime.now(UTC)], [None, None], None, None),
         # GP tests
         ('SUCCESS', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], [None, None], [None, None], None, None),
         ('SUCCESS', 'GP', 'FM0000001', True, 0, 2, ['registration'], [True], [None, None], [None, None], None, None),
@@ -53,13 +53,13 @@ from business_model.models import Address, Business, Office, PartyRole
         ('FAIL_NO_PARTNER', 'GP', 'FM0000001', True, 0, 1, ['registration'], [True], [None], [None], 'NO_PARTNER', '2 partners are required.'),
         ('FAIL_NO_OFFICE', 'GP', 'FM0000001', False, 2, 0, ['registration'], [True], [None, None], [None, None], 'NO_BUSINESS_OFFICE', 'A business office is required.'),
         ('FAIL_NO_COMPLETING_PARTY', 'GP', 'FM0000001', True, 2, 0, ['registration'], [False], [None, None], [None, None], 'NO_COMPLETING_PARTY', 'A completing party is required.'),
-        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 1, ['registration'], [True], [datetime.utcnow()], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration'], [True], [None], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [True, True], [None], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [None], [datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
-        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 0, 2, ['registration', 'conversion'], [False, True], [None, None], [datetime.utcnow(), datetime.utcnow()], 'NO_PARTNER', '2 partners are required.'),
-        ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], [None, None], [datetime.utcnow(), datetime.utcnow()], None, None),
-        ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration', 'conversion'], [True, True], [None, None], [datetime.utcnow(), datetime.utcnow()], None, None),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 1, ['registration'], [True], [datetime.now(UTC)], [datetime.now(UTC)], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration'], [True], [None], [datetime.now(UTC)], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 1, 0, ['registration', 'conversion'], [True, True], [None], [datetime.now(UTC)], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 0, 1, ['registration', 'conversion'], [False, True], [None], [datetime.now(UTC)], 'NO_PARTNER', '2 partners are required.'),
+        ('FAIL_CEASED_PARTNER', 'GP', 'FM0000001', True, 0, 2, ['registration', 'conversion'], [False, True], [None, None], [datetime.now(UTC), datetime.now(UTC)], 'NO_PARTNER', '2 partners are required.'),
+        ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration'], [True], [None, None], [datetime.now(UTC), datetime.now(UTC)], None, None),
+        ('SUCCESS_CEASED_PARTNER', 'GP', 'FM0000001', True, 2, 0, ['registration', 'conversion'], [True, True], [None, None], [datetime.now(UTC), datetime.now(UTC)], None, None),
     ])
 def test_check_warnings(session, test_name, legal_type, identifier, has_office, num_persons_roles:int,
                         num_org_roles:int, filing_types: list, filing_has_completing_party: list,
@@ -77,7 +77,7 @@ def test_check_warnings(session, test_name, legal_type, identifier, has_office, 
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
                     filing_has_completing_party=filing_has_completing_party,
-                    start_date=datetime.utcnow(),
+                    start_date=datetime.now(UTC),
                     person_cessation_dates=person_cessation_dates,
                     org_cessation_dates=org_cessation_dates)
 

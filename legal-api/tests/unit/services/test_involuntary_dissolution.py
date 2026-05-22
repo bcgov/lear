@@ -22,11 +22,10 @@ import pytest
 from datedelta import datedelta
 from unittest.mock import patch
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
-from sqlalchemy.sql import true
 
+from business_common.utils.datetime import datetime
 from business_model.models import Batch, Business
 from legal_api.services import flags, InvoluntaryDissolutionService
-from legal_api.utils.datetime import datetime
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,

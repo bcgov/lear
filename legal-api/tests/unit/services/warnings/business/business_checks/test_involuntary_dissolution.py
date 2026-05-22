@@ -16,15 +16,15 @@ import copy
 
 import pytest
 from datedelta import datedelta
-from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
 
+from business_common.utils.datetime import datetime
 from business_model.models import Batch, BatchProcessing, Business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
 from legal_api.services.warnings.business.business_checks.involuntary_dissolution import (
     _get_modified_warning_data,
     check_business,
 )
-from legal_api.utils.datetime import datetime
+from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER, RESTORATION
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,

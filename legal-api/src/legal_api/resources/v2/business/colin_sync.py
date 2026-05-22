@@ -22,6 +22,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_, text
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,
     Alias,
@@ -44,7 +45,6 @@ from business_model.models.db import VersioningProxy
 from legal_api.exceptions import BusinessException
 from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 

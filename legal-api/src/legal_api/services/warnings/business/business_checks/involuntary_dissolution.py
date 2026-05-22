@@ -16,9 +16,9 @@
 from datedelta import datedelta
 from flask import current_app
 
+from business_common.utils.datetime import datetime
 from business_model.models import BatchProcessing, Business
 from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
-from legal_api.utils.datetime import datetime
 
 from . import BusinessWarningCodes, WarningType
 

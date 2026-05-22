@@ -20,11 +20,11 @@ from datetime import date
 import pytest
 from freezegun import freeze_time
 
+from business_common.utils.datetime import datetime as dt, timedelta
 from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
-from legal_api.utils.datetime import datetime as dt, timedelta
 from registry_schemas.example_data import CONTINUATION_IN
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal

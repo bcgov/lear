@@ -18,6 +18,7 @@ from typing import Final
 from dateutil.relativedelta import relativedelta
 from flask_babel import _ as babel
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing, PartyRole
 from legal_api.errors import Error
 from legal_api.services.filings.validations.common_validations import (
@@ -28,7 +29,6 @@ from legal_api.services.filings.validations.common_validations import (
 )
 from legal_api.services.filings.validations.incorporation_application import validate_offices
 from legal_api.services.utils import get_date, get_str
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 APPROVAL_TYPE_PATH = "/filing/restoration/approvalType"
 

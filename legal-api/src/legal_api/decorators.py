@@ -15,7 +15,7 @@
 
 import json
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import wraps
 from http import HTTPStatus
 
@@ -96,7 +96,7 @@ def requires_traction_auth(f):
             if not (decoded := pyjwt.decode(current_app.api_token, options={"verify_signature": False})):
                 raise pyjwt.ExpiredSignatureError
 
-            if datetime.utcfromtimestamp(decoded["exp"]) <= datetime.utcnow():
+            if datetime.fromtimestamp(decoded["exp"], UTC) <= datetime.now(UTC):
                 raise pyjwt.ExpiredSignatureError
         except ExpiredSignatureError:
             current_app.logger.info("Traction token expired or is missing, requesting new token")

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the directors for the entity."""
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import jsonify, request
@@ -48,8 +48,8 @@ def get_directors(identifier, director_id=None):
         return jsonify(director or msg), code
 
     # return all active directors as of date query param
-    end_date = datetime.utcnow().strptime(request.args.get("date"), "%Y-%m-%d").date()\
-        if request.args.get("date") else datetime.utcnow().date()
+    end_date = datetime.now(UTC).strptime(request.args.get("date"), "%Y-%m-%d").date()\
+        if request.args.get("date") else datetime.now(UTC).date()
 
     party_list = []
     active_directors = PartyRole.get_active_directors(business.id, end_date)
