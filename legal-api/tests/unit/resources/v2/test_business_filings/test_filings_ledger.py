@@ -17,41 +17,29 @@
 Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is working as expected.
 """
 import copy
-import json
 from datetime import UTC, date, datetime
 from http import HTTPStatus
-from typing import Final, Tuple
+from typing import Tuple
 
 import datedelta
 import pytest
-from dateutil.parser import parse
-from flask import current_app
+
+from business_model.models import Business, Comment, Filing as FilingStorage, UserRoles
+from legal_api.core import Filing, FILINGS
+from legal_api.services.authz import STAFF_ROLE
 from registry_schemas.example_data import (
-    ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
-    CHANGE_OF_DIRECTORS,
     CORRECTION_AR,
-    CORRECTION_INCORPORATION,
     CORRECTION_CP_SPECIAL_RESOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION,
-    INCORPORATION_FILING_TEMPLATE,
     RESTORATION,
-    SPECIAL_RESOLUTION,
-    TRANSITION_FILING_TEMPLATE,
 )
-
-from legal_api.core import Filing, FilingMeta, FILINGS
-from business_model.models import Business, Comment, Filing as FilingStorage, UserRoles
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from business_common.utils.legislation_datetime import LegislationDatetime
-from tests import api_v2, integration_payment
 from tests.unit.core.test_filing_ledger import load_ledger
-from tests.unit.models import (  # noqa:E501,I001
+from tests.unit.models import (
     factory_business,
-    factory_business_mailing_address,
     factory_completed_filing,
     factory_filing,
     factory_user,

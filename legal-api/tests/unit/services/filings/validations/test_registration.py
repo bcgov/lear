@@ -15,21 +15,20 @@
 import copy
 from datetime import datetime, timedelta
 from unittest.mock import patch
-from dateutil.relativedelta import relativedelta
 from http import HTTPStatus
 
 import pytest
-from registry_schemas.example_data import FILING_HEADER, REGISTRATION
+from dateutil.relativedelta import relativedelta
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business
 from legal_api.services import NaicsService, NameXService, flags 
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from business_common.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
 from tests.unit.services.filings.validations import create_party, create_party_address
-
-from ...utils import jwt_request_context
+from tests.unit.services.utils import jwt_request_context
 
 now = datetime.now().strftime('%Y-%m-%d')
 

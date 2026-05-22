@@ -29,8 +29,26 @@ import pytest
 from dateutil.parser import parse
 from flask import current_app
 from minio.error import S3Error
-from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE, RESTORATION
 from reportlab.lib.pagesizes import letter
+
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import (
+    Address,
+    Batch,
+    Business,
+    Filing,
+    PartyRole,
+    RegistrationBootstrap,
+    Review,
+    ReviewResult,
+    ReviewStatus,
+    User,
+    UserRoles,
+)
+from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
+from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
+from legal_api.services.bootstrap import RegistrationBootstrapService
+from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
@@ -58,26 +76,7 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE
 )
-
-from business_model.models import (
-    Address,
-    Batch,
-    BatchProcessing,
-    Business,
-    Filing,
-    PartyRole,
-    RegistrationBootstrap,
-    Review,
-    ReviewResult,
-    ReviewStatus,
-    User,
-    UserRoles,
-)
-from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
-from legal_api.services.bootstrap import RegistrationBootstrapService
-from legal_api.services.minio import MinioService
-from business_common.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE, RESTORATION
 from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
     factory_batch,

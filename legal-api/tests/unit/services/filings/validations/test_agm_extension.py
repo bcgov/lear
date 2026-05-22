@@ -18,12 +18,10 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from registry_schemas.example_data import FILING_HEADER
 
-from legal_api.services.filings.validations.validation import validate
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_common.utils.datetime import datetime
-
+from legal_api.services.filings.validations.validation import validate
+from registry_schemas.example_data import FILING_HEADER
 from tests.unit.models import factory_business
 
 

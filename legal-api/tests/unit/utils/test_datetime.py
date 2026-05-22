@@ -25,10 +25,6 @@ def test_datetime_utcnow(freeze_datetime_utcnow):
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
     with freeze_datetime_utcnow(now):
-        print(1)
-        print(_datetime)
-        print(_datetime.__dict__)
-        print(_datetime.utcnow)
         d = _datetime.utcnow()
         assert d == now.replace(tzinfo=timezone.utc)
 

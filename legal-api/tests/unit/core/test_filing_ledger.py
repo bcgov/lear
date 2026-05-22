@@ -16,15 +16,12 @@
 import copy
 
 import datedelta
-import pytest
-from flask import current_app
 from registry_schemas.example_data import FILING_TEMPLATE
 
-from legal_api.core import Filing as CoreFiling
-from business_model.models import Business, Comment, Filing, UserRoles
-from business_model.models.user import UserRoles
-from legal_api.services.authz import STAFF_ROLE
 from business_common.utils.datetime import datetime
+from business_model.models import Business, Comment, Filing
+from legal_api.core import Filing as CoreFiling
+from legal_api.services.authz import STAFF_ROLE
 from tests.unit.models import factory_business, factory_completed_filing, factory_user
 from tests.unit.services.utils import helper_create_jwt, create_header
 

@@ -23,6 +23,10 @@ from http import HTTPStatus
 import pytest
 
 import registry_schemas
+from business_common.utils.datetime import datetime
+from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services import flags
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
@@ -32,18 +36,12 @@ from registry_schemas.example_data import (
     FILING_TEMPLATE,
     INCORPORATION
 )
-
-from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
-from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from legal_api.services import flags
-from business_common.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
 
-from unittest.mock import MagicMock
 
 def factory_business_model(legal_name,
                            identifier,
