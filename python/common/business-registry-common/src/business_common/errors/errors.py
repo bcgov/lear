@@ -13,7 +13,7 @@
 # limitations under the License.
 """Common error."""
 
-class Error:  # pylint: disable=too-few-public-methods; convenience class
+class Error:
     """A convenience class for managing errors as code outside of Exceptions."""
 
     def __init__(self, code: int, message: list[dict]):
