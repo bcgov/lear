@@ -23,7 +23,6 @@ from legal_api.models import Business, Filing, PartyRole
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_name_request,
-    validate_name_translation,
     validate_offices_addresses,
     validate_parties_addresses,
 )
@@ -75,7 +74,6 @@ def validate(business: Business, restoration: dict) -> Optional[Error]:
     msg.extend(validate_approval_type(restoration, restoration_type, limited_restoration))
     msg.extend(validate_restoration_court_order(restoration, restoration_type, limited_restoration))
     msg.extend(validate_restoration_registrar(restoration, restoration_type))
-    msg.extend(validate_name_translation(restoration, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
