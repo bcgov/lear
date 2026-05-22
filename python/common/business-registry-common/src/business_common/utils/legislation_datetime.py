@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Legislation Date time utilities."""
+from datetime import date, timedelta
+
 import datedelta
 import pytz
 from dateutil.tz import gettz
 from flask import current_app
 
-from .datetime import date, datetime, timedelta, timezone
+from . import datetime
 
 
-class LegislationDatetime():
+class LegislationDatetime:
     """Date utility using legislation timezone for reporting and future effective dates."""
 
     @staticmethod
@@ -151,4 +153,4 @@ class LegislationDatetime():
     def is_future(date_string: str) -> bool:
         """Return the boolean for whether the date string is in the future."""
         effective_date = datetime.fromisoformat(date_string)
-        return effective_date > datetime.utcnow().replace(tzinfo=timezone.utc)
+        return effective_date > datetime.utcnow()

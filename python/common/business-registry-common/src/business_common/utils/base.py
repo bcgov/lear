@@ -20,10 +20,10 @@ from typing import Optional
 class BaseMeta(EnumMeta):
     """Meta class for the enum."""
 
-    def __contains__(self, other):  # pylint: disable=C0203
+    def __contains__(cls, other):
         """Return True if 'in' the Enum."""
         try:
-            self(other)  # pylint: disable=no-value-for-parameter
+            cls(other)
         except ValueError:
             return False
         else:
@@ -34,7 +34,7 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
     """Replace autoname from Enum class."""
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> Optional[str]:
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
