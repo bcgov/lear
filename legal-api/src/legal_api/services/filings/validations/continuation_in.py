@@ -17,6 +17,7 @@ from typing import Final
 
 from flask_babel import _ as babel
 
+from business_common.utils.datetime import datetime as dt
 from business_model.models import Business, PartyRole
 from legal_api.errors import Error
 from legal_api.services import colin, flags
@@ -39,7 +40,6 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_delivery_address,
 )
 from legal_api.services.utils import get_bool, get_str
-from legal_api.utils.datetime import datetime as dt
 
 
 def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-branches;

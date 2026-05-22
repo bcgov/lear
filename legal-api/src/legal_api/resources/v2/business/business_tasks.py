@@ -16,7 +16,7 @@
 Provides all the search and retrieval from the business filings datastore.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import datedelta
@@ -25,11 +25,11 @@ from flask import current_app, jsonify
 from flask_cors import cross_origin
 from requests import exceptions
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from legal_api.services import check_warnings, namex
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
@@ -162,8 +162,8 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
 
         start_year = next_ar_year
-        while next_ar_year <= datetime.utcnow().year and ar_min_date <= datetime.utcnow().date():
-            # while next_ar_year <= datetime.utcnow().date():
+        while next_ar_year <= datetime.now(UTC).year and ar_min_date <= datetime.now(UTC).date():
+            # while next_ar_year <= datetime.now(UTC).date():
             enabled = not pending_filings and ar_min_date.year == start_year
             tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
 

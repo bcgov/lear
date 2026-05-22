@@ -33,8 +33,8 @@ from legal_api.services.authz import has_roles, is_competent_authority
 from .constants import REDACTED_STAFF_SUBMITTER
 
 if TYPE_CHECKING:
+    from business_common.utils.datetime import date, datetime
     from flask_jwt_oidc import JwtManager
-    from legal_api.utils.datetime import date, datetime
 
 
 # @dataclass(init=False, repr=False)

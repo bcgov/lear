@@ -23,6 +23,8 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
+from business_common.utils.datetime import datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     AmalgamatingBusiness,
     Amalgamation,
@@ -40,9 +42,7 @@ from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.utils.auth import jwt
-from legal_api.utils.datetime import datetime
 from legal_api.utils.formatting import float_to_str
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 OUTPUT_DATE_FORMAT: Final = "%B %-d, %Y"
 

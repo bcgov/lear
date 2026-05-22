@@ -24,8 +24,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 @dataclass

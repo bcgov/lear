@@ -19,12 +19,13 @@ Test-Suite to ensure that the businesses/<identifier>/comments endpoint is worki
 import copy
 from http import HTTPStatus
 
+from datetime import UTC
 from freezegun import freeze_time
-from registry_schemas.example_data import COMMENT_BUSINESS
 
+from business_common.utils import datetime
 from business_model.models import User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
-from legal_api.utils import datetime
+from registry_schemas.example_data import COMMENT_BUSINESS
 from tests.unit.models import factory_business, factory_business_comment
 from tests.unit.services.utils import create_header
 
@@ -93,7 +94,7 @@ def test_business_comment_json_output(session, client, jwt):
     u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
     u.save()
 
-    now = datetime.datetime(1970, 1, 1, 0, 0).replace(tzinfo=datetime.timezone.utc)
+    now = datetime(1970, 1, 1, 0, 0).replace(tzinfo=UTC)
     with freeze_time(now):
         factory_business_comment(b, 'some specific text', u)
 

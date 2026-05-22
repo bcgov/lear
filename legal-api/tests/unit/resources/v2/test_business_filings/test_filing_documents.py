@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is
 import copy
 import json
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 import requests_mock
 
@@ -76,7 +76,7 @@ def basic_test_helper():
 
     filing_json = FILING_HEADER
     filing_json['specialResolution'] = SPECIAL_RESOLUTION
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_completed_filing(business, filing_json, filing_date=filing_date)
 
     return business, filing
@@ -130,7 +130,7 @@ def test_unpaid_filing(session, client, jwt):
 
     filing_json = FILING_HEADER
     filing_json['specialResolution'] = SPECIAL_RESOLUTION
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
@@ -1488,7 +1488,7 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
     if legal_filing_2:
         filing_json['filing'][filing_name_2] = legal_filing_2
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = status
@@ -1654,7 +1654,7 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
         legal_filing['nameRequest']['legalType'] = entity_type
     filing_json['filing'][filing_name] = legal_filing
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
 
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = temp_identifier
@@ -1708,7 +1708,7 @@ def test_get_receipt(session, client, jwt, requests_mock):
     filing_json['filing'][filing_name] = INCORPORATION
     filing_json['filing'].pop('business')
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
@@ -1744,7 +1744,7 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
     filing_json['filing'][filing_name] = INCORPORATION
     filing_json['filing'].pop('business')
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
@@ -1782,7 +1782,7 @@ def test_get_receipt_no_receipt_ca(session, client, jwt, requests_mock):
     filing_json['filing'][filing_name] = INCORPORATION
     filing_json['filing'].pop('business')
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
@@ -1837,7 +1837,7 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     filing_json['filing']['business']['legalType'] = entity_type
     filing_json['filing']['noticeOfWithdrawal'] = MOCK_NOTICE_OF_WITHDRAWAL
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
 
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = temp_identifier

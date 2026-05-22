@@ -31,9 +31,9 @@ from .pytest_marks import (
 )
 
 
-EPOCH_DATETIME = datetime.datetime.utcfromtimestamp(0).replace(tzinfo=datetime.timezone.utc)
-FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362).replace(tzinfo=datetime.timezone.utc)
-FROZEN_2018_DATETIME = datetime.datetime(2018, 12, 25, 0, 0, 50, 0).replace(tzinfo=datetime.timezone.utc)
+EPOCH_DATETIME = datetime.datetime.fromtimestamp(0, datetime.UTC)
+FROZEN_DATETIME = datetime.datetime(2001, 8, 5, 7, 7, 58, 272362, datetime.UTC)
+FROZEN_2018_DATETIME = datetime.datetime(2018, 12, 25, 0, 0, 50, 0, datetime.UTC)
 TIMEZONE_OFFSET=time.timezone/60/60 if time.timezone else 0
 
 

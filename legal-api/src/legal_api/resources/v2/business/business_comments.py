@@ -15,7 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import g, jsonify, request
@@ -95,7 +95,7 @@ def post_comments(identifier):
         comment.comment = json_input["comment"]["comment"]
         comment.staff_id = user.id
         comment.business_id = business.id
-        comment.timestamp = datetime.datetime.utcnow()
+        comment.timestamp = datetime.now(UTC)
         comment.save()
     except BusinessException as err:
         reply = json_input

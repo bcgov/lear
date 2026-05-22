@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test annual report year is managed correctly."""
 import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import datedelta
@@ -32,7 +32,7 @@ from tests.unit.models import factory_business
      HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date must be a valid date.',
                                'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_FUTURE_FILINGS',
-     (datetime.utcnow() + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
+     (datetime.now(UTC) + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
      '2017-08-05', '1900-07-01',
      HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date cannot be in the future.',
                                'path': 'filing/annualReport/annualReportDate'}]),
