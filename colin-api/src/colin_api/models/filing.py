@@ -1489,8 +1489,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                                    event_id=filing.event_id)
                 if (filing.filing_type == 'incorporationApplication' and
                         filing.business.corp_type != Business.TypeCodes.COOP.value and
-                        not has_completing_party
-                ):
+                        not has_completing_party):
                     cls._create_completing_party(cursor=cursor, filing=filing)
 
             # add shares if not coop
