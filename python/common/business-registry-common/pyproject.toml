@@ -9,6 +9,7 @@ dependencies = [
     "datedelta (>=1.4,<2.0)",
     "flask (>=3.1.0,<4.0.0)",
     "pytz (>=2025.1,<2026.0)",
+    "python-dateutil (>=2.9.0,<3.0.0)",
 ]
 
 [tool.poetry]
@@ -32,7 +33,7 @@ exclude = [
     ".vscode",
     "dist",
     "htmlcov",
-    "venv",
+    ".venv",
     "migrations",
     "devops",
     ".history"

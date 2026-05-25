@@ -12,9 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module holds all of the basic data about a business."""
-
 from enum import Enum, EnumMeta
-from typing import Optional
 
 
 class BaseMeta(EnumMeta):
@@ -34,7 +32,7 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
     """Replace autoname from Enum class."""
 
     @classmethod
-    def get_enum_by_value(cls, value: str) -> str | None:
+    def get_enum_by_value(cls, value: str):
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:
