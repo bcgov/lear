@@ -40,6 +40,8 @@ from legal_api.services.filings.validations.incorporation_application import (
 from legal_api.services.utils import get_bool, get_str
 from legal_api.utils.datetime import datetime as dt
 
+FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH = 50
+FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH = 1000
 
 def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
     """Validate the Continuation In filing."""
@@ -138,6 +140,27 @@ def validate_roles(filing_dict: dict, legal_type: str, filing_type: str) -> list
     return msg
 
 
+def _validate_incorporation_date(incorporation_date: str, incorporation_date_path: str) -> list:
+    """Validate incorporation date."""
+    msg = []
+    try:
+        # Check the incorporation date is in valid format
+        incorporation_date_formatted = dt.fromisoformat(incorporation_date)
+        
+        # Check if the date is today or before
+        if incorporation_date_formatted > dt.now():
+            msg.append({
+                "error": "Incorporation date cannot be in the future.",
+                "path": incorporation_date_path
+            })
+    except ValueError:
+        msg.append({
+            "error": f"{incorporation_date} is an invalid ISO format for incorporation date.",
+            "path": incorporation_date_path
+        })
+    return msg
+
+
 def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate continuation in foreign jurisdiction."""
     msg = []
@@ -145,6 +168,28 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
     incorporation_date = filing_json["filing"][filing_type]["foreignJurisdiction"]["incorporationDate"]
     foreign_jurisdiction_path = f"/filing/{filing_type}/foreignJurisdiction"
     incorporation_date_path = f"/filing/{filing_type}/foreignJurisdiction/incorporationDate"
+
+    if not (identifier := foreign_jurisdiction.get("identifier")):
+        msg.append({
+            "error": "Identifier is required.",
+            "path": f"{foreign_jurisdiction_path}/identifier"
+        })
+    elif len(identifier) > FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH:
+        msg.append({
+            "error": f"Identifier must not exceed {FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH} characters.",
+            "path": f"{foreign_jurisdiction_path}/identifier"
+        })
+
+    if not (legal_name := foreign_jurisdiction.get("legalName")):
+        msg.append({
+            "error": "Legal name is required.",
+            "path": f"{foreign_jurisdiction_path}/legalName"
+        })
+    elif len(legal_name) > FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH:
+        msg.append({
+            "error": f"Legal name must not exceed {FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH} characters.",
+            "path": f"{foreign_jurisdiction_path}/legalName"
+        })
 
     if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
@@ -157,21 +202,8 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
                 msg.extend(err)
         else:
             msg.append({"error": "Affidavit from the directors is required.", "path": affidavit_file_key_path})
-    try:
-        # Check the incorporation date is in valid format
-        incorporation_date_formatted = dt.fromisoformat(incorporation_date)
 
-        # Check if the date is today or before
-        if incorporation_date_formatted > dt.now():
-            msg.append({
-                "error": "Incorporation date cannot be in the future.",
-                "path": incorporation_date_path
-            })
-    except ValueError:
-        msg.append({
-            "error": f"{incorporation_date} is an invalid ISO format for incorporation date.",
-            "path": incorporation_date_path
-        })
+    msg.extend(_validate_incorporation_date(incorporation_date, incorporation_date_path))
 
     return msg
 
