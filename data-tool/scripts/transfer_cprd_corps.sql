@@ -13,7 +13,7 @@ SELECT pg_advisory_lock(
 
 learn schema public;
 
-insert into colin_subset_extract (extracted_at)
+insert into public.colin_extract_version (extracted_at)
 values (current_timestamp);
 
 

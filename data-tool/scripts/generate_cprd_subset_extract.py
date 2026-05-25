@@ -646,9 +646,10 @@ def gen_build_master_script_inline(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
-    lines.append("truncate table colin_extract_version; "
-                 "insert into colin_extract_version (extracted_at) values (current_timestamp); "
-    )
+    lines.append("-- Record the subset refresh start once, before transfer inserts begin.")
+    lines.append("truncate table public.colin_extract_version; "
+                 "insert into public.colin_extract_version (extracted_at) values (current_timestamp); "
+                )
     lines.append("")
 
     if cfg.pg_fastload:
@@ -750,8 +751,8 @@ def gen_build_master_script_vset(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
-    lines.append("truncate table colin_extract_version; "
-                 "insert into colin_extract_version (extracted_at) values (current_timestamp); "
+    lines.append("truncate table public.colin_extract_version; "
+                 "insert into public.colin_extract_version (extracted_at) values (current_timestamp); "
     )
     lines.append("")
 
