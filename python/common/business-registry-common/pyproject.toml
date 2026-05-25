@@ -84,6 +84,7 @@ select = [
     "PIE", # flake8-pie
     "PL",  # pyLint
     "PGH", # pygrep
+    "Q",   # Enables flake8-quotes rules
     "RUF", # ruff checks
     "SIM", # flake8-simplify
     "T20", # flake8-print

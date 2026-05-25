@@ -38,35 +38,35 @@ def test_datetime_isoformat():
     with freeze_time(now):
         d = datetime.utcnow()
         iso = d.isoformat()
-        tz = iso[iso.find('+'):]
-        assert tz == '+00:00'
+        tz = iso[iso.find("+"):]
+        assert tz == "+00:00"
 
 
 @pytest.mark.parametrize(
-    'test_name, from_date_str, num_days, expected_date_str', [
+    "test_name, from_date_str, num_days, expected_date_str", [
         (
-            'ADD_WITHIN_WEEKDAYS',
-            '2024-06-19',
+            "ADD_WITHIN_WEEKDAYS",
+            "2024-06-19",
             2,
-            '2024-06-21'
+            "2024-06-21"
         ),
         (
-            'ADD_OVER_WEEKEND',
-            '2024-06-19',
+            "ADD_OVER_WEEKEND",
+            "2024-06-19",
             5,
-            '2024-06-26'
+            "2024-06-26"
         ),
         (
-            'SUB_WITHIN_WEEKDAYS',
-            '2024-06-19',
+            "SUB_WITHIN_WEEKDAYS",
+            "2024-06-19",
             -2,
-            '2024-06-17'
+            "2024-06-17"
         ),
         (
-            'SUB_OVER_WEEKEND',
-            '2024-06-19',
+            "SUB_OVER_WEEKEND",
+            "2024-06-19",
             -5,
-            '2024-06-12'
+            "2024-06-12"
         ),
     ]
 )
