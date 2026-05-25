@@ -13,65 +13,65 @@
 # limitations under the License.
 
 """Tests to ensure the datetime wrappers are working as expected."""
-from datetime import date, datetime, timezone
+from datetime import UTC, date
+from datetime import datetime as _datetime
 
 import pytest
 from freezegun import freeze_time
 
+from business_common.utils import datetime
+
 
 def test_datetime_utcnow():
     """Assert that datetime.utcnow returns a non-naive datetime object."""
-    import business_common.utils.datetime as _datetime
-    now = datetime(2020, 9, 17, 0, 0, 0, 0)
+    now = _datetime(2020, 9, 17, 0, 0, 0, 0)
 
     with freeze_time(now):
-        d = _datetime.datetime.utcnow()
-        assert d == now.replace(tzinfo=timezone.utc)
+        d = datetime.utcnow()
+        assert d == now.replace(tzinfo=UTC)
 
 
 def test_datetime_isoformat():
     """Assert that the isoformat has the tzinfo set to +00:00."""
-    import business_common.utils.datetime as _datetime
     now = datetime(2020, 9, 17, 0, 0, 0, 0)
 
     with freeze_time(now):
-        d = _datetime.datetime.utcnow()
+        d = datetime.utcnow()
         iso = d.isoformat()
-        tz = iso[iso.find('+'):]
-        assert tz == '+00:00'
+        tz = iso[iso.find("+"):]
+        assert tz == "+00:00"
 
 
 @pytest.mark.parametrize(
-    'test_name, from_date_str, num_days, expected_date_str', [
+    "test_name, from_date_str, num_days, expected_date_str", [
         (
-            'ADD_WITHIN_WEEKDAYS',
-            '2024-06-19',
+            "ADD_WITHIN_WEEKDAYS",
+            "2024-06-19",
             2,
-            '2024-06-21'
+            "2024-06-21"
         ),
         (
-            'ADD_OVER_WEEKEND',
-            '2024-06-19',
+            "ADD_OVER_WEEKEND",
+            "2024-06-19",
             5,
-            '2024-06-26'
+            "2024-06-26"
         ),
         (
-            'SUB_WITHIN_WEEKDAYS',
-            '2024-06-19',
+            "SUB_WITHIN_WEEKDAYS",
+            "2024-06-19",
             -2,
-            '2024-06-17'
+            "2024-06-17"
         ),
         (
-            'SUB_OVER_WEEKEND',
-            '2024-06-19',
+            "SUB_OVER_WEEKEND",
+            "2024-06-19",
             -5,
-            '2024-06-12'
+            "2024-06-12"
         ),
     ]
 )
 def test_datetime_add_business_days(test_name, from_date_str, num_days, expected_date_str):
     """Assert that business days are added to a date correctly."""
-    import business_common.utils.datetime as _datetime
     from_date = date.fromisoformat(from_date_str)
-    new_date = _datetime.datetime.add_business_days(from_date, num_days)
+    new_date = datetime.add_business_days(from_date, num_days)
     assert new_date == date.fromisoformat(expected_date_str)
