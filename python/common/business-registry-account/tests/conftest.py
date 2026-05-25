@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
+import json
 import os
 from contextlib import contextmanager
 
 import pytest
 from flask import Flask
-from flask_jwt_oidc import JwtManager
 
 from business_account.config import CONFIGURATION
-
-import json
-
+from flask_jwt_oidc import JwtManager
 
 _jwt = JwtManager()
 
@@ -35,19 +33,19 @@ def not_raises(exception):
     try:
         yield
     except exception:
-        raise pytest.fail(f'DID RAISE {exception}')
+        raise pytest.fail(f"DID RAISE {exception}")
 
 
 def setup_jwt_manager(app, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
+        return a_dict["realm_access"]["roles"]  # pragma: no cover
+    app.config["JWT_ROLE_CALLBACK"] = get_roles
 
     jwt_manager.init_app(app)
 
 
-def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
+def create_app(run_mode=os.getenv("FLASK_ENV", "production")):
     """Return a configured Flask App using the Factory method."""
     app = Flask(__name__)
     app.config.from_object(CONFIGURATION[run_mode])
@@ -55,19 +53,19 @@ def create_app(run_mode=os.getenv('FLASK_ENV', 'production')):
 
     return app
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    _app = create_app("testing")
 
     return _app
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app_ctx(event_loop):
     # def app_ctx():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    _app = create_app("testing")
     with _app.app_context():
         yield _app
 
@@ -78,21 +76,21 @@ def config(app):
     return app.config
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app_request():
     """Return a session-wide application configured in TEST mode."""
-    _app = create_app('testing')
+    _app = create_app("testing")
 
     return _app
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def jwt():
     """Return a session-wide jwt manager."""
     return _jwt

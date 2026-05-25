@@ -95,6 +95,9 @@ select = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
+"**/config.py" = [
+  "T201",  # allow print instead of logger in config
+]
 "**/tests/*" = [
   "B",
   "C",
