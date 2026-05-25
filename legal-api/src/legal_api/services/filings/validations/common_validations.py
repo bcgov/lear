@@ -884,7 +884,8 @@ def validate_relationship_roles(roles: list[dict[str, str]],
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
-                          accepted_request_types: Optional[list] = None) -> list:
+                          accepted_request_types: Optional[list] = None,
+                          require_legal_name: bool = True) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -901,7 +902,8 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
             # CP, SP, GP doesn't support numbered company
             return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
     elif nr_number and not legal_name:
-        return [{"error": _("Legal name is missing in nameRequest."), "path": legal_name_path}]
+        if require_legal_name:
+            return [{"error": _("Legal name is missing in nameRequest."), "path": legal_name_path}]
     elif not nr_number and legal_name:
         # expecting nrNumber when legalName provided
         return [{
@@ -928,11 +930,12 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
         msg.append({"error": _("Name Request legal type is not same as the business legal type."),
                     "path": legal_type_path})
 
-    # ensure NR request has the same legal name
-    nr_name = namex.get_approved_name(nr_response_json)
-    if nr_name != legal_name:
-        msg.append({"error": _("Name Request legal name is not same as the business legal name."),
-                    "path": legal_name_path})
+    # ensure NR request has the same legal name (only when caller provided one)
+    if legal_name:
+        nr_name = namex.get_approved_name(nr_response_json)
+        if nr_name != legal_name:
+            msg.append({"error": _("Name Request legal name is not same as the business legal name."),
+                        "path": legal_name_path})
 
     return msg
 

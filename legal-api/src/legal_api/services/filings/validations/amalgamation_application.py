@@ -59,9 +59,11 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
 
     amalgamation_type = get_str(amalgamation_json, f"/filing/{filing_type}/type")
 
-    if amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
-        # Adopt from one of the amalgamating businesses contains name not nrNumber
-        msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
+    name_option, name_option_errors = _derive_and_validate_name_option(amalgamation_json, legal_type, filing_type)
+    msg.extend(name_option_errors)
+    if name_option == "new_nr":
+        msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type,
+                                         require_legal_name=False))
     
     if flags.is_on("enabled-deeper-permission-action"):
         err = validate_permission_and_completing_party(
@@ -357,6 +359,33 @@ def _validate_foreign_identifier(amalgamating_business, amalgamating_business_pa
             })
 
     return msg
+
+
+def _derive_and_validate_name_option(filing_json, legal_type, filing_type):
+    nr_path = f"/filing/{filing_type}/nameRequest"
+    name_request = filing_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {})
+    nr_number = name_request.get("nrNumber")
+    legal_name = name_request.get("legalName")
+
+    if nr_number and legal_name:
+        return None, [{
+            "error": "nameRequest must include either legalName (adopted name) or nrNumber (new NR), not both.",
+            "path": nr_path,
+        }]
+
+    if nr_number:
+        return "new_nr", []
+
+    if legal_name:
+        return "adopted_name", []
+
+    if legal_type not in Business.CORPS:
+        return None, [{
+            "error": f"{legal_type} cannot be a numbered company; nameRequest must include legalName or nrNumber.",
+            "path": nr_path,
+        }]
+
+    return "numbered_company", []
 
 
 def _check_aml_permission_or_default_error(msg: list, message: str, default_error: dict) -> bool:
