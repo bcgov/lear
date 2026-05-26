@@ -894,7 +894,9 @@ def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
                 'foreignJurisdiction': {
                     'country': 'USA',
                     'region': 'WA',
-                    'incorporationDate': future_date
+                    'incorporationDate': future_date,
+                    'identifier': '123456789',
+                    'legalName': 'Test Company'
                 }
             },
             'header': {
@@ -1127,4 +1129,136 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
     else:
         assert err is None
 
+@pytest.mark.parametrize(
+    'test_name, identifier, legal_name, expected_errors',
+    [
+        (
+            'SUCCESS',
+            'C1234567',
+            'Test',
+            []
+        ),
+        (
+            'SUCCESS_IDENTIFIER_AT_MAX_LENGTH',
+            'A' * 50,
+            'Test',
+            []
+        ),
+        (
+            'SUCCESS_LEGAL_NAME_AT_MAX_LENGTH',
+            'C1234567',
+            'A' * 1000,
+            []
+        ),
+        (
+            'FAIL_IDENTIFIER_MISSING',
+            None,
+            'Test',
+            [
+                {
+                    'error': 'Identifier is required.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
+                }
+            ]
+        ),
+        (
+            'FAIL_LEGAL_NAME_MISSING',
+            'C1234567',
+            None,
+            [
+                {
+                    'error': 'Legal name is required.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
+                }
+            ]
+        ),
+        (
+            'FAIL_BOTH_MISSING',
+            None,
+            None,
+            [
+                {
+                    'error': 'Identifier is required.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
+                },
+                {
+                    'error': 'Legal name is required.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
+                }
+            ]
+        ),
+        (
+            'FAIL_IDENTIFIER_EXCEEDS_MAX_LENGTH',
+            'A' * 51,
+            'Test',
+            [
+                {
+                    'error': 'Identifier must not exceed 50 characters.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
+                }
+            ]
+        ),
+        (
+            'FAIL_LEGAL_NAME_EXCEEDS_MAX_LENGTH',
+            'C1234567',
+            'A' * 1001,
+            [
+                {
+                    'error': 'Legal name must not exceed 1000 characters.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
+                }
+            ]
+        ),
+        (
+            'FAIL_BOTH_EXCEED_MAX_LENGTH',
+            'A' * 51,
+            'A' * 1001,
+            [
+                {
+                    'error': 'Identifier must not exceed 50 characters.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
+                },
+                {
+                    'error': 'Legal name must not exceed 1000 characters.',
+                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
+                                                     test_name, identifier, legal_name, expected_errors):
+    """Assert that identifier and legalName are required and enforce max length for continuation in filings."""
+    filing = {
+        'filing': {
+            'continuationIn': {
+                'foreignJurisdiction': {
+                    'country': 'US',
+                    'region': 'WA',
+                    'incorporationDate': dt.now().date().isoformat()
+                }
+            },
+            'header': {
+                'name': 'continuationIn',
+                'date': '2019-04-08',
+                'certifiedBy': 'full name',
+                'authorizationReceived': True,
+                'email': 'no_one@never.get',
+                'filingId': 1
+            }
+        }
+    }
 
+    if identifier is not None:
+        filing['filing']['continuationIn']['foreignJurisdiction']['identifier'] = identifier
+
+    if legal_name is not None:
+        filing['filing']['continuationIn']['foreignJurisdiction']['legalName'] = legal_name
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_foreign_jurisdiction',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+
+    err = _validate_foreign_jurisdiction(filing, 'continuationIn', 'C')
+
+    assert err == expected_errors
