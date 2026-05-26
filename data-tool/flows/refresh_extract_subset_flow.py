@@ -14,13 +14,16 @@ from datetime import datetime, timezone
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
 from common.init_utils import colin_oracle_init, get_config
-from common.query_utils import corpnum_to_oracle_ids
+from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
 _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
+_REFRESH_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'refresh_colin_extract_views.sh'
+_BUILD_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_views_ddl'
+
 
 def _resolve_master_script_path(out: str | None) -> Path:
     if not out:
@@ -67,13 +70,57 @@ def _reset_extract_postgres_db() -> None:
     _run_cmd(['dropdb', *pg_flags, '--maintenance-db=postgres', '--if-exists', dbname ], env=run_env)
     _run_cmd(['createdb', *pg_flags, '--maintenance-db=postgres', '-T', 'template0', dbname ], env=run_env)
     _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_DEFAULT_DDL) ], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_BUILD_VIEWS_SCRIPT) ], env=run_env)
+
+@task(name='Get-Fallen-Out-Identifiers', cache_policy=NO_CACHE)
+def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
+    """
+    Get updated corp nums from colin with cutoff timestamp
+    """
+    if not updated_corp_nums:
+        return []
+    cfg = get_named_config()
+    corp_nums_prune_list_query = get_fallout_corp_nums('SAF', updated_corp_nums)
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+        result = conn.execute(text(corp_nums_prune_list_query)).scalars().all()
+        rows = [str(row).strip() for row in result]
+    return rows
+
+@task(name='Prune-Fallen-Out-Identifiers', cache_policy=NO_CACHE)
+def prune_fallen_identifiers(fallenout_corp_nums: list) -> list[dict]:
+    """
+    Get updated corp nums from colin with cutoff timestamp
+    """
+    if not fallenout_corp_nums:
+        print(f"No fallout corps to prune")
+        return
+    cfg = get_named_config()
+    fallen_out_identifiers_list = get_fallen_identifiers(fallenout_corp_nums)
+    cp_query = prune_candidates_from_cp(fallen_out_identifiers_list)
+    batch_query = prune_candidates_from_batch(fallen_out_identifiers_list)
+    account_query = prune_candidates_from_account(fallen_out_identifiers_list)
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
+        prune_cp = conn.execute(text(cp_query))
+        prune_batch = conn.execute(text(batch_query))
+        prune_account = conn.execute(text(account_query))
+    print(f"Pruned corp_processing={prune_cp.rowcount}, mig_corp_batch={prune_batch.rowcount}, mig_corp_account={prune_account.rowcount}")
+
+def get_cuttoff_timestamp() -> datetime:
+
+    cfg = get_named_config()
+    cuttoff_timestamp = get_cutoff_timestamp_query()
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
+        cuttoff_timestamp_result = conn.execute(text(cuttoff_timestamp)).scalar()
+    print(f"cuttoff timestamp is {cuttoff_timestamp_result}")
+    return cuttoff_timestamp_result
+    
 
 @task(name='Cleanup-Extract-Postgres', cache_policy=NO_CACHE)
 def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
 @task(name='Get-Updated-Identifiers-Colin', cache_policy=NO_CACHE)
-def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine) -> list[dict]:
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine, chunk_size: int) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
@@ -82,10 +129,9 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
         row = conn.execute(text(mig_sql)).fetchone()
     
-    corp_list = corpnum_to_oracle_ids(row[0]) if row else None
-    # oracle_ids = corpnum_to_oracle_ids(corp_list)
-    
-    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list))
+    corp_list = corpnum_to_oracle_ids(row[0]) if row else None    
+    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list), chunk_size)
+
     with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
         rows = [dict(row) for row in result.mappings()]
@@ -156,6 +202,31 @@ def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli
         text=True,
     )
 
+@task(name='Refresh-Views', cache_policy=NO_CACHE)
+def run_refresh_views(mode: str = 'refresh', targets: str =  'all') -> subprocess.CompletedProcess:
+    cfg = get_named_config()
+    script = require_file(_REFRESH_VIEWS_SCRIPT, 'refresh_colin_extract_views.sh')
+    argv = [
+        str(script),
+        '--mode', mode,
+        '--targets', targets,
+        '--db', cfg.DB_NAME_COLIN_MIGR,
+        '--host', cfg.DB_HOST_COLIN_MIGR,
+        '--port', str(cfg.DB_PORT_COLIN_MIGR),
+        '--user', cfg.DB_USER_COLIN_MIGR
+    ]
+    run_env = dict(os.environ)
+    if cfg.DB_PASSWORD_COLIN_MIGR and 'PGPASSWORD' not in run_env:
+        run_env['PGPASSWORD'] = cfg.DB_PASSWORD_COLIN_MIGR
+    print(f'Running: {" ".join(argv)}')
+    return subprocess.run(argv,
+                          cwd=str(_REPO_ROOT),
+                          capture_output=False,
+                          text=True,
+                          env=run_env
+                          )
+
+
 @flow(name='Extract-Subset-Flow', log_prints=True, persist_result=False)
 def extract_pull_flow(
     corp_file: str,
@@ -167,6 +238,7 @@ def extract_pull_flow(
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
+    refresh_views: bool = True,
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
     target_connection: str = 'ctst_pg',
@@ -180,19 +252,20 @@ def extract_pull_flow(
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
     
-    cutoff = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cutoff = get_cuttoff_timestamp()
 
     config = get_config()
     colin_oracle_engine = colin_oracle_init(config)
     # Get Identifiers
     feed_path: Path | None = None
     if mode == 'refresh':
-        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine)
+        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine, chunk_size=chunk_size)
         print(f'Colin updated identifiers : {len(updated_rows)} rows')
         _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
         seen = set()
         lines = []
+        updated_corp_nums = []
         for row in updated_rows:
             for k, v in row.items():
                 if k is None or v is None:
@@ -202,8 +275,9 @@ def extract_pull_flow(
                     if c and c not in seen:
                         seen.add(c)
                         lines.append(c)
+                        updated_corp_nums.append('BC'+c)
                     break
-        if  not lines:
+        if not lines:
             raise ValueError('refresh: no corp_num in updated_rows')
         feed_path.write_text('\n'.join(lines) + '\n', encoding='utf-8')
         corp_file = str(feed_path)
@@ -237,13 +311,19 @@ def extract_pull_flow(
         )
         if run_result.returncode != 0:
             raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
-
+        
+    if refresh_views:
+        refresh_result = run_refresh_views('refresh', 'all')
+        if refresh_result.returncode !=0:
+            raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
+    if mode == 'refresh':
+        prune_identifiers = get_fallen_identifiers(updated_corp_nums)
+        prune_fallen_identifiers(prune_identifiers)
     
-
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
     p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
-    p.add_argument('--mode', default='load', choices=('refresh', 'load'))
+    p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
@@ -251,6 +331,7 @@ if __name__ == '__main__':
     p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
     p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_false')
+    p.add_argument('--refresh-views', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
     p.add_argument('--target-connection', default='ctst_pg')
