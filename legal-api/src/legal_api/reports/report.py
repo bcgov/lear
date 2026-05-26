@@ -391,7 +391,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         request_context = get_request_context()
         enabled_new_features: list[str] = (flags.value("enable-new-feature",
                                                        request_context.user,
-                                                       request_context.account_id))
+                                                       request_context.account_id)) or []
         incorp_compparty_stmnt_enabled = "incorporationApplication-completingParty" in enabled_new_features
         filing["flags"]["incorporationApplication_completingParty"] = incorp_compparty_stmnt_enabled
         is_corp_incorp = (

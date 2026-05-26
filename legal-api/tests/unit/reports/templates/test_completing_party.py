@@ -51,7 +51,10 @@ def test_completing_party_template(session, test_name, template_path):
     assert parties
     completing_party = next((party for party in parties if any(role for role in party["roles"] if role["roleType"] == "Completing Party")), None) 
     assert completing_party
-    completing_party_name = f"{completing_party['officer']['firstName']} {completing_party['officer'].get('middleName', '')} {completing_party['officer']['lastName']}".replace("  ", "")
+    first_name = completing_party["officer"]["firstName"]
+    middle_name = completing_party["officer"]["lastName"]
+    last_name = completing_party["officer"]["lastName"]
+    completing_party_name = f"{first_name} {middle_name} {last_name}".replace("  ", "")
     assert completing_party_name != certified_by
 
     # Render and verify template info
@@ -64,10 +67,14 @@ def test_completing_party_template(session, test_name, template_path):
         assert "Mailing Address" in rendered
         assert completing_party["mailingAddress"]["streetAddress"] in rendered
         assert "Completing Party Statement" in rendered
-        assert f"I, {completing_party_name.upper()} certify that I have relevant knowledge of the Cooperative and I am authorized to make this filing."
+        assert f'<span class="capitalize-text">{first_name}</span>' in rendered
+        assert f'<span class="capitalize-text">{middle_name}</span>' in rendered
+        assert f'<span class="capitalize-text">{last_name}</span>' in rendered
+        assert "certify that I have relevant knowledge" in rendered
         assert certified_by.upper() not in rendered
     else:
         assert "Completing Party Statement" in rendered
-        assert f"I, {certified_by.upper()}, the completing party, have examined the incorporation agreement and articles applicable to the company being incorporated and confirm the following:"
+        assert f'<span class="capitalize-text">{certified_by}</span>' in rendered
+        assert "the completing party, have examined the incorporation agreement and articles applicable to the company" in rendered
         assert completing_party_name not in rendered
         assert "Mailing Address" not in rendered
