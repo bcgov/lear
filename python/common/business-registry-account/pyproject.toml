@@ -10,13 +10,15 @@ dependencies = [
   "flask (>=3.1.0,<4.0.0)",
   "python-dotenv (>=1.1.0,<2.0.0)",
   "pytz (>=2025.1,<2026.0)",
-  "requests (>=2.32.3,<3.0.0)"
+  "requests (>=2.32.3,<3.0.0)",
+  # BCReg deps
+  "flask-jwt-oidc (>=0.8.0,<1.0.0)"
 ]
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.5"
 pytest-cov = "^6.0.0"
-flask-jwt-oidc = "^0.8.0"
+requests-mock = "^1.12.1"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.11.5"

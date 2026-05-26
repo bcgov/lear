@@ -27,37 +27,22 @@ from dotenv import find_dotenv, load_dotenv
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
-CONFIGURATION = {
-    "development": "business_account.config.DevConfig",
-    "testing": "business_account.config.TestConfig",
-    "production": "business_account.config.ProdConfig",
-    "default": "business_account.config.ProdConfig"
-}
 
-
-def get_named_config(config_name: str = "production"):
-    """Return the configuration object based on the name.
-
-    :raise: KeyError: if an unknown configuration is requested
-    """
-    if config_name in ["production", "staging", "default"]:
-        config = ProdConfig()
-    elif config_name == "testing":
-        config = TestConfig()
-    elif config_name == "development":
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration: {config_name}")
-    return config
-
-
-class _Config:  # pylint: disable=too-few-public-methods
+class _Config:
     """Base class configuration that should set reasonable defaults.
 
     Used as the base for all the other configurations.
     """
 
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "http://")
+    # BCReg Auth service
+    AUTH_API_URL = os.getenv("AUTH_API_URL", "")
+    AUTH_API_VERSION = os.getenv("AUTH_API_VERSION", "")
+    AUTH_SVC_URL = f"{AUTH_API_URL + AUTH_API_VERSION}"
+    # JWT service
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
+    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT", "20")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
     # JWT_OIDC Settings
     JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv("JWT_OIDC_WELL_KNOWN_CONFIG")
     JWT_OIDC_ALGORITHMS = os.getenv("JWT_OIDC_ALGORITHMS")
@@ -76,24 +61,18 @@ class _Config:  # pylint: disable=too-few-public-methods
     except (TypeError, ValueError):
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
-    # service accounts
-    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
-    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
-    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
-    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
-
     TESTING = False
     DEBUG = False
 
 
-class DevConfig(_Config):  # pylint: disable=too-few-public-methods
+class DevConfig(_Config):
     """Creates the Development Config object."""
 
     TESTING = False
     DEBUG = True
 
 
-class TestConfig(_Config):  # pylint: disable=too-few-public-methods
+class TestConfig(_Config):
     """In support of testing only.
 
     Used by the py.test suite
@@ -102,9 +81,17 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
     DEBUG = True
     TESTING = True
 
+    # BCReg Auth service
+    AUTH_API_URL = os.getenv("AUTH_API_TEST_URL", "http://AUTH_API_TEST_URL")
+    AUTH_API_VERSION = os.getenv("AUTH_API_TEST_VERSION", "/api/v1")
+    AUTH_SVC_URL = f"{AUTH_API_URL + AUTH_API_VERSION}"
+    # JWT service
+    ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_TEST_URL", "http://ACCOUNT_SVC_AUTH_TEST_URL")
+    ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
+    ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_TEST_CLIENT_ID", "test-client-id")
+    ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_TEST_CLIENT_SECRET", "test-client-secret")
     # JWT OIDC settings
     # JWT_OIDC_TEST_MODE will set jwt_manager to use
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "http://")
     JWT_OIDC_TEST_MODE = True
     JWT_OIDC_TEST_AUDIENCE = "example"
     JWT_OIDC_TEST_ISSUER = "https://example.localdomain/auth/realms/example"
@@ -158,7 +145,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
 -----END RSA PRIVATE KEY-----"""
 
 
-class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
+class ProdConfig(_Config):
     """Production environment configuration."""
 
     SECRET_KEY = os.getenv("SECRET_KEY", None)

@@ -29,65 +29,59 @@ from flask import current_app
 from business_account import AccountService
 
 
-@pytest.fixture(scope="function")
-def account(app):
-    """Create an account to be used for testing."""
+def test_get_bearer_token(app, requests_mock):
+    """Verifies the get_bearer_token returns the token as expected."""
+    mock_token = "token"
+    requests_mock.post(f"{app.config.get('ACCOUNT_SVC_AUTH_URL')}", json={"access_token": mock_token})
     with app.app_context():
-        auth_url = current_app.config.get("AUTH_SVC_URL")
-        account_url = auth_url + "/orgs/{account_id}/affiliations"
-        account_url = account_url[:account_url.rfind("{") - 1]
-
-        org_data = json.dumps({"name": str(uuid.uuid4())})
         token = AccountService.get_bearer_token()
 
-        # with app.app_context():
-        rv = requests.post(
-            url=account_url,
-            data=org_data,
-            headers={**AccountService.CONTENT_TYPE_JSON,
-                     "Authorization": AccountService.BEARER + token},
-            timeout=20
-        )
+        assert token == mock_token
 
-        account_id = rv.json()["id"]
 
-        yield account_id
-
-        rv = requests.delete(url=f"{account_url}/{account_id}",
-                             headers={"Authorization": AccountService.BEARER + token},
-                             timeout=20
-                             )
-        print(rv)
-
-def test_get_bearer_token(app):
+@pytest.mark.parametrize("test_num, user_token, idir_email, bcsc_email, expected_email", [
+    ("1", "user-token", "idir@email.com", None, "idir@email.com"),
+    ("2", "user-token", None, "bcsc@email.com", "bcsc@email.com"),
+    ("3", "user-token", "idir@email.com", "bcsc@email.com", "bcsc@email.com"),
+    ("4", None, None, "bcsc@email.com", "bcsc@email.com"),
+])
+def test_get_contacts(app, jwt, requests_mock, test_num, user_token, idir_email, bcsc_email, expected_email):
+    """Verifies get_contacts returns as expected."""
+    
+    org_id = 1
+    system_token = "system-token"
+    auth_url = app.config.get("AUTH_SVC_URL")
+    mock_org_data = {
+        "mailingAddress": {
+            "street": "101 Test Street"
+        }
+    }
+    mock_user_data = {
+        "firstname": "first",
+        "lastname": "last",
+        "email": idir_email,
+        "contacts": [{"email": bcsc_email}] if bcsc_email else []
+    }
+    get_token_mock = requests_mock.post(f"{app.config.get('ACCOUNT_SVC_AUTH_URL')}", json={"access_token": system_token})
+    get_user_data_mock = requests_mock.get(f"{auth_url}/users/@me", json=mock_user_data)
+    get_org_contacts_mock = requests_mock.get(f"{auth_url}/orgs/{org_id}", json=mock_org_data)
+    
     with app.app_context():
-        auth_url = current_app.config.get("AUTH_SVC_URL")
-        account_url = auth_url + "/orgs/{account_id}/affiliations"
-        account_url = account_url[:account_url.rfind("{") - 1]
+        contacts = AccountService.get_contacts(org_id, user_token)
+    
+        assert get_token_mock.called != bool(user_token)
+        assert get_user_data_mock.called == True
+        assert get_org_contacts_mock.called == True
+        if user_token:
+            assert user_token in get_user_data_mock.request_history[0].headers["Authorization"]
+            assert user_token in get_org_contacts_mock.request_history[0].headers["Authorization"]
+        else:
+            assert system_token in get_user_data_mock.request_history[0].headers["Authorization"]
+            assert system_token in get_org_contacts_mock.request_history[0].headers["Authorization"]
 
-        token = AccountService.get_bearer_token()
-
-        assert token is not None
-
-@pytest.mark.skipif((os.getenv("RUN_AFFILIATION_TESTS", "false").lower() != "true"),
-                                             reason="Account affiliation tests are only run when requested.")
-def test_account_affiliation_integration(account):
-    """Assert that the affiliation can be created."""
-    business_registration = (f"T{random.SystemRandom().getrandbits(0x58)}")[:10]
-    r = AccountService.create_affiliation(account=account,
-                                          business_registration=business_registration,
-                                          business_name="")
-
-    assert r == HTTPStatus.OK
-
-    r = AccountService.update_entity(business_registration=business_registration,
-                                     business_name=business_registration,
-                                     corp_type_code="BEN")
-
-    assert r == HTTPStatus.OK
-
-    r = AccountService.delete_affiliation(account=account,
-                                          business_registration=business_registration)
-
-    # @TODO change this next sprint when affiliation service is updated.
-    assert r == HTTPStatus.OK
+        assert contacts and len(contacts.get("contacts", [])) == 1
+        contact_data = contacts["contacts"][0]
+        assert contact_data["email"] == expected_email
+        assert contact_data["firstName"] == mock_user_data["firstname"]
+        assert contact_data["lastName"] == mock_user_data["lastname"]
+        assert contact_data["street"] == mock_org_data["mailingAddress"]["street"]
