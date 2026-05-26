@@ -25,7 +25,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_effective_date,
     validate_foreign_jurisdiction,
     validate_name_request,
-    validate_name_translation,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
@@ -64,7 +63,6 @@ def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
     msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
-    msg.extend(validate_name_translation(filing_json, filing_type))
 
     if get_bool(filing_json, "/filing/continuationIn/isApproved"):
         msg.extend(validate_offices(filing_json, legal_type, filing_type))

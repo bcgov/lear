@@ -119,7 +119,7 @@ def get_unprocessed_corps_query(flow_name, config, batch_size):
     LEFT JOIN colin_tracking ct
     ON ct.corp_num = c.corp_num
     AND ct.flow_name = '{flow_name}'
-    AND ct.environment = '{environment}'z
+    AND ct.environment = '{environment}'
     WHERE 1 = 1
     {where_clause}
     AND ct.corp_num IS NULL

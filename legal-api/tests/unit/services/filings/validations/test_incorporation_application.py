@@ -1984,43 +1984,6 @@ def test_ia_email_required_validation(session, email):
 
     assert err
 
-@pytest.mark.parametrize('test_name, name_translation, expected_code, expected_msg', [
-    ('SUCCESS_EMPTY_ARRAY', [], None, None),
-    ('SUCCESS_NAME_TRANSLATION', [{"name": "TEST"}], None, None),
-    ('FAIL_EMPTY_NAME_TRANSLATION', [{"name": ""}],  HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be an empty string.',
-        'path': '/filing/incorporationApplication/nameTranslations/0/name/'
-    }]),
-    ('FAIL_WHITESPACE_ONLY_NAME_TRANSLATION', [{"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be an empty string.',
-        'path': '/filing/incorporationApplication/nameTranslations/0/name/'
-    }]),
-    ('FAIL_SECOND_NAME_TRANSLATION', [{"name": "TEST"}, {"name": "   "}], HTTPStatus.BAD_REQUEST, [{
-        'error': 'Name translation cannot be an empty string.',
-        'path': '/filing/incorporationApplication/nameTranslations/1/name/'
-    }]),
-])
-def test_validate_name_translation(session, test_name, name_translation, expected_code, expected_msg):
-    """Test validate name translation if provided."""
-    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
-                                        'certifiedBy': 'full name', 'authorizationReceived': True,
-                                       'email': 'no_one@never.get', 'filingId': 1, 'effectiveDate': effective_date}
-    
-    filing_json['filing'][incorporation_application_name]['nameTranslations'] = name_translation
-
-    # perform test
-    with freeze_time(now):
-        err = validate(business, filing_json)
-
-    # validate outcomes
-    if expected_code:
-        assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
-    else:
-        if err:
-            print(err, err.code, err.msg)
-        assert err is None
 
 @pytest.mark.parametrize(
     'test_name, flag_enabled, permission_error, expected_code, expected_msg',
@@ -2062,7 +2025,6 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     mocker.patch.object(incorporation_application, 'validate_effective_date', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_phone_number', return_value=[])
     mocker.patch.object(incorporation_application, 'validate_email', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_name_translation', return_value=[])
 
     mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
@@ -2110,8 +2072,7 @@ def test_coop_incorporation_does_not_validate_shares(session, mocker):
                       'validate_parties_names', 'validate_parties_addresses',
                       'validate_coop_parties_mailing_address', 'validate_parties_delivery_address',
                       'validate_name_request', 'validate_cooperative_documents', 'validate_effective_date',
-                      'validate_ia_court_order', 'validate_phone_number', 'validate_email',
-                      'validate_name_translation']:
+                      'validate_ia_court_order', 'validate_phone_number', 'validate_email']:
         mocker.patch.object(incorporation_application, func_name, return_value=[])
     mocker.patch.object(flags, 'is_on', return_value=False)
 
@@ -2145,7 +2106,7 @@ def test_incorporation_share_currency_validation(session, mocker, test_name, cur
                       'validate_coop_parties_mailing_address', 'validate_parties_delivery_address',
                       'validate_name_request', 'validate_share_structure',
                       'validate_effective_date', 'validate_ia_court_order',
-                      'validate_phone_number', 'validate_email', 'validate_name_translation']:
+                      'validate_phone_number', 'validate_email']:
         mocker.patch.object(incorporation_application, func_name, return_value=[])
     mocker.patch.object(flags, 'is_on', return_value=False)
 

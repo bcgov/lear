@@ -26,7 +26,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_effective_date,
     validate_email,
     validate_name_request,
-    validate_name_translation,
     validate_offices_addresses,
     validate_parties_addresses,
     validate_parties_names,
@@ -93,8 +92,6 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     err = validate_email(incorporation_json, "incorporationApplication")
     if err:
         msg.extend(err)
-
-    msg.extend(validate_name_translation(incorporation_json, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

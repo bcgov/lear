@@ -27,7 +27,6 @@ from .common_validations import (
     validate_court_order,
     validate_effective_date,
     validate_name_request,
-    validate_name_translation,
     validate_pdf,
     validate_phone_number,
     validate_resolution_date_in_share_structure,
@@ -64,7 +63,6 @@ def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-
         msg.extend(err)
 
     msg.extend(validate_effective_date(filing))
-    msg.extend(validate_name_translation(filing, "alteration"))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
