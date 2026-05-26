@@ -18,7 +18,7 @@ This module is the service worker for handling events that deal with Digital Bus
 import os
 
 from business_registry_digital_credentials import digital_credentials
-from cloud_sql_connector import DBConfig
+from cloud_sql_connector import DBConfig, setup_pg8000_close_event_listener
 from flask import Flask
 
 from business_model.models.db import db
@@ -67,5 +67,7 @@ def create_app(
 
     with app.app_context():
         digital_credentials.init_app(app)
+        if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+            setup_pg8000_close_event_listener(db.engine)
 
     return app

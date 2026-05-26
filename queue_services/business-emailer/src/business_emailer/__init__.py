@@ -36,7 +36,7 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
         flags.init_app(app)
 
     if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
-        from cloud_sql_connector import DBConfig
+        from cloud_sql_connector import DBConfig, setup_pg8000_close_event_listener
         db_config = DBConfig(
             instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
             database=app.config.get("DB_NAME", ""),
@@ -48,6 +48,10 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
         app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
 
     db.init_app(app)
+
+    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+        with app.app_context():
+            setup_pg8000_close_event_listener(db.engine)
     register_endpoints(app)
     gcp_queue.init_app(app)
 
