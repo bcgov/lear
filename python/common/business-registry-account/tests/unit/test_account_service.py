@@ -1,4 +1,4 @@
-# Copyright © 2020 Province of British Columbia
+# Copyright © 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,15 +16,7 @@
 
 Test-Suite to ensure that the AccountService is working as expected.
 """
-import json
-import os
-import random
-import uuid
-from http import HTTPStatus
-
 import pytest
-import requests
-from flask import current_app
 
 from business_account import AccountService
 
