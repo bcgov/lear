@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [assigned, synchronize]
     paths:
-      - "python/common/business-registry-common/**"
+      - "python/common/business-registry-account/**"
   workflow_dispatch:
 
 defaults:
