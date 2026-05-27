@@ -52,7 +52,7 @@ def test_completing_party_template(session, test_name, template_path):
     completing_party = next((party for party in parties if any(role for role in party["roles"] if role["roleType"] == "Completing Party")), None) 
     assert completing_party
     first_name = completing_party["officer"]["firstName"]
-    middle_name = completing_party["officer"]["lastName"]
+    middle_name = completing_party["officer"]["middleName"]
     last_name = completing_party["officer"]["lastName"]
     completing_party_name = f"{first_name} {middle_name} {last_name}".replace("  ", "")
     assert completing_party_name != certified_by
