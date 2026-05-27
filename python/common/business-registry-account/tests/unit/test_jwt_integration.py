@@ -1,4 +1,4 @@
-# Copyright © 2025 Province of British Columbia
+# Copyright © 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,5 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""This exports all classes, utility functions and helpers for the main package."""
-from .account_service import AccountService
+
+"""Tests to assure the AccountService jwt service integration."""
+import os
+
+import pytest
+
+from business_account import AccountService
+
+
+@pytest.mark.skipif(
+    (os.getenv("RUN_JWT_INTEGRATION_TESTS", "false").lower() != "true"),
+    reason="Integration tests are only run when requested."
+)
+def test_get_bearer_token_integration(app):
+    with app.app_context():
+        token = AccountService.get_bearer_token()
+
+        assert token is not None
