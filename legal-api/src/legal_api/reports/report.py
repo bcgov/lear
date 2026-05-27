@@ -24,6 +24,7 @@ from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
 from legal_api.core.meta.filing import FILINGS, FilingMeta
+from legal_api.exceptions import BusinessException
 from legal_api.models import (
     AmalgamatingBusiness,
     Amalgamation,
@@ -36,9 +37,11 @@ from legal_api.models import (
     PartyRole,
 )
 from legal_api.models.business import ASSOCIATION_TYPE_DESC
+from legal_api.models.user import UserRoles
 from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
 from legal_api.utils.datetime import datetime
 from legal_api.utils.formatting import float_to_str
@@ -51,7 +54,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     # TODO review pylint warning and alter as required
     """Service to create report outputs."""
 
-    def __init__(self, filing):
+    def __init__(self, filing: Filing):
         """Create the Report instance."""
         self._filing = filing
         self._business = None
@@ -83,7 +86,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
         if self._filing.business_id:
-            self._business = Business.find_by_internal_id(self._filing.business_id)
+            self._business: Business = Business.find_by_internal_id(self._filing.business_id)
             Report._populate_business_info_to_filing(self._filing, self._business)
         business_identifier = self._business.identifier if self._business else self._filing.temp_reg
         report_meta: dict = ReportMeta.reports.get(self._report_key)
@@ -216,7 +219,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "change-of-registration/partner",
             "notice-of-withdrawal/recordToBeWithdrawn",
             "incorporation-application/benefitCompanyStmt",
-            "incorporation-application/completingParty",
+            "incorporation-application/completingPartyCoop",
+            "incorporation-application/completingPartyCorp",
+            "incorporation-application/completingPartyOld",
             "incorporation-application/effectiveDate",
             "incorporation-application/incorporator",
             "incorporation-application/nameRequest",
@@ -293,6 +298,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         filing["header"]["reportType"] = self._report_key
 
+        filing["flags"] = {}
+
         self._format_par_value(filing)
         self._set_dates(filing)
         self._set_description(filing)
@@ -304,7 +311,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         filing["enable_new_ben_statements"] = flags.is_on("enable-new-ben-statements")
         filing["enable_sandbox"] = flags.is_on("enable-sandbox")
-
         return filing
 
     def _format_par_value(self, filing):
@@ -382,14 +388,38 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["business"]["isCorp"] = legal_type in Business.CORPS
 
     def _set_completing_party(self, filing):
-        completing_party_role = PartyRole.get_party_roles_by_filing(
-            self._filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)
-        if completing_party_role:
-            filing["completingParty"] = completing_party_role[0].party.json
-            with suppress(KeyError):
-                self._format_address(filing["completingParty"]["deliveryAddress"])
-            with suppress(KeyError):
-                self._format_address(filing["completingParty"]["mailingAddress"])
+        request_context = get_request_context()
+        enabled_new_features: list[str] = (flags.value("enable-new-feature",
+                                                       request_context.user,
+                                                       request_context.account_id)) or []
+        incorp_compparty_stmnt_enabled = "incorporationApplication-completingParty" in enabled_new_features
+        filing["flags"]["incorporationApplication_completingParty"] = incorp_compparty_stmnt_enabled
+        is_corp_incorp = (
+            self._filing.filing_type == "incorporationApplication"
+            and self._business
+            and self._business.legal_type in Business.CORPS
+        )
+
+        if is_corp_incorp and incorp_compparty_stmnt_enabled:
+            if self._filing.submitter_roles in [UserRoles.staff]:
+                filing["header"]["certifiedBy"] = filing["header"].get("certifiedBy")
+            else:
+                filing["header"]["certifiedBy"] = self._filing.filing_submitter.display_name
+
+            if not filing["header"]["certifiedBy"]:
+                raise BusinessException(
+                    error="Missing data for the completing party statement.",
+                    status_code=HTTPStatus.UNPROCESSABLE_ENTITY
+                )
+        else:
+            completing_party_role = PartyRole.get_party_roles_by_filing(
+                self._filing.id, datetime.utcnow(), PartyRole.RoleTypes.COMPLETING_PARTY.value)
+            if completing_party_role:
+                filing["completingParty"] = completing_party_role[0].party.json
+                with suppress(KeyError):
+                    self._format_address(filing["completingParty"]["deliveryAddress"])
+                with suppress(KeyError):
+                    self._format_address(filing["completingParty"]["mailingAddress"])
 
     def _set_registrar_info(self, filing):
         if self._filing.filing_type in ["annualReport", "changeOfDirectors"]:
