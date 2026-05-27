@@ -37,6 +37,8 @@ register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>
 connection cprd_pg -d PostgreSql -u postgres -p <some_password> -h localhost -P <port> -D colin-mig-corps-data-test
 ```
 
+DbSchema connection aliases are not embedded with credentials in generated transfer SQL. The SQL connects by alias, so `~/.DbSchema/cli/init.sql` must define the aliases referenced by the script being run.
+
 7. Transfer data (full refresh)
    `dbschemacli <lear-repo-base-path>/data-tool/scripts/transfer_cprd_corps.sql`
 
@@ -244,6 +246,14 @@ cars* global refresh templates (only when cars are included; skipped with `--no-
 Generator:
 - `data-tool/scripts/generate_cprd_subset_extract.py`
 
+Connection aliases and target schema:
+- Generated subset SQL is self-contained for rendered predicates, per-chunk SQL, source alias, and target schema after generation, but it still depends on DbSchema connection aliases from `~/.DbSchema/cli/init.sql`.
+- The source Oracle alias defaults to `cprd` for direct/local compatibility. Pass `--source-connection <alias>` if your `init.sql` uses another source alias.
+- The direct generator default target alias is `cprd_pg_subset`; define that alias in `init.sql` or pass `--target-connection <alias>`.
+- The target Postgres schema defaults to `public`. Pass `--target-schema <schema>` when loading into another schema.
+- Target schema names must be lowercase simple identifiers: letters, numbers, and underscores, not starting with a number. Uppercase schema names are rejected because generated SQL uses unquoted identifiers.
+- The OCP wrapper/flow requires explicit source alias, target alias, and target schema values and passes them explicitly to the generator.
+
 Generated scripts (gitignored by default):
 - **Main script**: runs templates + the per-chunk scripts, e.g. `data-tool/scripts/_generated/subset_refresh.sql`
 - **Chunk scripts**: generated per chunk in `data-tool/scripts/_generated/chunks/`
@@ -263,8 +273,11 @@ Generated scripts (gitignored by default):
      --mode refresh \
      --chunk-size 500 \
      --threads 4 \
-     --pg-fastload \ 
-     --pg-disable-method table_triggers \   
+     --pg-fastload \
+     --pg-disable-method table_triggers \
+     --source-connection cprd \
+     --target-connection cprd_pg_subset \
+     --target-schema public \
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
    ```
 
@@ -276,8 +289,11 @@ Generated scripts (gitignored by default):
      --chunk-size 500 \
      --threads 4 \
      --include-cp \
-     --pg-fastload \ 
-     --pg-disable-method table_triggers \   
+     --pg-fastload \
+     --pg-disable-method table_triggers \
+     --source-connection cprd \
+     --target-connection cprd_pg_subset \
+     --target-schema public \
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
    ```
 
@@ -288,25 +304,43 @@ Generated scripts (gitignored by default):
      --mode load \
      --chunk-size 500 \
      --threads 4 \
-     --pg-fastload \ 
-     --pg-disable-method table_triggers \      
+     --pg-fastload \
+     --pg-disable-method table_triggers \
+     --source-connection cprd \
+     --target-connection cprd_pg_subset \
+     --target-schema public \
      --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_load.sql
    ```
+
+   Required/connection flags to set deliberately:
+   - Add `--source-connection <alias>` if your source Oracle DbSchema alias is not the direct generator default `cprd`.
+   - Add `--target-connection <alias>` if your target Postgres DbSchema alias is not the direct generator default `cprd_pg_subset`.
+   - Add `--target-schema <schema>` if your target Postgres schema is not the direct generator default `public`. The schema must already exist and contain the expected extract/helper tables.
+
+   Local Makefile shortcuts for the refresh flow now expose the same connection/schema controls:
+   ```bash
+   make -C <lear-repo-base-path>/data-tool run-extract-refresh \
+     SOURCE_CONNECTION=cprd \
+     TARGET_CONNECTION=ctst_pg \
+     TARGET_SCHEMA=public
+   ```
+   Override these values when your DbSchema `init.sql` aliases or target Postgres schema differ. The direct generator default target alias is `cprd_pg_subset`; the local Makefile keeps its historical `TARGET_CONNECTION=ctst_pg` default for compatibility.
 
    Optional flags:
    - Add `--include-cp` to opt in corp type `CP` for the subset transfer queries.
    - `--include-cp` affects the **subset workflow only**. Full refresh (`transfer_cprd_corps.sql`) and downstream reservation flows still use the historical corp-type cohort unless updated separately.
+   - Add `--no-cars` to skip the global cars* refresh, or `--include-cars` to make the default cars* refresh explicit.
 
    Optional performance flags:
    - Add `--pg-fastload` to enable Postgres session settings for faster bulk writes (templates `subset_pg_fastload_begin.sql` / `subset_pg_fastload_end.sql`).
    - `--pg-disable-method` currently accepts only `table_triggers` and `replica_role`.
    - The actual generator default is `table_triggers`, not `replica_role`.
-   - In refresh mode, preserved rows in `corp_processing`, `auth_processing`, `affiliation_processing`, and `colin_tracking` still reference `corporation` / `event`, so FK enforcement must stay suppressed across delete/reload. The generator now adds refresh-only trigger suppression for those preserved FK-owning tables when `--pg-disable-method table_triggers` is used.
+   - In refresh mode, preserved rows in `corp_processing`, `auth_processing`, `affiliation_processing`, and `colin_tracking` still reference `corporation` / `event`, so FK enforcement must stay suppressed across delete/reload. Current generator table-trigger mode suppresses `corp_processing` and `colin_tracking`. `auth_processing` exists in current DDL and was introduced in the generator as a commented-out trigger statement with no discoverable repo-history rationale; `affiliation_processing` also exists in current DDL/docs but is absent from generator trigger handling. Extending table-trigger suppression to those two tables is deferred until Cloud SQL privilege/runtime validation confirms the intended preserved-table set.
    - Subset load/refresh scripts now acquire a session-level Postgres advisory lock at the start and release it at the end so overlapping subset runs on the same target DB serialize instead of interleaving. The same lock key is also used by the full refresh script.
    - `table_triggers` changes table trigger state globally while the refresh runs, so use it against a quiesced/disposable extract DB and with a role that can disable the relevant triggers.
    - If you use `replica_role`, remember it is session-local. If FK errors still occur, verify `current_setting('session_replication_role')` inside the nested delete/purge scripts being executed by DbSchemaCLI.
-   - `address` is treated as a shared/global table during subset refresh/load. The generator now reuses the predeclared helper staging table `public.subset_address_stage`, transfers incoming Oracle addresses into it, and merges them into `public.address` by `addr_id` instead of deleting/reinserting address rows directly. The address extract also includes `notification_resend` references.
-   - BCOMPS purge keysets also use predeclared helper tables in the extract schema: `public.subset_excluded_corps`, `public.subset_excluded_events`, and `public.subset_excluded_corp_parties`.
+   - `address` is treated as a shared/global table during subset refresh/load. The generator now reuses the predeclared helper staging table `<target_schema>.subset_address_stage`, transfers incoming Oracle addresses into it, and merges them into `<target_schema>.address` by `addr_id` instead of deleting/reinserting address rows directly. The address extract also includes `notification_resend` references.
+   - BCOMPS purge keysets also use predeclared helper tables in the extract schema: `<target_schema>.subset_excluded_corps`, `<target_schema>.subset_excluded_events`, and `<target_schema>.subset_excluded_corp_parties`.
    - Do not overlap subset runs against the same target DB, and ensure the runtime role can truncate/read/write those helper tables.
    - Existing extract DBs created from older DDL must be refreshed or updated with the latest `colin_corps_extract_postgres_ddl` before running the subset workflow, otherwise the first helper-table `TRUNCATE` will fail.
    - Refresh mode now pre-cleans orphan event/corp-party child rows that can survive the parent-keyed delete phase from earlier failed/interleaved runs (for example a stale `filing` row whose parent `event` row is missing in target).
@@ -330,7 +364,9 @@ Generated scripts (gitignored by default):
 - Subset scripts automatically install a Postgres helper cast to allow DbSchemaCLI inserts of `t/f` into boolean columns.
 - DbSchemaCLI build issue: If you get errors about `"bsh: for: No collection"` ensure you are using DbSchemaCLI 9.4.3+.
 - If `--no-cars` is used, cars* tables are skipped entirely.
-- Chunk templates are rendered at generation time (inline mode), so the resulting SQL is self-contained.
+- The direct refresh flow CLI uses a rolling lookback (`--lookback-hours`, default 5) scoped by `--mig-batch-id` (default 1). This is not durable high-watermark processing; retained artifact corp feeds should be used for recovery/reruns of failed runs.
+- Chunk templates are rendered at generation time (inline mode), so the resulting SQL is self-contained for rendered predicates and chunk SQL.
+- Generated SQL connects by DbSchema alias and renders the selected target schema at generation time. The source alias defaults to `cprd`, the target alias defaults to `cprd_pg_subset`, and the target schema defaults to `public` for direct generator use unless `--source-connection`, `--target-connection`, or `--target-schema` are passed. Ensure the selected aliases exist in `~/.DbSchema/cli/init.sql` and the selected schema exists in the target Postgres DB before running DbSchemaCLI.
 - If you need legacy runtime substitution behavior, generate with `--render-mode vset` (uses DbSchemaCLI `vset` + &placeholders).
 
 ### Oracle IN-list strategy (`--oracle-in-strategy`)

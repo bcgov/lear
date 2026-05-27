@@ -113,14 +113,36 @@ run-colin-freeze:  ## Run colin freeze flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/colin_freeze_flow.py
 OUT ?=
-RESET_EXTRACT_POSTGRES ?=
+ARTIFACT_DIR ?=
+CORP_FILE ?= ../data-tool/scripts/generated/delta_ctst.txt
+SOURCE_CONNECTION ?= cprd
+TARGET_CONNECTION ?= ctst_pg
+TARGET_SCHEMA ?= public
+MIG_BATCH_ID ?= 1
+LOOKBACK_HOURS ?= 5
+EXTRACT_OPTIONAL_ARGS = $(if $(OUT),--out "$(OUT)",) $(if $(ARTIFACT_DIR),--artifact-dir "$(ARTIFACT_DIR)",)
+# Preserve historical Makefile behavior after CLI boolean cleanup: generate and run DbSchemaCLI,
+# and keep cars* refresh enabled for local targets. Scheduled jobs should pass explicit flags.
 run-extract-load:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py --mode load
+	python flows/refresh_extract_subset_flow.py --mode load \
+		--corp-file "$(CORP_FILE)" \
+		--source-connection "$(SOURCE_CONNECTION)" \
+		--target-connection "$(TARGET_CONNECTION)" \
+		--target-schema "$(TARGET_SCHEMA)" \
+		--include-cars \
+		--run-dbschemacli $(EXTRACT_OPTIONAL_ARGS)
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py  --mode refresh
+	python flows/refresh_extract_subset_flow.py --mode refresh \
+		--source-connection "$(SOURCE_CONNECTION)" \
+		--target-connection "$(TARGET_CONNECTION)" \
+		--target-schema "$(TARGET_SCHEMA)" \
+		--mig-batch-id "$(MIG_BATCH_ID)" \
+		--lookback-hours "$(LOOKBACK_HOURS)" \
+		--include-cars \
+		--run-dbschemacli $(EXTRACT_OPTIONAL_ARGS)
 
 run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
 	. $(VENV_DIR)/bin/activate && \

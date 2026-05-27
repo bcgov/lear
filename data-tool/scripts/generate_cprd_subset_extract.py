@@ -31,7 +31,7 @@ from __future__ import annotations
 
 import argparse
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence
@@ -86,6 +86,7 @@ class cfg_GenerationConfig:
     out_master: Path
     out_chunks_dir: Path
 
+    source_connection: str
     target_connection: str
     target_schema: str
 
@@ -98,6 +99,10 @@ TMPL_TOKEN_CORP_IDS = "&corp_ids_in"  # used by delete template (Postgres-side)
 TMPL_TOKEN_TARGET_PRED = "&target_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_PRED = "&oracle_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_CORP_TYPE_PRED = "&oracle_corp_type_predicate"  # used by transfer template (Oracle-side)
+TMPL_TOKEN_SOURCE_CONNECTION = "__DBSCHEMA_SOURCE_CONNECTION__"  # rendered generator-time source DbSchema alias
+TMPL_TOKEN_TARGET_SCHEMA = "__DBSCHEMA_TARGET_SCHEMA__"  # rendered generator-time target Postgres schema
+TMPL_CONNECTION_TOKENS = (TMPL_TOKEN_SOURCE_CONNECTION, TMPL_TOKEN_TARGET_SCHEMA)
+DBSCHEMA_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 @dataclass(frozen=True)
@@ -306,26 +311,32 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     pg_prepare_address_stage = tmpl_TemplateSpec(
         name="subset_pg_prepare_address_stage",
         path=subset_dir / "subset_pg_prepare_address_stage.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     pg_cleanup_address_stage = tmpl_TemplateSpec(
         name="subset_pg_cleanup_address_stage",
         path=subset_dir / "subset_pg_cleanup_address_stage.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     pg_cleanup_orphan_children = tmpl_TemplateSpec(
         name="subset_pg_cleanup_orphan_children",
         path=subset_dir / "subset_pg_cleanup_orphan_children.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     disable_triggers = tmpl_TemplateSpec(
         name="subset_disable_triggers",
         path=subset_dir / "subset_disable_triggers.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     enable_triggers = tmpl_TemplateSpec(
         name="subset_enable_triggers",
         path=subset_dir / "subset_enable_triggers.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     pg_boolean_casts = tmpl_TemplateSpec(
         name="subset_pg_boolean_casts",
         path=subset_dir / "subset_pg_boolean_casts.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     pg_fastload_begin = tmpl_TemplateSpec(
         name="subset_pg_fastload_begin",
@@ -338,24 +349,33 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     pg_purge_bcomps_excluded = tmpl_TemplateSpec(
         name="subset_pg_purge_bcomps_excluded",
         path=subset_dir / "subset_pg_purge_bcomps_excluded.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     delete_chunk = tmpl_TemplateSpec(
         name="subset_delete_chunk",
         path=subset_dir / "subset_delete_chunk.sql",
-        required_tokens=(TMPL_TOKEN_CORP_IDS,),
+        required_tokens=(TMPL_TOKEN_CORP_IDS, TMPL_TOKEN_TARGET_SCHEMA),
     )
     transfer_chunk = tmpl_TemplateSpec(
         name="subset_transfer_chunk",
         path=subset_dir / "subset_transfer_chunk.sql",
-        required_tokens=(TMPL_TOKEN_TARGET_PRED, TMPL_TOKEN_ORACLE_PRED, TMPL_TOKEN_ORACLE_CORP_TYPE_PRED),
+        required_tokens=(
+            TMPL_TOKEN_TARGET_PRED,
+            TMPL_TOKEN_ORACLE_PRED,
+            TMPL_TOKEN_ORACLE_CORP_TYPE_PRED,
+            TMPL_TOKEN_SOURCE_CONNECTION,
+            TMPL_TOKEN_TARGET_SCHEMA,
+        ),
     )
     delete_cars = tmpl_TemplateSpec(
         name="subset_delete_cars",
         path=subset_dir / "subset_delete_cars.sql",
+        required_tokens=(TMPL_TOKEN_TARGET_SCHEMA,),
     )
     transfer_cars = tmpl_TemplateSpec(
         name="subset_transfer_cars",
         path=subset_dir / "subset_transfer_cars.sql",
+        required_tokens=(TMPL_TOKEN_SOURCE_CONNECTION, TMPL_TOKEN_TARGET_SCHEMA),
     )
 
     return tmpl_TemplateBundle(
@@ -405,6 +425,45 @@ def tmpl_render(template_text: str, *, replacements: Dict[str, str]) -> str:
     return out
 
 
+def cfg_validate_dbschema_identifier(name: str, value: str) -> str:
+    if not value:
+        raise SystemExit(f"{name} must not be empty")
+    if not DBSCHEMA_IDENTIFIER_RE.match(value):
+        raise SystemExit(
+            f"{name} must be a conservative DbSchema/Postgres identifier using letters, digits, "
+            "and underscore, and must not start with a digit"
+        )
+    return value
+
+
+def cfg_validate_pg_schema_identifier(name: str, value: str) -> str:
+    value = cfg_validate_dbschema_identifier(name, value)
+    if value != value.lower():
+        raise SystemExit(
+            f"{name} must be lowercase. PostgreSQL folds unquoted uppercase identifiers to lowercase, "
+            "so uppercase schema values are rejected to avoid mismatches."
+        )
+    return value
+
+
+def tmpl_connection_replacements(cfg: cfg_GenerationConfig) -> Dict[str, str]:
+    return {
+        TMPL_TOKEN_SOURCE_CONNECTION: cfg.source_connection,
+        TMPL_TOKEN_TARGET_SCHEMA: cfg.target_schema,
+    }
+
+
+def tmpl_assert_no_connection_tokens(spec: tmpl_TemplateSpec, rendered_text: str) -> None:
+    remaining = [token for token in TMPL_CONNECTION_TOKENS if token in rendered_text]
+    if remaining:
+        raise SystemExit(
+            "Template source/schema token rendering failed.\n"
+            f"Template: {spec.name}\n"
+            f"Path: {spec.path}\n"
+            f"Remaining token(s): {', '.join(remaining)}\n"
+        )
+
+
 # =========================
 # chunk_* (chunk planning)
 # =========================
@@ -446,7 +505,92 @@ def chunk_plan_chunks(
 # =========================
 
 def gen_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def gen_write_rendered_connection_template(
+    *,
+    cfg: cfg_GenerationConfig,
+    spec: tmpl_TemplateSpec,
+    output_dir: Path,
+) -> tmpl_TemplateSpec:
+    template_text = tmpl_load_text(spec)
+    rendered_text = tmpl_render(template_text, replacements=tmpl_connection_replacements(cfg))
+    tmpl_assert_no_connection_tokens(spec, rendered_text)
+    rendered_path = output_dir / spec.path.name
+    gen_write_text(rendered_path, rendered_text)
+    return replace(
+        spec,
+        path=rendered_path,
+        required_tokens=tuple(token for token in spec.required_tokens if token not in TMPL_CONNECTION_TOKENS),
+    )
+
+
+def gen_write_rendered_connection_templates(
+    *,
+    cfg: cfg_GenerationConfig,
+    templates: tmpl_TemplateBundle,
+) -> tmpl_TemplateBundle:
+    support_dir = cfg.out_chunks_dir / "support"
+    return replace(
+        templates,
+        pg_prepare_address_stage=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_prepare_address_stage,
+            output_dir=support_dir,
+        ),
+        pg_cleanup_address_stage=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_cleanup_address_stage,
+            output_dir=support_dir,
+        ),
+        pg_cleanup_orphan_children=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_cleanup_orphan_children,
+            output_dir=support_dir,
+        ),
+        disable_triggers=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.disable_triggers,
+            output_dir=support_dir,
+        ),
+        enable_triggers=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.enable_triggers,
+            output_dir=support_dir,
+        ),
+        pg_boolean_casts=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_boolean_casts,
+            output_dir=support_dir,
+        ),
+        pg_purge_bcomps_excluded=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_purge_bcomps_excluded,
+            output_dir=support_dir,
+        ),
+        delete_chunk=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.delete_chunk,
+            output_dir=support_dir,
+        ),
+        transfer_chunk=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.transfer_chunk,
+            output_dir=support_dir,
+        ),
+        delete_cars=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.delete_cars,
+            output_dir=support_dir,
+        ),
+        transfer_cars=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.transfer_cars,
+            output_dir=support_dir,
+        ),
+    )
 
 
 def gen_build_chunk_sql(
@@ -497,7 +641,9 @@ def gen_build_chunk_sql(
         rendered_transfer = tmpl_render(transfer_template_text, replacements=replacements)
         if (TMPL_TOKEN_TARGET_PRED in rendered_transfer or
                 TMPL_TOKEN_ORACLE_PRED in rendered_transfer or
-                TMPL_TOKEN_ORACLE_CORP_TYPE_PRED in rendered_transfer):
+                TMPL_TOKEN_ORACLE_CORP_TYPE_PRED in rendered_transfer or
+                TMPL_TOKEN_SOURCE_CONNECTION in rendered_transfer or
+                TMPL_TOKEN_TARGET_SCHEMA in rendered_transfer):
             raise SystemExit(
                 f"Internal error: token(s) remained after rendering transfer template for chunk {chunk.index:03d}."
             )
@@ -561,9 +707,12 @@ def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, t
         lines.append(f"execute {templates.disable_triggers.path.as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: preserved processing/tracking tables still reference corporation/event rows.")
-            lines.append("ALTER TABLE corp_processing DISABLE TRIGGER ALL;")
-            # lines.append("ALTER TABLE auth_processing DISABLE TRIGGER ALL;")
-            lines.append("ALTER TABLE colin_tracking DISABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.corp_processing DISABLE TRIGGER ALL;")
+            lines.append("-- Deferred: DDL/docs identify auth_processing and affiliation_processing as preserved FK-owning")
+            lines.append("-- tables too, but auth_processing was introduced here as commented-out with no repo-history")
+            lines.append("-- rationale. Do not extend table-trigger suppression until Cloud SQL privilege/runtime")
+            lines.append("-- validation confirms the intended preserved-table set.")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.colin_tracking DISABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -581,9 +730,9 @@ def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, tem
         lines.append(f"execute {templates.enable_triggers.path.as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: restore preserved processing/tracking table triggers too.")
-            lines.append("ALTER TABLE corp_processing ENABLE TRIGGER ALL;")
-            # lines.append("ALTER TABLE auth_processing ENABLE TRIGGER ALL;")
-            lines.append("ALTER TABLE colin_tracking ENABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.corp_processing ENABLE TRIGGER ALL;")
+            lines.append("-- Deferred: see matching disable-side note for auth_processing/affiliation_processing.")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.colin_tracking ENABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -646,8 +795,8 @@ def gen_build_master_script_inline(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
-    lines.append("truncate table public.colin_extract_version; "
-                 "insert into public.colin_extract_version (extracted_at) values (current_timestamp); "
+    lines.append(f"truncate table {cfg.target_schema}.colin_extract_version; "
+                 f"insert into {cfg.target_schema}.colin_extract_version (extracted_at) values (current_timestamp); "
     )
     lines.append("")
 
@@ -750,8 +899,8 @@ def gen_build_master_script_vset(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
-    lines.append("truncate table public.colin_extract_version; "
-                 "insert into public.colin_extract_version (extracted_at) values (current_timestamp); "
+    lines.append(f"truncate table {cfg.target_schema}.colin_extract_version; "
+                 f"insert into {cfg.target_schema}.colin_extract_version (extracted_at) values (current_timestamp); "
     )
     lines.append("")
 
@@ -773,10 +922,6 @@ def gen_build_master_script_vset(
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
     _gen_emit_refresh_fk_note(lines, cfg=cfg)
-    if cfg.mode == cfg_GenerationMode.REFRESH:
-        lines.append("-- Cleanup stale orphan child rows before chunked refresh deletes.")
-        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
-        lines.append("")
 
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
@@ -910,6 +1055,12 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
         help="If set, any all-numeric corp id lines will be normalized to BC<digits> for the TARGET/Postgres corp_num.",
     )
     parser.add_argument(
+        "--include-cars",
+        dest="include_cars",
+        action="store_true",
+        help="Include global cars* refresh step (carsfile/carsbox/carsrept/carindiv; generator default).",
+    )
+    parser.add_argument(
         "--no-cars",
         dest="include_cars",
         action="store_false",
@@ -951,6 +1102,11 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
              "session_replication_role in the master script and nested execute files.",
     )
 
+    parser.add_argument(
+        "--source-connection",
+        default="cprd",
+        help="DbSchemaCLI connection name for the SOURCE Oracle DB (default: cprd).",
+    )
     parser.add_argument(
         "--target-connection",
         default="cprd_pg_subset",
@@ -994,15 +1150,18 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
     )
     out_master.parent.mkdir(parents=True, exist_ok=True)
 
-    # Chunk scripts dir is always derived from master output stem for determinism.
+    # Chunk/support scripts dir is always derived from master output stem for determinism.
     out_chunks_dir = out_master.parent / f"{out_master.stem}_chunks"
-    if render_mode == cfg_RenderMode.INLINE:
-        out_chunks_dir.mkdir(parents=True, exist_ok=True)
+    out_chunks_dir.mkdir(parents=True, exist_ok=True)
 
     if args.chunk_size <= 0:
         raise SystemExit("--chunk-size must be > 0")
     if args.threads <= 0:
         raise SystemExit("--threads must be > 0")
+
+    source_connection = cfg_validate_dbschema_identifier("--source-connection", str(args.source_connection))
+    target_connection = cfg_validate_dbschema_identifier("--target-connection", str(args.target_connection))
+    target_schema = cfg_validate_pg_schema_identifier("--target-schema", str(args.target_schema))
 
     return cfg_GenerationConfig(
         repo_root=repo_root,
@@ -1021,8 +1180,9 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
         or_of_in_max_ids=or_of_in_max_ids,
         out_master=out_master,
         out_chunks_dir=out_chunks_dir,
-        target_connection=str(args.target_connection),
-        target_schema=str(args.target_schema),
+        source_connection=source_connection,
+        target_connection=target_connection,
+        target_schema=target_schema,
     )
 
 
@@ -1034,6 +1194,7 @@ def _effective_oracle_strategy(cfg: cfg_GenerationConfig, total_ids: int) -> cfg
 
 def run(cfg: cfg_GenerationConfig) -> int:
     templates = tmpl_default_bundle(cfg.repo_root)
+    templates = gen_write_rendered_connection_templates(cfg=cfg, templates=templates)
 
     if cfg.pg_debug_session_probes and cfg.render_mode != cfg_RenderMode.INLINE:
         raise SystemExit("--pg-debug-session-probes currently supports only --render-mode inline.")
@@ -1157,6 +1318,9 @@ def run(cfg: cfg_GenerationConfig) -> int:
         print(" - Corp ids in the file should match the TARGET Postgres extract corp_num format (e.g. BC0460007).")
         print(" - If you have numeric-only corp ids, consider --prefix-numeric-bc.")
         print(f" - corp ids: {n_ids} => ceil({n_ids}/{cfg.chunk_size}) = {in_groups} chunk(s)")
+        print(f" - Source DbSchema connection: {cfg.source_connection}")
+        print(f" - Target DbSchema connection: {cfg.target_connection}")
+        print(f" - Target schema: {cfg.target_schema}")
         print(f" - Oracle IN-list handling: {effective_strategy.value} (configured: {cfg.oracle_in_strategy.value})")
         print(f" - chunk-size (max items per IN list): {cfg.chunk_size}")
         if effective_strategy == cfg_OracleInStrategy.CHUNK_FILES:
@@ -1176,7 +1340,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
         print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
-        print(" - Address loads use the predeclared helper table public.subset_address_stage and merge into public.address by addr_id.")
+        print(f" - Address loads use the predeclared helper table {cfg.target_schema}.subset_address_stage and merge into {cfg.target_schema}.address by addr_id.")
         print("   - BCOMPS purge keysets also use predeclared helper tables in the extract schema (subset_excluded_*).")
         print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to truncate/read/write those helper tables.")
         if cfg.pg_debug_session_probes:
@@ -1215,6 +1379,9 @@ def run(cfg: cfg_GenerationConfig) -> int:
     print("Notes:")
     print(" - This script relies on DbSchemaCLI vset variables and runtime substitution.")
     print(f" - corp ids: {n_ids} => ceil({n_ids}/{cfg.chunk_size}) = {in_groups} chunk(s)")
+    print(f" - Source DbSchema connection: {cfg.source_connection}")
+    print(f" - Target DbSchema connection: {cfg.target_connection}")
+    print(f" - Target schema: {cfg.target_schema}")
     print(f" - Oracle IN-list handling: {effective_strategy.value} (configured: {cfg.oracle_in_strategy.value})")
     print(f" - chunk-size (max items per IN list): {cfg.chunk_size}")
     if effective_strategy == cfg_OracleInStrategy.CHUNK_FILES:
@@ -1230,7 +1397,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
     print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
     print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
     print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
-    print(" - Address loads use the predeclared helper table public.subset_address_stage and merge into public.address by addr_id.")
+    print(f" - Address loads use the predeclared helper table {cfg.target_schema}.subset_address_stage and merge into {cfg.target_schema}.address by addr_id.")
     print("   - BCOMPS purge keysets also use predeclared helper tables in the extract schema (subset_excluded_*).")
     print("   - subset runs should not overlap on the same target DB, and the runtime role must be able to truncate/read/write those helper tables.")
     if cfg.pg_debug_session_probes:

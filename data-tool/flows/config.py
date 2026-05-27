@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # Copyright © 2022 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
@@ -23,6 +25,7 @@ import os
 import sys
 
 from dotenv import find_dotenv, load_dotenv
+from sqlalchemy.engine import URL
 
 
 # this will load all the envars from a .env file located in the project root (api)
@@ -52,6 +55,49 @@ def _get_bool(name: str, default: bool = False) -> bool:
     if val is None:
         return default
     return val.strip().lower() == 'true'
+
+
+def _build_postgres_uri(
+    *,
+    username: str,
+    password: str,
+    host: str,
+    port: str | int,
+    database: str,
+    exact_uri: str | None = None,
+    cloudsql_connection_name: str | None = None,
+) -> str:
+    """Build a Postgres SQLAlchemy URL without breaking on URL-reserved password chars."""
+    if exact_uri:
+        return exact_uri
+    if cloudsql_connection_name:
+        return URL.create(
+            'postgresql+psycopg2',
+            username=username,
+            password=password,
+            database=database,
+            query={'host': f'/cloudsql/{cloudsql_connection_name}'},
+        ).render_as_string(hide_password=False)
+    return URL.create(
+        'postgresql+psycopg2',
+        username=username,
+        password=password,
+        host=host,
+        port=int(port),
+        database=database,
+    ).render_as_string(hide_password=False)
+
+
+def _build_oracle_uri(*, username: str, password: str, host: str, port: str | int, database: str) -> str:
+    """Build an Oracle SQLAlchemy URL without breaking on URL-reserved password chars."""
+    return URL.create(
+        'oracle+oracledb',
+        username=username,
+        password=password,
+        host=host,
+        port=int(port),
+        database=database,
+    ).render_as_string(hide_password=False)
 
 
 def get_named_config(config_name: str = 'production'):
@@ -105,12 +151,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME_COLIN_MIGR = os.getenv('DATABASE_NAME_COLIN_MIGR', '')
     DB_HOST_COLIN_MIGR = os.getenv('DATABASE_HOST_COLIN_MIGR', '')
     DB_PORT_COLIN_MIGR = os.getenv('DATABASE_PORT_COLIN_MIGR', '5432')
-    SQLALCHEMY_DATABASE_URI_COLIN_MIGR = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER_COLIN_MIGR,
+    SQLALCHEMY_DATABASE_URI_COLIN_MIGR = _build_postgres_uri(
+        username=DB_USER_COLIN_MIGR,
         password=DB_PASSWORD_COLIN_MIGR,
         host=DB_HOST_COLIN_MIGR,
-        port=int(DB_PORT_COLIN_MIGR),
-        name=DB_NAME_COLIN_MIGR,
+        port=DB_PORT_COLIN_MIGR,
+        database=DB_NAME_COLIN_MIGR,
+        exact_uri=os.getenv('DATABASE_URI_COLIN_MIGR'),
+        cloudsql_connection_name=os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME_COLIN_MIGR'),
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
@@ -120,12 +168,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME = os.getenv('DATABASE_NAME', '')
     DB_HOST = os.getenv('DATABASE_HOST', '')
     DB_PORT = os.getenv('DATABASE_PORT', '5432')
-    SQLALCHEMY_DATABASE_URI = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER,
+    SQLALCHEMY_DATABASE_URI = _build_postgres_uri(
+        username=DB_USER,
         password=DB_PASSWORD,
         host=DB_HOST,
-        port=int(DB_PORT),
-        name=DB_NAME,
+        port=DB_PORT,
+        database=DB_NAME,
+        exact_uri=os.getenv('DATABASE_URI_LEAR'),
+        cloudsql_connection_name=os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME'),
     )
 
     DATABASE_POOL_PRE_PING = os.getenv('DATABASE_POOL_PRE_PING', 'True') == 'True'
@@ -144,12 +194,14 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME_AUTH = os.getenv('DATABASE_NAME_AUTH', '')
     DB_HOST_AUTH = os.getenv('DATABASE_HOST_AUTH', '')
     DB_PORT_AUTH = os.getenv('DATABASE_PORT_AUTH', '5432')
-    SQLALCHEMY_DATABASE_URI_AUTH = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER_AUTH,
+    SQLALCHEMY_DATABASE_URI_AUTH = _build_postgres_uri(
+        username=DB_USER_AUTH,
         password=DB_PASSWORD_AUTH,
         host=DB_HOST_AUTH,
-        port=int(DB_PORT_AUTH),
-        name=DB_NAME_AUTH,
+        port=DB_PORT_AUTH,
+        database=DB_NAME_AUTH,
+        exact_uri=os.getenv('DATABASE_URI_AUTH'),
+        cloudsql_connection_name=os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH'),
     )
 
     # service accounts
@@ -206,12 +258,12 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME_COLIN_ORACLE = os.getenv('DATABASE_NAME_COLIN_ORACLE', '')
     DB_HOST_COLIN_ORACLE = os.getenv('DATABASE_HOST_COLIN_ORACLE', '')
     DB_PORT_COLIN_ORACLE = os.getenv('DATABASE_PORT_COLIN_ORACLE', '1521')
-    SQLALCHEMY_DATABASE_URI_COLIN_ORACLE = 'oracle+oracledb://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER_COLIN_ORACLE,
+    SQLALCHEMY_DATABASE_URI_COLIN_ORACLE = _build_oracle_uri(
+        username=DB_USER_COLIN_ORACLE,
         password=DB_PASSWORD_COLIN_ORACLE,
         host=DB_HOST_COLIN_ORACLE,
-        port=int(DB_PORT_COLIN_ORACLE),
-        name=DB_NAME_COLIN_ORACLE,
+        port=DB_PORT_COLIN_ORACLE,
+        database=DB_NAME_COLIN_ORACLE,
     )
     FREEZE_COLIN_CORPS = os.getenv('FREEZE_COLIN_CORPS', 'False') == 'True'
     FREEZE_ADD_EARLY_ADOPTER = os.getenv('FREEZE_ADD_EARLY_ADOPTER', 'False') == 'True'
