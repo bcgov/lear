@@ -17,7 +17,7 @@ from unittest.mock import patch
 import pytest
 from simple_cloudevent import SimpleCloudEvent
 
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from business_model.models import Filing
 
 from business_emailer.email_processors import (

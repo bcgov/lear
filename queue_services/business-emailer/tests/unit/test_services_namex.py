@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from business_account.AccountService import AccountService
+from business_account import AccountService
 
 from business_emailer.services.namex import NameXService
 

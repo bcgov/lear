@@ -19,7 +19,7 @@ import pytest
 from simple_cloudevent import SimpleCloudEvent
 from business_model.models import Business, Furnishing
 from business_emailer.services.namex import NameXService
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.email_processors import (

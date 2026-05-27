@@ -40,7 +40,7 @@ import requests
 from flask import Blueprint, current_app, request
 from simple_cloudevent import SimpleCloudEvent
 
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
