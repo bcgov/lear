@@ -116,16 +116,21 @@ def update_naics_info(business: Business, naics: dict):
 def get_next_corp_num(legal_type: str):
     """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
     # this gets called if the new services are generating the Business.identifier.
+    colin_sequence_type = legal_type
     if legal_type in (Business.LegalTypes.BCOMP.value,
                       Business.LegalTypes.BC_ULC_COMPANY.value,
                       Business.LegalTypes.BC_CCC.value,
                       Business.LegalTypes.COMP.value):
         legal_type = "BC"
+        colin_sequence_type = "BC"
     elif legal_type in (Business.LegalTypes.BCOMP_CONTINUE_IN.value,
                         Business.LegalTypes.ULC_CONTINUE_IN.value,
                         Business.LegalTypes.CCC_CONTINUE_IN.value,
                         Business.LegalTypes.CONTINUE_IN.value):
         legal_type = "C"
+        # 'C' types share the same colin sequence as 'BC'
+        colin_sequence_type = "BC"
+        
 
     # when lear generating the identifier
     if (
@@ -141,7 +146,7 @@ def get_next_corp_num(legal_type: str):
     try:
         token = AccountService.get_bearer_token()
         resp = requests.post(
-            f'{current_app.config["COLIN_API"]}/businesses/{legal_type}',
+            f'{current_app.config["COLIN_API"]}/businesses/{colin_sequence_type}',
             headers={"Accept": "application/json",
                      "Authorization": f"Bearer {token}"}
         )
