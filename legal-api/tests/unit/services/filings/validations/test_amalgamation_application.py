@@ -93,7 +93,7 @@ def test_invalid_nr_amalgamation(mocker, app, session):
     ]
 )
 def test_short_form_amalgamation_rejects_nr(mocker, app, session, amalgamation_type):
-    """Assert short-form amalgamations reject an nrNumber without calling NameX."""
+    """Assert short-form amalgamations reject an nrNumber."""
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'authorizationReceived': True,
