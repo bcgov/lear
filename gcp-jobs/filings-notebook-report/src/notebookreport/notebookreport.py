@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 
 import papermill as pm
 import requests
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from dateutil.relativedelta import relativedelta
 from dotenv import find_dotenv, load_dotenv
 from flask import Flask

@@ -17,7 +17,7 @@ from http import HTTPStatus
 import requests
 from flask import current_app
 
-from business_account.AccountService import AccountService
+from business_account import AccountService
 
 
 def get_filings(token, limit, offset):

@@ -36,7 +36,7 @@ import uuid
 from datetime import UTC, datetime
 
 import requests
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from business_model.models import Business, Filing, db
 from flask import current_app
 from flask_sqlalchemy.pagination import Pagination

@@ -15,7 +15,7 @@
 """This provides the service for namex-api calls."""
 
 import requests
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from flask import current_app
 
 
