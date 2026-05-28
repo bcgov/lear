@@ -151,7 +151,7 @@ def test_sp_registration(app, session, jwt):
 
 def test_dba_registration(mocker, app, session, jwt):
     """Assert that the general partnership registration is valid."""
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.namex.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
     with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             with patch.object(flags, 'is_on', return_value=True):

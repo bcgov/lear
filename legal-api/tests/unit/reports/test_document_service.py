@@ -362,8 +362,7 @@ def test_update_ledger_docs(session, desc, doc_data, drs_data, receipt, filing, 
         assert text_results.find(static) > 0
 
 
-def test_create_document(session, mock_doc_service, mocker):
-    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
+def test_create_document(app, session, mock_bearer_token, mock_doc_service):
     founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
@@ -379,8 +378,8 @@ def test_create_document(session, mock_doc_service, mocker):
     assert document_service.has_document(completed_filing.id, 'annualReport') != False
 
 
-def test_get_document(session, mock_doc_service, mocker):
-    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
+def test_get_document(app, session, mock_bearer_token, mock_doc_service):
+    # mocker.patch("legal_api.reports.document_service.AccountService.get_bearer_token", json={"access_token": "fake-token"})
     founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)

@@ -241,9 +241,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
             f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    # URLs
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "http://test-auth-url")
-
     # Transparency Register - test cases set this explicitly as needed
     TR_START_DATE = ""
 
@@ -316,6 +313,8 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
 
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
+    AUTH_SVC_URL = "https://AUTH_SVC_URL"
+    ACCOUNT_SVC_AUTH_URL = "https://ACCOUNT_SVC_AUTH_URL"
 
     BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")
     BUSINESS_CRED_DEF_ID = os.getenv("BUSINESS_CRED_DEF_ID", "TEST_BUSINESS_SCHEMA_ID")

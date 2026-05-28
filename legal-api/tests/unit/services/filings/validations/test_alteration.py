@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test Correction validations."""
 import copy
-from datetime import date
+from datetime import date, timezone
 from http import HTTPStatus
 from unittest.mock import MagicMock, patch
 
@@ -22,7 +22,7 @@ import pytest
 from freezegun import freeze_time
 from reportlab.lib.pagesizes import letter
 
-from business_common.utils.datetime import datetime, timezone
+from business_common.utils import datetime
 from business_model.models import Business
 from legal_api.errors import Error
 from legal_api.services import flags, NameXService

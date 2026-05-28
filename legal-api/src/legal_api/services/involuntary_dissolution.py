@@ -19,10 +19,9 @@ from typing import Final
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
+from business_account import AccountService
 from business_model.models import Batch, BatchProcessing, Business, Filing, db
 from legal_api.services.request_context import get_request_context
-
-from .bootstrap import AccountService
 
 
 class InvoluntaryDissolutionService:

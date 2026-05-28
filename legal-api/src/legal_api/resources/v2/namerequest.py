@@ -20,8 +20,8 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
-from legal_api.services import namex
-from legal_api.services.bootstrap import AccountService
+from business_account import AccountService
+from legal_api.services import namex, flags
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import normalize_phone
@@ -52,7 +52,7 @@ def validate_with_contact_info(identifier): # noqa: PLR0911
             return jsonify(nr_json)
 
         # Check the NR is affiliated with this account
-        orgs_response = AccountService.get_account_by_affiliated_identifier(identifier)
+        orgs_response = AccountService.get_account_by_affiliated_identifier(identifier, flags)
                
          # If affiliated with the account, return the NR
         if len(orgs_response["orgs"]):

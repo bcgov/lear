@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test suite to ensure Corpse business checks work correctly for businesses in liquidation."""
+from datetime import date
+
 import pytest
 from psycopg2.tz import FixedOffsetTimezone
 
-from business_common.utils.datetime import datetime, date
+from business_common.utils import datetime
 from business_model.models import Business
 from legal_api.services.warnings.business import check_business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
