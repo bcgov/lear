@@ -15,14 +15,15 @@
 import contextlib
 
 import pytest
-from flask import Flask
-from flask_jwt_oidc import JwtManager
 import sqlalchemy
+from flask import Flask
 from sqlalchemy import event, text
 from flask_migrate import Migrate, upgrade
-from dissolution_service.config import TestConfig
+
 import business_model_migrations
 from business_model.models import db as _db
+from dissolution_service.config import TestConfig
+from flask_jwt_oidc import JwtManager
 
 contextmanager = contextlib.contextmanager
 _jwt = JwtManager()
@@ -157,7 +158,7 @@ def config(app):
 def app_request():
     """Return a session-wide application configured in TEST mode."""
     app = Flask(__name__)
-    app.config.from_object(Testing)
+    app.config.from_object(TestConfig)
     _db.init_app(app)
 
     return app

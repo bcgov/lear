@@ -14,15 +14,16 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Final, Tuple
+from typing import Any, Final, Tuple
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
 from business_model.models import Batch, BatchProcessing, Business, Filing, db
 
-from business_account.AccountService import AccountService
-from business_common.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
+from business_account import AccountService
+from business_common.core.filing import Filing as CoreFiling
+from .request_context import get_request_context
 
 
 class InvoluntaryDissolutionService():
@@ -57,7 +58,7 @@ class InvoluntaryDissolutionService():
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters(), flags: any = None
+        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters(), flags: Any = None
     ) -> Tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
@@ -75,7 +76,7 @@ class InvoluntaryDissolutionService():
         return True, eligibility_details
 
     @classmethod
-    def get_businesses_eligible(cls, num_allowed: int = None, flags: any = None):
+    def get_businesses_eligible(cls, num_allowed: int = None, flags: Any = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query(flags=flags)
         if num_allowed:
@@ -86,7 +87,7 @@ class InvoluntaryDissolutionService():
         return eligible_businesses
 
     @classmethod
-    def get_businesses_eligible_count(cls, flags: any = None):
+    def get_businesses_eligible_count(cls, flags: Any = None):
         """Return the number of businesses eligible for involuntary dissolution."""
         return cls._get_businesses_eligible_query(flags=flags).count()
 
@@ -103,7 +104,7 @@ class InvoluntaryDissolutionService():
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters(), flags: any = None):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters(), flags: Any = None):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
@@ -279,13 +280,16 @@ def _is_xpro_from_nwpta():
     )
 
 
-def _check_feature_flags_filter(flags: any = None):
+def _check_feature_flags_filter(flags: Any = None):
     """Check eligibility for dissolution based on inclusion and exclusion of businesses."""
     if flags is None:
         op = type("flagType", (object,), {"is_on": lambda x,y: True, "value": lambda x,y: {}})
         flags = op()
+    request_context = get_request_context()
     # Scenario 1: If the flag is off, proceed with the standard eligibility check.
-    if not flags.is_on('enable-involuntary-dissolution-filter'):
+    if not flags.is_on('enable-involuntary-dissolution-filter',
+                       request_context.user,
+                       request_context.account_id):
         return True  # Continue with the usual logic
 
     # Get the dissolution filter data (handle if filter is None or empty)

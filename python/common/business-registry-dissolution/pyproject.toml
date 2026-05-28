@@ -1,28 +1,169 @@
-[tool.poetry]
+[project]
 name = "business-registry-dissolution"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
-authors = ["BrandonSharratt <brandon@daxiom.com>"]
+authors = [{name = "BC Business Registry"}]
 readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "flask (>=3.1.0,<4.0.0)",
+  "python-dotenv (>=1.1.0,<2.0.0)",
+  # BCReg deps
+  "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
+  "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
+  "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
+]
+
+[tool.poetry]
 packages = [{include = "dissolution_service", from = "src"}]
 
-[tool.poetry.dependencies]
-python = ">=3.13,<3.14"
-flask = "^3.1.0"
-sqlalchemy = "^2.0.39"
+[tool.poetry.group.test.dependencies]
 datedelta = "^1.4"
-business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
-business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account"}
-business-registry-common = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common"}
-flask-migrate = {version = ">=4.1.0,<5.0.0"}
+freezegun = "^1.5.1"
+pytest = "^8.3.5"
+pytest-cov = "^6.0.0"
+requests-mock = "^1.12.1"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.3.5"
-black = "^25.1.0"
-flake8 = "^7.1.2"
-psycopg2 = "^2.9.10"
-freezegun = "^1.5.1"
+ruff = "^0.11.5"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".vscode",
+    "dist",
+    "htmlcov",
+    ".venv",
+    "migrations",
+    "devops",
+    ".history"
+]
+
+
+# Same as Black.
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.13
+target-version = "py313"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "ERA", # flake8-eradicate/eradicate
+    "I",   # isort
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    "PL",  # pyLint
+    "PGH", # pygrep
+    "Q",   # Enables flake8-quotes rules
+    "RUF", # ruff checks
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "UP",  # pyupgrade
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/config.py" = [
+  "T201",  # allow print instead of logger in config
+]
+"**/tests/*" = [
+  "B",
+  "C",
+  "ERA",
+  "N",
+  "PLR",
+  "RUF",
+  "SIM",
+  "T2",
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = [
+    "ERA", # do not autoremove commented out code
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["business_account", "business_common", "business_model", "flask_jwt_oidc"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.pytest.ini_options]
+minversion = "2.0"
+testpaths = [
+   "tests",
+]
+addopts = "--verbose --strict -p no:warnings --cov=src --cov-report html:htmlcov --cov-report xml:coverage.xml"
+python_files = [
+   "test*.py"
+]
+norecursedirs = [
+   ".git", ".tox", "venv*", "requirements*", "build",
+]
+log_cli = true
+log_cli_level = "INFO"
+filterwarnings = [
+   "ignore::UserWarning"
+]
+markers = [
+   "slow",
+   "serial",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+   "src/dissolution_service",
+]
+omit = [
+]
+
+[tool.coverage.report]
+exclude_lines = [
+   "pragma: no cover",
+   "from",
+   "import",
+   "def __repr__",
+   "if self.debug:",
+   "if settings.DEBUG",
+   "raise AssertionError",
+   "raise NotImplementedError",
+   "if 0:",
+   'if __name__ == "__main__":',
+]
