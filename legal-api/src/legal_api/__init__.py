@@ -66,7 +66,7 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.
 def _setup_pg8000_graceful_shutdown(engine) -> None:
     """Suppress pg8000 InterfaceError on connection close during Cloud Run scale-down."""
     try:
-        from pg8000.exceptions import InterfaceError as _interface_error
+        from pg8000.exceptions import InterfaceError as _interface_error  # noqa: N813
     except ImportError:
         _interface_error = None
 
