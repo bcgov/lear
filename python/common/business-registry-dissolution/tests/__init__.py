@@ -14,8 +14,9 @@
 """This module holds general utility functions and helpers for the main package."""
 import base64
 import uuid
-from datetime import datetime as _datetime, timezone
 from contextlib import contextmanager
+from datetime import UTC, timezone
+from datetime import datetime as _datetime
 
 from datedelta import datedelta
 from freezegun import freeze_time
@@ -26,20 +27,19 @@ from business_model.models import (
     Batch,
     BatchProcessing,
     Business,
-    db,
     Filing,
+    db,
 )
 from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 
-
-EPOCH_DATETIME = datetime.from_date(_datetime(1970, 1, 1, tzinfo=timezone.utc))
-FROZEN_DATETIME = _datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=timezone.utc)
+EPOCH_DATETIME = datetime.from_date(_datetime(1970, 1, 1, tzinfo=UTC))
+FROZEN_DATETIME = _datetime(2001, 8, 5, 7, 7, 58, 272362, tzinfo=UTC)
 
 def factory_batch(batch_type=Batch.BatchType.INVOLUNTARY_DISSOLUTION,
                   status=Batch.BatchStatus.HOLD,
                   size=3,
-                  notes=''):
+                  notes=""):
     batch = Batch(
         batch_type=batch_type,
         status=status,
@@ -56,7 +56,7 @@ def factory_batch_processing(batch_id,
                              step=BatchProcessing.BatchProcessingStep.WARNING_LEVEL_1,
                              status=BatchProcessing.BatchProcessingStatus.PROCESSING,
                              trigger_date=datetime.utcnow() + datedelta(days=42),
-                             notes=''
+                             notes=""
                              ):
     batch_processing = BatchProcessing(
         batch_id=batch_id,
@@ -85,14 +85,14 @@ def factory_business(identifier,
     last_ar_year = None
     if last_ar_date:
         last_ar_year = last_ar_date.year
-    business = Business(legal_name=f'legal_name-{identifier}',
+    business = Business(legal_name=f"legal_name-{identifier}",
                         founding_date=founding_date,
                         last_ar_date=last_ar_date,
                         last_ar_year=last_ar_year,
                         last_ledger_timestamp=EPOCH_DATETIME,
                         # dissolution_date=EPOCH_DATETIME,
                         identifier=identifier,
-                        tax_id='BN123456789',
+                        tax_id="BN123456789",
                         fiscal_year_end_date=FROZEN_DATETIME,
                         legal_type=entity_type,
                         state=state,
@@ -119,7 +119,7 @@ def factory_completed_filing(business,
                              filing_sub_type=None):
     """Create a completed filing."""
     if not payment_token:
-        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace('=', '')
+        payment_token = str(base64.urlsafe_b64encode(uuid.uuid4().bytes)).replace("=", "")
 
     with freeze_time(filing_date):
 
@@ -132,8 +132,8 @@ def factory_completed_filing(business,
         if filing_sub_type:
             filing._filing_sub_type = filing_sub_type
         
-        if (filing.filing_type == 'adminFreeze' or
-            (filing.filing_type == 'dissolution' and filing.filing_sub_type == 'involuntary')):
+        if (filing.filing_type == "adminFreeze" or
+            (filing.filing_type == "dissolution" and filing.filing_sub_type == "involuntary")):
             filing.hide_in_ledger = True
         
         filing.save()
