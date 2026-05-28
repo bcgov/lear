@@ -283,7 +283,7 @@ def _is_xpro_from_nwpta():
 def _check_feature_flags_filter(flags: Any = None):
     """Check eligibility for dissolution based on inclusion and exclusion of businesses."""
     if flags is None:
-        op = type("flagType", (object,), {"is_on": lambda x,y: True, "value": lambda x,y: {}})
+        op = type("flagType", (object,), {"is_on": lambda w,x,y=None,z=None: True, "value": lambda w,x,y=None,z=None: {}})
         flags = op()
     request_context = get_request_context()
     # Scenario 1: If the flag is off, proceed with the standard eligibility check.
