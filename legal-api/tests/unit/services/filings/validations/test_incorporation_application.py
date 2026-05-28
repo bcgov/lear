@@ -2048,6 +2048,7 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
+    mocker.patch.object(incorporation_application, '_incorp_completing_party_not_required', return_value=False)
     mock_validate_permission = mocker.patch.object(incorporation_application,
         'validate_permission_and_completing_party', return_value=permission_error)
     
