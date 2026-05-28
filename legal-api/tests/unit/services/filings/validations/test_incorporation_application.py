@@ -664,9 +664,19 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
                                       'path': '/filing/incorporationApplication/parties/roles'}]
         )
     ])
+@pytest.mark.parametrize('cp_flag_enabled', [True, False])
 def test_validate_incorporation_role(session, minio_server, mocker, test_name,
-                                     legal_type, parties, expected_code, expected_msg):
+                                     legal_type, parties, expected_code, expected_msg,
+                                     cp_flag_enabled):
     """Assert that incorporation parties roles can be validated."""
+
+    mocker.patch(
+        'legal_api.services.flags.value',
+        return_value=[
+            "incorporationApplication-completingParty"
+        ] if cp_flag_enabled else []
+    )
+
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 
                                        'certifiedBy': 'full name', 'authorizationReceived': True,
@@ -711,6 +721,16 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     err = validate(business, filing_json)
 
     # validate outcomes
+    is_corp_incorp_cp_skip = cp_flag_enabled and legal_type in Business.CORPS
+
+    if is_corp_incorp_cp_skip:
+        if test_name in [
+            'FAIL_NO_COMPLETING_PARTY',
+            'FAIL_EXCEEDING_ONE_COMPLETING_PARTY'
+        ]:
+            expected_code = None
+            expected_msg = None
+
     if expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)

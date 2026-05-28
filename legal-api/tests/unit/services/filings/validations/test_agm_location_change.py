@@ -40,7 +40,7 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message, m
     """Assert validate agm year."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-agm-location-change-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-agm-location-change-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -82,7 +82,7 @@ def test_validate_agm_reason(session, mocker, test_name, reason, expected_code, 
     """Assert validate agm reason"""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL" if flag == 'supported-agm-location-change-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL" if flag == 'supported-agm-location-change-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)

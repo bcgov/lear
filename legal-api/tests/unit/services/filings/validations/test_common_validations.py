@@ -720,6 +720,7 @@ def test_validate_certified_by_coops(
 
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
+@pytest.mark.parametrize('feature_enabled', [True, False])
 @pytest.mark.parametrize('legal_type', Business.CORPS + [
     Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
 @pytest.mark.parametrize('authorization_received, expected_error', [
@@ -733,10 +734,20 @@ def test_validate_certified_by_coops(
     (CoreFiling.FilingTypes.DISSOLUTION, True, "voluntary"),
     (CoreFiling.FilingTypes.DISSOLUTION, False, "administrative"),
     (CoreFiling.FilingTypes.REGISTRARSORDER, False, None),  # staff filing
-    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None),  # not in FILINGS_REQUIRING_AUTHORIZATION
+    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None),
 ])
-def test_validate_authorization_received(session, legal_type, authorization_received, expected_error, filing_type, requires_authorization, dissolution_type):
+def test_validate_authorization_received(session, monkeypatch, legal_type, authorization_received,
+                                         expected_error, filing_type, requires_authorization,
+                                         dissolution_type, feature_enabled):
     """Test that authorizationReceived is enforced for required Corps filings."""
+
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None:
+            ["incorporationApplication-completingParty"]
+            if flag == "enable-new-feature" and feature_enabled else default
+    )
+
     filing = copy.deepcopy(FILING_HEADER)
     if authorization_received is not None:
         filing['filing']['header']['authorizationReceived'] = authorization_received
@@ -748,13 +759,17 @@ def test_validate_authorization_received(session, legal_type, authorization_rece
 
     errors = validate_authorization_received(filing, filing_type, legal_type)
 
-    if legal_type in Business.CORPS and requires_authorization and expected_error:
+    ia_requires_authorization = (
+        filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION and feature_enabled
+    )
+
+    if legal_type in Business.CORPS and \
+            (requires_authorization or ia_requires_authorization) and expected_error:
         assert errors
         assert errors[0]['error'] == 'Authorization received must be true to authorize the filing submission.'
         assert errors[0]['path'] == '/filing/header/authorizationReceived'
     else:
         assert errors == []
-
 @pytest.mark.parametrize(
     ('party_type', 'organization_name','officer_override', 'expected_errors'),
     [

@@ -65,7 +65,7 @@ def test_validate_amalgamation_out_date(session, test_name, expected_code, messa
     """Assert validate amalgamation_out_date."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -109,7 +109,7 @@ def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code
     """Assert validate foreign jurisdiction."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -144,7 +144,7 @@ def test_valid_foreign_jurisdiction(session, mocker, monkeypatch):
     """Assert valid foreign jurisdiction."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -179,7 +179,7 @@ def test_amalgamation_out_court_order(session, mocker, test_status, file_number,
     """Assert valid court order."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-amalgamation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)

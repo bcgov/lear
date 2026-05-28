@@ -54,7 +54,7 @@ def test_document_legal_type(session, test_status, document_type, legal_type, id
     """Assert valid document legal type."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else {}
+        lambda flag, default=None: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else default
     )
     business = factory_business(identifier,
                                 founding_date=(datetime.now(timezone.utc) - datedelta.YEAR),
