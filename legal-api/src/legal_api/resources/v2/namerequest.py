@@ -21,7 +21,7 @@ from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
 from business_account import AccountService
-from legal_api.services import namex, flags
+from legal_api.services import flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import normalize_phone
