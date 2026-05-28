@@ -16,11 +16,12 @@
 Test suite to ensure that helpers and utility functions for digital credentials are working as expected
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 from business_model.models import Business, CorpType, DCBusinessUser, DCDefinition, Party, PartyRole, User
+
 from business_registry_digital_credentials.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_business_type,
@@ -150,9 +151,11 @@ class TestGetRegisteredOnDateint:
     """Tests for get_registered_on_dateint."""
 
     def test_formats_date(self):
-        """Returns date in YYYYMMDD format."""
+        """Returns date in YYYYMMDD format (in legislation timezone)."""
         business = MagicMock()
-        business.founding_date = datetime(2025, 1, 15)
+        # Use a tz-aware UTC time mid-day in America/Vancouver so the date is
+        # stable regardless of the host system's local timezone.
+        business.founding_date = datetime(2025, 1, 15, 20, 0, tzinfo=timezone.utc)
         assert get_registered_on_dateint(business) == "20250115"
 
     def test_no_founding_date(self):
@@ -303,7 +306,9 @@ class TestGetDigitalCredentialData:
     @patch("business_registry_digital_credentials.digital_credentials_helpers.get_roles", return_value=["Director"])
     @patch("business_registry_digital_credentials.digital_credentials_helpers.get_given_names", return_value="JOHN")
     @patch("business_registry_digital_credentials.digital_credentials_helpers.get_family_name", return_value="DOE")
-    @patch("business_registry_digital_credentials.digital_credentials_helpers.get_company_status", return_value="ACTIVE")
+    @patch(
+        "business_registry_digital_credentials.digital_credentials_helpers.get_company_status", return_value="ACTIVE"
+    )
     @patch(
         "business_registry_digital_credentials.digital_credentials_helpers.get_registered_on_dateint",
         return_value="20250115",

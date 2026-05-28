@@ -22,6 +22,7 @@ from unittest.mock import MagicMock, patch
 
 import jwt as pyjwt
 import pytest
+
 from business_registry_digital_credentials.decorators import _get_traction_token, requires_traction_auth
 
 

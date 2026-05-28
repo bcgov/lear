@@ -7,7 +7,7 @@ readme = "README.md"
 packages = [{ include = "business_registry_digital_credentials", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<4.0"
+python = ">=3.13,<3.14"
 datedelta = "^1.4"
 flask-jwt-oidc = "^0.8.0"
 pytz = "^2025.1"
@@ -61,7 +61,7 @@ docstring-min-length = 10
 count = true
 
 [tool.black]
-target-version = ["py39", "py310", "py311", "py312"]
+target-version = ["py313"]
 line-length = 120
 
 [tool.isort]

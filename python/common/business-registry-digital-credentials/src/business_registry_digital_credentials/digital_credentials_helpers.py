@@ -111,9 +111,7 @@ def get_roles(
     preconditions = rules.get_preconditions(user, business)
 
     has_preconditions = preconditions is not None and len(preconditions)
-    only_use_self_attested_roles = (
-        has_preconditions and self_attested_roles is not None and len(self_attested_roles)
-    )
+    only_use_self_attested_roles = has_preconditions and self_attested_roles is not None and len(self_attested_roles)
     may_attach_role = not has_preconditions or only_use_self_attested_roles
 
     if may_attach_role:

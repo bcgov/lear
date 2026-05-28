@@ -19,21 +19,18 @@ The queue service never reaches this path — DBC access enforcement is a
 legal-api / HTTP concern.
 """
 
+from business_model.models.business import Business
+from business_model.models.user import User
 from flask import g
 from flask.globals import request_ctx
 from flask_jwt_oidc import JwtManager
-
-from business_model.models.business import Business
-from business_model.models.user import User
 
 from .digital_credentials_rules import DigitalCredentialsRulesService
 
 STAFF_ROLE = "staff"
 
 
-def are_digital_credentials_allowed(
-    business: Business, jwt: JwtManager, allowed_business_types: list[str]
-) -> bool:
+def are_digital_credentials_allowed(business: Business, jwt: JwtManager, allowed_business_types: list[str]) -> bool:
     """Return True if the business is allowed to have/view digital credentials.
 
     ``allowed_business_types`` is the feature-flag-resolved list (required — pass ``[]``

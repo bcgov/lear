@@ -17,9 +17,8 @@
 from datetime import datetime, timezone
 from enum import Enum
 
-from flask import current_app
-
 from business_model.models import Business, Filing, Party, PartyRole, User
+from flask import current_app
 
 from .digital_credentials_utils import FormattedUser, determine_allowed_business_types
 
@@ -90,9 +89,7 @@ class DigitalCredentialsRulesService:
 
         return True
 
-    def _has_specific_access(
-        self, user: User, business: Business, allowed_business_types: list[str]
-    ) -> bool:
+    def _has_specific_access(self, user: User, business: Business, allowed_business_types: list[str]) -> bool:
         """Return True if business rules are met."""
         if not business:
             current_app.logger.debug("No business is provided.")
@@ -106,10 +103,7 @@ class DigitalCredentialsRulesService:
         current_app.logger.debug("DBC Allowed business types: %s", eligible_business_types)
 
         if business.legal_type in eligible_business_types:
-            return bool(
-                self.user_filing_party_roles(user, business)
-                or self.user_business_party_roles(user, business)
-            )
+            return bool(self.user_filing_party_roles(user, business) or self.user_business_party_roles(user, business))
 
         current_app.logger.debug("No specific DBC access rules are met.")
         return False
@@ -144,9 +138,7 @@ class DigitalCredentialsRulesService:
             return []
 
         filing = filings.pop(0)
-        roles = filing.filing_party_roles.filter(
-            PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value
-        ).all()
+        roles = filing.filing_party_roles.filter(PartyRole.role != PartyRole.RoleTypes.COMPLETING_PARTY.value).all()
         return list(
             filter(
                 lambda role: role.role in self.valid_role_types and self.user_matches_party(user, role.party),

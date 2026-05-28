@@ -25,14 +25,7 @@ The ``digital_credentials`` singleton is bound at module import time — package
 to swap out the Traction client.
 """
 
-from business_model.models import (
-    Business,
-    DCBusinessUser,
-    DCConnection,
-    DCCredential,
-    DCDefinition,
-    DCRevocationReason,
-)
+from business_model.models import Business, DCBusinessUser, DCConnection, DCCredential, DCDefinition, DCRevocationReason
 
 from . import digital_credentials
 from .digital_credentials_helpers import get_digital_credential_data
@@ -55,12 +48,22 @@ def get_all_digital_credentials_for_business(business: Business) -> list[DCCrede
 
 
 def issue_digital_credential(
-    business_user: DCBusinessUser, credential_type: DCDefinition.CredentialType
+    business_user: DCBusinessUser,
+    credential_type: DCDefinition.CredentialType | str,
 ) -> DCCredential:
-    """Issue a digital credential for a business to a user."""
+    """Issue a digital credential for a business to a user.
+
+    ``credential_type`` accepts either a ``DCDefinition.CredentialType`` enum
+    member or its name string (e.g. ``"business"``).
+    """
+    ct = (
+        credential_type
+        if isinstance(credential_type, DCDefinition.CredentialType)
+        else DCDefinition.CredentialType[credential_type]
+    )
     if not (
         definition := DCDefinition.find_by(
-            DCDefinition.CredentialType[credential_type],
+            ct,
             digital_credentials.business_schema_id,
             digital_credentials.business_cred_def_id,
         )
@@ -88,6 +91,7 @@ def issue_digital_credential(
     issued_credential = DCCredential(
         definition_id=definition.id,
         connection_id=connection.id,
+        business_user_id=business_user.id,
         credential_exchange_id=response["cred_ex_id"],
         credential_id=credential_id,
     )

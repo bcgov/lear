@@ -21,7 +21,6 @@ from contextlib import suppress
 from datetime import datetime
 
 import requests
-
 from business_model.models import DCDefinition, DCRevocationReason
 
 from .decorators import requires_traction_auth

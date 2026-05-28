@@ -22,6 +22,7 @@ from unittest.mock import MagicMock, patch
 import jwt as pyjwt
 import pytest
 from business_model.models import DCDefinition, DCRevocationReason
+
 from business_registry_digital_credentials.digital_credentials import DigitalCredentialsService
 
 
@@ -201,7 +202,9 @@ class TestRevokeCredential:
         service = DigitalCredentialsService()
         service.app = app
         service.api_url = "https://traction.test"
-        result = service.revoke_credential("conn-123", "cred-rev-1", "rev-reg-1", DCRevocationReason.UPDATED_INFORMATION)
+        result = service.revoke_credential(
+            "conn-123", "cred-rev-1", "rev-reg-1", DCRevocationReason.UPDATED_INFORMATION
+        )
         assert result == {}
 
     @patch("business_registry_digital_credentials.digital_credentials.requests.post", side_effect=Exception("fail"))
@@ -211,5 +214,7 @@ class TestRevokeCredential:
         service = DigitalCredentialsService()
         service.app = app
         service.api_url = "https://traction.test"
-        result = service.revoke_credential("conn-123", "cred-rev-1", "rev-reg-1", DCRevocationReason.UPDATED_INFORMATION)
+        result = service.revoke_credential(
+            "conn-123", "cred-rev-1", "rev-reg-1", DCRevocationReason.UPDATED_INFORMATION
+        )
         assert result is None
