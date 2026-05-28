@@ -723,13 +723,12 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
     # validate outcomes
     is_corp_incorp_cp_skip = cp_flag_enabled and legal_type in Business.CORPS
 
-    if is_corp_incorp_cp_skip:
-        if test_name in [
-            'FAIL_NO_COMPLETING_PARTY',
-            'FAIL_EXCEEDING_ONE_COMPLETING_PARTY'
-        ]:
-            expected_code = None
-            expected_msg = None
+    if is_corp_incorp_cp_skip and test_name in [
+        'FAIL_NO_COMPLETING_PARTY',
+        'FAIL_EXCEEDING_ONE_COMPLETING_PARTY'
+    ]:
+        expected_code = None
+        expected_msg = None
 
     if expected_code:
         assert err.code == expected_code

@@ -147,7 +147,7 @@ def _validate_address(addresses: dict, address_key: str, filing_type: str) -> li
     return msg
 
 def _incorp_completing_party_not_required() -> bool:
-    """Return whether the incorporationApplication completing party feature is enabled."""
+    """Return True when incorporationApplication-completingParty ff is enabled and completing party is not required."""
     enabled_features: list[str] = flags.value("enable-new-feature", [])
     return "incorporationApplication-completingParty" in enabled_features
 

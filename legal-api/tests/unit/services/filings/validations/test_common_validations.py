@@ -734,7 +734,7 @@ def test_validate_certified_by_coops(
     (CoreFiling.FilingTypes.DISSOLUTION, True, "voluntary"),
     (CoreFiling.FilingTypes.DISSOLUTION, False, "administrative"),
     (CoreFiling.FilingTypes.REGISTRARSORDER, False, None),  # staff filing
-    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None),
+    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None), # conditionally required via enable-new-feature flag
 ])
 def test_validate_authorization_received(session, monkeypatch, legal_type, authorization_received,
                                          expected_error, filing_type, requires_authorization,
