@@ -379,7 +379,6 @@ def test_create_document(app, session, mock_bearer_token, mock_doc_service):
 
 
 def test_get_document(app, session, mock_bearer_token, mock_doc_service):
-    # mocker.patch("legal_api.reports.document_service.AccountService.get_bearer_token", json={"access_token": "fake-token"})
     founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
