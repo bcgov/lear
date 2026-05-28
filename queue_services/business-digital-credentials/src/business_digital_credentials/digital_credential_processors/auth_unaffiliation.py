@@ -24,8 +24,7 @@ Note: The credential is not replaced, it is simply revoked.
 from flask import current_app
 
 from business_model.models import Business, DCRevocationReason, User
-
-from .helpers import (
+from business_registry_digital_credentials import (
     get_all_digital_credentials_for_business,
     revoke_digital_credential,
 )
