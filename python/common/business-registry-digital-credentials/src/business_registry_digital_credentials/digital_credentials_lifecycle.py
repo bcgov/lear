@@ -31,6 +31,10 @@ from . import digital_credentials
 from .digital_credentials_helpers import get_digital_credential_data
 
 
+class DigitalCredentialError(Exception):
+    """Raised when an issue/revoke/replace lifecycle operation cannot complete."""
+
+
 def get_all_digital_credentials_for_business(business: Business) -> list[DCCredential]:
     """Get all currently-issued, non-revoked digital credentials for a business.
 
@@ -68,10 +72,10 @@ def issue_digital_credential(
             digital_credentials.business_cred_def_id,
         )
     ):
-        raise Exception(f"Definition not found for credential type: {credential_type}.")
+        raise DigitalCredentialError(f"Definition not found for credential type: {credential_type}.")
 
     if not (connection := DCConnection.find_active_by_business_user_id(business_user_id=business_user.id)):
-        raise Exception(f"Active connection not found for business user with ID: {business_user.id}.")
+        raise DigitalCredentialError(f"Active connection not found for business user with ID: {business_user.id}.")
 
     credential_data = get_digital_credential_data(business_user, definition.credential_type)
     credential_id = next(
@@ -86,7 +90,7 @@ def issue_digital_credential(
             data=credential_data,
         )
     ):
-        raise Exception("Failed to issue credential.")
+        raise DigitalCredentialError("Failed to issue credential.")
 
     issued_credential = DCCredential(
         definition_id=definition.id,
@@ -102,10 +106,10 @@ def issue_digital_credential(
 def revoke_digital_credential(credential: DCCredential, reason: DCRevocationReason) -> None:
     """Revoke an issued digital credential."""
     if not credential.is_issued or credential.is_revoked:
-        raise Exception("Credential is not issued yet or is revoked already.")
+        raise DigitalCredentialError("Credential is not issued yet or is revoked already.")
 
     if not (connection := credential.connection) or not connection.is_active:
-        raise Exception(f"Active connection not found for credential with ID: {credential.credential_id}.")
+        raise DigitalCredentialError(f"Active connection not found for credential with ID: {credential.credential_id}.")
 
     if (
         digital_credentials.revoke_credential(
@@ -116,7 +120,7 @@ def revoke_digital_credential(credential: DCCredential, reason: DCRevocationReas
         )
         is None
     ):
-        raise Exception("Failed to revoke credential.")
+        raise DigitalCredentialError("Failed to revoke credential.")
 
     credential.is_revoked = True
     credential.save()
@@ -135,7 +139,7 @@ def replace_digital_credential(
         digital_credentials.fetch_credential_exchange_record(credential.credential_exchange_id) is not None
         and digital_credentials.remove_credential_exchange_record(credential.credential_exchange_id) is None
     ):
-        raise Exception("Failed to remove credential exchange record.")
+        raise DigitalCredentialError("Failed to remove credential exchange record.")
 
     issue_digital_credential(credential.connection.business_user, credential_type)
     # We delete the old credential after issuing the new one so that the connection is not lost

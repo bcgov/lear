@@ -20,6 +20,7 @@ from business_model.models import DCDefinition, DCRevocationReason
 
 from business_registry_digital_credentials import digital_credentials_lifecycle
 from business_registry_digital_credentials.digital_credentials_lifecycle import (
+    DigitalCredentialError,
     get_all_digital_credentials_for_business,
     issue_digital_credential,
     replace_digital_credential,
@@ -80,7 +81,7 @@ class TestIssueDigitalCredential:
         # Preserve the real enum so isinstance check works.
         mock_definition_cls.CredentialType = DCDefinition.CredentialType
         business_user = MagicMock(id=1)
-        with pytest.raises(Exception, match="Definition not found"):
+        with pytest.raises(DigitalCredentialError, match="Definition not found"):
             issue_digital_credential(business_user, DCDefinition.CredentialType.business)
 
     @patch.object(digital_credentials_lifecycle, "DCConnection")
@@ -91,7 +92,7 @@ class TestIssueDigitalCredential:
         mock_definition_cls.CredentialType = DCDefinition.CredentialType
         mock_connection_cls.find_active_by_business_user_id.return_value = None
         business_user = MagicMock(id=1)
-        with pytest.raises(Exception, match="Active connection not found"):
+        with pytest.raises(DigitalCredentialError, match="Active connection not found"):
             issue_digital_credential(business_user, DCDefinition.CredentialType.business)
 
     @patch.object(digital_credentials_lifecycle, "get_digital_credential_data", return_value=[])
@@ -104,7 +105,7 @@ class TestIssueDigitalCredential:
         mock_definition_cls.CredentialType = DCDefinition.CredentialType
         mock_connection_cls.find_active_by_business_user_id.return_value = MagicMock()
         mock_dc.issue_credential.return_value = None
-        with pytest.raises(Exception, match="Failed to issue credential"):
+        with pytest.raises(DigitalCredentialError, match="Failed to issue credential"):
             issue_digital_credential(MagicMock(id=1), DCDefinition.CredentialType.business)
 
     @patch.object(digital_credentials_lifecycle, "DCCredential")
@@ -176,19 +177,19 @@ class TestRevokeDigitalCredential:
     def test_raises_when_not_issued(self):
         """Raises when the credential has not yet been issued."""
         credential = MagicMock(is_issued=False, is_revoked=False)
-        with pytest.raises(Exception, match="not issued yet or is revoked already"):
+        with pytest.raises(DigitalCredentialError, match="not issued yet or is revoked already"):
             revoke_digital_credential(credential, DCRevocationReason.UPDATED_INFORMATION)
 
     def test_raises_when_already_revoked(self):
         """Raises when the credential is already revoked."""
         credential = MagicMock(is_issued=True, is_revoked=True)
-        with pytest.raises(Exception, match="not issued yet or is revoked already"):
+        with pytest.raises(DigitalCredentialError, match="not issued yet or is revoked already"):
             revoke_digital_credential(credential, DCRevocationReason.UPDATED_INFORMATION)
 
     def test_raises_when_no_active_connection(self):
         """Raises when the credential's connection is missing or inactive."""
         credential = MagicMock(is_issued=True, is_revoked=False, connection=None)
-        with pytest.raises(Exception, match="Active connection not found"):
+        with pytest.raises(DigitalCredentialError, match="Active connection not found"):
             revoke_digital_credential(credential, DCRevocationReason.UPDATED_INFORMATION)
 
     @patch.object(digital_credentials_lifecycle, "digital_credentials")
@@ -197,7 +198,7 @@ class TestRevokeDigitalCredential:
         connection = MagicMock(is_active=True, connection_id="c")
         credential = MagicMock(is_issued=True, is_revoked=False, connection=connection)
         mock_dc.revoke_credential.return_value = None
-        with pytest.raises(Exception, match="Failed to revoke credential"):
+        with pytest.raises(DigitalCredentialError, match="Failed to revoke credential"):
             revoke_digital_credential(credential, DCRevocationReason.UPDATED_INFORMATION)
 
     @patch.object(digital_credentials_lifecycle, "digital_credentials")
@@ -264,7 +265,7 @@ class TestReplaceDigitalCredential:
         mock_dc.fetch_credential_exchange_record.return_value = {"id": "ex-1"}
         mock_dc.remove_credential_exchange_record.return_value = None
 
-        with pytest.raises(Exception, match="Failed to remove credential exchange record"):
+        with pytest.raises(DigitalCredentialError, match="Failed to remove credential exchange record"):
             replace_digital_credential(
                 credential,
                 DCDefinition.CredentialType.business,
