@@ -35,12 +35,14 @@
 
 This module is the API for the Legal Entity system.
 """
+import logging
 import os
 from typing import Optional
 
 from flask import Flask, jsonify
 from registry_schemas import __version__ as registry_schemas_version
 from registry_schemas.flask import SchemaServices
+from sqlalchemy import event
 
 from legal_api import config, models
 from legal_api.models import db
@@ -63,12 +65,10 @@ setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.
 
 def _setup_pg8000_graceful_shutdown(engine) -> None:
     """Suppress pg8000 InterfaceError on connection close during Cloud Run scale-down."""
-    import logging
-    from sqlalchemy import event
     try:
-        from pg8000.exceptions import InterfaceError as _InterfaceError
+        from pg8000.exceptions import InterfaceError as _interface_error
     except ImportError:
-        _InterfaceError = None
+        _interface_error = None
 
     @event.listens_for(engine, "connect")
     def on_connect(dbapi_conn, _connection_record):
@@ -78,7 +78,7 @@ def _setup_pg8000_graceful_shutdown(engine) -> None:
             try:
                 orig_close()
             except Exception as exc:
-                if _InterfaceError and isinstance(exc, _InterfaceError):
+                if _interface_error and isinstance(exc, _interface_error):
                     logging.getLogger(__name__).debug("Suppressed pg8000 InterfaceError on teardown.")
                 else:
                     raise
