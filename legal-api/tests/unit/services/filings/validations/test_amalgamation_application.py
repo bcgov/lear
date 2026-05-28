@@ -86,6 +86,33 @@ def test_invalid_nr_amalgamation(mocker, app, session):
 
 
 @pytest.mark.parametrize(
+    'amalgamation_type',
+    [
+        Amalgamation.AmalgamationTypes.horizontal.name,
+        Amalgamation.AmalgamationTypes.vertical.name,
+    ]
+)
+def test_short_form_amalgamation_rejects_nr(mocker, app, session, amalgamation_type):
+    """Assert short-form amalgamations reject an nrNumber without calling NameX."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'amalgamationApplication', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+    with patch.object(NameXService, 'query_nr_number') as mock_query:
+        err = validate(None, filing)
+
+    assert err
+    assert any(m['error'] == 'Short-form amalgamations cannot have a Name Request.' for m in err.msg)
+    mock_query.assert_not_called()
+
+
+@pytest.mark.parametrize(
     'amalgamation_type, expected_msg',
     [
         (Amalgamation.AmalgamationTypes.regular.name, 'At least one Director and a Completing Party is required.'),
@@ -100,8 +127,6 @@ def test_amalgamation_parties_missing_role(mocker, app, session, amalgamation_ty
                                   'certifiedBy': 'full name', 'authorizationReceived': True,
                                   'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
-
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
     filing['filing']['amalgamationApplication']['parties'] = []
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -718,7 +743,6 @@ def test_validate_amalgamation_office_or_share_required(session, mocker, amalgam
                                   'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
-    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     del filing['filing']['amalgamationApplication']['offices']
     del filing['filing']['amalgamationApplication']['shareStructure']
@@ -1553,8 +1577,9 @@ def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_typ
                                   'certifiedBy': 'full name', 'authorizationReceived': True,
                                   'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
+    if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
+        filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = amalgamating_businesses
 
     def mock_find_by_identifier(identifier):
@@ -1607,7 +1632,6 @@ def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type,
                                   'certifiedBy': 'full name', 'authorizationReceived': True,
                                   'email': 'no_one@never.get', 'filingId': 1}
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [

@@ -60,8 +60,16 @@ def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
     amalgamation_type = get_str(amalgamation_json, f"/filing/{filing_type}/type")
 
     if amalgamation_json.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
-        # Adopt from one of the amalgamating businesses contains name not nrNumber
-        msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
+        if amalgamation_type in [Amalgamation.AmalgamationTypes.horizontal.name,
+                                 Amalgamation.AmalgamationTypes.vertical.name]:
+            # Short-form amalgamations adopt the primary/holding business name; an NR is not allowed.
+            msg.append({
+                "error": "Short-form amalgamations cannot have a Name Request.",
+                "path": f"/filing/{filing_type}/nameRequest/nrNumber"
+            })
+        else:
+            # Adopt from one of the amalgamating businesses contains name not nrNumber
+            msg.extend(validate_name_request(amalgamation_json, legal_type, filing_type))
     
     if flags.is_on("enabled-deeper-permission-action"):
         err = validate_permission_and_completing_party(
