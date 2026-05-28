@@ -93,7 +93,7 @@ def test_are_digital_credentials_allowed_staff(app):
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = True
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is False
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is False
 
 
 @patch("business_model.models.User.find_by_jwt_token", return_value=None)
@@ -104,7 +104,7 @@ def test_are_digital_credentials_allowed_no_user(mock_find, app):
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = False
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is False
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is False
 
 
 @patch("business_model.models.User.find_by_jwt_token", return_value=User(id=1, login_source="BCSC"))
@@ -116,7 +116,7 @@ def test_are_digital_credentials_allowed_delegates_to_rules(mock_rules, mock_fin
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = False
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is True
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is True
 
 
 @patch("business_model.models.User.find_by_jwt_token", return_value=User(id=1, login_source="BCSC"))
@@ -128,4 +128,4 @@ def test_are_digital_credentials_allowed_rules_deny(mock_rules, mock_find, app):
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = False
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is False
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is False

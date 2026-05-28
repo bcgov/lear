@@ -63,54 +63,29 @@ def test_formatted_user(test_user, expected):
 
 
 @pytest.mark.parametrize(
-    "flag_value, valid_registration_types, valid_incorporation_types, expected",
+    "enabled_business_types, valid_registration_types, valid_incorporation_types, expected",
     [
-        ({"types": ["SP", "BEN", "GP"]}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP", "BEN", "GP", "CBEN"]}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP"]}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": []}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP", "GP"]}, [], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP", "BEN"]}, ["SP", "GP"], [], ["SP", "BEN", "GP"]),
+        (["SP", "BEN", "GP"], ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
+        (["SP", "BEN", "GP", "CBEN"], ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
+        (["SP"], ["SP", "GP"], ["BEN"], ["SP"]),
+        ([], ["SP", "GP"], ["BEN"], []),
+        (["SP", "GP"], [], ["BEN"], []),
+        (["SP", "BEN"], ["SP", "GP"], [], ["SP"]),
     ],
 )
 def test_determine_allowed_business_types(
-    app, flag_value, valid_registration_types, valid_incorporation_types, expected
+    enabled_business_types, valid_registration_types, valid_incorporation_types, expected
 ):
-    """Test filtering of allowed business types based on flag values."""
-
-    # The app fixture provides Flask context, so current_app.logger works
-    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
+    """Caller-provided enabled types are intersected with supported types."""
+    result = determine_allowed_business_types(
+        enabled_business_types, valid_registration_types, valid_incorporation_types
+    )
     assert sorted(result) == sorted(expected)
 
 
-@pytest.mark.parametrize(
-    "flag_value, valid_registration_types, valid_incorporation_types, expected",
-    [
-        (["SP", "BEN", "GP"], ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": "SP"}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": 123}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"type": ["SP", "BEN", "GP"]}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ("not-a-object", ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        (123, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-    ],
-)
-def test_determine_allowed_business_types_invalid_flags(
-    app, flag_value, valid_registration_types, valid_incorporation_types, expected
-):
-    """Test filtering of allowed business types based on flag values."""
-
-    # The app fixture provides Flask context, so current_app.logger works
-    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
-    assert sorted(result) == sorted(expected)
-
-
-def test_determine_allowed_business_types_missing_flag(app):
-    """Test filtering of allowed business types based on flag value not set."""
-
-    # The app fixture provides Flask context, so current_app.logger works
-    result = determine_allowed_business_types(["SP", "GP"], ["BEN"])
-    assert result == ["SP", "BEN", "GP"]
+def test_determine_allowed_business_types_none_input():
+    """None ``enabled_business_types`` yields empty list (DBC disabled)."""
+    assert determine_allowed_business_types(None, ["SP", "GP"], ["BEN"]) == []
 
 
 # Helper function tests

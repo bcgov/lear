@@ -179,7 +179,7 @@ class TestHasSpecificAccess:
 
     def test_no_business(self, rules_service, mock_user):
         """Returns False when no business is provided."""
-        assert rules_service._has_specific_access(mock_user, None) is False
+        assert rules_service._has_specific_access(mock_user, None, ["SP", "BEN", "GP"]) is False
 
     @patch(
         "business_registry_digital_credentials.digital_credentials_rules.determine_allowed_business_types",
@@ -189,7 +189,7 @@ class TestHasSpecificAccess:
         """Returns False when business type is not allowed."""
         business = MagicMock(spec=Business)
         business.legal_type = "CP"
-        assert rules_service._has_specific_access(mock_user, business) is False
+        assert rules_service._has_specific_access(mock_user, business, ["SP", "BEN", "GP"]) is False
 
     @patch(
         "business_registry_digital_credentials.digital_credentials_rules.determine_allowed_business_types",
@@ -200,7 +200,7 @@ class TestHasSpecificAccess:
         """Returns True when business type is allowed and user has a filing role."""
         business = MagicMock(spec=Business)
         business.legal_type = "BEN"
-        assert rules_service._has_specific_access(mock_user, business) is True
+        assert rules_service._has_specific_access(mock_user, business, ["SP", "BEN", "GP"]) is True
 
     @patch(
         "business_registry_digital_credentials.digital_credentials_rules.determine_allowed_business_types",
@@ -212,7 +212,7 @@ class TestHasSpecificAccess:
         """Returns True when business type is allowed and user has a business role."""
         business = MagicMock(spec=Business)
         business.legal_type = "SP"
-        assert rules_service._has_specific_access(mock_user, business) is True
+        assert rules_service._has_specific_access(mock_user, business, ["SP", "BEN", "GP"]) is True
 
 
 class TestAreDigitalCredentialsAllowed:
@@ -223,20 +223,20 @@ class TestAreDigitalCredentialsAllowed:
     def test_allowed(self, mock_specific, mock_general, rules_service, mock_user):
         """Returns True when both general and specific access are met."""
         business = MagicMock(spec=Business)
-        assert rules_service.are_digital_credentials_allowed(mock_user, business) is True
+        assert rules_service.are_digital_credentials_allowed(mock_user, business, ["SP", "BEN", "GP"]) is True
 
     @patch.object(DigitalCredentialsRulesService, "_has_general_access", return_value=False)
     def test_no_general_access(self, mock_general, rules_service, mock_user):
         """Returns False when general access is not met."""
         business = MagicMock(spec=Business)
-        assert rules_service.are_digital_credentials_allowed(mock_user, business) is False
+        assert rules_service.are_digital_credentials_allowed(mock_user, business, ["SP", "BEN", "GP"]) is False
 
     @patch.object(DigitalCredentialsRulesService, "_has_general_access", return_value=True)
     @patch.object(DigitalCredentialsRulesService, "_has_specific_access", return_value=False)
     def test_no_specific_access(self, mock_specific, mock_general, rules_service, mock_user):
         """Returns False when specific access is not met."""
         business = MagicMock(spec=Business)
-        assert rules_service.are_digital_credentials_allowed(mock_user, business) is False
+        assert rules_service.are_digital_credentials_allowed(mock_user, business, ["SP", "BEN", "GP"]) is False
 
 
 class TestGetPreconditions:
