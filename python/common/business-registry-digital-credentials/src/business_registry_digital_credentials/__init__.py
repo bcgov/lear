@@ -25,20 +25,20 @@ from .digital_credentials import DigitalCredentialsService
 
 digital_credentials = DigitalCredentialsService()
 
-from .digital_credentials_auth import (  # noqa: E402
+from .digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
-from .digital_credentials_helpers import (  # noqa: E402
+from .digital_credentials_helpers import (
     extract_invitation_message_id,
     get_digital_credential_data,
     get_or_create_business_user,
     get_roles,
 )
-from .digital_credentials_lifecycle import (  # noqa: E402
+from .digital_credentials_lifecycle import (
     get_all_digital_credentials_for_business,
     issue_digital_credential,
     replace_digital_credential,
     revoke_digital_credential,
 )
-from .digital_credentials_rules import DigitalCredentialsRulesService  # noqa: E402
+from .digital_credentials_rules import DigitalCredentialsRulesService

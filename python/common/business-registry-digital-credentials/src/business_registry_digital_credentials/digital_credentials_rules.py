@@ -16,6 +16,7 @@
 
 from datetime import datetime, timezone
 from enum import Enum
+from typing import ClassVar
 
 from business_model.models import Business, Filing, Party, PartyRole, User
 from flask import current_app
@@ -32,22 +33,22 @@ class DigitalCredentialsRulesService:
         REGISTRATION = "registration"
         INCORPORATION_APPLICATION = "incorporationApplication"
 
-    valid_filing_types = [
+    valid_filing_types: ClassVar = [
         FilingTypes.REGISTRATION.value,
         FilingTypes.INCORPORATION_APPLICATION.value,
     ]
 
-    valid_registration_types = [
+    valid_registration_types: ClassVar = [
         Business.LegalTypes.SOLE_PROP.value,
         Business.LegalTypes.PARTNERSHIP.value,
     ]
 
-    valid_incorporation_types = [
+    valid_incorporation_types: ClassVar = [
         Business.LegalTypes.BCOMP.value,
         Business.LegalTypes.BCOMP_CONTINUE_IN.value,
     ]
 
-    valid_role_types = [
+    valid_role_types: ClassVar = [
         PartyRole.RoleTypes.PROPRIETOR.value,
         PartyRole.RoleTypes.DIRECTOR.value,
         PartyRole.RoleTypes.PARTNER.value,

@@ -43,14 +43,14 @@ from business_registry_digital_credentials.digital_credentials_utils import (
 @pytest.mark.parametrize(
     "test_user, expected",
     [
-        (Party(**{"first_name": "First", "last_name": "Last"}), {"first_name": "first", "last_name": "last"}),
+        (Party(first_name="First", last_name="Last"), {"first_name": "first", "last_name": "last"}),
         (
-            Party(**{"first_name": "First", "middle_initial": "M", "last_name": "Last"}),
+            Party(first_name="First", middle_initial="M", last_name="Last"),
             {"first_name": "first m", "last_name": "last"},
         ),
-        (User(**{"firstname": "First", "lastname": "Last"}), {"first_name": "first", "last_name": "last"}),
+        (User(firstname="First", lastname="Last"), {"first_name": "first", "last_name": "last"}),
         (
-            User(**{"firstname": "First", "middlename": "M", "lastname": "Last"}),
+            User(firstname="First", middlename="M", lastname="Last"),
             {"first_name": "first m", "last_name": "last"},
         ),
         (User(), {"first_name": "", "last_name": ""}),
@@ -72,6 +72,7 @@ def test_formatted_user(test_user, expected):
         ([], ["SP", "GP"], ["BEN"], []),
         (["SP", "GP"], [], ["BEN"], []),
         (["SP", "BEN"], ["SP", "GP"], [], ["SP"]),
+        (["SP", "SP", "BEN"], ["SP", "GP"], ["BEN"], ["SP", "BEN"]),
     ],
 )
 def test_determine_allowed_business_types(
