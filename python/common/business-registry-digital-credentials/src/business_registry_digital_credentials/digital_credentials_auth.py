@@ -23,6 +23,7 @@ from business_model.models.business import Business
 from business_model.models.user import User
 from flask import g
 from flask.globals import request_ctx
+
 from flask_jwt_oidc import JwtManager
 
 from .digital_credentials_rules import DigitalCredentialsRulesService

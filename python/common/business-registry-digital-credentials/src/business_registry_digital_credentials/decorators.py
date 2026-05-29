@@ -31,13 +31,13 @@ TOKEN_RETRY_WAIT = 2  # Delay in seconds between retries
 def _get_traction_token():
     """Get a traction token and check if it is valid."""
     if not (traction_api_url := current_app.config.get("TRACTION_API_URL")):
-        raise EnvironmentError("TRACTION_API_URL environment variable is not set")
+        raise OSError("TRACTION_API_URL environment variable is not set")
 
     if not (traction_tenant_id := current_app.config.get("TRACTION_TENANT_ID")):
-        raise EnvironmentError("TRACTION_TENANT_ID environment variable is not set")
+        raise OSError("TRACTION_TENANT_ID environment variable is not set")
 
     if not (traction_api_key := current_app.config.get("TRACTION_API_KEY")):
-        raise EnvironmentError("TRACTION_API_KEY environment variable is not set")
+        raise OSError("TRACTION_API_KEY environment variable is not set")
 
     for attempt in range(MAX_RETRIES):
         try:
@@ -73,7 +73,7 @@ def _get_traction_token():
             current_app.logger.error(f"Attempt {attempt + 1}: Failed to get Traction token: {err}")
             break
 
-    raise EnvironmentError("Failed to get Traction token")
+    raise OSError("Failed to get Traction token")
 
 
 def requires_traction_auth(f):
