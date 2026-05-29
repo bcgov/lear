@@ -72,6 +72,7 @@ def test_formatted_user(test_user, expected):
         ([], ["SP", "GP"], ["BEN"], []),
         (["SP", "GP"], [], ["BEN"], []),
         (["SP", "BEN"], ["SP", "GP"], [], ["SP"]),
+        (["SP", "SP", "BEN"], ["SP", "GP"], ["BEN"], ["SP", "BEN"]),
     ],
 )
 def test_determine_allowed_business_types(
