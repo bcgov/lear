@@ -2004,18 +2004,23 @@ def test_ia_email_required_validation(session, email):
     assert err
 
 
-@pytest.mark.parametrize(
-    'test_name, flag_enabled, permission_error, expected_code, expected_msg',
-    [
-        ('SUCCESS_FLAG_ON', True, None, None, None),
-        ('SUCCESS_FLAG_OFF', False, None, None, None),
-        ('FAIL_PERMISSION_ERROR', True, Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission denied.'}]),
-            HTTPStatus.FORBIDDEN, 'Permission denied.'),
-    ]
-)
-def test_incorporation_permission_and_completing_party_flag(mocker, app, session, test_name, flag_enabled, permission_error, expected_code, expected_msg):
-    """Test validate_permission_and_completing_party is called when flag is enabled."""
-    account_id = '123456'
+def _setup_incorporation_permission_mocks(mocker, filing_json, legal_type):
+    """Patch all incorporation validation functions except permission-related ones."""
+    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = legal_type
+    for func in [
+        'validate_offices', 'validate_roles', 'validate_coop_parties_mailing_address',
+        'validate_parties_delivery_address', 'validate_cooperative_documents', 'validate_ia_court_order',
+        'validate_offices_addresses', 'validate_parties_names', 'validate_parties_addresses',
+        'validate_name_request', 'validate_share_structure', 'validate_effective_date',
+        'validate_phone_number', 'validate_email',
+    ]:
+        mocker.patch.object(incorporation_application, func, return_value=[])
+    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts',
+                 return_value={'contacts': [{'email': 'test@example.com'}]})
+
+
+def _build_incorporation_filing_json():
+    """Build a base incorporation filing json for permission tests."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {
         'name': incorporation_application_name,
@@ -2028,24 +2033,25 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     filing_json['filing'][incorporation_application_name] = copy.deepcopy(INCORPORATION)
     filing_json['filing'][incorporation_application_name]['nameRequest'] = {}
     filing_json['filing'][incorporation_application_name]['nameRequest']['nrNumber'] = identifier
-    filing_json['filing'][incorporation_application_name]['nameRequest']['legalType'] = Business.LegalTypes.BCOMP.value
+    return filing_json
 
-    mocker.patch.object(incorporation_application ,'validate_offices', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_roles', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_coop_parties_mailing_address', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_parties_delivery_address', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_cooperative_documents', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_ia_court_order', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_offices_addresses', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_parties_names', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_parties_addresses', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_name_request', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_share_structure', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_effective_date', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_phone_number', return_value=[])
-    mocker.patch.object(incorporation_application, 'validate_email', return_value=[])
 
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+@pytest.mark.parametrize(
+    'test_name, flag_enabled, permission_error, expected_code, expected_msg',
+    [
+        ('SUCCESS_FLAG_ON', True, None, None, None),
+        ('SUCCESS_FLAG_OFF', False, None, None, None),
+        ('FAIL_PERMISSION_ERROR', True, Error(HTTPStatus.FORBIDDEN, [{'error': 'Permission denied.'}]),
+            HTTPStatus.FORBIDDEN, 'Permission denied.'),
+    ]
+)
+def test_incorporation_permission_and_completing_party_flag(mocker, app, session, test_name, flag_enabled,
+                                                            permission_error, expected_code, expected_msg):
+    """Test validate_permission_and_completing_party is called when enabled-deeper-permission-action flag is enabled."""
+    account_id = '123456'
+    filing_json = _build_incorporation_filing_json()
+
+    _setup_incorporation_permission_mocks(mocker, filing_json, Business.LegalTypes.BCOMP.value)
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
     mocker.patch.object(incorporation_application, '_incorp_completing_party_not_required', return_value=False)
@@ -2077,6 +2083,34 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     else:
         assert err is None
 
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, cp_not_required, expected_called',
+    [
+        ('corp_flag_on_skips', Business.LegalTypes.BCOMP.value, True, False),
+        ('corp_flag_off_validates', Business.LegalTypes.BCOMP.value, False, True),
+        ('coop_flag_on_still_validates', Business.LegalTypes.COOP.value, True, True),
+        ('coop_flag_off_validates', Business.LegalTypes.COOP.value, False, True),
+    ]
+)
+def test_incorporation_permission_cp_not_required_flag(mocker, app, session, test_name, legal_type,
+                                                       cp_not_required, expected_called):
+    """Test that corps are skipped when completing party feature flag is on, coops always validate."""
+    account_id = '123456'
+    filing_json = _build_incorporation_filing_json()
+
+    _setup_incorporation_permission_mocks(mocker, filing_json, legal_type)
+
+    mocker.patch.object(flags, 'is_on', return_value=True)
+    mocker.patch.object(incorporation_application, '_incorp_completing_party_not_required', return_value=cp_not_required)
+    mock_validate_permission = mocker.patch.object(incorporation_application,
+        'validate_permission_and_completing_party', return_value=None)
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing_json, account_id)
+
+    assert mock_validate_permission.called == expected_called
+    assert err is None
 
 def test_coop_incorporation_does_not_validate_shares(session, mocker):
     """Assert that COOP incorporation does not call validate_share_structure."""
