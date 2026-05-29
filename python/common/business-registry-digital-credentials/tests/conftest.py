@@ -13,17 +13,23 @@
 # limitations under the License.
 """Test configuration and fixtures."""
 
-import pytest
 from unittest.mock import Mock
+
+import pytest
 from flask import Flask
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def app():
-    """Create a Flask application for testing."""
+    """Create a Flask application for testing.
+
+    Autouse so every test runs inside an app context — the shared package now
+    uses ``current_app.logger`` and ``LegislationDatetime`` helpers that need it.
+    """
     app = Flask(__name__)
     app.config["TESTING"] = True
     app.config["SECRET_KEY"] = "test-secret-key"
+    app.config["LEGISLATIVE_TIMEZONE"] = "America/Vancouver"
 
     with app.app_context():
         yield app

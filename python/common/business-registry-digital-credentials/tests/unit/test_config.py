@@ -14,6 +14,7 @@
 """Tests for config module."""
 
 import pytest
+
 from business_registry_digital_credentials.config import DevConfig, ProdConfig, TestConfig, get_named_config
 
 

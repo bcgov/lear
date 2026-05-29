@@ -18,8 +18,9 @@ Test suite to ensure that auth functions for digital credentials are working as 
 
 from unittest.mock import MagicMock, patch
 
-from business_model.models import Business
-from business_model.models import User
+from business_model.models import Business, User
+from flask.globals import request_ctx
+
 from business_registry_digital_credentials.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
@@ -90,21 +91,23 @@ def test_get_digital_credentials_preconditions_no_user(mock_user, app):
 def test_are_digital_credentials_allowed_staff(app):
     """Staff users are not allowed digital credentials."""
     with app.test_request_context():
+        request_ctx.current_user = {"username": "test"}
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = True
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is False
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is False
 
 
 @patch("business_model.models.User.find_by_jwt_token", return_value=None)
 def test_are_digital_credentials_allowed_no_user(mock_find, app):
     """Returns False when user is not found."""
     with app.test_request_context():
+        request_ctx.current_user = {"username": "test"}
         app.app_ctx_globals_class.jwt_oidc_token_info = {"username": "test"}
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = False
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is False
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is False
 
 
 @patch("business_model.models.User.find_by_jwt_token", return_value=User(id=1, login_source="BCSC"))
@@ -112,11 +115,12 @@ def test_are_digital_credentials_allowed_no_user(mock_find, app):
 def test_are_digital_credentials_allowed_delegates_to_rules(mock_rules, mock_find, app):
     """Delegates to rules service when user is found."""
     with app.test_request_context():
+        request_ctx.current_user = {"username": "test"}
         app.app_ctx_globals_class.jwt_oidc_token_info = {"username": "test"}
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = False
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is True
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is True
 
 
 @patch("business_model.models.User.find_by_jwt_token", return_value=User(id=1, login_source="BCSC"))
@@ -124,8 +128,9 @@ def test_are_digital_credentials_allowed_delegates_to_rules(mock_rules, mock_fin
 def test_are_digital_credentials_allowed_rules_deny(mock_rules, mock_find, app):
     """Returns False when rules service denies access."""
     with app.test_request_context():
+        request_ctx.current_user = {"username": "test"}
         app.app_ctx_globals_class.jwt_oidc_token_info = {"username": "test"}
         jwt_mock = MagicMock()
         jwt_mock.contains_role.return_value = False
         business = Business()
-        assert are_digital_credentials_allowed(business, jwt_mock) is False
+        assert are_digital_credentials_allowed(business, jwt_mock, ["SP", "BEN", "GP"]) is False
