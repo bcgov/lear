@@ -13,16 +13,15 @@
 # limitations under the License.
 """Processing dissolution actions."""
 
-from flask import current_app
-
-from business_digital_credentials.exceptions import QueueException
-from business_model.models import Business, DCDefinition, DCRevocationReason
-
-from .helpers import (
+from business_registry_digital_credentials import (
     get_all_digital_credentials_for_business,
     replace_digital_credential,
     revoke_digital_credential,
 )
+from flask import current_app
+
+from business_digital_credentials.exceptions import QueueException
+from business_model.models import Business, DCDefinition, DCRevocationReason
 
 
 def process(business: Business, filing_sub_type: str) -> None:

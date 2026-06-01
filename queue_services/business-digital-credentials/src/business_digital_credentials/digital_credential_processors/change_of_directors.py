@@ -13,15 +13,15 @@
 # limitations under the License.
 """Processing change of director filing actions."""
 
+from business_registry_digital_credentials import (
+    get_all_digital_credentials_for_business,
+    revoke_digital_credential,
+)
 from flask import current_app
 
 from business_model.models import Business, DCRevocationReason, Filing
 
-from .helpers import (
-    does_officer_have_action,
-    get_all_digital_credentials_for_business,
-    revoke_digital_credential,
-)
+from .helpers import does_officer_have_action
 
 
 def process(business: Business, filing: Filing) -> None:
