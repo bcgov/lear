@@ -13,23 +13,15 @@ coverage:
       backend:
         target: auto
         flags:
-          - business-api
-          - business-bn
-          - business-bn-retry
-          - business-digital-credentials
-          - business-email-reminder
-          - business-emailer
-          - business-entity-bn
-          - business-expired-limited-restoration
-          - business-filer
-          - business-filings-notebook-report
-          - business-furnishings
-          - business-future-effective-filings
-          - business-involuntary-dissolutions
-          - business-pay
-          - business-registry-model
-          - business-update-colin-filings
-          - business-update-legal-filings
+          - colinapi
+          - legalapi
+          - entityemailer
+          - entityfiler
+          - entitypay
+          - entitybn
+          - entity-digital-credentials
+          - furnishings
+          - involuntary-dissolutions
 
 ignore:
   - "^/tests/**/*" # ignore test harness code
@@ -48,71 +40,39 @@ comment:
   require_changes: true
 
 flags:
-  business-api:
+  colinapi:
+    paths:
+      - colin-api/src/colin_api
+    carryforward: true
+  legalapi:
     paths:
       - legal-api/src/legal_api
     carryforward: true
-  business-bn:
+  entityemailer:
     paths:
-      - queue_services/business-bn/src/business_bn
+      - queue_services/entity-emailer/src/entity_emailer
     carryforward: true
-  business-bn-retry:
+  entityfiler:
     paths:
-      - gcp-jobs/bn-retry/src/bn_retry
+      - queue_services/entity-filer/src/entity_filer
     carryforward: true
-  business-digital-credentials:
+  entitypay:
     paths:
-      - queue_services/business-digital-credentials/src/business_digital_credentials
+      - queue_services/entity-pay/src/entity_pay
     carryforward: true
-  business-email-reminder:
+  entitybn:
     paths:
-      - gcp-jobs/email-reminder/src/email_reminder
+      - queue_services/entity-bn/src/entity_bn
     carryforward: true
-  business-emailer:
+  entity-digital-credentials:
     paths:
-      - queue_services/business-emailer/src/business_emailer
+      - queue_services/entity-digital-credentials/src/entity_digital_credentials
     carryforward: true
-  business-entity-bn:
+  furnishings:
     paths:
-      - gcp-jobs/entity-bn/src/entity-bn
+      - jobs/furnishings
     carryforward: true
-  business-expired-limited-restoration:
+  involuntary-dissolutions:
     paths:
-      - gcp-jobs/expired-limited-restoration/src/expired_limited_restoration
-    carryforward: true
-  business-filer:
-    paths:
-      - queue_services/business-filer/src/business_filer
-    carryforward: true
-  business-filings-notebook-report:
-    paths:
-      - gcp-jobs/filings-notebook-report/src/notebookreport
-    carryforward: true
-  business-furnishings:
-    paths:
-      - gcp-jobs/furnishings/src/furnishings
-    carryforward: true
-  business-future-effective-filings:
-    paths:
-      - gcp-jobs/future-effective-filings/src/future_effective_filings
-    carryforward: true
-  business-involuntary-dissolutions:
-    paths:
-      - gcp-jobs/involuntary-dissolutions/src/involuntary_dissolutions
-    carryforward: true
-  business-pay:
-    paths:
-      - queue_services/business-pay/src/business_pay
-    carryforward: true
-  business-registry-model:
-    paths:
-      - python/common/business-registry-model/src/business_model
-    carryforward: true
-  business-update-colin-filings:
-    paths:
-      - gcp-jobs/update-colin-filings/src/update_colin_filings
-    carryforward: true
-  business-update-legal-filings:
-    paths:
-      - gcp-jobs/update-legal-filings/src/update_legal_filings
+      - jobs/involuntary-dissolutions
     carryforward: true
