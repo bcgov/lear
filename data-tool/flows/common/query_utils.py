@@ -78,6 +78,7 @@ def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list) -> s
     AND has_bar_filing = false
     AND directors_within_bc = true
     AND is_bad_email = false
+    AND is_migration_excluded = false
     )
 """
 
