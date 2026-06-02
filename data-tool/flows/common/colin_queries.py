@@ -47,19 +47,19 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> 
         JOIN corp_list c
             ON c.corp_num = e.corp_num
         WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
-        AND NOT (
-            EXISTS (
-            SELECT 1
-            FROM corporation c2
-            WHERE c2.corp_num = e.corp_num
-                AND c2.corp_frozen_typ_cd = 'C'
-            )
-            AND EXISTS (
-            SELECT 1
-            FROM corp_early_adopters cea
-            WHERE cea.corp_num = e.corp_num
-            )
-        )
+        -- AND NOT (
+           -- EXISTS (
+           -- SELECT 1
+           -- FROM corporation c2
+            -- WHERE c2.corp_num = e.corp_num
+               -- AND c2.corp_frozen_typ_cd = 'C'
+           -- )
+          --  AND EXISTS (
+           -- SELECT 1
+           -- FROM corp_early_adopters cea
+           -- WHERE cea.corp_num = e.corp_num
+           -- )
+        -- )
     ) SELECT le.EVENT_ID,
         le.corp_num,
         le.event_typ_cd,
