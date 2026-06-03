@@ -36,10 +36,10 @@
 This module processes firms to check BN15 status.
 """
 
-import requests
 import uuid
 from datetime import UTC, datetime
 
+import requests
 from flask import current_app
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from sqlalchemy import func, or_
@@ -130,7 +130,7 @@ def regenerate_documents(identifier: str):
         timeout = int(current_app.config.get("ACCOUNT_SVC_TIMEOUT"))
         token = get_bearer_token(timeout)
         legal_api_url = current_app.config.get("LEGAL_API_URL")
-        url = f'{legal_api_url}/businesses/{identifier}/documents/regenerate?only_required=true&previous=true'
+        url = f"{legal_api_url}/businesses/{identifier}/documents/regenerate?only_required=true&previous=true"
         response = requests.post(
             url,
             headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},

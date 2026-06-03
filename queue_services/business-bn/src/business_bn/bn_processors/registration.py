@@ -172,7 +172,7 @@ def _regenerate_documents(business: Business):
     try:
         token = AccountService.get_bearer_token()
         legal_api_url = current_app.config.get("LEGAL_API_URL")
-        url = f'{legal_api_url}/businesses/{business.identifier}/documents/regenerate?only_required=true&previous=true'
+        url = f"{legal_api_url}/businesses/{business.identifier}/documents/regenerate?only_required=true&previous=true"
         response = requests.post(
             url,
             headers={**AccountService.CONTENT_TYPE_JSON, "Authorization": AccountService.BEARER + token},

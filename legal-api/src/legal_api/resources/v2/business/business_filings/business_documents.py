@@ -15,8 +15,8 @@
 
 Provides all the search and retrieval from the business entity documents.
 """
-from pydantic import BaseModel
 from http import HTTPStatus
+from pydantic import BaseModel
 from typing import Final, Optional
 
 import requests
@@ -109,7 +109,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                 return get_pdf(filing.storage, legal_filing_name, True)
             else:
                 return jsonify(
-                    message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
+                    message="Unauthorized to regenerate"
                 ), HTTPStatus.UNAUTHORIZED
 
         if drs_params := _get_drs_params():
@@ -319,7 +319,7 @@ def _regenerate_documents(business: Business, filing: Filing, query: RegenerateQ
         "dissolution"
     ]
     document_list = Filing.get_document_list(business, filing, jwt)
-    if not document_list or 'documents' not in document_list:
+    if not document_list or "documents" not in document_list:
         return {}, HTTPStatus.OK
 
     docs = document_list.get("documents", {})
@@ -337,12 +337,9 @@ def _regenerate_documents(business: Business, filing: Filing, query: RegenerateQ
     for doc_name in doc_keys:
         if query.only_required and doc_name not in regeneration_required:
             continue
-            
+
         response = get_pdf(filing.storage, doc_name, True)
-        if isinstance(response, tuple):
-            status_code = response[1]
-        else:
-            status_code = getattr(response, 'status_code', HTTPStatus.OK)
+        status_code = response[1] if isinstance(response, tuple) else getattr(response, "status_code", HTTPStatus.OK)
 
         if status_code != HTTPStatus.OK:
             current_app.logger.error(
