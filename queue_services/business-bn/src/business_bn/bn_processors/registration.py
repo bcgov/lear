@@ -164,6 +164,25 @@ def process( # noqa: PLR0912, PLR0915
     except Exception as err:  # pylint: disable=broad-except;
         current_app.logger.error("Failed to publish BN update for %s %s", business.identifier, err, exc_info=True)
 
+    _regenerate_documents(business)
+
+
+def _regenerate_documents(business: Business):
+    """Regenerate documents for business."""
+    try:
+        token = AccountService.get_bearer_token()
+        legal_api_url = current_app.config.get("LEGAL_API_URL")
+        url = f'{legal_api_url}/businesses/{business.identifier}/documents/regenerate?only_required=true&previous=true'
+        response = requests.post(
+            url,
+            headers={**AccountService.CONTENT_TYPE_JSON, "Authorization": AccountService.BEARER + token},
+            timeout=AccountService.timeout,
+            data={}
+        )
+        response.raise_for_status()
+    except Exception as err:
+        current_app.logger.error("Failed to regenerate documents for %s %s", business.identifier, err, exc_info=True)
+
 
 def _inform_cra(
     business: Business,  # pylint: disable=too-many-locals

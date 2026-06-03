@@ -15,16 +15,18 @@
 
 Provides all the search and retrieval from the business entity documents.
 """
+from pydantic import BaseModel
 from http import HTTPStatus
 from typing import Final, Optional
 
 import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
+from flask_pydantic import validate as pydantic_validate
 
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Document
+from legal_api.models import Business, Document, UserRoles
 from legal_api.models import Filing as FilingModel
 from legal_api.reports import get_pdf
 from legal_api.reports.document_service import DocumentService
@@ -102,8 +104,13 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                                           file_name=file_name, filing_id=filing_id, identifier=identifier)
             ), HTTPStatus.NOT_FOUND
 
-        if _regenerate(legal_filing_name):
-            return get_pdf(filing.storage, legal_filing_name, True)
+        if _should_regenerate(legal_filing_name):
+            if jwt.validate_roles([UserRoles.staff, UserRoles.system]):
+                return get_pdf(filing.storage, legal_filing_name, True)
+            else:
+                return jsonify(
+                    message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
+                ), HTTPStatus.UNAUTHORIZED
 
         if drs_params := _get_drs_params():
             return _get_drs_documents(drs_params)
@@ -137,7 +144,7 @@ def _get_drs_params() -> dict:
     return params
 
 
-def _regenerate(legal_filing_name: str) -> bool:
+def _should_regenerate(legal_filing_name: str) -> bool:
     """Determine if individual report request should regenerate and update the DRS."""
     if legal_filing_name and legal_filing_name.lower().startswith("receipt"):
         return False
@@ -255,3 +262,90 @@ def _get_corp_name(business, filing):
         return Business.BUSINESSES.get(legal_type, {}).get("numberedDescription", "")
 
     return ""
+
+
+class RegenerateQueryModel(BaseModel):
+    """Document regenerate query model."""
+
+    previous: bool | None = None
+    only_required: bool | None = None
+
+
+@cors_preflight("POST")
+@bp.route("/<string:identifier>/documents/regenerate", methods=["POST", "OPTIONS"])
+@bp.route(DOCUMENTS_BASE_ROUTE + "/regenerate", methods=["POST", "OPTIONS"])
+@cross_origin(origin="*")
+@jwt.has_one_of_roles([UserRoles.system])
+@pydantic_validate(get_json_params={"silent": True})
+def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: int | None = None):
+    """
+    Regenerate documents for a business.
+    """
+    if identifier.startswith("T"):
+        # not supported for temp registrations
+        return {}, HTTPStatus.NOT_FOUND
+
+    business = Business.find_by_identifier(identifier)
+    if filing_id is not None:
+        filing = Filing.find_by_id(filing_id)
+    else:
+        filing_storage = FilingModel.get_most_recent_filing(business.id)
+        filing = Filing()
+        filing.storage = filing_storage
+
+    if not business or not filing:
+        return {}, HTTPStatus.NOT_FOUND
+
+    _regenerate_documents(business, filing, query)
+    if query.previous:  # regenerate documents for previous completed filings
+        while filing_storage := FilingModel.get_previous_completed_filing(filing.storage):
+            prev_filing = Filing()
+            prev_filing.storage = filing_storage
+            _regenerate_documents(business, prev_filing, query)
+            filing = prev_filing
+
+    return {}, HTTPStatus.OK
+
+
+def _regenerate_documents(business: Business, filing: Filing, query: RegenerateQueryModel):
+    """Regenerate documents for a business."""
+    # these documents shows BN15
+    regeneration_required = [
+        "registration",
+        "amendedRegistrationStatement",
+        "correctedRegistrationStatement",
+        "changeOfRegistration",
+        "annualReport",
+        "dissolution"
+    ]
+    document_list = Filing.get_document_list(business, filing, jwt)
+    if not document_list or 'documents' not in document_list:
+        return {}, HTTPStatus.OK
+
+    docs = document_list.get("documents", {})
+
+    doc_keys = []
+    if legal_filings := docs.pop("legalFilings", None):
+        for doc in legal_filings:
+            doc_keys.extend(doc.keys())
+
+    docs.pop("receipt", None)
+    docs.pop("staticDocuments", None)
+    docs.pop("uploadedCourtOrder", None)
+    doc_keys.extend(docs.keys())
+
+    for doc_name in doc_keys:
+        if query.only_required and doc_name not in regeneration_required:
+            continue
+            
+        response = get_pdf(filing.storage, doc_name, True)
+        if isinstance(response, tuple):
+            status_code = response[1]
+        else:
+            status_code = getattr(response, 'status_code', HTTPStatus.OK)
+
+        if status_code != HTTPStatus.OK:
+            current_app.logger.error(
+                f"Failed to regenerate document {doc_name} for filing {filing.id} of {business.identifier}"
+            )
+            return response

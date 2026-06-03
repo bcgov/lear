@@ -36,6 +36,7 @@
 This module processes firms to check BN15 status.
 """
 
+import requests
 import uuid
 from datetime import UTC, datetime
 
@@ -44,7 +45,7 @@ from simple_cloudevent import SimpleCloudEvent, to_queue_message
 from sqlalchemy import func, or_
 
 from bn_retry import db
-from bn_retry.services import check_bn15_status_batch, gcp_queue
+from bn_retry.services import check_bn15_status_batch, gcp_queue, get_bearer_token
 from business_model.models import Business
 
 
@@ -123,6 +124,24 @@ def publish_business_event(identifier: str):
         raise
 
 
+def regenerate_documents(identifier: str):
+    """Regenerate documents for business."""
+    try:
+        timeout = int(current_app.config.get("ACCOUNT_SVC_TIMEOUT"))
+        token = get_bearer_token(timeout)
+        legal_api_url = current_app.config.get("LEGAL_API_URL")
+        url = f'{legal_api_url}/businesses/{identifier}/documents/regenerate?only_required=true&previous=true'
+        response = requests.post(
+            url,
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {token}"},
+            timeout=timeout,
+            data={}
+        )
+        response.raise_for_status()
+    except Exception as err:
+        current_app.logger.error("Failed to regenerate documents for %s %s", identifier, err, exc_info=True)
+
+
 def run_job():
     """Run the BN15 retry job with batch processing.
 
@@ -169,6 +188,7 @@ def run_job():
                         update_business_bn(business, bn15)
                         publish_email_notification(identifier)
                         publish_business_event(identifier)
+                        regenerate_documents(identifier)
                     except Exception as ex:
                         current_app.logger.error(f"Error updating {identifier}: {ex}")
                         # Continue with other updates in batch
