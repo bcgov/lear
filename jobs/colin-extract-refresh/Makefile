@@ -5,7 +5,7 @@ CURRENT_ABS_DIR:=$(patsubst %/,%,$(dir $(MKFILE_PATH)))
 
 DOCKER_NAME:=colin-extract-refresh
 TAG_NAME ?= dev
-
+DOCKER_PLATFORM ?= --platform linux/amd64
 
 #################################################################################
 # COMMANDS -- Setup                                                             #
@@ -22,12 +22,12 @@ run: ## Run the project in local
 	. .venv/bin/activate && python test_connectivity.py
 
 build:
-	docker build -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR) \
+	docker build ${DOCKER_PLATFORM} -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR) \
 		--build-arg VCS_REF=$$(git -C $(CURRENT_ABS_DIR) rev-parse --short HEAD 2>/dev/null || echo missing) \
 		--build-arg BUILD_DATE=$$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 build-nc:
-	docker build --no-cache -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR)
+	docker build ${DOCKER_PLATFORM} --no-cache -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR)
 
 run-docker: build
 	docker run --rm --env-file $(CURRENT_ABS_DIR)/.env $(DOCKER_NAME):$(TAG_NAME)
