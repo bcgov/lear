@@ -276,7 +276,7 @@ class RegenerateQueryModel(BaseModel):
 @bp.route(DOCUMENTS_BASE_ROUTE + "/regenerate", methods=["POST", "OPTIONS"])
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.system])
-@pydantic_validate(get_json_params={"silent": True})
+@pydantic_validate()
 def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: int | None = None):
     """
     Regenerate documents for a business.
