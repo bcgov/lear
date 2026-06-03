@@ -40,7 +40,7 @@ from business_model.models import Business, BusinessIdentifier, BusinessType, Fi
 from flask import current_app
 from flask_babel import _ as babel
 
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from business_filer.common.services import NaicsService
 from business_filer.services import Flags
 

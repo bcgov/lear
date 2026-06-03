@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "filings-notebook-report"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"

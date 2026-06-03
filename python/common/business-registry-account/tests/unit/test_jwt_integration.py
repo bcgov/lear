@@ -1,4 +1,4 @@
-# Copyright © 2024 Province of British Columbia
+# Copyright © 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Version of this service in PEP440.
+"""Tests to assure the AccountService jwt service integration."""
+import os
 
-[N!]N(.N)*[{a|b|rc}N][.postN][.devN]
-Epoch segment: N!
-Release segment: N(.N)*
-Pre-release segment: {a|b|rc}N
-Post-release segment: .postN
-Development release segment: .devN
-"""
+import pytest
 
-__version__ = "2.171.8"  # pylint: disable=invalid-name
+from business_account import AccountService
+
+
+@pytest.mark.skipif(
+    (os.getenv("RUN_JWT_INTEGRATION_TESTS", "false").lower() != "true"),
+    reason="Integration tests are only run when requested."
+)
+def test_get_bearer_token_integration(app):
+    with app.app_context():
+        token = AccountService.get_bearer_token()
+
+        assert token is not None

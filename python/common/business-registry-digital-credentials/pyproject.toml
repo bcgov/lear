@@ -1,27 +1,24 @@
 [tool.poetry]
 name = "business-registry-digital-credentials"
-version = "0.1.1"
+version = "0.2.0"
 description = ""
 authors = ["Lucas O'Neil <lucasoneil@gmail.com>"]
 readme = "README.md"
 packages = [{ include = "business_registry_digital_credentials", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-datedelta = "^1.4"
+python = ">=3.13,<3.14"
 flask-jwt-oidc = "^0.8.0"
-pytz = "^2025.1"
 pyjwt = "^2.8.0"
 requests = "^2.32.3"
 business-model = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model", branch = "main" }
+business-registry-common = { git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common", branch = "main" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.5"
 pytest-cov = "^6.0.0"
 pytest-mock = "^3.12.0"
-black = "^25.1.0"
-flake8 = "^7.1.2"
-isort = "^5.13.2"
+ruff = "^0.11.5"
 freezegun = "^1.5.1"
 
 [tool.pytest.ini_options]
@@ -45,28 +42,86 @@ exclude_lines = [
     "if __name__ == .__main__.:",
 ]
 
-[tool.flake8]
-ignore = ["F401","E402", "Q000", "E203", "W503"]
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
 exclude = [
+    ".vscode",
+    "dist",
+    "htmlcov",
     ".venv",
-    ".git",
-    ".history",
+    "migrations",
     "devops",
-    "tests",
-    "*migrations*",
+    ".history"
 ]
-max-line-length = 120
-docstring-min-length = 10
-count = true
 
-[tool.black]
-target-version = ["py39", "py310", "py311", "py312"]
+# Same as Black.
 line-length = 120
+indent-width = 4
 
-[tool.isort]
-atomic = true
-profile = "black"
-line_length = 120
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings.
+docstring-code-format = true
+
+# Set the line length limit used when formatting code snippets in docstrings.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "ERA", # flake8-eradicate/eradicate
+    "I",   # isort
+    "N",   # pep8-naming
+    "PIE", # flake8-pie
+    "PL",  # pyLint
+    "PGH", # pygrep
+    "Q",   # Enables flake8-quotes rules
+    "RUF", # ruff checks
+    "SIM", # flake8-simplify
+    "T20", # flake8-print
+    "TCH", # flake8-type-checking
+    "TID", # flake8-tidy-imports
+    "UP",  # pyupgrade
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = [
+    "ERA", # do not autoremove commented out code
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/config.py" = [
+  "T201",  # allow print instead of logger in config
+]
+"**/tests/*" = [
+  "B",
+  "C",
+  "ERA",
+  "N",
+  "PLR",
+  "RUF",
+  "SIM",
+  "T2",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["flask_jwt_oidc"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
 
 
 [build-system]

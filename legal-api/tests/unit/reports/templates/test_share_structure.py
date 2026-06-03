@@ -12,24 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Share structure template tests."""
-
 from decimal import Decimal
-from pathlib import Path
 from typing import Final
 
 import pytest
-from flask import current_app
-from jinja2 import Template
+
+from . import get_template
 
 
 SHARE_STRUCTURE_TEMPLATE: Final = '/template-parts/common/shareStructure.html'
-
-
-def get_template(template):
-    """Returns the template."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}{template}').read_text()
-    return Template(template_code)
 
 
 def _share_class(par_value, currency='USD', has_par_value=True, name='Class A', series=None):

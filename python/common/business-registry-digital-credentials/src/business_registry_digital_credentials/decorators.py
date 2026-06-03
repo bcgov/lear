@@ -15,38 +15,29 @@
 
 import json
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from functools import wraps
 from http import HTTPStatus
 
 import jwt as pyjwt
 import requests
-from flask import current_app, jsonify
-from flask_jwt_oidc import JwtManager
+from flask import current_app
 from jwt import ExpiredSignatureError
-
-from business_model.models import Business
-from .digital_credentials_auth import are_digital_credentials_allowed
-
-# from legal_api.utils.auth import jwt
-
 
 MAX_RETRIES = 5  # Number of times to retry getting the token
 TOKEN_RETRY_WAIT = 2  # Delay in seconds between retries
-
-jwt = JwtManager()
 
 
 def _get_traction_token():
     """Get a traction token and check if it is valid."""
     if not (traction_api_url := current_app.config.get("TRACTION_API_URL")):
-        raise EnvironmentError("TRACTION_API_URL environment variable is not set")
+        raise OSError("TRACTION_API_URL environment variable is not set")
 
     if not (traction_tenant_id := current_app.config.get("TRACTION_TENANT_ID")):
-        raise EnvironmentError("TRACTION_TENANT_ID environment variable is not set")
+        raise OSError("TRACTION_TENANT_ID environment variable is not set")
 
     if not (traction_api_key := current_app.config.get("TRACTION_API_KEY")):
-        raise EnvironmentError("TRACTION_API_KEY environment variable is not set")
+        raise OSError("TRACTION_API_KEY environment variable is not set")
 
     for attempt in range(MAX_RETRIES):
         try:
@@ -65,7 +56,7 @@ def _get_traction_token():
             # Use the token to check if it is valid by calling the tenant endpoint
             check_response = requests.get(f"{traction_api_url}/tenant", headers={"Authorization": f"Bearer {token}"})
 
-            if check_response.status_code == 401:
+            if check_response.status_code == HTTPStatus.UNAUTHORIZED:
                 current_app.logger.warning(f"Attempt {attempt + 1}: Received 401 checking token. Retry.")
                 time.sleep(TOKEN_RETRY_WAIT)
                 continue
@@ -82,7 +73,7 @@ def _get_traction_token():
             current_app.logger.error(f"Attempt {attempt + 1}: Failed to get Traction token: {err}")
             break
 
-    raise EnvironmentError("Failed to get Traction token")
+    raise OSError("Failed to get Traction token")
 
 
 def requires_traction_auth(f):
@@ -97,29 +88,11 @@ def requires_traction_auth(f):
             if not (decoded := pyjwt.decode(current_app.api_token, options={"verify_signature": False})):
                 raise pyjwt.ExpiredSignatureError
 
-            if datetime.utcfromtimestamp(decoded["exp"]) <= datetime.utcnow():
+            if datetime.fromtimestamp(decoded["exp"], UTC) <= datetime.now(UTC):
                 raise pyjwt.ExpiredSignatureError
         except ExpiredSignatureError:
             current_app.logger.info("Traction token expired or is missing, requesting new token")
             current_app.api_token = _get_traction_token()
-
-        return f(*args, **kwargs)
-
-    return decorated_function
-
-
-def can_access_digital_credentials(f):
-    """Ensure the business can has access to digital credentials."""
-
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        identifier = kwargs.get("identifier", None)
-
-        if not (business := Business.find_by_identifier(identifier)):
-            return jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
-
-        if not are_digital_credentials_allowed(business, jwt):
-            return jsonify({"message": f"digital credential not available for: {identifier}."}), HTTPStatus.UNAUTHORIZED
 
         return f(*args, **kwargs)
 

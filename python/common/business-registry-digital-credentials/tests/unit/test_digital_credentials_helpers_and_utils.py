@@ -16,11 +16,12 @@
 Test suite to ensure that helpers and utility functions for digital credentials are working as expected
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 from business_model.models import Business, CorpType, DCBusinessUser, DCDefinition, Party, PartyRole, User
+
 from business_registry_digital_credentials.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_business_type,
@@ -42,14 +43,14 @@ from business_registry_digital_credentials.digital_credentials_utils import (
 @pytest.mark.parametrize(
     "test_user, expected",
     [
-        (Party(**{"first_name": "First", "last_name": "Last"}), {"first_name": "first", "last_name": "last"}),
+        (Party(first_name="First", last_name="Last"), {"first_name": "first", "last_name": "last"}),
         (
-            Party(**{"first_name": "First", "middle_initial": "M", "last_name": "Last"}),
+            Party(first_name="First", middle_initial="M", last_name="Last"),
             {"first_name": "first m", "last_name": "last"},
         ),
-        (User(**{"firstname": "First", "lastname": "Last"}), {"first_name": "first", "last_name": "last"}),
+        (User(firstname="First", lastname="Last"), {"first_name": "first", "last_name": "last"}),
         (
-            User(**{"firstname": "First", "middlename": "M", "lastname": "Last"}),
+            User(firstname="First", middlename="M", lastname="Last"),
             {"first_name": "first m", "last_name": "last"},
         ),
         (User(), {"first_name": "", "last_name": ""}),
@@ -63,54 +64,30 @@ def test_formatted_user(test_user, expected):
 
 
 @pytest.mark.parametrize(
-    "flag_value, valid_registration_types, valid_incorporation_types, expected",
+    "enabled_business_types, valid_registration_types, valid_incorporation_types, expected",
     [
-        ({"types": ["SP", "BEN", "GP"]}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP", "BEN", "GP", "CBEN"]}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP"]}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": []}, ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP", "GP"]}, [], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": ["SP", "BEN"]}, ["SP", "GP"], [], ["SP", "BEN", "GP"]),
+        (["SP", "BEN", "GP"], ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
+        (["SP", "BEN", "GP", "CBEN"], ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
+        (["SP"], ["SP", "GP"], ["BEN"], ["SP"]),
+        ([], ["SP", "GP"], ["BEN"], []),
+        (["SP", "GP"], [], ["BEN"], []),
+        (["SP", "BEN"], ["SP", "GP"], [], ["SP"]),
+        (["SP", "SP", "BEN"], ["SP", "GP"], ["BEN"], ["SP", "BEN"]),
     ],
 )
 def test_determine_allowed_business_types(
-    app, flag_value, valid_registration_types, valid_incorporation_types, expected
+    enabled_business_types, valid_registration_types, valid_incorporation_types, expected
 ):
-    """Test filtering of allowed business types based on flag values."""
-
-    # The app fixture provides Flask context, so current_app.logger works
-    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
+    """Caller-provided enabled types are intersected with supported types."""
+    result = determine_allowed_business_types(
+        enabled_business_types, valid_registration_types, valid_incorporation_types
+    )
     assert sorted(result) == sorted(expected)
 
 
-@pytest.mark.parametrize(
-    "flag_value, valid_registration_types, valid_incorporation_types, expected",
-    [
-        (["SP", "BEN", "GP"], ["SP", "GP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": "SP"}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"types": 123}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ({"type": ["SP", "BEN", "GP"]}, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        ("not-a-object", ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-        (123, ["SP"], ["BEN"], ["SP", "BEN", "GP"]),
-    ],
-)
-def test_determine_allowed_business_types_invalid_flags(
-    app, flag_value, valid_registration_types, valid_incorporation_types, expected
-):
-    """Test filtering of allowed business types based on flag values."""
-
-    # The app fixture provides Flask context, so current_app.logger works
-    result = determine_allowed_business_types(valid_registration_types, valid_incorporation_types)
-    assert sorted(result) == sorted(expected)
-
-
-def test_determine_allowed_business_types_missing_flag(app):
-    """Test filtering of allowed business types based on flag value not set."""
-
-    # The app fixture provides Flask context, so current_app.logger works
-    result = determine_allowed_business_types(["SP", "GP"], ["BEN"])
-    assert result == ["SP", "BEN", "GP"]
+def test_determine_allowed_business_types_none_input():
+    """None ``enabled_business_types`` yields empty list (DBC disabled)."""
+    assert determine_allowed_business_types(None, ["SP", "GP"], ["BEN"]) == []
 
 
 # Helper function tests
@@ -175,9 +152,11 @@ class TestGetRegisteredOnDateint:
     """Tests for get_registered_on_dateint."""
 
     def test_formats_date(self):
-        """Returns date in YYYYMMDD format."""
+        """Returns date in YYYYMMDD format (in legislation timezone)."""
         business = MagicMock()
-        business.founding_date = datetime(2025, 1, 15)
+        # Use a tz-aware UTC time mid-day in America/Vancouver so the date is
+        # stable regardless of the host system's local timezone.
+        business.founding_date = datetime(2025, 1, 15, 20, 0, tzinfo=timezone.utc)
         assert get_registered_on_dateint(business) == "20250115"
 
     def test_no_founding_date(self):
@@ -328,7 +307,9 @@ class TestGetDigitalCredentialData:
     @patch("business_registry_digital_credentials.digital_credentials_helpers.get_roles", return_value=["Director"])
     @patch("business_registry_digital_credentials.digital_credentials_helpers.get_given_names", return_value="JOHN")
     @patch("business_registry_digital_credentials.digital_credentials_helpers.get_family_name", return_value="DOE")
-    @patch("business_registry_digital_credentials.digital_credentials_helpers.get_company_status", return_value="ACTIVE")
+    @patch(
+        "business_registry_digital_credentials.digital_credentials_helpers.get_company_status", return_value="ACTIVE"
+    )
     @patch(
         "business_registry_digital_credentials.digital_credentials_helpers.get_registered_on_dateint",
         return_value="20250115",

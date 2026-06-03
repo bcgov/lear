@@ -13,16 +13,16 @@
 # limitations under the License.
 """Processing change of registration actions."""
 
+from business_registry_digital_credentials import (
+    get_all_digital_credentials_for_business,
+    replace_digital_credential,
+    revoke_digital_credential,
+)
 from flask import current_app
 
 from business_model.models import Business, DCDefinition, DCRevocationReason, Filing, PartyRole
 
-from .helpers import (
-    get_all_digital_credentials_for_business,
-    is_user_in_officers,
-    replace_digital_credential,
-    revoke_digital_credential,
-)
+from .helpers import is_user_in_officers
 
 
 def process(business: Business, filing: Filing) -> None:

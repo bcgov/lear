@@ -19,12 +19,11 @@ import json
 import secrets
 from contextlib import suppress
 from datetime import datetime
-from typing import Optional
 
 import requests
+from business_model.models import DCDefinition, DCRevocationReason
 
 from .decorators import requires_traction_auth
-from business_model.models import DCDefinition, DCRevocationReason
 
 
 class DigitalCredentialsService:
@@ -88,14 +87,14 @@ class DigitalCredentialsService:
             # Look for a schema first, and copy it into the Traction tenant if it's not there
             if not (schema_id := self._fetch_schema(self.business_schema_id)):
                 raise ValueError(
-                    f"Schema with id:{self.business_schema_id}" + " must be available in Traction tenant storage"
+                    f"Schema with id:{self.business_schema_id} must be available in Traction tenant storage"
                 )
 
             # Look for a published credential definition first, and copy it into the Traction tenant if it's not there
             if not (credential_definition_id := self._fetch_credential_definition(self.business_cred_def_id)):
                 raise ValueError(
                     f"Credential Definition with id: {self.business_cred_def_id}"
-                    + " must be available in Traction tenant storage"
+                    " must be available in Traction tenant storage"
                 )
 
             # Check for the current Business definition.
@@ -123,7 +122,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def _fetch_schema(self, schema_id: str) -> Optional[str]:
+    def _fetch_schema(self, schema_id: str) -> str | None:
         """Find a schema in Traction storage."""
         try:
             response = requests.get(self.api_url + f"/schemas/{schema_id}", headers=self._get_headers())
@@ -135,7 +134,7 @@ class DigitalCredentialsService:
             raise err
 
     @requires_traction_auth
-    def _fetch_credential_definition(self, cred_def_id: str) -> Optional[str]:
+    def _fetch_credential_definition(self, cred_def_id: str) -> str | None:
         """Find a published credential definition."""
         try:
             response = requests.get(
@@ -145,13 +144,13 @@ class DigitalCredentialsService:
             return response.json().get("credential_definition", None).get("id", None)
         except Exception as err:
             self.app.logger.error(
-                f"Failed to find credential definition with id: {cred_def_id}" + " from Traction tenant storage"
+                f"Failed to find credential definition with id: {cred_def_id} from Traction tenant storage"
             )
             self.app.logger.error(err)
             raise err
 
     @requires_traction_auth
-    def create_invitation(self) -> Optional[dict]:
+    def create_invitation(self) -> dict | None:
         """Create a new connection invitation."""
         try:
             response = requests.post(
@@ -173,7 +172,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def attest_connection(self, connection_id: str) -> Optional[dict]:
+    def attest_connection(self, connection_id: str) -> dict | None:
         """Perform an attestation to ensure that interactions only happen with connections on a trusted app."""
         try:
             current_timestamp = int(datetime.now().timestamp())
@@ -224,7 +223,7 @@ class DigitalCredentialsService:
         definition: DCDefinition,
         data: list,  # list of { 'name': 'business_name', 'value': 'test_business' }
         comment: str = "",
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Send holder a credential, automating entire flow."""
         try:
             response = requests.post(
@@ -257,7 +256,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def fetch_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+    def fetch_credential_exchange_record(self, cred_ex_id: str) -> dict | None:
         """Fetch a credential exchange record."""
         try:
             response = requests.get(
@@ -272,7 +271,7 @@ class DigitalCredentialsService:
     @requires_traction_auth
     def revoke_credential(
         self, connection_id, cred_rev_id: str, rev_reg_id: str, reason: DCRevocationReason
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Revoke a credential."""
         try:
             response = requests.post(
@@ -297,7 +296,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def remove_connection_record(self, connection_id: str) -> Optional[dict]:
+    def remove_connection_record(self, connection_id: str) -> dict | None:
         """Delete a connection."""
         try:
             response = requests.delete(self.api_url + "/connections/" + connection_id, headers=self._get_headers())
@@ -308,7 +307,7 @@ class DigitalCredentialsService:
             return None
 
     @requires_traction_auth
-    def remove_credential_exchange_record(self, cred_ex_id: str) -> Optional[dict]:
+    def remove_credential_exchange_record(self, cred_ex_id: str) -> dict | None:
         """Delete a credential exchange."""
         try:
             response = requests.delete(

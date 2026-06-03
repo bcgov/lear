@@ -22,11 +22,8 @@ from unittest.mock import MagicMock, patch
 
 import jwt as pyjwt
 import pytest
-from business_registry_digital_credentials.decorators import (
-    _get_traction_token,
-    can_access_digital_credentials,
-    requires_traction_auth,
-)
+
+from business_registry_digital_credentials.decorators import _get_traction_token, requires_traction_auth
 
 
 def _make_valid_token():
@@ -37,55 +34,6 @@ def _make_valid_token():
 def _make_expired_token():
     """Create an expired JWT token."""
     return pyjwt.encode({"exp": int(time.time()) - 3600}, "secret", algorithm="HS256")
-
-
-class TestCanAccessDigitalCredentials:
-    """Tests for can_access_digital_credentials decorator."""
-
-    def test_business_not_found(self, app):
-        """Returns 404 when business is not found."""
-
-        @can_access_digital_credentials
-        def dummy_view(**kwargs):
-            return "ok", 200
-
-        with app.test_request_context():
-            with patch("business_registry_digital_credentials.decorators.Business.find_by_identifier", return_value=None):
-                result, status = dummy_view(identifier="BC1234567")
-        assert status == HTTPStatus.NOT_FOUND
-
-    @patch("business_registry_digital_credentials.decorators.are_digital_credentials_allowed", return_value=False)
-    def test_not_allowed(self, mock_allowed, app):
-        """Returns 401 when digital credentials are not allowed."""
-
-        @can_access_digital_credentials
-        def dummy_view(**kwargs):
-            return "ok", 200
-
-        business = MagicMock()
-        with app.test_request_context():
-            with patch(
-                "business_registry_digital_credentials.decorators.Business.find_by_identifier", return_value=business
-            ):
-                result, status = dummy_view(identifier="BC1234567")
-        assert status == HTTPStatus.UNAUTHORIZED
-
-    @patch("business_registry_digital_credentials.decorators.are_digital_credentials_allowed", return_value=True)
-    def test_allowed(self, mock_allowed, app):
-        """Calls through to wrapped function when allowed."""
-
-        @can_access_digital_credentials
-        def dummy_view(**kwargs):
-            return "ok", 200
-
-        business = MagicMock()
-        with app.test_request_context():
-            with patch(
-                "business_registry_digital_credentials.decorators.Business.find_by_identifier", return_value=business
-            ):
-                result, status = dummy_view(identifier="BC1234567")
-        assert result == "ok"
-        assert status == 200
 
 
 class TestRequiresTractionAuth:

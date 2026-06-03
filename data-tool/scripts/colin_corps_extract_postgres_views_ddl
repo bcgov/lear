@@ -870,6 +870,11 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         mb.display_name as mig_batch_display_name,
         mb.migrated_date as mig_date,
         COALESCE(ms.migrated, 'N') AS migrated,
+        CAST(EXISTS (
+          SELECT 1
+          FROM exclude_corps ec
+          WHERE ec.corp_num = tblFe.corp_num
+        ) AS boolean) AS is_migration_excluded,
         CAST(has_password as boolean) as has_password,
         CAST(COALESCE(sif.has_other_currency, false) as boolean) as has_other_share_currency,
         CAST(COALESCE(sif.has_par_value_lt1_gt6dp, false) as boolean) as has_share_par_value_lt1_gt6dp,

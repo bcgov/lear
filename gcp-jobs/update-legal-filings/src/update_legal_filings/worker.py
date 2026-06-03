@@ -45,7 +45,7 @@ import simple_cloudevent
 from flask import current_app
 from simple_cloudevent import to_queue_message
 
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from update_legal_filings import gcp_queue
 from update_legal_filings.colin_helper import COLIN_FILING_TYPES, ColinApiTypeCodes
 

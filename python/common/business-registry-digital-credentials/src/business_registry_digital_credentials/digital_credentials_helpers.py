@@ -14,18 +14,17 @@
 
 """This provides helper functions for digital credentials."""
 
-from typing import List, Union
-from flask import current_app
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, CorpType, DCBusinessUser, DCDefinition, User
 
-from business_model.models import Business, CorpType, DCDefinition, User, DCBusinessUser
 from .digital_credentials_rules import DigitalCredentialsRulesService
 
 
 def get_digital_credential_data(
     business_user: DCBusinessUser,
     credential_type: DCDefinition.CredentialType,
-    self_attested_roles: Union[List[str], None] = None,
-) -> List[dict[str, str]]:
+    self_attested_roles: list[str] | None = None,
+) -> list[dict[str, str]] | None:
     """Get the data for a digital credential."""
     if credential_type == DCDefinition.CredentialType.business:
         rules = DigitalCredentialsRulesService()
@@ -78,8 +77,12 @@ def get_company_status(business: Business) -> str:
 
 
 def get_registered_on_dateint(business: Business) -> str:
-    """Get registered on date in YYYYMMDD format."""
-    return business.founding_date.strftime("%Y%m%d") if business.founding_date else ""
+    """Get registered on date in YYYYMMDD format (legislation timezone)."""
+    return (
+        LegislationDatetime.as_legislation_timezone(business.founding_date).strftime("%Y%m%d")
+        if business.founding_date
+        else ""
+    )
 
 
 def get_family_name(user: User) -> str:
@@ -93,8 +96,11 @@ def get_given_names(user: User) -> str:
 
 
 def get_roles(
-    user: User, business: Business, rules: DigitalCredentialsRulesService, self_attested_roles: Union[List[str], None]
-) -> List[str]:
+    user: User,
+    business: Business,
+    rules: DigitalCredentialsRulesService,
+    self_attested_roles: list[str] | None,
+) -> list[str]:
     """Get roles for the user in the business."""
 
     def valid_party_role_filter(party_role) -> bool:
@@ -116,7 +122,7 @@ def get_roles(
             # Ensures that the user cant attach roles that are not stated in the preconditions
             party_roles = list(filter(valid_party_role_filter, party_roles))
 
-    return list(map(lambda party_role: party_role.role.replace("_", " ").title(), party_roles))
+    return [party_role.role.replace("_", " ").title() for party_role in party_roles]
 
 
 def extract_invitation_message_id(json_message: dict) -> str:

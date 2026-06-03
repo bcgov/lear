@@ -1141,6 +1141,15 @@ CREATE TABLE IF NOT EXISTS bad_emails (
 alter table bad_emails
     owner to postgres;
 
+CREATE TABLE IF NOT EXISTS exclude_corps (
+    corp_num varchar(10) NOT NULL
+        CONSTRAINT pk_exclude_corps PRIMARY KEY,
+    notes text
+);
+
+alter table exclude_corps
+    owner to postgres;
+
 CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
 
 CREATE INDEX if not exists ix_conv_ledger_event_id ON conv_ledger (event_id);

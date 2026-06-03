@@ -12,23 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Name Translation template tests."""
-
-from pathlib import Path
 from typing import Final
 
 import pytest
-from flask import current_app
-from jinja2 import Template
+
+from . import get_template
 
 
 title: Final = 'Company Name Translation(s)'
-
-
-def get_template():
-    """Returns the template."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}/template-parts/common/nameTranslation.html').read_text()
-    return Template(template_code)
+NAME_TRANSLATION_TEMPLATE = '/template-parts/common/nameTranslation.html'
 
 
 @pytest.mark.parametrize('list_of_translations,previous_translations', [
@@ -37,7 +29,7 @@ def get_template():
     ([], [])])
 def test_render_translations(session, list_of_translations, previous_translations):
     """Test Company Name Translation(s) rendering."""
-    template = get_template()
+    template = get_template(NAME_TRANSLATION_TEMPLATE)
     rendered = template.render(listOfTranslations=list_of_translations,
                                previousNameTranslations=previous_translations,
                                header={'name': ''})

@@ -217,6 +217,7 @@ def test_alteration_name_change(session, monkeypatch):
     from unittest.mock import Mock
     mock_flags = Mock()
     mock_flags.is_on.return_value = False
+    mock_flags.value.return_value = []
     
     # Patch the flags instance in the report module
     import legal_api.reports.report

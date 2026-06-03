@@ -13,14 +13,13 @@
 # limitations under the License.
 """Processing business number actions."""
 
-from flask import current_app
-
-from business_model.models import Business, DCDefinition, DCRevocationReason
-
-from .helpers import (
+from business_registry_digital_credentials import (
     get_all_digital_credentials_for_business,
     replace_digital_credential,
 )
+from flask import current_app
+
+from business_model.models import Business, DCDefinition, DCRevocationReason
 
 
 def process(business: Business) -> None:

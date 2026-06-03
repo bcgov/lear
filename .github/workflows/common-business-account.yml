@@ -1,0 +1,21 @@
+name: Common Business Account CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "python/common/business-registry-account/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./python/common/business-registry-account
+
+jobs:
+  business-registry-account-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-registry-account"
+      working_directory: "./python/common/business-registry-account"
+      codecov_flag: "business-registry-account"

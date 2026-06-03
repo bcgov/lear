@@ -12,20 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Directors template tests."""
-
-from pathlib import Path
-from typing import Final
-
 import pytest
-from flask import current_app
-from jinja2 import Template
 
-
-def get_template(template):
-    """Returns the template."""
-    template_path = current_app.config.get('REPORT_TEMPLATE_PATH')
-    template_code = Path(f'{template_path}{template}').read_text()
-    return Template(template_code)
+from . import get_template
 
 
 @pytest.mark.parametrize('parties,template', [
