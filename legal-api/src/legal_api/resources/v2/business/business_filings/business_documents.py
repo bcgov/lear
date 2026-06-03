@@ -277,7 +277,7 @@ class RegenerateQueryModel(BaseModel):
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.system])
 @pydantic_validate()
-def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: int | None = None):
+def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: Optional[int] = None):
     """
     Regenerate documents for a business.
     """
