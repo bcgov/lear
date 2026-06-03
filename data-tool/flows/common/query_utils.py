@@ -67,7 +67,6 @@ def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list) -> s
     AND in_dissolution = false
     AND migrated <> 'Y'
     AND has_password = true
-    AND has_officers = false
     AND meets_main_criteria = true
     AND has_3rd_party = false
     AND admin_email IS NOT NULL
