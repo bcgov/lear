@@ -23,7 +23,7 @@
 -- DbSchemaCLI splits statements on semicolons and does not reliably handle semicolons inside dollar-quoted
 -- bodies. Keep dollar-quoted bodies free of internal semicolons and avoid DO $$ blocks.
 
-CREATE OR REPLACE FUNCTION public.dbcli_varchar_to_boolean(val varchar)
+CREATE OR REPLACE FUNCTION __DBSCHEMA_TARGET_SCHEMA__.dbcli_varchar_to_boolean(val varchar)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
@@ -32,7 +32,7 @@ AS $$
     SELECT (val::text)::boolean
 $$;
 
-CREATE OR REPLACE FUNCTION public.dbcli_bpchar_to_boolean(val bpchar)
+CREATE OR REPLACE FUNCTION __DBSCHEMA_TARGET_SCHEMA__.dbcli_bpchar_to_boolean(val bpchar)
 RETURNS boolean
 LANGUAGE sql
 IMMUTABLE
@@ -44,12 +44,12 @@ $$;
 -- Recreate casts in an idempotent way (Postgres has no CREATE CAST IF NOT EXISTS).
 DROP CAST IF EXISTS (varchar AS boolean);
 CREATE CAST (varchar AS boolean)
-    WITH FUNCTION public.dbcli_varchar_to_boolean(varchar)
+    WITH FUNCTION __DBSCHEMA_TARGET_SCHEMA__.dbcli_varchar_to_boolean(varchar)
     AS IMPLICIT -- DbSchemaCLI workaround: avoid keyword being last token
 ;
 
 DROP CAST IF EXISTS (bpchar AS boolean);
 CREATE CAST (bpchar AS boolean)
-    WITH FUNCTION public.dbcli_bpchar_to_boolean(bpchar)
+    WITH FUNCTION __DBSCHEMA_TARGET_SCHEMA__.dbcli_bpchar_to_boolean(bpchar)
     AS IMPLICIT -- DbSchemaCLI workaround: avoid keyword being last token
 ;

@@ -1,4 +1,4 @@
--- Transfer a chunk (or a whole subset) of corps from the SOURCE Oracle DB (cprd) into the TARGET Postgres extract DB (cprd_pg).
+-- Transfer a chunk (or a whole subset) of corps from the SOURCE Oracle DB (__DBSCHEMA_SOURCE_CONNECTION__) into the TARGET Postgres extract DB (__DBSCHEMA_TARGET_SCHEMA__ schema).
 --
 -- REQUIRED DbSchemaCLI variables (replace_variables=true):
 --   target_corp_num_predicate : SQL predicate restricting the computed target_corp_num (NO trailing semicolon).
@@ -14,7 +14,7 @@
 --                                c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 --                                c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE','CP')
 --
--- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (cprd_pg).
+-- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (__DBSCHEMA_TARGET_SCHEMA__ schema).
 --
 -- IMPORTANT:
 -- - This template intentionally avoids the boolean<->integer ALTER COLUMN hacks used in the full refresh script.
@@ -33,7 +33,7 @@
 -- vset oracle_corp_num_predicate=c.CORP_NUM in ('1111585','1226175');
 
 -- corporation
-transfer public.corporation from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corporation from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -88,7 +88,7 @@ left join last_ar la on la.corp_num = c.corp_num;
 
 
 -- event
-transfer public.event from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.event from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -121,7 +121,7 @@ where e.event_typ_cd not in ('BNUPD', 'ADDLEDGR');
 
 
 -- corp_name
-transfer public.corp_name from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_name from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -152,7 +152,7 @@ join CORP_NAME cn on cn.corp_num = c.corp_num;
 
 
 -- corp_state
-transfer public.corp_state from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_state from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -184,7 +184,7 @@ join corp_op_state cos on cos.state_typ_cd = cs.state_typ_cd;
 
 
 -- filing
-transfer public.filing from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.filing from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -231,7 +231,7 @@ join filing f on f.event_id = e.event_id;
 
 
 -- filing_user
-transfer public.filing_user from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.filing_user from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -266,9 +266,9 @@ join filing_user u on u.event_id = e.event_id;
 
 
 -- address (shared/global table; stage then merge before loading dependents)
-TRUNCATE TABLE public.subset_address_stage;
+TRUNCATE TABLE __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage;
 
-transfer public.subset_address_stage from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -346,7 +346,7 @@ from (
 	join address a on x.mailing_addr_id = a.addr_id
 );
 
-INSERT INTO public.address (
+INSERT INTO __DBSCHEMA_TARGET_SCHEMA__.address (
 	addr_id,
 	province,
 	country_typ_cd,
@@ -374,7 +374,7 @@ FROM (
 		   addr_line_2,
 		   addr_line_3,
 		   city
-	FROM public.subset_address_stage
+	FROM __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage
 	WHERE addr_id IS NOT NULL
 	ORDER BY addr_id
 ) s
@@ -387,11 +387,11 @@ SET province = EXCLUDED.province,
 	addr_line_3 = EXCLUDED.addr_line_3,
 	city = EXCLUDED.city;
 
-TRUNCATE TABLE public.subset_address_stage;
+TRUNCATE TABLE __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage;
 
 
 -- office
-transfer public.office from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.office from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -423,7 +423,7 @@ join office o on o.corp_num = c.corp_num;
 
 
 -- corp_comments
-transfer public.corp_comments from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_comments from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -457,7 +457,7 @@ join corp_comments cc on cc.corp_num = c.corp_num;
 
 
 -- ledger_text
-transfer public.ledger_text from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.ledger_text from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -488,7 +488,7 @@ join ledger_text l on l.event_id = e.event_id;
 
 
 -- corp_party
-transfer public.corp_party from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_party from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -531,7 +531,7 @@ join corp_party p on p.corp_num = c.corp_num;
 
 
 -- corp_party_relationship
-transfer public.corp_party_relationship from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_party_relationship from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -560,7 +560,7 @@ join CORP_PARTY_RELATIONSHIP cpr on cpr.corp_party_id = p.corp_party_id;
 
 
 -- offices_held
-transfer public.offices_held from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.offices_held from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -589,7 +589,7 @@ join OFFICES_HELD oh on oh.corp_party_id = p.corp_party_id;
 
 
 -- completing_party
-transfer public.completing_party from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.completing_party from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -622,7 +622,7 @@ join completing_party cp on cp.event_id = e.event_id;
 
 
 -- submitting_party
-transfer public.submitting_party from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.submitting_party from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -663,7 +663,7 @@ join SUBMITTING_PARTY sp on sp.event_id = e.event_id;
 
 
 -- corp_flag
-transfer public.corp_flag from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_flag from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -693,7 +693,7 @@ join corp_flag cf on cf.corp_num = c.corp_num;
 
 
 -- cont_out
-transfer public.cont_out from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.cont_out from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -726,7 +726,7 @@ join CONT_OUT co on co.corp_num = c.corp_num;
 
 
 -- conv_event
-transfer public.conv_event from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.conv_event from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -765,7 +765,7 @@ join CONV_EVENT ce on ce.event_id = e.event_id;
 
 
 -- conv_ledger
-transfer public.conv_ledger from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.conv_ledger from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -796,7 +796,7 @@ join CONV_LEDGER cl on cl.event_id = e.event_id;
 
 
 -- corp_involved - amalgamaTING_businesses
-transfer public.corp_involved_amalgamating from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_involved_amalgamating from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -864,7 +864,7 @@ where f.filing_typ_cd in ('AMALH', 'AMALV', 'AMALR', 'AMLHU', 'AMLVU', 'AMLRU', 
 
 
 -- corp_involved - continue_in_historical_xpro
-transfer public.corp_involved_cont_in from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_involved_cont_in from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -895,7 +895,7 @@ where f.filing_typ_cd in ('CONTI', 'CONTU', 'CONTC')
 
 
 -- corp_restriction
-transfer public.corp_restriction from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.corp_restriction from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -929,7 +929,7 @@ join CORP_RESTRICTION cr on cr.corp_num = c.corp_num;
 
 
 -- correction
-transfer public.correction from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.correction from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -959,7 +959,7 @@ join CORRECTION corr on corr.event_id = e.event_id;
 
 
 -- continued_in_from_jurisdiction
-transfer public.jurisdiction from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.jurisdiction from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -994,7 +994,7 @@ join JURISDICTION j on j.corp_num = c.corp_num;
 
 
 -- resolution
-transfer public.resolution from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.resolution from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1025,7 +1025,7 @@ join RESOLUTION r on r.corp_num = c.corp_num;
 
 
 -- share_struct
-transfer public.share_struct from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.share_struct from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1054,7 +1054,7 @@ join SHARE_STRUCT ss on ss.corp_num = c.corp_num;
 
 
 -- share_struct_cls
-transfer public.share_struct_cls from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.share_struct_cls from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1103,7 +1103,7 @@ join SHARE_STRUCT_CLS ssc on ssc.corp_num = c.corp_num;
 
 
 -- share_series
-transfer public.share_series from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.share_series from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1145,7 +1145,7 @@ join SHARE_SERIES ss on ss.corp_num = c.corp_num;
 
 
 -- notification
-transfer public.notification from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.notification from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1181,7 +1181,7 @@ join NOTIFICATION n on n.event_id = e.event_id;
 
 
 -- notification_resend
-transfer public.notification_resend from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.notification_resend from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1217,7 +1217,7 @@ join NOTIFICATION_RESEND nr on nr.event_id = e.event_id;
 
 
 -- party_notification
-transfer public.party_notification from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.party_notification from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1254,7 +1254,7 @@ join PARTY_NOTIFICATION pn on pn.party_id = cp.corp_party_id;
 
 
 -- payment
-transfer public.payment from cprd using
+transfer __DBSCHEMA_TARGET_SCHEMA__.payment from __DBSCHEMA_SOURCE_CONNECTION__ using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c

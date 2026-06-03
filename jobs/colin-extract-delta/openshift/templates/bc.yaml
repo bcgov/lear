@@ -1,0 +1,21 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  labels:
+    app: ${NAME}
+  name: ${NAME}-build
+objects:
+  # External CI builds the repo-root Dockerfile and pushes into this ImageStream/tag.
+  # This template intentionally does not create an OpenShift BuildConfig.
+  - apiVersion: v1
+    kind: ImageStream
+    metadata:
+      name: ${NAME}
+      labels:
+        app: ${NAME}
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to the ImageStream consumed by the CronJob.
+    required: true
+    value: colin-extract-delta

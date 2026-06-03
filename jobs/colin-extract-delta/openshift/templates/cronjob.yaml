@@ -1,0 +1,344 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  labels:
+    name: ${NAME}
+  name: ${NAME}-cronjob
+objects:
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ${NAME}-${TAG}-config
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+    data:
+      APP_DATA: /opt/app-root/data
+      CLOUDSQL_PROXY_MODE: "${CLOUDSQL_PROXY_MODE}"
+      CLOUDSQL_PROXY_ADDRESS: "127.0.0.1"
+      CLOUDSQL_PROXY_PORT: "${CLOUDSQL_PROXY_PORT}"
+      CLOUDSQL_PRIVATE_IP: "${CLOUDSQL_PRIVATE_IP}"
+      FLOW_MODE: "${FLOW_MODE}"
+      FLOW_CORP_FILE: "${FLOW_CORP_FILE}"
+      FLOW_RESET_EXTRACT_POSTGRES: "${FLOW_RESET_EXTRACT_POSTGRES}"
+      FLOW_CHUNK_SIZE: "${FLOW_CHUNK_SIZE}"
+      FLOW_THREADS: "${FLOW_THREADS}"
+      FLOW_MIG_BATCH_ID: "${FLOW_MIG_BATCH_ID}"
+      FLOW_LOOKBACK_HOURS: "${FLOW_LOOKBACK_HOURS}"
+      FLOW_PG_DISABLE_METHOD: "table_triggers"
+      FLOW_PG_FASTLOAD: "${FLOW_PG_FASTLOAD}"
+      FLOW_INCLUDE_CP: "${FLOW_INCLUDE_CP}"
+      # Scheduled v1 default: do not run the global cars* truncate/reload unless explicitly approved.
+      FLOW_INCLUDE_CARS: "${FLOW_INCLUDE_CARS}"
+      RUN_PREFLIGHT: "true"
+      RUN_POSTFLIGHT: "true"
+      SMOKE_ONLY: "${SMOKE_ONLY}"
+      REFRESH_COLIN_EXTRACT_VIEWS: "${REFRESH_COLIN_EXTRACT_VIEWS}"
+      MV_REFRESH_TARGETS: "${MV_REFRESH_TARGETS}"
+      MV_REFRESH_SKIP_ANALYZE: "${MV_REFRESH_SKIP_ANALYZE}"
+      PGSCHEMA: "${DBSCHEMA_TARGET_SCHEMA}"
+      DBSCHEMA_SOURCE_CONNECTION: "${DBSCHEMA_SOURCE_CONNECTION}"
+      DBSCHEMA_TARGET_CONNECTION: "${DBSCHEMA_TARGET_CONNECTION}"
+      DBSCHEMA_TARGET_SCHEMA: "${DBSCHEMA_TARGET_SCHEMA}"
+  - kind: CronJob
+    apiVersion: batch/v1
+    metadata:
+      name: ${NAME}-${TAG}
+      labels:
+        name: ${NAME}
+        environment: ${TAG}
+        role: ${ROLE}
+    spec:
+      # Keep suspended until Cloud SQL privileges, DbSchema free CLI runtime, OCP networking,
+      # one-corp refresh, small-batch refresh, and recovery drill have passed for the environment.
+      suspend: ${{SUSPEND}}
+      schedule: "${SCHEDULE}"
+      concurrencyPolicy: Forbid
+      successfulJobsHistoryLimit: ${{SUCCESS_JOBS_HISTORY_LIMIT}}
+      failedJobsHistoryLimit: ${{FAILED_JOBS_HISTORY_LIMIT}}
+      jobTemplate:
+        metadata:
+          labels:
+            name: ${NAME}
+            environment: ${TAG}
+            role: ${ROLE}
+        spec:
+          backoffLimit: ${{JOB_BACKOFF_LIMIT}}
+          activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
+          template:
+            metadata:
+              labels:
+                name: ${NAME}
+                environment: ${TAG}
+                role: ${ROLE}
+            spec:
+              restartPolicy: Never
+              terminationGracePeriodSeconds: 60
+              dnsPolicy: ClusterFirst
+              containers:
+                - name: ${NAME}-${TAG}
+                  image: ${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/${NAME}:${IMAGE_TAG}
+                  imagePullPolicy: Always
+                  command:
+                    - /opt/app-root/run.sh
+                  envFrom:
+                    - configMapRef:
+                        name: ${NAME}-${TAG}-config
+                  env:
+                    # Cloud SQL Auth Proxy:
+                    # - wrapper mode uses CLOUDSQL_INSTANCE_CONNECTION_NAME and either mounted JSON ADC
+                    #   credentials or workload identity/ambient ADC if the cluster supports it.
+                    # - external/sidecar mode should still expose Postgres on 127.0.0.1:${CLOUDSQL_PROXY_PORT}.
+                    - name: CLOUDSQL_INSTANCE_CONNECTION_NAME
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: CLOUDSQL_INSTANCE_CONNECTION_NAME
+                          optional: true
+                    - name: GOOGLE_APPLICATION_CREDENTIALS
+                      value: /var/secrets/google/cloudsql-service-account.json
+                    - name: DATABASE_USERNAME_COLIN_MIGR
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_USERNAME_COLIN_MIGR
+                    - name: DATABASE_PASSWORD_COLIN_MIGR
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_PASSWORD_COLIN_MIGR
+                    - name: DATABASE_NAME_COLIN_MIGR
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_NAME_COLIN_MIGR
+                    # Optional direct Postgres networking. Required only when CLOUDSQL_PROXY_MODE=disabled.
+                    - name: DATABASE_HOST_COLIN_MIGR
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_HOST_COLIN_MIGR
+                          optional: true
+                    - name: DATABASE_PORT_COLIN_MIGR
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_PORT_COLIN_MIGR
+                          optional: true
+                    - name: DATABASE_USERNAME_COLIN_ORACLE
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_USERNAME_COLIN_ORACLE
+                    - name: DATABASE_PASSWORD_COLIN_ORACLE
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_PASSWORD_COLIN_ORACLE
+                    - name: DATABASE_HOST_COLIN_ORACLE
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_HOST_COLIN_ORACLE
+                    - name: DATABASE_PORT_COLIN_ORACLE
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_PORT_COLIN_ORACLE
+                    - name: DATABASE_NAME_COLIN_ORACLE
+                      valueFrom:
+                        secretKeyRef:
+                          name: ${NAME}-${TAG}-secret
+                          key: DATABASE_NAME_COLIN_ORACLE
+                  resources:
+                    # Conservative starting point for Python + Java/DbSchemaCLI. Tune after dev timing data.
+                    requests:
+                      cpu: "${CPU_REQUEST}"
+                      memory: "${MEMORY_REQUEST}"
+                    limits:
+                      cpu: "${CPU_LIMIT}"
+                      memory: "${MEMORY_LIMIT}"
+                  volumeMounts:
+                    - name: data-volume
+                      mountPath: /opt/app-root/data
+                    - name: gcp-sa-volume
+                      readOnly: true
+                      mountPath: /var/secrets/google
+              volumes:
+                - name: data-volume
+                  emptyDir: {}
+                - name: gcp-sa-volume
+                  secret:
+                    # Optional for Workload Identity/ambient ADC deployments; required for JSON-key mode.
+                    secretName: ${GCP_SA_SECRET_NAME}
+                    optional: true
+                    items:
+                      - key: ${GCP_SA_SECRET_KEY}
+                        path: cloudsql-service-account.json
+parameters:
+  - name: NAME
+    displayName: Name
+    description: The name assigned to OpenShift resources for this job.
+    required: true
+    value: colin-extract-delta
+  - name: TAG
+    displayName: Environment tag
+    description: Required environment tag, for example dev, test, or prod. Supply explicitly per deployment.
+    required: true
+  - name: ROLE
+    displayName: Role
+    required: true
+    value: job
+  - name: IMAGE_NAMESPACE
+    displayName: Image Namespace
+    required: true
+    description: Required namespace containing the externally built ImageStreamTag. Supply explicitly per deployment.
+  - name: IMAGE_REGISTRY
+    displayName: Image Registry
+    required: true
+    value: image-registry.openshift-image-registry.svc:5000
+  - name: IMAGE_TAG
+    displayName: Image tag
+    description: Required image tag for the externally built runtime image. Supply explicitly per deployment.
+    required: true
+  - name: SCHEDULE
+    displayName: Cron Schedule
+    description: Cron schedule using the cluster timezone. Keep suspended by default until rollout gates pass.
+    required: true
+    value: "30 9 * * TUE-SAT"
+  - name: SUSPEND
+    displayName: Suspend schedule
+    description: true keeps the CronJob disabled; set false only after production gate approval.
+    required: true
+    value: "true"
+  - name: SUCCESS_JOBS_HISTORY_LIMIT
+    displayName: Successful Job History Limit
+    required: true
+    value: "3"
+  - name: FAILED_JOBS_HISTORY_LIMIT
+    displayName: Failed Job History Limit
+    required: true
+    value: "3"
+  - name: JOB_BACKOFF_LIMIT
+    displayName: Job Backoff Limit
+    required: true
+    value: "0"
+  - name: ACTIVE_DEADLINE_SECONDS
+    displayName: Active Deadline Seconds
+    description: Tune after dev measurements; must cover DbSchema transfer plus optional MV refresh.
+    required: true
+    value: "21600"
+  - name: CPU_REQUEST
+    displayName: CPU Request
+    required: true
+    value: 500m
+  - name: CPU_LIMIT
+    displayName: CPU Limit
+    required: true
+    value: "2"
+  - name: MEMORY_REQUEST
+    displayName: Memory Request
+    required: true
+    value: 2Gi
+  - name: MEMORY_LIMIT
+    displayName: Memory Limit
+    required: true
+    value: 6Gi
+  - name: CLOUDSQL_PROXY_MODE
+    displayName: Cloud SQL Proxy Mode
+    description: wrapper starts cloud-sql-proxy in run.sh; external/sidecar assumes localhost is already available.
+    required: true
+    value: wrapper
+  - name: CLOUDSQL_PROXY_PORT
+    displayName: Cloud SQL Proxy Port
+    required: true
+    value: "5432"
+  - name: CLOUDSQL_PRIVATE_IP
+    displayName: Cloud SQL Private IP
+    description: Set true to pass --private-ip to the wrapper-managed Cloud SQL Auth Proxy.
+    required: true
+    value: "false"
+  - name: GCP_SA_SECRET_NAME
+    displayName: GCP Service Account Secret
+    description: Secret containing the Cloud SQL proxy JSON key for JSON-key mode. The template requires an explicit value; Workload Identity/ambient ADC deployments may provide an explicitly agreed unused secret name because the volume is optional.
+    required: true
+  - name: GCP_SA_SECRET_KEY
+    displayName: GCP Service Account Secret Key
+    description: Secret key containing the Cloud SQL proxy JSON credentials for JSON-key mode. Supply explicitly per deployment.
+    required: true
+  - name: FLOW_MODE
+    displayName: Flow Mode
+    description: refresh deletes/reloads the rolling-lookback or FLOW_CORP_FILE corp set; load loads FLOW_CORP_FILE and only resets the DB if FLOW_RESET_EXTRACT_POSTGRES=true.
+    required: true
+    value: refresh
+  - name: FLOW_CORP_FILE
+    displayName: Flow Corp File
+    description: Optional in refresh mode for curated/retained feed replay; required when FLOW_MODE=load.
+    required: false
+    value: ""
+  - name: FLOW_RESET_EXTRACT_POSTGRES
+    displayName: Reset Extract Postgres
+    description: Explicit destructive load-mode DB reset. Keep false for OCP delta/replay runs.
+    required: true
+    value: "false"
+  - name: FLOW_CHUNK_SIZE
+    displayName: Flow Chunk Size
+    required: true
+    value: "900"
+  - name: FLOW_THREADS
+    displayName: DbSchema Transfer Threads
+    required: true
+    value: "4"
+  - name: FLOW_MIG_BATCH_ID
+    displayName: Migration Batch Id
+    required: true
+    value: "1"
+  - name: FLOW_LOOKBACK_HOURS
+    displayName: Rolling Lookback Hours
+    description: Scheduled v1 rolling lookback; not a durable high-watermark.
+    required: true
+    value: "5"
+  - name: FLOW_PG_FASTLOAD
+    displayName: Enable Postgres Fastload
+    required: true
+    value: "false"
+  - name: FLOW_INCLUDE_CP
+    displayName: Include CP corps
+    required: true
+    value: "false"
+  - name: FLOW_INCLUDE_CARS
+    displayName: Include global cars refresh
+    description: false by default; true truncates/reloads cars* globally.
+    required: true
+    value: "false"
+  - name: DBSCHEMA_SOURCE_CONNECTION
+    displayName: DbSchema Source Connection
+    description: Required source Oracle alias generated in runtime init.sql and rendered into generated transfer SQL. Aliases are validated by run.sh and must use letters, digits, and underscore, and must not start with a digit.
+    required: true
+  - name: DBSCHEMA_TARGET_CONNECTION
+    displayName: DbSchema Target Connection
+    description: Required target Postgres alias generated in runtime init.sql and passed to the flow/generator. Aliases are validated by run.sh and must use letters, digits, and underscore, and must not start with a digit.
+    required: true
+  - name: DBSCHEMA_TARGET_SCHEMA
+    displayName: DbSchema Target Schema
+    description: Required Postgres target schema rendered into generated helper/transfer SQL and used for PGSCHEMA/MV refresh. Schema names are validated by run.sh and must use letters, digits, and underscore, and must not start with a digit.
+    required: true
+  - name: SMOKE_ONLY
+    displayName: Smoke Only
+    description: true runs preflight only and exits before data movement.
+    required: true
+    value: "false"
+  - name: REFRESH_COLIN_EXTRACT_VIEWS
+    displayName: Refresh Materialized Views
+    description: Optional post-transfer MV refresh. Leave false until dev runtime is measured.
+    required: true
+    value: "false"
+  - name: MV_REFRESH_TARGETS
+    displayName: MV Refresh Targets
+    required: true
+    value: legacy
+  - name: MV_REFRESH_SKIP_ANALYZE
+    displayName: Skip Analyze After MV Refresh
+    required: true
+    value: "false"

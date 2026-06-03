@@ -1,13 +1,24 @@
+from __future__ import annotations
 
 from math import ceil
 import re
 
-from sqlalchemy import text
+
+def _positive_int(value: int | str, name: str) -> int:
+    try:
+        parsed = int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f'{name} must be a positive integer') from exc
+    if parsed <= 0:
+        raise ValueError(f'{name} must be a positive integer')
+    return parsed
 
 def build_corp_list(corp_list: str, chunksize: int) -> str:
     if not str(corp_list).strip():
         raise ValueError('empty corp_list')
     corp_nums = re.findall(r"'([^']*)'", corp_list)
+    if not corp_nums:
+        raise ValueError('corp_list must contain SQL-quoted corp identifiers')
     batch_size = min(chunksize, 999)
     num_batches = ceil(len(corp_nums) / batch_size)
 
@@ -27,9 +38,11 @@ def build_corp_list(corp_list: str, chunksize: int) -> str:
     corp_list_cte = 'corp_list AS (\n'+ '\n'.join(union_lines) + '\n)'
     return ',\n'.join([*batch_ctes, corp_list_cte])
 
-def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> str:
+def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, lookback_hours: int = 5) -> str:
     if not str(corp_list).strip():
         raise ValueError('empty corp_list')
+    chunk_size = _positive_int(chunk_size, 'chunk_size')
+    lookback_hours = _positive_int(lookback_hours, 'lookback_hours')
     corp_list_ctes = build_corp_list(corp_list, chunk_size)
     query = f"""
     WITH {corp_list_ctes},
@@ -46,7 +59,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> 
         FROM event e
         JOIN corp_list c
             ON c.corp_num = e.corp_num
-        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
+        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '{lookback_hours}' HOUR
         AND NOT (
             EXISTS (
             SELECT 1
@@ -74,12 +87,13 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> 
     return query
 
 def get_identifiers_per_batch(mig_batch_id: int) -> str:
+    mig_batch_id = _positive_int(mig_batch_id, 'mig_batch_id')
     return f"""
     SELECT string_agg(pg_catalog.quote_literal(trim(CAST(mcb.corp_num AS text))), ',') AS corp_list
     FROM mig_corp_batch mcb
     WHERE mcb.mig_batch_id = {mig_batch_id}
     """
 
-def get_updated_identifiers_for_batch(timestamp: str, corp_list: str, chunk_size: int) -> str:
+def get_updated_identifiers_for_batch(timestamp: str, corp_list: str, chunk_size: int = 999, lookback_hours: int = 5) -> str:
     """per batch get identifiers"""
-    return get_updated_identifiers(timestamp, corp_list, 999)
+    return get_updated_identifiers(timestamp, corp_list, chunk_size, lookback_hours=lookback_hours)
