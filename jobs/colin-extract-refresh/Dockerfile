@@ -6,7 +6,7 @@ ARG BUILD_DATE="missing"
 ENV VCS_REF=${VCS_REF}
 ENV BUILD_DATE=${BUILD_DATE}
 ENV PYTHONUNBUFFERED=1
-ENV ORACLE_CLIENT_LIB_DIR=/opt/oracle/instantclient_21_1
+# ENV ORACLE_CLIENT_LIB_DIR=/opt/oracle/instantclient_21_1
 
 
 # Configure Jupyter to use user-writable paths
@@ -17,18 +17,25 @@ LABEL org.label-schema.vcs-ref=${VCS_REF} \
 
 USER root
 
-WORKDIR /opt/oracle
+
+ENV LD_LIBRARY_PATH=/opt/oracle/instantclient_21_4
 
 RUN apt-get update; \
-    apt-get install -y --no-install-recommends libaiol wget unzip ca-certificates; \
-    wget -q https://download.oracle.com/otn_software/linux/instantclient/211000/instantclient-basiclite-linux.x64-21.1.0.0.0.zip; \
-    unzip instantclient-basiclite-linux.x64-21.1.0.0.0.zip; \
-    rm -f instantclient-basiclite-linux.x64-21.1.0.0.0.zip; \
-    cd "${ORACLE_CLIENT_LIB_DIR}"; \
-    rm -f *jdbc* *occi* *mysql* *README *jar uidvrci genezi adrci; \
-    echo "${ORACLE_CLIENT_LIB_DIR}" > /etc/ld.so.conf.d/oracle-instantclient.conf; \
-    ldconfig; \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y libpq-dev zlib1g-dev build-essential shared-mime-info libaio1 libaio-dev unzip wget --no-install-recommends; \
+    wget https://download.oracle.com/otn_software/linux/instantclient/214000/instantclient-sdk-linux.x64-21.4.0.0.0dbru.zip; \
+    wget https://download.oracle.com/otn_software/linux/instantclient/214000/instantclient-sqlplus-linux.x64-21.4.0.0.0dbru.zip; \
+    wget https://download.oracle.com/otn_software/linux/instantclient/214000/instantclient-basic-linux.x64-21.4.0.0.0dbru.zip; \
+    mkdir -p /opt/oracle; \
+    cp instantclient-* /opt/oracle/ ; \
+    cd /opt/oracle/ ; \
+    unzip instantclient-basic-linux.x64-21.4.0.0.0dbru.zip ; \
+    unzip instantclient-sdk-linux.x64-21.4.0.0.0dbru.zip ; \
+    unzip instantclient-sqlplus-linux.x64-21.4.0.0.0dbru.zip ; \
+    rm -rf /var/lib/apt/lists/* instantclient-basic-linux.x64-21.4.0.0.0dbru.zip instantclient-sdk-linux.x64-21.4.0.0.0dbru.zip instantclient-sqlplus-linux.x64-21.4.0.0.0dbru.zip ; \
+    apt -y clean ; \
+    apt -y remove wget unzip ; \
+    apt -y autoremove ; \
+    rm -rf /var/cache/apt
 
 # Create directories with proper permissions
 RUN mkdir -p /opt/app-root && \

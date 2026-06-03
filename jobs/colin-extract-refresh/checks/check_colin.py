@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 from config import get_named_config
 
 def _colin_oracle_init() -> None:
-    oracledb.init_oracle_client(lib_dir="/opt/oracle/instantclient_23_3")
+    oracledb.init_oracle_client(lib_dir="/opt/oracle/instantclient_21_4")
     print('👷 Enable thick mode:', not oracledb.is_thin_mode())
     print('👷 Instant Client version:', oracledb.clientversion())
         
