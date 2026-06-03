@@ -49,9 +49,6 @@ WORKDIR /opt/app-root
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY . .
-
 USER 1001
 
 EXPOSE 8080
