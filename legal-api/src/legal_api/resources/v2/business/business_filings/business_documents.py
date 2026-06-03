@@ -16,13 +16,13 @@
 Provides all the search and retrieval from the business entity documents.
 """
 from http import HTTPStatus
-from pydantic import BaseModel
 from typing import Final, Optional
 
 import requests
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
+from pydantic import BaseModel
 
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
@@ -267,8 +267,8 @@ def _get_corp_name(business, filing):
 class RegenerateQueryModel(BaseModel):
     """Document regenerate query model."""
 
-    previous: bool | None = None
-    only_required: bool | None = None
+    previous: Optional[bool]
+    only_required: Optional[bool]
 
 
 @cors_preflight("POST")
