@@ -21,14 +21,13 @@ Used in the event that a user is unaffiliated from a business where they have a 
 
 Note: The credential is not replaced, it is simply revoked.
 """
-from flask import current_app
-
-from business_model.models import Business, DCRevocationReason, User
-
-from .helpers import (
+from business_registry_digital_credentials import (
     get_all_digital_credentials_for_business,
     revoke_digital_credential,
 )
+from flask import current_app
+
+from business_model.models import Business, DCRevocationReason, User
 
 
 def process(idp_userid: str, unaffiliated_identifiers: list) -> None:

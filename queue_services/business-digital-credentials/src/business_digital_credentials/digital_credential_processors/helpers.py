@@ -11,177 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Helper functions for digital credentials."""
+"""Cloud-Event payload parsers used only by the queue service.
+
+Credential-lifecycle helpers (issue / revoke / replace / get-all) are in
+``business_registry_digital_credentials`` shared with legal-api.
+"""
 
 
-from business_registry_digital_credentials import digital_credentials
-from business_registry_digital_credentials.digital_credentials_helpers import (
-    get_digital_credential_data,
-)
+from business_model.models import DCBusinessUser
 
-from business_model.models import (
-    Business,
-    DCBusinessUser,
-    DCConnection,
-    DCCredential,
-    DCDefinition,
-    DCRevocationReason,
-)
-
-
-def get_all_digital_credentials_for_business(
-    business: Business,
-) -> list[DCCredential] | None:
-    """
-    Get issued digital credentials for a business.
-
-    TODO: Once DCCredential references DCBusinessUser, this function can be refactored
-    """
-    try:
-        credentials = []
-        for business_user in business.business_users:
-            active_connections = list(
-                filter(
-                    lambda connection: connection.is_active, business_user.connections
-                )
-            )
-            if active_connections and len(active_connections) == 1:
-                active_connection = active_connections[0]
-                for credential in list(
-                    filter(
-                        lambda credential: (
-                            credential.is_issued and not credential.is_revoked
-                        ),
-                        active_connection.credentials,
-                    )
-                ):
-                    credentials.append(credential)
-
-        return credentials
-    except Exception as err:
-        raise err
-
-
-def issue_digital_credential(
-    business_user: DCBusinessUser, credential_type: DCDefinition.CredentialType
-) -> DCCredential | None:
-    """Issue a digital credential for a business to a user."""
-    try:
-        if not (
-            definition := DCDefinition.find_by(
-                DCDefinition.CredentialType[credential_type],
-                digital_credentials.business_schema_id,
-                digital_credentials.business_cred_def_id,
-            )
-        ):
-            raise Exception(
-                f"Definition not found for credential type: {credential_type}."
-            )
-
-        if not (
-            connection := DCConnection.find_active_by_business_user_id(
-                business_user_id=business_user.id
-            )
-        ):
-            raise Exception(
-                f"Active connection not found for business user with ID: {business_user.id}."
-            )
-
-        credential_data = get_digital_credential_data(
-            business_user, definition.credential_type
-        )
-        credential_id = next(
-            (
-                item["value"]
-                for item in credential_data
-                if item["name"] == "credential_id"
-            ),
-            None,
-        )
-
-        if not (
-            response := digital_credentials.issue_credential(
-                connection_id=connection.connection_id,
-                definition=definition,
-                data=credential_data,
-            )
-        ):
-            raise Exception("Failed to issue credential.")
-
-        issued_credential = DCCredential(
-            definition_id=definition.id,
-            connection_id=connection.id,
-            credential_exchange_id=response["cred_ex_id"],
-            credential_id=credential_id,
-        )
-        issued_credential.save()
-
-        return issued_credential
-    except Exception as err:
-        raise err
-
-
-def revoke_digital_credential(
-    credential: DCCredential, reason: DCRevocationReason
-) -> dict | None:
-    """Revoke an issued digital credential."""
-    try:
-        if not credential.is_issued or credential.is_revoked:
-            raise Exception("Credential is not issued yet or is revoked already.")
-
-        if not (connection := credential.connection) or not connection.is_active:
-            raise Exception(
-                f"Active connection not found for credential with ID: {credential.credential_id}."
-            )
-
-        if (
-            digital_credentials.revoke_credential(
-                connection.connection_id,
-                credential.credential_revocation_id,
-                credential.revocation_registry_id,
-                reason,
-            )
-            is None
-        ):
-            raise Exception("Failed to revoke credential.")
-
-        credential.is_revoked = True
-        credential.save()
-
-        return None
-    except Exception as err:
-        raise err
-
-
-def replace_digital_credential(
-    credential: DCCredential,
-    credential_type: DCDefinition.CredentialType,
-    reason: DCRevocationReason,
-) -> DCCredential | None:
-    """Replace an issued digital credential for a business."""
-    try:
-        if credential.is_issued and not credential.is_revoked:
-            revoke_digital_credential(credential, reason)
-
-        if (
-            digital_credentials.fetch_credential_exchange_record(
-                credential.credential_exchange_id
-            )
-            is not None
-            and digital_credentials.remove_credential_exchange_record(
-                credential.credential_exchange_id
-            )
-            is None
-        ):
-            raise Exception("Failed to remove credential exchange record.")
-
-        issue_digital_credential(credential.connection.business_user, credential_type)
-        # We delete the old credential after issuing the new one so that the connection is not lost
-        credential.delete()
-
-        return None
-    except Exception as err:
-        raise err
 
 def _does_officer_match_user(officer: dict, user: DCBusinessUser) -> bool:
     """Check if officer name matches user name (case insensitive)."""
@@ -192,39 +30,35 @@ def _does_officer_match_user(officer: dict, user: DCBusinessUser) -> bool:
 
 
 def is_user_in_officers(
-        user: DCBusinessUser, 
-        filing_data: dict,
-        role_name: str
+    user: DCBusinessUser,
+    filing_data: dict,
+    role_name: str,
 ) -> bool:
     """Check if the user associated with the business user is in the filing parties as a specific role."""
-    user_in_parties = False
     for party in filing_data.get("parties", []):
         officer = party.get("officer", {})
         roles = party.get("roles", [])
         has_partner_role = any(role.get("roleType").lower() == role_name.lower() for role in roles)
         if _does_officer_match_user(officer, user) and has_partner_role:
-            user_in_parties = True
-            break
-    return user_in_parties
+            return True
+    return False
 
 
 def does_officer_have_action(
-        user: DCBusinessUser, 
-        filing_data: dict,
-        officer_type: str,
-        action_type: str
+    user: DCBusinessUser,
+    filing_data: dict,
+    officer_type: str,
+    action_type: str,
 ) -> bool:
-    """
-    Check if a type of officer has a specific action on them.
+    """Check if a type of officer has a specific action on them.
+
     e.g., Check if a director has a 'ceased' action.
     """
     for officer_record in filing_data.get(officer_type, []):
         officer = officer_record.get("officer", {})
         if _does_officer_match_user(officer, user):
-            # Check if they have the supplied action
             actions = [a.lower() for a in officer_record.get("actions", [])]
             if action_type.lower() in actions:
                 return True
             break
-    
     return False
