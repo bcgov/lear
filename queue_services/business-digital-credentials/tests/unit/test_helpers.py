@@ -22,6 +22,8 @@ from business_model.models import DCBusinessUser, DCCredential, DCDefinition, DC
 from business_digital_credentials.digital_credential_processors.helpers import (
     _does_officer_match_user,
     does_officer_have_action,
+)
+from business_registry_digital_credentials import (
     get_all_digital_credentials_for_business,
     issue_digital_credential,
     replace_digital_credential,
@@ -179,11 +181,11 @@ def test_issued_credential_revoked(mock_revoke_credential, app, session):
     assert credential.is_revoked is True
 
 
-@patch('business_digital_credentials.digital_credential_processors.helpers.issue_digital_credential', return_value=None)
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.issue_digital_credential', return_value=None)
 @patch('business_registry_digital_credentials.DigitalCredentialsService.fetch_credential_exchange_record', return_value=None)
 @patch('business_model.models.User.find_by_id', return_value=User(id=1))
 @patch('business_model.models.DCBusinessUser.find_by_id', return_value=DCBusinessUser(id=1, user_id=1))
-@patch('business_digital_credentials.digital_credential_processors.helpers.revoke_digital_credential')
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.revoke_digital_credential')
 def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_digital_credential,
                                                         mock_find_business_user_by_id,
                                                         mock_find_user_by_id,
@@ -205,11 +207,11 @@ def test_issued_credential_not_revoked_is_revoked_first(mock_revoke_digital_cred
     mock_revoke_digital_credential.assert_called_once_with(credential, reason)
 
 
-@patch('business_digital_credentials.digital_credential_processors.helpers.issue_digital_credential', return_value=None)
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.issue_digital_credential', return_value=None)
 @patch('business_registry_digital_credentials.DigitalCredentialsService.fetch_credential_exchange_record', return_value=None)
 @patch('business_model.models.User.find_by_id', return_value=User(id=1))
 @patch('business_model.models.DCBusinessUser.find_by_id', return_value=DCBusinessUser(id=1, user_id=1))
-@patch('business_digital_credentials.digital_credential_processors.helpers.revoke_digital_credential')
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.revoke_digital_credential')
 def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
                                                         mock_find_buisness_user_by_id,
                                                         mock_find_user_by_id,
@@ -231,7 +233,7 @@ def test_issued_credential_revoked_is_not_revoked_first(mock_revoke_credential,
     mock_revoke_credential.assert_not_called()
 
 
-@patch('business_digital_credentials.digital_credential_processors.helpers.issue_digital_credential')
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.issue_digital_credential')
 @patch('business_registry_digital_credentials.DigitalCredentialsService.fetch_credential_exchange_record',
        return_value='test_credential_exchange_id')
 @patch('business_registry_digital_credentials.DigitalCredentialsService.remove_credential_exchange_record', return_value=None)
@@ -260,7 +262,7 @@ def test_replace_digital_credential_throws_cred_ex_id_exception(mock_remove_cred
     mock_issue_digital_credential.assert_not_called()
 
 
-@patch('business_digital_credentials.digital_credential_processors.helpers.issue_digital_credential', return_value=None)
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.issue_digital_credential', return_value=None)
 @patch('business_registry_digital_credentials.DigitalCredentialsService.fetch_credential_exchange_record', return_value=None)
 def test_issued_credential_replaced(mock_fetch_credential_exchange_record,
                                     mock_issue_digital_credential,
@@ -300,7 +302,7 @@ def test_issue_digital_credential_throws_definition_not_found_error(mock_find_de
 
 
 @patch('business_model.models.DCConnection.find_active_by_business_user_id', return_value=None)
-@patch('business_digital_credentials.digital_credential_processors.helpers.digital_credentials')
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.digital_credentials')
 def test_issue_digital_credential_throws_active_connection_not_found_error(mock_digital_credentials,
                                                                            mock_find_active_by,
                                                                            app, session):
@@ -331,8 +333,8 @@ def test_issue_digital_credential_throws_active_connection_not_found_error(mock_
             excinfo)
 
 
-@patch('business_digital_credentials.digital_credential_processors.helpers.digital_credentials')
-@patch('business_digital_credentials.digital_credential_processors.helpers.get_digital_credential_data', return_value=[{
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.digital_credentials')
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.get_digital_credential_data', return_value=[{
     'name': 'credential_id',
     'value': '00000001'
 }])
@@ -367,8 +369,8 @@ def test_issue_digital_credential_throws_exception_on_failure(mock_digital_crede
         assert 'Failed to issue credential.' in str(excinfo)
 
 
-@patch('business_digital_credentials.digital_credential_processors.helpers.digital_credentials')
-@patch('business_digital_credentials.digital_credential_processors.helpers.get_digital_credential_data', return_value=[{
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.digital_credentials')
+@patch('business_registry_digital_credentials.digital_credentials_lifecycle.get_digital_credential_data', return_value=[{
     'name': 'credential_id',
     'value': '00000001'
 }])
