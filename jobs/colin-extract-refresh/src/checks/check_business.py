@@ -9,7 +9,7 @@ def run_check() -> int:
         raise RuntimeError(
             "Missing business env vars"
         )
-    print(f"connecting to business db.....")
+    print("== running check_business.py ==")
     engine = create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
     with engine.connect() as conn:
         row = conn.execute(text("SELECT * FROM corporation LIMIT 1")).mappings().first()

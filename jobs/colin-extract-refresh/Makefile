@@ -19,7 +19,7 @@ install:  ## Install python virtual environment
 	pip install -Ur requirements.txt
 
 run: ## Run the project in local
-	. .venv/bin/activate && python test_connectivity.py
+	. .venv/bin/activate && python src/test_connectivity.py
 
 build:
 	docker build ${DOCKER_PLATFORM} -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR) \
@@ -29,7 +29,7 @@ build:
 build-nc:
 	docker build ${DOCKER_PLATFORM} --no-cache -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR)
 
-run-docker: build
+run-docker: build-nc
 	docker run  $(DOCKER_NAME):$(TAG_NAME)
 
 #################################################################################
