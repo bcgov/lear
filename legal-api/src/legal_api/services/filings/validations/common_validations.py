@@ -1392,8 +1392,15 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
 
     if legal_type not in Business.CORPS:
         return msg  # authorizationReceived is only required for corporations
-    
-    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION and not is_voluntary_dissolution(filing_json, filing_type):
+
+    enabled_features: list[str] = flags.value("enable-new-feature", [])
+    filings_requiring_auth = FILINGS_REQUIRING_AUTHORIZATION
+    if "incorporationApplication-completingParty" in enabled_features:
+        filings_requiring_auth = FILINGS_REQUIRING_AUTHORIZATION | {
+            CoreFiling.FilingTypes.INCORPORATIONAPPLICATION
+        }
+
+    if filing_type not in filings_requiring_auth and not is_voluntary_dissolution(filing_json, filing_type):
         return msg  # authorizationReceived is only required for specific filings
 
     authorization_received = filing_json["filing"]["header"].get("authorizationReceived")

@@ -2037,8 +2037,8 @@ def test_cor(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     enabled_filings = 'changeOfReceivers.appointReceiver' if enabled else ''
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag, _user, _account_id: enabled_filings
-        if flag == 'enabled-specific-filings' else {}
+        lambda flag, _user=None, _account_id=None: enabled_filings
+        if flag == 'enabled-specific-filings' else []
     )
     cor = copy.deepcopy(FILING_HEADER)
     cor['filing']['header']['name'] = 'changeOfReceivers'
@@ -2090,8 +2090,8 @@ def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     enabled_filings = 'changeOfLiquidators.intentToLiquidate' if enabled else ''
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag, _user, _account_id: enabled_filings
-        if flag == 'enabled-specific-filings' else {}
+        lambda flag, _user=None, _account_id=None: enabled_filings
+        if flag == 'enabled-specific-filings' else []
     )
     col = copy.deepcopy(FILING_HEADER)
     col['filing']['header']['name'] = 'changeOfLiquidators'
@@ -2146,7 +2146,7 @@ def test_dod(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     enabled_filings = 'dissolution.delay' if enabled else ''
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag, _user, _account_id: enabled_filings
+        lambda flag, _user=None, _account_id=None: enabled_filings
         if flag == 'enabled-specific-filings' else {}
     )
     monkeypatch.setattr(
@@ -2231,8 +2231,8 @@ def test_ta(session, requests_mock, client, jwt, monkeypatch, test_name, legal_t
     enabled_filings = 'transition' if enabled else ''
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag, _user, _account_id: enabled_filings
-        if flag == 'enabled-specific-filings' else {}
+        lambda flag, _user=None, _account_id=None: enabled_filings
+        if flag == 'enabled-specific-filings' else []
     )
     monkeypatch.setattr(
         'legal_api.services.flags.is_on',
