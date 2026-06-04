@@ -17,7 +17,7 @@ def run_check() -> int:
         raise RuntimeError(
             "Missing colin env vars"
         )
-    print(f"[business-api] connecting to {cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE}")
+    print(f"connecting to colin db.....")
     _colin_oracle_init()
     engine = create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE)
     with engine.connect() as conn:

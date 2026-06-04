@@ -53,4 +53,6 @@ USER 1001
 
 EXPOSE 8080
 
+COPY . .
+
 CMD [ "python", "/opt/app-root/test_connectivity.py" ]

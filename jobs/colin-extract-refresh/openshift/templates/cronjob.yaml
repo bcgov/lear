@@ -53,7 +53,15 @@ objects:
                         memory: "${MEMORY_LIMIT}"
             restartPolicy: Never
             terminationGracePeriodSeconds: 30
-                  
+
+  envFrom:
+    env:
+      - name: TEST_KEY
+        valueFrom:
+          secretKeyRef:
+            name: ${NAME}-${TAG}-secret
+            key: TEST_KEY
+            optional: true               
 parameters: 
 
   - name: NAME

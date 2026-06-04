@@ -30,7 +30,7 @@ build-nc:
 	docker build ${DOCKER_PLATFORM} --no-cache -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR)
 
 run-docker: build
-	docker run --rm --env-file $(CURRENT_ABS_DIR)/.env $(DOCKER_NAME):$(TAG_NAME)
+	docker run  $(DOCKER_NAME):$(TAG_NAME)
 
 #################################################################################
 # Self Documenting Commands                                                     #
