@@ -13,7 +13,7 @@ DOCKER_PLATFORM ?= --platform linux/amd64
 setup: install  ## Setup the project
 
 install:  ## Install python virtual environment
-	test -f .venv/bin/activate || python3.11 -m venv  $(CURRENT_ABS_DIR)/.venv ;\
+	test -f .venv/bin/activate || python3.12 -m venv  $(CURRENT_ABS_DIR)/.venv ;\
 	. .venv/bin/activate ;\
 	pip install --upgrade pip ;\
 	pip install -Ur requirements.txt

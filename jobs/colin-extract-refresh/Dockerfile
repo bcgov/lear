@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 ARG VCS_REF="missing"
 ARG BUILD_DATE="missing"

@@ -23,7 +23,7 @@ import os
 import sys
 
 from dotenv import find_dotenv, load_dotenv
-
+from sqlalchemy import create_engine
 
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
@@ -84,14 +84,22 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME_COLIN_MIGR = os.getenv('DATABASE_NAME_COLIN_MIGR', '')
     DB_HOST_COLIN_MIGR = os.getenv('DATABASE_HOST_COLIN_MIGR', '')
     DB_PORT_COLIN_MIGR = os.getenv('DATABASE_PORT_COLIN_MIGR', '5432')
-    SQLALCHEMY_DATABASE_URI_COLIN_MIGR = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
-        user=DB_USER_COLIN_MIGR,
-        password=DB_PASSWORD_COLIN_MIGR,
-        host=DB_HOST_COLIN_MIGR,
-        port=int(DB_PORT_COLIN_MIGR),
-        name=DB_NAME_COLIN_MIGR,
-    )
-    SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', False)
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME', '')
+    DATABASE_IP_TYPE = os.getenv('DATABASE_IP_TYPE', 'private').lower()
+    if CLOUDSQL_INSTANCE_CONNECTION_NAME:
+        SQLALCHEMY_DATABASE_URI_COLIN_MIGR = "postgresql+pg8000://"
+
+    elif DB_HOST_COLIN_MIGR:
+        SQLALCHEMY_DATABASE_URI_COLIN_MIGR = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
+            user=DB_USER_COLIN_MIGR,
+            password=DB_PASSWORD_COLIN_MIGR,
+            host=DB_HOST_COLIN_MIGR,
+            port=int(DB_PORT_COLIN_MIGR),
+            name=DB_NAME_COLIN_MIGR,
+        )
+    else:
+        SQLALCHEMY_DATABASE_URI_COLIN_MIGR = ''
+        SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
 
     DATABASE_POOL_PRE_PING = os.getenv('DATABASE_POOL_PRE_PING', 'True') == 'True'
@@ -144,3 +152,22 @@ class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
 
     TESTING = False
     DEBUG = False
+
+
+def get_colin_mig_conn(cfg: _Config):
+    from cloud_sql_connector import DBConfig, getconn
+    config = DBConfig(
+        instance_name=cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME,
+        database=cfg.DB_NAME_COLIN_MIGR,
+        user=cfg.DB_USER_COLIN_MIGR,
+        ip_type=cfg.DATABASE_IP_TYPE,
+        schema="public"
+    )
+    return getconn(config)
+
+def get_colin_mig_engine(cfg: _Config | None = None):
+    cfg = cfg or get_named_config()
+    if cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME and cfg.DB_NAME_COLIN_MIGR and cfg.DB_USER_COLIN_MIGR:
+        return create_engine("postgresql+pg8000://", creator=get_colin_mig_conn)
+    else:
+        return create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
