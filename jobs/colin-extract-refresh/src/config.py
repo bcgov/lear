@@ -168,6 +168,6 @@ def get_colin_mig_conn(cfg: _Config):
 def get_colin_mig_engine(cfg: _Config | None = None):
     cfg = cfg or get_named_config()
     if cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME and cfg.DB_NAME_COLIN_MIGR and cfg.DB_USER_COLIN_MIGR:
-        return create_engine("postgresql+pg8000://", creator=get_colin_mig_conn)
+        return create_engine("postgresql+pg8000://", creator=get_colin_mig_conn(cfg))
     else:
-        return create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR)
+        return create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR, **cfg.SQLALCHEMY_ENGINE_OPTIONS)
