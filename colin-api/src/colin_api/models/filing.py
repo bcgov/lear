@@ -1482,11 +1482,14 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             office_text = cls._process_office(cursor=cursor, filing=filing)
 
             if parties := filing.body.get('parties', []):
+                has_completing_party = False
                 for party in parties:
-                    has_completing_party = cls._create_party_roles(cursor=cursor,
-                                                                   party=party,
-                                                                   business=business,
-                                                                   event_id=filing.event_id)
+                    completing_party_created = cls._create_party_roles(cursor=cursor,
+                                                                       party=party,
+                                                                       business=business,
+                                                                       event_id=filing.event_id)
+                    if completing_party_created:
+                        has_completing_party = True
                 if (filing.filing_type == 'incorporationApplication' and
                         filing.business.corp_type != Business.TypeCodes.COOP.value and
                         not has_completing_party):

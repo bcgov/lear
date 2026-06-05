@@ -47,6 +47,8 @@ class _Config:  # pylint: disable=too-few-public-methods
 
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
+    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
+
     # Colin API configuration
     COLIN_API_URL = os.getenv("COLIN_API_URL", "")
     COLIN_API_VERSION = os.getenv("COLIN_API_VERSION", "/api/v1")

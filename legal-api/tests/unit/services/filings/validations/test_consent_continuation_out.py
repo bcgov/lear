@@ -41,7 +41,7 @@ def test_consent_continuation_out_active_and_good_standing(session, test_name, e
     """Assert Consent Continuation Out can be filed."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else default
     )
     business = Business(
         identifier='BC1234567',
@@ -83,7 +83,7 @@ def test_validate_foreign_jurisdiction(session, test_name, expected_code, messag
     """Assert validate foreign jurisdiction."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else default
     )
     business = Business(
         identifier='BC1234567',
@@ -122,7 +122,7 @@ def test_valid_foreign_jurisdiction(session, monkeypatch):
     """Assert valid foreign jurisdiction."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else default
     )
     business = Business(
         identifier='BC1234567',
@@ -162,7 +162,7 @@ def test_validate_existing_cco(session, test_name, expected_code, message, monke
     """Assert validate foreign jurisdiction exist."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -209,7 +209,7 @@ def test_consent_continuation_out_court_order(session, test_status, file_number,
     """Assert valid court order."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-consent-continuation-out-entities' else default
     )
     business = Business(
         identifier='BC1234567',

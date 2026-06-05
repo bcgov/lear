@@ -16,6 +16,7 @@ from common.colin_queries import get_identifiers_per_batch, get_updated_identifi
 from common.init_utils import colin_oracle_init, get_config
 from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
+_DEFAULT_TARGET_CONNECTION = get_named_config().TARGET_CONNECTION
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -148,7 +149,7 @@ def run_cprd_subset_extract_generator(
     pg_disable_method: str,
     out: str | None,
     include_cp: bool = False,
-    target_connection: str = 'ctst_pg',
+    target_connection: str = _DEFAULT_TARGET_CONNECTION,
     prefix_numeric_bc: bool = False,
 ) -> subprocess.CompletedProcess:
     """
@@ -241,7 +242,7 @@ def extract_pull_flow(
     refresh_views: bool = True,
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
-    target_connection: str = 'ctst_pg',
+    target_connection: str = _DEFAULT_TARGET_CONNECTION,
 ) -> None:
     """
     Generate files
@@ -259,7 +260,7 @@ def extract_pull_flow(
     # Get Identifiers
     feed_path: Path | None = None
     if mode == 'refresh':
-        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=1, colin_oracle_engine=colin_oracle_engine, chunk_size=chunk_size)
+        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=config.MIG_BATCH_IDS, colin_oracle_engine=colin_oracle_engine, chunk_size=chunk_size)
         print(f'Colin updated identifiers : {len(updated_rows)} rows')
         _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
@@ -334,5 +335,5 @@ if __name__ == '__main__':
     p.add_argument('--refresh-views', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
-    p.add_argument('--target-connection', default='ctst_pg')
+    p.add_argument('--target-connection', default=_DEFAULT_TARGET_CONNECTION)
     extract_pull_flow(**vars(p.parse_args()))

@@ -58,6 +58,7 @@ class Config:  # pylint: disable=too-few-public-methods
     PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
     LD_SDK_KEY = os.getenv("LD_SDK_KEY", None)
+    LEGAL_API_URL = os.getenv("BUSINESS_API_URL", "") + os.getenv("BUSINESS_API_VERSION_2", "")
     COLIN_API = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
 
     SEARCH_API = (
