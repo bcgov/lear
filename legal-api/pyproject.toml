@@ -35,6 +35,7 @@ dependencies = [
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
     "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
     "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
+    "business-registry-dissolution @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-dissolution",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
     "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@cloud-sql-connector-python3.9#subdirectory=python/cloud-sql-connector"
@@ -147,6 +148,7 @@ known-first-party = [
    "business_model",
    "business_model_migrations",
    "cloud-sql-connector",
+   "dissolution_service",
    "flask_jwt_oidc",
    "gcp_queue",
    "registry_schemas",

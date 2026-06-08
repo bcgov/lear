@@ -25,7 +25,8 @@ from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION
 
 from business_common.utils import datetime
 from business_model.models import Batch, Business
-from legal_api.services import flags, InvoluntaryDissolutionService
+from dissolution_service import InvoluntaryDissolutionService
+from legal_api.services import flags
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,
@@ -426,11 +427,11 @@ def test_check_feature_flags_filter(app, session, mocker, test_name, enable_invo
     def side_effect(id):
         return get_affiliation_response[id]
     
-    mocker.patch('legal_api.services.involuntary_dissolution.AccountService.get_affiliations', side_effect=side_effect)
+    mocker.patch('dissolution_service.involuntary_dissolution.AccountService.get_affiliations', side_effect=side_effect)
     
     with patch.object(flags, 'is_on', return_value=enable_involuntary_dissolution_filter):
         with patch.object(flags, 'value', return_value=involuntary_dissolution_filter):
-            result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
+            result = InvoluntaryDissolutionService._get_businesses_eligible_query(None, flags).all()
 
     if test_name == 'no_filter':
         assert len(result) == 9
