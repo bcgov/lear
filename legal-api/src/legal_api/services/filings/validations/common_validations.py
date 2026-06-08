@@ -29,6 +29,7 @@ from flask import current_app, g, request
 from flask_babel import _
 from pypdf import PdfReader
 
+from business_account import AccountService
 from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
@@ -37,7 +38,6 @@ from business_model.models.configuration import EMAIL_PATTERN
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.services import MinioService, colin, flags, namex
-from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str

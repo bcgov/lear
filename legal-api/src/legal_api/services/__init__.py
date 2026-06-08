@@ -33,7 +33,7 @@ from .authz import (
     authorized,
     has_roles,
 )
-from .bootstrap import AccountService, RegistrationBootstrapService
+from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
 from .digital_credentials import DigitalCredentialsService
@@ -64,7 +64,6 @@ __all__ = [  # noqa: RUF022
     "authorized",
     "has_roles",
     # Services
-    "AccountService",
     "RegistrationBootstrapService",
     "VersionedBusinessDetailsService",
     "ColinService",

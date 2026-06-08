@@ -18,10 +18,10 @@ from typing import Final
 from flask.globals import request_ctx
 from flask_babel import _ as babel
 
+from business_account import AccountService
 from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, flags
-from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
@@ -448,7 +448,7 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
 
 def _is_business_affliated(identifier, account_id):
     return bool(
-        (account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and
+        (account_response := AccountService.get_account_by_affiliated_identifier(identifier, flags)) and
         (orgs := account_response.get("orgs")) and
         any(str(org.get("id")) == account_id for org in orgs)
     )

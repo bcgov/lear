@@ -17,7 +17,7 @@ import copy
 import pytest
 from datedelta import datedelta
 
-from business_common.utils.datetime import datetime
+from business_common.utils import datetime
 from business_model.models import Batch, BatchProcessing, Business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
 from legal_api.services.warnings.business.business_checks.involuntary_dissolution import (

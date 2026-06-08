@@ -13,14 +13,14 @@
 # limitations under the License.
 """Test Change of Director basic validations."""
 import copy
+from datetime import timezone
 from http import HTTPStatus
 
 import datedelta
 import pytest
 from freezegun import freeze_time
 
-from business_common.utils.datetime import datetime, timezone
-from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils import LegislationDatetime, datetime
 from business_model.models import Business
 from legal_api.services.filings import validate
 from tests.unit.services.filings.validations import lists_are_equal

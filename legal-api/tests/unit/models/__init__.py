@@ -15,12 +15,13 @@
 """The Test-Suite used to ensure that the Model objects are working correctly."""
 import base64
 import uuid
+from datetime import timezone
 
 from datedelta import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from business_common.utils.datetime import datetime, timezone
+from business_common.utils import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,

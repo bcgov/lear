@@ -822,7 +822,7 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+    mocker.patch('legal_api.resources.v2.business.business.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
 
     with jwt_request_context(app, jwt, [STAFF_ROLE]):
@@ -946,7 +946,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+    mocker.patch('legal_api.resources.v2.business.business.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': [{'id': account_id}]} if test_status in  'SUCCESS_AFFILIATED' else {})
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
@@ -955,7 +955,7 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
     with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)
@@ -1029,7 +1029,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
     with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)
@@ -1141,7 +1141,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
     
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
     with jwt_request_context(app, jwt, [role], 'test-user', account_id):
         err = validate(None, filing, account_id)

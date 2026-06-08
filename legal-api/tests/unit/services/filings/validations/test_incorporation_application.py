@@ -2016,7 +2016,7 @@ def _setup_incorporation_permission_mocks(mocker, filing_json, legal_type):
         'validate_phone_number', 'validate_email',
     ]:
         mocker.patch.object(incorporation_application, func, return_value=[])
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts',
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts',
                  return_value={'contacts': [{'email': 'test@example.com'}]})
 
 

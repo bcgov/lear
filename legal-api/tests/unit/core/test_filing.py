@@ -13,11 +13,13 @@
 # limitations under the License.
 
 """Tests to assure the Filing Domain is working as expected."""
+from datetime import timezone
+
 import datedelta
 from freezegun import freeze_time
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from business_common.utils.datetime import datetime, timezone
+from business_common.utils import datetime
 from legal_api.core import Filing
 from tests.unit.models import factory_business, factory_completed_filing
 

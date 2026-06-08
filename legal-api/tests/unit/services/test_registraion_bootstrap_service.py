@@ -25,8 +25,8 @@ import pytest
 import requests
 from flask import current_app
 
+from business_account import AccountService
 from legal_api.services import RegistrationBootstrapService
-from legal_api.services.bootstrap import AccountService
 from tests import integration_affiliation
 
 
