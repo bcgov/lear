@@ -38,6 +38,7 @@ This module is the API for the Legal Entity system.
 import os
 from typing import Optional
 
+from cloud_sql_connector import setup_pg8000_close_event_listener
 from flask import Flask, jsonify
 from registry_schemas import __version__ as registry_schemas_version
 from registry_schemas.flask import SchemaServices
@@ -72,18 +73,6 @@ def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
     else:
         app.config.from_object(config.CONFIGURATION[run_mode])
 
-    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
-        from cloud_sql_connector import DBConfig
-        db_config = DBConfig(
-            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
-            database=app.config.get("DB_NAME", ""),
-            user=app.config.get("DB_USER", ""),
-            ip_type=app.config["DB_IP_TYPE"],
-            pool_recycle = 60,
-            schema="public",
-        )
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
-
     app.logger = StructuredLogging(app).get_logger()
     init_db(app)
     rsbc_schemas.init_app(app)
@@ -94,6 +83,8 @@ def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
 
     with app.app_context():  # db require app context
         digital_credentials.init_app(app)
+        if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+            setup_pg8000_close_event_listener(db.engine)
 
     cache.init_app(app)
 
