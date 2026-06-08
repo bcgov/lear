@@ -40,14 +40,30 @@ RUN set -eux; \
     chmod 755 "${ORACLE_CLIENT_LIB_DIR}"; \
     rm -rf /var/lib/apt/lists/*
 
+ENV DBSCHEMA_HOME=/opt/DbSchema
+ENV DBSCHEMA_VERSION=10_2_1
+
+RUN set -eux; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends default-jre-headless curl;\
+    curl -fsSL "https://www.dbschema.com/download/dbschema_linux_10_2_1.tar.gz" -O /tmp/dbschema.tar.gz;\
+    tar -xzf /tmp/dbschema.tar.gz -C /opt; \
+    rm /tmp/dbschema.tar.gz; \
+    curl -fsSL "https://repo1.maven.org/maven2/org/testfx/openjfx-monocle/17.0.10/openjfx-monocle-17.0.10.jar" -o "${DBSCHEMA_HOME}/lib/monocle.jar"; \
+    ln -sf "${DBSCHEMA_HOME}/dbschemacli" /usr/local/bin/dbschemacli; \
+    test -x "${DBSCHEMA_HOME}/dbschemacli"; \
+    rm -rf /var/lib/apt/list/*
+    
+
+ 
 # Create directories with proper permissions
 RUN mkdir -p /opt/app-root && \
     chmod 755 /opt/app-root
 
 WORKDIR /opt/app-root
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+ENV PATH="${DBSCHEMA_HOME}:${PATH}"
 
 USER 1001
 
