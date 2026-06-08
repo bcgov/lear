@@ -278,6 +278,12 @@ def minio_server(monkeypatch):
         yield minio_mock
 
 
+@pytest.fixture(scope="function")
+def mock_bearer_token(app, requests_mock):
+    token_mock = requests_mock.post(app.config.get("ACCOUNT_SVC_AUTH_URL"), json={"access_token": "mock-token"})
+    return token_mock
+    
+
 DOCUMENT_API_URL = 'http://document-api.com'
 DOCUMENT_API_VERSION = '/api/v1'
 DOCUMENT_SVC_URL = f'{DOCUMENT_API_URL + DOCUMENT_API_VERSION}'

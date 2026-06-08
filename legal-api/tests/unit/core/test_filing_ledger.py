@@ -18,7 +18,7 @@ import copy
 import datedelta
 from registry_schemas.example_data import FILING_TEMPLATE
 
-from business_common.utils.datetime import datetime
+from business_common.utils import datetime
 from business_model.models import Business, Comment, Filing
 from legal_api.core import Filing as CoreFiling
 from legal_api.services.authz import STAFF_ROLE

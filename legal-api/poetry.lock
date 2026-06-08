@@ -347,24 +347,51 @@ resolved_reference = "1d96ede7c8abd779b16dcbd93c0d04953bb6cdcb"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
-name = "business-registry-common"
-version = "0.1.0"
+name = "business-registry-account"
+version = "0.1.1"
 description = ""
 optional = false
-python-versions = ">=3.9,<4.0"
+python-versions = ">=3.13,<3.14"
 groups = ["main"]
 files = []
 develop = false
 
 [package.dependencies]
-datedelta = "^1.4"
-pytz = "^2025.1"
+datedelta = ">=1.4,<2.0"
+flask = ">=3.1.0,<4.0.0"
+flask-jwt-oidc = ">=0.8.0,<1.0.0"
+python-dotenv = ">=1.1.0,<2.0.0"
+pytz = ">=2025.1,<2026.0"
+requests = ">=2.32.3,<3.0.0"
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "41558e130ff93aa1c32caada6f174e02b099b4f6"
+resolved_reference = "5220da1a7f3cf74f112ae4fdc613c64e28cd356d"
+subdirectory = "python/common/business-registry-account"
+
+[[package]]
+name = "business-registry-common"
+version = "0.1.1"
+description = ""
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+datedelta = ">=1.4,<2.0"
+flask = ">=3.1.0,<4.0.0"
+python-dateutil = ">=2.9.0,<3.0.0"
+pytz = ">=2025.1,<2026.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "ab74265227677d93896a8d9c85dd5bae6c617873"
 subdirectory = "python/common/business-registry-common"
 
 [[package]]
@@ -4361,4 +4388,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "5495323f2113af19cb10adaf57a698649dfd65b4a024488952c6615fe1c30eff"
+content-hash = "88090f7b4d497163f6a9e57131dc472e80b06a62f67e30a7a90f2a9df6dc4478"

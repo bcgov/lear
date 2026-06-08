@@ -13,12 +13,12 @@
 # limitations under the License.
 """Test Change of Director effective date validations. See rules in change_of_directors.py."""
 import copy
+from datetime import timezone
 
 import datedelta
 from freezegun import freeze_time
 
-from business_common.utils.datetime import datetime, timezone
-from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils import LegislationDatetime, datetime
 from business_model.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations.change_of_directors import validate_effective_date
