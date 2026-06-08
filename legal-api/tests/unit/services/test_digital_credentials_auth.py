@@ -20,9 +20,9 @@ from unittest.mock import patch
 
 from business_model.models.business import Business
 from business_model.models.user import User
+from business_registry_digital_credentials import DigitalCredentialsRulesService
 from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
 from legal_api.services.digital_credentials_auth import are_digital_credentials_allowed, get_digital_credentials_preconditions
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from tests.unit.services.utils import create_business, jwt_request_context
 
 token_json = {'username': 'test'}

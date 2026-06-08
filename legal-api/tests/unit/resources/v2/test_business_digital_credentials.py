@@ -22,9 +22,9 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import jwt as pyjwt
-from legal_api.services.authz import BASIC_USER
 from business_model.models import DCConnection, DCDefinition, User
-from legal_api.services.digital_credentials import DigitalCredentialsService
+from business_registry_digital_credentials import DigitalCredentialsService
+from legal_api.services.authz import BASIC_USER
 
 from tests.unit.models import create_dc_business_user, create_dc_connection, create_dc_credential, create_dc_definition, factory_business
 from tests.unit.services.utils import create_header, helper_create_jwt_json_token_claims
