@@ -46,13 +46,14 @@ ENV DBSCHEMA_VERSION=10_2_1
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends default-jre-headless curl;\
-    curl -fsSL "https://www.dbschema.com/download/dbschema_linux_10_2_1.tar.gz" -O /tmp/dbschema.tar.gz;\
+    curl -fsSL "https://www.dbschema.com/download/dbschema_linux_10_2_1.tar.gz" -o /tmp/dbschema.tar.gz;\
     tar -xzf /tmp/dbschema.tar.gz -C /opt; \
     rm /tmp/dbschema.tar.gz; \
+    mkdir -p "${DBSCHEMA_HOME}/lib"; \
     curl -fsSL "https://repo1.maven.org/maven2/org/testfx/openjfx-monocle/17.0.10/openjfx-monocle-17.0.10.jar" -o "${DBSCHEMA_HOME}/lib/monocle.jar"; \
-    ln -sf "${DBSCHEMA_HOME}/dbschemacli" /usr/local/bin/dbschemacli; \
-    test -x "${DBSCHEMA_HOME}/dbschemacli"; \
-    rm -rf /var/lib/apt/list/*
+    ln -sf "${DBSCHEMA_HOME}/DbSchemaCLI" /usr/local/bin/dbschemacli; \
+    test -x "${DBSCHEMA_HOME}/DbSchemaCLI"; \
+    rm -rf /var/lib/apt/lists/*
     
 
  
@@ -62,7 +63,11 @@ RUN mkdir -p /opt/app-root && \
 
 WORKDIR /opt/app-root
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN apt-get update; \
+    apt-get install -y --no-install-recommends git;\
+    pip install --no-cache-dir -r requirements.txt;\
+    rm -rf /var/lib/apt/lists/*
+
 ENV PATH="${DBSCHEMA_HOME}:${PATH}"
 
 USER 1001
@@ -71,4 +76,4 @@ EXPOSE 8080
 
 COPY . .
 
-CMD [ "python", "/opt/app-root/test_connectivity.py" ]
+CMD [ "python", "src/test_connectivity.py" ]
