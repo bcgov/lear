@@ -1,0 +1,21 @@
+name: Common Business Dissolution CI
+
+on:
+  pull_request:
+    types: [assigned, synchronize]
+    paths:
+      - "python/common/business-registry-dissolution/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./python/common/business-registry-dissolution
+
+jobs:
+  business-registry-dissolution-ci:
+    uses: bcgov/bcregistry-sre/.github/workflows/backend-ci.yaml@main
+    with:
+      app_name: "business-registry-dissolution"
+      working_directory: "./python/common/business-registry-dissolution"
+      codecov_flag: "business-registry-dissolution"

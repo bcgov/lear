@@ -14,15 +14,16 @@
 """Common setup and fixtures for the pytest suite used by this service."""
 import contextlib
 
-import pytest
-from flask import Flask
-from flask_jwt_oidc import JwtManager
-import sqlalchemy
-from sqlalchemy import event, text
-from flask_migrate import Migrate, upgrade
-from dissolution_service.config import TestConfig
 import business_model_migrations
+import pytest
+import sqlalchemy
+from flask import Flask
+from flask_migrate import Migrate, upgrade
+from sqlalchemy import event, text
+
 from business_model.models import db as _db
+from dissolution_service.config import TestConfig
+from flask_jwt_oidc import JwtManager
 
 contextmanager = contextlib.contextmanager
 _jwt = JwtManager()
@@ -110,14 +111,14 @@ def not_raises(exception):
     try:
         yield
     except exception:
-        raise pytest.fail(f'DID RAISE {exception}')
+        raise pytest.fail(f"DID RAISE {exception}")
 
 
 def setup_jwt_manager(app, jwt_manager):
     """Use flask app to configure the JWTManager to work for a particular Realm."""
     def get_roles(a_dict):
-        return a_dict['realm_access']['roles']  # pragma: no cover
-    app.config['JWT_ROLE_CALLBACK'] = get_roles
+        return a_dict["realm_access"]["roles"]  # pragma: no cover
+    app.config["JWT_ROLE_CALLBACK"] = get_roles
 
     jwt_manager.init_app(app)
 
@@ -130,7 +131,7 @@ def create_app():
 
     return app
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def app():
     """Return a session-wide application configured in TEST mode."""
     _app = create_app()
@@ -138,7 +139,7 @@ def app():
     return _app
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app_ctx(event_loop):
     # def app_ctx():
     """Return a session-wide application configured in TEST mode."""
@@ -153,23 +154,23 @@ def config(app):
     return app.config
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def app_request():
     """Return a session-wide application configured in TEST mode."""
     app = Flask(__name__)
-    app.config.from_object(Testing)
+    app.config.from_object(TestConfig)
     _db.init_app(app)
 
     return app
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def client(app):  # pylint: disable=redefined-outer-name
     """Return a session-wide Flask test client."""
     return app.test_client()
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope="session")
 def jwt():
     """Return a session-wide jwt manager."""
     return _jwt
@@ -192,7 +193,7 @@ def db(app):  # pylint: disable=redefined-outer-name, invalid-name
             app,
             _db,
             directory=business_model_migrations.__path__[0],
-            **{"dialect_name": "postgres"},
+            dialect_name="postgres",
         )
         upgrade()
 
@@ -251,5 +252,5 @@ def run_around_tests(db):
     yield
     # run after each test
     db.session.rollback()
-    db.session.execute(text(f'TRUNCATE TABLE businesses CASCADE'))
+    db.session.execute(text(f"TRUNCATE TABLE businesses CASCADE"))
     db.session.commit()
