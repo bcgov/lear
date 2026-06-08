@@ -33,13 +33,24 @@ from flask_jwt_oidc import JwtManager
 DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
 
 
+def _get_flags():
+    """Return the legal-api flags singleton.
+
+    Wrapped in a function (rather than a top-level import) for two reasons:
+    1. Avoids a circular import via ``legal_api.services`` package init.
+    2. Gives tests a single, stable patch target — ``_get_flags`` — so they can
+       return a stub instead of standing up a LaunchDarkly client.
+    """
+    from legal_api.services import flags
+    return flags
+
+
 def _resolve_allowed_business_types() -> list[str]:
     """Read the ``dbc-enabled-business-types`` LD flag and return the resolved list.
 
     Returns ``[]`` if the flag is off or the flag value is malformed.
     """
-    # Local import: avoids a circular import via ``legal_api.services`` package init.
-    from legal_api.services import flags
+    flags = _get_flags()
 
     if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG):
         current_app.logger.warning("%s is OFF", DBC_ENABLED_BUSINESS_TYPES_FLAG)
