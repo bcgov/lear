@@ -24,6 +24,9 @@ from .flags import Flags
 flags = Flags()
 
 # Now import modules that may reference the flags instance
+from business_registry_digital_credentials import DigitalCredentialsRulesService, DigitalCredentialsService
+from business_registry_digital_credentials import digital_credentials as _shared_digital_credentials
+
 from .authz import (
     ACCOUNT_IDENTITY,
     BASIC_USER,
@@ -33,9 +36,6 @@ from .authz import (
     authorized,
     has_roles,
 )
-from business_registry_digital_credentials import DigitalCredentialsRulesService, DigitalCredentialsService
-from business_registry_digital_credentials import digital_credentials as _shared_digital_credentials
-
 from .bootstrap import AccountService, RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
