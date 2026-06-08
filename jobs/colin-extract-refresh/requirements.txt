@@ -3,5 +3,5 @@ psycopg2-binary==2.9.9
 oracledb==3.1.1
 python-dotenv==1.1.1
 pg8000==1.31.4
-git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/cloud-sql-connector
 
+cloud-sql-connector @  git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/cloud-sql-connector
