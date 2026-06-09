@@ -395,6 +395,30 @@ resolved_reference = "ab74265227677d93896a8d9c85dd5bae6c617873"
 subdirectory = "python/common/business-registry-common"
 
 [[package]]
+name = "business-registry-dissolution"
+version = "0.1.2"
+description = ""
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
+business-model = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-model"}
+business-registry-account = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-account"}
+business-registry-common = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-common"}
+flask = ">=3.1.0,<4.0.0"
+python-dotenv = ">=1.1.0,<2.0.0"
+
+[package.source]
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "b415feb9f1a091ecc87a3a353e3a0985da4d094c"
+subdirectory = "python/common/business-registry-dissolution"
+
+[[package]]
 name = "cachelib"
 version = "0.13.0"
 description = "A collection of cache libraries in the same API interface."
@@ -4388,4 +4412,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "88090f7b4d497163f6a9e57131dc472e80b06a62f67e30a7a90f2a9df6dc4478"
+content-hash = "04e824180ee3082d47286dc8a50ee881f23db89c26e98367d2d8e0811ea4eff6"
