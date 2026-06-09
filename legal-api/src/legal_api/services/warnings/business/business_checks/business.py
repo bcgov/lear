@@ -14,7 +14,7 @@
 
 """Service to check compliancy for a business."""
 from business_model.models import Business
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
+from dissolution_service import InvoluntaryDissolutionService
 
 from . import BusinessWarningCodes, WarningType
 from .corps import check_business as corps_check
