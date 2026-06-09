@@ -35,7 +35,7 @@
 from contextlib import suppress
 
 import dpath
-from business_model.models import Business, Filing
+from business_model.models import Business, Comment, Filing
 
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
@@ -77,3 +77,11 @@ def process(business: Business, continuation_out_filing: Filing, filing: dict, f
         "legalName": legal_name,
         "continuationOutDate": continuation_out_date_str
     }
+
+    if details := continuation_out_json.get("details"):
+        continuation_out_filing.comments.append(
+            Comment(
+                comment=details,
+                staff_id=continuation_out_filing.submitter_id
+            )
+        )
