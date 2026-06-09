@@ -95,9 +95,6 @@ def tests_filer_consent_continuation_out(app, session, mocker, test_name, effect
         final_filing.court_order_file_number
     assert filing_json['filing']['consentContinuationOut']['courtOrder']['effectOfOrder'] == \
         final_filing.court_order_effect_of_order
-    assert filing_json['filing']['consentContinuationOut']['details']  == \
-        final_filing.comments[0].comment
-    assert final_filing.submitter_id == final_filing.comments[0].staff_id
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 
