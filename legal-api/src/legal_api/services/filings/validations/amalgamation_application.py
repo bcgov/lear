@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Amalgamation Application filing."""
-import re
 from http import HTTPStatus
 from typing import Final, Optional
 
@@ -279,16 +278,6 @@ def _validate_foreign_businesses(  # noqa: PLR0913
         amalgamating_business,
         amalgamating_business_path) -> list:
     msg = []
-    msg.extend(_validate_foreign_identifier(amalgamating_business, amalgamating_business_path))
-
-    # Frontend enforces these bounds on the foreign business legal name; mirror them here.
-    min_legal_name_length: Final = 3
-    max_legal_name_length: Final = 150
-    if not min_legal_name_length <= len(foreign_legal_name) <= max_legal_name_length:
-        msg.append({
-            "error": "Length of foreign business legal name must be from 3 to 150 characters.",
-            "path": f"{amalgamating_business_path}/legalName"
-        })
 
     if is_staff:
         msg.extend(validate_foreign_jurisdiction(amalgamating_business["foreignJurisdiction"],
@@ -333,42 +322,6 @@ def _validate_foreign_businesses(  # noqa: PLR0913
                     "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
-
-    return msg
-
-
-def _validate_foreign_identifier(amalgamating_business, amalgamating_business_path) -> list:
-    mras_ca_regions = {"AB", "MB", "NS", "ON", "QC", "SK"}
-    identifier_pattern = r"^[0-9a-zA-Z-]+$"
-    min_len = 3
-    max_len = 40
-
-    msg = []
-    identifier = amalgamating_business.get("identifier")
-    jurisdiction = amalgamating_business.get("foreignJurisdiction", {})
-    country = (jurisdiction.get("country") or "").upper()
-    region = (jurisdiction.get("region") or "").upper()
-    identifier_path = f"{amalgamating_business_path}/identifier"
-
-    is_mras = country == "CA" and region in mras_ca_regions
-    if is_mras and not identifier:
-        msg.append({
-            "error": "Identifier is required for foreign businesses from MRAS jurisdictions.",
-            "path": identifier_path,
-        })
-        return msg
-
-    if identifier:
-        if not min_len <= len(identifier) <= max_len:
-            msg.append({
-                "error": f"Foreign business identifier must be between {min_len} and {max_len} characters.",
-                "path": identifier_path,
-            })
-        if not re.match(identifier_pattern, identifier):
-            msg.append({
-                "error": "Foreign business identifier may only contain letters, numbers, and hyphens.",
-                "path": identifier_path,
-            })
 
     return msg
 
