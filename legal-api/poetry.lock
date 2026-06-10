@@ -388,7 +388,7 @@ requests = "^2.32.3"
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "2b62a37bf206edda1241cb2748213e2ef956bbe1"
+resolved_reference = "a84cfb9b8707e9f12b156f296393eb63c3297412"
 subdirectory = "python/common/business-registry-digital-credentials"
 
 [[package]]
