@@ -397,8 +397,6 @@ subdirectory = "python/common/business-registry-common"
 [[package]]
 name = "business-registry-digital-credentials"
 version = "0.2.0"
-name = "business-registry-dissolution"
-version = "0.1.2"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -412,6 +410,25 @@ business-registry-common = {git = "https://github.com/bcgov/lear.git", branch = 
 flask-jwt-oidc = "^0.8.0"
 pyjwt = "^2.8.0"
 requests = "^2.32.3"
+
+[package.source]
+type = "git"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "a84cfb9b8707e9f12b156f296393eb63c3297412"
+subdirectory = "python/common/business-registry-digital-credentials"
+
+[[package]]
+name = "business-registry-dissolution"
+version = "0.1.2"
+description = ""
+optional = false
+python-versions = ">=3.13,<3.14"
+groups = ["main"]
+files = []
+develop = false
+
+[package.dependencies]
 business-model = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-model"}
 business-registry-account = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-account"}
 business-registry-common = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-common"}
@@ -422,8 +439,6 @@ python-dotenv = ">=1.1.0,<2.0.0"
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "a84cfb9b8707e9f12b156f296393eb63c3297412"
-subdirectory = "python/common/business-registry-digital-credentials"
 resolved_reference = "b415feb9f1a091ecc87a3a353e3a0985da4d094c"
 subdirectory = "python/common/business-registry-dissolution"
 
@@ -4421,4 +4436,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "6fff2205239bcf3d547cb985d1b23146cf80fb333d95418389708d676db8cb0f"
+content-hash = "1a96190ffbc9b3bccc153a55ffe79f290b789a0f245810df28defdf4e816014c"
