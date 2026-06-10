@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """This module wraps the calls to external services used by the API."""
-import uuid
-
 from gcp_queue import GcpQueue
 
 # Import Flags class first
@@ -36,11 +34,10 @@ from .authz import (
     authorized,
     has_roles,
 )
-from .bootstrap import AccountService, RegistrationBootstrapService
+from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
 from .furnishing_documents_service import FurnishingDocumentsService
-from .involuntary_dissolution import InvoluntaryDissolutionService
 from .minio import MinioService
 from .mras_service import MrasService
 from .naics import NaicsService
@@ -67,7 +64,6 @@ __all__ = [  # noqa: RUF022
     "authorized",
     "has_roles",
     # Services
-    "AccountService",
     "RegistrationBootstrapService",
     "VersionedBusinessDetailsService",
     "ColinService",
@@ -75,7 +71,6 @@ __all__ = [  # noqa: RUF022
     "DigitalCredentialsRulesService",
     "Flags",
     "FurnishingDocumentsService",
-    "InvoluntaryDissolutionService",
     "MinioService",
     "MrasService",
     "NaicsService",

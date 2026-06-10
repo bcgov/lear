@@ -18,7 +18,8 @@ from flask import jsonify
 from flask_cors import cross_origin
 
 from business_model.models import UserRoles
-from legal_api.services import InvoluntaryDissolutionService
+from dissolution_service import InvoluntaryDissolutionService
+from legal_api.services import flags
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
@@ -29,7 +30,7 @@ from .bp import bp_admin
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_statistics():
     """Return a JSON object with statistic information."""
-    count = InvoluntaryDissolutionService.get_businesses_eligible_count()
+    count = InvoluntaryDissolutionService.get_businesses_eligible_count(flags)
     data = {
         "eligibleCount": count
     }

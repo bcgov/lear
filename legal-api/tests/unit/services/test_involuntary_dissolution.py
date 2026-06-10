@@ -23,9 +23,10 @@ from datedelta import datedelta
 from unittest.mock import patch
 from registry_schemas.example_data import FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 
-from business_common.utils.datetime import datetime
+from business_common.utils import datetime
 from business_model.models import Batch, Business
-from legal_api.services import flags, InvoluntaryDissolutionService
+from dissolution_service import InvoluntaryDissolutionService
+from legal_api.services import flags
 from tests.unit.models import (
     factory_batch,
     factory_batch_processing,
@@ -381,7 +382,7 @@ def test_get_businesses_eligible_query_order(session, test_name, expected_order)
         ('combine_filter', True, {'include-accounts': [0, 1], 'exclude-accounts': [2, 3]})
     ]
 )
-def test_check_feature_flags_filte(app, session, mocker, test_name, enable_involuntary_dissolution_filter, involuntary_dissolution_filter):
+def test_check_feature_flags_filter(app, session, mocker, test_name, enable_involuntary_dissolution_filter, involuntary_dissolution_filter):
     """Assert the feature_flags_filter with flag"""
     identifiers = ['BC1111111', 'BC2222222', 'BC3333333', 'BC4444444', 'BC5555555', 'BC6666666', 'BC7777777', 'BC8888888', 'BC9999999']
     for indetifier in identifiers:
@@ -426,11 +427,11 @@ def test_check_feature_flags_filte(app, session, mocker, test_name, enable_invol
     def side_effect(id):
         return get_affiliation_response[id]
     
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_affiliations', side_effect=side_effect)
+    mocker.patch('dissolution_service.involuntary_dissolution.AccountService.get_affiliations', side_effect=side_effect)
     
     with patch.object(flags, 'is_on', return_value=enable_involuntary_dissolution_filter):
         with patch.object(flags, 'value', return_value=involuntary_dissolution_filter):
-            result = InvoluntaryDissolutionService._get_businesses_eligible_query().all()
+            result = InvoluntaryDissolutionService._get_businesses_eligible_query(None, flags).all()
 
     if test_name == 'no_filter':
         assert len(result) == 9
