@@ -48,15 +48,21 @@ def _get_flags():
 def _resolve_allowed_business_types() -> list[str]:
     """Read the ``dbc-enabled-business-types`` LD flag and return the resolved list.
 
-    Returns ``[]`` if the flag is off or the flag value is malformed.
+    Returns ``[]`` if the flag is off or the flag value is malformed. Flag lookup
+    passes the request's user/account so LD targeting rules can apply.
     """
-    flags = _get_flags()
+    from legal_api.services.request_context import get_request_context
 
-    if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG):
+    flags = _get_flags()
+    request_context = get_request_context()
+
+    if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG,
+                       request_context.user, request_context.account_id):
         current_app.logger.warning("%s is OFF", DBC_ENABLED_BUSINESS_TYPES_FLAG)
         return []
 
-    flag_obj = flags.value(DBC_ENABLED_BUSINESS_TYPES_FLAG)
+    flag_obj = flags.value(DBC_ENABLED_BUSINESS_TYPES_FLAG,
+                           request_context.user, request_context.account_id)
 
     if not isinstance(flag_obj, dict) or "types" not in flag_obj or not isinstance(flag_obj["types"], list):
         current_app.logger.error("Invalid %s flag value: %s", DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)

@@ -163,7 +163,7 @@ def test_resolve_allowed_business_types_flag_off(mock_flags, app):
     with app.app_context():
         assert _resolve_allowed_business_types() == []
 
-    mock_flags.is_on.assert_called_once_with(DBC_ENABLED_BUSINESS_TYPES_FLAG)
+    mock_flags.is_on.assert_called_once_with(DBC_ENABLED_BUSINESS_TYPES_FLAG, None, None)
     mock_flags.value.assert_not_called()
 
 
@@ -175,7 +175,7 @@ def test_resolve_allowed_business_types_valid(mock_flags, app):
     with app.app_context():
         assert _resolve_allowed_business_types() == ["SP", "BEN", "GP"]
 
-    mock_flags.value.assert_called_once_with(DBC_ENABLED_BUSINESS_TYPES_FLAG)
+    mock_flags.value.assert_called_once_with(DBC_ENABLED_BUSINESS_TYPES_FLAG, None, None)
 
 
 def test_resolve_allowed_business_types_valid_empty_list(mock_flags, app):
@@ -226,9 +226,9 @@ def test_are_digital_credentials_allowed_passes_resolved_flag_to_rules(
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is True
 
-    # Shared rules called with the FF-resolved list (keyword arg).
-    _, kwargs = mock_rules.call_args
-    assert kwargs.get('allowed_business_types') == ["SP", "BEN", "GP"]
+    # Shared rules service called as rules.are_digital_credentials_allowed(user, business, allowed_business_types).
+    args, _ = mock_rules.call_args
+    assert args[-1] == ["SP", "BEN", "GP"]
 
 
 @patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
@@ -243,5 +243,5 @@ def test_are_digital_credentials_allowed_passes_empty_list_when_flag_off(
         business = create_business('SP', Business.State.ACTIVE)
         are_digital_credentials_allowed(business, jwt)
 
-    _, kwargs = mock_rules.call_args
-    assert kwargs.get('allowed_business_types') == []
+    args, _ = mock_rules.call_args
+    assert args[-1] == []
