@@ -16,6 +16,13 @@
 from datetime import UTC, datetime
 from http import HTTPStatus
 
+from business_registry_digital_credentials import DigitalCredentialsRulesService
+from business_registry_digital_credentials.digital_credentials_helpers import (
+    extract_invitation_message_id,
+    get_digital_credential_data,
+    get_or_create_business_user,
+    get_roles,
+)
 from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
@@ -30,13 +37,6 @@ from business_model.models import (
 )
 from legal_api.decorators import can_access_digital_credentials
 from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials_helpers import (
-    extract_invitation_message_id,
-    get_digital_credential_data,
-    get_or_create_business_user,
-    get_roles,
-)
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 from legal_api.utils.auth import jwt
 
 from .bp import bp

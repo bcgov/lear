@@ -350,11 +350,11 @@ def test_get_business_with_unauthoized_role(app, session, client, jwt, monkeypat
 
     # mocked feature flag check function:
     # when the flag is 'enable-auth-v2-business', whether it is on is controlled by 'auth_check_on'
-    def check_feature_flag(flag_name):
+    def check_feature_flag(flag_name, *args, **kwargs):
         if flag_name == 'enable-auth-v2-business':
             return auth_check_on
         else:
-            return is_feature_flag_on(flag_name)
+            return is_feature_flag_on(flag_name, *args, **kwargs)
     monkeypatch.setattr(flags, "is_on", check_feature_flag)
 
     identifier = 'CP7654321'

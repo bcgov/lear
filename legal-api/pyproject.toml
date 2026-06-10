@@ -35,6 +35,7 @@ dependencies = [
     "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
     "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
     "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
+    "business-registry-digital-credentials @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-digital-credentials",
     "business-registry-dissolution @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-dissolution",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",

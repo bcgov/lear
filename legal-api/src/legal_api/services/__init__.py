@@ -22,6 +22,9 @@ from .flags import Flags
 flags = Flags()
 
 # Now import modules that may reference the flags instance
+from business_registry_digital_credentials import DigitalCredentialsRulesService, DigitalCredentialsService
+from business_registry_digital_credentials import digital_credentials as _shared_digital_credentials
+
 from .authz import (
     ACCOUNT_IDENTITY,
     BASIC_USER,
@@ -34,8 +37,6 @@ from .authz import (
 from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
-from .digital_credentials import DigitalCredentialsService
-from .digital_credentials_rules import DigitalCredentialsRulesService
 from .furnishing_documents_service import FurnishingDocumentsService
 from .minio import MinioService
 from .mras_service import MrasService
@@ -49,7 +50,9 @@ from .warnings.warning import check_warnings
 gcp_queue = GcpQueue()
 namex = NameXService()
 colin = ColinService()
-digital_credentials = DigitalCredentialsService()
+# Re-export the shared singleton from python/common so both legal-api and the
+# queue service operate on the same DigitalCredentialsService instance.
+digital_credentials = _shared_digital_credentials
 
 __all__ = [  # noqa: RUF022
     # Authorization
