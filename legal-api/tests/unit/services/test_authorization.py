@@ -3769,3 +3769,56 @@ def create_filing(business, filing_type, filing_sub_type=None):
                                       filing_type=filing_type,
                                       filing_sub_type=filing_sub_type)
     return filing
+
+
+# ----------------------------------------------------------------------------
+# get_allowable_actions — DBC field wiring.
+#
+# Confirms the authorization response includes ``digitalBusinessCard`` and
+# ``digitalBusinessCardPreconditions`` and that they're sourced from the
+# legal-api DBC wrappers (which themselves resolve the LD flag and delegate
+# to ``business_registry_digital_credentials``).
+# ----------------------------------------------------------------------------
+
+
+@patch('legal_api.services.authz.get_digital_credentials_preconditions',
+       return_value={"attestBusiness": "Test Co", "attestName": "Test User", "attestRoles": []})
+@patch('legal_api.services.authz.are_digital_credentials_allowed', return_value=True)
+@patch('legal_api.services.authz.get_allowed_filings', return_value=[])
+@patch('legal_api.services.authz.is_competent_authority', return_value=False)
+def test_get_allowable_actions_includes_dbc_fields(
+    mock_comp_auth, mock_allowed_filings, mock_dbc_allowed, mock_dbc_preconditions,
+    app, session, jwt,
+):
+    """``get_allowable_actions`` exposes digitalBusinessCard + preconditions, sourced from the DBC wrappers."""
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], username='test'):
+        business = create_business(Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+
+        result = get_allowable_actions(jwt, business)
+
+    assert result['digitalBusinessCard'] is True
+    assert result['digitalBusinessCardPreconditions'] == {
+        "attestBusiness": "Test Co",
+        "attestName": "Test User",
+        "attestRoles": [],
+    }
+    mock_dbc_allowed.assert_called_once_with(business, jwt)
+    mock_dbc_preconditions.assert_called_once_with(business)
+
+
+@patch('legal_api.services.authz.get_digital_credentials_preconditions', return_value={})
+@patch('legal_api.services.authz.are_digital_credentials_allowed', return_value=False)
+@patch('legal_api.services.authz.get_allowed_filings', return_value=[])
+@patch('legal_api.services.authz.is_competent_authority', return_value=False)
+def test_get_allowable_actions_dbc_fields_when_not_allowed(
+    mock_comp_auth, mock_allowed_filings, mock_dbc_allowed, mock_dbc_preconditions,
+    app, session, jwt,
+):
+    """When DBC is not allowed for the business, the field is False but still present."""
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], username='test'):
+        business = create_business(Business.LegalTypes.SOLE_PROP.value, Business.State.ACTIVE)
+
+        result = get_allowable_actions(jwt, business)
+
+    assert result['digitalBusinessCard'] is False
+    assert result['digitalBusinessCardPreconditions'] == {}
