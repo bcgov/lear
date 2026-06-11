@@ -30,8 +30,9 @@ Then run:
 from __future__ import annotations
 
 import argparse
+import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass,replace
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence
@@ -86,6 +87,7 @@ class cfg_GenerationConfig:
     out_master: Path
     out_chunks_dir: Path
 
+    source_connection: str
     target_connection: str
     target_schema: str
 
@@ -98,6 +100,10 @@ TMPL_TOKEN_CORP_IDS = "&corp_ids_in"  # used by delete template (Postgres-side)
 TMPL_TOKEN_TARGET_PRED = "&target_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_PRED = "&oracle_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_CORP_TYPE_PRED = "&oracle_corp_type_predicate"  # used by transfer template (Oracle-side)
+TMPL_TOKEN_SOURCE_CONNECTION = "__DBSCHEMA_SOURCE_CONNECTION__"  # rendered generator-time source DbSchema alias
+TMPL_TOKEN_TARGET_SCHEMA = "__DBSCHEMA_TARGET_SCHEMA__"  # rendered generator-time target Postgres schema
+TMPL_CONNECTION_TOKENS = (TMPL_TOKEN_SOURCE_CONNECTION, TMPL_TOKEN_TARGET_SCHEMA)
+DBSCHEMA_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 @dataclass(frozen=True)
@@ -404,6 +410,44 @@ def tmpl_render(template_text: str, *, replacements: Dict[str, str]) -> str:
         out = out.replace(token, value)
     return out
 
+def cfg_validate_dbschema_identifier(name: str, value: str) -> str:
+    if not value:
+        raise SystemExit(f"{name} must not be empty")
+    if not DBSCHEMA_IDENTIFIER_RE.match(value):
+        raise SystemExit(
+            f"{name} must be a conservative DbSchema/Postgres identifier using letters, digits, "
+            "and underscore, and must not start with a digit"
+        )
+    return value
+
+
+def cfg_validate_pg_schema_identifier(name: str, value: str) -> str:
+    value = cfg_validate_dbschema_identifier(name, value)
+    if value != value.lower():
+        raise SystemExit(
+            f"{name} must be lowercase. PostgreSQL folds unquoted uppercase identifiers to lowercase, "
+            "so uppercase schema values are rejected to avoid mismatches."
+        )
+    return value
+
+
+def tmpl_connection_replacements(cfg: cfg_GenerationConfig) -> Dict[str, str]:
+    return {
+        TMPL_TOKEN_SOURCE_CONNECTION: cfg.source_connection,
+        TMPL_TOKEN_TARGET_SCHEMA: cfg.target_schema,
+    }
+
+
+def tmpl_assert_no_connection_tokens(spec: tmpl_TemplateSpec, rendered_text: str) -> None:
+    remaining = [token for token in TMPL_CONNECTION_TOKENS if token in rendered_text]
+    if remaining:
+        raise SystemExit(
+            "Template source/schema token rendering failed.\n"
+            f"Template: {spec.name}\n"
+            f"Path: {spec.path}\n"
+            f"Remaining token(s): {', '.join(remaining)}\n"
+        )
+
 
 # =========================
 # chunk_* (chunk planning)
@@ -447,6 +491,90 @@ def chunk_plan_chunks(
 
 def gen_write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
+
+
+def gen_write_rendered_connection_template(
+    *,
+    cfg: cfg_GenerationConfig,
+    spec: tmpl_TemplateSpec,
+    output_dir: Path,
+) -> tmpl_TemplateSpec:
+    template_text = tmpl_load_text(spec)
+    rendered_text = tmpl_render(template_text, replacements=tmpl_connection_replacements(cfg))
+    tmpl_assert_no_connection_tokens(spec, rendered_text)
+    rendered_path = output_dir / spec.path.name
+    gen_write_text(rendered_path, rendered_text)
+    return replace(
+        spec,
+        path=rendered_path,
+        required_tokens=tuple(token for token in spec.required_tokens if token not in TMPL_CONNECTION_TOKENS),
+    )
+
+
+def gen_write_rendered_connection_templates(
+    *,
+    cfg: cfg_GenerationConfig,
+    templates: tmpl_TemplateBundle,
+) -> tmpl_TemplateBundle:
+    support_dir = cfg.out_chunks_dir / "support"
+    return replace(
+        templates,
+        pg_prepare_address_stage=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_prepare_address_stage,
+            output_dir=support_dir,
+        ),
+        pg_cleanup_address_stage=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_cleanup_address_stage,
+            output_dir=support_dir,
+        ),
+        pg_cleanup_orphan_children=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_cleanup_orphan_children,
+            output_dir=support_dir,
+        ),
+        disable_triggers=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.disable_triggers,
+            output_dir=support_dir,
+        ),
+        enable_triggers=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.enable_triggers,
+            output_dir=support_dir,
+        ),
+        pg_boolean_casts=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_boolean_casts,
+            output_dir=support_dir,
+        ),
+        pg_purge_bcomps_excluded=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.pg_purge_bcomps_excluded,
+            output_dir=support_dir,
+        ),
+        delete_chunk=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.delete_chunk,
+            output_dir=support_dir,
+        ),
+        transfer_chunk=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.transfer_chunk,
+            output_dir=support_dir,
+        ),
+        delete_cars=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.delete_cars,
+            output_dir=support_dir,
+        ),
+        transfer_cars=gen_write_rendered_connection_template(
+            cfg=cfg,
+            spec=templates.transfer_cars,
+            output_dir=support_dir,
+        ),
+    )
 
 
 def gen_build_chunk_sql(
@@ -952,6 +1080,12 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--source-connection",
+        default="cprd",
+        help="DbSchemaCLI connection name for the SOURCE Oracle DB (default: cprd).",
+    )
+
+    parser.add_argument(
         "--target-connection",
         default="cprd_pg_subset",
         help="DbSchemaCLI connection name for the TARGET Postgres extract DB (default: cprd_pg_subset).",
@@ -1021,6 +1155,7 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
         or_of_in_max_ids=or_of_in_max_ids,
         out_master=out_master,
         out_chunks_dir=out_chunks_dir,
+        source_connection=str(args.source_connection),
         target_connection=str(args.target_connection),
         target_schema=str(args.target_schema),
     )
@@ -1034,6 +1169,10 @@ def _effective_oracle_strategy(cfg: cfg_GenerationConfig, total_ids: int) -> cfg
 
 def run(cfg: cfg_GenerationConfig) -> int:
     templates = tmpl_default_bundle(cfg.repo_root)
+    templates = gen_write_rendered_connection_templates(cfg=cfg, templates=templates)
+        
+    DBSCHEMA_SOURCE_CONNECTION = os.getenv('DBSCHEMA_SOURCE_CONNECTION', '')
+    DBSCHEMA_TARGET_SCHEMA = os.getenv('DBSCHEMA_TARGET_SCHEMA', '')
 
     if cfg.pg_debug_session_probes and cfg.render_mode != cfg_RenderMode.INLINE:
         raise SystemExit("--pg-debug-session-probes currently supports only --render-mode inline.")

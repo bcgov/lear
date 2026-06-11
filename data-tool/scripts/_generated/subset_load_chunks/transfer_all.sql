@@ -1,4 +1,10 @@
--- Transfer a chunk (or a whole subset) of corps from the SOURCE Oracle DB (__DBSCHEMA_SOURCE_CONNECTION__) into the TARGET Postgres extract DB (__DBSCHEMA_TARGET_SCHEMA__ schema).
+-- generated chunk script: transfer_all.sql
+-- mode: load
+-- chunk: 001/001
+-- target corps: 2
+-- oracle corp_num: 2
+
+-- Transfer a chunk (or a whole subset) of corps from the SOURCE Oracle DB (cprd) into the TARGET Postgres extract DB (cprd_pg).
 --
 -- REQUIRED DbSchemaCLI variables (replace_variables=true):
 --   target_corp_num_predicate : SQL predicate restricting the computed target_corp_num (NO trailing semicolon).
@@ -14,7 +20,7 @@
 --                                c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 --                                c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE','CP')
 --
--- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (__DBSCHEMA_TARGET_SCHEMA__ schema).
+-- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (cprd_pg).
 --
 -- IMPORTANT:
 -- - This template intentionally avoids the boolean<->integer ALTER COLUMN hacks used in the full refresh script.
@@ -33,12 +39,15 @@
 -- vset oracle_corp_num_predicate=c.CORP_NUM in ('1111585','1226175');
 
 -- corporation
-transfer __DBSCHEMA_TARGET_SCHEMA__.corporation from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corporation from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		-- altered from BC to BEN then BEN to BC before directed launch
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
@@ -53,7 +62,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 ),
 last_ar as (
 	select e.corp_num,
@@ -88,12 +100,15 @@ left join last_ar la on la.corp_num = c.corp_num;
 
 
 -- event
-transfer __DBSCHEMA_TARGET_SCHEMA__.event from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.event from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -107,7 +122,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        c.target_corp_num as CORP_NUM,
@@ -121,12 +139,15 @@ where e.event_typ_cd not in ('BNUPD', 'ADDLEDGR');
 
 
 -- corp_name
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_name from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_name from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -140,7 +161,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        cn.CORP_NAME_TYP_CD,
@@ -152,12 +176,15 @@ join CORP_NAME cn on cn.corp_num = c.corp_num;
 
 
 -- corp_state
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_state from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_state from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -171,7 +198,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        cs.STATE_TYP_CD as state_type_cd,
@@ -184,12 +214,15 @@ join corp_op_state cos on cos.state_typ_cd = cs.state_typ_cd;
 
 
 -- filing
-transfer __DBSCHEMA_TARGET_SCHEMA__.filing from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.filing from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -203,7 +236,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
 		f.filing_typ_cd as filing_type_cd,
@@ -231,12 +267,15 @@ join filing f on f.event_id = e.event_id;
 
 
 -- filing_user
-transfer __DBSCHEMA_TARGET_SCHEMA__.filing_user from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.filing_user from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -250,7 +289,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        u.user_id,
@@ -266,14 +308,17 @@ join filing_user u on u.event_id = e.event_id;
 
 
 -- address (shared/global table; stage then merge before loading dependents)
-TRUNCATE TABLE __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage;
+TRUNCATE TABLE public.subset_address_stage;
 
-transfer __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.subset_address_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -287,7 +332,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select distinct
 		addr_id,
@@ -346,7 +394,7 @@ from (
 	join address a on x.mailing_addr_id = a.addr_id
 );
 
-INSERT INTO __DBSCHEMA_TARGET_SCHEMA__.address (
+INSERT INTO public.address (
 	addr_id,
 	province,
 	country_typ_cd,
@@ -374,7 +422,7 @@ FROM (
 		   addr_line_2,
 		   addr_line_3,
 		   city
-	FROM __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage
+	FROM public.subset_address_stage
 	WHERE addr_id IS NOT NULL
 	ORDER BY addr_id
 ) s
@@ -387,16 +435,19 @@ SET province = EXCLUDED.province,
 	addr_line_3 = EXCLUDED.addr_line_3,
 	city = EXCLUDED.city;
 
-TRUNCATE TABLE __DBSCHEMA_TARGET_SCHEMA__.subset_address_stage;
+TRUNCATE TABLE public.subset_address_stage;
 
 
 -- office
-transfer __DBSCHEMA_TARGET_SCHEMA__.office from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.office from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -410,7 +461,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
 		o.office_typ_cd,
@@ -423,12 +477,15 @@ join office o on o.corp_num = c.corp_num;
 
 
 -- corp_comments
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_comments from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_comments from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -442,7 +499,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select cc.comment_dts,
        c.target_corp_num as CORP_NUM,
@@ -457,12 +517,15 @@ join corp_comments cc on cc.corp_num = c.corp_num;
 
 
 -- ledger_text
-transfer __DBSCHEMA_TARGET_SCHEMA__.ledger_text from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.ledger_text from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -476,7 +539,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        l.notation,
@@ -488,12 +554,15 @@ join ledger_text l on l.event_id = e.event_id;
 
 
 -- corp_party
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_party from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_party from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -507,7 +576,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select p.corp_party_id,
        p.mailing_addr_id,
@@ -531,12 +603,15 @@ join corp_party p on p.corp_num = c.corp_num;
 
 
 -- corp_party_relationship
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_party_relationship from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_party_relationship from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -550,7 +625,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select cpr.CORP_PARTY_ID as corp_party_id,
 		cpr.RELATIONSHIP_TYP_CD as relationship_typ_cd
@@ -560,12 +638,15 @@ join CORP_PARTY_RELATIONSHIP cpr on cpr.corp_party_id = p.corp_party_id;
 
 
 -- offices_held
-transfer __DBSCHEMA_TARGET_SCHEMA__.offices_held from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.offices_held from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -579,7 +660,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select oh.CORP_PARTY_ID as corp_party_id,
 		oh.OFFICER_TYP_CD as officer_typ_cd
@@ -589,12 +673,15 @@ join OFFICES_HELD oh on oh.corp_party_id = p.corp_party_id;
 
 
 -- completing_party
-transfer __DBSCHEMA_TARGET_SCHEMA__.completing_party from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.completing_party from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -608,7 +695,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        cp.MAILING_ADDR_ID,
@@ -622,12 +712,15 @@ join completing_party cp on cp.event_id = e.event_id;
 
 
 -- submitting_party
-transfer __DBSCHEMA_TARGET_SCHEMA__.submitting_party from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.submitting_party from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -641,7 +734,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        sp.MAILING_ADDR_ID,
@@ -663,12 +759,15 @@ join SUBMITTING_PARTY sp on sp.event_id = e.event_id;
 
 
 -- corp_flag
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_flag from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_flag from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -682,7 +781,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        cf.CORP_FLAG_TYPE_CD,
@@ -693,12 +795,15 @@ join corp_flag cf on cf.corp_num = c.corp_num;
 
 
 -- cont_out
-transfer __DBSCHEMA_TARGET_SCHEMA__.cont_out from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.cont_out from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -712,7 +817,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        co.CAN_JUR_TYP_CD,
@@ -726,12 +834,15 @@ join CONT_OUT co on co.corp_num = c.corp_num;
 
 
 -- conv_event
-transfer __DBSCHEMA_TARGET_SCHEMA__.conv_event from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.conv_event from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -745,7 +856,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        ce.effective_dt,
@@ -765,12 +879,15 @@ join CONV_EVENT ce on ce.event_id = e.event_id;
 
 
 -- conv_ledger
-transfer __DBSCHEMA_TARGET_SCHEMA__.conv_ledger from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.conv_ledger from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -784,7 +901,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        cl.LEDGER_TITLE_TXT,
@@ -796,12 +916,15 @@ join CONV_LEDGER cl on cl.event_id = e.event_id;
 
 
 -- corp_involved - amalgamaTING_businesses
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_involved_amalgamating from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_involved_amalgamating from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -815,7 +938,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id as event_id,
 		c.target_corp_num as ted_corp_num,
@@ -864,12 +990,15 @@ where f.filing_typ_cd in ('AMALH', 'AMALV', 'AMALR', 'AMLHU', 'AMLVU', 'AMLRU', 
 
 
 -- corp_involved - continue_in_historical_xpro
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_involved_cont_in from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_involved_cont_in from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -883,7 +1012,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        c.target_corp_num as CORP_NUM
@@ -895,12 +1027,15 @@ where f.filing_typ_cd in ('CONTI', 'CONTU', 'CONTC')
 
 
 -- corp_restriction
-transfer __DBSCHEMA_TARGET_SCHEMA__.corp_restriction from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.corp_restriction from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -914,7 +1049,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        case cr.RESTRICTION_IND
@@ -929,12 +1067,15 @@ join CORP_RESTRICTION cr on cr.corp_num = c.corp_num;
 
 
 -- correction
-transfer __DBSCHEMA_TARGET_SCHEMA__.correction from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.correction from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -948,7 +1089,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        c.target_corp_num as CORP_NUM,
@@ -959,12 +1103,15 @@ join CORRECTION corr on corr.event_id = e.event_id;
 
 
 -- continued_in_from_jurisdiction
-transfer __DBSCHEMA_TARGET_SCHEMA__.jurisdiction from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.jurisdiction from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -978,7 +1125,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        j.CAN_JUR_TYP_CD,
@@ -994,12 +1144,15 @@ join JURISDICTION j on j.corp_num = c.corp_num;
 
 
 -- resolution
-transfer __DBSCHEMA_TARGET_SCHEMA__.resolution from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.resolution from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1013,7 +1166,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        r.RESOLUTION_DT,
@@ -1025,12 +1181,15 @@ join RESOLUTION r on r.corp_num = c.corp_num;
 
 
 -- share_struct
-transfer __DBSCHEMA_TARGET_SCHEMA__.share_struct from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.share_struct from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1044,7 +1203,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        ss.start_event_id,
@@ -1054,12 +1216,15 @@ join SHARE_STRUCT ss on ss.corp_num = c.corp_num;
 
 
 -- share_struct_cls
-transfer __DBSCHEMA_TARGET_SCHEMA__.share_struct_cls from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.share_struct_cls from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1073,7 +1238,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        ssc.SHARE_CLASS_ID,
@@ -1103,12 +1271,15 @@ join SHARE_STRUCT_CLS ssc on ssc.corp_num = c.corp_num;
 
 
 -- share_series
-transfer __DBSCHEMA_TARGET_SCHEMA__.share_series from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.share_series from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1122,7 +1293,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select c.target_corp_num as CORP_NUM,
        ss.SHARE_CLASS_ID,
@@ -1145,12 +1319,15 @@ join SHARE_SERIES ss on ss.corp_num = c.corp_num;
 
 
 -- notification
-transfer __DBSCHEMA_TARGET_SCHEMA__.notification from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.notification from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1164,7 +1341,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        n.METHOD_TYP_CD,
@@ -1181,12 +1361,15 @@ join NOTIFICATION n on n.event_id = e.event_id;
 
 
 -- notification_resend
-transfer __DBSCHEMA_TARGET_SCHEMA__.notification_resend from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.notification_resend from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1200,7 +1383,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select e.event_id,
        nr.METHOD_TYP_CD,
@@ -1217,12 +1403,15 @@ join NOTIFICATION_RESEND nr on nr.event_id = e.event_id;
 
 
 -- party_notification
-transfer __DBSCHEMA_TARGET_SCHEMA__.party_notification from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.party_notification from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1236,7 +1425,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select pn.PARTY_ID,
        pn.METHOD_TYP_CD,
@@ -1254,12 +1446,15 @@ join PARTY_NOTIFICATION pn on pn.party_id = cp.corp_party_id;
 
 
 -- payment
-transfer __DBSCHEMA_TARGET_SCHEMA__.payment from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer public.payment from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
-	where &oracle_corp_num_predicate
-		and &oracle_corp_type_predicate
+	where c.CORP_NUM in (
+    '0008367',
+    '0008368'
+)
+		and c.CORP_TYP_CD in ('BC','C','ULC','CUL','CC','CCC','QA','QB','QC','QD','QE')
 		and c.CORP_NUM not in ('0460007', '1255957', '1186381')
 ),
 corporation_cte as (
@@ -1273,7 +1468,10 @@ corporation_cte as (
 		from corporation c
 		join corp_list cl on cl.corp_num = c.corp_num
 	)
-	where &target_corp_num_predicate
+	where target_corp_num in (
+    'BC0008367',
+    'BC0008368'
+)
 )
 select p.event_id,
        p.payment_typ_cd,
