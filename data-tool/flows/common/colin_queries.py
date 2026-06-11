@@ -31,6 +31,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> 
     if not str(corp_list).strip():
         raise ValueError('empty corp_list')
     corp_list_ctes = build_corp_list(corp_list, chunk_size)
+    frozen_ctes = frozen_cte()
     query = f"""
     WITH {corp_list_ctes},
     latest_event AS (
@@ -47,19 +48,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> 
         JOIN corp_list c
             ON c.corp_num = e.corp_num
         WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
-        -- AND NOT (
-           -- EXISTS (
-           -- SELECT 1
-           -- FROM corporation c2
-            -- WHERE c2.corp_num = e.corp_num
-               -- AND c2.corp_frozen_typ_cd = 'C'
-           -- )
-          --  AND EXISTS (
-           -- SELECT 1
-           -- FROM corp_early_adopters cea
-           -- WHERE cea.corp_num = e.corp_num
-           -- )
-        -- )
+        {frozen_ctes}
     ) SELECT le.EVENT_ID,
         le.corp_num,
         le.event_typ_cd,
@@ -78,6 +67,38 @@ def get_identifiers_per_batch(mig_batch_id: int) -> str:
     SELECT string_agg(pg_catalog.quote_literal(trim(CAST(mcb.corp_num AS text))), ',') AS corp_list
     FROM mig_corp_batch mcb
     WHERE mcb.mig_batch_id = {mig_batch_id}
+    """
+
+def unfreeze_identifiers() -> str:
+    return f"""
+    UPDATE corporation AS c
+    SET corp_frozen_type_cd = NULL
+    FROM mig_group AS mg
+            JOIN mig_batch AS mb ON mb.mig_group_id = mg.id
+            JOIN mig_corp_batch AS mcb ON mcb.mig_batch_id = mb.id
+    WHERE c.corp_num = mcb.corp_num
+    -- cprd
+    and mg.name in ('group_0', 'group_1', 'group_3', 'group_4','gcp_migration_group_test','misc_group')
+    and mg.source_db = 'cprd'
+    and mg.target_environment = 'prod'
+    AND c.corp_frozen_type_cd IS NOT NULL;
+    """
+
+def frozen_cte() -> str:
+    return f"""
+    AND NOT (
+            EXISTS (
+            SELECT 1
+            FROM corporation c2
+                WHERE c2.corp_num = e.corp_num
+                AND c2.corp_frozen_typ_cd = 'C'
+            )
+            AND EXISTS (
+            SELECT 1
+            FROM corp_early_adopters cea
+            WHERE cea.corp_num = e.corp_num
+            )
+        )
     """
 
 def get_updated_identifiers_for_batch(timestamp: str, corp_list: str, chunk_size: int) -> str:

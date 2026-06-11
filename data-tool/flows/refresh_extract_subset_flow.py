@@ -12,7 +12,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from datetime import datetime, timezone
 from config import get_named_config
-from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
+from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch, unfreeze_identifiers
 from common.init_utils import colin_oracle_init, get_config
 from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
@@ -252,7 +252,7 @@ def extract_pull_flow(
         print('Running in refresh mode: skipping Postgres DB reset')
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
-    
+
     cutoff = get_cuttoff_timestamp()
 
     config = get_config()
@@ -312,7 +312,12 @@ def extract_pull_flow(
         )
         if run_result.returncode != 0:
             raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
-        
+    
+    print('Running Unfreezing Corps.......')
+    unfreeze_after_freeze_flow = unfreeze_identifiers()
+    if unfreeze_after_freeze_flow.returncode !=0:
+            raise RuntimeError(f'Unfreezing process of corps after freeze flow exited with code {unfreeze_after_freeze_flow.returncode}')
+    
     if refresh_views:
         refresh_result = run_refresh_views('refresh', 'all')
         if refresh_result.returncode !=0:
