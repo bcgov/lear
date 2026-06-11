@@ -324,9 +324,7 @@ def extract_pull_flow(
             raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
     
     print('Running Unfreezing Corps.......')
-    unfreeze_after_freeze_flow = unfreeze_identifiers()
-    if unfreeze_after_freeze_flow.returncode !=0:
-            raise RuntimeError(f'Unfreezing process of corps after freeze flow exited with code {unfreeze_after_freeze_flow.returncode}')
+    run_unfreeze_identifiers()
     
     if refresh_views and delta_scope == 'batch':
         refresh_result = run_refresh_views('refresh', 'all')
