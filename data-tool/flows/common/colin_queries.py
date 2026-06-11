@@ -30,7 +30,10 @@ def build_corp_list(corp_list: str, chunksize: int) -> str:
 
 def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, scope: Literal['batch', 'full']) -> str:
     corp_list_ctes = 'WITH '
+    frozen_ctes = ''
+    join_ctes = 'corporation'
     if scope == 'batch':
+        join_ctes = 'corp_list'
         if not str(corp_list).strip():
             raise ValueError('empty corp_list')
         corp_list_ctes += build_corp_list(corp_list, chunk_size) + ',\n'
@@ -49,7 +52,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, sco
                 ORDER BY e.event_timestmp DESC, e.event_id DESC
                 ) AS rn
         FROM event e
-        JOIN corp_list c
+        JOIN {join_ctes} c
             ON c.corp_num = e.corp_num
         WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
         {frozen_ctes}
