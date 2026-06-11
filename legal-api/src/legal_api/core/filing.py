@@ -512,8 +512,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             ):  # noqa: E125; lint conflicts on the indenting
             return None
 
-        base_url = current_app.config.get("LEGAL_API_BASE_URL")
-        base_url = base_url[:base_url.find("/api")]
+        base_url = current_app.config.get("BUSINESS_API_GW_URL")
         identifier = business.identifier if business else filing.storage.temp_reg
         if not identifier and filing.storage.withdrawn_filing_id:
             withdrawn_filing = Filing.find_by_id(filing.storage.withdrawn_filing_id)
