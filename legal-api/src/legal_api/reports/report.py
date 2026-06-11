@@ -40,6 +40,7 @@ from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.models.user import UserRoles
 from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.reports.utils import get_amalg_formatted_jurisdiction
 from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
@@ -947,12 +948,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             identifier = amalgamating_business.get("identifier")
             if foreign_legal_name := amalgamating_business.get("legalName"):
                 business_legal_name = foreign_legal_name
+                country_code = amalgamating_business.get("foreignJurisdiction", {}).get("country")
+                region_code = amalgamating_business.get("foreignJurisdiction", {}).get("region")
+
             elif ting_business := self._get_versioned_amalgamating_business(identifier):
                 business_legal_name = ting_business.legal_name
+                country_code = "CA"
+                region_code = "BC"
+
+            jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
 
             ting_businesses.append({
-                "legalName": business_legal_name,
-                "identifier": identifier
+                "legalName": business_legal_name or "N/A",
+                "identifier": identifier or "N/A",
+                "jurisdiction": jurisdiction or "N/A"
             })
         filing["amalgamatingBusinesses"] = ting_businesses
 
