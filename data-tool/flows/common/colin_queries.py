@@ -1,6 +1,7 @@
 
 from math import ceil
 import re
+from typing import Literal
 
 from sqlalchemy import text
 
@@ -27,13 +28,16 @@ def build_corp_list(corp_list: str, chunksize: int) -> str:
     corp_list_cte = 'corp_list AS (\n'+ '\n'.join(union_lines) + '\n)'
     return ',\n'.join([*batch_ctes, corp_list_cte])
 
-def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int) -> str:
-    if not str(corp_list).strip():
-        raise ValueError('empty corp_list')
-    corp_list_ctes = build_corp_list(corp_list, chunk_size)
-    frozen_ctes = frozen_cte()
+def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, scope: Literal['batch', 'full']) -> str:
+    corp_list_ctes = 'WITH '
+    if scope == 'batch':
+        if not str(corp_list).strip():
+            raise ValueError('empty corp_list')
+        corp_list_ctes += build_corp_list(corp_list, chunk_size) + ',\n'
+    if scope == 'full':
+        frozen_ctes = frozen_cte() 
     query = f"""
-    WITH {corp_list_ctes},
+    {corp_list_ctes}
     latest_event AS (
         SELECT e.event_id,
                 e.corp_num,
@@ -101,6 +105,6 @@ def frozen_cte() -> str:
         )
     """
 
-def get_updated_identifiers_for_batch(timestamp: str, corp_list: str, chunk_size: int) -> str:
+def get_updated_identifiers_for_batch(timestamp: str, corp_list: str, chunk_size: int, scope: str) -> str:
     """per batch get identifiers"""
-    return get_updated_identifiers(timestamp, corp_list, 999)
+    return get_updated_identifiers(timestamp, corp_list, chunk_size, scope)
