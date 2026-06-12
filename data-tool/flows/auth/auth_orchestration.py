@@ -518,7 +518,11 @@ def reserve_auth_candidates(
             getattr(config, 'AUTH_AFFILIATION_ACCOUNT_IDS_CSV', None)
             if options.include_account_ids else None
         ),
-        base_query_params=get_auth_query_params(identity),
+        base_query_params=get_auth_query_params(
+            identity,
+            config=config,
+            include_contact_email=options.include_contact_email,
+        ),
         static_insert_values=identity.as_insert_values(),
         conflict_columns=AUTH_PROCESSING_IDENTITY_CONFLICT_COLUMNS,
     )
