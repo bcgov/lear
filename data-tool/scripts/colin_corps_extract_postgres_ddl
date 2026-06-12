@@ -6,6 +6,10 @@ create sequence if not exists auth_processing_id_seq;
 
 alter sequence auth_processing_id_seq owner to postgres;
 
+create sequence if not exists auth_component_operation_id_seq;
+
+alter sequence auth_component_operation_id_seq owner to postgres;
+
 create sequence corp_processing_id_seq;
 
 alter sequence corp_processing_id_seq owner to postgres;
@@ -861,6 +865,15 @@ create table if not exists auth_processing
 	flow_run_id      uuid,
 	processed_status varchar(25)  not null,
 
+	-- auth operation identity. Defaults preserve legacy insert behavior until flows pass explicit values.
+	operation        varchar(25) default 'CREATE' not null,
+	operation_scope  varchar(25) default 'ENTITY' not null,
+	operation_target varchar(500),
+	repeatability    varchar(25) default 'ONE_SHOT' not null,
+	attempt_key      varchar(100) default 'ONE_SHOT' not null,
+	-- auth attempt identity audit context only; not part of uniqueness.
+	attempt_key_context text,
+	dry_run          boolean default false not null,
 	create_date      timestamp with time zone default current_timestamp not null,
 	last_modified    timestamp with time zone default current_timestamp not null,
 	claimed_at       timestamp with time zone,
@@ -879,7 +892,14 @@ create table if not exists auth_processing
 	-- short structured summary, never secrets
 	action_detail        varchar(2000),
 
-	constraint unq_auth_processing unique (corp_num, flow_name, environment)
+	constraint unq_auth_processing unique (
+		corp_num,
+		flow_name,
+		environment,
+		operation,
+		operation_scope,
+		attempt_key
+	)
 );
 
 alter table auth_processing owner to postgres;
@@ -889,6 +909,46 @@ create index if not exists idx_auth_processing_claim_batch
 
 create index if not exists idx_auth_processing_flow_env_status
 	on auth_processing (flow_name, environment, processed_status, corp_num);
+
+create index if not exists idx_auth_processing_identity
+	on auth_processing (corp_num, flow_name, environment, operation, operation_scope, attempt_key);
+
+create index if not exists idx_auth_processing_reset_guard
+	on auth_processing (corp_num, environment, flow_name, operation, operation_scope, dry_run, processed_status);
+
+create table if not exists auth_component_operation
+(
+	id                  integer default nextval('auth_component_operation_id_seq'::regclass) not null
+		constraint pk_auth_component_operation primary key,
+	auth_processing_id  integer not null
+		constraint fk_auth_component_operation_auth_processing
+			references auth_processing (id) on delete cascade,
+
+	corp_num            varchar(10) not null,
+	flow_name           varchar(100) not null,
+	environment         varchar(25) not null,
+	flow_run_id         uuid,
+
+	operation           varchar(25) not null,
+	operation_scope     varchar(25) not null,
+	component           varchar(25) not null,
+	target_type         varchar(50),
+	target_value        varchar(500),
+	action              varchar(50),
+	status_code         integer,
+	error               varchar(1000),
+	detail              varchar(2000),
+	dry_run             boolean default false not null,
+	create_date         timestamp with time zone default current_timestamp not null
+);
+
+alter table auth_component_operation owner to postgres;
+
+create index if not exists idx_auth_component_operation_auth_processing_id
+	on auth_component_operation (auth_processing_id);
+
+create index if not exists idx_auth_component_operation_lookup
+	on auth_component_operation (corp_num, environment, flow_name, create_date);
 
 create table if not exists corp_restriction
 (
