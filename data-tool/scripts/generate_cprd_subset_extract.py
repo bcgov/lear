@@ -490,6 +490,7 @@ def chunk_plan_chunks(
 # =========================
 
 def gen_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
 
 
