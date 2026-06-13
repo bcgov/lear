@@ -51,7 +51,7 @@ def _get_bool(name: str, default: bool = False) -> bool:
     val = os.getenv(name)
     if val is None:
         return default
-    return val.strip().lower() == 'true'
+    return val.strip().lower() in ('true', '1')
 
 
 def _parse_int_csv(raw_value: str) -> list[int]:
@@ -100,7 +100,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Normalized CSV string (useful when passing into SQL as a single value)
     AFFILIATE_ENTITY_ACCOUNT_IDS_CSV = _normalized_csv(AFFILIATE_ENTITY_ACCOUNT_IDS)
 
-    USE_CUSTOM_CONTACT_EMAIL = os.getenv('USE_CUSTOM_CONTACT_EMAIL', 'False') == 'True'
+    USE_CUSTOM_CONTACT_EMAIL = _get_bool('USE_CUSTOM_CONTACT_EMAIL', False)
     CUSTOM_CONTACT_EMAIL = os.getenv('CUSTOM_CONTACT_EMAIL', '')
     SEND_UNAFFILIATED_EMAIL = os.getenv('SEND_UNAFFILIATED_EMAIL', 'False') == 'True'
 

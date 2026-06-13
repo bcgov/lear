@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional, Sequence
 
+from .auth_flow_utils import auth_custom_contact_email_override
 from .auth_models import (
     AuthProcessingIdentity,
     AuthRepeatability,
@@ -27,15 +28,37 @@ def _quote_list(values: Sequence[str]) -> str:
     return ", ".join([f"'{_escape_sql_literal(v)}'" for v in values])
 
 
-def get_auth_query_params(identity: Optional[AuthProcessingIdentity]) -> Dict[str, object]:
-    """Return bind parameters required by identity-aware auth query predicates."""
-    if identity is None or identity.dry_run:
-        return {}
-    if identity.repeatability == AuthRepeatability.REPEATABLE:
-        return {'auth_attempt_key': identity.attempt_key}
-    if identity.repeatability == AuthRepeatability.RESET and identity.full_reset_sweep:
-        return {'auth_attempt_key': identity.attempt_key}
-    return {}
+def get_auth_query_params(
+    identity: Optional[AuthProcessingIdentity],
+    *,
+    config=None,
+    include_contact_email: bool = False,
+) -> Dict[str, object]:
+    """Return bind parameters required by auth query predicates/select columns."""
+    params: Dict[str, object] = {}
+    uses_auth_attempt_key = (
+        identity is not None
+        and not identity.dry_run
+        and (
+            identity.repeatability == AuthRepeatability.REPEATABLE
+            or (
+                identity.repeatability == AuthRepeatability.RESET
+                and identity.full_reset_sweep
+            )
+        )
+    )
+    if uses_auth_attempt_key:
+        params['auth_attempt_key'] = identity.attempt_key
+
+    custom_contact_email = (
+        auth_custom_contact_email_override(config)
+        if config is not None and include_contact_email
+        else None
+    )
+    if custom_contact_email is not None:
+        params['auth_custom_contact_email'] = custom_contact_email
+
+    return params
 
 
 def _auth_processing_exclusion_sql(
@@ -331,7 +354,12 @@ def get_auth_reservable_corps_query(
             # MANUAL
             account_select = ", NULL::varchar(100) AS account_ids"
 
-    contact_select = ", c.admin_email AS contact_email" if include_contact_email else ""
+    contact_select = ""
+    if include_contact_email:
+        if auth_custom_contact_email_override(config) is not None:
+            contact_select = ", CAST(:auth_custom_contact_email AS varchar(254)) AS contact_email"
+        else:
+            contact_select = ", c.admin_email AS contact_email"
 
     ap_join, ap_exclusion_where = _auth_processing_exclusion_sql(
         flow_name=flow_name,

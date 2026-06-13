@@ -28,6 +28,28 @@ AUTH_PROCESSING_IDENTITY_CONFLICT_COLUMNS: Sequence[str] = (
 )
 
 
+def auth_custom_contact_email_override(config) -> Optional[str]:
+    """Return the configured custom contact email when custom mode is enabled.
+
+    An empty custom value is intentional: when USE_CUSTOM_CONTACT_EMAIL is true,
+    auth flows must not fall back to the source corporation.admin_email.
+    """
+    if _config_bool(config, 'USE_CUSTOM_CONTACT_EMAIL', False):
+        return getattr(config, 'CUSTOM_CONTACT_EMAIL', '') or ''
+    return None
+
+
+def resolve_auth_contact_email(config, *source_emails: Optional[str]) -> str:
+    """Resolve the effective auth contact email using task/reservation override semantics."""
+    custom_email = auth_custom_contact_email_override(config)
+    if custom_email is not None:
+        return custom_email
+    for source_email in source_emails:
+        if source_email:
+            return source_email
+    return ''
+
+
 def _flow_run_id_text(flow_run_id) -> str:
     """Return flow_run_id text, raising when an attempt-specific key needs one."""
     value = str(flow_run_id or '').strip()

@@ -7,7 +7,7 @@ from prefect import task
 from prefect.cache_policies import NO_CACHE
 
 from common.auth_service import AuthService
-from .auth_flow_utils import auth_component_operation_logging_enabled
+from .auth_flow_utils import auth_component_operation_logging_enabled, resolve_auth_contact_email
 from .auth_models import AuthComponentStatus, AuthCreatePlan, AuthDeletePlan, AuthOperationScope, AuthProcessingIdentity
 from .auth_tracking import AuthComponentOperationRecord
 
@@ -208,9 +208,11 @@ def perform_auth_create_for_corp(
             pass_code = getattr(config, 'CUSTOM_PASSCODE')
 
         # Determine contact email (safe to store)
-        email = (profile or {}).get('admin_email') or (profile or {}).get('contact_email') or ''
-        if getattr(config, 'USE_CUSTOM_CONTACT_EMAIL', False) and getattr(config, 'CUSTOM_CONTACT_EMAIL', ''):
-            email = getattr(config, 'CUSTOM_CONTACT_EMAIL')
+        email = resolve_auth_contact_email(
+            config,
+            (profile or {}).get('admin_email'),
+            (profile or {}).get('contact_email'),
+        )
 
         # Mutual exclusion: affiliations vs invite
         if plan.create_affiliations and plan.send_unaffiliated_invite:
