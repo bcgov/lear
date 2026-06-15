@@ -105,7 +105,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
             ), HTTPStatus.NOT_FOUND
 
         if _should_regenerate(legal_filing_name):
-            if jwt.validate_roles([UserRoles.staff, UserRoles.system]):
+            if jwt.contains_role([UserRoles.staff, UserRoles.system]):
                 return get_pdf(filing.storage, legal_filing_name, True)
             else:
                 return jsonify(
