@@ -6,6 +6,6 @@
     "convert:postman": "postman-to-k6 postman/load_business_flow_test.postman_collection.json -e postman/load_business_flow_test.postman_environment.json test.js"
   },
   "dependencies": {
-    "@apideck/postman-to-k6": "^1.8.5"
+    "@apideck/postman-to-k6": "^1.14.2"
   }
 }
