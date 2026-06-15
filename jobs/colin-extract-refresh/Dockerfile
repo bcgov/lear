@@ -74,6 +74,6 @@ USER 1001
 
 EXPOSE 8080
 
-COPY . .
+COPY . ./src
 
 CMD [ "python", "src/test_connectivity.py" ]
