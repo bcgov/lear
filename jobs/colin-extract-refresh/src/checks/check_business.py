@@ -19,7 +19,7 @@ def run_check() -> int:
         if row is None:
             print("no rows in business mig db")
         else:
-            print(f"sample row: {dict(row)}")
+            print(f"row found........")
         return 0
     
 
@@ -27,5 +27,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(run_check())
     except Exception as exc:
-        print(f"business db check failed: {exc}", file=sys.stderr)
+        print(f"business db check failed......")
         raise

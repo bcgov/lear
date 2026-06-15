@@ -15,4 +15,4 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception as exc:
-        print(f"[test-connectivity] failed: {exc}", file=sys.stderr)
+        print(f"[test-connectivity] failed")

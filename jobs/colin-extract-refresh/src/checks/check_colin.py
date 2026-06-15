@@ -23,9 +23,9 @@ def run_check() -> int:
     with engine.connect() as conn:
         row = conn.execute(text("SELECT * FROM corporation FETCH FIRST 1 ROWS ONLY")).mappings().first()
         if row is None:
-            print("no rows in COLIN  db")
+            print("no rows in COLIN  db.")
         else:
-            print(f"COLIN sample row: {dict(row)}")
+            print(f"COLIN sample row found.")
         return 0
     
 
@@ -33,5 +33,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(run_check())
     except Exception as exc:
-        print(f"business db check failed: {exc}", file=sys.stderr)
+        print(f"business db check failed.")
         raise
