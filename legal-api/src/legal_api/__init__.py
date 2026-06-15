@@ -36,23 +36,15 @@
 This module is the API for the Legal Entity system.
 """
 import os
-from uuid import uuid4
 
-<<<<<<< HEAD
-from cloud_sql_connector import setup_pg8000_close_event_listener
-from flask import Flask, jsonify
-from registry_schemas import __version__ as registry_schemas_version
-from registry_schemas.flask import SchemaServices
-=======
-from cloud_sql_connector import DBConfig
 from flask import Flask, Response, current_app, jsonify, request
 from flask_migrate import Migrate
->>>>>>> 910637aae (33247 legal api dep upgrade (#4387))
 
 import business_model_migrations
 from business_model import models
 from business_model.models import db
 from business_model.models.db import init_db
+from cloud_sql_connector import setup_pg8000_close_event_listener
 from legal_api.config import DevConfig, MigrationConfig, ProdConfig, TestConfig
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
@@ -80,25 +72,13 @@ def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **k
     app.logger = StructuredLogging(app).get_logger()
     app.config.from_object(CONFIG_MAP.get(environment, CONFIG_MAP["default"]))
 
-    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
-        db_config = DBConfig(
-            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
-            database=app.config.get("DB_NAME", ""),
-            user=app.config.get("DB_USER", ""),
-            ip_type=app.config["DB_IP_TYPE"],
-            pool_recycle = 60,
-            schema="public",
-        )
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
-
     init_db(app)
 
-<<<<<<< HEAD
     with app.app_context():  # db require app context
         digital_credentials.init_app(app)
         if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
             setup_pg8000_close_event_listener(db.engine)
-=======
+
     if environment == "migration":
         migrations_path = business_model_migrations.__file__
         migrations_dir = os.path.dirname(migrations_path)
@@ -122,7 +102,6 @@ def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **k
                                  request.path,
                                  request.headers.get("app-name"),
                                  request.headers.get("account-id"))
->>>>>>> 910637aae (33247 legal api dep upgrade (#4387))
 
     @app.after_request
     def add_version(response: Response):

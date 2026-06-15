@@ -19,10 +19,9 @@ Test-Suite to ensure that the /businesses../summary endpoint works as expected.
 import copy
 from flask import current_app
 from http import HTTPStatus
-from business_model.models.business import Business
 
 
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
 from business_model.models.document import Document, DocumentType
 from tests import integration_reports
 from tests.unit.models import factory_business, factory_completed_filing, factory_incorporation_filing

@@ -669,13 +669,7 @@ def test_validate_incorporation_role(session, minio_server, mocker, test_name,
                                      legal_type, parties, expected_code, expected_msg,
                                      cp_flag_enabled):
     """Assert that incorporation parties roles can be validated."""
-
-    mocker.patch(
-        'legal_api.services.flags.value',
-        return_value=[
-            "incorporationApplication-completingParty"
-        ] if cp_flag_enabled else []
-    )
+    mocker.patch.object(flags, 'value', return_value=["incorporationApplication-completingParty"] if cp_flag_enabled else [])
 
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 
@@ -2016,6 +2010,7 @@ def _setup_incorporation_permission_mocks(mocker, filing_json, legal_type):
         'validate_phone_number', 'validate_email',
     ]:
         mocker.patch.object(incorporation_application, func, return_value=[])
+
     mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts',
                  return_value={'contacts': [{'email': 'test@example.com'}]})
 

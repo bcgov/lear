@@ -35,9 +35,11 @@ from business_model.models import (
     Filing,
     OfficeType,
     PartyRole,
+    UserRoles,
 )
 from business_model.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.core.meta.filing import FILINGS, FilingMeta
+from legal_api.exceptions import BusinessException
 from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.reports.utils import get_amalg_formatted_jurisdiction

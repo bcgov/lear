@@ -148,7 +148,7 @@ known-first-party = [
    "business_common",
    "business_model",
    "business_model_migrations",
-   "cloud-sql-connector",
+   "cloud_sql_connector",
    "dissolution_service",
    "flask_jwt_oidc",
    "gcp_queue",

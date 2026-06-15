@@ -23,6 +23,7 @@ from freezegun import freeze_time
 from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
 from legal_api.errors import Error
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
+from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_businesses
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import AMALGAMATION_APPLICATION

@@ -23,8 +23,9 @@ or by accessing this configuration directly.
 import os
 import sys
 
-from cloud_sql_connector import DBConfig
 from dotenv import find_dotenv, load_dotenv
+
+from cloud_sql_connector import DBConfig
 
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
@@ -317,6 +318,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = 3
 
+    BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
     BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"

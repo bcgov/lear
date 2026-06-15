@@ -15,12 +15,8 @@
 import io
 import math
 import re
-<<<<<<< HEAD
-from datetime import datetime, timedelta, timezone
-from decimal import Decimal
-=======
 from datetime import UTC, datetime, timedelta
->>>>>>> 910637aae (33247 legal api dep upgrade (#4387))
+from decimal import Decimal
 from http import HTTPStatus
 from typing import Final
 
@@ -1415,34 +1411,7 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
 
     return msg
 
-<<<<<<< HEAD
-def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> Optional[str]:
-=======
-def validate_name_translation(filing_json: dict, filing_type: str) -> list:
-    """Validate name translations fields."""
-    msg = []
-    translations = filing_json["filing"][filing_type].get("nameTranslations", [])
-
-    for idx, translation in enumerate(translations):
-
-        name = translation.get("name")
-        stripped_name = name.strip()
-
-        if not stripped_name:
-            msg.append({
-                "error": "Name translation cannot be an empty string.",
-                "path": f"/filing/{filing_type}/nameTranslations/{idx}/name/"
-            })
-        elif name != stripped_name:
-            msg.append({
-                "error": "Name translation cannot start or end with whitespace.",
-                "path": f"/filing/{filing_type}/nameTranslations/{idx}/name/"
-            })
-
-    return msg
-
 def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> str | None:
->>>>>>> 910637aae (33247 legal api dep upgrade (#4387))
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
         # Validation only for sole proprietorships

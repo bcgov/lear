@@ -25,7 +25,7 @@ from flask_pydantic import validate as pydantic_validate
 from pydantic import BaseModel
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, Document
+from business_model.models import Business, Document, UserRoles
 from business_model.models import Filing as FilingModel
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
@@ -264,8 +264,8 @@ def _get_corp_name(business, filing):
 class RegenerateQueryModel(BaseModel):
     """Document regenerate query model."""
 
-    previous: Optional[bool]
-    only_required: Optional[bool]
+    previous: bool | None = None
+    only_required: bool | None = None
 
 
 @cors_preflight("POST")
@@ -274,7 +274,7 @@ class RegenerateQueryModel(BaseModel):
 @cross_origin(origin="*")
 @jwt.has_one_of_roles([UserRoles.system])
 @pydantic_validate()
-def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: Optional[int] = None):
+def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: int | None = None):
     """
     Regenerate documents for a business.
     """
