@@ -270,7 +270,7 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     "intentToLiquidate": {
                         "legalTypes": ["BC", "BEN", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
                         "blockerChecks": {
-                            "business": [BusinessBlocker.DEFAULT]
+                            "business": [BusinessBlocker.DEFAULT, BusinessBlocker.IN_LIQUIDATION]
                         }
                     },
                     "liquidationReport": {

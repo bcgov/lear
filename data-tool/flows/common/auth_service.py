@@ -129,6 +129,57 @@ class AuthService:
         return HTTPStatus.OK
 
     @classmethod
+    def create_affiliation_only(
+        cls,
+        config,
+        account: int,
+        business_registration: str,
+        pass_code: str = '',
+        details: dict = None,
+        *,
+        token: str | None = None
+    ) -> HTTPStatus:
+        """Create an account:business affiliation ONLY (does not create the entity)."""
+        auth_url = config.AUTH_SVC_URL
+        account_svc_affiliate_url = f'{auth_url}/orgs/{account}/affiliations'
+
+        token = cls._resolve_token(config, token)
+        if not token:
+            return HTTPStatus.UNAUTHORIZED
+
+        affiliate_data = {
+            'businessIdentifier': business_registration,
+        }
+        if pass_code:
+            affiliate_data['passCode'] = pass_code
+        if details:
+            affiliate_data['entityDetails'] = details
+
+        affiliate = requests.post(
+            url=account_svc_affiliate_url,
+            headers={**cls.CONTENT_TYPE_JSON,
+                     'Authorization': cls.BEARER + token},
+            data=json.dumps(affiliate_data),
+            timeout=cls.get_time_out(config)
+        )
+
+        affiliate_ok = affiliate.status_code in (
+            HTTPStatus.CREATED,
+            HTTPStatus.OK,
+            HTTPStatus.CONFLICT
+        )
+        if affiliate.status_code == HTTPStatus.BAD_REQUEST and 'DATA_ALREADY_EXISTS' in affiliate.text:
+            affiliate_ok = True
+
+        if not affiliate_ok:
+            try:
+                return HTTPStatus(affiliate.status_code)
+            except Exception:
+                return HTTPStatus.BAD_REQUEST
+
+        return HTTPStatus.OK
+
+    @classmethod
     def create_entity(
         cls,
         config,

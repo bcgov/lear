@@ -91,8 +91,7 @@ def get_business_documents(identifier: str, document_name: Optional[str] = None)
 
 def _get_document_list(business):
     """Get list of business documents."""
-    base_url = current_app.config.get("LEGAL_API_BASE_URL")
-    base_url = base_url[:base_url.find("/api")]
+    base_url = current_app.config.get("BUSINESS_API_GW_URL")
     doc_url = url_for("API2.get_business_documents", identifier=business.identifier, document_name=None)
     documents = {"documents": {}}
 
@@ -129,8 +128,7 @@ def _get_coop_documents_and_info(business):
     if not business:
         return documents, info
 
-    base_url = current_app.config.get("LEGAL_API_BASE_URL")
-    base_url = base_url[:base_url.find("/api")]
+    base_url = current_app.config.get("BUSINESS_API_GW_URL")
 
     info["certifiedRules"], info["certifiedMemorandum"] = {}, {}
 

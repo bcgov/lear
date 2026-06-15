@@ -1054,6 +1054,56 @@ WHERE cs.end_event_id IS NULL;
 ALTER VIEW v_business_state
     owner to postgres;
 
+CREATE OR REPLACE VIEW v_auth_component_operation_audit AS
+SELECT
+    aco.id AS component_operation_id,
+    aco.auth_processing_id,
+    aco.corp_num,
+    aco.environment,
+    aco.flow_name,
+    aco.flow_run_id,
+    c.corp_type_cd,
+    c.recognition_dts,
+    ap.processed_status AS auth_processing_status,
+    ap.operation AS processing_operation,
+    ap.operation_scope AS processing_operation_scope,
+    ap.operation_target AS processing_operation_target,
+    ap.repeatability,
+    ap.attempt_key,
+    ap.dry_run AS processing_dry_run,
+    ap.attempt_key_context AS processing_attempt_key_context,
+    ap.mig_batch_id,
+    ap.claimed_at,
+    ap.create_date AS processing_create_date,
+    ap.last_modified AS processing_last_modified,
+    ap.last_error AS processing_last_error,
+    ap.entity_action,
+    ap.contact_action,
+    ap.affiliation_action,
+    ap.invite_action,
+    ap.action_detail AS processing_action_detail,
+    aco.operation AS component_operation,
+    aco.operation_scope AS component_operation_scope,
+    aco.component,
+    aco.target_type,
+    aco.target_value,
+    aco.action,
+    aco.status_code,
+    aco.error AS component_error,
+    aco.detail AS component_detail,
+    aco.dry_run AS component_dry_run,
+    aco.create_date AS component_create_date,
+    aco.corp_num = ap.corp_num AS corp_num_matches_parent,
+    aco.environment = ap.environment AS environment_matches_parent,
+    aco.flow_name = ap.flow_name AS flow_name_matches_parent,
+    aco.flow_run_id IS NOT DISTINCT FROM ap.flow_run_id AS flow_run_id_matches_parent
+FROM auth_component_operation aco
+JOIN auth_processing ap ON ap.id = aco.auth_processing_id
+LEFT JOIN corporation c ON c.corp_num = aco.corp_num;
+
+ALTER VIEW v_auth_component_operation_audit
+    owner to postgres;
+
 CREATE MATERIALIZED VIEW mv_corp_issue_flags AS
 SELECT
   co.corp_num,

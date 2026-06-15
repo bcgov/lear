@@ -14,6 +14,7 @@ VENV_DIR=venv
 PREFECT_VENV_DIR=venv-prefect
 SQLALCHEMY_VENV_DIR=venv-sqlalchemy
 PYTHON_VERSION=python3.11
+AUTH_MODULE_RUNNER=PYTHONPATH="$(CURRENT_ABS_DIR)/flows:$$PYTHONPATH" python -m
 
 #################################################################################
 # COMMANDS -- Setup                                                             #
@@ -129,6 +130,27 @@ run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
 run-verify-colin-updates: ## Run verify COLIN updates flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/verify_colin_updates_flow.py
+
+run-auth-create: ## Run auth create flow
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.auth_create_flow
+
+run-auth-contact: ## Run auth contact flow
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.auth_contact_flow
+
+run-auth-affiliation: ## Run auth affiliation flow
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.auth_affiliation_flow
+
+run-auth-invite: ## Run auth invitation flow
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.auth_invite_flow
+
+run-auth-delete: ## Run auth delete flow
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.auth_delete_flow
+
 
 #################################################################################
 # Self Documenting Commands                                                     #

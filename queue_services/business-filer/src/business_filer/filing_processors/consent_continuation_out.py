@@ -36,7 +36,7 @@ from contextlib import suppress
 
 import datedelta
 import dpath
-from business_model.models import Business, ConsentContinuationOut, Filing
+from business_model.models import Business, Comment, ConsentContinuationOut, Filing
 
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
@@ -50,7 +50,9 @@ def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: F
         consent_continuation_out_json = dpath.get(filing, "/consentContinuationOut/courtOrder")
         filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
 
-    foreign_jurisdiction = filing["consentContinuationOut"]["foreignJurisdiction"]
+    cco_json = filing["consentContinuationOut"]
+    foreign_jurisdiction = cco_json["foreignJurisdiction"]
+
     consent_continuation_out = ConsentContinuationOut()
     consent_continuation_out.consent_type = ConsentContinuationOut.ConsentTypes.continuation_out
     country = foreign_jurisdiction.get("country").upper()
@@ -72,6 +74,14 @@ def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: F
         "region": region,
         "expiry": expiry_date.isoformat()
     }
+
+    if details := cco_json.get("details", ""):
+        cco_filing.comments.append(
+            Comment(
+                comment=details,
+                staff_id=cco_filing.submitter_id
+            )
+        )
 
 
 def get_expiry_date(filing: Filing):

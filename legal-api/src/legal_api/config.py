@@ -23,6 +23,7 @@ or by accessing this configuration directly.
 import os
 import sys
 
+from cloud_sql_connector import DBConfig
 from dotenv import find_dotenv, load_dotenv
 
 # this will load all the envars from a .env file located in the project root (api)
@@ -118,6 +119,15 @@ class _Config:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
         SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
+        db_config = DBConfig(
+            instance_name=CLOUDSQL_INSTANCE_CONNECTION_NAME,
+            database=DB_NAME,
+            user=DB_USER,
+            ip_type=DB_IP_TYPE,
+            pool_recycle=60,
+            schema="public",
+        )
+        SQLALCHEMY_ENGINE_OPTIONS = db_config.get_engine_options()
 
     # JWT_OIDC Settings
     JWT_OIDC_WELL_KNOWN_CONFIG = os.getenv("JWT_OIDC_WELL_KNOWN_CONFIG")
@@ -333,6 +343,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     NAICS_VERSION = 1
 
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
+    BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
 
     BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")

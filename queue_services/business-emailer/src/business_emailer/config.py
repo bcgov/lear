@@ -22,6 +22,7 @@ or by accessing this configuration directly.
 
 import os
 
+from cloud_sql_connector import DBConfig
 from dotenv import find_dotenv, load_dotenv
 
 # this will load all the envars from a .env file located in the project root (api)
@@ -113,6 +114,15 @@ class Config:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql+pg8000://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{int(DB_PORT)}/{DB_NAME}"    
     elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
         SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
+        db_config = DBConfig(
+            instance_name=CLOUDSQL_INSTANCE_CONNECTION_NAME,
+            database=DB_NAME,
+            user=DB_USER,
+            ip_type=DB_IP_TYPE,
+            pool_recycle=60,
+            schema="public",
+        )
+        SQLALCHEMY_ENGINE_OPTIONS = db_config.get_engine_options()
 
 
 

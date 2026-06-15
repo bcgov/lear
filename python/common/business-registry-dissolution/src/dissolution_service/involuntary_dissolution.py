@@ -14,18 +14,19 @@
 
 """This provides the service for involuntary dissolution."""
 from dataclasses import dataclass
-from typing import Final, Tuple
+from typing import Any, Final
 
 from sqlalchemy import and_, exists, func, not_, or_, select, text
 from sqlalchemy.orm import aliased
 
+from business_account import AccountService
+from business_common.core.filing import Filing as CoreFiling
 from business_model.models import Batch, BatchProcessing, Business, Filing, db
 
-from business_account.AccountService import AccountService
-from business_common.core.filing import Filing as CoreFiling  # pylint: disable=import-outside-toplevel
+from .request_context import get_request_context
 
 
-class InvoluntaryDissolutionService():
+class InvoluntaryDissolutionService:
     """Provides services to get information for involuntary dissolution."""
 
     ELIGIBLE_TYPES: Final = [
@@ -57,14 +58,15 @@ class InvoluntaryDissolutionService():
 
     @classmethod
     def check_business_eligibility(
-        cls, identifier: str, eligibility_filters: EligibilityFilters = EligibilityFilters(), flags: any = None
-    ) -> Tuple[bool, EligibilityDetails]:
+        cls, identifier: str, eligibility_filters: EligibilityFilters | None = None, flags: Any = None
+    ) -> tuple[bool, EligibilityDetails]:
         """Return true if the business with provided identifier is eligible for dissolution.
 
         Returns:
             eligible (bool): True if the business is eligible for dissolution.
             eligibility_details (EligibilityDetails): Details regarding eligibility.
         """
+        eligibility_filters = eligibility_filters or cls.EligibilityFilters()
         query = cls._get_businesses_eligible_query(eligibility_filters, flags).filter(Business.identifier == identifier)
         result = query.one_or_none()
 
@@ -75,18 +77,15 @@ class InvoluntaryDissolutionService():
         return True, eligibility_details
 
     @classmethod
-    def get_businesses_eligible(cls, num_allowed: int = None, flags: any = None):
+    def get_businesses_eligible(cls, num_allowed: int | None = None, flags: Any = None):
         """Return the businesses eligible for involuntary dissolution."""
         query = cls._get_businesses_eligible_query(flags=flags)
-        if num_allowed:
-            eligible_businesses = query.limit(num_allowed).all()
-        else:
-            eligible_businesses = query.all()
+        eligible_businesses = query.limit(num_allowed).all() if num_allowed else query.all()
 
         return eligible_businesses
 
     @classmethod
-    def get_businesses_eligible_count(cls, flags: any = None):
+    def get_businesses_eligible_count(cls, flags: Any = None):
         """Return the number of businesses eligible for involuntary dissolution."""
         return cls._get_businesses_eligible_query(flags=flags).count()
 
@@ -103,12 +102,13 @@ class InvoluntaryDissolutionService():
             one_or_none()
 
     @staticmethod
-    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters = EligibilityFilters(), flags: any = None):
+    def _get_businesses_eligible_query(eligibility_filters: EligibilityFilters | None = None, flags: Any = None):
         """Return SQLAlchemy clause for fetching businesses eligible for involuntary dissolution.
 
         Args:
             exclude_in_dissolution (bool): If True, exclude businesses already in dissolution.
         """
+        eligibility_filters = eligibility_filters or InvoluntaryDissolutionService.EligibilityFilters()
         in_dissolution = (
             exists().where(
                 BatchProcessing.business_id == Business.id,
@@ -121,14 +121,14 @@ class InvoluntaryDissolutionService():
                 Batch.batch_type == Batch.BatchType.INVOLUNTARY_DISSOLUTION
             )
         )
-        specific_filing_overdue = _has_specific_filing_overdue() < func.timezone('UTC', func.now())
+        specific_filing_overdue = _has_specific_filing_overdue() < func.timezone("UTC", func.now())
         no_transition_filed_after_restoration = func.coalesce((_has_no_transition_filed_after_restoration()
-                                                               <= func.timezone('UTC', func.now())), False)
+                                                               <= func.timezone("UTC", func.now())), False)
 
         query = db.session.query(
             Business,
-            specific_filing_overdue.label('ar_overdue'),
-            no_transition_filed_after_restoration.label('transition_overdue')
+            specific_filing_overdue.label("ar_overdue"),
+            no_transition_filed_after_restoration.label("transition_overdue")
         ).\
             filter(not_(Business.admin_freeze.is_(True))).\
             filter(Business.state == Business.State.ACTIVE).\
@@ -198,7 +198,7 @@ def _has_no_transition_filed_after_restoration():
     Check if the business needs to file Transition but does not file it within 12 months after restoration.
     """
 
-    new_act_date = func.date('2004-03-29 00:00:00+00:00')
+    new_act_date = func.date("2004-03-29 00:00:00+00:00")
 
     restoration_filing = aliased(Filing)
     transition_filing = aliased(Filing)
@@ -262,7 +262,7 @@ def _is_limited_restored():
     """
     return and_(
         Business.restoration_expiry_date.isnot(None),
-        Business.restoration_expiry_date >= func.timezone('UTC', func.now())
+        Business.restoration_expiry_date >= func.timezone("UTC", func.now())
     )
 
 
@@ -273,26 +273,29 @@ def _is_xpro_from_nwpta():
     """
     return and_(
         Business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value,
-        Business.jurisdiction == 'CA',
+        Business.jurisdiction == "CA",
         Business.foreign_jurisdiction_region.isnot(None),
-        Business.foreign_jurisdiction_region.in_(['AB', 'SK', 'MB'])
+        Business.foreign_jurisdiction_region.in_(["AB", "SK", "MB"])
     )
 
 
-def _check_feature_flags_filter(flags: any = None):
+def _check_feature_flags_filter(flags: Any = None):
     """Check eligibility for dissolution based on inclusion and exclusion of businesses."""
     if flags is None:
-        op = type("flagType", (object,), {"is_on": lambda x,y: True, "value": lambda x,y: {}})
+        op = type("flagType", (object,), {"is_on": lambda w,x,y=None,z=None: True, "value": lambda w,x,y=None,z=None: {}})
         flags = op()
+    request_context = get_request_context()
     # Scenario 1: If the flag is off, proceed with the standard eligibility check.
-    if not flags.is_on('enable-involuntary-dissolution-filter'):
+    if not flags.is_on("enable-involuntary-dissolution-filter",
+                       request_context.user,
+                       request_context.account_id):
         return True  # Continue with the usual logic
 
     # Get the dissolution filter data (handle if filter is None or empty)
-    involuntary_dissolution_filter = flags.value('involuntary-dissolution-filter') or {}
+    involuntary_dissolution_filter = flags.value("involuntary-dissolution-filter") or {}
 
-    include_accounts = involuntary_dissolution_filter.get('include-accounts', [])
-    exclude_accounts = involuntary_dissolution_filter.get('exclude-accounts', [])
+    include_accounts = involuntary_dissolution_filter.get("include-accounts", [])
+    exclude_accounts = involuntary_dissolution_filter.get("exclude-accounts", [])
 
     # Convert accounts to sets for efficient filtering
     include_entities = set(_get_filtered_entities(include_accounts)) if include_accounts else set()
@@ -322,8 +325,8 @@ def _get_filtered_entities(accounts):
         entities = AccountService.get_affiliations(int(org_id))
 
         for entity in entities:
-            identifier = entity.get('businessIdentifier')
-            if identifier and not (identifier.startswith('T') or identifier.startswith('NR')):
+            identifier = entity.get("businessIdentifier")
+            if identifier and not identifier.startswith(("T","NR")):
                 filtered_entities.append(identifier)
 
     return filtered_entities
