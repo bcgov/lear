@@ -1079,6 +1079,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                         "name": file.get("fileName"),
                         "url": f"{url_prefix}/{file_key}"
                     })
+        elif filing.filing_type == "continuationOut":
+            continuation_out = filing.meta_data.get("continuationOut", {})
+            for file in continuation_out.get("uploadedDocuments", []):
+                if file_key := file.get("fileKey"):
+                    outputs.append({
+                        "name": file.get("fileName"),
+                        "url": f"{url_prefix}/{file_key}"
+                    })
         return outputs
 
     @staticmethod
