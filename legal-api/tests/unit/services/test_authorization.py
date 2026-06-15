@@ -3693,14 +3693,7 @@ def test_get_allowed_filings_in_liquidation(monkeypatch, app, session, jwt, test
 
 def test_get_allowed_filings_in_liquidation_intent_to_liquidate_blocked_when_in_liquidation(monkeypatch, app, session, jwt):
     """Assert that intentToLiquidate is blocked if already in liquidation."""
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='staff')
-    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
-
-    def mock_auth(one, two): # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.intentToLiquidate"

@@ -21,7 +21,6 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from unittest.mock import patch
 
-import jwt as pyjwt
 from business_model.models import DCConnection, DCDefinition, User
 from business_registry_digital_credentials import DigitalCredentialsService
 from legal_api.services.authz import BASIC_USER

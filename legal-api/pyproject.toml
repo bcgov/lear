@@ -37,9 +37,9 @@ dependencies = [
     "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
     "business-registry-digital-credentials @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-digital-credentials",
     "business-registry-dissolution @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-dissolution",
+    "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/cloud-sql-connector",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
-    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
-    "cloud-sql-connector @ git+https://github.com/bcgov/sbc-connect-common.git@cloud-sql-connector-python3.9#subdirectory=python/cloud-sql-connector"
+    "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging"
 ]
 
 [tool.poetry]
@@ -148,6 +148,7 @@ known-first-party = [
    "business_common",
    "business_model",
    "business_model_migrations",
+   "business_registry_digital_credentials",
    "cloud_sql_connector",
    "dissolution_service",
    "flask_jwt_oidc",

@@ -18,16 +18,15 @@ Loads the ``dbc-enabled-business-types`` LaunchDarkly flag and forwards the
 resolved value into the shared ``business_registry_digital_credentials`` API.
 This is the only place in legal-api that knows the LD flag key for DBC.
 """
+from flask import current_app
 
+from business_model.models.business import Business
 from business_registry_digital_credentials import (
     are_digital_credentials_allowed as _shared_are_digital_credentials_allowed,
 )
 from business_registry_digital_credentials import (
     get_digital_credentials_preconditions as _shared_get_digital_credentials_preconditions,
 )
-from flask import current_app
-
-from business_model.models.business import Business
 from flask_jwt_oidc import JwtManager
 
 DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
