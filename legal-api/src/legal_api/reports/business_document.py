@@ -24,6 +24,7 @@ from flask import current_app, jsonify
 from legal_api.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.reports.utils import get_amalg_formatted_jurisdiction
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
 from legal_api.services import VersionedBusinessDetailsService, flags
@@ -580,8 +581,9 @@ class BusinessDocument:
                      amalgamation_application.effective_date < self._tombstone_filing_date):
                 # imported from COLIN
                 amalgamated_businesses_info = {
-                    "legalName": "Not Available",
-                    "identifier": "Not Available"
+                    "legalName": "N/A",
+                    "identifier": "N/A",
+                    "jurisdiction": "N/A"
                 }
                 amalgamated_businesses.append(amalgamated_businesses_info)
             else:
@@ -591,18 +593,25 @@ class BusinessDocument:
                                                                             amalgamation.id)
                 for amalgamating_business in amalgamating_businesses:
                     if amalgamating_business.foreign_name:
-                        identifier = amalgamating_business.foreign_identifier or "Not Available"
-                        business_legal_name = amalgamating_business.foreign_name or "Not Available"
+                        identifier = amalgamating_business.foreign_identifier or "N/A"
+                        business_legal_name = amalgamating_business.foreign_name or "N/A"
+                        country_code = amalgamating_business.foreign_jurisdiction
+                        region_code = amalgamating_business.foreign_jurisdiction_region
                     else:
                         ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
                             amalgamation_application,
                             amalgamating_business.business_id)
                         identifier = ting_business._identifier  # pylint: disable=protected-access;
                         business_legal_name = ting_business.legal_name
+                        country_code = "CA"
+                        region_code = "BC"
 
+                    jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
+                    
                     amalgamated_businesses_info = {
-                        "legalName": business_legal_name,
-                        "identifier": identifier
+                        "legalName": business_legal_name or "N/A",
+                        "identifier": identifier or "N/A",
+                        "jurisdiction": jurisdiction or "N/A"
                     }
                     amalgamated_businesses.append(amalgamated_businesses_info)
         business["amalgamatedEntities"] = amalgamated_businesses
