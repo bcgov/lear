@@ -1577,6 +1577,68 @@ def filer_action(filing_name, filing_json, meta_data, business):
     return meta_data
 
 
+def test_continuation_out_uploaded_documents(app, session, client, jwt, monkeypatch, mock_drs_service):
+    """Assert that uploaded continuation out documents are returned as staff-only static documents."""
+    identifier = 'BC7654321'
+    entity_type = Business.LegalTypes.COMP.value
+    business = factory_business(identifier, entity_type=entity_type)
+
+    uploaded_documents = [
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'supporting-document-1.pdf'},
+        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'supporting-document-2.pdf'}
+    ]
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'continuationOut'
+    filing_json['filing']['business']['legalType'] = entity_type
+    filing_json['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
+    filing_json['filing']['continuationOut']['documents'] = uploaded_documents
+
+    filing = factory_filing(business, filing_json)
+    filing.skip_status_listener = True
+    filing._status = Filing.Status.COMPLETED.value
+    filing._payment_completion_date = '2017-10-01'
+    filing.save()
+
+    # set the meta data the filer would have written for a completed filing
+    filing._meta_data = {
+        'legalFilings': ['continuationOut'],
+        'continuationOut': {'uploadedDocuments': uploaded_documents}
+    }
+    filing.save()
+
+    expected_msg = {'documents': {
+        'receipt': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/receipt',
+        'staticDocuments': [
+            {
+                'name': file.get('fileName'),
+                'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file.get("fileKey")}'
+            }
+            for file in uploaded_documents
+        ]
+    }}
+
+    account_id = '1'
+    headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with requests_mock.Mocker() as m:
+            mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
+            m.get(mock_url, json=[], status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv_data == expected
+
+
 @pytest.mark.parametrize('test_name, temp_identifier, identifier, entity_type, filing_name, legal_filing, status, expected_msg, expected_http_code', [
     ('ben_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, Filing.Status.PAID,
