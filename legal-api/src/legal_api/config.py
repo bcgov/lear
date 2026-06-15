@@ -318,7 +318,6 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     # determines which version of NAICS data will be used to drive NAICS search
     NAICS_VERSION = 3
 
-    BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
     BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"

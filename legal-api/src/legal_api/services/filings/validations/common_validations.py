@@ -402,7 +402,7 @@ def _validate_par_value(par_value, share_class_name: str, err_path: str):
     if par_value is None:
         msg.append({"error": f"Share class {share_class_name} must specify par value", "path": err_path})
         return msg
-    if not isinstance(par_value, (int, float)) or isinstance(par_value, bool):
+    if not isinstance(par_value, (int | float)) or isinstance(par_value, bool):
         msg.append({"error": "Must be a valid number", "path": err_path})
         return msg
     # only floats can be non-finite; calling math.isfinite on a huge int raises OverflowError
