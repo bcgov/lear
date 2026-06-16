@@ -316,7 +316,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.3.30"
+version = "3.3.31"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -336,14 +336,14 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2025.1,<2026.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.70"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.71"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "c4d4c20c3326e311d9f251f8304183e07f5a3493"
+resolved_reference = "e7d25bbd276ba6d68f768b4f583ed410f87e2bc5"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -3370,8 +3370,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.70"
-resolved_reference = "0c6917857384e00aec36f0fbca57d7ee58ba2e1c"
+reference = "2.18.71"
+resolved_reference = "e8f9a9c1a2ae9a98f7fa8bb05a6f982cb765263c"
 
 [[package]]
 name = "reportlab"
