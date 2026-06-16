@@ -226,7 +226,6 @@ _INVITE_READ_SQL = """
     SELECT entity_id, COUNT(*) AS invite_count
     FROM affiliation_invitations
     WHERE entity_id IN :entity_ids
-      AND COALESCE(is_deleted, false) = false
     GROUP BY entity_id
 """.strip()
 
