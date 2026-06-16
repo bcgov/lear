@@ -62,6 +62,25 @@ def _parse_int_csv(raw_value: str) -> list[int]:
     ]
 
 
+def _parse_positive_int_csv(raw_value: str, name: str) -> list[int]:
+    """Parse a comma-separated list into positive ints, raising for invalid tokens."""
+    values: list[int] = []
+    seen = set()
+    for token in (raw_value or '').split(','):
+        stripped = token.strip()
+        if not stripped:
+            continue
+        if not stripped.isdigit():
+            raise ValueError(f'{name} must be a CSV of positive integers: {raw_value}')
+        value = int(stripped)
+        if value <= 0:
+            raise ValueError(f'{name} must contain only positive integers: {raw_value}')
+        if value not in seen:
+            seen.add(value)
+            values.append(value)
+    return values
+
+
 def _normalized_csv(values: list[int]):
     """Return a normalized comma-separated string for integer values."""
     return ','.join(str(x) for x in values) if values else None
@@ -202,6 +221,18 @@ class _Config():  # pylint: disable=too-few-public-methods
     VERIFY_COLIN_UPDATES_CHECK_AR_IND_IS_NO = _get_bool('VERIFY_COLIN_UPDATES_CHECK_AR_IND_IS_NO', False)
     VERIFY_COLIN_UPDATES_DETAIL_PATH = os.getenv('VERIFY_COLIN_UPDATES_DETAIL_PATH')
     VERIFY_COLIN_UPDATES_SUMMARY_PATH = os.getenv('VERIFY_COLIN_UPDATES_SUMMARY_PATH')
+
+    # verify Auth flow
+    VERIFY_AUTH_BATCHES = _get_strict_int('VERIFY_AUTH_BATCHES', 0)
+    VERIFY_AUTH_BATCH_SIZE = _get_strict_int('VERIFY_AUTH_BATCH_SIZE', 0)
+    VERIFY_AUTH_REPORT_MODE = (os.getenv('VERIFY_AUTH_REPORT_MODE') or 'VERIFY').strip() or 'VERIFY'
+    VERIFY_AUTH_INSPECT_FILTER = (os.getenv('VERIFY_AUTH_INSPECT_FILTER') or 'ALL').strip() or 'ALL'
+    VERIFY_AUTH_CHECK_ENTITY = _get_bool('VERIFY_AUTH_CHECK_ENTITY', True)
+    VERIFY_AUTH_CHECK_CONTACT = _get_bool('VERIFY_AUTH_CHECK_CONTACT', True)
+    VERIFY_AUTH_CHECK_AFFILIATION = _get_bool('VERIFY_AUTH_CHECK_AFFILIATION', False)
+    VERIFY_AUTH_CHECK_INVITE = _get_bool('VERIFY_AUTH_CHECK_INVITE', False)
+    VERIFY_AUTH_CONSOLE_DETAIL = _get_bool('VERIFY_AUTH_CONSOLE_DETAIL', False)
+    VERIFY_AUTH_OUTPUT_PATH = os.getenv('VERIFY_AUTH_OUTPUT_PATH')
 
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)

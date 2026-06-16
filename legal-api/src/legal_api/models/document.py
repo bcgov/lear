@@ -31,6 +31,7 @@ class DocumentType(Enum):
 
     AFFIDAVIT = "affidavit"
     AUTHORIZATION_FILE = "authorization_file"
+    CONTINUATION_OUT = "continuation_out"
     COOP_RULES = "coop_rules"
     COOP_MEMORANDUM = "coop_memorandum"
     COURT_ORDER = "court_order"

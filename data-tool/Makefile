@@ -131,6 +131,10 @@ run-verify-colin-updates: ## Run verify COLIN updates flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/verify_colin_updates_flow.py
 
+run-verify-auth: ## Run verify Auth flow
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.verify_auth_flow
+
 run-auth-create: ## Run auth create flow
 	. $(VENV_DIR)/bin/activate && \
 	$(AUTH_MODULE_RUNNER) auth.auth_create_flow
