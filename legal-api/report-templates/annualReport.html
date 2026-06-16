@@ -30,6 +30,7 @@
       </div>
     </div>
     [[common/businessDetails.html]]
+    {% if business.legalType == 'CP' %}
     <div class="container">
       <table class="section-data section-data-table" role="presentation">
         <tr class="no-page-break">
@@ -53,7 +54,12 @@
         [[directors.html]]
       {% endif %}
       [[certification.html]]
-
     </div>
+    {% else %}
+      <div class="container">
+        <div class="separator"></div>
+        [[bc-annual-report/legalObligations.html]]
+      </div>
+    {% endif %}
   </body>
 </html>

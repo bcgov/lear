@@ -123,6 +123,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
+        elif self._filing.status not in [Filing.Status.WITHDRAWN.value, Filing.Status.COMPLETED.value]:
+            # some sections are available only when filing is completed.
+            return current_app.response_class(
+                response=response.content,
+                status=response.status_code,
+                mimetype="application/pdf"
+            )
 
         if regenerate:
             response_drs = self._document_service.replace_filing_report(
@@ -184,8 +191,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "amalgamation/approvalType",
             "amalgamation/effectiveDate",
             "bc-annual-report/legalObligations",
-            "bc-address-change/addresses",
-            "bc-director-change/directors",
             "common/certificateFooter",
             "common/certificateLogo",
             "common/certificateRegistrarSignature",
@@ -1608,37 +1613,19 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "reportType": ReportTypes.FILING.value
         },
         "changeOfAddress": {
-            "hasDifferentTemplates": True,
             "filingDescription": "Change of Address",
             "reportType": ReportTypes.FILING.value,
-            "default": {
-                "fileName": "bcAddressChange"
-            },
-            "CP": {
-                "fileName": "changeOfAddress"
-            }
+            "fileName": "changeOfAddress"
         },
         "changeOfDirectors": {
-            "hasDifferentTemplates": True,
             "filingDescription": "Change of Directors",
             "reportType": ReportTypes.FILING.value,
-            "default": {
-                "fileName": "bcDirectorChange"
-            },
-            "CP": {
-                "fileName": "changeOfDirectors"
-            }
+            "fileName": "changeOfDirectors"
         },
         "annualReport": {
-            "hasDifferentTemplates": True,
             "filingDescription": "Annual Report",
             "reportType": ReportTypes.FILING.value,
-            "default": {
-                "fileName": "bcAnnualReport"
-            },
-            "CP": {
-                "fileName": "annualReport"
-            }
+            "fileName": "annualReport"
         },
         "changeOfName": {
             "filingDescription": "Change of Name",
