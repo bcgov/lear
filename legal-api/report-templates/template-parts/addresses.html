@@ -4,7 +4,7 @@
   <tr class="no-page-break">
     <td class="col-50">
       <div class="section-sub-title">
-        Mailing Address  {% if 'addressChanged' in registeredOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}
+        Mailing Address  {% if 'addressChanged' in registeredOfficeAddress.mailingAddress.actions %}{{ labelChanged() }}{% endif %}
       </div>
       <div class="pt-2">{{ registeredOfficeAddress.mailingAddress.streetAddress }}</div>
       <div>{{ registeredOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
@@ -18,7 +18,7 @@
     </td>
     <td class="col-50">
       <div class="section-sub-title">
-        Delivery Address  {% if 'addressChanged' in registeredOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}
+        Delivery Address  {% if 'addressChanged' in registeredOfficeAddress.deliveryAddress.actions %}{{ labelChanged() }}{% endif %}
       </div>
       <div class="pt-2">{{ registeredOfficeAddress.deliveryAddress.streetAddress }}</div>
       <div>{{ registeredOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>
@@ -43,7 +43,7 @@
   <tr class="no-page-break">
     <td class="col-50">
       <div class="section-sub-title">
-        Mailing Address  {% if 'addressChanged' in recordsOfficeAddress.mailingAddress.actions %}{{ labelNew() }}{% endif %}
+        Mailing Address  {% if 'addressChanged' in recordsOfficeAddress.mailingAddress.actions %}{{ labelChanged() }}{% endif %}
       </div>
       <div class="pt-2">{{ recordsOfficeAddress.mailingAddress.streetAddress }}</div>
       <div>{{ recordsOfficeAddress.mailingAddress.streetAddressAdditional }}</div>
@@ -57,7 +57,7 @@
     </td>
     <td class="col-50">
       <div class="section-sub-title">
-        Delivery Address {% if 'addressChanged' in recordsOfficeAddress.deliveryAddress.actions %}{{ labelNew() }}{% endif %}
+        Delivery Address {% if 'addressChanged' in recordsOfficeAddress.deliveryAddress.actions %}{{ labelChanged() }}{% endif %}
       </div>
       <div class="pt-2">{{ recordsOfficeAddress.deliveryAddress.streetAddress }}</div>
       <div>{{ recordsOfficeAddress.deliveryAddress.streetAddressAdditional }}</div>

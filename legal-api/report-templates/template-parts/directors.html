@@ -137,7 +137,7 @@
         <td class="col-33">
           {% if director.mailingAddress is defined %}
             <div class="section-sub-title">
-              Mailing Address {% if 'addressChanged' in director.actions %}{{ labelNew() }}{% endif %}
+              Mailing Address {% if 'addressChanged' in director.actions %}{{ labelChanged() }}{% endif %}
             </div>
             <div class="pt-2">{{ director.mailingAddress.streetAddress }}</div>
             <div>{{ director.mailingAddress.streetAddressAdditional }}</div>
@@ -157,7 +157,7 @@
         </td>
         <td class="col-33">
           <div class="section-sub-title">
-            Delivery Address {% if 'addressChanged' in director.actions %}{{ labelNew() }}{% endif %}
+            Delivery Address {% if 'addressChanged' in director.actions %}{{ labelChanged() }}{% endif %}
           </div>
           <div class="pt-2">{{ director.deliveryAddress.streetAddress }}</div>
           <div>{{ director.deliveryAddress.streetAddressAdditional }}</div>
