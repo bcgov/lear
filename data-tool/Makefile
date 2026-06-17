@@ -121,7 +121,12 @@ run-extract-load:
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py  --mode refresh
+	python flows/refresh_extract_subset_flow.py  --mode refresh --delta-scope batch
+
+run-extract-refresh-full:
+	. $(VENV_DIR)/bin/activate && \
+	python flows/refresh_extract_subset_flow.py --mode refresh --delta-scope full
+
 
 run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
 	. $(VENV_DIR)/bin/activate && \

@@ -12,7 +12,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from datetime import datetime, timezone
 from config import get_named_config
-from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch
+from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch, unfreeze_identifiers
 from common.init_utils import colin_oracle_init, get_config
 from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
@@ -120,18 +120,27 @@ def get_cuttoff_timestamp() -> datetime:
 def cleanup_extract_postgres_db() -> None:
     _reset_extract_postgres_db()
 
+@task(name='Unfreeze-Identifiers', cache_policy=NO_CACHE)
+def run_unfreeze_identifiers() -> None:
+    cfg = get_named_config()
+    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
+        result = conn.execute(text(unfreeze_identifiers()))
+    print(f'Unfroze corporation rows={result.rowcount}')
+
 @task(name='Get-Updated-Identifiers-Colin', cache_policy=NO_CACHE)
-def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine, chunk_size: int) -> list[dict]:
+def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, colin_oracle_engine: Engine, chunk_size: int, scope: str) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
     """
     cfg = get_named_config()
-    mig_sql = get_identifiers_per_batch(mig_batch_id)
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
-        row = conn.execute(text(mig_sql)).fetchone()
+    corp_list = ''
+    if scope == 'batch':
+        mig_sql = get_identifiers_per_batch(mig_batch_id)
+        with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+            row = conn.execute(text(mig_sql)).fetchone()
     
-    corp_list = corpnum_to_oracle_ids(row[0]) if row else None    
-    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list), chunk_size)
+        corp_list = corpnum_to_oracle_ids(row[0]) if row else None    
+    colin_sql = get_updated_identifiers_for_batch(cutoff_timestamp, str(corp_list or ''), chunk_size, scope)
 
     with colin_oracle_engine.connect() as conn:
         result = conn.execute(text(colin_sql))
@@ -232,7 +241,7 @@ def run_refresh_views(mode: str = 'refresh', targets: str =  'all') -> subproces
 def extract_pull_flow(
     corp_file: str,
     mode: str = 'load',
-    chunk_size: int = 900,
+    chunk_size: int = 999,
     threads: int = 4,
     pg_fastload: bool = False,
     pg_disable_method: str = 'table_triggers',
@@ -243,6 +252,7 @@ def extract_pull_flow(
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
     target_connection: str = _DEFAULT_TARGET_CONNECTION,
+    delta_scope: str = 'batch'
 ) -> None:
     """
     Generate files
@@ -252,7 +262,7 @@ def extract_pull_flow(
         print('Running in refresh mode: skipping Postgres DB reset')
     if reset_extract_postgres:
         cleanup_extract_postgres_db()
-    
+
     cutoff = get_cuttoff_timestamp()
 
     config = get_config()
@@ -260,7 +270,7 @@ def extract_pull_flow(
     # Get Identifiers
     feed_path: Path | None = None
     if mode == 'refresh':
-        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=config.MIG_BATCH_IDS, colin_oracle_engine=colin_oracle_engine, chunk_size=chunk_size)
+        updated_rows = get_updated_identifiers_colin(cutoff_timestamp=cutoff, mig_batch_id=config.MIG_BATCH_IDS, colin_oracle_engine=colin_oracle_engine, chunk_size=chunk_size, scope=delta_scope)
         print(f'Colin updated identifiers : {len(updated_rows)} rows')
         _GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         feed_path = _GENERATED_DIR / f'refresh_corp_feed_{os.getpid()}.tmp'
@@ -312,12 +322,15 @@ def extract_pull_flow(
         )
         if run_result.returncode != 0:
             raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
-        
-    if refresh_views:
+    
+    print('Running Unfreezing Corps.......')
+    run_unfreeze_identifiers()
+    
+    if refresh_views and delta_scope == 'batch':
         refresh_result = run_refresh_views('refresh', 'all')
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
-    if mode == 'refresh':
+    if mode == 'refresh' and delta_scope == 'batch':
         prune_identifiers = get_fallen_identifiers(updated_corp_nums)
         prune_fallen_identifiers(prune_identifiers)
     
@@ -325,6 +338,7 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
     p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
     p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
+    p.add_argument('--delta-scope', default='batch', choices=('batch', 'full'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
