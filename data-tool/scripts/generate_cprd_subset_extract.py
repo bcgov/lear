@@ -775,8 +775,8 @@ def gen_build_master_script_inline(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
-    lines.append("truncate table public.colin_extract_version; "
-                 "insert into public.colin_extract_version (extracted_at) values (current_timestamp); "
+    lines.append(f"truncate table {cfg.target_schema}.colin_extract_version; "
+                 f"insert into {cfg.target_schema}.colin_extract_version (extracted_at) values (current_timestamp); "
     )
     lines.append("")
 
@@ -879,8 +879,8 @@ def gen_build_master_script_vset(
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
-    lines.append("truncate table public.colin_extract_version; "
-                 "insert into public.colin_extract_version (extracted_at) values (current_timestamp); "
+    lines.append(f"truncate table {cfg.target_schema}.colin_extract_version; "
+                 f"insert into {cfg.target_schema}.colin_extract_version (extracted_at) values (current_timestamp); "
     )
     lines.append("")
 
@@ -1037,6 +1037,12 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
         "--prefix-numeric-bc",
         action="store_true",
         help="If set, any all-numeric corp id lines will be normalized to BC<digits> for the TARGET/Postgres corp_num.",
+    )
+    parser.add_argument(
+        "--include-cars",
+        dest="include_cars",
+        action="store_true",
+        help="Include global cars* refresh step (carsfile/carsbox/carsrept/carindiv; generator default).",
     )
     parser.add_argument(
         "--no-cars",

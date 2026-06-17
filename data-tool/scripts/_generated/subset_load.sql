@@ -4,7 +4,7 @@ vset cli.settings.transfer_threads=4
 vset format.date=YYYY-MM-dd'T'hh:mm:ss'Z'
 vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 
-connect cprd_pg;
+connect ctst_pg_subset;
 -- Serialize subset runs on this target DB.
 execute /home/kdeodhar/repos/lear/data-tool/scripts/subset/subset_pg_acquire_advisory_lock.sql
 
@@ -12,7 +12,7 @@ execute /home/kdeodhar/repos/lear/data-tool/scripts/subset/subset_pg_acquire_adv
 execute /home/kdeodhar/repos/lear/data-tool/scripts/_generated/subset_load_chunks/support/subset_pg_prepare_address_stage.sql
 learn schema colin_extract;
 
-truncate table public.colin_extract_version; insert into public.colin_extract_version (extracted_at) values (current_timestamp); 
+truncate table colin_extract.colin_extract_version; insert into colin_extract.colin_extract_version (extracted_at) values (current_timestamp); 
 
 -- Postgres fast-load mode (session-level settings)
 execute /home/kdeodhar/repos/lear/data-tool/scripts/subset/subset_pg_fastload_begin.sql
