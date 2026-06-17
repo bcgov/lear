@@ -73,7 +73,7 @@ def get_identifiers_per_batch(mig_batch_id: int) -> str:
     return f"""
     SELECT string_agg(pg_catalog.quote_literal(trim(CAST(mcb.corp_num AS text))), ',') AS corp_list
     FROM mig_corp_batch mcb
-    WHERE mcb.mig_batch_id = {mig_batch_id}
+    WHERE mcb.mig_batch_id IN ({mig_batch_id})
     """
 
 def unfreeze_identifiers() -> str:
