@@ -24,7 +24,6 @@ from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
-    validate_email,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -86,10 +85,6 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     msg.extend(validate_ia_court_order(incorporation_json))
 
     err = validate_phone_number(incorporation_json, legal_type, "incorporationApplication")
-    if err:
-        msg.extend(err)
-
-    err = validate_email(incorporation_json, "incorporationApplication")
     if err:
         msg.extend(err)
 

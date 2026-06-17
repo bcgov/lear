@@ -19,6 +19,7 @@ from datetime import date
 
 import pytest
 from freezegun import freeze_time
+import registry_schemas
 from registry_schemas.example_data import CONTINUATION_IN
 
 from legal_api.models import Business
@@ -1151,43 +1152,6 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
             []
         ),
         (
-            'FAIL_IDENTIFIER_MISSING',
-            None,
-            'Test',
-            [
-                {
-                    'error': 'Identifier is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
-                }
-            ]
-        ),
-        (
-            'FAIL_LEGAL_NAME_MISSING',
-            'C1234567',
-            None,
-            [
-                {
-                    'error': 'Legal name is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
-                }
-            ]
-        ),
-        (
-            'FAIL_BOTH_MISSING',
-            None,
-            None,
-            [
-                {
-                    'error': 'Identifier is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
-                },
-                {
-                    'error': 'Legal name is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
-                }
-            ]
-        ),
-        (
             'FAIL_IDENTIFIER_EXCEEDS_MAX_LENGTH',
             'A' * 51,
             'Test',
@@ -1228,7 +1192,11 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
 )
 def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
                                                      test_name, identifier, legal_name, expected_errors):
-    """Assert that identifier and legalName are required and enforce max length for continuation in filings."""
+    """Assert that identifier and legalName enforce max length for continuation in filings.
+
+    The required (non-empty / non-whitespace) rule for these fields now lives in the schema;
+    see test_continuation_in_foreign_jurisdiction_name_rejected_by_schema.
+    """
     filing = {
         'filing': {
             'continuationIn': {
@@ -1262,3 +1230,18 @@ def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
     err = _validate_foreign_jurisdiction(filing, 'continuationIn', 'C')
 
     assert err == expected_errors
+
+
+@pytest.mark.parametrize('field', ['identifier', 'legalName'])
+@pytest.mark.parametrize('bad_value', ['', '   ', '\t', '\n'])
+def test_continuation_in_foreign_jurisdiction_name_rejected_by_schema(session, field, bad_value):
+    """Empty/whitespace-only foreignJurisdiction identifier/legalName is rejected by the schema.
+
+    This required rule moved from legal-api into the business-schemas continuation_in pattern.
+    """
+    ci = copy.deepcopy(CONTINUATION_IN)
+    ci['foreignJurisdiction'][field] = bad_value
+
+    valid, _ = registry_schemas.validate({'continuationIn': ci}, 'continuation_in')
+
+    assert not valid

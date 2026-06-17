@@ -23,6 +23,7 @@ from legal_api.errors import Error
 from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
+import registry_schemas
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter
 
@@ -512,19 +513,9 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
 @pytest.mark.parametrize(
     'test_status, legal_type, dissolution_type, party_type, org_name, first_name, expected_code, expected_msg',
     [
-        # Required organization name cases
-        ('FAIL', 'BC', 'voluntary', 'organization', '', None, HTTPStatus.BAD_REQUEST,
-         'Organization name is required.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', '   ', None, HTTPStatus.BAD_REQUEST,
-         'Organization name is required.'),
-
-        # Leading/trailing whitespace - organization
-        ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, HTTPStatus.BAD_REQUEST,
-         'Organization name cannot have leading or trailing spaces.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', None, HTTPStatus.BAD_REQUEST,
-         'Organization name cannot have leading or trailing spaces.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', None, HTTPStatus.BAD_REQUEST,
-         'Organization name cannot have leading or trailing spaces.'),
+        # Organization custodian name (required + no surrounding whitespace) is enforced by the
+        # schema (parties officer.organizationName pattern); see
+        # test_dissolution_custodian_org_name_rejected_by_schema.
 
         # Valid organization name
         ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None, None),
@@ -593,6 +584,27 @@ def test_dissolution_custodian_name(session, test_status, legal_type, dissolutio
         assert any(expected_msg in msg['error'] for msg in err.msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize('bad_org_name', ['', '   ', '\t', '\n', '  LeadingSpace', 'TrailingSpace  ', '  BothSides  '])
+def test_dissolution_custodian_org_name_rejected_by_schema(session, bad_org_name):
+    """A blank/whitespace/surrounding-whitespace custodian organizationName is rejected by the schema.
+
+    This rule moved from legal-api into the business-schemas parties officer.organizationName pattern.
+    """
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+    officer = filing['filing']['dissolution']['parties'][1]['officer']
+    officer['partyType'] = 'organization'
+    officer['organizationName'] = bad_org_name
+
+    valid, _ = registry_schemas.validate(filing, 'filing')
+
+    assert not valid
 
 #setup
 now = date(2020, 9, 17)

@@ -388,22 +388,10 @@ def _validate_custodian_name(parties, dissolution_type, legal_type) -> list:
     msg = []
     for idx, party in enumerate(parties):
         party_type = get_str(party, "/officer/partyType")
-        if party_type == "organization":
-            org_name = get_str(party, "/officer/organizationName")
-            stripped_org_name = org_name.strip()
-
-            if not stripped_org_name:
-                msg.append({
-                    "error": "Organization name is required.",
-                    "path": f"/filing/dissolution/parties/{idx}/officer/organizationName"
-                })
-            elif org_name != stripped_org_name:
-                msg.append({
-                    "error": "Organization name cannot have leading or trailing spaces.",
-                    "path": f"/filing/dissolution/parties/{idx}/officer/organizationName"
-                })
-
-        else:
+        # Organization custodian name (required + no surrounding whitespace) is enforced by the
+        # schema (business-schemas parties officer.organizationName pattern). firstName is not
+        # schema-patterned, so it is still validated here.
+        if party_type != "organization":
             first_name = get_str(party, "/officer/firstName")
 
             if first_name is None or not first_name.strip():
