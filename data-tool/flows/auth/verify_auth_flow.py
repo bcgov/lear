@@ -181,6 +181,7 @@ SCENARIO_FIELDNAMES = ["scenario", "count", "identifiers_csv", "recommended_acti
 
 INSPECTION_FIELDNAMES = [
     "business_identifier",
+    "business_names",
     "entity_state",
     "entity_exists",
     "entity_count",
@@ -200,7 +201,7 @@ INSPECTION_FIELDNAMES = [
 ]
 
 _ENTITY_READ_SQL = """
-    SELECT id, business_identifier
+    SELECT id, business_identifier, name AS business_name
     FROM entities
     WHERE business_identifier IN :business_identifiers
     ORDER BY business_identifier, id
@@ -342,6 +343,7 @@ class AuthBusinessState:
     found_account_names: tuple[str, ...] = ()
     missing_account_ids: tuple[str, ...] = ()
     invite_count: int = 0
+    business_names: tuple[str, ...] = ()
 
     @property
     def entity_exists(self) -> bool:
@@ -785,6 +787,7 @@ def read_auth_states_for_candidates(
 
     expected_accounts_by_identifier = expected_accounts_by_identifier or {}
     entity_ids_by_identifier: dict[str, set[Any]] = {identifier: set() for identifier in candidates}
+    business_names_by_identifier: dict[str, set[str]] = {identifier: set() for identifier in candidates}
     identifier_by_entity_id: dict[str, str] = {}
     contact_count_by_entity_id: dict[str, int] = defaultdict(int)
     usable_contact_count_by_entity_id: dict[str, int] = defaultdict(int)
@@ -800,6 +803,9 @@ def read_auth_states_for_candidates(
             if identifier not in entity_ids_by_identifier or entity_id is None:
                 continue
             entity_ids_by_identifier[identifier].add(entity_id)
+            business_name = _row_value_or_none(row, 2, "business_name", "name")
+            if business_name is not None and str(business_name).strip():
+                business_names_by_identifier[identifier].add(str(business_name).strip())
             identifier_by_entity_id[str(entity_id)] = identifier
 
         entity_ids = [entity_id for entity_ids_set in entity_ids_by_identifier.values() for entity_id in entity_ids_set]
@@ -834,6 +840,7 @@ def read_auth_states_for_candidates(
     states: list[AuthBusinessState] = []
     for identifier in candidates:
         entity_ids = _sorted_unique_strings(entity_ids_by_identifier.get(identifier, ()))
+        business_names = _sorted_unique_strings(business_names_by_identifier.get(identifier, ()))
         expected_account_ids = _sorted_unique_strings(expected_accounts_by_identifier.get(identifier, ()))
         found_account_ids = _sorted_unique_strings(found_accounts_by_identifier.get(identifier, ()))
         found_account_names = _sorted_unique_strings(found_account_names_by_identifier.get(identifier, ()))
@@ -846,6 +853,7 @@ def read_auth_states_for_candidates(
         states.append(
             AuthBusinessState(
                 business_identifier=identifier,
+                business_names=business_names,
                 entity_ids=entity_ids,
                 contact_count=contact_count,
                 usable_contact_count=usable_contact_count,
@@ -1156,6 +1164,7 @@ def build_inspection_rows(states: list[AuthBusinessState]) -> list[dict[str, str
         rows.append(
             {
                 "business_identifier": state.business_identifier,
+                "business_names": _format_tuple(state.business_names),
                 "entity_state": "present" if entity_exists else "missing",
                 "entity_exists": _format_bool(entity_exists),
                 "entity_count": len(state.entity_ids),
@@ -1330,6 +1339,7 @@ def print_inspection_rows(inspection_rows: list[dict[str, str | int]]) -> None:
 
     columns = (
         "business_identifier",
+        "business_names",
         "entity_state",
         "contact_state",
         "affiliation_state",
