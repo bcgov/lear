@@ -343,6 +343,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     NAICS_VERSION = 1
 
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
+    BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
 
     BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")

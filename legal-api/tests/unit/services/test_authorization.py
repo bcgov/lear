@@ -3755,7 +3755,7 @@ def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, 
                           FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
                           FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
                           FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
-                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          # FilingKey.CHANGE_OF_LIQUIDATORS_INTENT, - Block intentToLiquidate when business is in liquidation
                           FilingKey.CHANGE_OF_LIQUIDATORS_REPORT,
                           FilingKey.COO_CORPS,
                           FilingKey.CHANGE_OF_RECEIVERS_AMEND,
@@ -3779,7 +3779,7 @@ def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, 
                           FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
                           FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
                           FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
-                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          # FilingKey.CHANGE_OF_LIQUIDATORS_INTENT, - Block intentToLiquidate when business is in liquidation
                           FilingKey.COO_CORPS,
                           FilingKey.CHANGE_OF_RECEIVERS_AMEND,
                           FilingKey.CHANGE_OF_RECEIVERS_APPOINT,
@@ -3802,7 +3802,7 @@ def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, 
                           FilingKey.CHANGE_OF_LIQUIDATORS_APPOINT,
                           FilingKey.CHANGE_OF_LIQUIDATORS_CEASE,
                           FilingKey.CHANGE_OF_LIQUIDATORS_ADDRESS,
-                          FilingKey.CHANGE_OF_LIQUIDATORS_INTENT,
+                          # FilingKey.CHANGE_OF_LIQUIDATORS_INTENT, - Block intentToLiquidate when business is in liquidation
                           FilingKey.COO_CORPS,
                           FilingKey.CHANGE_OF_RECEIVERS_AMEND,
                           FilingKey.CHANGE_OF_RECEIVERS_APPOINT,
@@ -3856,6 +3856,47 @@ def test_get_allowed_filings_in_liquidation(monkeypatch, app, session, jwt, test
         business: Business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP, in_liquidation_date=in_liquidation_date, last_lr_year=last_lr_year)
         filing_types = get_allowed_filings(business, Business.State.ACTIVE, Business.LegalTypes.COMP, jwt)
         assert filing_types == expected
+
+
+def test_get_allowed_filings_in_liquidation_intent_to_liquidate_blocked_when_in_liquidation(monkeypatch, app, session, jwt):
+    """Assert that intentToLiquidate is blocked if already in liquidation."""
+    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='staff')
+    headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
+
+    def mock_auth(one, two): # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: "changeOfLiquidators.intentToLiquidate"
+            if flag == 'enabled-specific-filings' else {}
+        )
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
+
+        identifier = 'BC7654321'
+
+        # intentToLiquidate allowed when business not in liquidation
+        business_normal = factory_business(
+            identifier=identifier, 
+            entity_type=Business.LegalTypes.COMP, 
+            in_liquidation_date=None
+        )
+        filings_normal = get_allowed_filings(business_normal, Business.State.ACTIVE, Business.LegalTypes.COMP, jwt)
+        assert any(f['name'] == 'changeOfLiquidators' and f.get('type') == 'intentToLiquidate' for f in filings_normal)
+
+        # intentToLiquidate NOT allowed when business in liquidation
+        business_in_liquidation = factory_business(
+            identifier=identifier, 
+            entity_type=Business.LegalTypes.COMP, 
+            in_liquidation_date=datetime.now()
+        )
+        filings_in_liquidation = get_allowed_filings(business_in_liquidation, Business.State.ACTIVE, Business.LegalTypes.COMP, jwt)
+        assert not any(f['name'] == 'changeOfLiquidators' and f.get('type') == 'intentToLiquidate' for f in filings_in_liquidation)
 
 
 def create_incomplete_filing(business,

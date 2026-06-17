@@ -1,8 +1,18 @@
 from __future__ import annotations
 
-from typing import List, Sequence
+from typing import Dict, List, Optional, Sequence
 
-from .auth_models import AuthSelectionMode
+from .auth_flow_utils import auth_custom_contact_email_override
+from .auth_models import (
+    AuthProcessingIdentity,
+    AuthRepeatability,
+    AuthSelectionMode,
+)
+from .auth_selection import (
+    auth_migration_filter_ids,
+    parse_auth_corp_nums_csv,
+    positive_int_csv_for_sql,
+)
 
 # Match the existing tombstone corp type cohort by default.
 CORP_TYPE_FILTER = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
@@ -18,22 +28,263 @@ def _quote_list(values: Sequence[str]) -> str:
     return ", ".join([f"'{_escape_sql_literal(v)}'" for v in values])
 
 
+def get_auth_query_params(
+    identity: Optional[AuthProcessingIdentity],
+    *,
+    config=None,
+    include_contact_email: bool = False,
+) -> Dict[str, object]:
+    """Return bind parameters required by auth query predicates/select columns."""
+    params: Dict[str, object] = {}
+    uses_auth_attempt_key = (
+        identity is not None
+        and not identity.dry_run
+        and (
+            identity.repeatability == AuthRepeatability.REPEATABLE
+            or (
+                identity.repeatability == AuthRepeatability.RESET
+                and identity.full_reset_sweep
+            )
+        )
+    )
+    if uses_auth_attempt_key:
+        params['auth_attempt_key'] = identity.attempt_key
+
+    custom_contact_email = (
+        auth_custom_contact_email_override(config)
+        if config is not None and include_contact_email
+        else None
+    )
+    if custom_contact_email is not None:
+        params['auth_custom_contact_email'] = custom_contact_email
+
+    return params
+
+
+def _auth_processing_exclusion_sql(
+    *,
+    flow_name: str,
+    environment: str,
+    identity: Optional[AuthProcessingIdentity],
+) -> tuple[str, str]:
+    """Return auth_processing join/predicate SQL for the selection policy.
+
+    Legacy callers that have not yet been updated to pass an AuthProcessingIdentity retain
+    the old one-row-per-(corp, flow, environment) anti-join behavior. Identity-aware callers
+    get policy-driven blocking:
+      - active non-dry-run rows for the same corp/environment block all auth flows, including dry-runs;
+      - ONE_SHOT and RESET real runs also exclude historical non-dry-run rows for the same operation/scope;
+      - real REPEATABLE rows exclude same-cycle attempts by attempt_key, regardless of status;
+      - older-cycle REPEATABLE history only contributes to priority ordering.
+    """
+    flow_sql = _escape_sql_literal(flow_name)
+    env_sql = _escape_sql_literal(environment)
+
+    if identity is None:
+        legacy_join = f"""
+    LEFT JOIN auth_processing ap
+        ON ap.corp_num = c.corp_num
+       AND ap.flow_name = '{flow_sql}'
+       AND ap.environment = '{env_sql}'
+    """
+        return legacy_join, "AND ap.corp_num IS NULL"
+
+    if identity.flow_name != flow_name:
+        raise ValueError(
+            f'flow_name ({flow_name}) must match identity.flow_name ({identity.flow_name})'
+        )
+
+    if identity.repeatability not in (
+        AuthRepeatability.ONE_SHOT,
+        AuthRepeatability.RESET,
+        AuthRepeatability.REPEATABLE,
+    ):
+        raise ValueError(f'Unsupported auth repeatability: {identity.repeatability}')
+
+    operation_sql = _escape_sql_literal(identity.operation.value)
+    scope_sql = _escape_sql_literal(identity.operation_scope.value)
+
+    exclusion = f"""
+        AND NOT EXISTS (
+            SELECT 1
+            FROM auth_processing ap_active
+            WHERE ap_active.corp_num = c.corp_num
+              AND ap_active.environment = '{env_sql}'
+              AND COALESCE(ap_active.dry_run, false) = false
+              AND ap_active.processed_status IN ('PENDING', 'PROCESSING')
+        )
+    """
+
+    if identity.dry_run:
+        return "", exclusion
+
+    if identity.repeatability == AuthRepeatability.RESET and identity.full_reset_sweep:
+        exclusion += f"""
+        AND NOT EXISTS (
+            SELECT 1
+            FROM auth_processing ap_reset_sweep
+            WHERE ap_reset_sweep.corp_num = c.corp_num
+              AND ap_reset_sweep.flow_name = '{flow_sql}'
+              AND ap_reset_sweep.environment = '{env_sql}'
+              AND ap_reset_sweep.operation = '{operation_sql}'
+              AND ap_reset_sweep.operation_scope = '{scope_sql}'
+              AND ap_reset_sweep.attempt_key = :auth_attempt_key
+              AND COALESCE(ap_reset_sweep.dry_run, false) = false
+        )
+        AND NOT EXISTS (
+            SELECT 1
+            FROM auth_processing ap_reset_failed
+            WHERE ap_reset_failed.corp_num = c.corp_num
+              AND ap_reset_failed.flow_name = '{flow_sql}'
+              AND ap_reset_failed.environment = '{env_sql}'
+              AND ap_reset_failed.operation = '{operation_sql}'
+              AND ap_reset_failed.operation_scope = '{scope_sql}'
+              AND ap_reset_failed.processed_status = 'FAILED'
+              AND COALESCE(ap_reset_failed.dry_run, false) = false
+        )
+        """
+
+    if identity.repeatability in (AuthRepeatability.ONE_SHOT, AuthRepeatability.RESET) and not identity.full_reset_sweep:
+        exclusion += f"""
+        AND NOT EXISTS (
+            SELECT 1
+            FROM auth_processing ap_history
+            WHERE ap_history.corp_num = c.corp_num
+              AND ap_history.flow_name = '{flow_sql}'
+              AND ap_history.environment = '{env_sql}'
+              AND ap_history.operation = '{operation_sql}'
+              AND ap_history.operation_scope = '{scope_sql}'
+              AND COALESCE(ap_history.dry_run, false) = false
+        )
+        """
+
+    if identity.repeatability == AuthRepeatability.REPEATABLE:
+        exclusion += f"""
+        AND NOT EXISTS (
+            SELECT 1
+            FROM auth_processing ap_cycle
+            WHERE ap_cycle.corp_num = c.corp_num
+              AND ap_cycle.flow_name = '{flow_sql}'
+              AND ap_cycle.environment = '{env_sql}'
+              AND ap_cycle.operation = '{operation_sql}'
+              AND ap_cycle.operation_scope = '{scope_sql}'
+              AND ap_cycle.attempt_key = :auth_attempt_key
+              AND COALESCE(ap_cycle.dry_run, false) = false
+        )
+        """
+
+    return "", exclusion
+
+
+def _auth_repeatable_real_history_priority_sql(
+    *,
+    flow_name: str,
+    environment: str,
+    identity: Optional[AuthProcessingIdentity],
+) -> str:
+    """Return ORDER BY expression that ranks never-run repeatable real corps first.
+
+    Repeatable flows remain rerunnable across cycles: prior real history outside the current
+    attempt_key is not excluded here, it only sorts after corps with no prior real attempt for
+    the same flow/operation/scope identity.
+    Dry-run history is ignored for real-run priority, and dry-runs do not apply this
+    priority because they should not be treated as durable progress.
+    """
+    if (
+        identity is None
+        or identity.dry_run
+        or identity.repeatability != AuthRepeatability.REPEATABLE
+    ):
+        return ""
+
+    flow_sql = _escape_sql_literal(flow_name)
+    env_sql = _escape_sql_literal(environment)
+    operation_sql = _escape_sql_literal(identity.operation.value)
+    scope_sql = _escape_sql_literal(identity.operation_scope.value)
+
+    return f"""
+        CASE
+            WHEN EXISTS (
+                SELECT 1
+                FROM auth_processing ap_repeatable_history
+                WHERE ap_repeatable_history.corp_num = c.corp_num
+                  AND ap_repeatable_history.flow_name = '{flow_sql}'
+                  AND ap_repeatable_history.environment = '{env_sql}'
+                  AND ap_repeatable_history.operation = '{operation_sql}'
+                  AND ap_repeatable_history.operation_scope = '{scope_sql}'
+                  AND COALESCE(ap_repeatable_history.dry_run, false) = false
+            ) THEN 1
+            ELSE 0
+        END
+    """
+
+
+def _order_by_sql(*terms: str) -> str:
+    """Return an ORDER BY clause from non-empty terms."""
+    cleaned = [term.strip() for term in terms if term and term.strip()]
+    return f"ORDER BY\n            {', '.join(cleaned)}" if cleaned else ""
+
+
+
+def _positive_int_csv(csv_val: str | None, *, name: str) -> Optional[str]:
+    """Return safe positive integer CSV for SQL interpolation, or None when unset."""
+    return positive_int_csv_for_sql(csv_val, name=name)
+
+
+def _auth_migration_filter_ids(config) -> tuple[Optional[str], Optional[str]]:
+    """Return Auth-only migration group/batch ID filters, without global fallback."""
+    return auth_migration_filter_ids(config, require_any=True)
+
+
 def _parse_corp_nums_csv(csv_val: str | None) -> List[str]:
-    if not csv_val:
-        return []
-    parts: List[str] = []
-    for tok in str(csv_val).split(','):
-        t = tok.strip().upper()
-        if t:
-            parts.append(t)
-    # Deduplicate while preserving order
-    seen = set()
-    out: List[str] = []
-    for t in parts:
-        if t not in seen:
-            seen.add(t)
-            out.append(t)
-    return out
+    return parse_auth_corp_nums_csv(csv_val)
+
+
+def get_auth_selected_corp_nums_query(config, selection_mode: AuthSelectionMode) -> str:
+    """Build SQL for the currently configured auth selection, returning one corp_num column.
+
+    This cleanup/preview helper intentionally does not join auth_processing, does not apply
+    reservation exclusions, and does not limit rows.
+    """
+    selection_mode = AuthSelectionMode(selection_mode)
+
+    if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
+        mig_group_ids, mig_batch_ids = _auth_migration_filter_ids(config)
+        auth_corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+        mig_extra_where = ""
+        if mig_batch_ids:
+            mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
+        if mig_group_ids:
+            mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+        if auth_corp_nums:
+            mig_extra_where += f" AND c.corp_num IN ({_quote_list(auth_corp_nums)})"
+
+        return f"""
+        SELECT DISTINCT c.corp_num
+        FROM mig_corp_batch mcb
+        JOIN mig_batch b ON b.id = mcb.mig_batch_id
+        JOIN mig_group g ON g.id = b.mig_group_id
+        JOIN corporation c ON c.corp_num = mcb.corp_num
+        JOIN corp_state cs
+            ON cs.corp_num = c.corp_num
+           AND cs.end_event_id IS NULL
+        WHERE 1=1
+        {mig_extra_where}
+        AND c.corp_type_cd IN {CORP_TYPE_FILTER}
+        """
+
+    corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+    corp_filter = f"AND c.corp_num IN ({_quote_list(corp_nums)})" if corp_nums else "AND 1=0"
+    return f"""
+    SELECT c.corp_num
+    FROM corporation c
+    JOIN corp_state cs
+        ON cs.corp_num = c.corp_num
+       AND cs.end_event_id IS NULL
+    WHERE 1=1
+      {corp_filter}
+      AND c.corp_type_cd IN {CORP_TYPE_FILTER}
+    """
 
 
 def get_auth_reservable_corps_query(
@@ -44,6 +295,7 @@ def get_auth_reservable_corps_query(
     selection_mode: AuthSelectionMode,
     include_account_ids: bool = False,
     include_contact_email: bool = False,
+    identity: Optional[AuthProcessingIdentity] = None,
 ) -> str:
     """
     Build SQL to select corps eligible to be reserved for an auth flow.
@@ -57,13 +309,24 @@ def get_auth_reservable_corps_query(
         - account_ids (CSV string)
         - contact_email
 
-    IMPORTANT: Always excludes corps already present in auth_processing for the same
+    Identity-aware selection policy:
+        - ONE_SHOT excludes existing non-dry-run rows by operation/scope.
+        - REPEATABLE excludes active non-dry-run rows for the same corp/environment, but not historic rows.
+        - RESET excludes existing non-dry-run reset rows by operation/scope.
+        - Dry-runs ignore historical durable rows but still exclude active non-dry-run rows.
+
+    Legacy callers that do not pass identity keep the prior anti-join by
     (corp_num, flow_name, environment).
     """
+    selection_mode = AuthSelectionMode(selection_mode)
+
     environment = getattr(config, 'DATA_LOAD_ENV', '')
-    mig_group_ids = getattr(config, 'MIG_GROUP_IDS', None)
-    mig_batch_ids = getattr(config, 'MIG_BATCH_IDS', None)
-    source_flow = getattr(config, 'AUTH_SOURCE_FLOW_NAME', 'tombstone-flow')
+    mig_group_ids = None
+    mig_batch_ids = None
+    auth_corp_nums = []
+    if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
+        mig_group_ids, mig_batch_ids = _auth_migration_filter_ids(config)
+        auth_corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
 
     # Optional select columns
     account_map_cte = ""
@@ -81,25 +344,33 @@ def get_auth_reservable_corps_query(
                 WHERE mca.target_environment = '{_escape_sql_literal(environment)}'
                 {f" AND b2.id IN ({mig_batch_ids})" if mig_batch_ids else ""}
                 {f" AND b2.mig_group_id IN ({mig_group_ids})" if mig_group_ids else ""}
+                {f" AND mca.corp_num IN ({_quote_list(auth_corp_nums)})" if auth_corp_nums else ""}
                 GROUP BY mca.corp_num
             )
             """
             account_join = "LEFT JOIN account_map am ON am.corp_num = c.corp_num"
             account_select = ", COALESCE(am.account_ids, NULL::varchar(100)) AS account_ids"
-        elif selection_mode == AuthSelectionMode.CORP_PROCESSING:
-            account_select = ", cp.account_ids AS account_ids"
         else:
             # MANUAL
             account_select = ", NULL::varchar(100) AS account_ids"
 
-    contact_select = ", c.admin_email AS contact_email" if include_contact_email else ""
+    contact_select = ""
+    if include_contact_email:
+        if auth_custom_contact_email_override(config) is not None:
+            contact_select = ", CAST(:auth_custom_contact_email AS varchar(254)) AS contact_email"
+        else:
+            contact_select = ", c.admin_email AS contact_email"
 
-    ap_join = f"""
-    LEFT JOIN auth_processing ap
-        ON ap.corp_num = c.corp_num
-       AND ap.flow_name = '{_escape_sql_literal(flow_name)}'
-       AND ap.environment = '{_escape_sql_literal(environment)}'
-    """
+    ap_join, ap_exclusion_where = _auth_processing_exclusion_sql(
+        flow_name=flow_name,
+        environment=environment,
+        identity=identity,
+    )
+    repeatable_priority_order = _auth_repeatable_real_history_priority_sql(
+        flow_name=flow_name,
+        environment=environment,
+        identity=identity,
+    )
 
     # MIG filters for MIGRATION_FILTER mode
     mig_extra_where = ""
@@ -108,8 +379,15 @@ def get_auth_reservable_corps_query(
             mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
         if mig_group_ids:
             mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+        if auth_corp_nums:
+            mig_extra_where += f" AND c.corp_num IN ({_quote_list(auth_corp_nums)})"
 
     if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
+        order_by = _order_by_sql(
+            f"{repeatable_priority_order} ASC" if repeatable_priority_order else "",
+            "b.id ASC",
+            "c.corp_num ASC",
+        )
         query = f"""
         {account_map_cte}
         SELECT
@@ -130,31 +408,8 @@ def get_auth_reservable_corps_query(
         WHERE 1=1
         {mig_extra_where}
         AND c.corp_type_cd IN {CORP_TYPE_FILTER}
-        AND ap.corp_num IS NULL
-        LIMIT {int(batch_size)}
-        """
-        return query
-
-    if selection_mode == AuthSelectionMode.CORP_PROCESSING:
-        query = f"""
-        SELECT
-            cp.corp_num,
-            c.corp_type_cd,
-            cp.mig_batch_id AS mig_batch_id
-            {account_select}
-            {contact_select}
-        FROM corp_processing cp
-        JOIN corporation c ON c.corp_num = cp.corp_num
-        JOIN corp_state cs
-            ON cs.corp_num = c.corp_num
-           AND cs.end_event_id IS NULL
-        {ap_join}
-        WHERE 1=1
-          AND cp.flow_name = '{_escape_sql_literal(source_flow)}'
-          AND cp.environment = '{_escape_sql_literal(environment)}'
-          AND cp.processed_status IN ('COMPLETED', 'PARTIAL')
-          AND c.corp_type_cd IN {CORP_TYPE_FILTER}
-          AND ap.corp_num IS NULL
+        {ap_exclusion_where}
+        {order_by}
         LIMIT {int(batch_size)}
         """
         return query
@@ -162,6 +417,16 @@ def get_auth_reservable_corps_query(
     # MANUAL
     corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
     corp_filter = f"AND c.corp_num IN ({_quote_list(corp_nums)})" if corp_nums else "AND 1=0"
+    manual_input_order = (
+        f"array_position(ARRAY[{_quote_list(corp_nums)}]::text[], c.corp_num::text) ASC"
+        if corp_nums
+        else ""
+    )
+    order_by = _order_by_sql(
+        f"{repeatable_priority_order} ASC" if repeatable_priority_order else "",
+        manual_input_order,
+        "c.corp_num ASC",
+    )
 
     query = f"""
     SELECT
@@ -178,7 +443,8 @@ def get_auth_reservable_corps_query(
     WHERE 1=1
       {corp_filter}
       AND c.corp_type_cd IN {CORP_TYPE_FILTER}
-      AND ap.corp_num IS NULL
+      {ap_exclusion_where}
+    {order_by}
     LIMIT {int(batch_size)}
     """
     return query
@@ -189,6 +455,7 @@ def get_auth_reservable_count_query(
     flow_name: str,
     config,
     selection_mode: AuthSelectionMode,
+    identity: Optional[AuthProcessingIdentity] = None,
 ) -> str:
     """
     Count corps eligible to be reserved for this auth flow.
@@ -198,19 +465,23 @@ def get_auth_reservable_count_query(
       - MIG filters (when enabled)
       - corp type filter
       - corp_state current row (end_event_id IS NULL)
-      - exclusion of existing auth_processing rows for (corp_num, flow_name, environment)
+      - identity-aware auth_processing exclusion policy, or legacy exclusion when identity is omitted
     """
-    environment = getattr(config, 'DATA_LOAD_ENV', '')
-    mig_group_ids = getattr(config, 'MIG_GROUP_IDS', None)
-    mig_batch_ids = getattr(config, 'MIG_BATCH_IDS', None)
-    source_flow = getattr(config, 'AUTH_SOURCE_FLOW_NAME', 'tombstone-flow')
+    selection_mode = AuthSelectionMode(selection_mode)
 
-    ap_join = f"""
-    LEFT JOIN auth_processing ap
-        ON ap.corp_num = c.corp_num
-       AND ap.flow_name = '{_escape_sql_literal(flow_name)}'
-       AND ap.environment = '{_escape_sql_literal(environment)}'
-    """
+    environment = getattr(config, 'DATA_LOAD_ENV', '')
+    mig_group_ids = None
+    mig_batch_ids = None
+    auth_corp_nums = []
+    if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
+        mig_group_ids, mig_batch_ids = _auth_migration_filter_ids(config)
+        auth_corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+
+    ap_join, ap_exclusion_where = _auth_processing_exclusion_sql(
+        flow_name=flow_name,
+        environment=environment,
+        identity=identity,
+    )
 
     mig_extra_where = ""
     if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
@@ -218,6 +489,8 @@ def get_auth_reservable_count_query(
             mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
         if mig_group_ids:
             mig_extra_where += f" AND g.id IN ({mig_group_ids})"
+        if auth_corp_nums:
+            mig_extra_where += f" AND c.corp_num IN ({_quote_list(auth_corp_nums)})"
 
     if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
         return f"""
@@ -233,24 +506,7 @@ def get_auth_reservable_count_query(
         WHERE 1=1
         {mig_extra_where}
         AND c.corp_type_cd IN {CORP_TYPE_FILTER}
-        AND ap.corp_num IS NULL
-        """
-
-    if selection_mode == AuthSelectionMode.CORP_PROCESSING:
-        return f"""
-        SELECT count(*)
-        FROM corp_processing cp
-        JOIN corporation c ON c.corp_num = cp.corp_num
-        JOIN corp_state cs
-            ON cs.corp_num = c.corp_num
-           AND cs.end_event_id IS NULL
-        {ap_join}
-        WHERE 1=1
-          AND cp.flow_name = '{_escape_sql_literal(source_flow)}'
-          AND cp.environment = '{_escape_sql_literal(environment)}'
-          AND cp.processed_status IN ('COMPLETED', 'PARTIAL')
-          AND c.corp_type_cd IN {CORP_TYPE_FILTER}
-          AND ap.corp_num IS NULL
+        {ap_exclusion_where}
         """
 
     corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
@@ -265,7 +521,7 @@ def get_auth_reservable_count_query(
     WHERE 1=1
       {corp_filter}
       AND c.corp_type_cd IN {CORP_TYPE_FILTER}
-      AND ap.corp_num IS NULL
+      {ap_exclusion_where}
     """
 
 

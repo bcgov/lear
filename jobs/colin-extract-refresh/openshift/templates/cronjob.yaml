@@ -1,0 +1,131 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  labels:
+    name: ${NAME}
+  name: ${NAME}-cronjob
+objects:
+- kind: "CronJob"
+  apiVersion: "batch/v1"
+  metadata:
+    name: "${NAME}-${TAG}"
+    labels:
+      name: "${NAME}"
+      environment: "${TAG}"
+      role: "${ROLE}"
+  spec:
+    schedule: "${SCHEDULE}"
+    concurrencyPolicy: Forbid
+    successfulJobsHistoryLimit: 3
+    failedJobsHistoryLimit: 1
+    jobTemplate:
+      metadata:
+        labels:
+          name: "${NAME}"
+          environment: "${TAG}"
+          role: "${ROLE}"
+      spec:
+        backoffLimit: 0
+        activeDeadlineSeconds: 300
+        template:
+          metadata:
+            labels:
+              name: "${NAME}"
+              environment: "${TAG}"
+              role: "${ROLE}"
+          spec:
+            containers:
+              - name: "${NAME}-${TAG}"
+                image: "${IMAGE_REGISTRY}/${IMAGE_NAMESPACE}/${NAME}:${IMAGE_TAG}"
+                imagePullPolicy: Always
+                command:
+                  - python
+                  - /opt/app-root/test_connectivity.py
+                envFrom:
+                  - secretRef:
+                      name: ${APP_SECRET_NAME}
+                    resources:
+                      requests:
+                        cpu: "${CPU_REQUEST}"
+                        memory: "${MEMORY_REQUEST}"
+                      limits:
+                        cpu: "${CPU_LIMIT}"
+                        memory: "${MEMORY_LIMIT}"
+            restartPolicy: Never
+            terminationGracePeriodSeconds: 30
+
+  envFrom:
+    secretKeyRef:
+      name: ${NAME}
+      key: TEST_KEY
+      optional: true  
+
+parameters: 
+
+  - name: NAME
+    displayName: Name
+    description: The name assigned to all of the OpenShift resources associated to the server instance.
+    required: true
+    value: colin-extract-refresh
+
+  - name: TAG
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    value: dev
+    required: true
+
+  - name: ROLE
+    displayName: Role
+    description: Role
+    required: true
+    value: job
+
+  - name: IMAGE_NAMESPACE
+    displayName: Image Namespace
+    required: true
+    description: The namespace of the OpenShift project containing the imagestream for the application.
+    value: cc892f-tools
+
+  - name: IMAGE_TAG
+    displayName: Environment TAG name
+    description: The TAG name for this environment, e.g., dev, test, prod
+    value: dev
+    required: true
+
+  - name: IMAGE_REGISTRY
+    displayName: Image Registry
+    required: true
+    description: The image registry of the OpenShift project.
+    value: image-registry.openshift-image-registry.svc:5000
+
+  - name: APP_SECRET_NAME
+    displayName: App Secret Name
+    description: Secret with business-api and colin-api
+    required: true
+    value:  colin-extract-refresh-secret
+
+  - name: SCHEDULE
+    displayName: "Cron Schedule"
+    description: "Cron Schedule to Execute the Job (using local cluster system TZ) to run at 0:55 * * TUE-SAT at pacific time so it will be 7:55 at UTC"
+    value: "55 7 * * TUE-SAT"
+    required: true
+
+  - name: CPU_REQUEST
+    displayName: CPU request
+    required: true
+    value: 50m
+  
+  - name: CPU_LIMIT
+    displayName: CPU limit
+    required: true
+    value: 200m
+
+  - name: MEMORY_REQUEST
+    displayName: memory request
+    required: true
+    value: 128Mi
+
+  - name: MEMORY_LIMIT
+    displayName: Memory Limit
+    required: true
+    value: 512Mi

@@ -40,6 +40,7 @@ from legal_api.models.business import ASSOCIATION_TYPE_DESC
 from legal_api.models.user import UserRoles
 from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
+from legal_api.reports.utils import get_amalg_formatted_jurisdiction
 from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
@@ -122,6 +123,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if response.status_code != HTTPStatus.OK:
             return jsonify(message=str(response.content)), response.status_code
+        elif self._filing.status not in [Filing.Status.WITHDRAWN.value, Filing.Status.COMPLETED.value]:
+            # some sections are available only when filing is completed.
+            return current_app.response_class(
+                response=response.content,
+                status=response.status_code,
+                mimetype="application/pdf"
+            )
 
         if regenerate:
             response_drs = self._document_service.replace_filing_report(
@@ -183,8 +191,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "amalgamation/approvalType",
             "amalgamation/effectiveDate",
             "bc-annual-report/legalObligations",
-            "bc-address-change/addresses",
-            "bc-director-change/directors",
             "common/certificateFooter",
             "common/certificateLogo",
             "common/certificateRegistrarSignature",
@@ -402,7 +408,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         if is_corp_incorp and incorp_compparty_stmnt_enabled:
             if self._filing.submitter_roles in [UserRoles.staff]:
-                filing["header"]["certifiedBy"] = filing["header"].get("certifiedBy")
+                filing["header"]["certifiedBy"] = self._filing.filing_json["filing"]["header"].get("certifiedBy")
             else:
                 filing["header"]["certifiedBy"] = self._filing.filing_submitter.display_name
 
@@ -947,12 +953,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             identifier = amalgamating_business.get("identifier")
             if foreign_legal_name := amalgamating_business.get("legalName"):
                 business_legal_name = foreign_legal_name
+                country_code = amalgamating_business.get("foreignJurisdiction", {}).get("country")
+                region_code = amalgamating_business.get("foreignJurisdiction", {}).get("region")
+
             elif ting_business := self._get_versioned_amalgamating_business(identifier):
                 business_legal_name = ting_business.legal_name
+                country_code = "CA"
+                region_code = "BC"
+
+            jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
 
             ting_businesses.append({
-                "legalName": business_legal_name,
-                "identifier": identifier
+                "legalName": business_legal_name or "N/A",
+                "identifier": identifier or "N/A",
+                "jurisdiction": jurisdiction or "N/A"
             })
         filing["amalgamatingBusinesses"] = ting_businesses
 
@@ -1599,37 +1613,19 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "reportType": ReportTypes.FILING.value
         },
         "changeOfAddress": {
-            "hasDifferentTemplates": True,
             "filingDescription": "Change of Address",
             "reportType": ReportTypes.FILING.value,
-            "default": {
-                "fileName": "bcAddressChange"
-            },
-            "CP": {
-                "fileName": "changeOfAddress"
-            }
+            "fileName": "changeOfAddress"
         },
         "changeOfDirectors": {
-            "hasDifferentTemplates": True,
             "filingDescription": "Change of Directors",
             "reportType": ReportTypes.FILING.value,
-            "default": {
-                "fileName": "bcDirectorChange"
-            },
-            "CP": {
-                "fileName": "changeOfDirectors"
-            }
+            "fileName": "changeOfDirectors"
         },
         "annualReport": {
-            "hasDifferentTemplates": True,
             "filingDescription": "Annual Report",
             "reportType": ReportTypes.FILING.value,
-            "default": {
-                "fileName": "bcAnnualReport"
-            },
-            "CP": {
-                "fileName": "annualReport"
-            }
+            "fileName": "annualReport"
         },
         "changeOfName": {
             "filingDescription": "Change of Name",
