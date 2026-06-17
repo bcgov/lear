@@ -133,6 +133,39 @@ Safety rules:
 
 ---
 
+## Dumping the extract DB without derived views/materialized views
+
+Creates a tar-format `pg_dump` archive excluding the COLIN derived views/materialized views.
+
+```bash
+PGPASSFILE=~/.pgpass \
+  DUMP=/tmp/colin-no-views-test.tar \
+  ./data-tool/dump_colin_extract_without_views.sh
+```
+
+Options:
+- `MODE`: `dump` (default) runs `pg_dump`; `print` only prints the command.
+- `PG_DUMP_BIN`: `pg_dump` binary to use (default: `pg_dump`).
+- `PGHOST`: database host (default: `localhost`).
+- `PGPORT`: database port (default: `5432`).
+- `PGUSER`: database user (default: `postgres`).
+- `PGDATABASE`: source database (default: `colin-mig-corps-test`).
+- `PGSCHEMA`: schema for excluded views/materialized views (default: `public`).
+- `PGPASSFILE`: password file for libpq authentication, e.g. `~/.pgpass`.
+- `PGPASSWORD`: one-off password alternative to `PGPASSFILE`.
+- `BACKUP_DIR`: output directory when `DUMP` is not set (default: current directory).
+- `DUMP`: full output path and filename; overrides `BACKUP_DIR`.
+
+After restore, recreate the derived layer with `reset_colin_extract_views.sh --mode reset --yes --allow-empty ...` if needed.
+
+Quick check; no output means no view/materialized-view entries were found in the archive list:
+
+```bash
+pg_restore -l /tmp/colin-no-views-test.tar | grep -E 'VIEW|MATERIALIZED VIEW'
+```
+
+---
+
 ## Refreshing selected materialized views for data-only changes
 
 Use this when the **derived MV definitions have not changed** and you only need to rebuild the affected materialized views in dependency order.
