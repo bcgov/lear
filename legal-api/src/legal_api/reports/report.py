@@ -532,6 +532,37 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             directors = self._format_directors(filing["listOfDirectors"]["directors"])
             filing["listOfDirectors"]["directorsAppointed"] = [el for el in directors if "appointed" in el["actions"]]
             filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
+            for director in filing["listOfDirectors"]["directors"]:
+                if "addressChanged" in director["actions"]:  # find which address changed
+                    self._set_director_address_changed_flag(director)
+
+    def _set_director_address_changed_flag(self, director):
+        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        if not (party_id := director["officer"].get("id")):
+            # fallback: id is not available for older/colin filings
+            party_id = self._find_director_id_using_name(director, prev_completed_filing)
+
+        prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+        prev_party_json = VersionedBusinessDetailsService.party_revision_json(
+            prev_completed_filing.transaction_id, prev_party, True)
+        if self._compare_address(director.get("mailingAddress"), prev_party_json.get("mailingAddress")):
+            director["mailingAddress"]["changed"] = True
+        if self._compare_address(director.get("deliveryAddress"), prev_party_json.get("deliveryAddress")):
+            director["deliveryAddress"]["changed"] = True
+
+    def _find_director_id_using_name(self, director, prev_completed_filing):
+        director_name = (director["officer"].get("firstName") +
+            director["officer"].get("middleInitial", "") +
+            director["officer"].get("lastName"))
+        previous_directors = VersionedBusinessDetailsService.get_party_role_revision(
+            prev_completed_filing, self._business.id, role=PartyRole.RoleTypes.DIRECTOR.value)
+        for previous_director in previous_directors:
+            previous_director_name = (previous_director["officer"].get("firstName") +
+                                    previous_director["officer"].get("middleInitial", "") +
+                                    previous_director["officer"].get("lastName"))
+            if (previous_director_name.upper() == director_name.upper() and
+                    previous_director["cessationDate"] is None):
+                return previous_director["id"]
 
     def _format_directors(self, directors):
         for director in directors:

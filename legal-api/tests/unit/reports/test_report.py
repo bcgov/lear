@@ -46,7 +46,6 @@ from legal_api.models import Business, db  # noqa:I001
 from legal_api.models.db import VersioningProxy
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import Report  # noqa:I001
-from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
 from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing  # noqa:E501,I001
 
@@ -209,6 +208,87 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     assert filename
     template = report._get_template()
     assert template
+
+
+def test_set_directors_flags_address_changed_without_officer_id(session, mocker):
+    """Assert addressChanged flags are set using previous filing lookup by name."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+
+    previous_filing_json = copy.deepcopy(FILING_HEADER)
+    previous_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    previous_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    previous_filing_json['filing']['business']['legalType'] = 'BC'
+    previous_filing_json['filing']['changeOfDirectors'] = {'directors': []}
+    factory_completed_filing(business, previous_filing_json, filing_date=datetime(2020, 1, 1))
+
+    current_filing_json = copy.deepcopy(FILING_HEADER)
+    current_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    current_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    current_filing_json['filing']['business']['legalType'] = 'BC'
+    current_filing_json['filing']['changeOfDirectors'] = {
+        'directors': [
+            {
+                'officer': {
+                    'firstName': 'Jane',
+                    'middleInitial': 'A',
+                    'lastName': 'Smith'
+                },
+                'actions': ['addressChanged'],
+                'mailingAddress': {
+                    'streetAddress': 'New Mailing Street',
+                    'addressCity': 'Victoria',
+                    'addressRegion': 'BC',
+                    'addressCountry': 'CA',
+                    'postalCode': 'V8W1P6'
+                },
+                'deliveryAddress': {
+                    'streetAddress': 'New Delivery Street',
+                    'addressCity': 'Victoria',
+                    'addressRegion': 'BC',
+                    'addressCountry': 'CA',
+                    'postalCode': 'V8W1P7'
+                }
+            }
+        ]
+    }
+    filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2020, 1, 2))
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'changeOfDirectors'
+
+    previous_director = {
+        'id': '123',
+        'officer': {
+            'firstName': 'Jane',
+            'middleInitial': 'A',
+            'lastName': 'Smith'
+        },
+        'cessationDate': None
+    }
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_role_revision', return_value=[previous_director])
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=object())
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json', return_value={
+        'mailingAddress': {
+            'streetAddress': 'Old Mailing Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P5'
+        },
+        'deliveryAddress': {
+            'streetAddress': 'Old Delivery Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P4'
+        }
+    })
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    assert director['mailingAddress']['changed'] is True
+    assert director['deliveryAddress']['changed'] is True
 
 
 def test_alteration_name_change(session, monkeypatch):
