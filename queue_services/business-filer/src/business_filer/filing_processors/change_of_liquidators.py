@@ -56,8 +56,9 @@ def _init_liquidation(business: Business, filing_meta: FilingMeta):
         business.in_liquidation_date = filing_meta.application_date or datetime.now(UTC)
 
         # withdraw any existing involuntary dissolution processing if it exists
-        batch_processing, _ = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
-        if batch_processing:
+        batch_details = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
+        if batch_details:
+            batch_processing, _ = batch_details
             batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
             batch_processing.notes = "Moved into liquidation"
             batch_processing.last_modified = datetime.now(UTC)
