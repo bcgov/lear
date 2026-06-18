@@ -1,0 +1,54 @@
+[[macros.html]]
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Statement of Intent to Liquidate</title>
+      <meta charset="UTF-8">
+      <meta name="author" content="BC Registries and Online Services">
+      [[common/style.html]]
+
+      {% if enable_sandbox %}
+         [[common/watermark.html]]
+      {% endif %}
+   </head>
+   <body>
+      <div class="header">
+         <table class="header-table" role="presentation">
+            <tr class="no-page-break">
+               <td>
+                  [[logo.html]]
+               </td>
+               <td>
+                  <div class="report-type">
+                     STATEMENT OF INTENT TO LIQUIDATE
+                  </div>
+                  <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
+               </td>
+            </tr>
+         </table>
+         
+         <div class="business-name-header">
+            <label class="lbl-business-name">
+               {% if business.legalName %}
+                  {{ business.legalName }}
+               {% else %}
+                  {{numberedDescription}}
+               {% endif %}
+            </label>
+         </div>
+      </div>
+      <div class="gap-y">
+         [[liquidation/meta.html]]
+         <div class="container gap-y">
+            <div class="separator"></div>
+            [[liquidation/recordsOffice.html]]
+            <div class="separator"></div>
+            [[liquidation/liquidators.html]]
+            <div class="separator"></div>
+         </div>
+      </div>
+      <!-- <div class="filing-identifier">
+         <span style="display: none !important;">Filing #{{ header.filingId }} |</span> Incorporation #{{ business.identifier }}
+      </div> -->
+   </body>
+</html>
