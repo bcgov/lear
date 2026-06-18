@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="en">
    <head>
-      <title>Statement of Intent to Liquidate</title>
+      <title>{{ reportTitle }}</title>
       <meta charset="UTF-8">
       <meta name="author" content="BC Registries and Online Services">
       [[common/style.html]]
@@ -19,8 +19,8 @@
                   [[logo.html]]
                </td>
                <td>
-                  <div class="report-type">
-                     STATEMENT OF INTENT TO LIQUIDATE
+                  <div class="report-type upper-text">
+                    {{ reportTitle }}
                   </div>
                   <div class="report-type-desc">{{ entityDescription }} - {{ entityAct }}</div>
                </td>
@@ -47,8 +47,5 @@
             <div class="separator"></div>
          </div>
       </div>
-      <!-- <div class="filing-identifier">
-         <span style="display: none !important;">Filing #{{ header.filingId }} |</span> Incorporation #{{ business.identifier }}
-      </div> -->
    </body>
 </html>

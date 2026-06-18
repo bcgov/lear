@@ -5,7 +5,7 @@
         <div class="bold">Incorporation Number:</div>
         <div class="bold">Business Number:</div>
         <div class="bold">Incorporation Date and Time:</div>
-        <div class="bold">Summary Date and Time:</div>
+        <div class="bold">{{ reportDateAndTimeTitle }}</div>
         <div class="bold">Company Status:</div>
       </td>
       
@@ -22,7 +22,7 @@
         
         <div>{{ recognition_date_time }}</div>
         
-        <div>{{ report_date_time }}</div>
+        <div>{{ effective_date_time }}</div>
         
         <div>
           {% if business.inLiquidation %}
