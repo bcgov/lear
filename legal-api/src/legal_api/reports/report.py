@@ -1551,6 +1551,25 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_liquidator_data(self, filing: Filing):
         col = filing.get("changeOfLiquidators", {})
+        sub_type = col.get("type")
+
+        report_title_config = {
+            "appointLiquidator": "Notice to Appoint Liquidators",
+            "ceaseLiquidator": "Notice to Cease Liquidators",
+            "changeAddressLiquidator": "Liquidators change of address",
+            "intentToLiquidate": "Statement of Intent to Liquidate"
+        }
+
+        filing["reportTitle"] = report_title_config[sub_type]
+
+        report_date_and_time_title_config = {
+            "appointLiquidator": "Appointed Date and Time:",
+            "ceaseLiquidator": "Ceased Date and Time:",
+            "changeAddressLiquidator": "Change Date and Time:",
+            "intentToLiquidate": "Summary Date and Time:"
+        }
+
+        filing["reportDateAndTimeTitle"] = report_date_and_time_title_config[sub_type]
 
         # format last liquidationReportDate
         latest_lr_filing = Filing.get_most_recent_filing(
@@ -1563,7 +1582,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if last_lr_date:
             filing["lastReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
 
-        # Check is business has Receivers
+        # Check if business has Receivers # TODO: is this current or at the effective_date?
         receivers = PartyRole.get_party_roles(
             business_id=self._business.id,
             end_date=datetime.utcnow().date(),
@@ -1618,7 +1637,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             )
         ]
 
-        print('APPOINTED RELS: ', filing["appointedRels"])
+        # we do not display effectiveDateRels for intentToLiquidate filing
+        if sub_type != 'intentToLiquidate':
+            filing["effectiveDateRels"] = self._get_relationships_at_effective_date(PartyRole.RoleTypes.LIQUIDATOR.value)
 
         # TODO: get ceased liquidators
         # TODO: get current liquidators as of report date
@@ -1681,6 +1702,43 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "mailingAddress": relationship.get("mailingAddress"),
             "roles": relationship.get("roles", [])
         }
+
+    def _get_relationships_at_effective_date(self, role: PartyRole.RoleTypes) -> dict:
+        roles = PartyRole.get_party_roles(
+            self._business.id,
+            self._filing.effective_date,
+            role
+        )
+
+        formatted_rels = []
+        for role in roles:
+            p = role.json
+            o = p.get("officer", {})
+
+            if mailing_address := p.get("mailingAddress"):
+                mailing_address = self._format_address(mailing_address)
+
+            if delivery_address := p.get("deliveryAddress"):
+                delivery_address = self._format_address(delivery_address)
+
+            rel = {
+                "entity": {
+                    "givenName": o.get("firstName"),
+                    "familyName": o.get("lastName"),
+                    "identifier": "", # do we need this ???
+                    "businessName": o.get("organizationName"),
+                    "alternateName": o.get("alternateName"),
+                    "middleInitial": o.get("middleInitial"),
+                },
+                "mailingAddress": mailing_address,
+                "deliveryAddress": delivery_address,
+                "appointmentDate": p.get("appointmentDate"),
+                "cessationDate": p.get("cessationDate")
+            } # TODO: do we need to include roles as well??? would need to combine duplicate parties if the one party has multiple roles
+
+            formatted_rels.append(rel)
+
+        return formatted_rels
 
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
@@ -1873,22 +1931,22 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "appointLiquidator": {
             "filingDescription": "Appoint Liquidator",
-            "fileName": "appointLiquidator",
+            "fileName": "changeOfLiquidators",
             "reportType": ReportTypes.FILING.value
         },
         "ceaseLiquidator": {
             "filingDescription": "Cease Liquidator",
-            "fileName": "ceaseLiquidator",
+            "fileName": "changeOfLiquidators",
             "reportType": ReportTypes.FILING.value
         },
         "changeAddressLiquidator": {
             "filingDescription": "Change Address Liquidator",
-            "fileName": "changeAddressLiquidator",
+            "fileName": "changeOfLiquidators",
             "reportType": ReportTypes.FILING.value
         },
         "intentToLiquidate": {
             "filingDescription": "Intent To Liquidate",
-            "fileName": "intentToLiquidate",
+            "fileName": "changeOfLiquidators",
             "reportType": ReportTypes.FILING.value
         },
         "default": {  # Used as DRS fallback if no report key configuration found.

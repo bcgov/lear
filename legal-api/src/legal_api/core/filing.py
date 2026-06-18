@@ -625,6 +625,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             ]
 
             # normalize filing names to use filing_sub_type if available
+            # TODO: DISCUSS IN PR
             normalized_legal_filings = []
             for doc in legal_filings_copy:
                 doc_name = doc
