@@ -237,7 +237,7 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
         template = Path(
             f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
         ).read_text()
-        filled_template = substitute_template_parts(template, "md")
+        filled_template = substitute_template_parts(template)
 
     # get attachments
     pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)

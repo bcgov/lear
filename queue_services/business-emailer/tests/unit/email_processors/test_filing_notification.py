@@ -626,3 +626,48 @@ def test_future_attachments_list_in_ia_future_effective_paid_corp(app, session, 
     # CORP future attachments include Notice of Articles but not Memorandum
     assert 'Notice of Articles' in body
     assert 'Memorandum' not in body
+
+
+@pytest.mark.parametrize(['filing_type', 'body_snippets', 'subject'], [
+    (
+        'annualReport',
+        ['Confirmation of Annual Report from the Business Registry',
+         'You have successfully filed your 2018 Annual Report with the BC Business Registry.',
+         '2018 Annual Report'],
+        'test business - Confirmation of Annual Report',
+    ),
+    (
+        'changeOfDirectors',
+        ['Confirmation of Director Change from the Business Registry',
+         'You have successfully filed your Director Change with the BC Business Registry.'],
+        'test business - Confirmation of Director Change',
+    ),
+    (
+        'changeOfAddress',
+        ['Confirmation of Address Change from the Business Registry',
+         'You have successfully filed your Address Change with the BC Business Registry.'],
+        'test business - Confirmation of Address Change',
+    ),
+])
+def test_maintenance_filing_renders_body_and_subject(app, session, mocker, filing_type, body_snippets, subject):
+    """Assert AR, director change and address change PAID emails render the expected body and subject."""
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', 'PAID', filing_type)
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_user_email_from_auth',
+        return_value='user@email.com')
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+        with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
+            email = filing_notification.process(
+                {'filingId': filing.id, 'type': filing_type, 'option': 'PAID'}, token)
+
+    assert email is not None
+    body = email['content']['body']
+    for snippet in body_snippets:
+        assert snippet in body
+    assert not ".html]]" in body
+    assert not ".md]]" in body
+    assert email['content']['subject'] == subject

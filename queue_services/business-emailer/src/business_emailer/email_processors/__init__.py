@@ -165,10 +165,10 @@ def get_entity_dashboard_url(identifier: str, token: str) -> str:
 def substitute_template_parts(template_code: str, file_type = "html") -> str:
     """Substitute template parts in main template.
 
-    Template parts are marked by [[partname.html]] in templates.
+    Template parts are marked by [[partname.{file_type}]] in templates.
 
     This functionality is restricted by:
-    - Markup must be exactly [[partname.html]] and have no extra spaces around the file name.
+    - Markup must be exactly [[partname.{file_type}]] and have no extra spaces around the file name.
     - Some nesting is supported: earlier templates can include later templates. Hence, the order of
       template parts, below, is important.
     - Do not comment out template parts as they may be replaced anyway!
