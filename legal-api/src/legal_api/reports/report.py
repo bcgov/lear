@@ -534,18 +534,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
             for director in filing["listOfDirectors"]["directors"]:
                 if "addressChanged" in director["actions"]:  # find which address changed
-                    prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
-                    if not (party_id := director["officer"].get("id")):
-                        # fallback: id is not available for older or colin filings
-                        party_id = self._find_director_id_using_name(director, prev_completed_filing)
+                    self._set_director_address_changed_flag(director)
 
-                    prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
-                    prev_party_json = VersionedBusinessDetailsService.party_revision_json(
-                        prev_completed_filing.transaction_id, prev_party, True)
-                    if self._compare_address(director.get("mailingAddress"), prev_party_json.get("mailingAddress")):
-                        director["mailingAddress"]["changed"] = True
-                    if self._compare_address(director.get("deliveryAddress"), prev_party_json.get("deliveryAddress")):
-                        director["deliveryAddress"]["changed"] = True
+    def _set_director_address_changed_flag(self, director):
+        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        if not (party_id := director["officer"].get("id")):
+            # fallback: id is not available for older/colin filings
+            party_id = self._find_director_id_using_name(director, prev_completed_filing)
+
+        prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+        prev_party_json = VersionedBusinessDetailsService.party_revision_json(
+            prev_completed_filing.transaction_id, prev_party, True)
+        if self._compare_address(director.get("mailingAddress"), prev_party_json.get("mailingAddress")):
+            director["mailingAddress"]["changed"] = True
+        if self._compare_address(director.get("deliveryAddress"), prev_party_json.get("deliveryAddress")):
+            director["deliveryAddress"]["changed"] = True
 
     def _find_director_id_using_name(self, director, prev_completed_filing):
         director_name = (director["officer"].get("firstName") +
