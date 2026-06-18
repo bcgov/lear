@@ -70,7 +70,7 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     # File name
     file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
     if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
-        file_name = f"{ar_date[:4]} {file_name}"(pdfs, token, business, filing)
+        file_name = f"{ar_date[:4]} {file_name}"
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token)
@@ -127,7 +127,7 @@ def _add_receipt_pdf(  # noqa: PLR0913
                 "attachOrder": str(attach_order)
             }
         )
-        attach_order + 1
+        return attach_order + 1
 
 
 def _get_pdfs(  # noqa: PLR0913

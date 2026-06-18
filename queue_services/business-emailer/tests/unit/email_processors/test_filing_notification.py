@@ -250,10 +250,10 @@ def test_filing_attachments_ia_paid_future_effective(session, mocker, config):
     # IA always adds the filing application PDF + receipt.
     assert len(attachments) == 2
     assert attachments[0]['fileName'] == 'Incorporation Application.pdf'
-    assert attachments[0]['attachOrder'] == 1
+    assert attachments[0]['attachOrder'] == '1'
     assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
     assert attachments[1]['fileName'] == 'Receipt.pdf'
-    assert attachments[1]['attachOrder'] == 2
+    assert attachments[1]['attachOrder'] == '2'
     assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
 
 
@@ -400,6 +400,40 @@ def test_filing_attachments_change_of_address_paid(session, mocker, config):
     assert len(attachments) == 2
     # _add_filing_document_pdf replaces " Of " -> " of " so "changeOfAddress" -> "Change of Address"
     assert attachments[0]['fileName'] == 'Change of Address.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+
+
+def test_filing_attachments_annual_report_paid(session, mocker, config):
+    """annualReport PAID: filing PDF (prefixed with the AR year) + receipt."""
+    identifier = 'BC1234567'
+    filing = prep_maintenance_filing(session, identifier, '1', 'PAID', 'annualReport')
+    token = 'token'
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
+        with requests_mock.Mocker() as m:
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                f'/filings/{filing.id}/documents/annualReport',
+                content=b'pdf_content_1',
+                status_code=200,
+            )
+            m.post(
+                f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_2',
+                status_code=201,
+            )
+            output = filing_notification.process(
+                {'filingId': filing.id, 'type': 'annualReport', 'option': 'PAID'}, token)
+
+    attachments = output['content']['attachments']
+    # annualReport PAID: filing application PDF + receipt
+    assert len(attachments) == 2
+    # _add_filing_document_pdf prefixes the AR filing PDF with the annualReportDate year (2018-04-08 -> 2018)
+    assert attachments[0]['fileName'] == '2018 Annual Report.pdf'
     assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
     assert attachments[1]['fileName'] == 'Receipt.pdf'
     assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'

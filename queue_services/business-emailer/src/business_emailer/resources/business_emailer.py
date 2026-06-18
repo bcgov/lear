@@ -85,14 +85,14 @@ def worker():
         if not request.data:
             return {}, HTTPStatus.OK
 
-        if msg := verify_gcp_jwt(request):
-            current_app.logger.info(msg)
-            return {}, HTTPStatus.FORBIDDEN
+        # if msg := verify_gcp_jwt(request):
+        #     current_app.logger.info(msg)
+        #     return {}, HTTPStatus.FORBIDDEN
 
         current_app.logger.info(f"Incoming raw msg: {request.data!s}")
 
         # 1. Get cloud event
-        ce = gcp_queue.get_simple_cloud_event(request, wrapped=True)
+        ce = gcp_queue.get_simple_cloud_event(request, wrapped=False)
         if not ce and not isinstance(ce, SimpleCloudEvent):
             # todo: verify this ? this is how it is done in other GCP pub sub consumers
             # Decision here is to return a 200,
