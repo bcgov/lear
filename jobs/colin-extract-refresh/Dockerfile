@@ -46,7 +46,7 @@ ENV DBSCHEMA_VERSION=9_7_1
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends default-jre-headless curl;\
-    curl -fsSL "https://www.dbschema.com/download/dbschema_linux_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
+    curl -fsSL "https://www.dbschema.com/download/dbschema_unix_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
     tar -xzf /tmp/dbschema.tar.gz -C /opt; \
     rm /tmp/dbschema.tar.gz; \
     mkdir -p "${DBSCHEMA_HOME}/lib"; \
