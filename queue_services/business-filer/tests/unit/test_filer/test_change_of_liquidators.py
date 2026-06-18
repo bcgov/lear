@@ -37,12 +37,12 @@ import datetime
 from datetime import datetime, timezone
 import random
 
-from business_model.models import Address, Business, Filing, Office, OfficeType, PartyRole, Party
+from business_model.models import Address, BatchProcessing, Business, Filing, Office, OfficeType, PartyRole, Party
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from business_filer.common.filing_message import FilingMessage
 from business_filer.services.filer import process_filing
-from tests.unit import create_business, create_filing
+from tests.unit import create_business, create_filing, factory_batch, factory_batch_processing
 from tests.unit.filing_processors.filing_components.test_offices import LIQUIDATION_RECORDS_OFFICE
 from tests.unit.test_filer import check_drs_publish
 
@@ -535,6 +535,11 @@ def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     filing_rec = create_filing(payment_id, filing, business.id)
     filing_rec.effective_date = expected_in_liquidation_date
     filing_rec.save()
+    
+    # create batch and batch_processing
+    batch_status = 'PROCESSING'
+    batch = factory_batch(status=batch_status)
+    batch_processing = factory_batch_processing(batch_id=batch.id, identifier=identifier, business_id=business.id, status=batch_status)
 
     # setup
     filing_msg = FilingMessage(filing_identifier=filing_rec.id)
@@ -562,3 +567,6 @@ def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     # NOTE: will have a registered office too
     assert len(offices) == 2
     _assert_office_addresses(offices, filing['filing']['changeOfLiquidators']['offices']['liquidationRecordsOffice'])
+    
+    assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
+    assert batch_processing.notes == 'Moved into liquidation'
