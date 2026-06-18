@@ -94,6 +94,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
         report_type = report_meta.get("reportType")
+
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
                 business_identifier,
@@ -232,6 +233,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "incorporation-application/incorporator",
             "incorporation-application/nameRequest",
             "incorporation-application/cooperativeAssociationType",
+            "liquidation/liquidators",
+            "liquidation/meta",
+            "liquidation/recordsOffice",
             "restoration-application/nameRequest",
             "restoration-application/legalName",
             "restoration-application/legalNameDissolution",
@@ -290,6 +294,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     ReportMeta.reports[self._report_key]["default"]["fileName"]
         else:
             file_name = ReportMeta.reports[self._report_key]["fileName"]
+
+        print('FOUND FILENAME: ', f"{file_name}.html")
+
         return f"{file_name}.html"
 
     def _get_template_data(self):
@@ -362,12 +369,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_continuation_in_data(filing)
         elif self._report_key == "certificateOfContinuation":
             self._format_certificate_of_continuation_in_data(filing)
-        elif self._report_key == "intentToLiquidate":
-            self._format_intent_to_liquidate_data(filing)
         elif self._report_key == "noticeOfWithdrawal":
             self._format_notice_of_withdrawal_data(filing)
         elif self._report_key in {"appointReceiver", "ceaseReceiver"}:
             self._format_receiver_data(filing)
+        elif self._report_key in {"appointLiquidator", "ceaseLiquidator", "changeAddressLiquidator", "intentToLiquidate"}:
+            self._format_liquidator_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
             with suppress(KeyError):
@@ -949,9 +956,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_amalgamation_data(self, filing):
         self._set_amalgamating_businesses(filing)
-
-    def _format_intent_to_liquidate_data(self, filing):
-        return
 
     def _format_notice_of_withdrawal_data(self, filing):
         withdrawn_filing_id = filing["noticeOfWithdrawal"]["filingId"]
@@ -1545,6 +1549,73 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             has_provisions = self._filing.filing_json["filing"].get("transition", {}).get("hasProvisions")
             filing["hasProvisions"] = has_provisions
 
+    def _format_liquidator_data(self, filing: Filing):
+        col = filing.get("changeOfLiquidators", {})
+
+        # format last liquidationReportDate
+        latest_lr_filing = Filing.get_most_recent_filing(
+            business_id=self._business.id,
+            filing_sub_type='liquidationReport'
+        )
+
+        last_lr_date = LegislationDatetime.as_legislation_timezone(latest_lr_filing.effective_date) if latest_lr_filing else None
+
+        if last_lr_date:
+            filing["lastReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
+
+        # Check is business has Receivers
+        receivers = PartyRole.get_party_roles(
+            business_id=self._business.id,
+            end_date=datetime.utcnow().date(),
+            role=PartyRole.RoleTypes.RECEIVER.value
+        )
+
+        filing["hasReceivers"] = bool(receivers)
+
+        # check for Court Order and Plan of Arrangment
+        court_order = col.get("courtOrder", {})
+        filing["hasPoa"] = court_order.get("hasPlanOfArrangement", False)
+        filing["courtOrderNumber"] = court_order.get("fileNumber", False)
+
+        # format liquidationRecordsOffice from the filing or db if not in filing json
+        filing_offices = (col.get("offices") or {}).get("liquidationRecordsOffice")
+
+        if not filing_offices:
+            filing_offices = {}
+            existing_office = self._business.offices.filter_by(
+                office_type=OfficeType.LIQUIDATION,
+                deactivated_date=None
+            ).first()
+
+            if existing_office:
+                for address in existing_office.addresses.all():
+                    filing_offices[f"{address.address_type}Address"] = address.json
+
+
+        if filing_offices:
+            if "mailingAddress" in filing_offices:
+                self._format_address(filing_offices["mailingAddress"])
+
+            if "deliveryAddress" in filing_offices:
+                self._format_address(filing_offices["deliveryAddress"])
+
+        filing["recordsOffice"] = filing_offices
+
+        rels = col.get("relationships", [])
+
+        for rel in rels:
+            if "mailingAddress" in rel:
+                rel["mailingAddress"] = self._format_address(rel["mailingAddress"])
+
+            if "deliveryAddress" in rel:
+                rel["deliveryAddress"] = self._format_address(rel["deliveryAddress"])
+
+        filing["appointedRels"] = [
+            rel for rel in rels
+            if any(role.get('roleType') == 'Liquidator' for role in rel.get('roles', []))
+            and 'ADDED' in rel.get('actions', [])
+        ]
+
     def _set_meta_info(self, filing):
         filing["environment"] = f"{self._get_environment()} FILING #{self._filing.id}".lstrip()
         # Get source
@@ -1785,6 +1856,26 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         "ceaseReceiver": {
             "filingDescription": "Cease Receiver",
             "fileName": "ceaseReceiver",
+            "reportType": ReportTypes.FILING.value
+        },
+        "appointLiquidator": {
+            "filingDescription": "Appoint Liquidator",
+            "fileName": "appointLiquidator",
+            "reportType": ReportTypes.FILING.value
+        },
+        "ceaseLiquidator": {
+            "filingDescription": "Cease Liquidator",
+            "fileName": "ceaseLiquidator",
+            "reportType": ReportTypes.FILING.value
+        },
+        "changeAddressLiquidator": {
+            "filingDescription": "Change Address Liquidator",
+            "fileName": "changeAddressLiquidator",
+            "reportType": ReportTypes.FILING.value
+        },
+        "intentToLiquidate": {
+            "filingDescription": "Intent To Liquidate",
+            "fileName": "intentToLiquidate",
             "reportType": ReportTypes.FILING.value
         },
         "default": {  # Used as DRS fallback if no report key configuration found.
