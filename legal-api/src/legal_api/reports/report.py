@@ -1591,7 +1591,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 for address in existing_office.addresses.all():
                     filing_offices[f"{address.address_type}Address"] = address.json
 
-
         if filing_offices:
             if "mailingAddress" in filing_offices:
                 self._format_address(filing_offices["mailingAddress"])
@@ -1612,9 +1611,23 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         filing["appointedRels"] = [
             rel for rel in rels
-            if any(role.get('roleType') == 'Liquidator' for role in rel.get('roles', []))
-            and 'ADDED' in rel.get('actions', [])
+            if any(
+                role.get('roleType') == 'Liquidator'
+                and role.get('cessationDate') is None # appointed relationships are submitted with no cessationDate
+                for role in rel.get('roles', [])
+            )
         ]
+
+        print('APPOINTED RELS: ', filing["appointedRels"])
+
+        # TODO: get ceased liquidators
+        # TODO: get current liquidators as of report date
+        # TODO: get address changed liquidators / liquidation office MUST HAVE CHANGED BADGE
+
+        # TODO: Reports todo
+        # appointLiquidator
+        # ceaseLiquidator
+        # changeAddressLiquidator
 
     def _set_meta_info(self, filing):
         filing["environment"] = f"{self._get_environment()} FILING #{self._filing.id}".lstrip()
