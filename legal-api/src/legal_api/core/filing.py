@@ -489,7 +489,7 @@ class Filing:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_document_list(business,  # noqa: PLR0912, PLR0915 NOSONAR(S3776)
-                          filing,
+                          filing: Filing,
                           jwt: JwtManager) -> dict | None:
         """Return a list of documents for a particular filing."""
         no_output_filings = [
@@ -540,10 +540,21 @@ class Filing:  # pylint: disable=too-many-public-methods
         elif filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
             documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
-        no_outputs_except_receipt = filing.filing_type in [
-            Filing.FilingTypes.CHANGEOFLIQUIDATORS.value,
-            Filing.FilingTypes.CHANGEOFRECEIVERS.value
+        filing_sub_type = getattr(filing.storage, "filing_sub_type", None)
+
+        receipt_only_filings = [
+            Filing.FilingTypes.CHANGEOFRECEIVERS.value,
         ]
+
+        receipt_only_sub_filings = [
+            (Filing.FilingTypes.CHANGEOFLIQUIDATORS.value, "liquidationReport"),
+        ]
+
+        no_outputs_except_receipt = (
+            filing.filing_type in receipt_only_filings
+            or (filing.filing_type, filing_sub_type) in receipt_only_sub_filings
+        )
+
         no_legal_filings_in_paid_withdrawn_status = no_outputs_except_receipt or filing.filing_type in [
             Filing.FilingTypes.AMALGAMATIONOUT.value,
             Filing.FilingTypes.REGISTRATION.value,
@@ -577,6 +588,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             return documents
 
         legal_filings = filing.storage.meta_data.get("legalFilings") if filing.storage.meta_data else None
+
         if not legal_filings and filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
             legal_filings = [filing.filing_type]
         if (
@@ -611,9 +623,22 @@ class Filing:  # pylint: disable=too-many-public-methods
                 Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
                 Filing.FilingTypes.CHANGEOFOFFICERS.value
             ]
+
+            # normalize filing names to use filing_sub_type if available
+            normalized_legal_filings = []
+            for doc in legal_filings_copy:
+                doc_name = doc
+                if filing_sub_type and filing_sub_type in FilingStorage.FILINGS.get(doc, {}):
+                    doc_name = filing_sub_type
+                normalized_legal_filings.append(doc_name)
+
+
+            legal_filing_document_urls = []
             if filing.filing_type not in no_legal_filings:
-                documents["documents"]["legalFilings"] = \
-                        [{doc: f"{base_url}{doc_url}/{doc}"} for doc in legal_filings_copy]
+                for doc in normalized_legal_filings:
+                    legal_filing_document_urls.append({doc: f"{base_url}{doc_url}/{doc}"})
+
+                documents["documents"]["legalFilings"] = legal_filing_document_urls
 
             # get extra outputs
             if filing.storage.transaction_id and \
@@ -621,7 +646,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                     filing.storage, business.id)):
                 business = bus_rev_temp
 
-            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
+            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in normalized_legal_filings]
             additional = {item for sublist in adds for item in sublist}
             FilingMeta.alter_outputs(filing.storage, business, additional)
             for doc in additional:
