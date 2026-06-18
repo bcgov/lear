@@ -18,7 +18,9 @@ import requests_mock
 from business_emailer.email_processors import (
     get_account_by_affiliated_identifier,
     get_entity_dashboard_url,
+    get_filled_template,
     get_org_id_for_temp_identifier,
+    substitute_template_parts,
 )
 
 
@@ -105,3 +107,53 @@ def test_get_entity_dashboard_url_temp_uses_auth_web_url(app, auth_url):
         m.get(orgs_url, json={'orgs': [{'id': 77}]}, status_code=200)
         url = get_entity_dashboard_url(identifier, 'token')
         assert url == 'https://auth-web-url/account/77/business'
+
+
+def test_substitute_template_parts_md_replaces_footer_marker(app):
+    """Assert that substitute_template_parts with file_type='md' replaces [[business-registry-footer.md]]."""
+    template = "Hello\n[[business-registry-footer.md]]\nEnd"
+    with app.app_context():
+        result = substitute_template_parts(template, "md")
+    assert '[[business-registry-footer.md]]' not in result
+    assert 'BC Registries and Online Services' in result
+
+
+def test_substitute_template_parts_md_replaces_all_md_parts(app):
+    """Assert that substitute_template_parts with file_type='md' replaces all five markdown common parts."""
+    template = (
+        "[[attachments.md]]\n"
+        "[[business-number.md]]\n"
+        "[[business-registry-footer.md]]\n"
+        "[[business-tombstone.md]]\n"
+        "[[what-happens-next.md]]"
+    )
+    with app.app_context():
+        result = substitute_template_parts(template, "md")
+    for marker in [
+        '[[attachments.md]]',
+        '[[business-number.md]]',
+        '[[business-registry-footer.md]]',
+        '[[business-tombstone.md]]',
+        '[[what-happens-next.md]]',
+    ]:
+        assert marker not in result
+
+
+def test_substitute_template_parts_html_does_not_replace_md_markers(app):
+    """Assert that substitute_template_parts with file_type='html' does not replace .md markers."""
+    template = "[[business-registry-footer.md]]"
+    with app.app_context():
+        result = substitute_template_parts(template, "html")
+    # html mode should not touch .md markers
+    assert '[[business-registry-footer.md]]' in result
+
+
+def test_get_filled_template_non_future(app):
+    """Assert that get_filled_template returns the non-future incorporationApplication.md template."""
+    with app.app_context():
+        result = get_filled_template('incorporationApplication', is_future_effective_paid=False)
+    assert result is not None
+    # The non-future template has this heading
+    assert 'successfully incorporated' in result
+    # All markers are substituted
+    assert '[[' not in result

@@ -150,7 +150,7 @@ def get_org_id_for_temp_identifier(identifier, token: str) -> int:
     return orgs[0].get("id")  # Temp identifer cannot be present in more than one account
 
 
-def get_entity_dashboard_url(identifier, token: str) -> str:
+def get_entity_dashboard_url(identifier: str, token: str) -> str:
     """Get my business registry url when temp identifier otherwise entity dashboard url."""
     entity_dashboard_url = None
     if identifier.startswith("T"):
@@ -162,7 +162,7 @@ def get_entity_dashboard_url(identifier, token: str) -> str:
     return entity_dashboard_url
 
 
-def substitute_template_parts(template_code: str) -> str:
+def substitute_template_parts(template_code: str, file_type = "html") -> str:
     """Substitute template parts in main template.
 
     Template parts are marked by [[partname.html]] in templates.
@@ -173,37 +173,46 @@ def substitute_template_parts(template_code: str) -> str:
       template parts, below, is important.
     - Do not comment out template parts as they may be replaced anyway!
     """
-    template_parts = [
-        "amalgamation-out-information",
-        "business-dashboard-link",
-        "business-dashboard-link-alt",
-        "business-info",
-        "business-information",
-        "consent-letter-information",
-        "continuation-application-details",
-        "reg-business-info",
-        "cra-notice",
-        "nr-footer",
-        "footer",
-        "header",
-        "initiative-notice",
-        "logo",
-        "pdf-notice",
-        "divider",
-        "8px",
-        "16px",
-        "20px",
-        "24px",
-        "whitespace-16px",
-        "whitespace-24px",
-        "style"
-    ]
+    if file_type == "md":
+        template_parts = [
+            "attachments",
+            "business-number",
+            "business-registry-footer",
+            "business-tombstone",
+            "what-happens-next"
+        ]
+    else:
+        template_parts = [
+            "amalgamation-out-information",
+            "business-dashboard-link",
+            "business-dashboard-link-alt",
+            "business-info",
+            "business-information",
+            "consent-letter-information",
+            "continuation-application-details",
+            "reg-business-info",
+            "cra-notice",
+            "nr-footer",
+            "footer",
+            "header",
+            "initiative-notice",
+            "logo",
+            "pdf-notice",
+            "divider",
+            "8px",
+            "16px",
+            "20px",
+            "24px",
+            "whitespace-16px",
+            "whitespace-24px",
+            "style"
+        ]
 
     # substitute template parts - marked up by [[filename]]
     for template_part in template_parts:
-        template_part_code = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.html')
+        template_part_code = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/common/{template_part}.{file_type}')
                               .read_text(encoding="utf-8"))
-        template_code = template_code.replace(f"[[{template_part}.html]]", template_part_code)
+        template_code = template_code.replace(f"[[{template_part}.{file_type}]]", template_part_code)
 
     return template_code
 
@@ -248,3 +257,13 @@ def get_filing_document(business_identifier, filing_id, document_type, token):
     except Exception:
         current_app.logger.error("Failed to get document response")
         return None
+
+
+def get_filled_template(filing_type: str, is_future_effective_paid: bool):
+    """Return the filled email template for the filing type."""
+    path = f'{current_app.config.get("TEMPLATE_PATH")}/{filing_type}.md'
+    if is_future_effective_paid:
+        path = f'{current_app.config.get("TEMPLATE_PATH")}/{filing_type}-future.md'
+    template = Path(path).read_text()
+
+    return substitute_template_parts(template, "md")
