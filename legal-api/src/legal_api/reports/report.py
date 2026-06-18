@@ -1637,6 +1637,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             )
         ]
 
+        filing["ceasedRels"] = [
+            rel for rel in rels
+            if any(
+                role.get('roleType') == 'Liquidator'
+                and role.get('cessationDate') is not None # ceased relationships are submitted with a cessationDate
+                for role in rel.get('roles', [])
+            )
+        ]
+
         # we do not display effectiveDateRels for intentToLiquidate filing
         if sub_type != 'intentToLiquidate':
             filing["effectiveDateRels"] = self._get_relationships_at_effective_date(PartyRole.RoleTypes.LIQUIDATOR.value)
