@@ -11,7 +11,7 @@ def run_check() -> int:
     print(f"starting dbschema connection")
     write_dbschema_init(cfg)
     import subprocess
-    TEST = Path(__file__).resolve().parents[2] / 'src' / 'checks' / 'test_dbschemacli.sql'
+    TEST = Path(__file__).resolve().parent / 'test_dbschemacli.sql'
     try:
         res = subprocess.run(["dbschemacli", TEST], capture_output=True, text=True, check=True)
         print("Success:", res.stdout)
