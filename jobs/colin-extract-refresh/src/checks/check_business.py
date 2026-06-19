@@ -2,7 +2,7 @@ import sys
 
 from sqlalchemy import create_engine, text
 from config import get_colin_mig_engine, get_named_config
-
+from dbschemacli_init import write_dbschema_init
 def run_check() -> int:
     cfg = get_named_config()
     if cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME:
@@ -21,7 +21,8 @@ def run_check() -> int:
         else:
             print(f"row found........")
         return 0
-    
+    print(f"starting dbschema connection")
+    write_dbschema_init()
 
 if __name__ == "__main__":
     try:
