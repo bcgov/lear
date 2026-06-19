@@ -871,9 +871,9 @@ def validate_relationship_roles(roles: list[dict[str, str]],
                                 path: str) -> list:
     """Validate relationship roles."""
     msg = []
-    converted_allowed_roles = [role.value.lower().replace(" ", "_") for role in allowed_roles]
+    converted_allowed_roles = [role.value for role in allowed_roles]
     for index, role in enumerate(roles):
-        if role.get("roleType").lower() not in converted_allowed_roles:
+        if role.get("roleType").lower().replace(" ", "_") not in converted_allowed_roles:
             err_msg = "Invalid role type for this filing."
             msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
         # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
