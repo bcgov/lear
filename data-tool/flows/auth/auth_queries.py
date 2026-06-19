@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 from .auth_flow_utils import auth_custom_contact_email_override
 from .auth_models import (
@@ -16,6 +16,7 @@ from .auth_selection import (
 
 # Match the existing tombstone corp type cohort by default.
 CORP_TYPE_FILTER = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
+_UNSET = object()
 
 
 def _escape_sql_literal(val: str) -> str:
@@ -240,7 +241,32 @@ def _parse_corp_nums_csv(csv_val: str | None) -> List[str]:
     return parse_auth_corp_nums_csv(csv_val)
 
 
-def get_auth_selected_corp_nums_query(config, selection_mode: AuthSelectionMode) -> str:
+def _corp_nums_for_sql(values: Sequence[str] | str | None) -> List[str]:
+    """Return normalized corp nums from settings-provided values."""
+    if values is None:
+        return []
+    if isinstance(values, str):
+        return parse_auth_corp_nums_csv(values)
+    return parse_auth_corp_nums_csv(",".join(str(value) for value in values))
+
+
+def _positive_int_sequence_for_sql(values: Sequence[int | str] | str | None, *, name: str) -> Optional[str]:
+    """Return normalized positive integer CSV from settings-provided values."""
+    if values is None:
+        return None
+    if isinstance(values, str):
+        return positive_int_csv_for_sql(values, name=name)
+    return positive_int_csv_for_sql(",".join(str(value) for value in values), name=name)
+
+
+def get_auth_selected_corp_nums_query(
+    config,
+    selection_mode: AuthSelectionMode,
+    *,
+    auth_corp_nums: Sequence[str] | str | None | Any = _UNSET,
+    auth_mig_group_ids: Sequence[int | str] | str | None | Any = _UNSET,
+    auth_mig_batch_ids: Sequence[int | str] | str | None | Any = _UNSET,
+) -> str:
     """Build SQL for the currently configured auth selection, returning one corp_num column.
 
     This cleanup/preview helper intentionally does not join auth_processing, does not apply
@@ -249,15 +275,36 @@ def get_auth_selected_corp_nums_query(config, selection_mode: AuthSelectionMode)
     selection_mode = AuthSelectionMode(selection_mode)
 
     if selection_mode == AuthSelectionMode.MIGRATION_FILTER:
-        mig_group_ids, mig_batch_ids = _auth_migration_filter_ids(config)
-        auth_corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+        if auth_mig_group_ids is _UNSET and auth_mig_batch_ids is _UNSET:
+            mig_group_ids, mig_batch_ids = _auth_migration_filter_ids(config)
+        else:
+            mig_group_ids = _positive_int_sequence_for_sql(
+                () if auth_mig_group_ids is _UNSET else auth_mig_group_ids,
+                name='AUTH_MIG_GROUP_IDS',
+            )
+            mig_batch_ids = _positive_int_sequence_for_sql(
+                () if auth_mig_batch_ids is _UNSET else auth_mig_batch_ids,
+                name='AUTH_MIG_BATCH_IDS',
+            )
+            if not (mig_group_ids or mig_batch_ids):
+                raise ValueError(
+                    'AUTH_SELECTION_MODE=MIGRATION_FILTER requires AUTH_MIG_GROUP_IDS and/or AUTH_MIG_BATCH_IDS; '
+                    'AUTH_CORP_NUMS only narrows the migration-filter cohort and does not replace '
+                    'AUTH_MIG_GROUP_IDS/AUTH_MIG_BATCH_IDS; Auth flows do not fall back to global '
+                    'MIG_GROUP_IDS/MIG_BATCH_IDS'
+                )
+        candidate_corp_nums = (
+            _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+            if auth_corp_nums is _UNSET
+            else _corp_nums_for_sql(auth_corp_nums)
+        )
         mig_extra_where = ""
         if mig_batch_ids:
             mig_extra_where += f" AND b.id IN ({mig_batch_ids})"
         if mig_group_ids:
             mig_extra_where += f" AND g.id IN ({mig_group_ids})"
-        if auth_corp_nums:
-            mig_extra_where += f" AND c.corp_num IN ({_quote_list(auth_corp_nums)})"
+        if candidate_corp_nums:
+            mig_extra_where += f" AND c.corp_num IN ({_quote_list(candidate_corp_nums)})"
 
         return f"""
         SELECT DISTINCT c.corp_num
@@ -273,7 +320,11 @@ def get_auth_selected_corp_nums_query(config, selection_mode: AuthSelectionMode)
         AND c.corp_type_cd IN {CORP_TYPE_FILTER}
         """
 
-    corp_nums = _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+    corp_nums = (
+        _parse_corp_nums_csv(getattr(config, 'AUTH_CORP_NUMS', ''))
+        if auth_corp_nums is _UNSET
+        else _corp_nums_for_sql(auth_corp_nums)
+    )
     corp_filter = f"AND c.corp_num IN ({_quote_list(corp_nums)})" if corp_nums else "AND 1=0"
     return f"""
     SELECT c.corp_num
