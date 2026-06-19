@@ -373,3 +373,12 @@ class MigrationConfig:  # pylint: disable=too-few-public-methods
         SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
         SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
+        db_config = DBConfig(
+            instance_name=CLOUDSQL_INSTANCE_CONNECTION_NAME,
+            database=DB_NAME,
+            user=DB_USER,
+            ip_type=DB_IP_TYPE,
+            pool_recycle=60,
+            schema="public",
+        )
+        SQLALCHEMY_ENGINE_OPTIONS = db_config.get_engine_options()
