@@ -19,7 +19,6 @@ def write_dbschema_init(cfg: _Config) -> Path:
 
     init_path.write_text('\n'.join(lines))
 
-    subprocess.run(["dbschema-cli", "-c", "my_proxy_test", "-e", "SELECT 1;"])
     return init_path
 
 
