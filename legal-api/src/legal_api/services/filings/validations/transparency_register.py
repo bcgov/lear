@@ -32,12 +32,11 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Transparency Register filing."""
-from typing import Optional
 
 from legal_api.errors import Error
 
 
-def validate(_: dict) -> Optional[Error]:
+def validate(_: dict) -> Error | None:
     """Validate the Transparency Register filing."""
     # NOTE: There isn't anything to validate outside what is already validated via the schema yet
     return None

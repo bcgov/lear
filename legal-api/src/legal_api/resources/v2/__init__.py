@@ -35,7 +35,7 @@ class V2Endpoint:
 
     def __init__(self):
         """Create the endpoint setup, without initializations."""
-        self.app: Optional[Flask] = None
+        self.app: Flask | None = None
 
     def init_app(self, app):
         """Register and initialize the Endpoint setup."""

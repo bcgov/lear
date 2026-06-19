@@ -15,7 +15,7 @@
 """Business checks for firms."""
 from typing import Final
 
-from legal_api.models import Address, Business, Filing, Office, Party, PartyRole
+from business_model.models import Address, Business, Filing, Office, Party, PartyRole
 
 from . import (
     WARNING_MESSAGE_BASE,

@@ -16,7 +16,7 @@
 Test-Suite to ensure that the Furnishing Documents Service is working as expected.
 """
 from http import HTTPStatus
-from legal_api.models import Business
+from business_model.models import Business
 from tests.unit.models import factory_business_with_stage_one_furnishing
 from unittest.mock import patch, MagicMock
 from legal_api.services import MrasService, FurnishingDocumentsService

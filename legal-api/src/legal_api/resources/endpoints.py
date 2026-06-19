@@ -13,13 +13,12 @@
 # limitations under the License.
 """Mounting the end-points."""
 from http import HTTPStatus
-from typing import Optional
 
 from flask import Flask, current_app, redirect, request, url_for
-from registry_schemas import __version__ as registry_schemas_version
 
 from legal_api import errorhandlers
 from legal_api.utils.run_version import get_run_version
+from registry_schemas import __version__ as registry_schemas_version
 
 from .constants import EndpointEnum, EndpointVersionEnum
 from .v2 import v2_endpoint
@@ -28,7 +27,7 @@ from .v2 import v2_endpoint
 class Endpoints:
     """Manage the mounting, traversal and redirects for a set of versioned end-points."""
 
-    app: Optional[Flask] = None
+    app: Flask | None = None
 
     def init_app(self, app: Flask):
         """Initialize the endpoints mapped for all services.

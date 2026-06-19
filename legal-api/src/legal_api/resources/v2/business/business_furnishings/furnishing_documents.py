@@ -18,8 +18,8 @@ from typing import Final
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 
+from business_model.models import Business, Furnishing, UserRoles
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Furnishing, UserRoles
 from legal_api.reports.report_v2 import ReportTypes
 from legal_api.resources.v2.business.bp import bp
 from legal_api.services import FurnishingDocumentsService, authorized

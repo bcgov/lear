@@ -12,27 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common setup and fixtures for the pytest suite used by this service."""
-from datetime import datetime, timezone
-import time
-from contextlib import contextmanager, suppress
-import re
-import pytest
-from unittest.mock import Mock, patch
 import json
+import os
+import pytest
+import re
+from contextlib import contextmanager
+from datetime import datetime, timezone
+from unittest.mock import Mock, patch
 from http import HTTPStatus
 
+import requests_mock
+from flask import Flask
 from flask_migrate import Migrate, upgrade
 from ldclient.integrations.test_data import TestData
 from minio.error import S3Error
-from testcontainers.postgres import PostgresContainer
 from sqlalchemy import event, text
-from sqlalchemy.schema import MetaData
-import requests_mock
+from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.sql.functions import now as _sqla_now
+from testcontainers.postgres import PostgresContainer
 
-from legal_api import create_app
-from legal_api import jwt as _jwt
+import business_model_migrations
+from business_common.utils import datetime as common_datetime
+from business_model.models import db as _db
+from legal_api import create_app, jwt as _jwt
 from legal_api.config import TestConfig
-from legal_api.models import db as _db
+
+postgres = PostgresContainer("postgres:16-alpine")
+
+
+# Models default many timestamp columns to ``func.now()`` which Postgres
+# resolves to the transaction start time. Per-test transaction isolation
+# means every row a test creates would share the same timestamp, breaking
+# any ``ORDER BY created_date`` query. Substitute ``clock_timestamp()`` so
+# each row gets a distinct wall-clock value at insert time. Test-only.
+@compiles(_sqla_now, 'postgresql')
+def _compile_now_to_clock_timestamp(element, compiler, **kw):
+    return 'clock_timestamp()'
 
 
 @contextmanager
@@ -56,8 +71,8 @@ def freeze_datetime_utcnow():
     """
     @contextmanager
     def _freeze_time(frozen_datetime):
-        with patch('legal_api.utils.datetime.datetime') as mock_datetime:
-            mock_datetime.utcnow.return_value = frozen_datetime.replace(tzinfo=timezone.utc)
+        with patch.object(common_datetime, 'utcnow') as mock_datetime_utcnow:
+            mock_datetime_utcnow.return_value = frozen_datetime.replace(tzinfo=timezone.utc)
             yield
     return _freeze_time
 
@@ -84,54 +99,44 @@ def monkey_session():
 
 
 @pytest.fixture(scope='session')
-def app(monkey_session, ld):
+def app(monkey_session, ld, database_service):
     """Return a session-wide application configured in TEST mode."""
     options = {
         'ld_test_data':ld,
     }
+    TestConfig.SQLALCHEMY_DATABASE_URI = postgres.get_connection_url()
     _app = create_app("testing", **options)
 
     def _utcnow_side_effect():
         """super().now(tz=timezone.utc) is not supported by freezegun, so we mock datetime.utcnow() directly."""
         return datetime.now(tz=timezone.utc)
-    monkey_session.setattr('legal_api.utils.datetime.datetime.utcnow', _utcnow_side_effect)
+    monkey_session.setattr(common_datetime, 'utcnow', _utcnow_side_effect)
 
 
     def _now_side_effect():
         """super().now() is not supported by freezegun, so we mock datetime.now() directly."""
         return datetime.now()
-    monkey_session.setattr('legal_api.utils.datetime.datetime.now', _now_side_effect)
+    monkey_session.setattr(common_datetime, 'now', _now_side_effect)
 
-    return _app
-
-
-@pytest.fixture(scope='function')
-def app_ctx(ld, event_loop):
-    # def app_ctx():
-    """Return a session-wide application configured in TEST mode."""
-    options = {
-        'ld_test_data':ld,
-    }
-    _app = create_app("testing", **options)
     with _app.app_context():
         yield _app
 
 
-@pytest.fixture
-def config(app):
-    """Return the application config."""
-    return app.config
-
-
 @pytest.fixture(scope='function')
-def app_request(ld):
-    """Return a session-wide application configured in TEST mode."""
-    options = {
-        'ld_test_data':ld,
-    }
-    _app = create_app("testing", **options)
+def app_request(ld, database_setup, monkeypatch):
+    """Return a function-scoped Flask app for tests that register routes ad-hoc.
 
-    return _app
+    ``StructuredLogging.get_logger()`` is a staticmethod that returns the
+    StructuredLogging instance (not a logger) whenever ``current_app`` is set,
+    which corrupts the second app's ``app.logger``. Patch it to always return a
+    fresh JSON logger during this fixture.
+    """
+    from structured_logging.logging import StructuredLogging as _SL, getJSONLogger
+    monkeypatch.setattr(_SL, 'get_logger', staticmethod(getJSONLogger))
+    TestConfig.SQLALCHEMY_DATABASE_URI = postgres.get_connection_url()
+    _app = create_app("testing", ld_test_data=ld)
+    with _app.app_context():
+        yield _app
 
 
 @pytest.fixture(scope='session')
@@ -146,102 +151,64 @@ def jwt():
     return _jwt
 
 
-@pytest.fixture(scope='session')
-def client_ctx(app):  # pylint: disable=redefined-outer-name
-    """Return session-wide Flask test client."""
-    with app.test_client() as _client:
-        yield _client
+@pytest.fixture(scope="session")
+def database_service(request):
+    """Start up database."""
+    postgres.start()
+
+    def remove_container():
+        postgres.stop()
+    
+    request.addfinalizer(remove_container)
 
 
-@pytest.fixture(scope='session')
-def db(app):  # pylint: disable=redefined-outer-name, invalid-name
-    """Return a session-wide initialised database.
-
-    Drops all existing tables - Meta follows Postgres FKs
-    """
-    with app.app_context():
-        # Clear out any existing tables
-        metadata = MetaData(_db.engine)
-        metadata.reflect()
-        with suppress(Exception):
-            metadata.drop_all()
-        with suppress(Exception):
-            _db.drop_all()
-
-        sequence_sql = """SELECT sequence_name FROM information_schema.sequences
-                          WHERE sequence_schema='public'
-                       """
-
-        sess = _db.session()
-        for seq in [name for (name,) in sess.execute(text(sequence_sql))]:
-            with suppress(Exception):
-                sess.execute(text('DROP SEQUENCE public.%s ;' % seq))
-                print('DROP SEQUENCE public.%s ' % seq)
-        sess.commit()
-
-        # drop enums
-        enum_type_sql = "SELECT typname FROM pg_type WHERE typcategory = 'E'"
-        for enum_name in [name for (name,) in sess.execute(text(enum_type_sql))]:
-            with suppress(Exception):
-                sess.execute(text('DROP TYPE %s ;' % enum_name))
-                print('DROP TYPE %s ' % enum_name)
-        sess.commit()
-
-        # For those who have local databases on bare metal in local time.
-        # Otherwise some of the returns will come back in local time and unit tests will fail.
-        # The current DEV database uses UTC.
-        sess.execute("SET TIME ZONE 'UTC';")
-        sess.commit()
-
-        # ############################################
-        # There are 2 approaches, an empty database, or the same one that the app will use
-        #     create the tables
-        #     _db.create_all()
-        # or
-        # Use Alembic to load all of the DB revisions including supporting lookup data
-        # This is the path we'll use in legal_api!!
-
-        # even though this isn't referenced directly, it sets up the internal configs that upgrade needs
-        Migrate(app, _db)
-        upgrade()
-
-        return _db
+@pytest.fixture(scope="session", autouse=True)
+def database_setup(database_service, app):
+    """Start up database."""
+    dir_path = os.path.dirname(business_model_migrations.__file__)
+    Migrate(app, _db, directory=dir_path)
+    upgrade() 
 
 
 @pytest.fixture(scope='function')
-def session(app, db):  # pylint: disable=redefined-outer-name, invalid-name
-    """Return a function-scoped session."""
-    with app.app_context():
-        conn = db.engine.connect()
-        txn = conn.begin()
+def session(database_setup):
+    """Per-test DB session with SAVEPOINT-based isolation.
 
-        options = dict(bind=conn, binds={})
-        sess = db.create_scoped_session(options=options)
+    Opens a dedicated connection with an outer transaction, starts a
+    SAVEPOINT inside it, and re-issues a fresh SAVEPOINT every time one
+    ends. Production code that commits (every model's `.save()` calls
+    `db.session.commit()`) only releases the inner SAVEPOINT — it
+    never escapes the outer transaction. Teardown rolls back the outer
+    transaction, wiping everything the test wrote.
+    """
+    connection = _db.engine.connect()
+    transaction = connection.begin()
 
-        # establish  a SAVEPOINT just before beginning the test
-        # (http://docs.sqlalchemy.org/en/latest/orm/session_transaction.html#using-savepoint)
-        sess.begin_nested()
+    options = dict(bind=connection, binds={})
+    scoped = _db._make_scoped_session(options=options)
+    _db.session = scoped
 
-        @event.listens_for(sess(), 'after_transaction_end')
-        def restart_savepoint(sess2, trans):  # pylint: disable=unused-variable
-            # Detecting whether this is indeed the nested transaction of the test
-            if trans.nested and not trans._parent.nested:  # pylint: disable=protected-access
-                # Handle where test DOESN'T session.commit(),
-                sess2.expire_all()
-                sess.begin_nested()
+    session = scoped()
+    # Flask-SQLAlchemy's Session.get_bind() ignores the Session's `bind=` and
+    # returns db.engines[None]; force it to use our test connection so writes
+    # land inside the outer transaction we just opened.
+    session.get_bind = lambda *args, **kwargs: connection
+    session.begin_nested()
 
-        db.session = sess
+    # Needed for extra save points in factory functions etc.
+    @event.listens_for(session, 'after_transaction_end')
+    def restart_savepoint(s, trans):
+        if trans.nested and not trans._parent.nested:
+            s.begin_nested()
 
-        sql = text('select 1')
-        sess.execute(sql)
+    session.execute(text("SET TIME ZONE 'UTC';"))
 
-        yield sess
+    yield scoped
 
-        # Cleanup
-        sess.remove()
-        # This instruction rollsback any commit that were executed in the tests.
-        txn.rollback()
-        conn.close()
+    event.remove(session, 'after_transaction_end', restart_savepoint)
+    scoped.close()
+    transaction.rollback()
+    connection.close()
 
 
 @pytest.fixture()
@@ -310,6 +277,12 @@ def minio_server(monkeypatch):
 
         yield minio_mock
 
+
+@pytest.fixture(scope="function")
+def mock_bearer_token(app, requests_mock):
+    token_mock = requests_mock.post(app.config.get("ACCOUNT_SVC_AUTH_URL"), json={"access_token": "mock-token"})
+    return token_mock
+    
 
 DOCUMENT_API_URL = 'http://document-api.com'
 DOCUMENT_API_VERSION = '/api/v1'

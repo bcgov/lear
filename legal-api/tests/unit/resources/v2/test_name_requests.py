@@ -22,15 +22,12 @@ import copy
 from unittest.mock import MagicMock, patch
 
 import datedelta
-from pytest_mock import mocker
 import pytz
 
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import UserRoles
 from legal_api.services import flags, namex
-from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.models import UserRoles
-
 from tests import integration_namerequests
-
 from tests.unit.services.utils import create_header
 
 
@@ -373,7 +370,7 @@ def test_nr_success_public_user(session, mocker, client, jwt):
                       'query_nr_number',
                       return_value=MagicMock(status_code=200,
                                              json=MagicMock(return_value=nr_approved))):
-        mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+        mocker.patch('legal_api.resources.v2.namerequest.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': [{'id': 123456}]})
         rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
                         headers=create_header(jwt, [UserRoles.public_user]))
@@ -386,7 +383,7 @@ def test_nr_not_affiliated_public_user(session, mocker, client, jwt):
                       'query_nr_number',
                       return_value=MagicMock(status_code=200,
                                              json=MagicMock(return_value=nr_approved_no_contact_info))):
-        mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+        mocker.patch('legal_api.resources.v2.namerequest.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': []})
         rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
                         headers=create_header(jwt, [UserRoles.public_user]))
@@ -399,7 +396,7 @@ def test_nr_valid_contact_public_user(session, mocker, client, jwt):
                       'query_nr_number',
                       return_value=MagicMock(status_code=200,
                                              json=MagicMock(return_value=nr_approved))):
-        mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+        mocker.patch('legal_api.resources.v2.namerequest.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': []})
         rv = client.get(
             '/api/v2/nameRequests/NR 1234567/validate',

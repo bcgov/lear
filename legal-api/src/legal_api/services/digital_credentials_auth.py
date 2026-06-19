@@ -12,41 +12,71 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""This provides auth functions for digital credentials."""
+"""Legal-api wrapper around the shared DBC auth functions.
 
+Loads the ``dbc-enabled-business-types`` LaunchDarkly flag and forwards the
+resolved value into the shared ``business_registry_digital_credentials`` API.
+This is the only place in legal-api that knows the LD flag key for DBC.
+"""
+from flask import current_app
 
-from flask import g
-
+from business_model.models.business import Business
+from business_registry_digital_credentials import (
+    are_digital_credentials_allowed as _shared_are_digital_credentials_allowed,
+)
+from business_registry_digital_credentials import (
+    get_digital_credentials_preconditions as _shared_get_digital_credentials_preconditions,
+)
 from flask_jwt_oidc import JwtManager
-from legal_api.models.business import Business
-from legal_api.models.user import User
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
 
-STAFF_ROLE = "staff"
+DBC_ENABLED_BUSINESS_TYPES_FLAG = "dbc-enabled-business-types"
+
+
+def _get_flags():
+    """Return the legal-api flags singleton.
+
+    Wrapped in a function (rather than a top-level import) for two reasons:
+    1. Avoids a circular import via ``legal_api.services`` package init.
+    2. Gives tests a single, stable patch target — ``_get_flags`` — so they can
+       return a stub instead of standing up a LaunchDarkly client.
+    """
+    from legal_api.services import flags
+    return flags
+
+
+def _resolve_allowed_business_types() -> list[str]:
+    """Read the ``dbc-enabled-business-types`` LD flag and return the resolved list.
+
+    Returns ``[]`` if the flag is off or the flag value is malformed. Flag lookup
+    passes the request's user/account so LD targeting rules can apply.
+    """
+    from legal_api.services.request_context import get_request_context
+
+    flags = _get_flags()
+    request_context = get_request_context()
+
+    if not flags.is_on(DBC_ENABLED_BUSINESS_TYPES_FLAG,
+                       request_context.user, request_context.account_id):
+        current_app.logger.warning("%s is OFF", DBC_ENABLED_BUSINESS_TYPES_FLAG)
+        return []
+
+    flag_obj = flags.value(DBC_ENABLED_BUSINESS_TYPES_FLAG,
+                           request_context.user, request_context.account_id)
+
+    if not isinstance(flag_obj, dict) or "types" not in flag_obj or not isinstance(flag_obj["types"], list):
+        current_app.logger.error("Invalid %s flag value: %s", DBC_ENABLED_BUSINESS_TYPES_FLAG, flag_obj)
+        return []
+
+    return flag_obj["types"]
 
 
 def are_digital_credentials_allowed(business: Business, jwt: JwtManager) -> bool:
     """Return True if the business is allowed to have/view digital credentials."""
-    is_staff = jwt.contains_role([STAFF_ROLE])
-    if is_staff:
-        # Staff do not have digital credentials
-        return False
-
-    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
-        return False
-
-    rules = DigitalCredentialsRulesService()
-    return rules.are_digital_credentials_allowed(user, business)
+    return _shared_are_digital_credentials_allowed(
+        business, jwt, allowed_business_types=_resolve_allowed_business_types()
+    )
 
 
 def get_digital_credentials_preconditions(business: Business) -> dict[str, list[str]]:
     """Return the preconditions for digital credentials."""
-    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
-        return {}
-
-    rules = DigitalCredentialsRulesService()
-    return {
-        "attestBusiness": business.legal_name if business else None,
-        "attestName": user.display_name if user else None,
-        "attestRoles": rules.get_preconditions(user, business) if user and business else [],
-    }
+    return _shared_get_digital_credentials_preconditions(business)

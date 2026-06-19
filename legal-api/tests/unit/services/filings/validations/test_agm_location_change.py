@@ -16,12 +16,11 @@ import copy
 from http import HTTPStatus
 
 import pytest
-from registry_schemas.example_data import AGM_LOCATION_CHANGE, FILING_HEADER
 
+from business_common.utils.datetime import datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from legal_api.services.filings.validations.validation import validate
-from legal_api.utils.datetime import datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
-
+from registry_schemas.example_data import AGM_LOCATION_CHANGE, FILING_HEADER
 from tests.unit.models import factory_business
 
 

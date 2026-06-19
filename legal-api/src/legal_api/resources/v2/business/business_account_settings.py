@@ -32,7 +32,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, BusinessAccountSettings
+from business_model.models import Business, BusinessAccountSettings
 from legal_api.services.authz import authorized, get_account_products
 from legal_api.utils.auth import jwt
 

@@ -17,8 +17,8 @@ from http import HTTPStatus
 import pycountry
 from flask_babel import _
 
+from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import validate_offices_addresses
 
 

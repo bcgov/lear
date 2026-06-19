@@ -20,10 +20,9 @@ from pypdf import PdfReader
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-from legal_api.reports.registrar_meta import RegistrarInfo
+from business_common.utils.legislation_datetime import LegislationDatetime
 from legal_api.services import PdfService
 from legal_api.services.pdf_service import RegistrarStampData, _write_text
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def test_stamp(app):  # pylint:disable=unused-argument

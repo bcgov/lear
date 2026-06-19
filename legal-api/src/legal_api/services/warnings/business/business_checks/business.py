@@ -13,8 +13,8 @@
 # limitations under the License.
 
 """Service to check compliancy for a business."""
-from legal_api.models import Business
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
+from business_model.models import Business
+from dissolution_service import InvoluntaryDissolutionService
 
 from . import BusinessWarningCodes, WarningType
 from .corps import check_business as corps_check
