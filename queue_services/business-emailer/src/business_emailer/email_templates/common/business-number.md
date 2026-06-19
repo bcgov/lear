@@ -1,0 +1,2 @@
+## Business Number
+As a result of this {{ filing_name_short | lower }}, a BN (business number) will be assigned by the Canada Revenue Agency (CRA) and will be emailed to the {{ office_name }} email address.

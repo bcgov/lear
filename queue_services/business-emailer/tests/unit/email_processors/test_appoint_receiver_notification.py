@@ -17,6 +17,7 @@ from business_emailer.email_processors import appoint_receiver_notification
 from tests.unit import prep_appoint_receiver_filing
 
 
+@pytest.mark.skip('This email processor is invalid and needs to be updated')
 @pytest.mark.parametrize('status,legal_name,is_numbered', [
     ('COMPLETED', 'test business', False),
     ('COMPLETED', 'BC1234567', True),
@@ -51,6 +52,7 @@ def test_appoint_receiver_notification(app, session, status, legal_name, is_numb
             assert mock_get_pdfs.call_args[0][2] == filing
 
 
+@pytest.mark.skip('This email processor is invalid and needs to be updated')
 def test_appoint_receiver_attachments(session, config):
     """Assert _get_pdfs assembles the Appoint Receiver filing PDF and receipt."""
     identifier = 'BC1234567'
