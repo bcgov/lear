@@ -13,6 +13,7 @@ def run_check() -> int:
     import subprocess
     TEST = Path(__file__).resolve().parent / 'test_dbschemacli.sql'
     try:
+        print(TEST)
         res = subprocess.run(["dbschemacli", TEST], capture_output=True, text=True, check=True)
         print("Success:", res.stdout)
     except subprocess.CalledProcessError as e:
