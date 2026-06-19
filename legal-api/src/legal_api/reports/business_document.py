@@ -27,7 +27,7 @@ from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.reports.utils import get_amalg_formatted_jurisdiction
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService, flags
+from legal_api.services import VersionedBusinessDetailsService, colin, flags
 from legal_api.services.request_context import RequestContext, get_request_context
 from legal_api.utils.auth import jwt
 from legal_api.utils.legislation_datetime import LegislationDatetime
@@ -593,10 +593,23 @@ class BusinessDocument:
                                                                             amalgamation.id)
                 for amalgamating_business in amalgamating_businesses:
                     if amalgamating_business.foreign_name:
-                        identifier = amalgamating_business.foreign_identifier or "N/A"
+                        # Set identifier to 'N/A' for foreign businesses (we are showing the 'Number in BC' in the output)
+                        identifier = "N/A"
+                        foreign_identifier = amalgamating_business.foreign_identifier
                         business_legal_name = amalgamating_business.foreign_name or "N/A"
                         country_code = amalgamating_business.foreign_jurisdiction
                         region_code = amalgamating_business.foreign_jurisdiction_region
+                        # FUTURE: rework this once expros are in lear
+                        # Check if this is an expro
+                        if (foreign_identifier.startswith("A")
+                            and (colin_resp := colin.query_business(foreign_identifier))
+                            and colin_resp.status_code == HTTPStatus.OK
+                        ):
+                            # this is an expro so set the identifier (it is the BC expro identifier)
+                            identifier = foreign_identifier
+                            # overwrite the region_code if jurisdiction is available in the response
+                            region_code = colin_resp.json().get("business", {}).get("jurisdiction")
+                            
                     else:
                         ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
                             amalgamation_application,
