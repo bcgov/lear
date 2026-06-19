@@ -119,7 +119,7 @@
               </td>
               {% if rel.mailingAddress is defined %}
                 <td>
-                  <div class="section-sub-title mb-2">Mailing Address</div>
+                  <div class="section-sub-title mb-2">Mailing Address {% if rel.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</div>
                   <div>{{ rel.mailingAddress.streetAddress }}</div>
                   <div>{{ rel.mailingAddress.streetAddressAdditional }}</div>
                   <div>
@@ -133,7 +133,7 @@
               {% endif %}
               {% if rel.deliveryAddress is defined %}
                 <td>
-                  <div class="section-sub-title mb-2">Delivery Address</div>
+                  <div class="section-sub-title mb-2">Delivery Address {% if rel.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</div>
                   <div>{{ rel.deliveryAddress.streetAddress }}</div>
                   <div>{{ rel.deliveryAddress.streetAddressAdditional }}</div>
                   <div>

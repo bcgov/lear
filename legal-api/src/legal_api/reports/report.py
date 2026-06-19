@@ -295,8 +295,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         else:
             file_name = ReportMeta.reports[self._report_key]["fileName"]
 
-        print('FOUND FILENAME: ', f"{file_name}.html")
-
         return f"{file_name}.html"
 
     def _get_template_data(self):
@@ -1556,7 +1554,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         report_title_config = {
             "appointLiquidator": "Notice to Appoint Liquidators",
             "ceaseLiquidator": "Notice to Cease Liquidators",
-            "changeAddressLiquidator": "Liquidators change of address",
+            "changeAddressLiquidator": "Liquidators Change of Address",
             "intentToLiquidate": "Statement of Intent to Liquidate"
         }
 
@@ -1611,53 +1609,120 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     filing_offices[f"{address.address_type}Address"] = address.json
 
         if filing_offices:
-            if "mailingAddress" in filing_offices:
-                self._format_address(filing_offices["mailingAddress"])
+            if mailing_address := filing_offices.get("mailingAddress"):
+                self._format_address(mailing_address)
 
-            if "deliveryAddress" in filing_offices:
-                self._format_address(filing_offices["deliveryAddress"])
+            if delivery_address := filing_offices.get("deliveryAddress"):
+                self._format_address(delivery_address)
 
         filing["recordsOffice"] = filing_offices
 
-        rels = col.get("relationships", [])
-
-        for rel in rels:
+        relationships_submitted = col.get("relationships", [])
+        for rel in relationships_submitted:
             if "mailingAddress" in rel:
                 rel["mailingAddress"] = self._format_address(rel["mailingAddress"])
-
             if "deliveryAddress" in rel:
                 rel["deliveryAddress"] = self._format_address(rel["deliveryAddress"])
 
-        filing["appointedRels"] = [
-            rel for rel in rels
-            if any(
-                role.get('roleType') == 'Liquidator'
-                and role.get('cessationDate') is None # appointed relationships are submitted with no cessationDate
-                for role in rel.get('roles', [])
-            )
-        ]
+        relationships_at_effective_date = self._get_relationships_at_effective_date(PartyRole.RoleTypes.LIQUIDATOR.value)
 
-        filing["ceasedRels"] = [
-            rel for rel in rels
-            if any(
-                role.get('roleType') == 'Liquidator'
-                and role.get('cessationDate') is not None # ceased relationships are submitted with a cessationDate
-                for role in rel.get('roles', [])
-            )
-        ]
+        if sub_type in {"appointLiquidator", "intentToLiquidate"}:
+            filing["appointedRels"] = [
+                rel for rel in relationships_submitted
+                if any(
+                    role.get('roleType') == 'Liquidator'
+                    and role.get('cessationDate') is None # appointed relationships are submitted with no cessationDate
+                    for role in rel.get('roles', [])
+                )
+            ]
+
+        if sub_type in {"ceaseLiquidator"}:
+            filing["ceasedRels"] = [
+                rel for rel in relationships_submitted
+                if any(
+                    role.get('roleType') == 'Liquidator'
+                    and role.get('cessationDate') is not None # ceased relationships are submitted with a cessationDate
+                    for role in rel.get('roles', [])
+                )
+            ]
 
         # we do not display effectiveDateRels for intentToLiquidate filing
-        if sub_type != 'intentToLiquidate':
-            filing["effectiveDateRels"] = self._get_relationships_at_effective_date(PartyRole.RoleTypes.LIQUIDATOR.value)
+        if sub_type in {"appointLiquidator", "ceaseLiquidator"}:
+            filing["effectiveDateRels"] = relationships_at_effective_date
 
-        # TODO: get ceased liquidators
-        # TODO: get current liquidators as of report date
-        # TODO: get address changed liquidators / liquidation office MUST HAVE CHANGED BADGE
+        if sub_type in {"changeAddressLiquidator"}:
+            prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
 
-        # TODO: Reports todo
-        # appointLiquidator
-        # ceaseLiquidator
-        # changeAddressLiquidator
+            # only compare offices if submitted in filing
+            if col.get("offices"):
+                office_revision = VersionedBusinessDetailsService.get_office_revision(
+                    prev_completed_filing.id,
+                    prev_completed_filing.transaction_id,
+                    self._business.id
+                )
+
+                mailing_changed = self._compare_address(
+                    office_revision.get("liquidationRecordsOffice", {}).get("mailingAddress"), 
+                    filing_offices.get("mailingAddress")
+                )
+                delivery_changed = self._compare_address(
+                    office_revision.get("liquidationRecordsOffice", {}).get("deliveryAddress"), 
+                    filing_offices.get("deliveryAddress")
+                )
+                delivery_same_as_mailing = not self._compare_address(
+                    filing_offices.get("mailingAddress"),
+                    filing_offices.get("deliveryAddress")
+                )
+
+                if filing.get("recordsOffice", {}).get("mailingAddress"):
+                    filing["recordsOffice"]["mailingAddress"]["changed"] = mailing_changed
+
+                if filing.get("recordsOffice", {}).get("deliveryAddress"):
+                    filing["recordsOffice"]["deliveryAddress"]["changed"] = delivery_changed and not delivery_same_as_mailing
+
+            # only compare relationships if submitted in filing
+            if relationships_submitted:
+                for rel in relationships_submitted:
+                    rel_id_str = rel.get("entity", {}).get("identifier", "")
+                    try:
+                        rel_id = int(rel_id_str)
+                    except Exception:
+                        rel_id = None
+                    
+                    if rel_id is None:
+                        continue
+
+                    party_revision = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, rel_id)
+                    if party_revision:
+                        party_json = VersionedBusinessDetailsService.party_revision_json(prev_completed_filing.transaction_id, party_revision, True)
+
+                        if mailing_address := rel.get("mailingAddress"):
+                            mailing_changed = self._compare_address(party_json.get("mailingAddress"), mailing_address)
+                        else:
+                            mailing_changed = False
+
+                        if delivery_address := rel.get("deliveryAddress"):
+                            delivery_changed = self._compare_address(party_json.get("deliveryAddress"), delivery_address)
+                            delivery_same_as_mailing = (
+                                not self._compare_address(mailing_address, delivery_address)
+                                if mailing_address else False
+                            )                        
+                            final_delivery_changed = delivery_changed and not delivery_same_as_mailing
+                        else:
+                            final_delivery_changed = False
+
+                        target_party = next(
+                            (item for item in relationships_at_effective_date if str(item.get("entity", {}).get("identifier")) == str(rel_id_str)),
+                            None
+                        )
+
+                        if target_party:
+                            if mailing_address and target_party.get("mailingAddress"):
+                                target_party["mailingAddress"]["changed"] = mailing_changed
+                            if delivery_address and target_party.get("deliveryAddress"):
+                                target_party["deliveryAddress"]["changed"] = final_delivery_changed
+
+            filing["effectiveDateRels"] = relationships_at_effective_date
 
     def _set_meta_info(self, filing):
         filing["environment"] = f"{self._get_environment()} FILING #{self._filing.id}".lstrip()
@@ -1712,16 +1777,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "roles": relationship.get("roles", [])
         }
 
-    def _get_relationships_at_effective_date(self, role: PartyRole.RoleTypes) -> dict:
-        roles = PartyRole.get_party_roles(
-            self._business.id,
-            self._filing.effective_date,
-            role
-        )
-
+    def _map_parties_to_relationships(self, parties: list[dict]) -> list[dict]:
         formatted_rels = []
-        for role in roles:
-            p = role.json
+        for p in parties:
             o = p.get("officer", {})
 
             if mailing_address := p.get("mailingAddress"):
@@ -1734,7 +1792,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 "entity": {
                     "givenName": o.get("firstName"),
                     "familyName": o.get("lastName"),
-                    "identifier": "", # do we need this ???
+                    "identifier": str(p.get("id") or ""),
                     "businessName": o.get("organizationName"),
                     "alternateName": o.get("alternateName"),
                     "middleInitial": o.get("middleInitial"),
@@ -1748,6 +1806,46 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             formatted_rels.append(rel)
 
         return formatted_rels
+
+    def _map_party_roles_to_relationships_json(self, party_roles: list[PartyRole]):
+        formatted_rels = []
+        for role in party_roles:
+            p = role.json
+            o = p.get("officer", {})
+
+            if mailing_address := p.get("mailingAddress"):
+                mailing_address = self._format_address(mailing_address)
+
+            if delivery_address := p.get("deliveryAddress"):
+                delivery_address = self._format_address(delivery_address)
+
+            rel = {
+                "entity": {
+                    "givenName": o.get("firstName"),
+                    "familyName": o.get("lastName"),
+                    "identifier": f"{role.party.id}",
+                    "businessName": o.get("organizationName"),
+                    "alternateName": o.get("alternateName"),
+                    "middleInitial": o.get("middleInitial"),
+                },
+                "mailingAddress": mailing_address,
+                "deliveryAddress": delivery_address,
+                "appointmentDate": p.get("appointmentDate"),
+                "cessationDate": p.get("cessationDate")
+            }
+
+            formatted_rels.append(rel)
+
+        return formatted_rels 
+
+
+    def _get_relationships_at_effective_date(self, role: PartyRole.RoleTypes) -> list[dict]:
+        roles = PartyRole.get_party_roles(
+            self._business.id,
+            self._filing.effective_date,
+            role
+        )
+        return self._map_party_roles_to_relationships_json(roles)
 
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
