@@ -5,6 +5,8 @@ from config import get_colin_mig_engine, get_named_config
 from dbschemacli_init import write_dbschema_init
 def run_check() -> int:
     cfg = get_named_config()
+    print(f"starting dbschema connection")
+    write_dbschema_init()
     if cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME:
         if not all([cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME, cfg.DB_NAME_COLIN_MIGR, cfg.DB_USER_COLIN_MIGR]):
             raise RuntimeError(
@@ -21,8 +23,7 @@ def run_check() -> int:
         else:
             print(f"row found........")
         return 0
-    print(f"starting dbschema connection")
-    write_dbschema_init()
+    
 
 if __name__ == "__main__":
     try:
