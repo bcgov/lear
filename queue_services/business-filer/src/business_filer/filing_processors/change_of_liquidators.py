@@ -35,9 +35,10 @@
 import copy
 from datetime import UTC, datetime
 
-from business_model.models import Business, Filing, PartyRole
+from business_model.models import BatchProcessing, Business, Filing, PartyRole
 from business_model.utils.legislation_datetime import LegislationDatetime
 
+from business_filer.common.services import InvoluntaryDissolutionService
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components.filings import update_filing_court_order
 from business_filer.filing_processors.filing_components.offices import update_or_create_offices
@@ -53,6 +54,14 @@ def _init_liquidation(business: Business, filing_meta: FilingMeta):
     if not business.in_liquidation:
         business.in_liquidation = True
         business.in_liquidation_date = filing_meta.application_date or datetime.now(UTC)
+
+        # withdraw any existing involuntary dissolution processing if it exists
+        batch_details = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
+        if batch_details:
+            batch_processing, _ = batch_details
+            batch_processing.status = BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
+            batch_processing.notes = "Moved into liquidation"
+            batch_processing.last_modified = datetime.now(UTC)
 
 
 def _update_last_lr_year(business: Business):
