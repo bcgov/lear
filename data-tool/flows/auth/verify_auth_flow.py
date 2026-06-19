@@ -1426,21 +1426,21 @@ def write_inspection_csv(path: str, states: list[AuthBusinessState]) -> None:
 
 
 _INSPECTION_FILTER_SUMMARY_METRICS = {
-    INSPECT_FILTER_HAS_ANY_AUTH: ("HasAnyAuth", "has_any_auth_count"),
-    INSPECT_FILTER_MISSING_ENTITY: ("MissingEntity", "missing_entity_count"),
-    INSPECT_FILTER_HAS_ENTITY: ("HasEntity", "has_entity_count"),
-    INSPECT_FILTER_HAS_CONTACT: ("HasUsableContactEmail", "has_contact_count"),
-    INSPECT_FILTER_ENTITY_WITHOUT_CONTACT: (
-        "EntityWithoutUsableContactEmail",
-        "entity_without_contact_count",
-    ),
-    INSPECT_FILTER_HAS_AFFILIATION: ("HasAffiliation", "has_affiliation_count"),
-    INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION: (
-        "EntityWithoutAffiliation",
-        "entity_without_affiliation_count",
-    ),
-    INSPECT_FILTER_HAS_INVITE: ("HasInvite", "has_invite_count"),
-    INSPECT_FILTER_ENTITY_WITHOUT_INVITE: ("EntityWithoutInvite", "entity_without_invite_count"),
+    INSPECT_FILTER_HAS_ANY_AUTH: {"label": "HasAnyAuth", "summary_key": "has_any_auth_count"},
+    INSPECT_FILTER_MISSING_ENTITY: {"label": "MissingEntity", "summary_key": "missing_entity_count"},
+    INSPECT_FILTER_HAS_ENTITY: {"label": "HasEntity", "summary_key": "has_entity_count"},
+    INSPECT_FILTER_HAS_CONTACT: {"label": "HasUsableContactEmail", "summary_key": "has_contact_count"},
+    INSPECT_FILTER_ENTITY_WITHOUT_CONTACT: {
+        "label": "EntityWithoutUsableContactEmail",
+        "summary_key": "entity_without_contact_count",
+    },
+    INSPECT_FILTER_HAS_AFFILIATION: {"label": "HasAffiliation", "summary_key": "has_affiliation_count"},
+    INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION: {
+        "label": "EntityWithoutAffiliation",
+        "summary_key": "entity_without_affiliation_count",
+    },
+    INSPECT_FILTER_HAS_INVITE: {"label": "HasInvite", "summary_key": "has_invite_count"},
+    INSPECT_FILTER_ENTITY_WITHOUT_INVITE: {"label": "EntityWithoutInvite", "summary_key": "entity_without_invite_count"},
 }
 
 
@@ -1473,8 +1473,7 @@ def _inspection_summary_metric_rows(summary: dict[str, int | str]) -> list[tuple
     ]
     filter_metric = _INSPECTION_FILTER_SUMMARY_METRICS.get(inspect_filter)
     if filter_metric:
-        label, summary_key = filter_metric
-        rows.append((label, summary.get(summary_key, 0)))
+        rows.append((filter_metric["label"], summary.get(filter_metric["summary_key"], 0)))
     return rows
 
 
