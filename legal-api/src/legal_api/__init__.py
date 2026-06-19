@@ -75,7 +75,6 @@ def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **k
     init_db(app)
 
     with app.app_context():  # db require app context
-        digital_credentials.init_app(app)
         if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
             setup_pg8000_close_event_listener(db.engine)
 
