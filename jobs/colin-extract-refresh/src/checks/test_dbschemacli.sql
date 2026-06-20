@@ -1,2 +1,2 @@
 connect my_proxy_test;
-SELECT 1;
+SELECT extracted_at from colin_extract_temp.colin_extract_version;
