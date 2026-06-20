@@ -82,4 +82,4 @@ EXPOSE 8080
 
 COPY src .
 
-CMD [ "python", "src/test_connectivity.py" ]
+CMD [ "python", "test_connectivity.py" ]
