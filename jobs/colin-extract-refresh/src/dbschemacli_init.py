@@ -13,7 +13,7 @@ def write_dbschema_init(cfg: _Config) -> Path:
     name = cfg.DB_NAME_COLIN_MIGR
     
     lines = [
-        'register driver PostgreSql org.postgresql.Driver jdbc:postgresql://{HOST}:{PORT}/{DB} "port=5432"',
+        'register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>/<db>?reWriteBatchedInserts=true "port=5432"',
         f'connection my_proxy_test -d PostgreSql -u {user} -p {password} -h {host} -P {port} -D {name}',
         
     ]
