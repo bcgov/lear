@@ -61,6 +61,11 @@ RUN set -eux; \
 RUN mkdir -p /opt/app-root && \
     chmod 755 /opt/app-root
 
+ENV HOME=/opt/app-root
+RUN mkdir -p /opt/app-root/.DBSchema/cli /opt/app-root/.DBSchema/drivers/PostfreSql && \
+    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DBSchema/drivers/PostgreSql/postgresql-42.7.4.jar && \
+    chmod -R g+rwX /opt/app-root/.DbSchema
+
 WORKDIR /opt/app-root
 COPY requirements.txt .
 RUN apt-get update; \

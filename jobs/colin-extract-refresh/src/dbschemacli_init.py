@@ -14,11 +14,9 @@ def write_dbschema_init(cfg: _Config) -> Path:
     
     lines = [
         'register driver PostgreSql org.postgresql.Driver jdbc:postgresql://{HOST}:{PORT}/{DB} "port=5432"',
-        f'connection my_proxy_test PostgreSql "user={user} password={password} host={host} port={port} db={name}"'
+        f'connection my_proxy_test PostgreSql "user={user} password={password} host={host} port={port} db={name}"',
     ]
 
-    init_path.write_text('\n'.join(lines))
+    init_path.write_text('\n'.join(lines) + '\n')
 
     return init_path
-
-

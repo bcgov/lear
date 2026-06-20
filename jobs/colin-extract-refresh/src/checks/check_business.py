@@ -14,10 +14,10 @@ def run_check() -> int:
     TEST = Path(__file__).resolve().parent / 'test_dbschemacli.sql'
     try:
         print(TEST)
-        res = subprocess.run(["dbschemacli", TEST], capture_output=True, text=True, check=True)
+        res = subprocess.run(["dbschemacli", str(TEST)], capture_output=True, text=True, check=True)
         print("Success:", res.stdout)
     except subprocess.CalledProcessError as e:
-        print("Failed:", e.stderr)
+        print("Failed:", e.stderr or e.stdout)
 
     if cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME:
         if not all([cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME, cfg.DB_NAME_COLIN_MIGR, cfg.DB_USER_COLIN_MIGR]):
