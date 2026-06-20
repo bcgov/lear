@@ -9,15 +9,16 @@ def run_check() -> int:
     
     cfg = get_named_config()
     print(f"starting dbschema connection")
-    write_dbschema_init(cfg)
+    inti_path = write_dbschema_init(cfg)
     import subprocess
-    TEST = Path(__file__).resolve().parent / 'test_dbschemacli.sql'
+    test_sql = Path(__file__).resolve().parent / 'test_dbschemacli.sql'
+    run_sql = inti_path.parent / 'run_dbschemacli.sql'
+    run_sql.write_text(inti_path.read_text() + test_sql.read_text())
     try:
-        print(TEST)
-        res = subprocess.run(["dbschemacli", str(TEST)], capture_output=True, text=True, check=True)
+        res = subprocess.run(['dbschemacli', str(run_sql)], capture_output=True, text=True, check=True)
         print("Success:", res.stdout)
     except subprocess.CalledProcessError as e:
-        print("Failed:", e.stderr or e.stdout)
+        print("Failed:", e.stdout or e.stderr)
 
     if cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME:
         if not all([cfg.CLOUDSQL_INSTANCE_CONNECTION_NAME, cfg.DB_NAME_COLIN_MIGR, cfg.DB_USER_COLIN_MIGR]):

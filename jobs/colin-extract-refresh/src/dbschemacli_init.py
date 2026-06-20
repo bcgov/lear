@@ -6,10 +6,10 @@ def write_dbschema_init(cfg: _Config) -> Path:
     init_dir = Path.home() / '.DbSchema' / 'cli'
     init_dir.mkdir(parents=True, exist_ok=True)
     init_path = init_dir / 'init.sql'
-    user = cfg.DB_USER_COLIN_MIGR,
-    password = cfg.DB_PASSWORD_COLIN_MIGR,
-    host = cfg.DB_HOST_COLIN_MIGR,
-    port = int(cfg.DB_PORT_COLIN_MIGR),
+    user = cfg.DB_USER_COLIN_MIGR
+    password = cfg.DB_PASSWORD_COLIN_MIGR
+    host = cfg.DB_HOST_COLIN_MIGR
+    port = int(cfg.DB_PORT_COLIN_MIGR)
     name = cfg.DB_NAME_COLIN_MIGR
     
     lines = [
