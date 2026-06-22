@@ -1,17 +1,17 @@
--- Global transfer of cars* tables from SOURCE Oracle DB (cprd) into TARGET Postgres extract DB (cprd_pg).
--- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (cprd_pg).
+-- Global transfer of cars* tables from SOURCE Oracle DB (ctst) into TARGET Postgres extract DB (ctst_pg).
+-- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (ctst_pg).
 --
 -- These tables are NOT corp-scoped. The full dataset is transferred without filtering.
 -- Volume is low enough that a full refresh is appropriate.
 
-transfer public.carsfile from cprd using
+transfer TARGET_SCHEMA.carsfile from ctst using
 select
     documtid,
     filedate,
     regiracf
 from carsfile;
 
-transfer public.carsbox from cprd using
+transfer TARGET_SCHEMA.carsbox from ctst using
 select
     documtid,
     accesnum,
@@ -19,14 +19,14 @@ select
     boxrracf
 from carsbox;
 
-transfer public.carsrept from cprd using
+transfer TARGET_SCHEMA.carsrept from ctst using
 select
     documtid,
     docutype,
     compnumb
 from carsrept;
 
-transfer public.carindiv from cprd using
+transfer TARGET_SCHEMA.carindiv from ctst using
 select
     documtid,
     replace(surname, CHR(0), '') as surname,
