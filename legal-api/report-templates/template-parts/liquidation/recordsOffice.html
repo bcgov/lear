@@ -3,7 +3,7 @@
   <table class="section-data-table section-data">
     <tr>
       <td>
-        <div class="section-sub-title mb-2">Mailing Address {% if recordsOffice.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</div>
+        <div class="section-sub-title mb-2">Mailing Address {% if recordsOffice.mailingAddress is defined and recordsOffice.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</div>
         {% if recordsOffice.mailingAddress %}
           <div>{{ recordsOffice.mailingAddress.streetAddress }}</div>
           <div>{{ recordsOffice.mailingAddress.streetAddressAdditional }}</div>
@@ -17,7 +17,7 @@
         {% endif %}
       </td>
       <td>
-        <div class="section-sub-title mb-2">Delivery Address {% if recordsOffice.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</div>
+        <div class="section-sub-title mb-2">Delivery Address {% if recordsOffice.deliveryAddress is defined and recordsOffice.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</div>
         {% if recordsOffice.deliveryAddress %}
           <div>{{ recordsOffice.deliveryAddress.streetAddress }}</div>
           <div>{{ recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
