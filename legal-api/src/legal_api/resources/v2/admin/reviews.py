@@ -13,7 +13,6 @@
 # limitations under the License.
 """API endpoints for retrieving review data."""
 from http import HTTPStatus
-from typing import Pattern
 
 from flask import current_app, g, jsonify, request
 from flask_cors import cross_origin
