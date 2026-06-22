@@ -34,7 +34,8 @@ def get_amalg_formatted_jurisdiction(identifier: str, country_code: str, region_
     try:
         country = pycountry.countries.get(alpha_2=country_code)
         region = None
-        if country_code == "CA" and region_code.upper() == "FEDERAL":
+        # NOTE: Region code is being saved as 'FEDERAL' in lear and 'FD' in colin
+        if country_code == "CA" and region_code.upper() in ["FEDERAL", "FD"]:
             return "Federal"
         elif country_code == "CA" and region_code:
             region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
