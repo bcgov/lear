@@ -1642,7 +1642,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
         # we do not display effectiveDate liquidators for intentToLiquidate filing
         if sub_type in {"appointLiquidator", "ceaseLiquidator", "changeAddressLiquidator"}:
-            relationships_at_effective_date = self._get_relationships_at_effective_date(PartyRole.RoleTypes.LIQUIDATOR.value)
+            roles = PartyRole.get_party_roles(
+                self._business.id,
+                self._filing.effective_date,
+                PartyRole.RoleTypes.LIQUIDATOR.value
+            )
+            relationships_at_effective_date = self._map_party_roles_to_relationships_json(roles)
 
             if sub_type in {"appointLiquidator", "ceaseLiquidator"}:
                 filing["relationships"]["effectiveDate"] = {
@@ -1835,16 +1840,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             formatted_rels.append(rel)
 
         return formatted_rels 
-
-
-    def _get_relationships_at_effective_date(self, role: PartyRole.RoleTypes) -> list[dict]:
-        roles = PartyRole.get_party_roles(
-            self._business.id,
-            self._filing.effective_date,
-            role
-        )
-        return self._map_party_roles_to_relationships_json(roles)
-
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
