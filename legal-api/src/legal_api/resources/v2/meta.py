@@ -15,10 +15,12 @@
 
 Currently this only provides API versioning information
 """
+import os
 from importlib.metadata import version
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, current_app, jsonify
 
+from business_model.models import db
 from legal_api.utils.run_version import get_run_version
 from registry_schemas import __version__ as registry_schemas_version
 
@@ -34,3 +36,21 @@ def info():
         API=f"legal_api/{api_version}",
         SCHEMAS=f"registry_schemas/{registry_schemas_version}",
         FrameWork=f"{framework_version}")
+
+
+@bp.route("/health")
+def health():
+    """Health check endpoint that verifies database connectivity."""
+    try:
+        # Simple query to verify DB connection
+        db.session.execute(db.text("SELECT 1"))
+        return jsonify({
+            "status": "healthy",
+            "database": "connected"
+        }), 200
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e)
+        }), 503
