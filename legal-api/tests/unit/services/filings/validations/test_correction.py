@@ -57,6 +57,34 @@ def test_valid_correction(session, app, jwt, test_name, legal_type, identifier, 
     f = copy.deepcopy(correction_filing)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = "CLIENT"
+    if test_name == 'COD':
+        CORRECTION_COD['filing']['correction']['relationships'].append({
+            'entity': {
+                'givenName': 'Phillip Tandy',
+                'familyName': 'Miller',
+                'alternateName': 'Phil Miller'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'roles': [
+                {
+                    'roleType': 'Completing Party'
+                }
+            ]
+        })
 
     with jwt_request_context(app, jwt, [STAFF_ROLE]):
         if err := validate(business, f):

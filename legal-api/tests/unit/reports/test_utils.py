@@ -38,6 +38,11 @@ from legal_api.reports.utils import get_amalg_formatted_jurisdiction
         ('ca-federal-uppercase', 'BC1234567', 'CA', 'FEDERAL', 'Federal'),
         ('ca-federal-lowercase', 'BC1234567', 'CA', 'federal', 'Federal'),
         ('ca-federal-mixedcase', 'BC1234567', 'CA', 'Federal', 'Federal'),
+        # Region code 'FD' is how COLIN stores the Federal jurisdiction (LEAR uses 'FEDERAL').
+        # Both must resolve to "Federal" (we are getting the jurisdiction from colin for expros).
+        ('ca-fd-uppercase', 'A1234567', 'CA', 'FD', 'Federal'),
+        ('ca-fd-lowercase', 'A1234567', 'CA', 'fd', 'Federal'),
+        ('ca-fd-mixedcase', 'A1234567', 'CA', 'Fd', 'Federal'),
         ('us-with-region', 'BC1234567', 'US', 'WA', 'United States'),
         ('us-no-region', 'BC1234567', 'US', None, 'United States'),
         ('gb-no-region', 'BC1234567', 'GB', None, 'United Kingdom'),
