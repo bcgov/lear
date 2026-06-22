@@ -62,7 +62,7 @@ def get_business_user(identifier) -> tuple[DCBusinessUser | None, dict | None, H
 
 
 @bp.route("/<string:identifier>/digitalCredentials/invitation", methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def create_invitation(identifier):
@@ -106,7 +106,7 @@ def create_invitation(identifier):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/connections", methods=["GET", "OPTIONS"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def get_connections(identifier):
@@ -130,7 +130,7 @@ def get_connections(identifier):
 
 @bp.route("/<string:identifier>/digitalCredentials/connections/<string:connection_id>/attest",
           methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def attest_connection(identifier, connection_id):
@@ -149,7 +149,7 @@ def attest_connection(identifier, connection_id):
 
 @bp.route("/<string:identifier>/digitalCredentials/connections/<string:connection_id>",
           methods=["DELETE"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def delete_connection(identifier, connection_id):
@@ -169,7 +169,7 @@ def delete_connection(identifier, connection_id):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/activeConnection", methods=["DELETE"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def delete_active_connection(identifier):
@@ -189,7 +189,7 @@ def delete_active_connection(identifier):
 
 
 @bp.route("/<string:identifier>/digitalCredentials", methods=["GET", "OPTIONS"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def get_credentials(identifier):
@@ -218,7 +218,7 @@ def get_credentials(identifier):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/<string:credential_type>", methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def send_credential(identifier, credential_type):  # noqa: PLR0911
@@ -283,7 +283,7 @@ def send_credential(identifier, credential_type):  # noqa: PLR0911
 
 @bp.route("/<string:identifier>/digitalCredentials/<string:credential_id>/revoke",
           methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def revoke_credential(identifier, credential_id):
@@ -315,7 +315,7 @@ def revoke_credential(identifier, credential_id):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/<string:credential_id>", methods=["DELETE"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 @can_access_digital_credentials
 def delete_credential(identifier, credential_id):
@@ -335,7 +335,7 @@ def delete_credential(identifier, credential_id):
 
 
 @bp_dc.route("/topic/<string:topic_name>", methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""
     json_input = request.get_json()

@@ -26,7 +26,7 @@ from .bp import bp_admin
 
 
 @bp_admin.route("/reviews", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_reviews():
     """Return a list of reviews."""
@@ -104,7 +104,7 @@ def get_mapped_column(submitted_sort_by):
 
 
 @bp_admin.route("/reviews/<int:review_id>", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def save_review(review_id: int):
     """Save review.
@@ -167,7 +167,7 @@ def save_review(review_id: int):
 
 
 @bp_admin.route("/reviews/<int:review_id>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_review(review_id: int):
     """Return specific review."""

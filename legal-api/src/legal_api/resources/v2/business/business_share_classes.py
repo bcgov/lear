@@ -27,7 +27,7 @@ from .bp import bp
 # @cors_preflight('GET,')
 @bp.route("/<string:identifier>/share-classes", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/share-classes/<int:share_class_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 def get_share_class(identifier, share_class_id=None):
     """Return a JSON of the share classes."""

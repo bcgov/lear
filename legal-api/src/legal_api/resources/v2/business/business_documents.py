@@ -32,7 +32,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/documents", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/documents/<string:document_name>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 def get_business_documents(identifier: str, document_name: str | None = None): # noqa: PLR0911
     """Return the business documents."""

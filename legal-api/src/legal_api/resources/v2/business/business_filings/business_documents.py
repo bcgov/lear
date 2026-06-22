@@ -50,7 +50,7 @@ CONTENT_PDF: Final = {"Content-Type": APP_PDF}
 @bp.route(DOCUMENTS_BASE_ROUTE, methods=["GET", "OPTIONS"])
 @bp.route(DOCUMENTS_BASE_ROUTE + "/<string:legal_filing_name>", methods=["GET", "OPTIONS"])
 @bp.route(DOCUMENTS_BASE_ROUTE + "/static/<string:file_key>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                   filing_id: int,
@@ -271,7 +271,7 @@ class RegenerateQueryModel(BaseModel):
 @cors_preflight("POST")
 @bp.route("/<string:identifier>/documents/regenerate", methods=["POST", "OPTIONS"])
 @bp.route(DOCUMENTS_BASE_ROUTE + "/regenerate", methods=["POST", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.system])
 @pydantic_validate()
 def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id: int | None = None):

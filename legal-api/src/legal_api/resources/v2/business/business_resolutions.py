@@ -26,7 +26,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/resolutions", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/resolutions/<int:resolution_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 def get_resolutions(identifier, resolution_id=None):
     """Return a JSON of the resolutions."""

@@ -30,7 +30,7 @@ bp = Blueprint("NAMEREQUEST2", __name__, url_prefix="/api/v2/nameRequests")
 
 
 @bp.route("/<string:identifier>/validate", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 def validate_with_contact_info(identifier): # noqa: PLR0911
     """Return a JSON object with name request information."""

@@ -26,7 +26,7 @@ from .bp import bp_admin
 
 
 @bp_admin.route("/dissolutions/statistics", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_statistics():
     """Return a JSON object with statistic information."""

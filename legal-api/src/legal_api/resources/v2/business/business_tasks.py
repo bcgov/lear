@@ -35,7 +35,7 @@ from .bp import bp
 
 
 @bp.route("/<string:identifier>/tasks", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin(origins="*")
 @jwt.requires_auth
 def get_tasks(identifier):
     """Return a JSON object with meta information about the Service."""
