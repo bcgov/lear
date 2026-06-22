@@ -31,7 +31,7 @@ from .bp import bp
 
 
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["PUT", "PATCH", "DELETE"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def not_allowed_filing_comments(identifier, filing_id, comment_id=None):  # pylint: disable=W0613; matching signature
     """Block the redirect of the versioned API calls."""
@@ -40,7 +40,7 @@ def not_allowed_filing_comments(identifier, filing_id, comment_id=None):  # pyli
 
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments", methods=["GET"])
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["GET"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def get_filing_comments(identifier, filing_id, comment_id=None):
     """Return a JSON object with meta information about the Service."""
@@ -67,7 +67,7 @@ def get_filing_comments(identifier, filing_id, comment_id=None):
 
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments", methods=["POST"])
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["POST"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def post_filing_comments(identifier, filing_id):
     """Create a new comment for the filing."""

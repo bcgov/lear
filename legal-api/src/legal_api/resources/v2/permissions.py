@@ -24,7 +24,7 @@ bp = Blueprint("PERMISSIONS2", __name__, url_prefix="/api/v2/permissions")
 
 
 @bp.route("", methods=["GET"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def get_permissions():
     """Return a list of authorized permissions for the user."""

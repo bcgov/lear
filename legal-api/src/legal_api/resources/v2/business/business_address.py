@@ -29,7 +29,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/addresses", methods=["GET", "OPTIONS"], strict_slashes=False)
 @bp.route("/<string:identifier>/addresses/<int:addresses_id>", methods=["GET", "OPTIONS"], strict_slashes=False)
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def get_addresses(identifier, addresses_id=None):
     """Return a JSON of the addresses on file."""

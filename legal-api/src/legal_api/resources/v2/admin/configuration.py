@@ -25,7 +25,7 @@ from .bp import bp_admin
 
 
 @bp_admin.route("/configurations", methods=["GET"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_configurations():
     """Return a list of configurations, optionally filtered by names."""
@@ -50,7 +50,7 @@ def get_configurations():
 
 
 @bp_admin.route("/configurations", methods=["PUT"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.staff])
 def update_configurations():
     """Update the configurations."""

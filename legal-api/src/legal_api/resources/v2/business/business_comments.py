@@ -33,7 +33,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/comments", methods=["GET"])
 @bp.route("/<string:identifier>/comments/<int:comment_id>", methods=["GET"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def get_comments(identifier, comment_id=None):
     """Return a JSON object with meta information about the Service."""
@@ -64,7 +64,7 @@ def get_comments(identifier, comment_id=None):
 
 
 @bp.route("/<string:identifier>/comments", methods=["POST"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def post_comments(identifier):
     """Create a new comment for the business."""

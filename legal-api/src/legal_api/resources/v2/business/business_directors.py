@@ -27,7 +27,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/directors", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/directors/<int:director_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.requires_auth
 def get_directors(identifier, director_id=None):
     """Return a JSON of the directors."""
