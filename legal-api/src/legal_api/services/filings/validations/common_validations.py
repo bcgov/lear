@@ -30,7 +30,6 @@ from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
-from business_model.models.configuration import EMAIL_PATTERN
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.services import MinioService, colin, flags, namex
