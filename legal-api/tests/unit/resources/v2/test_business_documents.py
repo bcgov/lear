@@ -19,10 +19,10 @@ Test-Suite to ensure that the /businesses../summary endpoint works as expected.
 import copy
 from flask import current_app
 from http import HTTPStatus
-from legal_api.models.business import Business
+
 
 from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
-from legal_api.models.document import Document, DocumentType
+from business_model.models.document import Document, DocumentType
 from tests import integration_reports
 from tests.unit.models import factory_business, factory_completed_filing, factory_incorporation_filing
 from tests.unit.services.utils import create_header
@@ -286,7 +286,7 @@ def test_get_business_summary_involuntary_dissolution(requests_mock, session, cl
         lambda flag: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else {}
     )
     # mock the meta_data property
-    with patch('legal_api.models.Filing.meta_data', new_callable=PropertyMock) as mock_meta_data:
+    with patch('business_model.models.Filing.meta_data', new_callable=PropertyMock) as mock_meta_data:
         mock_meta_data.return_value = {
             'dissolution': {
                 'dissolutionType': 'involuntary',

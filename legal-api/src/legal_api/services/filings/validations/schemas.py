@@ -13,14 +13,13 @@
 # limitations under the License
 """Filings are legal documents that alter the state of a business."""
 from http import HTTPStatus
-from typing import Optional
 
 from legal_api.errors import Error
 from legal_api.schemas import rsbc_schemas
 from legal_api.utils.util import build_schema_error_response, filter_validation_errors
 
 
-def validate_against_schema(json_data: Optional[dict] = None) -> Error:
+def validate_against_schema(json_data: dict | None = None) -> Error:
     """Validate against the filing schema.
 
     Returns:

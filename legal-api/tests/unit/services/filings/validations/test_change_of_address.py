@@ -20,7 +20,7 @@ from http import HTTPStatus
 from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER
 
 from legal_api.errors import Error
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings.validations.validation import validate
 
 from tests.unit.models import factory_business

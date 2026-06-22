@@ -16,9 +16,8 @@
 Provides all the search and retrieval from the business filings datastore.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
-from typing import Optional
 
 import datedelta
 import requests
@@ -26,11 +25,11 @@ from flask import current_app, jsonify
 from flask_cors import cross_origin
 from requests import exceptions
 
-from legal_api.models import Business, Filing
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, Filing
 from legal_api.services import check_warnings, namex
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
@@ -163,8 +162,8 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
 
         start_year = next_ar_year
-        while next_ar_year <= datetime.utcnow().year and ar_min_date <= datetime.utcnow().date():
-            # while next_ar_year <= datetime.utcnow().date():
+        while next_ar_year <= datetime.now(UTC).year and ar_min_date <= datetime.now(UTC).date():
+            # while next_ar_year <= datetime.now(UTC).date():
             enabled = not pending_filings and ar_min_date.year == start_year
             tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
 
@@ -201,7 +200,7 @@ def construct_task_list(business: Business):  # noqa: PLR0915
     return tasks
 
 
-def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: Optional[str] = None):
+def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: str | None = None):
     """Add Transparency Register tasks to the tasks list."""
     entity_types_no_tr = ["SP", "GP", "CP"]
     tr_required = business.state != Business.State.HISTORICAL.value and business.legal_type not in entity_types_no_tr
@@ -340,7 +339,7 @@ def _bump_task_order(tasks: list, bump_start_point: int) -> list:
 
 
 def _add_tr_task(tasks: list, order: int, enabled: bool,  # noqa: PLR0913
-                 business: Business, sub_type: str, due_date: datetime, year: Optional[int] = None):
+                 business: Business, sub_type: str, due_date: datetime, year: int | None = None):
     """Add a TR task to the list of tasks in the correct order."""
     tr_order = _find_task_order_for_tr(tasks, order, sub_type, year)
     # bump the order of all the tasks after the tr by 1
@@ -426,7 +425,7 @@ def create_transition_todo(business, order, enabled):
 
 
 def create_tr_todo(business: Business, order: int, enabled: bool,  # noqa: PLR0913
-                   sub_type: str, due_date: datetime, year: Optional[int] = None):
+                   sub_type: str, due_date: datetime, year: int | None = None):
     """Return a to-do JSON object for a Tranparency Register todo item."""
     return {
         "task": {

@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import NaicsStructure
+from business_model.models import NaicsStructure
 from legal_api.utils.auth import jwt
 
 bp = Blueprint("NAICS2", __name__, url_prefix="/api/v2/naics")

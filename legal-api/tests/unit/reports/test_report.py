@@ -15,13 +15,20 @@
 """Test-Suite to ensure that the Report class is working as expected."""
 import copy
 from contextlib import suppress
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
+from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 from flask import current_app
-from http import HTTPStatus
+
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, db
+from business_model.models.db import VersioningProxy
+from legal_api.exceptions import BusinessException
+from legal_api.reports.document_service import DocumentService
+from legal_api.reports.report import Report
 from registry_schemas.example_data import (
     AGM_LOCATION_CHANGE,
     ALTERATION_FILING_TEMPLATE,
@@ -40,14 +47,6 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
-
-from legal_api.exceptions import BusinessException
-from legal_api.models import Business, db  # noqa:I001
-from legal_api.models.db import VersioningProxy
-from legal_api.reports.document_service import DocumentService
-from legal_api.reports.report import Report  # noqa:I001
-from legal_api.services import VersionedBusinessDetailsService  # noqa:I001
-from legal_api.utils.legislation_datetime import LegislationDatetime
 from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing  # noqa:E501,I001
 
 
@@ -211,6 +210,87 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     assert template
 
 
+def test_set_directors_flags_address_changed_without_officer_id(session, mocker):
+    """Assert addressChanged flags are set using previous filing lookup by name."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+
+    previous_filing_json = copy.deepcopy(FILING_HEADER)
+    previous_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    previous_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    previous_filing_json['filing']['business']['legalType'] = 'BC'
+    previous_filing_json['filing']['changeOfDirectors'] = {'directors': []}
+    factory_completed_filing(business, previous_filing_json, filing_date=datetime(2020, 1, 1))
+
+    current_filing_json = copy.deepcopy(FILING_HEADER)
+    current_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    current_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    current_filing_json['filing']['business']['legalType'] = 'BC'
+    current_filing_json['filing']['changeOfDirectors'] = {
+        'directors': [
+            {
+                'officer': {
+                    'firstName': 'Jane',
+                    'middleInitial': 'A',
+                    'lastName': 'Smith'
+                },
+                'actions': ['addressChanged'],
+                'mailingAddress': {
+                    'streetAddress': 'New Mailing Street',
+                    'addressCity': 'Victoria',
+                    'addressRegion': 'BC',
+                    'addressCountry': 'CA',
+                    'postalCode': 'V8W1P6'
+                },
+                'deliveryAddress': {
+                    'streetAddress': 'New Delivery Street',
+                    'addressCity': 'Victoria',
+                    'addressRegion': 'BC',
+                    'addressCountry': 'CA',
+                    'postalCode': 'V8W1P7'
+                }
+            }
+        ]
+    }
+    filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2020, 1, 2))
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'changeOfDirectors'
+
+    previous_director = {
+        'id': '123',
+        'officer': {
+            'firstName': 'Jane',
+            'middleInitial': 'A',
+            'lastName': 'Smith'
+        },
+        'cessationDate': None
+    }
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_role_revision', return_value=[previous_director])
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=object())
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json', return_value={
+        'mailingAddress': {
+            'streetAddress': 'Old Mailing Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P5'
+        },
+        'deliveryAddress': {
+            'streetAddress': 'Old Delivery Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P4'
+        }
+    })
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    assert director['mailingAddress']['changed'] is True
+    assert director['deliveryAddress']['changed'] is True
+
+
 def test_alteration_name_change(session, monkeypatch):
     """Assert alteration name change filings can be returned as a PDF."""
     # Create a mock flags object with is_on method
@@ -369,7 +449,7 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     test_business = factory_business(identifier=identifier, entity_type=entity_type)
     
     # file a FE filing
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
     withdrawn_json = copy.deepcopy(FILING_HEADER)
@@ -400,16 +480,14 @@ def test_notice_of_withdraw_format_data(session, test_name, identifier, entity_t
     assert formatted_now_json['noticeOfWithdrawal']['filingId'] == withdrawn_filing_id
 
 
-def test_document_service_not_create_document(session, mock_doc_service, mocker):
-    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
+def test_document_service_not_create_document(session, mock_doc_service, mock_bearer_token):
     filing = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     report = create_report(identifier='BC9999999', entity_type='BC', report_type='annualReport',
                            filing_type='incorporationApplication', template=filing)
     assert report
     document_service = DocumentService()
     try:
-        document_service.get_document('BC9999999',
-                                      report._filing.id,
+        document_service.get_document(report._filing.id,
                                       'annualReport',
                                       '3113')
         # Expectation is that the above call SHOULD fail in this case as document was not created

@@ -116,6 +116,7 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
     curr_roles = len(business.party_roles.all())
 
     business.dissolution_date = None
+    business.in_liquidation = True
     business_id = business.id
 
     filing_meta = FilingMeta()
@@ -150,6 +151,7 @@ def test_dissolution(app, session, legal_type, identifier, dissolution_type):
     assert business.state_filing_id == filing.id
     assert len(business.party_roles.all()) == 2
     assert len(filing.filing_party_roles.all()) == 1
+    assert not business.in_liquidation
 
     if business.legal_type == Business.LegalTypes.COOP.value:
         documents = business.documents.all()

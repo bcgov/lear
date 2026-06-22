@@ -14,18 +14,19 @@
 
 # pylint: disable=too-many-lines
 """This manages all of the authentication and authorization service."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from http import HTTPStatus
-from typing import Optional
 
 from flask import Response, current_app, request
+from flask.globals import request_ctx
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, Filing
 from flask_jwt_oidc import JwtManager
-from legal_api.models import Business, Filing
 from legal_api.services import flags
 from legal_api.services.cache import cache
 from legal_api.services.digital_credentials_auth import (
@@ -34,7 +35,6 @@ from legal_api.services.digital_credentials_auth import (
 )
 from legal_api.services.request_context import get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 SYSTEM_ROLE = "system"
 SBC_STAFF_ROLE = "sbc_staff"
@@ -112,22 +112,22 @@ def authorized(  # noqa: PLR0911
     if not action or not identifier or not jwt:
         return False
 
-    if jwt.validate_roles([STAFF_ROLE]) \
-            or jwt.validate_roles([SYSTEM_ROLE]) \
-            or jwt.validate_roles([COLIN_SVC_ROLE]):
+    if jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]) \
+            or jwt.validate_roles(request_ctx.current_user, [SYSTEM_ROLE]) \
+            or jwt.validate_roles(request_ctx.current_user, [COLIN_SVC_ROLE]):
         return True
 
     # Temporary, until granular permission in authorized_role_permissions table is implemented
-    if (jwt.validate_roles([MAXIMUS_STAFF_ROLE]) or
-        jwt.validate_roles([SBC_STAFF_ROLE]) or
-            jwt.validate_roles([CONTACT_CENTRE_STAFF_ROLE])):
+    if (jwt.validate_roles(request_ctx.current_user, [MAXIMUS_STAFF_ROLE]) or
+        jwt.validate_roles(request_ctx.current_user, [SBC_STAFF_ROLE]) or
+            jwt.validate_roles(request_ctx.current_user, [CONTACT_CENTRE_STAFF_ROLE])):
         return True
 
     # allow IDIM and Competent Authorities view access on everything
     if (
         len(action) == 1 and action[0] == "view" and
         (
-            jwt.validate_roles([ACCOUNT_IDENTITY]) or
+            jwt.validate_roles(request_ctx.current_user, [ACCOUNT_IDENTITY]) or
             has_product("CA_SEARCH", jwt.get_token_auth_header())
         )
     ):
@@ -152,7 +152,7 @@ def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
 
     Assumes the JWT is already validated.
     """
-    return bool(jwt.validate_roles(roles))
+    return bool(jwt.validate_roles(request_ctx.current_user, roles))
 
 
 def get_allowable_filings_dict(is_authorization: bool = False):
@@ -704,7 +704,7 @@ def is_allowed(business: Business, # noqa: PLR0913
                filing_type: str,
                legal_type: str,
                jwt: JwtManager,
-               sub_filing_type: Optional[str] = None,
+               sub_filing_type: str | None = None,
                filing: Filing = None):
     """Is allowed to do filing."""
     is_ignore_draft_blockers = False
@@ -780,7 +780,7 @@ def get_could_file(legal_type: str,
     from legal_api.core.meta import FilingMeta
 
     user_role = "general"
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+    if jwt.contains_role(request_ctx.current_user, [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = "staff"
 
     bs_state = getattr(Business.State, state, "")
@@ -831,7 +831,7 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
     from legal_api.core.meta import FilingMeta
 
     user_role = "general"
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+    if jwt.contains_role(request_ctx.current_user, [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = "staff"
 
     state_filing = None
@@ -1076,7 +1076,7 @@ def has_blocker_future_effective_filing(business: Business, blocker_checks: dict
                                                        [Filing.Status.PENDING.value, Filing.Status.PAID.value],
                                                        True)
 
-    now = datetime.utcnow().replace(tzinfo=timezone.utc)
+    now = datetime.now(UTC)
     is_fed = any(f.effective_date > now for f in pending_filings)
 
     return is_fed
@@ -1134,7 +1134,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
     if any(blocker_filing_matches):
         return True
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     paid_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
     return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
@@ -1142,7 +1142,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
     """Get allowed type of filing types for the current user."""
     user_role = "general"
-    if jwt.contains_role([STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
+    if jwt.contains_role(request_ctx.current_user, [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE]):
         user_role = "staff"
 
     allowable_filings = get_allowable_filings_dict().get(user_role, {}).get(state, {})
@@ -1163,8 +1163,8 @@ def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):
 
 
 def add_allowable_filing_type(is_allowable: bool = False,
-                              allowable_filing_types: Optional[list] = None,
-                              allowable_filing_type: Optional[dict] = None):
+                              allowable_filing_types: list | None = None,
+                              allowable_filing_type: dict | None = None):
     """Append allowable filing type."""
     if is_allowable:
         allowable_filing_types.append(allowable_filing_type)
@@ -1172,13 +1172,13 @@ def add_allowable_filing_type(is_allowable: bool = False,
     return allowable_filing_types
 
 
-def get_account_id(_, account_id: Optional[str] = None) -> str:
+def get_account_id(_, account_id: str | None = None) -> str:
     """Return the account id."""
     return account_id or request.headers.get("Account-Id", None)
 
 
 @cache.cached(timeout=600, make_cache_key=get_account_id, cache_none=True)
-def get_account_products(token: str, account_id: Optional[str] = None) -> list:
+def get_account_products(token: str, account_id: str | None = None) -> list:
     """Return the account products of the org identified by the account id."""
     account_id = account_id or request.headers.get("Account-Id", None)
     resp = _call_auth_api(f"orgs/{account_id}/products?include_hidden=true", token)

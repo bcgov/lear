@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 import copy
 import json
 import random
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
 from unittest.mock import patch
@@ -29,8 +29,26 @@ import pytest
 from dateutil.parser import parse
 from flask import current_app
 from minio.error import S3Error
-from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE, RESTORATION
 from reportlab.lib.pagesizes import letter
+
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import (
+    Address,
+    Batch,
+    Business,
+    Filing,
+    PartyRole,
+    RegistrationBootstrap,
+    Review,
+    ReviewResult,
+    ReviewStatus,
+    User,
+    UserRoles,
+)
+from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
+from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
+from legal_api.services.bootstrap import RegistrationBootstrapService
+from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
@@ -58,26 +76,7 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE
 )
-
-from legal_api.models import (
-    Address,
-    Batch,
-    BatchProcessing,
-    Business,
-    Filing,
-    PartyRole,
-    RegistrationBootstrap,
-    Review,
-    ReviewResult,
-    ReviewStatus,
-    User,
-    UserRoles,
-)
-from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
-from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
-from legal_api.services.bootstrap import RegistrationBootstrapService
-from legal_api.services.minio import MinioService
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE, RESTORATION
 from tests import integration_payment
 from tests.unit.models import (  # noqa:E501,I001
     factory_batch,
@@ -145,7 +144,7 @@ def test_get_withdrawn_temp_business_filing(app, session, client, requests_mock,
     user = factory_user('idir/staff-person')
 
     # set-up withdrawn boostrap FE filing
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
 
@@ -162,7 +161,7 @@ def test_get_withdrawn_temp_business_filing(app, session, client, requests_mock,
     new_business_filing = factory_pending_filing(None, json_data)
     new_business_filing.temp_reg = identifier
     new_business_filing.effective_date = future_effective_date
-    new_business_filing.payment_completion_date = datetime.utcnow().isoformat()
+    new_business_filing.payment_completion_date = datetime.now(UTC).isoformat()
     new_business_filing._status = Filing.Status.PAID.value
     new_business_filing.skip_status_listener = True
     new_business_filing.save()
@@ -494,15 +493,15 @@ def test_post_only_validate_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier,
-                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
+                     founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                     last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
                      json=ar,
@@ -517,15 +516,15 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier,
-                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date(),
-                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2))  # founding date = 2 years ago
+                     last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date(),
+                     founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2))  # founding date = 2 years ago
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
                      json=ar,
@@ -588,15 +587,15 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier,
-                     founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                     last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date())
+                     founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                     last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
     ar['filing']['header']['routingSlipNumber'] = '123131332'
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
@@ -637,15 +636,15 @@ def test_post_cod_with_empty_directors_array(session, client, jwt, only_validate
 @integration_payment
 def test_post_valid_ar(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ar,
@@ -667,11 +666,11 @@ def test_post_valid_ar(session, client, jwt):
 @integration_payment
 def test_payment_header(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     payment_account = '12345'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     data = copy.deepcopy(FILING_HEADER)
@@ -696,15 +695,15 @@ def test_payment_header(session, client, jwt):
 @integration_payment
 def test_cancel_payment_for_pending_filing(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ar,
@@ -734,15 +733,15 @@ def test_cancel_payment_for_pending_filing(session, client, jwt):
 @integration_payment
 def test_post_valid_ar_with_routing_slip(session, client, jwt):
     """Assert that a filing can be completed up to payment."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
     ar['filing']['header']['routingSlipNumber'] = '123131332'
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
@@ -766,16 +765,16 @@ def test_post_valid_ar_failed_payment(monkeypatch, session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                                last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date()
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
     ar['filing']['business']['identifier'] = 'CP7654321'
     ar['filing']['business']['legalType'] = Business.LegalTypes.COOP.value
 
@@ -798,12 +797,12 @@ def test_cancel_payment_failed_connection_pay_api(monkeypatch, session, client, 
     """Assert that cancel payment failure returns error."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ar,
@@ -837,15 +836,15 @@ def test_update_annual_report_to_a_business(session, client, jwt):
     """Assert that a filing can be updated if not paid."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['header']['date'] = (datetime.utcnow().date() - datedelta.MONTH).isoformat()
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = (datetime.now(UTC).date() - datedelta.MONTH).isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
     filings = factory_filing(business, ar)
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = datetime.now(UTC).date().isoformat()
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}',
                     json=ar,
@@ -867,12 +866,12 @@ def test_payment_failed(session, client, jwt):
     """Assert that a failed call to a BCOL payment returns an error code and message."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     old_svc = current_app.config.get('PAYMENT_SVC_URL')
     current_app.config['PAYMENT_SVC_URL'] = old_svc + '?__code=400'
@@ -926,7 +925,7 @@ def test_delete_filing_in_draft(session, client, jwt):
 def test_delete_draft_now_filing(session, client, jwt):
     """Assert that when a NoW from a temporary business is deleted, the business is unlinked and not deleted."""
     # set-up withdrawn boostrap FE filing
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
 
@@ -944,7 +943,7 @@ def test_delete_draft_now_filing(session, client, jwt):
     temp_filing = factory_pending_filing(None, json_data)
     temp_filing.temp_reg = identifier
     temp_filing.effective_date = future_effective_date
-    temp_filing.payment_completion_date = datetime.utcnow().isoformat()
+    temp_filing.payment_completion_date = datetime.now(UTC).isoformat()
     temp_filing._status = Filing.Status.DRAFT.value
     temp_filing.skip_status_listener = True
     temp_filing.save()
@@ -1111,12 +1110,12 @@ def test_delete_filing_block_completed(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     filings = factory_completed_filing(business, ar)
 
@@ -1210,16 +1209,16 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                                last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date()
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
-    if annual_report_date > datetime.utcnow().date():
-        annual_report_date = datetime.utcnow().date()
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
+    if annual_report_date > datetime.now(UTC).date():
+        annual_report_date = datetime.now(UTC).date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     filings = factory_completed_filing(business, ar)
 
@@ -1236,12 +1235,12 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
     import copy
     identifier = 'CP7654321'
     business = factory_business(identifier,
-                                founding_date=(datetime.utcnow() - datedelta.YEAR)
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     filings = factory_completed_filing(business, ar)
     identifier = 'CP0000001'
@@ -1279,16 +1278,16 @@ def test_file_ar_no_agm_coop(session, client, jwt):
     """Assert that filing AR as COOP with no AGM date fails."""
     identifier = 'CP7654399'
     b = business = factory_business(identifier,
-                                    founding_date=(datetime.utcnow() - datedelta.datedelta(years=2)),
-                                    last_ar_date=datetime(datetime.utcnow().year - 1, 4, 20).date()
+                                    founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                                    last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date()
                                     )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    annual_report_date = datetime(datetime.utcnow().year, 2, 20).date()
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
     ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['header']['date'] = datetime.now(UTC).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ar,
@@ -1304,11 +1303,11 @@ def test_file_ar_no_agm_coop(session, client, jwt):
 def test_file_ar_no_agm_bcorp(session, client, jwt):
     """Assert that filing AR as BCORP with no AGM date succeeds."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, 'B')
     factory_business_mailing_address(b)
     ar = copy.deepcopy(ANNUAL_REPORT)
-    ar['filing']['annualReport']['annualReportDate'] = datetime.utcnow().date().isoformat()
-    ar['filing']['header']['date'] = datetime.utcnow().date().isoformat()
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['header']['date'] = datetime.now(UTC).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = None
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ar,
@@ -1321,9 +1320,9 @@ def test_file_ar_no_agm_bcorp(session, client, jwt):
 def test_calc_annual_report_date(session, client, jwt):
     """Assert that nextAnnualReport is the anniversary of the business recognition."""
     identifier = 'CP7654399'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, 'B')
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, 'B')
     factory_business_mailing_address(b)
-    assert b.next_anniversary.date().isoformat() == datetime.utcnow().date().isoformat()
+    assert b.next_anniversary.date().isoformat() == datetime.now(UTC).date().isoformat()
 
 
 DISSOLUTION_VOLUNTARY_FILING = copy.deepcopy(FILING_HEADER)
@@ -1539,7 +1538,7 @@ def test_coa_future_effective(session, client, jwt):
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None)
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None)
     factory_business_mailing_address(b)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=coa,
@@ -1549,7 +1548,7 @@ def test_coa_future_effective(session, client, jwt):
     # assert 'effectiveDate' not in rv.json['filing']['header']
 
     identifier = 'CP7654321'
-    bc = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
+    bc = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
     factory_business_mailing_address(bc)
     coa['filing']['business']['identifier'] = identifier
 
@@ -1594,7 +1593,7 @@ def test_filing_redaction(app, session, client, requests_mock, jwt, test_name, s
                     'resolution': 'Year challenge is hitting oppo for the win.'
                 }}}
         user = factory_user(username)
-        business = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
+        business = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, Business.LegalTypes.BCOMP.value)
         filing.json = filing_submission
         filing.save()
         filing._storage.business_id = business.id
@@ -1635,7 +1634,7 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
     coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
 
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR), None, legal_type)
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, legal_type)
     factory_business_mailing_address(b)
     coa['filing']['business']['identifier'] = identifier
 
@@ -1671,7 +1670,7 @@ def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
                  return_value=[])
 
     identifier = 'CP1234567'
-    b = factory_business(identifier, (datetime.utcnow() - datedelta.YEAR * 10), None, Business.LegalTypes.COOP.value)
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR * 10), None, Business.LegalTypes.COOP.value)
     factory_business_mailing_address(b)
     sr = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
     del sr['filing']['changeOfName']
@@ -1868,7 +1867,7 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
 )
 def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type, filing_type, filing_json, is_temp):
     """Assert that notice of withdrawal for new business filings can be filed"""
-    today = datetime.utcnow().date()
+    today = datetime.now(UTC).date()
     future_effective_date = today + timedelta(days=5)
     future_effective_date = future_effective_date.isoformat()
     # create a FE new business filing
@@ -1886,13 +1885,13 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
         new_business_filing = factory_pending_filing(None, json_data)
         new_business_filing.temp_reg = identifier
         new_business_filing.effective_date = future_effective_date
-        new_business_filing.payment_completion_date = datetime.utcnow().isoformat()
+        new_business_filing.payment_completion_date = datetime.now(UTC).isoformat()
         new_business_filing.save()
         withdrawn_filing_id = new_business_filing.id
     # create a regular business and file a FE filing
     else:
         identifier = 'BC1234567'
-        founding_date = datetime.utcnow() - timedelta(days=5)
+        founding_date = datetime.now(UTC) - timedelta(days=5)
         business = factory_business(identifier=identifier, founding_date=founding_date, entity_type=legal_type)
         filing_data_reg_business = copy.deepcopy(FILING_HEADER)
         filing_data_reg_business['filing']['header']['name'] = filing_type
@@ -1902,7 +1901,7 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
         filing_data_reg_business['filing'][filing_type] = fe_filing_json
         fe_filing = factory_pending_filing(business, filing_data_reg_business)
         fe_filing.effective_date = future_effective_date
-        fe_filing.payment_completion_date = datetime.utcnow().isoformat()
+        fe_filing.payment_completion_date = datetime.now(UTC).isoformat()
         fe_filing.save()
         withdrawn_filing_id = fe_filing.id
 

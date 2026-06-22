@@ -29,9 +29,9 @@ from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     AMALGAMATION_OUT,
     ANNUAL_REPORT,
-    APPOINT_RECEIVER,
-    CEASE_RECEIVER,
+    CHANGE_OF_RECEIVERS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_REGISTRATION,
     CONSENT_AMALGAMATION_OUT,
     CONSENT_CONTINUATION_OUT,
@@ -46,7 +46,6 @@ from registry_schemas.example_data import (
     FILING_HEADER,
     FILING_TEMPLATE,
     INCORPORATION_FILING_TEMPLATE,
-    INTENT_TO_LIQUIDATE,
     NOTICE_OF_WITHDRAWAL,
     REGISTRATION,
     RESTORATION,
@@ -775,11 +774,11 @@ def prep_intent_to_liquidate_filing(session, identifier, payment_id, legal_type,
     """Return a new intent to liquidate filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'intentToLiquidate'
+    filing_template['filing']['header']['name'] = 'changeOfLiquidators'
     if submitter_role:
         filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
 
-    filing_template['filing']['intentToLiquidate'] = copy.deepcopy(INTENT_TO_LIQUIDATE)
+    filing_template['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
     # Override liquidation date to be after founding date
     future_date = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
     filing_template['filing']['intentToLiquidate']['dateOfCommencementOfLiquidation'] = future_date
@@ -814,9 +813,9 @@ def prep_cease_receiver_filing(identifier, payment_id, legal_type, legal_name):
     """Return a new Cease Receiver filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'ceaseReceiver'
-
-    filing_template['filing']['ceaseReceiver'] = copy.deepcopy(CEASE_RECEIVER)
+    filing_template['filing']['header']['name'] = 'changeOfReceivers'
+    filing_template['filing']['changeOfReceivers'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
+    filing_template['filing']['changeOfReceivers']['type'] = 'ceaseReceiver'
     filing_template['filing']['business'] = {
         'identifier': business.identifier,
         'legalType': legal_type,
@@ -840,9 +839,9 @@ def prep_appoint_receiver_filing(identifier, payment_id, legal_type, legal_name)
     """Return a new Appoint Receiver filing prepped for email notification."""
     business = create_business(identifier, legal_type, legal_name)
     filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'appointReceiver'
+    filing_template['filing']['header']['name'] = 'changeOfReceivers'
 
-    filing_template['filing']['appointReceiver'] = copy.deepcopy(APPOINT_RECEIVER)
+    filing_template['filing']['appointReceiver'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
     filing_template['filing']['business'] = {
         'identifier': business.identifier,
         'legalType': legal_type,

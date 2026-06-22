@@ -19,7 +19,7 @@ from unittest.mock import patch
 import pytest
 from registry_schemas.example_data import CONVERSION_FILING_TEMPLATE, FIRMS_CONVERSION
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.conversion import validate
 from tests.unit.models import factory_business

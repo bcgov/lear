@@ -13,17 +13,17 @@
 # limitations under the License.
 """Validation for the Put Back Off filing."""
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
+from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.models import Business
 from legal_api.services.filings.validations.common_validations import validate_court_order
-from legal_api.services.utils import get_str  # noqa: I003; needed as the linter gets confused from the babel override.
+from legal_api.services.utils import get_str
 
 
-def validate(business: Business, put_back_off: dict) -> Optional[Error]:
+def validate(business: Business, put_back_off: dict) -> Error | None:
     """Validate the Court Order filing."""
     if not business or not put_back_off:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])

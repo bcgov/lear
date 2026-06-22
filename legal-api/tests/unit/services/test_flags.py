@@ -16,9 +16,12 @@
 Test-Suite to ensure that the Flag Service is working as expected.
 """
 import pytest
+from unittest.mock import patch
+
 from flask import Flask
 
-from legal_api.models import User
+from business_model.models import User
+from legal_api import flags
 from legal_api.services import Flags
 
 
@@ -84,18 +87,12 @@ def test_flags_bool(ld):
 
 def test_flags_bool_missing_flag(app):
     """Assert that a boolean (False) is returned when flag doesn't exist, when using the local Flag.json file."""
-    from legal_api import flags
-    app_env = app.env
     try:
-        with app.app_context():
-            flag_on = flags.is_on('no flag here')
-
+        flag_on = flags.is_on('no flag here')
         assert not flag_on
     except:  # pylint: disable=bare-except; # noqa: B901, E722
         # for tests we don't care
         assert False
-    finally:
-        app.env = app_env
 
 
 @pytest.mark.parametrize('test_name,flag_name,expected', [
@@ -105,10 +102,7 @@ def test_flags_bool_missing_flag(app):
 ])
 def test_flags_bool_value(app, test_name, flag_name, expected):
     """Assert that a boolean (True) is returned, when using the local Flag.json file."""
-    from legal_api import flags
-
-    with app.app_context():
-        val = flags.value(flag_name)
+    val = flags.value(flag_name)
 
     assert val == expected
 
@@ -119,8 +113,6 @@ def test_flag_bool_unique_user(ld):
     app.config['LD_SDK_KEY'] = 'https://no.flag/avail'
 
     user = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
-
-    app_env = app.env
     try:
         with app.app_context():
             flags = Flags()
@@ -133,8 +125,6 @@ def test_flag_bool_unique_user(ld):
     except:  # pylint: disable=bare-except; # noqa: B901, E722
         # for tests we don't care
         assert False
-    finally:
-        app.env = app_env
 
 
 def test_flags_is_on_client_none():
@@ -161,8 +151,6 @@ def test_flags_value_client_none():
 
 def test_flags_is_on_client_not_initialized(ld):
     """Assert that is_on returns False when client is not initialized."""
-    from unittest.mock import patch
-
     app = Flask(__name__)
 
     with app.app_context():
@@ -176,8 +164,6 @@ def test_flags_is_on_client_not_initialized(ld):
 
 def test_flags_value_client_not_initialized(ld):
     """Assert that value returns None when client is not initialized."""
-    from unittest.mock import patch
-
     app = Flask(__name__)
 
     with app.app_context():
@@ -191,8 +177,6 @@ def test_flags_value_client_not_initialized(ld):
 
 def test_flags_value_error_returns_none(ld):
     """Assert that value returns None on exception, not False."""
-    from unittest.mock import patch
-
     app = Flask(__name__)
 
     with app.app_context():

@@ -42,15 +42,13 @@ from tests.unit import (
     prep_incorp_filing,
     prep_maintenance_filing,
 )
+from tests.unit.helpers import make_future_effective, make_non_future_effective
 
-@pytest.mark.parametrize('option', [
-    ('PAID'),
-    ('COMPLETED'),
-])
-def test_process_incorp_email(app, session, mocker, option):
-    """Assert that an INCORP email msg is processed correctly."""
+
+def test_process_incorp_email_completed(app, session, mocker):
+    """Assert that an INCORP COMPLETED email is sent with the Successful Incorporation subject."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', option, 'BC')
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
     token = '1'
     # test worker
     mocker.patch(
@@ -61,29 +59,78 @@ def test_process_incorp_email(app, session, mocker, option):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     SimpleCloudEvent(
-                        data={'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': option}}
+                        data={'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}}
                     )
                 )
 
-                assert mock_get_pdfs.call_args[0][0] == option
+                assert mock_get_pdfs.call_args[0][0] == 'COMPLETED'
                 assert mock_get_pdfs.call_args[0][1] == token
-                if option == 'COMPLETED':
-                    assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-
+                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
                 assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
                 assert mock_get_pdfs.call_args[0][3] == filing
 
-                if option == 'PAID':
-                    assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
-                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                           'Confirmation of Filing from the Business Registry'
-                else:
-                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                           'Incorporation Documents from the Business Registry'
+                assert mock_send_email.call_args[0][0]['content']['subject'] == \
+                       'test business - Successful Incorporation'
                 assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
                 assert mock_send_email.call_args[0][0]['content']['body']
                 assert mock_send_email.call_args[0][0]['content']['attachments'] == []
                 assert mock_send_email.call_args[0][1] == token
+
+
+def test_process_incorp_email_paid_future_effective(app, session, mocker):
+    """Assert that an INCORP PAID future-effective email is sent with the Filed subject."""
+    # setup filing + business for email
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
+    make_future_effective(filing)
+    token = '1'
+    # test worker
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}}
+                    )
+                )
+
+                assert mock_get_pdfs.call_args[0][0] == 'PAID'
+                assert mock_get_pdfs.call_args[0][1] == token
+                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
+                assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
+                assert mock_get_pdfs.call_args[0][3] == filing
+
+                assert 'Incorporation Application Filed' in \
+                       mock_send_email.call_args[0][0]['content']['subject']
+                assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                assert mock_send_email.call_args[0][0]['content']['body']
+                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                assert mock_send_email.call_args[0][1] == token
+
+
+def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker):
+    """Assert that an INCORP PAID non-future-effective filing does not trigger send_email."""
+    # setup filing + business for email
+    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
+    make_non_future_effective(filing)
+    token = '1'
+    # test worker
+    mocker.patch(
+        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
+        return_value='https://dummyurl.gov.bc.ca')
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}}
+                    )
+                )
+
+                # process() returns None for non-future-effective PAID IA; worker skips send_email
+                assert not mock_send_email.call_args
 
 
 @pytest.mark.parametrize(['status', 'filing_type'], [

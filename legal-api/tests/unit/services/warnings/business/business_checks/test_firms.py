@@ -13,14 +13,14 @@
 # limitations under the License.
 """Test suite to ensure Firms business checks work correctly."""
 from unittest.mock import patch
-from datetime import datetime
+from datetime import UTC, datetime
 
 import pytest
 
 from tests.unit.services.warnings import factory_party_role_person, factory_party_role_organization, factory_party_roles,\
     create_business, factory_address, create_filing
 
-from legal_api.models import Address, Business, Office, PartyRole
+from business_model.models import Address, Business, Office, PartyRole
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, firms
 from legal_api.services.warnings.business.business_checks.firms import check_address, check_firm_party, check_firm_parties, \
     check_office, check_completing_party, check_completing_party_for_filing, check_parties, check_business,\
@@ -341,7 +341,7 @@ def test_check_business(session, test_name, legal_type, identifier, has_office, 
                     firm_num_org_roles=num_org_roles,
                     filing_types=filing_types,
                     filing_has_completing_party=filing_has_completing_party,
-                    start_date=datetime.utcnow())
+                    start_date=datetime.now(UTC))
 
     business = Business.find_by_identifier(identifier)
     assert business
@@ -422,9 +422,9 @@ def test_check_office(session, test_name, legal_type, identifier, expected_code,
     'test_name, legal_type, identifier, num_persons_roles, num_org_roles, person_cessation_dates, org_cessation_dates, filing_types, filing_has_completing_party, expected_code, expected_msg',
     [
         # SP tests
-        ('SUCCESS_PARTY_MA_MISSING_STREET', 'SP', 'FM0000001', 2, 0, [None, datetime.utcnow()], [], ['registration'], [True], None, None),
+        ('SUCCESS_PARTY_MA_MISSING_STREET', 'SP', 'FM0000001', 2, 0, [None, datetime.now(UTC)], [], ['registration'], [True], None, None),
         # GP tests
-        ('SUCCESS_PARTY_MA_MISSING_STREET', 'GP', 'FM0000001', 3, 0, [None, None, datetime.utcnow()], [], ['registration'], [True], None, None),
+        ('SUCCESS_PARTY_MA_MISSING_STREET', 'GP', 'FM0000001', 3, 0, [None, None, datetime.now(UTC)], [], ['registration'], [True], None, None),
     ])
 def test_check_parties_cessation_date(session, test_name, legal_type, identifier, num_persons_roles:int,
                                       num_org_roles:int, person_cessation_dates:list, org_cessation_dates:list,

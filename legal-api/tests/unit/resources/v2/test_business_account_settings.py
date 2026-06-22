@@ -27,7 +27,7 @@
 """Tests to assure the BusinessAccountSettings endpoints."""
 from http import HTTPStatus
 
-from legal_api.models import BusinessAccountSettings
+from business_model.models import BusinessAccountSettings
 from legal_api.services.authz import PUBLIC_USER
 
 from tests.unit.models import factory_business

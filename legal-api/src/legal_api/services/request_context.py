@@ -13,17 +13,16 @@
 # limitations under the License.
 """Helpers to build and access a per-request RequestContext."""
 from dataclasses import dataclass
-from typing import Optional
 
 from flask import g, has_request_context, request
 
-from legal_api.models import User
+from business_model.models import User
 
 
 @dataclass(frozen=True)
 class RequestContext:
-    account_id: Optional[str] = None
-    user: Optional[User] = None
+    account_id: str | None = None
+    user: User | None = None
 
 
 def build_from_flask() -> RequestContext:

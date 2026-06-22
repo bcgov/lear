@@ -16,6 +16,8 @@ import copy
 import pytest
 from http import HTTPStatus
 
+from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.filings import validate
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
@@ -26,8 +28,8 @@ from registry_schemas.example_data import (
     CORRECTION_COR,
     FILING_TEMPLATE)
 
-from legal_api.services.filings import validate
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing
+from tests.unit.services.utils import jwt_request_context
 
 
 CORRECTION_COD = copy.deepcopy(CORRECTION_COL)
@@ -41,7 +43,7 @@ CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType
     ('COL', 'BC', 'BC1234567', CHANGE_OF_LIQUIDATORS, CORRECTION_COL),
     ('COR', 'BC', 'BC1234567', CHANGE_OF_RECEIVERS, CORRECTION_COR)
 ])
-def test_valid_correction(mocker, session, test_name, legal_type, identifier, initial_filing, correction_filing):
+def test_valid_correction(session, app, jwt, test_name, legal_type, identifier, initial_filing, correction_filing):
     """Test that a valid correction passes validation."""
     # setup
     filing_template = copy.deepcopy(FILING_TEMPLATE)
@@ -56,17 +58,15 @@ def test_valid_correction(mocker, session, test_name, legal_type, identifier, in
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-    if err:
-        print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     # check that validation passed
     assert None is err
 
 
-def test_correction__does_not_own_corrected_filing(mocker, session):
+def test_correction__does_not_own_corrected_filing(session, app, jwt):
     """Check that a business cannot correct a different business' filing."""
     # setup
     identifier = 'CP1234567'
@@ -78,18 +78,16 @@ def test_correction__does_not_own_corrected_filing(mocker, session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-    if err:
-        print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     # check that validation failed as expected
     assert HTTPStatus.BAD_REQUEST == err.code
     assert 'Corrected filing is not a valid filing for this business.' == err.msg[0]['error']
 
 
-def test_correction__corrected_filing_does_not_exist(mocker, session):
+def test_correction__corrected_filing_does_not_exist(session, app, jwt):
     """Check that a correction fails on a filing that does not exist."""
     # setup
     identifier = 'CP1234567'
@@ -99,18 +97,16 @@ def test_correction__corrected_filing_does_not_exist(mocker, session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = 1
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-    if err:
-        print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     # check that validation failed as expected
     assert HTTPStatus.BAD_REQUEST == err.code
     assert 'Corrected filing is not a valid filing.' == err.msg[0]['error']
 
 
-def test_correction__corrected_filing_is_not_complete(mocker, session):
+def test_correction__corrected_filing_is_not_complete(session, app, jwt):
     """Check that a correction fails on a filing that is not complete."""
     # setup
     identifier = 'CP1234567'
@@ -121,11 +117,9 @@ def test_correction__corrected_filing_is_not_complete(mocker, session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-    if err:
-        print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     # check that validation failed as expected
     assert HTTPStatus.BAD_REQUEST == err.code

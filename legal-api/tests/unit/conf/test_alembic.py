@@ -15,14 +15,19 @@
 
 Test-Suite to ensure that Alembic and Migration are working as expected.
 """
+import os
+
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 
+import business_model_migrations
 from tests.conftest import not_raises
 
 def test_for_no_branches_in_versions():
+    migrations_path = business_model_migrations.__file__
+    migrations_dir = os.path.dirname(migrations_path)
     config = Config()
-    config.set_main_option("script_location", "migrations")
+    config.set_main_option("script_location", migrations_dir)
     script = ScriptDirectory.from_config(config)
 
     with not_raises(Exception):

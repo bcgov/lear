@@ -33,10 +33,9 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Post Restoration Transition Application filing."""
 from http import HTTPStatus
-from typing import Optional
 
+from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import (
     validate_offices,
     validate_relationships,
@@ -45,7 +44,7 @@ from legal_api.services.filings.validations.common_validations import (
 )
 
 
-def validate(business: Business, filing_json: dict) -> Optional[Error]:
+def validate(business: Business, filing_json: dict) -> Error | None:
     """Validate the Post Restoration Transition Application filing."""
     filing_type = "transition"
 

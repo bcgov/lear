@@ -16,7 +16,6 @@
 import io
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from flask import current_app
 from pypdf import PdfReader, PdfWriter
@@ -25,8 +24,8 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 @dataclass
@@ -35,7 +34,7 @@ class RegistrarStampData:
 
     certify_date: datetime
     identifier: str
-    file_name: Optional[str] = None
+    file_name: str | None = None
     is_correction: bool = False
 
 

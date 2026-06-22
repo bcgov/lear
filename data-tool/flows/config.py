@@ -222,17 +222,33 @@ class _Config():  # pylint: disable=too-few-public-methods
     VERIFY_COLIN_UPDATES_DETAIL_PATH = os.getenv('VERIFY_COLIN_UPDATES_DETAIL_PATH')
     VERIFY_COLIN_UPDATES_SUMMARY_PATH = os.getenv('VERIFY_COLIN_UPDATES_SUMMARY_PATH')
 
+    # Auth output root shared by Auth flows that write report files.
+    AUTH_OUTPUT_PATH = os.getenv('AUTH_OUTPUT_PATH')
+
+    # Auth reporting throughput shared by verify-auth and inspect-auth.
+    # Keep raw at shared config-load time so invalid reporting env vars do not
+    # prevent unrelated data-tool/Auth flows from starting. The active reporting
+    # entrypoint performs strict positive-integer validation.
+    AUTH_REPORT_BATCHES = os.getenv('AUTH_REPORT_BATCHES', '0')
+    AUTH_REPORT_BATCH_SIZE = os.getenv('AUTH_REPORT_BATCH_SIZE', '0')
+
     # verify Auth flow
-    VERIFY_AUTH_BATCHES = _get_strict_int('VERIFY_AUTH_BATCHES', 0)
-    VERIFY_AUTH_BATCH_SIZE = _get_strict_int('VERIFY_AUTH_BATCH_SIZE', 0)
-    VERIFY_AUTH_REPORT_MODE = (os.getenv('VERIFY_AUTH_REPORT_MODE') or 'VERIFY').strip() or 'VERIFY'
-    VERIFY_AUTH_INSPECT_FILTER = (os.getenv('VERIFY_AUTH_INSPECT_FILTER') or 'ALL').strip() or 'ALL'
     VERIFY_AUTH_CHECK_ENTITY = _get_bool('VERIFY_AUTH_CHECK_ENTITY', True)
     VERIFY_AUTH_CHECK_CONTACT = _get_bool('VERIFY_AUTH_CHECK_CONTACT', True)
     VERIFY_AUTH_CHECK_AFFILIATION = _get_bool('VERIFY_AUTH_CHECK_AFFILIATION', False)
     VERIFY_AUTH_CHECK_INVITE = _get_bool('VERIFY_AUTH_CHECK_INVITE', False)
-    VERIFY_AUTH_CONSOLE_DETAIL = _get_bool('VERIFY_AUTH_CONSOLE_DETAIL', False)
-    VERIFY_AUTH_OUTPUT_PATH = os.getenv('VERIFY_AUTH_OUTPUT_PATH')
+    # Console-only verify scenario identifier limit: 0 suppresses optional sections,
+    # a positive integer caps console identifiers per scenario bucket, and ALL prints all.
+    # File outputs remain complete, including verify-auth-scenario.txt.
+    VERIFY_AUTH_CONSOLE_LIMIT = os.getenv('VERIFY_AUTH_CONSOLE_LIMIT', '25')
+
+    # inspect Auth flow. HAS_CONTACT / ENTITY_WITHOUT_CONTACT mean usable contact email,
+    # not merely any raw contact row.
+    INSPECT_AUTH_FILTER = (os.getenv('INSPECT_AUTH_FILTER') or 'ALL').strip() or 'ALL'
+    # Console-only inspect preview/identifier limit: 0 suppresses optional sections,
+    # a positive integer caps console rows/identifiers, and ALL prints all.
+    # File outputs remain complete, including inspect-auth-inspection.csv and inspect-auth-summary.txt.
+    INSPECT_AUTH_CONSOLE_LIMIT = os.getenv('INSPECT_AUTH_CONSOLE_LIMIT', '25')
 
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)

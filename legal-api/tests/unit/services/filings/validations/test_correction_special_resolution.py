@@ -17,15 +17,22 @@ import copy
 from http import HTTPStatus
 
 import pytest
-from registry_schemas.example_data import CORRECTION_CP_SPECIAL_RESOLUTION,\
-                                        CP_SPECIAL_RESOLUTION_TEMPLATE, FILING_HEADER
+
+from registry_schemas.example_data import (
+    CORRECTION_CP_SPECIAL_RESOLUTION,
+    CP_SPECIAL_RESOLUTION_TEMPLATE,
+    FILING_HEADER
+)
+from legal_api.services.authz import STAFF_ROLE
 from legal_api.services.filings import validate
+
 from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit.services.filings.validations import lists_are_equal
+from tests.unit.services.utils import jwt_request_context
 
 CP_SPECIAL_RESOLUTION_APPLICATION = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
 
-def test_valid_special_resolution_correction(mocker, session):
+def test_valid_special_resolution_correction(session, app, jwt):
     """Test that a valid SPECIAL_RESOLUTION correction passes validation."""
     # setup
     identifier = 'CP1234567'
@@ -39,12 +46,9 @@ def test_valid_special_resolution_correction(mocker, session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-
-    if err:
-        print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     # check that validation passed
     assert None is err
@@ -72,7 +76,7 @@ def test_valid_special_resolution_correction(mocker, session):
      [{'error': 'Should not provide completing party when correction type is STAFF', 'path': '/filing/correction/parties/roles'},
       {'error': 'Must have a minimum of three Directors', 'path': '/filing/correction/parties/roles'}]),
 ])
-def test_parties_special_resolution_correction(mocker, session, test_name, legal_type, correction_type, err_msg):
+def test_parties_special_resolution_correction(session, app, jwt, test_name, legal_type, correction_type, err_msg):
     """Test parties for SPECIAL_RESOLUTION correction."""
     # setup
     identifier = 'BC1234567'
@@ -104,11 +108,9 @@ def test_parties_special_resolution_correction(mocker, session, test_name, legal
         if correction_type == 'STAFF':
             del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-    if err:
-      print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     if err_msg:
         assert err
