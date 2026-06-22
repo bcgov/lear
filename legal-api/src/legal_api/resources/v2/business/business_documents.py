@@ -13,20 +13,19 @@
 # limitations under the License.
 """Retrieve the specified report for the entity."""
 from http import HTTPStatus
-from typing import Optional
 
 from flask import Response, current_app, jsonify, request, url_for
 from flask_cors import cross_origin
 
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, Filing
+from business_model.models.document import Document, DocumentType
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Filing
-from legal_api.models.document import Document, DocumentType
 from legal_api.reports.business_document import BusinessDocument
 from legal_api.services import authorized, flags
 from legal_api.services.business import validate_document_request
 from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
@@ -35,7 +34,7 @@ from .bp import bp
 @bp.route("/<string:identifier>/documents/<string:document_name>", methods=["GET", "OPTIONS"])
 @cross_origin(origin="*")
 @jwt.requires_auth
-def get_business_documents(identifier: str, document_name: Optional[str] = None): # noqa: PLR0911
+def get_business_documents(identifier: str, document_name: str | None = None): # noqa: PLR0911
     """Return the business documents."""
     # basic checks
     if not authorized(identifier, jwt, ["view", ]):

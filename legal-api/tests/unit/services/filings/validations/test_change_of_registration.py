@@ -22,7 +22,7 @@ from legal_api.services.permissions import PermissionService
 import pytest
 from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGISTRATION
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import NaicsService, NameXService, flags
 from legal_api.services.filings.validations.change_of_registration import validate
 

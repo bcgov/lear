@@ -13,13 +13,13 @@
 # limitations under the License.
 """Test annual report year is managed correctly."""
 import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 import datedelta
 import pytest
 from freezegun import freeze_time
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings.validations.annual_report import validate_ar_year
 from registry_schemas.example_data import ANNUAL_REPORT
 
@@ -32,7 +32,7 @@ from tests.unit.models import factory_business
      HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date must be a valid date.',
                                'path': 'filing/annualReport/annualReportDate'}]),
     ('NO_FUTURE_FILINGS',
-     (datetime.utcnow() + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
+     (datetime.now(UTC) + datedelta.YEAR).date().isoformat(),  # current_ar_date a year in the future
      '2017-08-05', '1900-07-01',
      HTTPStatus.BAD_REQUEST, [{'error': 'Annual Report Date cannot be in the future.',
                                'path': 'filing/annualReport/annualReportDate'}]),
@@ -138,10 +138,11 @@ def test_validate_ar_year(app, test_name, current_ar_date, previous_ar_date, fou
          '2020-01-01', '2021-10-31', None, 2020, '2022-07-14'),
     ])
 def test_ar_dates(
-        app, session, test_name, founding_date, previous_ar_date, legal_type,
+        mocker, app, session, test_name, founding_date, previous_ar_date, legal_type,
         expected_ar_min_date, expected_ar_max_date, previous_ar_year, next_year, today):
     """Assert min and max dates for Annual Report are correct."""
     now = datetime.fromisoformat(today + 'T12:00:00+00:00')
+    mocker.patch('business_model.models.business.LegislationDatetime.datenow', return_value=now.date())
     with freeze_time(now):
         # setup
         previous_ar_datetime = datetime.fromisoformat(previous_ar_date) if previous_ar_date else None

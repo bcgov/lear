@@ -22,17 +22,17 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel
 from flask_cors import cross_origin
 
+from business_account import AccountService
+from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v2.business.business_filings import saving_filings
-from legal_api.services import (  # noqa: I001;
+from legal_api.services import (
     ACCOUNT_IDENTITY,
     SYSTEM_ROLE,
-    AccountService,
     RegistrationBootstrapService,
     check_warnings,
     flags,
-)  # noqa: I001;
+)
 from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
@@ -92,7 +92,7 @@ def get_businesses(identifier: str):
     q_account = request.args.get("account")
     current_app.logger.info("account info request, for account: %s", q_account)
     if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, ACCOUNT_IDENTITY]):
-        account_response = AccountService.get_account_by_affiliated_identifier(identifier)
+        account_response = AccountService.get_account_by_affiliated_identifier(identifier, flags)
         current_app.logger.info("VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s",
                                 q_account,
                                 g.jwt_oidc_token_info.get("preferred_username"),

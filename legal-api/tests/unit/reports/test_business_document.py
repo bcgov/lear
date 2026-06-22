@@ -13,14 +13,17 @@
 # limitations under the License.
 
 """Test-Suite to ensure that the Business Report class is working as expected."""
-import pytest
 from http import HTTPStatus
+from unittest.mock import MagicMock
 
-from legal_api.reports.business_document import BusinessDocument  # noqa:I001
+import pytest
+
+from legal_api.reports.business_document import BusinessDocument
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
 from tests.unit.models import factory_business, factory_business_mailing_address
+from tests.unit.reports import make_amalgamation_filing_mock, make_foreign_amalgamating_business, set_amalgamation_details
 
 
 @pytest.mark.parametrize(
@@ -107,3 +110,61 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
         assert template_data['registrarInfo']
         assert template_data['entityDescription']
         assert template_data['entityAct']
+
+
+@pytest.mark.parametrize('foreign_id,foreign_country,foreign_region,colin_status,colin_jurisdiction,expected_id,expected_jurisdiction,expected_mock_calls',[
+    ('A1234567', 'CA', 'BC', 200, 'ON', 'A1234567', 'Ontario', 1),
+    ('A1234567', 'CA', 'BC', 200, 'FD', 'A1234567', 'Federal', 1),
+    ('A1234567', 'CA', 'BC', 200, None, 'A1234567', 'N/A', 1),
+    ('A1234567', 'US', 'WA', 404, None, 'N/A', 'United States', 1),
+    ('UK1234567', 'GB', None, None, None, 'N/A', 'United Kingdom', 0),
+], ids=[
+    'expro province',
+    'expro federal',
+    'expro no jurisdiction',
+    'Non expro with expro like identifier',
+    'Non expro',
+])
+def test_set_amalgamation_details(
+    session, app, jwt, monkeypatch, foreign_id, foreign_country, foreign_region,
+    colin_status, colin_jurisdiction, expected_id, expected_jurisdiction, expected_mock_calls
+):
+    """Assert that expros resolve as expected. 
+    
+    Foreign businesses with identifier starting with 'A' and existing in colin are treated as an expro: 
+     - identifier is set to the foreign_identifier
+     - region_code is taken from the colin response's business.jurisdiction field.
+    """
+    foreign_name = 'Foreign Corp'
+
+    ab = make_foreign_amalgamating_business(
+        foreign_identifier=foreign_id,
+        foreign_name=foreign_name,
+        foreign_jurisdiction=foreign_country,
+        foreign_jurisdiction_region=foreign_region,  # original region — is overwritten for expros
+    )
+
+    colin_call_count = {'count': 0}
+
+    def mock_colin(identifier):
+        resp = MagicMock()
+        colin_call_count['count'] += 1
+        resp.status_code = colin_status
+        if colin_status == HTTPStatus.OK:
+            resp.json.return_value = {'business': {'jurisdiction': colin_jurisdiction}}
+        return resp
+
+    business_json = set_amalgamation_details(
+        app, jwt, session, monkeypatch,
+        amalgamating_businesses_list=[ab],
+        colin_query_side_effect=mock_colin,
+    )
+
+    entities = business_json.get('amalgamatedEntities', [])
+    assert len(entities) == 1
+    entity = entities[0]
+
+    assert colin_call_count['count'] == expected_mock_calls
+    assert entity['identifier'] == expected_id
+    assert entity['jurisdiction'] == expected_jurisdiction
+    assert entity['legalName'] == foreign_name

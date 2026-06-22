@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Test suite to ensure Corpse business checks work correctly for businesses in liquidation."""
-import copy
+from datetime import date
 
 import pytest
 from psycopg2.tz import FixedOffsetTimezone
-from datedelta import datedelta
 
-from legal_api.models import Business
+from business_common.utils import datetime
+from business_model.models import Business
 from legal_api.services.warnings.business import check_business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
-from legal_api.utils.datetime import datetime, date
 from tests.unit.models import factory_business
 
 FOUNDING_DATE = datetime(2023, 3, 3)

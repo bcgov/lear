@@ -25,18 +25,17 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Common helper functions for reports flows."""
-from typing import Optional
-
 import pycountry
 from flask import current_app
 
 
-def get_amalg_formatted_jurisdiction(identifier: str, country_code: str, region_code: Optional[str] = None):
+def get_amalg_formatted_jurisdiction(identifier: str, country_code: str, region_code: str | None = None):
     """Return the jurisdiction region if its in Canada otherwise return the jurisdiction country."""
     try:
         country = pycountry.countries.get(alpha_2=country_code)
         region = None
-        if country_code == "CA" and region_code.upper() == "FEDERAL":
+        # NOTE: Region code is being saved as 'FEDERAL' in lear and 'FD' in colin
+        if country_code == "CA" and region_code.upper() in ["FEDERAL", "FD"]:
             return "Federal"
         elif country_code == "CA" and region_code:
             region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")

@@ -22,8 +22,8 @@ import pytz
 import requests
 from flask import current_app
 
-from legal_api.models import Filing
-from legal_api.services.bootstrap import AccountService
+from business_account import AccountService
+from business_model.models import Filing
 
 from .utils import get_str
 

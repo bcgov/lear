@@ -21,7 +21,7 @@ from hypothesis import given
 from hypothesis.strategies import dates, datetimes, just, text
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services.filings.validations.annual_report import validate_agm_year
 
 

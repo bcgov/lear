@@ -35,19 +35,6 @@ CUSTOM_JWKS_CACHE_TIMEOUT = 500
 DEFAULT_JWKS_CACHE_TIMEOUT = 300
 
 
-@pytest.mark.parametrize("test_type,environment,expected", TEST_ENVIRONMENT_DATA)
-def test_get_named_config(test_type, environment, expected):
-    """Assert that the named configurations can be loaded.
-
-    Or that a KeyError is returned for missing config types.
-    """
-    if test_type == "valid":
-        assert isinstance(config.get_named_config(environment), expected)
-    else:
-        with pytest.raises(KeyError):
-            config.get_named_config(environment)
-
-
 def test_prod_config_secret_key(monkeypatch):  # pylint: disable=missing-docstring
     """Assert that the ProductionConfig is correct.
 

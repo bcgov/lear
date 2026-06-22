@@ -18,7 +18,7 @@
 import requests
 from flask import current_app
 
-from legal_api.services.bootstrap import AccountService
+from business_account import AccountService
 
 
 class NaicsService:

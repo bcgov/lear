@@ -21,7 +21,7 @@ import datetime
 
 from registry_schemas.example_data import ANNUAL_REPORT
 
-from legal_api.models import Filing
+from business_model.models import Filing
 from legal_api.reports.registrar_meta import RegistrarInfo
 from tests.unit.models import factory_business
 

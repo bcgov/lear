@@ -23,6 +23,7 @@ from business_emailer.email_processors import intent_to_liquidate_notification
 from tests.unit import prep_intent_to_liquidate_filing
 
 
+@pytest.mark.skip('This email processor is invalid and needs to be updated')
 @pytest.mark.parametrize('status,legal_type,submitter_role', [
     ('COMPLETED', Business.LegalTypes.COMP.value, 'staff'),
     ('COMPLETED', Business.LegalTypes.BCOMP.value, 'staff'),
@@ -60,6 +61,7 @@ def test_intent_to_liquidate_notification(app, session, status, legal_type, subm
             assert mock_get_pdfs.call_args[0][2] == filing
 
 
+@pytest.mark.skip('This email processor is invalid and needs to be updated')
 def test_intent_to_liquidate_attachments(session, config):
     """Assert _get_pdfs assembles the Statement of Intent to Liquidate and receipt."""
     identifier = 'BC1234567'

@@ -121,7 +121,12 @@ run-extract-load:
 
 run-extract-refresh:
 	. $(VENV_DIR)/bin/activate && \
-	python flows/refresh_extract_subset_flow.py  --mode refresh
+	python flows/refresh_extract_subset_flow.py  --mode refresh --delta-scope batch
+
+run-extract-refresh-full:
+	. $(VENV_DIR)/bin/activate && \
+	python flows/refresh_extract_subset_flow.py --mode refresh --delta-scope full
+
 
 run-update-colin-ar-ind: ## Run update COLIN AR indicator flow
 	. $(VENV_DIR)/bin/activate && \
@@ -131,9 +136,13 @@ run-verify-colin-updates: ## Run verify COLIN updates flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/verify_colin_updates_flow.py
 
-run-verify-auth: ## Run verify Auth flow
+run-verify-auth: ## Run verify Auth flow and write summary/detail CSVs plus scenario TXT copy list
 	. $(VENV_DIR)/bin/activate && \
 	$(AUTH_MODULE_RUNNER) auth.verify_auth_flow
+
+run-inspect-auth: ## Run inspect Auth flow and write inspect-auth-inspection.csv plus inspect-auth-summary.txt
+	. $(VENV_DIR)/bin/activate && \
+	$(AUTH_MODULE_RUNNER) auth.inspect_auth_flow
 
 run-auth-create: ## Run auth create flow
 	. $(VENV_DIR)/bin/activate && \

@@ -17,17 +17,17 @@
 Test-Suite to ensure that the /tasks endpoint is working as expected.
 """
 import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
 import datedelta
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
-from legal_api.models import Business
+
+from business_model.models import Business
 from legal_api.services.authz import STAFF_ROLE
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
@@ -213,7 +213,7 @@ def test_get_empty_tasks_with_invalid_business(session, client, jwt):
 
 def test_get_tasks_error_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
-    from legal_api.models import Filing
+    from business_model.models import Filing
     from tests.unit.models import AR_FILING, factory_business_mailing_address
     # setup
     identifier = 'CP7654321'
@@ -233,7 +233,7 @@ def test_get_tasks_error_filings(session, client, jwt):
 def test_get_tasks_pending_correction_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
     from freezegun import freeze_time
-    from legal_api.models import Filing
+    from business_model.models import Filing
     from tests import FROZEN_2018_DATETIME
     from registry_schemas.example_data import CORRECTION_AR
     # setup
@@ -486,7 +486,7 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
                         filing_types=['registration'],
                         filing_has_completing_party=[True],
                         create_completing_party_address=[True],
-                        start_date=datetime.utcnow())
+                        start_date=datetime.now(UTC))
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -511,7 +511,7 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
 ])
 def test_transition_application_task(session, client, jwt, test_name, business_restored, transition_completed, transition_task_expected):
     identifier = 'BC1234567'
-    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.utcnow())
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value, last_ar_date=datetime.now(UTC))
     if business_restored:
         factory_completed_filing(business, RESTORATION_FILING, filing_type='restoration', filing_sub_type='fullRestoration')
     if transition_completed:

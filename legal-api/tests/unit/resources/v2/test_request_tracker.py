@@ -20,7 +20,7 @@ import pytest
 from http import HTTPStatus
 from unittest.mock import patch
 
-from legal_api.models import Business, RequestTracker, UserRoles
+from business_model.models import Business, RequestTracker, UserRoles
 from legal_api.resources.v2 import request_tracker
 
 from tests.unit.models import factory_business

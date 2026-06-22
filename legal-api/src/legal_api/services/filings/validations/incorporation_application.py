@@ -18,8 +18,8 @@ from typing import Final
 import pycountry
 from flask_babel import _ as babel
 
+from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,

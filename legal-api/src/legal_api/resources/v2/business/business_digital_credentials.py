@@ -13,15 +13,13 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
-from typing import Union
 
 from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.decorators import can_access_digital_credentials
-from legal_api.models import (
+from business_model.models import (
     Business,
     DCBusinessUser,
     DCConnection,
@@ -30,14 +28,15 @@ from legal_api.models import (
     DCRevocationReason,
     User,
 )
-from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials_helpers import (
+from business_registry_digital_credentials import DigitalCredentialsRulesService
+from business_registry_digital_credentials.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_digital_credential_data,
     get_or_create_business_user,
     get_roles,
 )
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
+from legal_api.decorators import can_access_digital_credentials
+from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -48,7 +47,7 @@ bp_dc = Blueprint("DIGITAL_CREDENTIALS", __name__,
 rules = DigitalCredentialsRulesService()
 
 
-def get_business_user(identifier) -> tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
+def get_business_user(identifier) -> tuple[DCBusinessUser | None, dict | None, HTTPStatus | None]:
     """Get the business, user, and business user if they exist and the user is authorized."""
     if not (business := Business.find_by_identifier(identifier)):
         return None, jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
@@ -309,7 +308,7 @@ def revoke_credential(identifier, credential_id):
                                              reason) is None:
         return jsonify({"message": "Failed to revoke credential."}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential.date_of_issue = datetime.now(timezone.utc)
+    credential.date_of_issue = datetime.now(UTC)
     credential.is_revoked = True
     credential.save()
     return jsonify({"message": "Credential has been revoked."}), HTTPStatus.OK
@@ -361,7 +360,7 @@ def webhook_notification(topic_name: str):
         elif topic_name == "issue_credential_v2_0" and state == "done":
             cred_ex_id = json_input.get("cred_ex_id", None)
             if (credential := DCCredential.find_by_credential_exchange_id(cred_ex_id)):
-                credential.date_of_issue = datetime.now(timezone.utc)
+                credential.date_of_issue = datetime.now(UTC)
                 credential.is_issued = True
                 credential.save()
         elif topic_name == "present_proof_v2_0" and state == "done":
@@ -369,7 +368,7 @@ def webhook_notification(topic_name: str):
             verified = json_input.get("verified", "false") == "true"
             if connection_id and (connection := DCConnection.find_by_connection_id(connection_id)):
                 connection.is_attested = verified
-                connection.last_attested = datetime.now(timezone.utc)
+                connection.last_attested = datetime.now(UTC)
                 connection.save()
     except Exception as err:
         current_app.logger.error(err)

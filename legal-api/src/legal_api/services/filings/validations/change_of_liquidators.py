@@ -33,14 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Change of Liquidators filing."""
 from http import HTTPStatus
-from typing import Optional
 
+from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
 from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships
 
 
-def validate(business: Business, filing_json: dict) -> Optional[Error]:
+def validate(business: Business, filing_json: dict) -> Error | None:
     """Validate the Change of Liquidators filing."""
     filing_type = "changeOfLiquidators"
     filing_sub_type = filing_json["filing"][filing_type]["type"]

@@ -20,8 +20,9 @@ import datetime
 import pytest
 from http import HTTPStatus
 
+from business_model.models.party_class import PartyClassType
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from tests.unit.models import Address, Party, PartyRole, PartyClass, factory_business, factory_party_role
+from tests.unit.models import Address, Party, PartyRole, factory_business, factory_party_role
 from tests.unit.services.utils import create_header
 
 
@@ -348,7 +349,7 @@ def parties_by_class_type_test_data(session):
     party_a.save()
     party_b.save()
 
-    def _factory_party_role(business_id: int, party_id: int, role: PartyRole.RoleTypes, class_type: PartyClass.PartyClassType, cessation_date: datetime.date = None):
+    def _factory_party_role(business_id: int, party_id: int, role: PartyRole.RoleTypes, class_type: PartyClassType, cessation_date: datetime.date = None):
         party_role = PartyRole(
             role=role.value,
             appointment_date=datetime.datetime(2017, 5, 17),
@@ -362,13 +363,13 @@ def parties_by_class_type_test_data(session):
 
     created = {
         # Business A Data
-        'ceo_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CEO, PartyClass.PartyClassType.OFFICER),
-        'cfo_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CFO, PartyClass.PartyClassType.OFFICER, cessation_date=datetime.date(2022, 1, 1)),
-        'director_a': _factory_party_role(business_a.id, party_b.id, PartyRole.RoleTypes.DIRECTOR, PartyClass.PartyClassType.DIRECTOR),
-        'chair_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CHAIR, PartyClass.PartyClassType.DIRECTOR),
+        'ceo_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CEO, PartyClassType.OFFICER),
+        'cfo_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CFO, PartyClassType.OFFICER, cessation_date=datetime.date(2022, 1, 1)),
+        'director_a': _factory_party_role(business_a.id, party_b.id, PartyRole.RoleTypes.DIRECTOR, PartyClassType.DIRECTOR),
+        'chair_a': _factory_party_role(business_a.id, party_a.id, PartyRole.RoleTypes.CHAIR, PartyClassType.DIRECTOR),
 
         # Business B Data
-        'ceo_b': _factory_party_role(business_b.id, party_a.id, PartyRole.RoleTypes.CEO, PartyClass.PartyClassType.OFFICER),
+        'ceo_b': _factory_party_role(business_b.id, party_a.id, PartyRole.RoleTypes.CEO, PartyClassType.OFFICER),
     }
 
     return {'businesses': {'a': business_a, 'b': business_b}, 'parties': {'a': party_a, 'b': party_b}, 'roles': created}

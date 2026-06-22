@@ -23,34 +23,12 @@ or by accessing this configuration directly.
 import os
 import sys
 
-from cloud_sql_connector import DBConfig
 from dotenv import find_dotenv, load_dotenv
+
+from cloud_sql_connector import DBConfig
 
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
-
-CONFIGURATION = {
-    "development": "legal_api.config.DevConfig",
-    "testing": "legal_api.config.TestConfig",
-    "production": "legal_api.config.ProdConfig",
-    "default": "legal_api.config.ProdConfig",
-}
-
-
-def get_named_config(config_name: str = "production"):
-    """Return the configuration object based on the name.
-
-    :raise: KeyError: if an unknown configuration is requested
-    """
-    if config_name in ["production", "staging", "default"]:
-        config = ProdConfig()
-    elif config_name == "testing":
-        config = TestConfig()
-    elif config_name == "development":
-        config = DevConfig()
-    else:
-        raise KeyError(f"Unknown configuration: {config_name}")
-    return config
 
 
 class _Config:  # pylint: disable=too-few-public-methods
@@ -270,9 +248,6 @@ class TestConfig(_Config):  # pylint: disable=too-few-public-methods
             f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
         )
 
-    # URLs
-    AUTH_SVC_URL = os.getenv("AUTH_SVC_URL", "http://test-auth-url")
-
     # Transparency Register - test cases set this explicitly as needed
     TR_START_DATE = ""
 
@@ -337,14 +312,17 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     MINIO_BUCKET_BUSINESSES = "businesses"
     MINIO_SECURE = False
 
-    # determines which year of NAICS data will be used to drive NAICS search
-    NAICS_YEAR = 2022
+    # determines which year of NAICS data will be used to drive NAICS search;
+    # matches the test seed data loaded by business_model_migrations
+    NAICS_YEAR = 2017
     # determines which version of NAICS data will be used to drive NAICS search
-    NAICS_VERSION = 1
+    NAICS_VERSION = 3
 
     LEGAL_API_BASE_URL = "https://LEGAL_API_BASE_URL/api/v2/businesses"
     BUSINESS_API_GW_URL = "https://LEGAL_API_BASE_URL"
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
+    AUTH_SVC_URL = "https://AUTH_SVC_URL"
+    ACCOUNT_SVC_AUTH_URL = "https://ACCOUNT_SVC_AUTH_URL"
 
     BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")
     BUSINESS_CRED_DEF_ID = os.getenv("BUSINESS_CRED_DEF_ID", "TEST_BUSINESS_SCHEMA_ID")
@@ -371,3 +349,36 @@ class ProdConfig(_Config):  # pylint: disable=too-few-public-methods
 
     TESTING = False
     DEBUG = False
+
+
+class MigrationConfig:  # pylint: disable=too-few-public-methods
+    """Config object for migration environment."""
+
+    ALEMBIC_INI = "migrations/alembic.ini"
+
+    # POSTGRESQL
+    DB_USER = os.getenv("DATABASE_USERNAME", "")
+    DB_PASSWORD = os.getenv("DATABASE_PASSWORD", "")
+    DB_NAME = os.getenv("DATABASE_NAME", "")
+    DB_HOST = os.getenv("DATABASE_HOST", "")
+    DB_PORT = os.getenv("DATABASE_PORT", "5432")
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv("CLOUDSQL_INSTANCE_CONNECTION_NAME", "")
+    DB_IP_TYPE = os.getenv("DATABASE_IP_TYPE", "private").lower()
+
+    # POSTGRESQL
+    DB_UNIX_SOCKET = os.getenv("DATABASE_UNIX_SOCKET", None)
+    if DB_UNIX_SOCKET:
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@/{DB_NAME}?host={DB_UNIX_SOCKET}"
+    elif DB_HOST:
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    elif CLOUDSQL_INSTANCE_CONNECTION_NAME:
+        SQLALCHEMY_DATABASE_URI = "postgresql+pg8000://"
+        db_config = DBConfig(
+            instance_name=CLOUDSQL_INSTANCE_CONNECTION_NAME,
+            database=DB_NAME,
+            user=DB_USER,
+            ip_type=DB_IP_TYPE,
+            pool_recycle=60,
+            schema="public",
+        )
+        SQLALCHEMY_ENGINE_OPTIONS = db_config.get_engine_options()

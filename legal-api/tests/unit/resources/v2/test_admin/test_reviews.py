@@ -24,7 +24,7 @@ from http import HTTPStatus
 from flask import current_app
 from registry_schemas.example_data import CONTINUATION_IN
 
-from legal_api.models import Filing, RegistrationBootstrap, Review, ReviewStatus
+from business_model.models import Filing, RegistrationBootstrap, Review, ReviewStatus
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 
 from tests.unit.models import factory_filing

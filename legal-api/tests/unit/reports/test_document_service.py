@@ -14,14 +14,14 @@
 
 """Test-Suite to ensure that the Report class is working as expected."""
 import copy
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 import datedelta
 import json
 
 import pytest
 
-from legal_api.models import Filing
+from business_model.models import Filing
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.report import ReportMeta
 from tests.unit.models import factory_business, factory_completed_filing
@@ -362,36 +362,34 @@ def test_update_ledger_docs(session, desc, doc_data, drs_data, receipt, filing, 
         assert text_results.find(static) > 0
 
 
-def test_create_document(session, mock_doc_service, mocker):
-    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
-    founding_date = datetime.utcnow()
+def test_create_document(app, session, mock_bearer_token, mock_doc_service):
+    founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = 'Involuntary Dissolution'
     completed_filing = \
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     document_service = DocumentService()
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') == False
+    assert document_service.has_document(completed_filing.id, 'annualReport') == False
     response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', '3113', completed_filing.filing_type)
     assert status == HTTPStatus.CREATED
     assert response['identifier'] == 1
     assert response['url'] == 'https://document-service.com/document/1'
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
+    assert document_service.has_document(completed_filing.id, 'annualReport') != False
 
 
-def test_get_document(session, mock_doc_service, mocker):
-    mocker.patch('legal_api.services.AccountService.get_bearer_token', return_value='')
-    founding_date = datetime.utcnow()
+def test_get_document(app, session, mock_bearer_token, mock_doc_service):
+    founding_date = datetime.now(UTC)
     business = factory_business('CP1234567', founding_date=founding_date)
     filing = copy.deepcopy(FILING_TEMPLATE)
     filing['filing']['header']['name'] = 'Involuntary Dissolution'
     completed_filing = \
         factory_completed_filing(business, filing, filing_date=founding_date + datedelta.datedelta(months=1))
     document_service = DocumentService()
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') == False
+    assert document_service.has_document(completed_filing.id, 'annualReport') == False
     response, status = document_service.create_document(business.identifier, completed_filing.id, 'annualReport', '3113', completed_filing.filing_type)
     assert response
-    response, status = document_service.get_document(business.identifier, completed_filing.id, 'annualReport', '3113')
+    response, status = document_service.get_document(completed_filing.id, 'annualReport', '3113')
     assert response
     assert status == HTTPStatus.OK
-    assert document_service.has_document(business.identifier, completed_filing.id, 'annualReport') != False
+    assert document_service.has_document(completed_filing.id, 'annualReport') != False

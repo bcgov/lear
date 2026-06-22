@@ -23,9 +23,9 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from legal_api.core.meta.filing import FILINGS, FilingMeta
-from legal_api.exceptions import BusinessException
-from legal_api.models import (
+from business_common.utils.datetime import datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import (
     AmalgamatingBusiness,
     Amalgamation,
     Business,
@@ -35,18 +35,18 @@ from legal_api.models import (
     Filing,
     OfficeType,
     PartyRole,
+    UserRoles,
 )
-from legal_api.models.business import ASSOCIATION_TYPE_DESC
-from legal_api.models.user import UserRoles
+from business_model.models.business import ASSOCIATION_TYPE_DESC
+from legal_api.core.meta.filing import FILINGS, FilingMeta
+from legal_api.exceptions import BusinessException
 from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.reports.utils import get_amalg_formatted_jurisdiction
 from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
-from legal_api.utils.datetime import datetime
 from legal_api.utils.formatting import float_to_str
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 OUTPUT_DATE_FORMAT: Final = "%B %-d, %Y"
 
@@ -532,6 +532,37 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             directors = self._format_directors(filing["listOfDirectors"]["directors"])
             filing["listOfDirectors"]["directorsAppointed"] = [el for el in directors if "appointed" in el["actions"]]
             filing["listOfDirectors"]["directorsCeased"] = [el for el in directors if "ceased" in el["actions"]]
+            for director in filing["listOfDirectors"]["directors"]:
+                if "addressChanged" in director["actions"]:  # find which address changed
+                    self._set_director_address_changed_flag(director)
+
+    def _set_director_address_changed_flag(self, director):
+        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        if not (party_id := director["officer"].get("id")):
+            # fallback: id is not available for older/colin filings
+            party_id = self._find_director_id_using_name(director, prev_completed_filing)
+
+        prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+        prev_party_json = VersionedBusinessDetailsService.party_revision_json(
+            prev_completed_filing.transaction_id, prev_party, True)
+        if self._compare_address(director.get("mailingAddress"), prev_party_json.get("mailingAddress")):
+            director["mailingAddress"]["changed"] = True
+        if self._compare_address(director.get("deliveryAddress"), prev_party_json.get("deliveryAddress")):
+            director["deliveryAddress"]["changed"] = True
+
+    def _find_director_id_using_name(self, director, prev_completed_filing):
+        director_name = (director["officer"].get("firstName") +
+            director["officer"].get("middleInitial", "") +
+            director["officer"].get("lastName"))
+        previous_directors = VersionedBusinessDetailsService.get_party_role_revision(
+            prev_completed_filing, self._business.id, role=PartyRole.RoleTypes.DIRECTOR.value)
+        for previous_director in previous_directors:
+            previous_director_name = (previous_director["officer"].get("firstName") +
+                                    previous_director["officer"].get("middleInitial", "") +
+                                    previous_director["officer"].get("lastName"))
+            if (previous_director_name.upper() == director_name.upper() and
+                    previous_director["cessationDate"] is None):
+                return previous_director["id"]
 
     def _format_directors(self, directors):
         for director in directors:

@@ -19,8 +19,8 @@ import uuid
 from flask import current_app
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
+from business_common.utils.datetime import datetime
 from legal_api.services import gcp_queue
-from legal_api.utils.datetime import datetime
 
 
 def _get_source_and_time(identifier: str):
