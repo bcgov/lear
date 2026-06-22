@@ -20,6 +20,7 @@ from typing import Final
 
 import requests
 from flask import current_app, jsonify, request
+from flask.globals import request_ctx
 from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
 from pydantic import BaseModel
@@ -102,7 +103,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
             ), HTTPStatus.NOT_FOUND
 
         if _should_regenerate(legal_filing_name):
-            if jwt.contains_role([UserRoles.staff, UserRoles.system]):
+            if jwt.contains_role(request_ctx.current_user, [UserRoles.staff, UserRoles.system]):
                 return get_pdf(filing.storage, legal_filing_name, True)
             else:
                 return jsonify(

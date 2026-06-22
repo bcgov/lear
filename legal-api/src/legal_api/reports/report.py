@@ -574,30 +574,19 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _set_addresses(self, filing):
         if filing.get("changeOfAddress"):
-            if filing.get("changeOfAddress").get("offices"):
-                filing["registeredOfficeAddress"] = filing["changeOfAddress"]["offices"]["registeredOffice"]
-                if filing["changeOfAddress"]["offices"].get("recordsOffice", None):
-                    filing["recordsOfficeAddress"] = filing["changeOfAddress"]["offices"]["recordsOffice"]
-                    filing["recordsOfficeAddress"]["deliveryAddress"] = \
-                        self._format_address(filing["recordsOfficeAddress"]["deliveryAddress"])
-                    filing["recordsOfficeAddress"]["mailingAddress"] = \
-                        self._format_address(filing["recordsOfficeAddress"]["mailingAddress"])
-            else:
-                filing["registeredOfficeAddress"] = filing["changeOfAddress"]
-        elif filing.get("annualReport", {}).get("deliveryAddress"):
+            prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+            self._format_office_data(filing, prev_completed_filing, "changeOfAddress")
+            filing["registeredOfficeAddress"] = filing["offices"]["registeredOffice"]
+            if filing["changeOfAddress"]["offices"].get("recordsOffice", None):
+                filing["recordsOfficeAddress"] = filing["offices"]["recordsOffice"]
+
+        elif filing.get("annualReport"):  # COOP specific
             filing["registeredOfficeAddress"] = {
-                "deliveryAddress": filing["annualReport"]["deliveryAddress"],
-                "mailingAddress": filing["annualReport"]["mailingAddress"]
+                "deliveryAddress": self._format_address(
+                    filing["annualReport"]["offices"]["registeredOffice"]["deliveryAddress"]),
+                "mailingAddress": self._format_address(
+                    filing["annualReport"]["offices"]["registeredOffice"]["mailingAddress"])
             }
-        else:
-            filing["registeredOfficeAddress"] = {
-                "deliveryAddress": filing["annualReport"]["offices"]["registeredOffice"]["deliveryAddress"],
-                "mailingAddress": filing["annualReport"]["offices"]["registeredOffice"]["mailingAddress"]
-            }
-        delivery_address = filing["registeredOfficeAddress"]["deliveryAddress"]
-        mailing_address = filing["registeredOfficeAddress"]["mailingAddress"]
-        filing["registeredOfficeAddress"]["deliveryAddress"] = self._format_address(delivery_address)
-        filing["registeredOfficeAddress"]["mailingAddress"] = self._format_address(mailing_address)
 
     @staticmethod
     def _format_address(address):
@@ -1336,9 +1325,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             sorted([translation["name"] for translation in filing["listOfTranslations"]]) != \
             sorted([translation["name"] for translation in versioned_name_translations])
 
-    def _format_office_data(self, filing, prev_completed_filing: Filing):
+    def _format_office_data(self, filing, prev_completed_filing: Filing, filing_type="correction"):
         filing["offices"] = {}
-        if offices := filing.get("correction").get("offices"):
+        if offices := filing.get(filing_type).get("offices"):
             offices_json = VersionedBusinessDetailsService.get_office_revision(prev_completed_filing.id,
                                                                                prev_completed_filing.transaction_id,
                                                                                self._filing.business_id)
