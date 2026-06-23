@@ -567,18 +567,18 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def address_revision_json(address_revision):
         """Return a dict of this object, with keys in JSON format."""
         country_description = ""
-        if address_revision.country:
+        if address_revision and address_revision.country:
             country_description = pycountry.countries.search_fuzzy(address_revision.country)[0].name
         return {
-            "streetAddress": address_revision.street or "",
-            "streetAddressAdditional": address_revision.street_additional or "",
-            "addressType": address_revision.address_type,
-            "addressCity": address_revision.city or "",
-            "addressRegion": address_revision.region or "",
-            "addressCountry": address_revision.country or "",
+            "streetAddress": (address_revision and address_revision.street) or "",
+            "streetAddressAdditional": (address_revision and address_revision.street_additional) or "",
+            "addressType": (address_revision and address_revision.address_type) or "",
+            "addressCity": (address_revision and address_revision.city) or "",
+            "addressRegion": (address_revision and address_revision.region) or "",
+            "addressCountry": (address_revision and address_revision.country) or "",
             "addressCountryDescription": country_description,
-            "postalCode": address_revision.postal_code or "",
-            "deliveryInstructions": address_revision.delivery_instructions or ""
+            "postalCode": (address_revision and address_revision.postal_code) or "",
+            "deliveryInstructions": (address_revision and address_revision.delivery_instructions) or ""
         }
 
     @staticmethod
