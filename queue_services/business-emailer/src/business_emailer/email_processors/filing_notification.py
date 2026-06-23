@@ -58,6 +58,8 @@ FUTURE_ATTACHMENTS = {
     }
 }
 
+NOT_AVAILABLE = "Not Available"
+
 
 def _add_filing_document_pdf(  # noqa: PLR0913
     pdfs: list[dict],
@@ -209,7 +211,7 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
     filing_doc_title = FILING_TITLE[filing_type]
     show_effective_date = filing.is_future_effective
     is_future_effective_paid = filing.is_future_effective and status == Filing.Status.PAID.value
-    business_name = business.get("legalName") or "Not Available"
+    business_name = business.get("legalName") or NOT_AVAILABLE
     business_identifier = business.get("identifier")
     business_number = None
     filing_name_short = ""
@@ -226,14 +228,14 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
         filing_name_short = "Incorporation"
         filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
         if is_future_effective_paid:
-            business_identifier = "Not Available"
+            business_identifier = NOT_AVAILABLE
             if legal_type == Business.LegalTypes.COOP.value:
                 future_attachments_list = FUTURE_ATTACHMENTS["incorporationApplication"]["CP"]
             else:
                 future_attachments_list = FUTURE_ATTACHMENTS["incorporationApplication"]["CORP"]
             
         if not business_number and legal_type != Business.LegalTypes.COOP.value:
-            business_number = "Not Available"
+            business_number = NOT_AVAILABLE
 
     else:
         template = Path(
