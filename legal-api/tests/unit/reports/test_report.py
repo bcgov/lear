@@ -608,8 +608,8 @@ def test_format_appoint_liquidator_data(session):
     assert filing_data['reportDateAndTimeTitle'] == 'Appointed Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
-    assert filing_data['hasPoa'] is False
-    assert filing_data['courtOrderNumber'] is False
+    assert filing_data['hasPoa'] is True
+    assert filing_data['courtOrderNumber'] == '12345678'
 
     rels = filing_data.get('relationships', {})
     assert 'appointed' in rels
