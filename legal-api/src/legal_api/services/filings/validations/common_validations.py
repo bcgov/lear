@@ -30,7 +30,6 @@ from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
-from business_model.models.configuration import EMAIL_PATTERN
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.services import MinioService, colin, flags, namex
@@ -47,10 +46,10 @@ NO_POSTAL_CODE_COUNTRY_CODES = {
     "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
 }
 
+# streetAddress, addressCity, and addressCountry no-leading/trailing-whitespace are enforced by
+# the schema (business-schemas address pattern). postalCode is not patterned (optional/nullable),
+# so it is still whitespace-validated here.
 WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
-    "streetAddress",
-    "addressCity",
-    "addressCountry",
     "postalCode",
 )
 
@@ -207,21 +206,10 @@ def validate_series(item, filing_type, index) -> Error: # noqa: PLR0912
         err_path = f"/filing/{filing_type}/shareClasses/{index}/series/{series_index}"
 
         series_name = series.get("name", "")
-        stripped_series_name = series_name.strip()
 
-        if not stripped_series_name:
-            msg.append({
-                "error": "Share series name is required.",
-                "path": f"{err_path}/name/"
-            })
-
-        elif series_name != stripped_series_name:
-            msg.append({
-                "error": "Share series name cannot start or end with whitespace.",
-                "path": f"{err_path}/name/"
-            })
-
-        elif not series_name.endswith(SHARE_NAME_SUFFIX):
+        # Non-empty and no leading/trailing whitespace are enforced by the schema
+        # (business-schemas share_structure shareSeries.name pattern).
+        if not series_name.endswith(SHARE_NAME_SUFFIX):
             msg.append({
                 "error": f"Share series name '{series_name}' must end with '{SHARE_NAME_SUFFIX}'.",
                 "path": f"{err_path}/name/"
@@ -294,28 +282,15 @@ def _class_name_has_reserved_words(share_name: str) -> bool:
     return any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words)
 
 
-def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
     """Validate a wellformed share structure."""
     msg = []
 
     share_name = item.get("name", "")
-    stripped_share_name = share_name.strip()
 
-    if not stripped_share_name:
-        err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-        msg.append({
-            "error": "Share class name is required.",
-            "path": err_path
-        })
-
-    elif share_name != stripped_share_name:
-        err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-        msg.append({
-            "error": "Share class name cannot start or end with whitespace.",
-            "path": err_path
-        })
-    
-    elif not share_name.endswith(SHARE_NAME_SUFFIX):
+    # Non-empty and no leading/trailing whitespace are enforced by the schema
+    # (business-schemas share_structure shareClass.name pattern).
+    if not share_name.endswith(SHARE_NAME_SUFFIX):
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
         msg.append({
             "error": f"Share class name '{share_name}' must end with '{SHARE_NAME_SUFFIX}'.",
@@ -647,16 +622,10 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
                 err_msg = f"{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters"
                 msg.append({"error": err_msg, "path": party_path})
 
-        last_name = officer.get("lastName", None)
-        stripped_last_name = last_name.strip()
-        if (legal_type in Business.CORPS) and (not stripped_last_name):
-            msg.append({"error": f"{party_roles_str} last name is required", "path": f"{party_path}"})
-        elif last_name != stripped_last_name:
-            msg.append({
-                "error": f"{party_roles_str} last name cannot start or end with whitespace",
-                "path": party_path
-            })
-        elif len(last_name) > last_name_max_length:
+        # last name required (non-empty) and no leading/trailing whitespace are enforced by the
+        # schema (business-schemas parties officer.lastName pattern).
+        last_name = officer.get("lastName") or ""
+        if len(last_name) > last_name_max_length:
             err_msg = f"{party_roles_str} last name cannot be longer than {last_name_max_length} characters"
             msg.append({"error": err_msg, "path": party_path})
         
@@ -664,18 +633,8 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             err_msg = f"{party_roles_str} organization name should not be set for person party type"
             msg.append({"error": err_msg, "path": party_path})
     elif party_type == "organization":
-        if organization_name is None:
-            err_msg = "organization name is required"
-            msg.append({"error": err_msg, "path": party_path})
-        else:
-            stripped = organization_name.strip()
-            if not stripped:
-                err_msg = "organization name is required"
-                msg.append({"error": err_msg, "path": party_path})
-            elif organization_name != stripped:
-                err_msg = f"{party_roles_str} organization name cannot start or end with whitespace"
-                msg.append({"error": err_msg, "path": party_path})
-        
+        # organization name required (non-empty) and no leading/trailing whitespace are enforced
+        # by the schema (business-schemas parties officer.organizationName pattern).
         if officer.get("firstName") not in (None, ""):
             err_msg = f"{party_roles_str} first name should not be set for organization party type"
             msg.append({"error": err_msg, "path": party_path})
@@ -1101,30 +1060,6 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
 
         if not extension_str.isdigit() or len(extension_str) > max_extension_length:
             msg.append({"error": "Invalid extension, maximum 5 digits", "path": f"{contact_point_path}/extension"})
-
-    return msg
-
-def validate_email(filing_json: dict, filing_type: str) -> list:
-    """Validate email address format."""
-    contact_point_path = f"/filing/{filing_type}/contactPoint"
-    contact_point_dict = filing_json["filing"][filing_type].get("contactPoint", {})
-
-    msg = []
-
-    if email := contact_point_dict.get("email", None):
-        # Validate leading/trailing whitespace
-        if email != email.strip():
-            msg.append({
-                "error": "Email cannot start or end with whitespace.",
-                "path": f"{contact_point_path}/email"
-            })
-
-        # Validate format
-        elif not re.match(EMAIL_PATTERN, email):
-            msg.append({
-                "error": "Invalid email address format.",
-                "path": f"{contact_point_path}/email"
-            })
 
     return msg
 

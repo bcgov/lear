@@ -21,6 +21,7 @@ from legal_api.errors import Error
 from legal_api.services.filings.validations import incorporation_application
 import pytest
 from freezegun import freeze_time
+import registry_schemas
 from registry_schemas.example_data import COURT_ORDER, INCORPORATION, INCORPORATION_FILING_TEMPLATE
 from registry_schemas.example_data.schema_data import FILING_HEADER
 from reportlab.lib.pagesizes import letter
@@ -47,6 +48,17 @@ business = Business(identifier=identifier)
 effective_date = '2020-09-18T00:00:00+00:00'
 court_order_date = '2020-09-17T00:00:00+00:00'
 incorporation_application_name = 'incorporationApplication'
+
+# Sentinel for cases whose blank/whitespace rule moved into business-schemas: the filing is now
+# rejected by schema validation (HTTP 422) instead of the legal-api business check (HTTP 400).
+SCHEMA_REJECTED = 'SCHEMA_REJECTED'
+
+
+def assert_schema_rejected(err):
+    """Assert the filing was rejected by schema validation."""
+    assert err is not None
+    assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+
 
 nr_response = {
     'state': 'APPROVED',
@@ -286,46 +298,31 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             'FAIL - deliveryAddress streetAddress with leading whitespace',
             {"streetAddress": " 123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress streetAddress with trailing whitespace',
             {"streetAddress": "123 A St ", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress streetAddress with only whitespace',
             {"streetAddress": "   ", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress addressCity with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": " Vancouver ", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCity cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCity'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress addressCountry with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": " CA ", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCountry cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/deliveryAddress/addressCountry'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress postalCode with leading/trailing whitespace',
@@ -342,28 +339,19 @@ def test_validate_incorporation_addresses_basic(session, mocker, test_name, lega
             'FAIL - mailingAddress streetAddress with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": " 456 B St ", "addressCity": "Victoria", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - mailingAddress addressCity with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": " Victoria ", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCity cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCity'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - mailingAddress addressCountry with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "addressRegion": "BC", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": " CA ", "addressRegion": "BC", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCountry cannot start or end with whitespace.',
-                 'path': '/filing/incorporationApplication/offices/registeredOffice/mailingAddress/addressCountry'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - mailingAddress postalCode with leading/trailing whitespace',
@@ -423,7 +411,9 @@ def test_validate_incorporation_addresses_whitespace(session, mocker, test_name,
         err = validate(business, filing_json)
 
     # validate outcomes
-    if expected_code:
+    if expected_msg == SCHEMA_REJECTED:
+        assert_schema_rejected(err)
+    elif expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:
@@ -930,25 +920,6 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-            'FAIL_LAST_NAME_EMPTY', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': ''}
-                },
-                {
-                    'partyName': 'officer2',
-                    'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': ''}
-                }
-            ],
-            [{'error': 'Completing Party, Incorporator last name is required',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Incorporator, Director last name is required',
-              'path': '/filing/incorporationApplication/parties'}]
-        ),
-        (
             'FAIL_FIRST_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
             [
                 {
@@ -987,41 +958,6 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (
-            'FAIL_LAST_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Johnajksdfjldkslfja', 'middleName': None, 'lastName': '  Doe'}
-                },
-                {
-                    'partyName': 'officer2',
-                    'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': 'Doe  '}
-                }
-            ],
-            [{'error': 'Completing Party, Incorporator last name cannot start or end with whitespace',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Incorporator, Director last name cannot start or end with whitespace',
-              'path': '/filing/incorporationApplication/parties'}]
-        ),
-        (
-            'FAIL_PARTY_FIRST_MIDDLE_LAST_NAME_WHITESPACE', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': ' John  ', 'middleName': ' B ', 'lastName': '  Doe  '}
-                },
-            ],
-            [{'error': 'Completing Party, Incorporator first name cannot start or end with whitespace',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Completing Party, Incorporator middle name cannot start or end with whitespace',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Completing Party, Incorporator last name cannot start or end with whitespace',
-              'path': '/filing/incorporationApplication/parties'}]
-        ),
-        (
             'FAIL_FIRST_NAME_WHITESPACE_ONLY', 'BEN',
             [
                 {
@@ -1038,39 +974,6 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
             [{'error': 'Completing Party, Incorporator first name is required',
               'path': '/filing/incorporationApplication/parties'},
              {'error': 'Incorporator, Director first name is required',
-              'path': '/filing/incorporationApplication/parties'}]
-        ),
-        (
-            'FAIL_LAST_NAME_WHITESPACE_ONLY', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': 'Johnajksdfjljdkslfja', 'middleName': None, 'lastName': '  '}
-                },
-                {
-                    'partyName': 'officer2',
-                    'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': 'Janeajksdfjljdkslfja', 'middleName': 'jkalsdf', 'lastName': '  '}
-                }
-            ],
-            [{'error': 'Completing Party, Incorporator last name is required',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Incorporator, Director last name is required',
-              'path': '/filing/incorporationApplication/parties'}]
-        ),
-        (
-            'FAIL_PARTY_FIRST_LAST_NAME_WHITESPACE_ONLY', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': '   ', 'middleName': '   ', 'lastName': '   '}
-                },
-            ],
-            [{'error': 'Completing Party, Incorporator first is required',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Completing Party, Incorporator last name is required',
               'path': '/filing/incorporationApplication/parties'}]
         ),
         (
@@ -1299,6 +1202,21 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
         assert not err
 
 
+@pytest.mark.parametrize('bad_last_name', ['', '   ', '\t', '\n', ' Doe', 'Doe ', 'Doe\n'])
+def test_validate_incorporation_party_last_name_rejected_by_schema(session, bad_last_name):
+    """A blank/whitespace/surrounding-whitespace party lastName is rejected by schema validation.
+
+    This rule moved from legal-api into the business-schemas parties officer.lastName pattern,
+    so the filing is rejected by the schema check rather than by the business validator.
+    """
+    filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_json['filing'][incorporation_application_name]['parties'][0]['officer']['lastName'] = bad_last_name
+
+    valid, _ = registry_schemas.validate(filing_json, 'filing')
+
+    assert not valid
+
+
 @pytest.mark.parametrize(
     'test_name, legal_type,'
     'class_name_1,class_has_max_shares,class_max_shares,has_par_value,par_value,currency,'
@@ -1329,35 +1247,17 @@ def test_validate_incorporation_party_names(session, mocker, test_name,
              'path': '/filing/incorporationApplication/shareClasses/0/series/1'
          }]),
         ('FAIL_EMPTY_CLASS_NAME', 'BEN', '', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
-         None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class name is required.',
-             'path': '/filing/incorporationApplication/shareClasses/0/name/'
-         }]),
+         None, None,  HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_WHITESPACE_ONLY_CLASS_NAME', 'BEN', '   ', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
-         None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class name is required.',
-             'path': '/filing/incorporationApplication/shareClasses/0/name/'
-         }]),
+         None, None,  HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_LEADING_AND_TRAILING_WHITESPACE_CLASS_NAME', 'BEN', ' Series 1 Shares ', True, 5000, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
-         None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share class name cannot start or end with whitespace.',
-             'path': '/filing/incorporationApplication/shareClasses/0/name/'
-         }]),
+         None, None,  HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_EMPTY_SERIES_NAME', 'BEN', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', '', True, 1000,
-         None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series name is required.',
-             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
-         }]),
+         None, None,  HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_WHITESPACE_ONLY_SERIES_NAME', 'BEN', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', '   ', True, 1000,
-         None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series name is required.',
-             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
-         }]),
+         None, None,  HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_LEADING_AND_TRAILING_WHITESPACE_SERIES_NAME', 'BEN', 'Class 1 Shares', True, 5000, True, 0.875, 'CAD', '  Series 1 Shares  ', True, 1000,
-         None, None,  HTTPStatus.BAD_REQUEST, [{
-             'error': 'Share series name cannot start or end with whitespace.',
-             'path': '/filing/incorporationApplication/shareClasses/0/series/0/name/'
-         }]), 
+         None, None,  HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_INVALID_CLASS_MAX_SHARES', 'BEN',
          'Class 1 Shares', True, None, True, 0.875, 'CAD', 'Series 1 Shares', True, 1000,
          None, None,
@@ -1632,12 +1532,14 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
         err = validate(business, filing_json)
 
     # validate outcomes
-    if expected_code:
+    if expected_msg == SCHEMA_REJECTED:
+        assert_schema_rejected(err)
+    elif expected_code:
         assert err.code == expected_code
         # print the expected vs actual messages for easier debugging
         print('Expected Msg:', expected_msg)
         print('Actual Msg:', err.msg)
-        
+
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
@@ -1973,9 +1875,9 @@ def test_ia_email_validation(session, should_pass, email):
     if should_pass:
         assert None is err
     else:
-        assert err
-        assert HTTPStatus.BAD_REQUEST == err.code
-        assert any('Invalid email address format' in msg['error'] for msg in err.msg)
+        # invalid email format is now rejected by schema validation (HTTP 422),
+        # not legal-api's removed validate_email business check.
+        assert_schema_rejected(err)
 
 
 @pytest.mark.parametrize('email', [
@@ -2007,7 +1909,7 @@ def _setup_incorporation_permission_mocks(mocker, filing_json, legal_type):
         'validate_parties_delivery_address', 'validate_cooperative_documents', 'validate_ia_court_order',
         'validate_offices_addresses', 'validate_parties_names', 'validate_parties_addresses',
         'validate_name_request', 'validate_share_structure', 'validate_effective_date',
-        'validate_phone_number', 'validate_email',
+        'validate_phone_number',
     ]:
         mocker.patch.object(incorporation_application, func, return_value=[])
 
@@ -2122,7 +2024,7 @@ def test_coop_incorporation_does_not_validate_shares(session, mocker):
                       'validate_parties_names', 'validate_parties_addresses',
                       'validate_coop_parties_mailing_address', 'validate_parties_delivery_address',
                       'validate_name_request', 'validate_cooperative_documents', 'validate_effective_date',
-                      'validate_ia_court_order', 'validate_phone_number', 'validate_email']:
+                      'validate_ia_court_order', 'validate_phone_number']:
         mocker.patch.object(incorporation_application, func_name, return_value=[])
     mocker.patch.object(flags, 'is_on', return_value=False)
 
@@ -2156,7 +2058,7 @@ def test_incorporation_share_currency_validation(session, mocker, test_name, cur
                       'validate_coop_parties_mailing_address', 'validate_parties_delivery_address',
                       'validate_name_request', 'validate_share_structure',
                       'validate_effective_date', 'validate_ia_court_order',
-                      'validate_phone_number', 'validate_email']:
+                      'validate_phone_number']:
         mocker.patch.object(incorporation_application, func_name, return_value=[])
     mocker.patch.object(flags, 'is_on', return_value=False)
 

@@ -27,6 +27,17 @@ from tests.unit.services.filings.validations import lists_are_equal
 from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
 
 
+# Sentinel for cases whose blank/whitespace rule moved into business-schemas: the filing is now
+# rejected by schema validation (HTTP 422) instead of the legal-api business check (HTTP 400).
+SCHEMA_REJECTED = 'SCHEMA_REJECTED'
+
+
+def assert_schema_rejected(err):
+    """Assert the filing was rejected by schema validation."""
+    assert err is not None
+    assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
 @pytest.mark.parametrize(
     'test_name, now, delivery_region_1, delivery_country_1, delivery_region_2, delivery_country_2, '
     'mailing_address_1, mailing_address_2, expected_code, expected_msg',
@@ -64,10 +75,7 @@ from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
             'BC', 'CA', 'BC', 'CA',
             {"streetAddress": "", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V5K0A1"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'Mailing address must include streetAddress.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'Mailing Address missing addressCity',
@@ -75,10 +83,7 @@ from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
             'BC', 'CA', 'BC', 'CA',
             {"streetAddress": "123 A St", "addressCity": "", "addressCountry": "CA", "postalCode": "V5K0A1"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'Mailing address must include addressCity.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCity'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'Mailing Address missing addressCountry',
@@ -86,10 +91,7 @@ from registry_schemas.example_data import CHANGE_OF_DIRECTORS, FILING_HEADER
             'BC', 'CA', 'BC', 'CA',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "", "postalCode": "V5K0A1"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'Mailing address must include addressCountry.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCountry'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'Mailing Address missing postalCode',
@@ -146,7 +148,9 @@ def test_validate_cod_basic(session, test_name, now,
             print(err.msg)
 
     # validate outcomes
-    if expected_code:
+    if expected_msg == SCHEMA_REJECTED:
+        assert_schema_rejected(err)
+    elif expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:
@@ -165,46 +169,31 @@ def test_validate_cod_basic(session, test_name, now,
             'FAIL - deliveryAddress streetAddress with leading whitespace',
             {"streetAddress": " 123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress streetAddress with trailing whitespace',
             {"streetAddress": "123 A St ", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress streetAddress with only whitespace',
             {"streetAddress": "   ", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress addressCity with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": " Vancouver ", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCity cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/addressCity'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress addressCountry with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": " CA ", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCountry cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/deliveryAddress/addressCountry'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - deliveryAddress postalCode with leading/trailing whitespace',
@@ -221,28 +210,19 @@ def test_validate_cod_basic(session, test_name, now,
             'FAIL - mailingAddress streetAddress with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": " 456 B St ", "addressCity": "Victoria", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'streetAddress cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/streetAddress'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - mailingAddress addressCity with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": " Victoria ", "addressCountry": "CA", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCity cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCity'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - mailingAddress addressCountry with leading/trailing whitespace',
             {"streetAddress": "123 A St", "addressCity": "Vancouver", "addressCountry": "CA", "postalCode": "V8W1C2"},
             {"streetAddress": "456 B St", "addressCity": "Victoria", "addressCountry": " CA ", "postalCode": "V8W1C2"},
-            HTTPStatus.BAD_REQUEST, [
-                {'error': 'addressCountry cannot start or end with whitespace.',
-                 'path': '/filing/changeOfDirectors/directors/0/mailingAddress/addressCountry'}
-            ]
+            HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED
         ),
         (
             'FAIL - mailingAddress postalCode with leading/trailing whitespace',
@@ -308,7 +288,9 @@ def test_validate_whitespace_cod_address_fields(session, test_name,
             print(err.msg)
 
     # validate outcomes
-    if expected_code:
+    if expected_msg == SCHEMA_REJECTED:
+        assert_schema_rejected(err)
+    elif expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:

@@ -24,6 +24,7 @@ from business_model.models.share_series import ShareSeries
 from legal_api.services import flags
 from legal_api.services.permissions import PermissionService
 import pytest
+import registry_schemas
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     CHANGE_OF_ADDRESS,
@@ -54,7 +55,6 @@ from legal_api.services.filings.validations.common_validations import (
     validate_certify_name,
     validate_certified_by,
     validate_court_order,
-    validate_email,
     validate_foreign_jurisdiction,
     validate_offices,
     validate_offices_addresses,
@@ -142,10 +142,9 @@ VALID_OFFICE_EX_CA = {
     'mailingAddress': VALID_ADDRESS_EX_CA,
 }
 
+# streetAddress/addressCity/addressCountry no-whitespace is now enforced by the schema
+# (see test_address_field_*_rejected_by_schema); legal-api only whitespace-validates postalCode.
 WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
-    'streetAddress',
-    'addressCity',
-    'addressCountry',
     'postalCode',
 )
 
@@ -380,6 +379,22 @@ def test_validate_parties_addresses(session, filing_type, filing_data, party_key
     assert err4
     error_fields = {e['path'].split('/')[-1] for e in err4}
     assert error_fields == set(WHITESPACE_VALIDATED_ADDRESS_FIELDS)
+
+
+@pytest.mark.parametrize('field', ['streetAddress', 'addressCity', 'addressCountry'])
+@pytest.mark.parametrize('bad_value', ['', '   ', '\t', '\n', ' Lead', 'Trail ', 'Trail\n'])
+def test_address_required_field_blank_or_surrounding_whitespace_rejected_by_schema(session, field, bad_value):
+    """streetAddress/addressCity/addressCountry blank or surrounding-whitespace is rejected by the schema.
+
+    This rule now lives in the business-schemas address pattern rather than in legal-api validation.
+    """
+    address = {'streetAddress': '123 Main St', 'addressCity': 'Victoria', 'addressCountry': 'CA'}
+    address[field] = bad_value
+
+    valid, _ = registry_schemas.validate(address, 'address')
+
+    assert not valid
+
 
 @pytest.mark.parametrize('payment_type, expected', [
     ({}, False),
@@ -785,9 +800,6 @@ def test_validate_authorization_received(session, monkeypatch, legal_type, autho
             {'firstName': 'First', 'lastName': 'Last'},
             None
         ),
-        ('organization', None, {}, 'organization name is required'),
-        ('organization', '  ', {}, 'organization name is required'),
-        ('organization', ' Org Name', {}, 'director organization name cannot start or end with whitespace'),
         ('organization', 'Org Name', {'firstName':'First'}, 'director first name should not be set for organization party type'),
         ('organization', 'Org Name', {'firstName':' '}, 'director first name should not be set for organization party type'),
         ('organization', 'Org Name', {'middleInitial':'A'}, 'director middle initial should not be set for organization party type'),
@@ -819,6 +831,40 @@ def test_validate_party_name(session, party_type, organization_name, officer_ove
         assert expected_errors in [error['error'] for error in errors]
     else:
         assert errors == []
+
+
+def _schema_party(officer):
+    """Build a minimal-but-valid party around the given officer for schema validation."""
+    return {'parties': [{
+        'officer': officer,
+        'roles': [{'roleType': 'Director', 'appointmentDate': '2020-01-01'}],
+        'mailingAddress': {'streetAddress': '123 Main St', 'addressCity': 'Victoria', 'addressCountry': 'CA'},
+    }]}
+
+
+@pytest.mark.parametrize('bad_name', ['', '   ', '\t', '\n', ' Org Name', 'Org Name ', 'Org Name\n'])
+def test_party_org_name_blank_or_surrounding_whitespace_rejected_by_schema(session, bad_name):
+    """organizationName blank/whitespace/surrounding-whitespace is rejected by the schema, not legal-api.
+
+    Enforced by the business-schemas parties officer.organizationName pattern.
+    """
+    valid, _ = registry_schemas.validate(
+        _schema_party({'partyType': 'organization', 'organizationName': bad_name}), 'parties')
+
+    assert not valid
+
+
+@pytest.mark.parametrize('bad_name', ['', '   ', '\t', '\n', ' Last', 'Last ', 'Last\n'])
+def test_party_person_last_name_blank_or_surrounding_whitespace_rejected_by_schema(session, bad_name):
+    """lastName blank/whitespace/surrounding-whitespace is rejected by the schema, not legal-api.
+
+    Enforced by the business-schemas parties officer.lastName pattern.
+    """
+    valid, _ = registry_schemas.validate(
+        _schema_party({'partyType': 'person', 'firstName': 'Joe', 'lastName': bad_name}), 'parties')
+
+    assert not valid
+
 
 @pytest.mark.parametrize('test_name, filing_json, filing_type, business_in_lear, business_in_colin, has_permission, results', [
     (
@@ -1082,79 +1128,28 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test@ example.com', False),
     ('test@@example.com', False),
 ])
-def test_validate_email_format(session, email, is_valid):
-    """Test email format validation against various email patterns."""
-    filing_json = {
-        'filing': {
-            'incorporationApplication': {
-                'contactPoint': {
-                    'email': email
-                }
-            }
-        }
-    }
+def test_contact_point_email_format_via_schema(session, email, is_valid):
+    """The contactPoint email format is enforced by the schema (the same EMAIL_PATTERN the API used).
 
-    result = validate_email(filing_json, 'incorporationApplication')
+    legal-api's validate_email was removed; this asserts the schema covers the same cases.
+    """
+    valid, _ = registry_schemas.validate({'email': email}, 'contactPoint')
 
-    if is_valid:
-        assert result == []
-    else:
-        assert len(result) == 1
-        assert 'Invalid email address format' in result[0]['error']
-        assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'
+    assert valid == is_valid
 
 @pytest.mark.parametrize('email', [
-    # Valid email formats
-    (' test@example.com'),
-    ('test@example.com '),
-    (' test@@example.com'),
-    ('test@@example.com '),
+    ' test@example.com',
+    'test@example.com ',
+    ' test@example.com ',
 ])
-def test_validate_email_whitespace(session, email):
-    """Test whitespace handling in email validation."""
-    filing_json = {
-        'filing': {
-            'incorporationApplication': {
-                'contactPoint': {
-                    'email': email
-                }
-            }
-        }
-    }
+def test_validate_email_surrounding_whitespace_rejected_by_schema(session, email):
+    """Leading/trailing whitespace in contactPoint email is rejected by the schema, not legal-api.
 
-    result = validate_email(filing_json, 'incorporationApplication')
+    This rule now lives in the business-schemas contactPoint email pattern.
+    """
+    valid, _ = registry_schemas.validate({'email': email}, 'contactPoint')
 
-    assert len(result) == 1
-    assert 'Email cannot start or end with whitespace' in result[0]['error']
-    assert result[0]['path'] == '/filing/incorporationApplication/contactPoint/email'        
-
-
-def test_validate_email_missing_contact_point(session):
-    """Test that missing contactPoint does not cause an error."""
-    filing_json = {
-        'filing': {
-            'incorporationApplication': {}
-        }
-    }
-
-    result = validate_email(filing_json, 'incorporationApplication')
-    assert result == []
-
-
-def test_validate_email_missing_email_field(session):
-    """Test that missing email field does not cause an error."""
-    filing_json = {
-        'filing': {
-            'incorporationApplication': {
-                'contactPoint': {
-                    'phone': '(123) 456-7890'
-                }
-            }
-        }
-    }
-
-    result = validate_email(filing_json, 'incorporationApplication')
-    assert result == []
+    assert not valid
 
 
 @pytest.mark.parametrize('has_permission, expected_error_msg', [
@@ -1276,46 +1271,35 @@ def test_share_class_name_reserved_words(session, share_class_name, expected_val
     '   ',
     '\t',
     '\n',
-])
-def test_share_class_name_empty(session, share_class_name):
-    """Test that empty share class names are rejected."""
-    share_class = {
-        'name': share_class_name,
-        'hasMaximumShares': False,
-        'hasParValue': False,
-        'hasRightsOrRestrictions': False,
-        'series': []
-    }
-    memoize_names = []
-
-    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
-
-    assert len(result) >= 1
-    assert any('Share class name is required' in e.get('error', '') for e in result)
-
-
-@pytest.mark.parametrize('share_class_name', [
     ' Class A Shares',
     'Class A Shares ',
     ' Class A Shares ',
     '\tClass A Shares',
     'Class A Shares\n',
 ])
-def test_share_class_name_whitespace(session, share_class_name):
-    """Test that share class names with leading/trailing whitespace are rejected."""
-    share_class = {
-        'name': share_class_name,
-        'hasMaximumShares': False,
-        'hasParValue': False,
-        'hasRightsOrRestrictions': False,
-        'series': []
+def test_share_class_name_blank_or_surrounding_whitespace_rejected_by_schema(session, share_class_name):
+    """Blank/whitespace-only and leading/trailing-whitespace class names are rejected by the schema.
+
+    These rules now live in the business-schemas share_structure.shareClass.name
+    pattern rather than in legal-api validation, so they are asserted against the
+    schema here.
+    """
+    share_structure = {
+        'shareClasses': [{
+            'name': share_class_name,
+            'priority': 1,
+            'maxNumberOfShares': None,
+            'parValue': None,
+            'currency': None,
+            'hasMaximumShares': False,
+            'hasParValue': False,
+            'hasRightsOrRestrictions': False,
+        }]
     }
-    memoize_names = []
 
-    result = validate_shares(share_class, memoize_names, 'incorporationApplication', 0, 'BEN')
+    valid, _ = registry_schemas.validate(share_structure, 'share_structure')
 
-    assert len(result) >= 1
-    assert any('cannot start or end with whitespace' in e.get('error', '') for e in result)
+    assert not valid
 
 
 def test_share_class_name_duplicate(session):
@@ -1460,48 +1444,42 @@ def test_series_name_reserved_words(session, series_name, expected_valid):
     '   ',
     '\t',
     '\n',
+    ' Series A Shares',
+    'Series A Shares ',
+    ' Series A Shares ',
+    '\tSeries A Shares',
+    'Series A Shares\n',
 ])
-def test_series_name_empty(session, series_name):
-    """Test that empty series names are rejected."""
-    share_class = {
-        'name': 'Class A Shares',
-        'hasMaximumShares': False,
-        'hasParValue': False,
-        'hasRightsOrRestrictions': True,
-        'series': [{
-            'name': series_name,
-            'hasMaximumShares': False
+def test_series_name_blank_or_surrounding_whitespace_rejected_by_schema(session, series_name):
+    """Blank/whitespace-only and leading/trailing-whitespace series names are rejected by the schema.
+
+    These rules now live in the business-schemas share_structure.shareSeries.name
+    pattern rather than in legal-api validation, so they are asserted against the
+    schema here.
+    """
+    share_structure = {
+        'shareClasses': [{
+            'name': 'Class A Shares',
+            'priority': 1,
+            'maxNumberOfShares': None,
+            'parValue': None,
+            'currency': None,
+            'hasMaximumShares': False,
+            'hasParValue': False,
+            'hasRightsOrRestrictions': True,
+            'series': [{
+                'name': series_name,
+                'priority': 1,
+                'maxNumberOfShares': None,
+                'hasMaximumShares': False,
+                'hasRightsOrRestrictions': False,
+            }]
         }]
     }
-    result = validate_series(share_class, 'incorporationApplication', 0)
 
-    assert len(result) >= 1
-    assert any('Share series name is required' in e.get('error', '') for e in result)
+    valid, _ = registry_schemas.validate(share_structure, 'share_structure')
 
-
-@pytest.mark.parametrize('series_name', [
-    ' Series A',
-    'Series A ',
-    ' Series A ',
-    '\tSeries A',
-    'Series A\n',
-])
-def test_series_name_whitespace(session, series_name):
-    """Test that series names with leading/trailing whitespace are rejected."""
-    share_class = {
-        'name': 'Class A Shares',
-        'hasMaximumShares': False,
-        'hasParValue': False,
-        'hasRightsOrRestrictions': True,
-        'series': [{
-            'name': series_name,
-            'hasMaximumShares': False
-        }]
-    }
-    result = validate_series(share_class, 'incorporationApplication', 0)
-
-    assert len(result) >= 1
-    assert any('cannot start or end with whitespace' in e.get('error', '') for e in result)
+    assert not valid
 
 
 def test_series_name_duplicate(session):
