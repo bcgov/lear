@@ -27,7 +27,7 @@ bp = Blueprint("INTERNAL_SERVICE", __name__, url_prefix="/api/v2/internal")
 
 
 @bp.route("/filings/future_effective", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.system])
 def get_future_effective_filing_ids():
     """Return filing ids which should be effective now."""
@@ -36,7 +36,7 @@ def get_future_effective_filing_ids():
 
 
 @bp.route("/expired_restoration", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.system])
 def get_identifiers_of_expired_restoration():
     """Return all identifiers (if limited restoration has expired)."""
@@ -46,7 +46,7 @@ def get_identifiers_of_expired_restoration():
 
 
 @bp.route("/bnmove", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.system])
 def update_bn_move():
     """Update the new tax id for a business for given old tax id."""

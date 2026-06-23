@@ -41,7 +41,7 @@ from .bp import bp
 
 @bp.route("/settings/<string:account_id>", methods=["GET"])
 @bp.route("/settings/<string:account_id>/<string:identifier>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_business_account_settings(account_id: str, identifier: str | None = None):
     """Return a JSON object containing the settings information for the business and account combination."""
@@ -73,7 +73,7 @@ def get_business_account_settings(account_id: str, identifier: str | None = None
 
 
 @bp.route("/settings/<string:account_id>/<string:identifier>", methods=["POST", "PUT", "PATCH"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def update_business_account_settings(account_id: str, identifier: str):
     """Update the settings information for the business and account combination."""
@@ -91,7 +91,7 @@ def update_business_account_settings(account_id: str, identifier: str):
 
 
 @bp.route("/settings/<string:account_id>/<string:identifier>", methods=["DELETE"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def delete_business_account_settings(account_id: str, identifier: str):
     """Update the settings information for the business and account combination."""
