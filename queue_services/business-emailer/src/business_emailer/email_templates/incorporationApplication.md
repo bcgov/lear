@@ -9,7 +9,7 @@
 [[attachments.md]]
 
 ---
-{% if not business_number -%}
+{% if business_number == 'Not Available' -%}
 
 [[business-number.md]]
 

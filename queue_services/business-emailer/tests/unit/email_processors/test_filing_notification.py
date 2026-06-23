@@ -141,10 +141,12 @@ def test_numbered_incorp_notification_future_effective(app, session, mocker, leg
 
     assert email is not None
     assert email['content']['body']
-    # When legalName is absent from the DB business, process falls back to numberedDescription as business_name
+    # When legalName is absent from the DB business:
+    # - falls back to numberedDescription as business_name in subject
+    # - falls back to 'Not Available' in the tombstone
     numbered_description = Business.BUSINESSES[Business.LegalTypes(legal_type)]['numberedDescription']
     assert numbered_description in email['content']['subject']
-    assert numbered_description in email['content']['body']
+    assert "Business Name: Not Available" not in email['content']['body']
 
 
 @pytest.mark.parametrize('legal_type', [
@@ -518,17 +520,19 @@ def test_ia_completed_body_and_subject(app, session, mocker):
     assert email['content']['subject'] == 'test business - Successful Incorporation'
 
 
-def test_business_number_long_taxid_formats_with_space(app, session, mocker):
-    """Assert that taxId longer than 9 chars is formatted with ' BC' spacing and rendered in the IA body."""
-    # BN15 format: 9-digit root + 'BC' + 4 digits, length = 15 (> 9)
-    bn15 = '123456789BC0001'
-    assert len(bn15) > 9
+@pytest.mark.parametrize("legal_type, tax_id, expected", [
+    ("BC", "123456789BC0001", "123456789 BC0001"),
+    ("BC", "123456789", "Not Available"),
+    ("BC", None, "Not Available"),
+    ("CP", None, None),
+], ids=["BC with bn15", "BC with bn9", "BC with no bn", "CP doesn't show bn"])
+def test_business_number_rendering(app, session, mocker, legal_type, tax_id, expected):
+    """Assert business number renders as expected."""
+    identifier = f'{legal_type}1234567'
 
-    # Create IA COMPLETED filing so the markdown template (business-tombstone.md) renders business_number
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
-    # Retrieve the business created by prep_incorp_filing and set its tax_id
-    business = Business.find_by_identifier('BC1234567')
-    business.tax_id = bn15
+    filing = prep_incorp_filing(session, identifier, '1', 'COMPLETED', legal_type)
+    business = Business.find_by_identifier(identifier)
+    business.tax_id = tax_id
     business.save()
 
     token = 'token'
@@ -541,53 +545,10 @@ def test_business_number_long_taxid_formats_with_space(app, session, mocker):
 
     assert email is not None
     body = email['content']['body']
-    # business_number = bn15.replace("BC", " BC") = "123456789 BC0001"
-    formatted_bn = bn15.replace('BC', ' BC')
-    assert formatted_bn in body
-    # business-tombstone.md renders: **Business Number:** {{ business_number }}
-    assert 'Business Number:' in body
-
-
-def test_business_number_short_taxid_not_rendered(app, session, mocker):
-    """Assert that taxId with 9 or fewer chars does not set business_number (no Business Number in body)."""
-    short_bn = '123456789'  # exactly 9 chars — branch requires len > 9
-    assert len(short_bn) <= 9
-
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
-    business = Business.find_by_identifier('BC1234567')
-    business.tax_id = short_bn
-    business.save()
-
-    token = 'token'
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
-        email = filing_notification.process(
-            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
-
-    assert email is not None
-    body = email['content']['body']
-    # business_number is None when len(taxId) <= 9; tombstone template skips the Business Number block
-    assert 'Business Number:' not in body
-
-
-def test_business_number_empty_taxid_not_rendered(app, session, mocker):
-    """Assert that an absent taxId does not render a Business Number line in the IA body."""
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
-    # tax_id is None by default — no need to set it
-
-    token = 'token'
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
-        email = filing_notification.process(
-            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
-
-    assert email is not None
-    body = email['content']['body']
-    assert 'Business Number:' not in body
+    if expected:
+        assert f'**Business Number:** {expected}' in body
+    else:
+        assert '**Business Number:**' not in body
 
 
 def test_future_attachments_list_in_ia_future_effective_paid_coop(app, session, mocker):

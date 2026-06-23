@@ -29,6 +29,7 @@ from business_emailer.email_processors import (
     get_filing_info,
     get_filled_template,
     get_recipients,
+    get_subject,
     get_user_email_from_auth,
     substitute_template_parts,
 )
@@ -208,11 +209,12 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
     filing_doc_title = FILING_TITLE[filing_type]
     show_effective_date = filing.is_future_effective
     is_future_effective_paid = filing.is_future_effective and status == Filing.Status.PAID.value
-    business_name = business.get("legalName")
+    business_name = business.get("legalName") or "Not Available"
     business_identifier = business.get("identifier")
     business_number = None
     filing_name_short = ""
     future_attachments_list = []
+    dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
 
     if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
         # Only show if bn15 is saved and format for ux
@@ -223,15 +225,14 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
         filing_name_short = "Incorporation"
         filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
         if is_future_effective_paid:
+            business_identifier = "Not Available"
             if legal_type == Business.LegalTypes.COOP.value:
                 future_attachments_list = FUTURE_ATTACHMENTS["incorporationApplication"]["CP"]
             else:
                 future_attachments_list = FUTURE_ATTACHMENTS["incorporationApplication"]["CORP"]
-
-            if not business_name:
-                # assume it is numbered for this case (following current logic)
-                numbered_description = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
-                business_name = numbered_description
+            
+        if not business_number and legal_type != Business.LegalTypes.COOP.value:
+            business_number = "Not Available"
 
     else:
         template = Path(
@@ -251,12 +252,12 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=get_entity_dashboard_url(business.get("identifier"), token),
+        entity_dashboard_url=dashboard_url,
         filing_type=filing_type,
         additional_info=get_additional_info(filing),
         attachments_list=attachments_list,
-        business_name=business_name or "N/A",
-        business_identifier=business_identifier or "N/A",
+        business_name=business_name,
+        business_identifier=business_identifier,
         business_number=business_number,
         filing_doc_title=filing_doc_title,
         filing_name=filing_name,
@@ -284,10 +285,8 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
     # assign subject
     if filing_type == "incorporationApplication":
         # FUTURE - all filings will follow this logic
-        if is_future_effective_paid:
-            subject = f"{business_name} - {filing_name} Filed"
-        else:
-            subject = f"{business_name} - Successful {filing_name_short}"
+        subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, filing_name_short)
+
     else:
         if status == Filing.Status.PAID.value:
             if filing_type in ["changeOfAddress", "changeOfDirectors"]:
@@ -304,11 +303,7 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
         if not subject:  # fallback case - should never happen
             subject = "Notification from the BC Business Registry"
 
-        if filing.filing_type == "incorporationApplication":
-            legal_name = \
-                filing.filing_json["filing"]["incorporationApplication"]["nameRequest"].get("legalName", None)
-        else:
-            legal_name = business.get("legalName", None)
+        legal_name = business.get("legalName", None)
 
         subject = f"{legal_name} - {subject}" if legal_name else subject
 
