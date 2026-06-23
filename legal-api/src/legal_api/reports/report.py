@@ -283,6 +283,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return template_code
 
     def _get_template_filename(self):
+        print('GETTING TEMPLATE FILENAME')
         if ReportMeta.reports[self._report_key].get("hasDifferentTemplates", False):
             # Get template specific to legal type
             file_name = None
@@ -293,6 +294,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     ReportMeta.reports[self._report_key]["default"]["fileName"]
         else:
             file_name = ReportMeta.reports[self._report_key]["fileName"]
+
+        print('FOUND FILENAME: ', f"{file_name}.html")
+
         return f"{file_name}.html"
 
     def _get_template_data(self):
@@ -369,7 +373,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_notice_of_withdrawal_data(filing)
         elif self._report_key in {"appointReceiver", "ceaseReceiver"}:
             self._format_receiver_data(filing)
-        elif self._report_key in {"appointLiquidator", "ceaseLiquidator", "changeAddressLiquidator", "intentToLiquidate"}:
+        elif self._report_key == "changeOfLiquidators":
             self._format_liquidator_data(filing)
         else:
             # set registered office address from either the COA filing or status quo data in AR filing
@@ -1996,23 +2000,8 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "fileName": "ceaseReceiver",
             "reportType": ReportTypes.FILING.value
         },
-        "appointLiquidator": {
-            "filingDescription": "Appoint Liquidator",
-            "fileName": "changeOfLiquidators",
-            "reportType": ReportTypes.FILING.value
-        },
-        "ceaseLiquidator": {
-            "filingDescription": "Cease Liquidator",
-            "fileName": "changeOfLiquidators",
-            "reportType": ReportTypes.FILING.value
-        },
-        "changeAddressLiquidator": {
-            "filingDescription": "Change Address Liquidator",
-            "fileName": "changeOfLiquidators",
-            "reportType": ReportTypes.FILING.value
-        },
-        "intentToLiquidate": {
-            "filingDescription": "Intent To Liquidate",
+        "changeOfLiquidators": {
+            "filingDescription": "Change of Liquidators",
             "fileName": "changeOfLiquidators",
             "reportType": ReportTypes.FILING.value
         },
