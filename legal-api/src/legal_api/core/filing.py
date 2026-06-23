@@ -489,7 +489,7 @@ class Filing:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def get_document_list(business,  # noqa: PLR0912, PLR0915 NOSONAR(S3776)
-                          filing: Filing,
+                          filing,
                           jwt: JwtManager) -> dict | None:
         """Return a list of documents for a particular filing."""
         no_output_filings = [
@@ -565,6 +565,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
             Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
+            Filing.FilingTypes.CHANGEOFLIQUIDATORS.value,
             Filing.FilingTypes.CHANGEOFOFFICERS.value
         ]
         no_outputs_except_receipt_dissolution = filing.storage.filing_sub_type == "delay"
@@ -588,7 +589,6 @@ class Filing:  # pylint: disable=too-many-public-methods
             return documents
 
         legal_filings = filing.storage.meta_data.get("legalFilings") if filing.storage.meta_data else None
-
         if not legal_filings and filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
             legal_filings = [filing.filing_type]
         if (
@@ -623,22 +623,9 @@ class Filing:  # pylint: disable=too-many-public-methods
                 Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
                 Filing.FilingTypes.CHANGEOFOFFICERS.value
             ]
-
-            # normalize filing names to use filing_sub_type if available
-            normalized_legal_filings = []
-            for doc in legal_filings_copy:
-                doc_name = doc
-                if filing_sub_type and filing_sub_type in FilingStorage.FILINGS.get(doc, {}):
-                    doc_name = filing_sub_type
-                normalized_legal_filings.append(doc_name)
-
-
-            legal_filing_document_urls = []
             if filing.filing_type not in no_legal_filings:
-                for doc in normalized_legal_filings:
-                    legal_filing_document_urls.append({doc: f"{base_url}{doc_url}/{doc}"})
-
-                documents["documents"]["legalFilings"] = legal_filing_document_urls
+                documents["documents"]["legalFilings"] = \
+                        [{doc: f"{base_url}{doc_url}/{doc}"} for doc in legal_filings_copy]
 
             # get extra outputs
             if filing.storage.transaction_id and \
@@ -646,7 +633,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                     filing.storage, business.id)):
                 business = bus_rev_temp
 
-            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in normalized_legal_filings]
+            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
             additional = {item for sublist in adds for item in sublist}
             FilingMeta.alter_outputs(filing.storage, business, additional)
             for doc in additional:

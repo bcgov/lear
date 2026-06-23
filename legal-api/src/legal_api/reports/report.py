@@ -1545,7 +1545,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             has_provisions = self._filing.filing_json["filing"].get("transition", {}).get("hasProvisions")
             filing["hasProvisions"] = has_provisions
 
-    def _format_liquidator_data(self, filing):
+    def _format_liquidator_data(self, filing): # noqa: PLR0912, PLR0915 
         self._set_dates(filing) # required to use effective_date inside this method
         col = filing.get("changeOfLiquidators", {})
         sub_type = col.get("type")
@@ -1806,7 +1806,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             }
 
             formatted_rels.append(rel)
-        return formatted_rels 
+        return formatted_rels
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
     """Helper class to maintain the report meta information."""
