@@ -50,7 +50,7 @@ from .bp import bp
 
 
 @bp.route("/internal/filings", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_completed_filings_for_colin():
     """Get filings by status formatted in json."""
@@ -377,7 +377,7 @@ def _set_relationship_parties(business: Business, filing: Filing, filing_json: d
 
 
 @bp.route("/internal/filings/<int:filing_id>", methods=["PATCH"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def update_colin_id(filing_id):
     """Patch the colin_event_id for a filing."""
@@ -410,7 +410,7 @@ def update_colin_id(filing_id):
 
 @bp.route("/internal/filings/colin_id", methods=["GET"])
 @bp.route("/internal/filings/colin_id/<int:colin_id>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_colin_event_id(colin_id=None):
     """Get the last colin id updated in legal."""
@@ -438,7 +438,7 @@ def get_colin_event_id(colin_id=None):
 
 
 @bp.route("/internal/last-event-id/<identifier>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_last_event_id(identifier):
     """Get the last colin event id for the identifier."""
@@ -459,7 +459,7 @@ def get_last_event_id(identifier):
 
 
 @bp.route("/internal/filings/colin_id/<int:colin_id>", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def update_colin_event_id(colin_id):
     """Add a row to the colin_last_update table."""
@@ -479,7 +479,7 @@ def update_colin_event_id(colin_id):
 
 
 @bp.route("/internal/tax_ids", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_all_identifiers_without_tax_id():
     """Return all identifiers with no tax_id set that are supposed to have a tax_id.
@@ -495,7 +495,7 @@ def get_all_identifiers_without_tax_id():
 
 
 @bp.route("/internal/tax_ids", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def set_tax_ids():
     """Set tax ids for businesses for given identifiers."""

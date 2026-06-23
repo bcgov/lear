@@ -46,7 +46,7 @@ ENV DBSCHEMA_VERSION=9_7_1
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends default-jre-headless curl;\
-    curl -fsSL "https://www.dbschema.com/download/dbschema_linux_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
+    curl -fsSL "https://www.dbschema.com/download/dbschema_unix_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
     tar -xzf /tmp/dbschema.tar.gz -C /opt; \
     rm /tmp/dbschema.tar.gz; \
     mkdir -p "${DBSCHEMA_HOME}/lib"; \
@@ -59,6 +59,12 @@ RUN set -eux; \
  
 # Create directories with proper permissions
 RUN mkdir -p /opt/app-root && \
+    chmod 755 /opt/app-root
+
+ENV HOME=/opt/app-root
+RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
+    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar && \
+    chmod -R g+rwX /opt/app-root/.DbSchema && \
     chmod 755 /opt/app-root
 
 WORKDIR /opt/app-root
@@ -76,4 +82,4 @@ EXPOSE 8080
 
 COPY src .
 
-CMD [ "python", "src/test_connectivity.py" ]
+CMD [ "python", "test_connectivity.py" ]

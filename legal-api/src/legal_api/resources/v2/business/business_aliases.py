@@ -25,7 +25,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/aliases", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/aliases/<int:alias_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_aliases(identifier, alias_id=None):
     """Return a JSON of the aliases."""

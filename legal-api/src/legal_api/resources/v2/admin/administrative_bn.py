@@ -26,7 +26,7 @@ from .bp import bp_admin
 
 @bp_admin.route("bn/<string:identifier>", methods=["POST"])
 @bp_admin.route("bn/<string:identifier>/<string:business_number>", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.admin_edit, UserRoles.bn_edit])
 def create_bn_request(identifier: str, business_number: str | None = None):
     """Create a bn request."""

@@ -28,7 +28,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/parties", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/parties/<int:party_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_parties(identifier, party_id=None):  # noqa: PLR0912
     """Return a JSON of the parties."""

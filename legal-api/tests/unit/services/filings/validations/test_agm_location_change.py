@@ -24,10 +24,15 @@ from registry_schemas.example_data import AGM_LOCATION_CHANGE, FILING_HEADER
 from tests.unit.models import factory_business
 
 
+# Sentinel for cases whose blank/whitespace rule moved into business-schemas: the filing is now
+# rejected by schema validation (HTTP 422) instead of the legal-api business check (HTTP 400).
+SCHEMA_REJECTED = 'SCHEMA_REJECTED'
+
+
 @pytest.mark.parametrize(
     'test_name, expected_code, message',
     [
-        ('INVALID_YEAR', HTTPStatus.BAD_REQUEST, 'Invalid AGM year.'),
+        ('INVALID_YEAR', HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('FAIL_YEAR-3', HTTPStatus.BAD_REQUEST, 'AGM year must be between -2 or +1 year from current year.'),
         ('FAIL_YEAR+2', HTTPStatus.BAD_REQUEST, 'AGM year must be between -2 or +1 year from current year.'),
         ('SUCCESS-2', None, None),
@@ -61,7 +66,10 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message, m
     err = validate(business, filing)
 
     # validate outcomes
-    if not test_name.startswith('SUCCESS'):
+    if message == SCHEMA_REJECTED:
+        assert err is not None
+        assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+    elif not test_name.startswith('SUCCESS'):
         assert expected_code == err.code
         if message:
             assert message == err.msg[0]['error']
@@ -71,8 +79,8 @@ def test_validate_agm_year(session, mocker, test_name, expected_code, message, m
 @pytest.mark.parametrize(
     'test_name, reason, expected_code, message',
     [
-        ('EMPTY', '', HTTPStatus.BAD_REQUEST, 'Reason is required.'),        
-        ('ONLY_WHITESPACE', '     ', HTTPStatus.BAD_REQUEST, 'Reason is required.'),
+        ('EMPTY', '', HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
+        ('ONLY_WHITESPACE', '     ', HTTPStatus.UNPROCESSABLE_ENTITY, SCHEMA_REJECTED),
         ('VALID_REASON', 'Test Reason', None, None),
         ('VALID_REASON_WITH_SPACES', '   Valid Reason   ', None, None),
     ]
@@ -94,7 +102,10 @@ def test_validate_agm_reason(session, mocker, test_name, reason, expected_code, 
     err = validate(business, filing)
 
     # validate outcomes
-    if expected_code:
+    if message == SCHEMA_REJECTED:
+        assert err is not None
+        assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+    elif expected_code:
         assert expected_code == err.code
         assert message == err.msg[0]['error']
     else:

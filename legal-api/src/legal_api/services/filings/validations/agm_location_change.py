@@ -21,7 +21,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business
 from legal_api.errors import Error
 from legal_api.services import flags
-from legal_api.services.utils import get_int, get_str
+from legal_api.services.utils import get_int
 
 
 def validate(business: Business, filing: dict) -> Error | None:
@@ -36,6 +36,8 @@ def validate(business: Business, filing: dict) -> Error | None:
 
     msg = []
 
+    # A four-digit year is enforced by the schema (agm_location_change year pattern ^\d{4}$);
+    # only the business-rule year range is checked here.
     agm_year_path: Final = "/filing/agmLocationChange/year"
     year = get_int(filing, agm_year_path)
     if year:
@@ -43,13 +45,9 @@ def validate(business: Business, filing: dict) -> Error | None:
         expected_max = LegislationDatetime.now().year + 1
         if expected_min > year or year > expected_max:
             msg.append({"error": "AGM year must be between -2 or +1 year from current year.", "path": agm_year_path})
-    else:
-        msg.append({"error": "Invalid AGM year.", "path": agm_year_path})
 
-    agm_reason_path: Final = "/filing/agmLocationChange/reason"
-    reason = get_str(filing, agm_reason_path)
-    if not reason.strip():
-        msg.append({"error": "Reason is required.", "path": agm_reason_path})
+    # A non-empty reason (at least one non-whitespace character) is enforced by the schema
+    # (business-schemas agm_location_change reason pattern).
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
