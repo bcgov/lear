@@ -94,7 +94,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
         report_type = report_meta.get("reportType")
-
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
                 business_identifier,
@@ -294,7 +293,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     ReportMeta.reports[self._report_key]["default"]["fileName"]
         else:
             file_name = ReportMeta.reports[self._report_key]["fileName"]
-
         return f"{file_name}.html"
 
     def _get_template_data(self):
@@ -1780,36 +1778,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "roles": relationship.get("roles", [])
         }
 
-    def _map_parties_to_relationships(self, parties: list[dict]) -> list[dict]:
-        formatted_rels = []
-        for p in parties:
-            o = p.get("officer", {})
-
-            if mailing_address := p.get("mailingAddress"):
-                mailing_address = self._format_address(mailing_address)
-
-            if delivery_address := p.get("deliveryAddress"):
-                delivery_address = self._format_address(delivery_address)
-
-            rel = {
-                "entity": {
-                    "givenName": o.get("firstName"),
-                    "familyName": o.get("lastName"),
-                    "identifier": str(p.get("id") or ""),
-                    "businessName": o.get("organizationName"),
-                    "alternateName": o.get("alternateName"),
-                    "middleInitial": o.get("middleInitial"),
-                },
-                "mailingAddress": mailing_address,
-                "deliveryAddress": delivery_address,
-                "appointmentDate": p.get("appointmentDate"),
-                "cessationDate": p.get("cessationDate")
-            } # TODO: do we need to include roles as well??? would need to combine duplicate parties if the one party has multiple roles
-
-            formatted_rels.append(rel)
-
-        return formatted_rels
-
     def _map_party_roles_to_relationships_json(self, party_roles: list[PartyRole]):
         formatted_rels = []
         for role in party_roles:
@@ -1838,7 +1806,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             }
 
             formatted_rels.append(rel)
-
         return formatted_rels 
 
 class ReportMeta:  # pylint: disable=too-few-public-methods
