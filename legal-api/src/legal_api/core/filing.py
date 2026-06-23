@@ -540,7 +540,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         elif filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
             documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
-        filing_sub_type = getattr(filing.storage, "filing_sub_type", None)
+        filing_sub_type = filing.storage.filing_sub_type
 
         receipt_only_filings = [
             Filing.FilingTypes.CHANGEOFRECEIVERS.value,
