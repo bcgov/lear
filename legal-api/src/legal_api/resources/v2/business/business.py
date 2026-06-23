@@ -42,7 +42,7 @@ from .bp import bp
 
 
 @bp.route("/<string:identifier>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_businesses(identifier: str):
     """Return a JSON object with meta information about the Service."""
@@ -111,7 +111,7 @@ def get_businesses(identifier: str):
 
 
 @bp.route("/<string:identifier>/public", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_businesses_public(identifier: str, slim = False):
     """Return a JSON object with public meta information about the business."""
@@ -137,7 +137,7 @@ def get_businesses_public(identifier: str, slim = False):
 
 
 @bp.route("", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def post_businesses():
     """Create a valid filing, else error out."""
@@ -188,7 +188,7 @@ def post_businesses():
 
 
 @bp.route("/<string:identifier>/ar-reminder", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_ar_reminder(identifier):
     """Return send ar reminder flag."""
@@ -203,7 +203,7 @@ def get_ar_reminder(identifier):
 
 
 @bp.route("/<string:identifier>/ar-reminder", methods=["PUT"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def set_ar_reminder(identifier):
     """Update send ar reminder flag."""
@@ -238,7 +238,7 @@ def set_ar_reminder(identifier):
 
 
 @bp.route("/search", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_roles([SYSTEM_ROLE])
 def search_businesses():
     """Return the list of businesses and draft businesses."""
@@ -277,7 +277,7 @@ def search_businesses():
 
 
 @bp.route("/search/affiliation_mappings", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_roles([SYSTEM_ROLE])
 def get_filing_details():
     """Return the list of Business filings with name requests. Being called from auth api."""
@@ -293,7 +293,7 @@ def get_filing_details():
 
 
 @bp.route("/allowable/<string:business_type>/<string:business_state>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_allowable_for_business_type(business_type: str, business_state: str):
     """Return a JSON object with information about what a user could theoretically file for a business type."""

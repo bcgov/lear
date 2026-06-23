@@ -837,7 +837,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
         'foundingDate': '2009-07-23T07:00:00.000+00:00'
     }
 
-    mocker.patch('legal_api.services.colin.ColinService.query_business', return_value=mocker.Mock(
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
         status_code=HTTPStatus.OK,
         json=lambda: {
             'business': {
@@ -869,7 +869,7 @@ def test_validate_business_in_colin_founding_date_match(mocker, app, session):
         'foundingDate': '2009-07-23T18:31:24-00:00'
     }
 
-    mocker.patch('legal_api.services.colin.ColinService.query_business', return_value=mocker.Mock(
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
         status_code=HTTPStatus.OK,
         json=lambda: {
             'business': {

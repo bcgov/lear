@@ -91,7 +91,7 @@ class FilingModel(BaseModel, Generic[FilingT]):
 
 @bp.route("/<string:identifier>/filings", methods=["GET"])
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @pydantic_validate(query=QueryModel)
 def get_filings(identifier: str, filing_id: int | None = None):
@@ -118,7 +118,7 @@ def get_filings(identifier: str, filing_id: int | None = None):
 
 @bp.route("/<string:identifier>/filings", methods=["POST"])
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["POST", "PUT"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @pydantic_validate(get_json_params={"silent": True})
 def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
@@ -191,7 +191,7 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
 
 @bp.route("/<string:identifier>/filings", methods=["DELETE"])
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["DELETE"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def delete_filings(identifier, filing_id=None):
     """Delete a filing from the business."""
@@ -236,7 +236,7 @@ def delete_filings(identifier, filing_id=None):
 
 
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["PATCH"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def patch_filings(identifier, filing_id=None):
     """Cancel the payment and resets the filing status to DRAFT."""
@@ -285,7 +285,7 @@ def patch_filings(identifier, filing_id=None):
 
 
 @bp.route("/filings/search/<int:filing_id>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_single_filing_by_filing_id(filing_id):
     """Return a single filing by filing ID."""

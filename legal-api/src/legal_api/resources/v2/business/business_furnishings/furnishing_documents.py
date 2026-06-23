@@ -29,7 +29,7 @@ FURNISHING_DOC_BASE_ROUTE: Final = "/<string:identifier>/furnishings/<string:fur
 
 
 @bp.route(FURNISHING_DOC_BASE_ROUTE, methods=["GET", "OPTIONS"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.system, UserRoles.staff])
 def get_furnishing_document(identifier: str, furnishing_id: int): # noqa: PLR0911
     """Return a JSON object with meta information about the Service."""
