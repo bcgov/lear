@@ -283,7 +283,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return template_code
 
     def _get_template_filename(self):
-        print('GETTING TEMPLATE FILENAME')
         if ReportMeta.reports[self._report_key].get("hasDifferentTemplates", False):
             # Get template specific to legal type
             file_name = None
@@ -294,8 +293,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     ReportMeta.reports[self._report_key]["default"]["fileName"]
         else:
             file_name = ReportMeta.reports[self._report_key]["fileName"]
-
-        print('FOUND FILENAME: ', f"{file_name}.html")
 
         return f"{file_name}.html"
 
