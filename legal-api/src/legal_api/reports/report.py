@@ -1547,7 +1547,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             has_provisions = self._filing.filing_json["filing"].get("transition", {}).get("hasProvisions")
             filing["hasProvisions"] = has_provisions
 
-    def _format_liquidator_data(self, filing: Filing):
+    def _format_liquidator_data(self, filing):
         self._set_dates(filing) # required to use effective_date inside this method
         col = filing.get("changeOfLiquidators", {})
         sub_type = col.get("type")
@@ -1571,7 +1571,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["reportDateAndTimeTitle"] = report_date_and_time_title_config[sub_type]
 
         # format last liquidationReportDate
-        if latest_lr_filing := Filing.get_most_recent_filing(business_id=self._business.id, filing_sub_type='liquidationReport'):
+        if latest_lr_filing := Filing.get_most_recent_filing(business_id=self._business.id, filing_type="changeOfLiquidators", filing_sub_type="liquidationReport"):
             last_lr_date = LegislationDatetime.as_legislation_timezone(latest_lr_filing.effective_date)
             filing["lastReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
 
