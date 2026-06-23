@@ -214,7 +214,7 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
     business_number = None
     filing_name_short = ""
     future_attachments_list = []
-    dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
+    dashboard_url = get_entity_dashboard_url(business_identifier, token)
 
     if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
         # Only show if bn15 is saved and format for ux
@@ -222,6 +222,7 @@ def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; w
 
     # get template and fill in parts
     if filing_type == "incorporationApplication":
+        dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
         filing_name_short = "Incorporation"
         filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
         if is_future_effective_paid:

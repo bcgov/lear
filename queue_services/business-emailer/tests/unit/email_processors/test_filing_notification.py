@@ -547,8 +547,11 @@ def test_business_number_rendering(app, session, mocker, legal_type, tax_id, exp
     body = email['content']['body']
     if expected:
         assert f'**Business Number:** {expected}' in body
+        if expected == 'Not Available':
+            assert '## Business Number' in body    
     else:
         assert '**Business Number:**' not in body
+        assert '## Business Number'
 
 
 def test_future_attachments_list_in_ia_future_effective_paid_coop(app, session, mocker):
