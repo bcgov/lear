@@ -267,3 +267,16 @@ def get_filled_template(filing_type: str, is_future_effective_paid: bool):
     template = Path(path).read_text()
 
     return substitute_template_parts(template, "md")
+
+
+def get_subject(is_future_effective_paid: bool, business_name: str, legal_type: str, filing_name: str, filing_name_short: str):
+    """Return the subject for the email."""
+    if is_future_effective_paid:
+        if not business_name or business_name == "Not Available":
+            # assume its numbered
+            numbered_description = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
+            return f"{numbered_description} - {filing_name} Filed"
+
+        return f"{business_name} - {filing_name} Filed"
+
+    return f"{business_name} - Successful {filing_name_short}"
