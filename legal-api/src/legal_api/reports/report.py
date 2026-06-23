@@ -1614,9 +1614,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             appointed = [
                 rel for rel in relationships_submitted
                 if any(
-                    role.get('roleType') == 'Liquidator'
-                    and role.get('cessationDate') is None # appointed relationships are submitted with no cessationDate
-                    for role in rel.get('roles', [])
+                    role.get("roleType") == "Liquidator"
+                    and role.get("cessationDate") is None # appointed relationships are submitted with no cessationDate
+                    for role in rel.get("roles", [])
                 )
             ]
             filing["relationships"]["appointed"] = {
@@ -1628,9 +1628,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             ceased = [
                 rel for rel in relationships_submitted
                 if any(
-                    role.get('roleType') == 'Liquidator'
-                    and role.get('cessationDate') is not None # ceased relationships are submitted with a cessationDate
-                    for role in rel.get('roles', [])
+                    role.get("roleType") == "Liquidator"
+                    and role.get("cessationDate") is not None # ceased relationships are submitted with a cessationDate
+                    for role in rel.get("roles", [])
                 )
             ]
             filing["relationships"]["ceased"] = {
@@ -1649,7 +1649,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
             if sub_type in {"appointLiquidator", "ceaseLiquidator"}:
                 filing["relationships"]["effectiveDate"] = {
-                    "title": f"Liquidators as of {filing['effective_date']}",
+                    "title": f"Liquidators as of {filing["effective_date"]}",
                     "items": relationships_at_effective_date
                 }
 
@@ -1721,7 +1721,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                                     found_rel["deliveryAddress"]["changed"] = delivery_changed
 
                 filing["relationships"]["effectiveDate"] = {
-                    "title": f"Liquidators as of {filing['effective_date']}",
+                    "title": f"Liquidators as of {filing["effective_date"]}",
                     "items": relationships_at_effective_date
                 }
 
