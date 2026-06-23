@@ -89,4 +89,4 @@ ENV PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python
 
 COPY --chown=web:web . /code
 
-CMD gunicorn --bind 0.0.0.0:${PORT} --preload --config /code/gunicorn_config.py wsgi:application
+CMD gunicorn --bind 0.0.0.0:${PORT} --config /code/gunicorn_config.py wsgi:application
