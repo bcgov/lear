@@ -135,9 +135,52 @@ def set_tax_id(report):
     assert filing_json.get('taxId')
 
 
-def set_addresses(report):
+def set_addresses(report, mocker):
     """Assert _set_addresses works as expected."""
     filing_json = report._filing.filing_json
+    
+    previous_filing_json = copy.deepcopy(FILING_HEADER)
+    previous_filing_json['filing']['header']['name'] = 'changeOfAddress'
+    previous_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    previous_filing_json['filing']['business']['legalType'] = 'BC'
+    previous_filing_json['filing']['changeOfAddress'] = {}
+    previous_filing = factory_completed_filing(report._business, previous_filing_json, filing_date=datetime(2020, 1, 1))
+
+    mocker.patch('business_model.models.Filing.get_previous_completed_filing', return_value=previous_filing)
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_office_revision', return_value={
+        'registeredOffice': {
+            'mailingAddress': {
+                'streetAddress': 'Old Mailing Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P5'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'Old Delivery Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P4'
+            }
+        },
+        'recordsOffice': {
+            'mailingAddress': {
+                'streetAddress': 'Old Mailing Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P5'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'Old Delivery Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P4'
+            }
+        }
+    })
 
     with suppress(KeyError):
         with patch.object(report, '_format_address', return_value=None):
@@ -184,7 +227,7 @@ def set_meta_info(report):
         ('BEN TRANP', 'BC1234567', 'BEN', 'transition', 'transition', TRANSITION_FILING_TEMPLATE),
     ]
 )
-def test_get_pdf(session, test_name, identifier, entity_type, report_type, filing_type, template):
+def test_get_pdf(session, mocker, test_name, identifier, entity_type, report_type, filing_type, template):
     """Assert all filings can be returned as a PDF."""
     # TODO: add checks on set_directors, noa
     # setup
@@ -200,7 +243,7 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     set_meta_info(report)
 
     if report_type in ['annualReport', 'changeOfAddress']:
-        set_addresses(report)
+        set_addresses(report, mocker)
 
     if report._business.legal_type != 'CP':
         set_tax_id(report)
