@@ -618,7 +618,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_transition_data(self, filing):
         filing.update(filing["transition"])
+
+        filing["parties"] = []
+        if relationships := filing.get("relationships"):
+            # map relationships to parties for pdf templates
+            filing["parties"].extend([self._map_relationship_to_party(relationship) for relationship in relationships])
         self._format_directors(filing["parties"])
+
         self._format_address(filing["offices"]["registeredOffice"]["deliveryAddress"])
         self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
         if "recordsOffice" in filing["offices"]:
