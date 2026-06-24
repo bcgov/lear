@@ -101,6 +101,14 @@
         <span class="section-data">No</span>
         {% endif %}
     </div>
+    <div class="mt-2">
+        <span class="section-sub-title">Receiver: </span>
+        {% if receivers|length > 0 %}
+        <span class="section-data">Yes</span>
+        {% else %}
+        <span class="section-data">No</span>
+        {% endif %}
+    </div>
     {% if business.restorationExpiryDate %}
     <div class="mt-2">
         <span class="section-sub-title">This company is in Limited Restoration with an Expiry Date of </span>
