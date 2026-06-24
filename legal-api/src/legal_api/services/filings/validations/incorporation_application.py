@@ -18,13 +18,12 @@ from typing import Final
 import pycountry
 from flask_babel import _ as babel
 
+from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
-    validate_email,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -51,7 +50,7 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
         msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
-    err = _validate_incorporation_permission(incorporation_json, filing_type, msg)
+    err = _validate_incorporation_permission(incorporation_json, filing_type, legal_type, msg)
     if err:
         return err
         
@@ -86,10 +85,6 @@ def validate(incorporation_json: dict):  # pylint: disable=too-many-branches;
     msg.extend(validate_ia_court_order(incorporation_json))
 
     err = validate_phone_number(incorporation_json, legal_type, "incorporationApplication")
-    if err:
-        msg.extend(err)
-
-    err = validate_email(incorporation_json, "incorporationApplication")
     if err:
         msg.extend(err)
 
@@ -146,6 +141,10 @@ def _validate_address(addresses: dict, address_key: str, filing_type: str) -> li
 
     return msg
 
+def _incorp_completing_party_not_required() -> bool:
+    """Return True when incorporationApplication-completingParty ff is enabled and completing party is not required."""
+    enabled_features: list[str] = flags.value("enable-new-feature", [])
+    return "incorporationApplication-completingParty" in enabled_features
 
 def validate_roles(filing_dict: dict, # noqa: PLR0912
                    legal_type: str,
@@ -184,46 +183,43 @@ def validate_roles(filing_dict: dict, # noqa: PLR0912
             else:
                 invalid_roles.add(role_type)
 
+    err_path = f"/filing/{filing_type}/parties/roles"
     if invalid_roles:
-        err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({
             "error": f'Invalid party role(s) provided: {", ".join(sorted(invalid_roles))}',
             "path": err_path
         })
 
-    if filing_type == "incorporationApplication" or \
-            (filing_type == "correction" and filing_dict["filing"][filing_type].get("type") == "CLIENT"):
+    is_incorp_application = filing_type == "incorporationApplication"
+    skip_completing_party_validation = is_incorp_application and legal_type in Business.CORPS and \
+                                         _incorp_completing_party_not_required()
+
+    if not skip_completing_party_validation and (
+            is_incorp_application or \
+            (filing_type == "correction" and filing_dict["filing"][filing_type].get("type") == "CLIENT")):
         if completing_party_count == 0:
-            err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Must have a minimum of one completing party", "path": err_path})
         elif completing_party_count > 1:
-            err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Must have a maximum of one completing party", "path": err_path})
     elif filing_type == "correction" and filing_dict["filing"][filing_type].get("type") == "STAFF" and \
             completing_party_count != 0:
-        err_path = f"/filing/{filing_type}/parties/roles"
         msg.append({"error": "Should not provide completing party when correction type is STAFF", "path": err_path})
 
     min_director_count = min_director_count_info.get(legal_type, 0)
     if legal_type == Business.LegalTypes.COOP.value:
         if incorporator_count > 0:
-            err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Incorporator is an invalid party role", "path": err_path})
 
         if director_count < min_director_count:
-            err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Must have a minimum of three Directors", "path": err_path})
     else:
         # FUTURE: THis may have to be altered based on entity type in the future
-        if filing_type == "incorporationApplication" and incorporator_count < 1:
-            err_path = f"/filing/{filing_type}/parties/roles"
+        if is_incorp_application and incorporator_count < 1:
             msg.append({"error": "Must have a minimum of one Incorporator", "path": err_path})
         elif filing_type == "correction" and incorporator_count > 0:
-            err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": "Cannot correct Incorporator role", "path": err_path})
 
         if director_count < min_director_count and filing_type != "correction":
-            err_path = f"/filing/{filing_type}/parties/roles"
             msg.append({"error": f"Must have a minimum of {min_director_count} Director", "path": err_path})
 
     if msg:
@@ -327,11 +323,16 @@ def validate_ia_court_order(filing: dict) -> list:
 def _validate_incorporation_permission(
     incorporation_json: dict,
     filing_type: str,
+    legal_type: str,
     msg: list
 ):
     """Validate the permission and completing party of the incorporation filing."""
     if not flags.is_on("enabled-deeper-permission-action"):
         return None
+    
+    if _incorp_completing_party_not_required() and legal_type in Business.CORPS:
+        return None
+
     return validate_permission_and_completing_party(
         None,
         incorporation_json,

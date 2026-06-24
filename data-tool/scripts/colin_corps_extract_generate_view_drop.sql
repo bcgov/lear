@@ -32,6 +32,7 @@ INSERT INTO colin_extract_reset_allowlist (obj_name, expected_relkind)
 VALUES
   ('v_addr_links', 'v'),
   ('v_addr_issues', 'v'),
+  ('v_auth_component_operation_audit', 'v'),
   ('v_business_state', 'v'),
   ('v_corp_issue_flags_long', 'v'),
   ('mv_corps_with_officers', 'm'),

@@ -15,18 +15,17 @@
 import copy
 import datedelta
 from http import HTTPStatus
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 import pycountry
 import pytest
+
+from business_common.utils.datetime import datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import ConsentContinuationOut
+from legal_api.services.filings.validations.validation import validate
 from registry_schemas.example_data import FILING_HEADER, CONSENT_CONTINUATION_OUT, CONTINUATION_OUT
 
-from legal_api.models import Business, ConsentContinuationOut
-from legal_api.services.filings.validations.validation import validate
-from legal_api.utils.datetime import datetime
-
-from tests.unit.models import factory_business, factory_completed_filing
-from tests.unit.models.test_consent_continuation_out import get_cco_expiry_date
+from tests.unit.models import factory_business, factory_completed_filing, get_cco_expiry_date
 
 date_format = '%Y-%m-%d'
 legal_name = 'Test name request'
@@ -65,7 +64,7 @@ def test_validate_continuation_out_date(session, test_name, expected_code, messa
     """Assert validate continuation_out_date."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -109,7 +108,7 @@ def test_validate_foreign_jurisdiction(session, mocker, test_name, expected_code
     """Assert validate foreign jurisdiction."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -144,7 +143,7 @@ def test_valid_foreign_jurisdiction(session, mocker, monkeypatch):
     """Assert valid foreign jurisdiction."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)
@@ -179,7 +178,7 @@ def test_continuation_out_court_order(session, mocker, test_status, file_number,
     """Assert valid court order."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-continuation-out-entities' else default
     )
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=datetime.utcnow())
     filing = copy.deepcopy(FILING_HEADER)

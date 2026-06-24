@@ -17,10 +17,16 @@
 Test-Suite to ensure that the /businesses endpoint is working as expected.
 """
 import copy
+from datetime import UTC
 from http import HTTPStatus
+
 import pytest
 
 import registry_schemas
+from business_common.utils.datetime import datetime
+from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
+from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services import flags
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
@@ -30,18 +36,12 @@ from registry_schemas.example_data import (
     FILING_TEMPLATE,
     INCORPORATION
 )
-
-from legal_api.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
-from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
-from legal_api.services import flags
-from legal_api.utils.datetime import datetime
 from tests import integration_affiliation
 from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_pending_filing
 from tests.unit.services.warnings import create_business
 from tests.unit.services.utils import create_header
 from tests.unit.models import factory_completed_filing
 
-from unittest.mock import MagicMock
 
 def factory_business_model(legal_name,
                            identifier,
@@ -54,7 +54,7 @@ def factory_business_model(legal_name,
                            legal_type=None,
                            no_dissolution=False):
     """Return a valid Business object stamped with the supplied designation."""
-    from legal_api.models import Business as BusinessModel
+    from business_model.models import Business as BusinessModel
     b = BusinessModel(legal_name=legal_name,
                       identifier=identifier,
                       founding_date=founding_date,
@@ -178,9 +178,9 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     legal_name = identifier + ' legal name'
     factory_business_model(legal_name=legal_name,
                            identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
@@ -350,20 +350,20 @@ def test_get_business_with_unauthoized_role(app, session, client, jwt, monkeypat
 
     # mocked feature flag check function:
     # when the flag is 'enable-auth-v2-business', whether it is on is controlled by 'auth_check_on'
-    def check_feature_flag(flag_name):
+    def check_feature_flag(flag_name, *args, **kwargs):
         if flag_name == 'enable-auth-v2-business':
             return auth_check_on
         else:
-            return is_feature_flag_on(flag_name)
+            return is_feature_flag_on(flag_name, *args, **kwargs)
     monkeypatch.setattr(flags, "is_on", check_feature_flag)
 
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
     factory_business_model(legal_name=legal_name,
                            identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
@@ -386,9 +386,9 @@ def test_get_business_with_correction_filings(session, client, jwt):
     legal_name = identifier + ' legal name'
     business = factory_business_model(legal_name=legal_name,
                                       identifier=identifier,
-                                      founding_date=datetime.utcfromtimestamp(0),
-                                      last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                                      last_modified=datetime.utcfromtimestamp(0),
+                                      founding_date=datetime.fromtimestamp(0, UTC),
+                                      last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                                      last_modified=datetime.fromtimestamp(0, UTC),
                                       fiscal_year_end_date=None,
                                       tax_id=None,
                                       dissolution_date=None)
@@ -413,12 +413,12 @@ def test_get_business_info_dissolution(session, client, jwt):
     legal_name = identifier + ' legal name'
     factory_business_model(legal_name=legal_name,
                            identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC),
                            fiscal_year_end_date=None,
                            tax_id=None,
-                           dissolution_date=datetime.utcfromtimestamp(0))
+                           dissolution_date=datetime.fromtimestamp(0, UTC))
     rv = client.get(f'/api/v2/businesses/{identifier}',
                     headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -432,9 +432,9 @@ def test_get_business_info_missing_business(session, client, jwt):
     """Assert that the business info can be received in a valid JSONSchema format."""
     factory_business_model(legal_name='legal_name',
                            identifier='CP7654321',
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None)
@@ -513,9 +513,9 @@ def test_get_business_with_court_orders(session, client, jwt):
     legal_name = identifier + ' legal name'
     business = factory_business_model(legal_name=legal_name,
                                       identifier=identifier,
-                                      founding_date=datetime.utcfromtimestamp(0),
-                                      last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                                      last_modified=datetime.utcfromtimestamp(0),
+                                      founding_date=datetime.fromtimestamp(0, UTC),
+                                      last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                                      last_modified=datetime.fromtimestamp(0, UTC),
                                       fiscal_year_end_date=None,
                                       tax_id=None,
                                       dissolution_date=None)
@@ -600,9 +600,9 @@ def test_post_affiliated_businesses(session, client, jwt):
     for business in businesses:
         factory_business_model(legal_name=business[0] + 'name',
                                identifier=business[0] if business[0][0] != 'T' else 'BC7654321',
-                               founding_date=datetime.utcfromtimestamp(0),
-                               last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                               last_modified=datetime.utcfromtimestamp(0),
+                               founding_date=datetime.fromtimestamp(0, UTC),
+                               last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                               last_modified=datetime.fromtimestamp(0, UTC),
                                fiscal_year_end_date=None,
                                tax_id=business[2],
                                dissolution_date=None,
@@ -769,9 +769,9 @@ def test_post_affiliation_mappings_migrated_business_without_bootstrap(session, 
     identifier = 'BC1328381'
     business = factory_business_model(legal_name=identifier + 'name',
                            identifier=identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None,
@@ -842,9 +842,9 @@ def test_post_affiliation_mappings_mixed_direct_and_nr_identifiers(session, clie
 
     business = factory_business_model(legal_name=business_identifier + 'name',
                            identifier=business_identifier,
-                           founding_date=datetime.utcfromtimestamp(0),
-                           last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                           last_modified=datetime.utcfromtimestamp(0),
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC),
                            fiscal_year_end_date=None,
                            tax_id=None,
                            dissolution_date=None,
@@ -907,7 +907,7 @@ def test_get_could_file(session, client, jwt, monkeypatch):
         if flag == 'enabled-specific-filings' else {}
     )
     monkeypatch.setattr(
-        'legal_api.models.User.get_or_create_user_by_jwt',
+        'business_model.models.User.get_or_create_user_by_jwt',
         lambda _: None
     )
     identifier = 'BC0000001'
@@ -1101,9 +1101,9 @@ def test_get_ar_reminder(session, client, jwt, identifier, ar_reminder, status, 
     if identifier not in ('T7654321', 'BC1234567'):
         business = factory_business_model(legal_name='legal_name',
                             identifier=identifier,
-                            founding_date=datetime.utcfromtimestamp(0),
-                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                            last_modified=datetime.utcfromtimestamp(0),
+                            founding_date=datetime.fromtimestamp(0, UTC),
+                            last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                            last_modified=datetime.fromtimestamp(0, UTC),
                             fiscal_year_end_date=None,
                             tax_id=None,
                             dissolution_date=None)
@@ -1133,9 +1133,9 @@ def test_set_ar_reminder(session, mocker, client, jwt, identifier, ar_reminder, 
     if identifier not in ('T7654321', 'BC1234567'):
         business = factory_business_model(legal_name='legal_name',
                             identifier=identifier,
-                            founding_date=datetime.utcfromtimestamp(0),
-                            last_ledger_timestamp=datetime.utcfromtimestamp(0),
-                            last_modified=datetime.utcfromtimestamp(0),
+                            founding_date=datetime.fromtimestamp(0, UTC),
+                            last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                            last_modified=datetime.fromtimestamp(0, UTC),
                             fiscal_year_end_date=None,
                             tax_id=None,
                             dissolution_date=None)

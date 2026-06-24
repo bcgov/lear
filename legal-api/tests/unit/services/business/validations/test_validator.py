@@ -15,7 +15,7 @@
 import datedelta
 import pytest
 from legal_api.services.business import validate_document_request
-from legal_api.models import Business
+from business_model.models import Business
 from tests.unit.models import factory_business
 from datetime import datetime, timezone
 
@@ -54,7 +54,7 @@ def test_document_legal_type(session, test_status, document_type, legal_type, id
     """Assert valid document legal type."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else {}
+        lambda flag, default=None: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else default
     )
     business = factory_business(identifier,
                                 founding_date=(datetime.now(timezone.utc) - datedelta.YEAR),

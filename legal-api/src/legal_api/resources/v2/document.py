@@ -18,7 +18,7 @@ from http import HTTPStatus
 from flask import Blueprint, current_app, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Document, Filing
+from business_model.models import Document, Filing
 from legal_api.services.minio import MinioService
 from legal_api.utils.auth import jwt
 
@@ -26,7 +26,7 @@ bp = Blueprint("DOCUMENTS2", __name__, url_prefix="/api/v2/documents")
 
 
 @bp.route("/<string:file_name>/signatures", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_signatures(file_name: str):
     """Return a pre-signed URL for the new document."""
@@ -43,7 +43,7 @@ def is_draft_filing(file_key: str) -> bool:
 
 
 @bp.route("/<string:document_key>", methods=["DELETE"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def delete_minio_document(document_key):
     """Delete Minio document based on the provided document key and if it is a draft filing."""
@@ -60,7 +60,7 @@ def delete_minio_document(document_key):
 
 
 @bp.route("/<string:document_key>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_minio_document(document_key: str):
     """Get the document from Minio."""

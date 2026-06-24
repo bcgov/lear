@@ -15,27 +15,25 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import g, jsonify, request
 from flask_cors import cross_origin
 
+from business_model.models import Business, Comment, User, db
+from business_model.models import Filing as FilingModel
 from legal_api.exceptions import BusinessException
-from legal_api.models import Business, Comment, User, db
-from legal_api.models import Filing as FilingModel
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
 
 from .bp import bp
 
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 @bp.route("/<string:identifier>/comments", methods=["GET"])
 @bp.route("/<string:identifier>/comments/<int:comment_id>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_comments(identifier, comment_id=None):
     """Return a JSON object with meta information about the Service."""
@@ -66,7 +64,7 @@ def get_comments(identifier, comment_id=None):
 
 
 @bp.route("/<string:identifier>/comments", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def post_comments(identifier):
     """Create a new comment for the business."""
@@ -97,7 +95,7 @@ def post_comments(identifier):
         comment.comment = json_input["comment"]["comment"]
         comment.staff_id = user.id
         comment.business_id = business.id
-        comment.timestamp = datetime.datetime.utcnow()
+        comment.timestamp = datetime.now(UTC)
         comment.save()
     except BusinessException as err:
         reply = json_input
@@ -110,7 +108,7 @@ def post_comments(identifier):
 
 def _basic_checks(identifier: str, business: Business, client_request) -> tuple[dict, int]:
     """Perform basic checks to ensure put can do something."""
-    json_input = client_request.get_json()
+    json_input = client_request.get_json(silent=True)
     if client_request.method == "POST" and not json_input:
         return ({"message": f"No comment json data in body of post for {identifier}."},
                 HTTPStatus.BAD_REQUEST)

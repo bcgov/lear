@@ -19,7 +19,7 @@ Test-Suite to ensure that mras endpoints are working as expected.
 from http import HTTPStatus
 from unittest.mock import patch
 
-from legal_api.models import UserRoles
+from business_model.models import UserRoles
 from legal_api.services import MrasService
 from tests.unit.services.utils import create_header
 

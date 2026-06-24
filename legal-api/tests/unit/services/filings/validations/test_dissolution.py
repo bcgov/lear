@@ -23,10 +23,11 @@ from legal_api.errors import Error
 from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
+import registry_schemas
 from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RESOLUTION
 from reportlab.lib.pagesizes import letter
 
-from legal_api.models import Business
+from business_model.models import Business
 from legal_api.services import MinioService, flags
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
@@ -512,19 +513,9 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
 @pytest.mark.parametrize(
     'test_status, legal_type, dissolution_type, party_type, org_name, first_name, expected_code, expected_msg',
     [
-        # Required organization name cases
-        ('FAIL', 'BC', 'voluntary', 'organization', '', None, HTTPStatus.BAD_REQUEST,
-         'Organization name is required.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', '   ', None, HTTPStatus.BAD_REQUEST,
-         'Organization name is required.'),
-
-        # Leading/trailing whitespace - organization
-        ('FAIL', 'BC', 'voluntary', 'organization', '  LeadingSpace', None, HTTPStatus.BAD_REQUEST,
-         'Organization name cannot have leading or trailing spaces.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', 'TrailingSpace  ', None, HTTPStatus.BAD_REQUEST,
-         'Organization name cannot have leading or trailing spaces.'),
-        ('FAIL', 'BC', 'voluntary', 'organization', '  BothSides  ', None, HTTPStatus.BAD_REQUEST,
-         'Organization name cannot have leading or trailing spaces.'),
+        # Organization custodian name (required + no surrounding whitespace) is enforced by the
+        # schema (parties officer.organizationName pattern); see
+        # test_dissolution_custodian_org_name_rejected_by_schema.
 
         # Valid organization name
         ('SUCCESS', 'BC', 'voluntary', 'organization', 'Test Org', None, None, None),
@@ -594,6 +585,27 @@ def test_dissolution_custodian_name(session, test_status, legal_type, dissolutio
     else:
         assert err is None
 
+
+@pytest.mark.parametrize('bad_org_name', ['', '   ', '\t', '\n', '  LeadingSpace', 'TrailingSpace  ', '  BothSides  '])
+def test_dissolution_custodian_org_name_rejected_by_schema(session, bad_org_name):
+    """A blank/whitespace/surrounding-whitespace custodian organizationName is rejected by the schema.
+
+    This rule moved from legal-api into the business-schemas parties officer.organizationName pattern.
+    """
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['name'] = 'dissolution'
+    filing['filing']['business']['legalType'] = 'BC'
+    filing['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing['filing']['dissolution']['parties'][1]['deliveryAddress'] = \
+        filing['filing']['dissolution']['parties'][1]['mailingAddress']
+    officer = filing['filing']['dissolution']['parties'][1]['officer']
+    officer['partyType'] = 'organization'
+    officer['organizationName'] = bad_org_name
+
+    valid, _ = registry_schemas.validate(filing, 'filing')
+
+    assert not valid
+
 #setup
 now = date(2020, 9, 17)
 
@@ -602,9 +614,9 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00Z',
             HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
+                'error': '2020-09-44T00:00:00Z is an invalid ISO format for effectiveDate.',
                 'path': '/filing/header/effectiveDate'
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
@@ -640,7 +652,7 @@ def test_dissolution_effective_date(session, test_name,
 
     if expected_code:
         assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
+        assert err.msg == expected_msg
     else:
         assert err is None
 

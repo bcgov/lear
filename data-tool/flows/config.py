@@ -51,7 +51,39 @@ def _get_bool(name: str, default: bool = False) -> bool:
     val = os.getenv(name)
     if val is None:
         return default
-    return val.strip().lower() == 'true'
+    return val.strip().lower() in ('true', '1')
+
+
+def _parse_int_csv(raw_value: str) -> list[int]:
+    """Parse a comma-separated list into ints, ignoring blanks and non-numeric tokens."""
+    return [
+        int(x.strip()) for x in (raw_value or '').split(',')
+        if x and x.strip().isdigit()
+    ]
+
+
+def _parse_positive_int_csv(raw_value: str, name: str) -> list[int]:
+    """Parse a comma-separated list into positive ints, raising for invalid tokens."""
+    values: list[int] = []
+    seen = set()
+    for token in (raw_value or '').split(','):
+        stripped = token.strip()
+        if not stripped:
+            continue
+        if not stripped.isdigit():
+            raise ValueError(f'{name} must be a CSV of positive integers: {raw_value}')
+        value = int(stripped)
+        if value <= 0:
+            raise ValueError(f'{name} must contain only positive integers: {raw_value}')
+        if value not in seen:
+            seen.add(value)
+            values.append(value)
+    return values
+
+
+def _normalized_csv(values: list[int]):
+    """Return a normalized comma-separated string for integer values."""
+    return ','.join(str(x) for x in values) if values else None
 
 
 def get_named_config(config_name: str = 'production'):
@@ -83,17 +115,11 @@ class _Config():  # pylint: disable=too-few-public-methods
     AFFILIATE_ENTITY = os.getenv('AFFILIATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY_ACCOUNT_ID = os.getenv('AFFILIATE_ENTITY_ACCOUNT_ID', '')
     # Normalized parsed list of ints (preferred for program logic)
-    AFFILIATE_ENTITY_ACCOUNT_IDS = [
-        int(x.strip()) for x in AFFILIATE_ENTITY_ACCOUNT_ID.split(',')
-        if x and x.strip().isdigit()
-    ]
+    AFFILIATE_ENTITY_ACCOUNT_IDS = _parse_int_csv(AFFILIATE_ENTITY_ACCOUNT_ID)
     # Normalized CSV string (useful when passing into SQL as a single value)
-    AFFILIATE_ENTITY_ACCOUNT_IDS_CSV = (
-        ','.join(str(x) for x in AFFILIATE_ENTITY_ACCOUNT_IDS)
-        if AFFILIATE_ENTITY_ACCOUNT_IDS else None
-    )
+    AFFILIATE_ENTITY_ACCOUNT_IDS_CSV = _normalized_csv(AFFILIATE_ENTITY_ACCOUNT_IDS)
 
-    USE_CUSTOM_CONTACT_EMAIL = os.getenv('USE_CUSTOM_CONTACT_EMAIL', 'False') == 'True'
+    USE_CUSTOM_CONTACT_EMAIL = _get_bool('USE_CUSTOM_CONTACT_EMAIL', False)
     CUSTOM_CONTACT_EMAIL = os.getenv('CUSTOM_CONTACT_EMAIL', '')
     SEND_UNAFFILIATED_EMAIL = os.getenv('SEND_UNAFFILIATED_EMAIL', 'False') == 'True'
 
@@ -196,6 +222,34 @@ class _Config():  # pylint: disable=too-few-public-methods
     VERIFY_COLIN_UPDATES_DETAIL_PATH = os.getenv('VERIFY_COLIN_UPDATES_DETAIL_PATH')
     VERIFY_COLIN_UPDATES_SUMMARY_PATH = os.getenv('VERIFY_COLIN_UPDATES_SUMMARY_PATH')
 
+    # Auth output root shared by Auth flows that write report files.
+    AUTH_OUTPUT_PATH = os.getenv('AUTH_OUTPUT_PATH')
+
+    # Auth reporting throughput shared by verify-auth and inspect-auth.
+    # Keep raw at shared config-load time so invalid reporting env vars do not
+    # prevent unrelated data-tool/Auth flows from starting. The active reporting
+    # entrypoint performs strict positive-integer validation.
+    AUTH_REPORT_BATCHES = os.getenv('AUTH_REPORT_BATCHES', '0')
+    AUTH_REPORT_BATCH_SIZE = os.getenv('AUTH_REPORT_BATCH_SIZE', '0')
+
+    # verify Auth flow
+    VERIFY_AUTH_CHECK_ENTITY = _get_bool('VERIFY_AUTH_CHECK_ENTITY', True)
+    VERIFY_AUTH_CHECK_CONTACT = _get_bool('VERIFY_AUTH_CHECK_CONTACT', True)
+    VERIFY_AUTH_CHECK_AFFILIATION = _get_bool('VERIFY_AUTH_CHECK_AFFILIATION', False)
+    VERIFY_AUTH_CHECK_INVITE = _get_bool('VERIFY_AUTH_CHECK_INVITE', False)
+    # Console-only verify scenario identifier limit: 0 suppresses optional sections,
+    # a positive integer caps console identifiers per scenario bucket, and ALL prints all.
+    # File outputs remain complete, including verify-auth-scenario.txt.
+    VERIFY_AUTH_CONSOLE_LIMIT = os.getenv('VERIFY_AUTH_CONSOLE_LIMIT', '25')
+
+    # inspect Auth flow. HAS_CONTACT / ENTITY_WITHOUT_CONTACT mean usable contact email,
+    # not merely any raw contact row.
+    INSPECT_AUTH_FILTER = (os.getenv('INSPECT_AUTH_FILTER') or 'ALL').strip() or 'ALL'
+    # Console-only inspect preview/identifier limit: 0 suppresses optional sections,
+    # a positive integer caps console rows/identifiers, and ALL prints all.
+    # File outputs remain complete, including inspect-auth-inspection.csv and inspect-auth-summary.txt.
+    INSPECT_AUTH_CONSOLE_LIMIT = os.getenv('INSPECT_AUTH_CONSOLE_LIMIT', '25')
+
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)
     FREEZE_BATCH_SIZE = _get_int('FREEZE_BATCH_SIZE', 0)
@@ -227,7 +281,10 @@ class _Config():  # pylint: disable=too-few-public-methods
     # Selection
     AUTH_SELECTION_MODE = os.getenv('AUTH_SELECTION_MODE', 'MIGRATION_FILTER')
     AUTH_CORP_NUMS = os.getenv('AUTH_CORP_NUMS', '')
-    AUTH_SOURCE_FLOW_NAME = os.getenv('AUTH_SOURCE_FLOW_NAME', 'tombstone-flow')
+    AUTH_MIG_GROUP_IDS = os.getenv('AUTH_MIG_GROUP_IDS')
+    AUTH_MIG_BATCH_IDS = os.getenv('AUTH_MIG_BATCH_IDS')
+    AUTH_REPEATABLE_CYCLE_KEY = os.getenv('AUTH_REPEATABLE_CYCLE_KEY', '')
+    AUTH_REPEATABLE_CAMPAIGN_SCOPE = os.getenv('AUTH_REPEATABLE_CAMPAIGN_SCOPE', '')
 
     # Throughput
     AUTH_BATCHES = _get_int('AUTH_BATCHES', 0)
@@ -242,12 +299,19 @@ class _Config():  # pylint: disable=too-few-public-methods
     AUTH_FAIL_IF_MISSING_EMAIL = _get_bool('AUTH_FAIL_IF_MISSING_EMAIL', False)
     AUTH_DRY_RUN = _get_bool('AUTH_DRY_RUN', False)
 
+    # Auth-only affiliation fallback accounts. Separate Auth flows intentionally do not
+    # alias/fallback from tombstone AFFILIATE_ENTITY_ACCOUNT_ID(S).
+    AUTH_AFFILIATION_ACCOUNT_IDS_RAW = os.getenv('AUTH_AFFILIATION_ACCOUNT_IDS', '')
+    AUTH_AFFILIATION_ACCOUNT_IDS = _parse_int_csv(AUTH_AFFILIATION_ACCOUNT_IDS_RAW)
+    AUTH_AFFILIATION_ACCOUNT_IDS_CSV = _normalized_csv(AUTH_AFFILIATION_ACCOUNT_IDS)
+
     # Delete plan
     AUTH_DELETE_AFFILIATIONS = _get_bool('AUTH_DELETE_AFFILIATIONS', False)
     AUTH_DELETE_ENTITY = _get_bool('AUTH_DELETE_ENTITY', False)
-    AUTH_DELETE_INVITES = _get_bool('AUTH_DELETE_INVITES', False)  # unsupported unless API confirmed
-    AUTH_REQUIRE_CONFIRMATION = _get_bool('AUTH_REQUIRE_CONFIRMATION', False)
-    AUTH_CONFIRMATION_TOKEN = os.getenv('AUTH_CONFIRMATION_TOKEN', '')
+    AUTH_DELETE_TRACKING_CLEANUP_MODE = os.getenv('AUTH_DELETE_TRACKING_CLEANUP_MODE', 'OFF')
+
+    # Tracking
+    AUTH_LOG_COMPONENT_OPERATIONS = _get_bool('AUTH_LOG_COMPONENT_OPERATIONS', False)
 
     TESTING = False
     DEBUG = False

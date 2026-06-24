@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the directors for the entity."""
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, PartyRole
+from business_model.models import Business, PartyRole
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -27,7 +27,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/directors", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/directors/<int:director_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_directors(identifier, director_id=None):
     """Return a JSON of the directors."""
@@ -48,8 +48,8 @@ def get_directors(identifier, director_id=None):
         return jsonify(director or msg), code
 
     # return all active directors as of date query param
-    end_date = datetime.utcnow().strptime(request.args.get("date"), "%Y-%m-%d").date()\
-        if request.args.get("date") else datetime.utcnow().date()
+    end_date = datetime.now(UTC).strptime(request.args.get("date"), "%Y-%m-%d").date()\
+        if request.args.get("date") else datetime.now(UTC).date()
 
     party_list = []
     active_directors = PartyRole.get_active_directors(business.id, end_date)

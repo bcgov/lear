@@ -16,10 +16,10 @@ import re
 from collections.abc import MutableMapping
 from contextlib import suppress
 from enum import Enum, auto
-from typing import Final, Optional
+from typing import Final
 
-from legal_api.models import Business
-from legal_api.models import Filing as FilingStorage
+from business_model.models import Business
+from business_model.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService
 
 
@@ -925,7 +925,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     """Create all the information about a filing."""
 
     @staticmethod
-    def display_name(business: Business, filing: FilingStorage) -> Optional[str]:
+    def display_name(business: Business, filing: FilingStorage) -> str | None:
         """Return the name of the filing to display on outputs."""
         # if filing is imported from COLIN and has custom disaply name
         if filing.meta_data and\
@@ -974,7 +974,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return name
 
     @staticmethod
-    def get_effective_display_year(filing_meta_data: dict) -> Optional[str]:
+    def get_effective_display_year(filing_meta_data: dict) -> str | None:
         """Render a year as a string, given all filing mechanisms."""
         with suppress(IndexError, KeyError, TypeError):
             return str(filing_meta_data["annualReport"]["annualReportFilingYear"])
@@ -984,6 +984,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def get_all_outputs(business_type: str, filing_name: str) -> list:
         """Return list of all outputs."""
         filing = FILINGS.get(filing_name)
+
+        # try to find filing sub type config if filing_name not found
+        if not filing:
+            for parent_filing in FILINGS.values():
+                if isinstance(parent_filing, dict) and filing_name in parent_filing:
+                    filing = parent_filing.get(filing_name)
+                    break
+
         for docs in filing.get("additional", []):
             if business_type in docs.get("types", []):
                 return docs.get("outputs")
@@ -1079,10 +1087,18 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                         "name": file.get("fileName"),
                         "url": f"{url_prefix}/{file_key}"
                     })
+        elif filing.filing_type == "continuationOut":
+            continuation_out = filing.meta_data.get("continuationOut", {})
+            for file in continuation_out.get("uploadedDocuments", []):
+                if file_key := file.get("fileKey"):
+                    outputs.append({
+                        "name": file.get("fileName"),
+                        "url": f"{url_prefix}/{file_key}"
+                    })
         return outputs
 
     @staticmethod
-    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: Optional[str] = None) -> str:
+    def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str | None = None) -> str:
         """Return display name for filing."""
         filing_dict = FILINGS.get(filing_type, None)
 

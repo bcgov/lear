@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import UserRoles
+from business_model.models import UserRoles
 from legal_api.services import MrasService
 from legal_api.utils.auth import jwt
 
@@ -25,7 +25,7 @@ bp = Blueprint("MRAS2", __name__, url_prefix="/api/v2/mras")
 
 
 @bp.route("/<string:identifier>", methods=["GET"])
-@cross_origin(origins="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.system])
 def get_jurisdicions(identifier: str):
     """Return a list of foreign jurisdicions."""

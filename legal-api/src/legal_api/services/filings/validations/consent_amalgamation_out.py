@@ -12,24 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Consent Amalgamation Out filing."""
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
+from business_model.models import Business, ConsentContinuationOut
 from legal_api.errors import Error
-from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
 )
 
-# noqa: I003;
 
-
-def validate(business: Business, filing: dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Error | None:
     """Validate the Consent Amalgamation Out filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
@@ -52,7 +50,7 @@ def validate(business: Business, filing: dict) -> Optional[Error]:
     if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
     else:
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         country_code = foreign_jurisdiction.get("country")
         region = foreign_jurisdiction.get("region")
         ccos = ConsentContinuationOut.get_active_cco(business.id, now, country_code, region,

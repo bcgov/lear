@@ -1,0 +1,35 @@
+<div class="gap-y-2 no-page-break">
+  <div class="section-title">Liquidation Records Office</div>
+  <table class="section-data-table section-data">
+    <tr>
+      <td>
+        <div class="section-sub-title mb-2">Mailing Address {% if recordsOffice.mailingAddress is defined and recordsOffice.mailingAddress.changed %}{{ labelChanged() }}{% endif %}</div>
+        {% if recordsOffice.mailingAddress %}
+          <div>{{ recordsOffice.mailingAddress.streetAddress }}</div>
+          <div>{{ recordsOffice.mailingAddress.streetAddressAdditional }}</div>
+          <div>{{ recordsOffice.mailingAddress.addressCity }}
+            {{ recordsOffice.mailingAddress.addressRegion }}
+            &nbsp;{{ recordsOffice.mailingAddress.postalCode }}</div>
+          <div>{{ recordsOffice.mailingAddress.addressCountry }}</div>
+          <div class="delivery-instructions pt-1">{{ recordsOffice.mailingAddress.deliveryInstructions }}</div>
+        {% else %}
+          <div>Not Available</div>
+        {% endif %}
+      </td>
+      <td>
+        <div class="section-sub-title mb-2">Delivery Address {% if recordsOffice.deliveryAddress is defined and recordsOffice.deliveryAddress.changed %}{{ labelChanged() }}{% endif %}</div>
+        {% if recordsOffice.deliveryAddress %}
+          <div>{{ recordsOffice.deliveryAddress.streetAddress }}</div>
+          <div>{{ recordsOffice.deliveryAddress.streetAddressAdditional }}</div>
+          <div>{{ recordsOffice.deliveryAddress.addressCity }}
+            {{ recordsOffice.deliveryAddress.addressRegion }}
+            &nbsp;{{ recordsOffice.deliveryAddress.postalCode }}</div>
+          <div>{{ recordsOffice.deliveryAddress.addressCountry }}</div>
+          <div class="delivery-instructions pt-1">{{ recordsOffice.deliveryAddress.deliveryInstructions }}</div>
+        {% else %}
+          <div>Not Available</div>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+</div>

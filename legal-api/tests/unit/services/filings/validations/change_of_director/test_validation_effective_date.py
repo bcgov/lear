@@ -13,16 +13,16 @@
 # limitations under the License.
 """Test Change of Director effective date validations. See rules in change_of_directors.py."""
 import copy
+from datetime import timezone
 
 import datedelta
 from freezegun import freeze_time
-from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER
 
-from legal_api.models import Business
+from business_common.utils import LegislationDatetime, datetime
+from business_model.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations.change_of_directors import validate_effective_date
-from legal_api.utils.datetime import datetime, timezone
-from legal_api.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data import ANNUAL_REPORT, CHANGE_OF_DIRECTORS, FILING_HEADER
 from tests.unit.models import factory_completed_filing
 
 
@@ -67,7 +67,7 @@ def test_validate_effective_date_invalid_format(session):
     business, filing = common_setup(identifier, now)
 
     # Set an invalid ISO effectiveDate value
-    filing['filing']['header']['effectiveDate'] = "2026-01-21T08:00:00Z"
+    filing['filing']['header']['effectiveDate'] = "2026-01-44T08:00:00Z"
 
     with freeze_time(now):
         err = validate_effective_date(business, filing)

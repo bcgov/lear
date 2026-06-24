@@ -23,9 +23,9 @@ from typing import TYPE_CHECKING, Final
 from flask import current_app, url_for
 from sqlalchemy import desc
 
+from business_model.models import Business, Document, DocumentType, UserRoles
+from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
-from legal_api.models import Business, Document, DocumentType, UserRoles
-from legal_api.models import Filing as FilingStorage
 from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_roles, is_competent_authority
@@ -33,8 +33,8 @@ from legal_api.services.authz import has_roles, is_competent_authority
 from .constants import REDACTED_STAFF_SUBMITTER
 
 if TYPE_CHECKING:
+    from business_common.utils.datetime import date, datetime
     from flask_jwt_oidc import JwtManager
-    from legal_api.utils.datetime import date, datetime
 
 
 # @dataclass(init=False, repr=False)
@@ -509,11 +509,10 @@ class Filing:  # pylint: disable=too-many-public-methods
                 Filing.Status.CHANGE_REQUESTED,
                 Filing.Status.APPROVED,
                 Filing.Status.REJECTED,
-            ):  # noqa: E125; lint conflicts on the indenting
+            ):
             return None
 
-        base_url = current_app.config.get("LEGAL_API_BASE_URL")
-        base_url = base_url[:base_url.find("/api")]
+        base_url = current_app.config.get("BUSINESS_API_GW_URL")
         identifier = business.identifier if business else filing.storage.temp_reg
         if not identifier and filing.storage.withdrawn_filing_id:
             withdrawn_filing = Filing.find_by_id(filing.storage.withdrawn_filing_id)
@@ -541,10 +540,21 @@ class Filing:  # pylint: disable=too-many-public-methods
         elif filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
             documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
-        no_outputs_except_receipt = filing.filing_type in [
-            Filing.FilingTypes.CHANGEOFLIQUIDATORS.value,
-            Filing.FilingTypes.CHANGEOFRECEIVERS.value
+        filing_sub_type = filing.storage.filing_sub_type
+
+        receipt_only_filings = [
+            Filing.FilingTypes.CHANGEOFRECEIVERS.value,
         ]
+
+        receipt_only_sub_filings = [
+            (Filing.FilingTypes.CHANGEOFLIQUIDATORS.value, "liquidationReport"),
+        ]
+
+        no_outputs_except_receipt = (
+            filing.filing_type in receipt_only_filings
+            or (filing.filing_type, filing_sub_type) in receipt_only_sub_filings
+        )
+
         no_legal_filings_in_paid_withdrawn_status = no_outputs_except_receipt or filing.filing_type in [
             Filing.FilingTypes.AMALGAMATIONOUT.value,
             Filing.FilingTypes.REGISTRATION.value,
@@ -555,6 +565,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.AGMEXTENSION.value,
             Filing.FilingTypes.AGMLOCATIONCHANGE.value,
             Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
+            Filing.FilingTypes.CHANGEOFLIQUIDATORS.value,
             Filing.FilingTypes.CHANGEOFOFFICERS.value
         ]
         no_outputs_except_receipt_dissolution = filing.storage.filing_sub_type == "delay"

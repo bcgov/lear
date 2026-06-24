@@ -25,7 +25,7 @@ def test_put_back_off(session, monkeypatch):
     """Assert valid put back off."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL CP"  if flag == 'supported-put-back-on-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL CP"  if flag == 'supported-put-back-on-entities' else default
     ) 
 
     identifier = 'CP1234567'

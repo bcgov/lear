@@ -20,10 +20,10 @@ from http import HTTPStatus
 
 from flask import current_app, jsonify, request
 from flask_cors import cross_origin
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 
-from legal_api.exceptions import BusinessException
-from legal_api.models import (
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import (
     Address,
     Alias,
     AmalgamatingBusiness,
@@ -40,17 +40,17 @@ from legal_api.models import (
     UserRoles,
     db,
 )
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.db import VersioningProxy
+from business_model.models.colin_event_id import ColinEventId
+from business_model.models.db import VersioningProxy
+from legal_api.exceptions import BusinessException
 from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
 
 @bp.route("/internal/filings", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_completed_filings_for_colin():
     """Get filings by status formatted in json."""
@@ -377,7 +377,7 @@ def _set_relationship_parties(business: Business, filing: Filing, filing_json: d
 
 
 @bp.route("/internal/filings/<int:filing_id>", methods=["PATCH"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def update_colin_id(filing_id):
     """Patch the colin_event_id for a filing."""
@@ -410,7 +410,7 @@ def update_colin_id(filing_id):
 
 @bp.route("/internal/filings/colin_id", methods=["GET"])
 @bp.route("/internal/filings/colin_id/<int:colin_id>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_colin_event_id(colin_id=None):
     """Get the last colin id updated in legal."""
@@ -424,12 +424,12 @@ def get_colin_event_id(colin_id=None):
         current_app.logger.Error(f"Failed to get last updated colin event id: {err!r}")
         raise err
 
-    query = db.session.execute(
+    query = db.session.execute(text(
         """
         select last_event_id from colin_last_update
         order by id desc
         """
-    )
+    ))
     last_event_id = query.fetchone()
     if not last_event_id or not last_event_id[0]:
         return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
@@ -438,11 +438,11 @@ def get_colin_event_id(colin_id=None):
 
 
 @bp.route("/internal/last-event-id/<identifier>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_last_event_id(identifier):
     """Get the last colin event id for the identifier."""
-    query = db.session.execute(
+    query = db.session.execute(text(
         f"""
         select max(colin_event_id) from colin_event_ids
             join filings on filings.id = colin_event_ids.filing_id
@@ -450,7 +450,7 @@ def get_last_event_id(identifier):
         where businesses.identifier = '{identifier}'
         limit 1
         """
-    )
+    ))
     last_event_id = query.scalar()
     if not last_event_id:
         return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
@@ -459,17 +459,17 @@ def get_last_event_id(identifier):
 
 
 @bp.route("/internal/filings/colin_id/<int:colin_id>", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def update_colin_event_id(colin_id):
     """Add a row to the colin_last_update table."""
     try:
-        db.session.execute(
+        db.session.execute(text(
             f"""
             insert into colin_last_update (last_update, last_event_id)
             values (current_timestamp, {colin_id})
             """
-        )
+        ))
         db.session.commit()
         return get_colin_event_id()
 
@@ -479,7 +479,7 @@ def update_colin_event_id(colin_id):
 
 
 @bp.route("/internal/tax_ids", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def get_all_identifiers_without_tax_id():
     """Return all identifiers with no tax_id set that are supposed to have a tax_id.
@@ -495,7 +495,7 @@ def get_all_identifiers_without_tax_id():
 
 
 @bp.route("/internal/tax_ids", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.colin])
 def set_tax_ids():
     """Set tax ids for businesses for given identifiers."""

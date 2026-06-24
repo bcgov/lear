@@ -27,7 +27,9 @@ from business_emailer.email_processors import (
     get_entity_dashboard_url,
     get_filing_document,
     get_filing_info,
+    get_filled_template,
     get_recipients,
+    get_subject,
     get_user_email_from_auth,
     substitute_template_parts,
 )
@@ -41,8 +43,97 @@ FILING_TYPE_CONVERTER = {
     "alteration": "ALT"
 }
 
+FILING_TITLE = {
+    "alteration": "Alteration",
+    "annualReport": "Annual Report",
+    "changeOfDirectors": "Change of Directors",
+    "changeOfAddress": "Change of Address",
+    "incorporationApplication": "Incorporation Application",
+}
 
-def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
+FUTURE_ATTACHMENTS = {
+    "incorporationApplication": {
+        "CORP": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
+        "CP": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Memorandum","Receipt"],
+    }
+}
+
+NOT_AVAILABLE = "Not Available"
+
+
+def _add_filing_document_pdf(  # noqa: PLR0913
+    pdfs: list[dict],
+    attach_order: int,
+    document_type: str,
+    token: str,
+    business: dict,
+    filing: Filing,
+):
+    """Add the specified filing document pdf to the pdfs list."""
+    # File name
+    file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
+    if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
+        file_name = f"{ar_date[:4]} {file_name}"
+
+    # Get pdf and add it to the list
+    filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token)
+    if filing_pdf_encoded:
+        pdfs.append(
+            {
+                "fileName": f"{file_name}.pdf",
+                "fileBytes": filing_pdf_encoded.decode("utf-8"),
+                "fileUrl": "",
+                "attachOrder": str(attach_order)
+            }
+        )
+        return attach_order + 1
+
+
+def _add_receipt_pdf(  # noqa: PLR0913
+    pdfs: list[dict],
+    attach_order: int,
+    token: str,
+    business: dict,
+    filing: Filing,
+    filing_date_time: str,
+    effective_date: str
+):
+    """Add the filing receipt pdf to the pdfs list."""
+    headers = {
+        "Accept": "application/pdf",
+        "Authorization": f"Bearer {token}"
+    }
+    if not (corp_name := business.get("legalName")):  # pylint: disable=superfluous-parens
+        legal_type = business.get("legalType")
+        corp_name = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
+
+    receipt = requests.post(
+        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        json={
+            "corpName": corp_name,
+            "filingDateTime": filing_date_time,
+            "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
+            "filingIdentifier": str(filing.id),
+            "businessNumber": business.get("taxId", "")
+        },
+        headers=headers
+    )
+    if receipt.status_code != HTTPStatus.CREATED:
+        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
+    else:
+        receipt_encoded = base64.b64encode(receipt.content)
+        pdfs.append(
+            {
+                "fileName": "Receipt.pdf",
+                "fileBytes": receipt_encoded.decode("utf-8"),
+                "fileUrl": "",
+                "attachOrder": str(attach_order)
+            }
+        )
+        return attach_order + 1
+
+
+def _get_pdfs(  # noqa: PLR0913
     status: str,
     token: str,
     business: dict,
@@ -50,153 +141,66 @@ def _get_pdfs( # noqa: PLR0913,PLR0912,PLR0915
     filing_date_time: str,
     effective_date: str
 ) -> list:
-    # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the pdfs for the incorporation output."""
     pdfs = []
     attach_order = 1
-    headers = {
-        "Accept": "application/pdf",
-        "Authorization": f"Bearer {token}"
-    }
     legal_type = business.get("legalType")
 
-    if status == Filing.Status.PAID.value:
+    noa_pdf_type = "noticeOfArticles"
+    incorp_certificate_pdf_type = "certificateOfIncorporation"
+    memorandum_pdf_type = "memorandum"
+    rules_pdf_type = "certifiedRules"
+    name_change_certificate_pdf_type = "certificateOfNameChange"
+    
+    # FUTURE: rework branch logic once other filings are sending the updated emails
+    if filing.filing_type in ["incorporationApplication"]:
+        # add filing application document
+        attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing)
+
+        if status == Filing.Status.COMPLETED.value:
+            if legal_type == Business.LegalTypes.COOP.value:
+                # add cert, memorandum and rules
+                attach_order = _add_filing_document_pdf(pdfs, attach_order, incorp_certificate_pdf_type, token, business, filing)
+                attach_order = _add_filing_document_pdf(pdfs, attach_order, rules_pdf_type, token, business, filing)
+                attach_order = _add_filing_document_pdf(pdfs, attach_order, memorandum_pdf_type, token, business, filing)
+            else:
+                # add noa and cert
+                attach_order = _add_filing_document_pdf(pdfs, attach_order, noa_pdf_type, token, business, filing)
+                attach_order = _add_filing_document_pdf(pdfs, attach_order, incorp_certificate_pdf_type, token, business, filing)
+
+        # add receipt
+        attach_order = _add_receipt_pdf(pdfs, attach_order, token, business, filing, filing_date_time, effective_date)
+
+    elif status == Filing.Status.PAID.value:
         # add filing pdf
-        filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, filing.filing_type, token)
-        if filing_pdf_encoded:
-            file_name = filing.filing_type[0].upper() + \
-                        " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
-            if ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate"):
-                file_name = f"{ar_date[:4]} {file_name}"
-
-            pdfs.append(
-                {
-                    "fileName": f"{file_name}.pdf",
-                    "fileBytes": filing_pdf_encoded.decode("utf-8"),
-                    "fileUrl": "",
-                    "attachOrder": str(attach_order)
-                }
-            )
-            attach_order += 1
-
+        attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing)
         # add receipt pdf
-        if not (corp_name := business.get("legalName")):  # pylint: disable=superfluous-parens
-            legal_type = business.get("legalType")
-            corp_name = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
+        attach_order = _add_receipt_pdf(pdfs, attach_order, token, business, filing, filing_date_time, effective_date)
 
-        receipt = requests.post(
-            f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-            json={
-                "corpName": corp_name,
-                "filingDateTime": filing_date_time,
-                "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
-                "filingIdentifier": str(filing.id),
-                "businessNumber": business.get("taxId", "")
-            },
-            headers=headers
-        )
-        if receipt.status_code != HTTPStatus.CREATED:
-            current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
-        else:
-            receipt_encoded = base64.b64encode(receipt.content)
-            pdfs.append(
-                {
-                    "fileName": "Receipt.pdf",
-                    "fileBytes": receipt_encoded.decode("utf-8"),
-                    "fileUrl": "",
-                    "attachOrder": str(attach_order)
-                }
-            )
-            attach_order += 1
     elif status == Filing.Status.COMPLETED.value:
         if legal_type != Business.LegalTypes.COOP.value:
             # add notice of articles
-            noa_pdf_type = "noticeOfArticles"
-            noa_encoded = get_filing_document(business["identifier"], filing.id, noa_pdf_type, token)
-            if noa_encoded:
-                pdfs.append(
-                    {
-                        "fileName": "Notice of Articles.pdf",
-                        "fileBytes": noa_encoded.decode("utf-8"),
-                        "fileUrl": "",
-                        "attachOrder": str(attach_order)
-                    }
-                )
-                attach_order += 1
-
-        if filing.filing_type == "incorporationApplication":
-            # add certificate
-            certificate_pdf_type = "certificateOfIncorporation"
-            certificate_encoded = get_filing_document(business["identifier"], filing.id, certificate_pdf_type, token)
-            if certificate_encoded:
-                file_name = "Certificate Of Incorporation.pdf"
-                pdfs.append(
-                    {
-                        "fileName": file_name,
-                        "fileBytes": certificate_encoded.decode("utf-8"),
-                        "fileUrl": "",
-                        "attachOrder": str(attach_order)
-                    }
-                )
-                attach_order += 1
-
-            if legal_type == Business.LegalTypes.COOP.value:
-                # Add rules
-                rules_pdf_type = "certifiedRules"
-                certified_rules_encoded = get_filing_document(business["identifier"], filing.id, rules_pdf_type, token)
-                if certified_rules_encoded:
-                    pdfs.append(
-                        {
-                            "fileName": "Certified Rules.pdf",
-                            "fileBytes": certified_rules_encoded.decode("utf-8"),
-                            "fileUrl": "",
-                            "attachOrder": str(attach_order)
-                        }
-                    )
-                    attach_order += 1
-
-                # Add memorandum
-                memorandum_pdf_type = "memorandum"
-                certified_memorandum_encoded = get_filing_document(business["identifier"], filing.id,
-                                                                   memorandum_pdf_type, token)
-                if certified_memorandum_encoded:
-                    pdfs.append(
-                        {
-                            "fileName": "Certified Memorandum.pdf",
-                            "fileBytes": certified_memorandum_encoded.decode("utf-8"),
-                            "fileUrl": "",
-                            "attachOrder": str(attach_order)
-                        }
-                    )
-                    attach_order += 1
+            attach_order = _add_filing_document_pdf(pdfs, attach_order, noa_pdf_type, token, business, filing)
 
         if filing.filing_type == "alteration" and get_additional_info(filing).get("nameChange", False):
             # add certificate of name change
-            certificate_pdf_type = "certificateOfNameChange"
-            certificate_encoded = get_filing_document(business["identifier"], filing.id, certificate_pdf_type, token)
-            if certificate_encoded:
-                file_name = "Certificate of Name Change.pdf"
-                pdfs.append(
-                    {
-                        "fileName": file_name,
-                        "fileBytes": certificate_encoded.decode("utf-8"),
-                        "fileUrl": "",
-                        "attachOrder": str(attach_order)
-                    }
-                )
-                attach_order += 1
+            attach_order = _add_filing_document_pdf(pdfs, attach_order, name_change_certificate_pdf_type, token, business, filing)
 
     return pdfs
 
 
-def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-branches # noqa: PLR0912
-    email_info: dict, token: str) -> dict:
+def process(email_info: dict, token: str) -> dict:  # noqa: PLR0915, PLR0912 ; will get resolved once other filings are updated and logic is condensed
     """Build the email for Business Number notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
-    # get template and fill in parts
     filing_type, status = email_info["type"], email_info["option"]
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
+    
+    updated_filings = ["incorporationApplication"]
+    if filing_type in updated_filings and status == Filing.Status.PAID.value and not filing.is_future_effective:
+        # We no longer send an email for this case
+        return
+
     filing_data = (filing.json)["filing"][filing_type]
     if not business:  # incorporationApplication (if filing status PAID):
         business = filing_data["nameRequest"]
@@ -204,30 +208,67 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
 
     legal_type = business.get("legalType")
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
+    filing_doc_title = FILING_TITLE[filing_type]
+    show_effective_date = filing.is_future_effective
+    is_future_effective_paid = filing.is_future_effective and status == Filing.Status.PAID.value
+    business_name = business.get("legalName") or NOT_AVAILABLE
+    business_identifier = business.get("identifier")
+    business_number = None
+    filing_name_short = ""
+    future_attachments_list = []
+    dashboard_url = get_entity_dashboard_url(business_identifier, token)
 
-    template = Path(
-        f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
-    ).read_text()
-    filled_template = substitute_template_parts(template)
+    if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
+        # Only show if bn15 is saved and format for ux
+        business_number = business["taxId"].replace("BC", " BC")
+
+    # get template and fill in parts
+    if filing_type == "incorporationApplication":
+        dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
+        filing_name_short = "Incorporation"
+        filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
+        if is_future_effective_paid:
+            business_identifier = NOT_AVAILABLE
+            if legal_type == Business.LegalTypes.COOP.value:
+                future_attachments_list = FUTURE_ATTACHMENTS["incorporationApplication"]["CP"]
+            else:
+                future_attachments_list = FUTURE_ATTACHMENTS["incorporationApplication"]["CORP"]
+            
+        if not business_number and legal_type != Business.LegalTypes.COOP.value:
+            business_number = NOT_AVAILABLE
+
+    else:
+        template = Path(
+            f'{current_app.config.get("TEMPLATE_PATH")}/BC-{FILING_TYPE_CONVERTER[filing_type]}-{status}.html'
+        ).read_text()
+        filled_template = substitute_template_parts(template)
+
+    # get attachments
+    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
     # render template with vars
-    numbered_description = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
-    jnja_template = Template(filled_template, autoescape=True)
-    html_out = jnja_template.render(
+    attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
+    jnja_template: Template = Template(filled_template, autoescape=True)
+    rendered_template = jnja_template.render(
         business=business,
         filing=filing_data,
         filing_status=status,
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=get_entity_dashboard_url(business.get("identifier"), token),
-        email_header=filing_name.upper(),
+        entity_dashboard_url=dashboard_url,
         filing_type=filing_type,
-        numbered_description=numbered_description,
-        additional_info=get_additional_info(filing)
+        additional_info=get_additional_info(filing),
+        attachments_list=attachments_list,
+        business_name=business_name,
+        business_identifier=business_identifier,
+        business_number=business_number,
+        filing_doc_title=filing_doc_title,
+        filing_name=filing_name,
+        filing_name_short=filing_name_short,
+        future_attachments_list=future_attachments_list,
+        office_name="Registered Office",
+        show_effective_date=show_effective_date,
     )
-
-    # get attachments
-    pdfs = _get_pdfs(status, token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date)
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token)
@@ -245,40 +286,36 @@ def process(  # pylint: disable=too-many-locals, too-many-statements, too-many-b
         return {}
 
     # assign subject
-    if status == Filing.Status.PAID.value:
-        if filing_type == "incorporationApplication":
-            subject = "Confirmation of Filing from the Business Registry"
-        elif filing_type in ["changeOfAddress", "changeOfDirectors"]:
-            address_director = next(x for x in ["Address", "Director"] if x in filing_type)
-            subject = f"Confirmation of {address_director} Change"
-        elif filing_type == "annualReport":
-            subject = "Confirmation of Annual Report"
-        elif filing_type == "alteration":
-            subject = "Confirmation of Alteration from the Business Registry"
+    if filing_type == "incorporationApplication":
+        # FUTURE - all filings will follow this logic
+        subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, filing_name_short)
 
-    elif status == Filing.Status.COMPLETED.value:
-        if filing_type == "incorporationApplication":
-            subject = "Incorporation Documents from the Business Registry"
-        elif filing_type in ["changeOfAddress", "changeOfDirectors", "alteration"]:
+    else:
+        if status == Filing.Status.PAID.value:
+            if filing_type in ["changeOfAddress", "changeOfDirectors"]:
+                address_director = next(x for x in ["Address", "Director"] if x in filing_type)
+                subject = f"Confirmation of {address_director} Change"
+            elif filing_type == "annualReport":
+                subject = "Confirmation of Annual Report"
+            elif filing_type == "alteration":
+                subject = "Confirmation of Alteration from the Business Registry"
+
+        elif status == Filing.Status.COMPLETED.value and filing_type in ["changeOfAddress", "changeOfDirectors", "alteration"]:
             subject = "Notice of Articles"
 
-    if not subject:  # fallback case - should never happen
-        subject = "Notification from the BC Business Registry"
+        if not subject:  # fallback case - should never happen
+            subject = "Notification from the BC Business Registry"
 
-    if filing.filing_type == "incorporationApplication":
-        legal_name = \
-            filing.filing_json["filing"]["incorporationApplication"]["nameRequest"].get("legalName", None)
-    else:
         legal_name = business.get("legalName", None)
 
-    subject = f"{legal_name} - {subject}" if legal_name else subject
+        subject = f"{legal_name} - {subject}" if legal_name else subject
 
     return {
         "recipients": recipients,
         "requestBy": "BCRegistries@gov.bc.ca",
         "content": {
             "subject": subject,
-            "body": f"{html_out}",
+            "body": rendered_template,
             "attachments": pdfs
         }
     }

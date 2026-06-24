@@ -1,6 +1,10 @@
 import copy
 import pytest
 from http import HTTPStatus
+
+import registry_schemas
+from registry_schemas.example_data import CHANGE_OF_DIRECTORS
+
 from legal_api.services.filings.validations.change_of_directors import validate_directors_name
 
 # Minimal valid director structure for reuse
@@ -27,12 +31,8 @@ def make_director(**kwargs):
     "test_name,directors,expected_msgs",
     [
         ("valid_minimal", [make_director()], []),
-        ("missing_firstName", [make_director(officer={"firstName": ""})], [
-            {"error": "Director firstName is required.", "path": "/filing/changeOfDirectors/directors/0/officer/firstName"}
-        ]),
-        ("missing_lastName", [make_director(officer={"lastName": ""})], [
-            {"error": "Director lastName is required.", "path": "/filing/changeOfDirectors/directors/0/officer/lastName"}
-        ]),
+        # firstName/lastName "is required" moved to the schema; see
+        # test_director_name_blank_or_whitespace_rejected_by_schema below.
         ("nameChanged_missing_prevFirstName", [make_director(actions=["nameChanged"], officer={"prevFirstName": "", "prevLastName": "Smith"})], [
             {"error": "Director prevFirstName is required when name has changed.", "path": "/filing/changeOfDirectors/directors/0/officer/prevFirstName"}
         ]),
@@ -50,10 +50,10 @@ def make_director(**kwargs):
         ]),
         ("multiple_directors", [
             make_director(),
-            make_director(officer={"firstName": "", "lastName": ""})
+            make_director(officer={"firstName": " John", "lastName": "Public "})
         ], [
-            {"error": "Director firstName is required.", "path": "/filing/changeOfDirectors/directors/1/officer/firstName"},
-            {"error": "Director lastName is required.", "path": "/filing/changeOfDirectors/directors/1/officer/lastName"}
+            {"error": "Director firstName cannot have leading or trailing whitespace.", "path": "/filing/changeOfDirectors/directors/1/officer/firstName"},
+            {"error": "Director lastName cannot have leading or trailing whitespace.", "path": "/filing/changeOfDirectors/directors/1/officer/lastName"}
         ]),
     ]
 )
@@ -70,3 +70,19 @@ def test_validate_directors_name(test_name, directors, expected_msgs):
         {"error": m["error"].replace("Director ", "Director "), "path": m["path"]} for m in msgs
     ]
     assert msgs_simple == expected_msgs
+
+
+@pytest.mark.parametrize("field", ["firstName", "lastName"])
+@pytest.mark.parametrize("bad_value", ["", "   ", "\t", "\n", " John", "John ", "John\n"])
+def test_director_name_blank_or_whitespace_rejected_by_schema(field, bad_value):
+    """Blank/whitespace/surrounding-whitespace director firstName/lastName is rejected by the schema.
+
+    The "is required" and "no leading/trailing whitespace" rules for director first/last names
+    moved from legal-api into the business-schemas directors person pattern.
+    """
+    cod = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    cod["directors"][0]["officer"][field] = bad_value
+
+    valid, _ = registry_schemas.validate({"changeOfDirectors": cod}, "change_of_directors")
+
+    assert not valid

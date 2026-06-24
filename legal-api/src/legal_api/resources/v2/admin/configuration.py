@@ -16,16 +16,16 @@ from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_cors import cross_origin
-from sqlalchemy import any_
+from sqlalchemy.exc import DataError
 
-from legal_api.models import Configuration, UserRoles, db
+from business_model.models import Configuration, UserRoles, db
 from legal_api.utils.auth import jwt
 
 from .bp import bp_admin
 
 
 @bp_admin.route("/configurations", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.staff])
 def get_configurations():
     """Return a list of configurations, optionally filtered by names."""
@@ -35,7 +35,8 @@ def get_configurations():
         if not names_list:
             return {"message": "Configuration names are invalid"}, HTTPStatus.BAD_REQUEST
 
-        configurations = Configuration.find_by_names(names_list)
+        valid_names = [name for name in names_list if name in Configuration.Names.__members__]
+        configurations = Configuration.find_by_names(valid_names)
         if not configurations:
             return {"message": "Configurations not found"}, HTTPStatus.NOT_FOUND
     else:
@@ -49,11 +50,11 @@ def get_configurations():
 
 
 @bp_admin.route("/configurations", methods=["PUT"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.has_one_of_roles([UserRoles.staff])
 def update_configurations():
     """Update the configurations."""
-    json_input = request.get_json()
+    json_input = request.get_json(silent=True)
     if not json_input:
         return {"message": "Request body cannot be blank"}, HTTPStatus.BAD_REQUEST
 
@@ -127,8 +128,11 @@ def validate_data_types(configurations):
 def validate_invalid_names(names):
     """Validate if there are any invalid names in configurations to be updated."""
     # Query the database for these names
-    existing_configs = Configuration.query.filter(Configuration.name.ilike(any_(names))).all()
-
+    try:
+        existing_configs = Configuration.query.filter(Configuration.name.in_(names)).all()
+    except DataError:
+        # Invalid name string was specified
+        existing_configs = []
     # Check if the number of unique names in the request matches the number of names found in the database
     if len(existing_configs) != len(set(names)):
         return "Invalid name error."

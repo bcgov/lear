@@ -12,16 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Amalgamation Application filing."""
-import re
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
+from flask.globals import request_ctx
 from flask_babel import _ as babel
 
+from business_account import AccountService
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.errors import Error
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.services import STAFF_ROLE, flags
-from legal_api.services.bootstrap import AccountService
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
@@ -44,7 +44,7 @@ from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
 
-def validate(amalgamation_json: dict, account_id) -> Optional[Error]:
+def validate(amalgamation_json: dict, account_id) -> Error | None:
     """Validate the Amalgamation Application filing."""
     filing_type = "amalgamationApplication"
     if not amalgamation_json:
@@ -133,7 +133,7 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         amalgamation_type,
         account_id) -> list:
     """Validate amalgamating businesses."""
-    is_staff = jwt.validate_roles([STAFF_ROLE])
+    is_staff = jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE])
     enabled_filings = flags.value("supported-amalgamation-entities").split()
     if legal_type not in enabled_filings:
         return Error(HTTPStatus.FORBIDDEN,
@@ -279,16 +279,6 @@ def _validate_foreign_businesses(  # noqa: PLR0913
         amalgamating_business,
         amalgamating_business_path) -> list:
     msg = []
-    msg.extend(_validate_foreign_identifier(amalgamating_business, amalgamating_business_path))
-
-    # Frontend enforces these bounds on the foreign business legal name; mirror them here.
-    min_legal_name_length: Final = 3
-    max_legal_name_length: Final = 150
-    if not min_legal_name_length <= len(foreign_legal_name) <= max_legal_name_length:
-        msg.append({
-            "error": "Length of foreign business legal name must be from 3 to 150 characters.",
-            "path": f"{amalgamating_business_path}/legalName"
-        })
 
     if is_staff:
         msg.extend(validate_foreign_jurisdiction(amalgamating_business["foreignJurisdiction"],
@@ -333,42 +323,6 @@ def _validate_foreign_businesses(  # noqa: PLR0913
                     "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
-
-    return msg
-
-
-def _validate_foreign_identifier(amalgamating_business, amalgamating_business_path) -> list:
-    mras_ca_regions = {"AB", "MB", "NS", "ON", "QC", "SK"}
-    identifier_pattern = r"^[0-9a-zA-Z-]+$"
-    min_len = 3
-    max_len = 40
-
-    msg = []
-    identifier = amalgamating_business.get("identifier")
-    jurisdiction = amalgamating_business.get("foreignJurisdiction", {})
-    country = (jurisdiction.get("country") or "").upper()
-    region = (jurisdiction.get("region") or "").upper()
-    identifier_path = f"{amalgamating_business_path}/identifier"
-
-    is_mras = country == "CA" and region in mras_ca_regions
-    if is_mras and not identifier:
-        msg.append({
-            "error": "Identifier is required for foreign businesses from MRAS jurisdictions.",
-            "path": identifier_path,
-        })
-        return msg
-
-    if identifier:
-        if not min_len <= len(identifier) <= max_len:
-            msg.append({
-                "error": f"Foreign business identifier must be between {min_len} and {max_len} characters.",
-                "path": identifier_path,
-            })
-        if not re.match(identifier_pattern, identifier):
-            msg.append({
-                "error": "Foreign business identifier may only contain letters, numbers, and hyphens.",
-                "path": identifier_path,
-            })
 
     return msg
 
@@ -494,7 +448,7 @@ def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
 
 def _is_business_affliated(identifier, account_id):
     return bool(
-        (account_response := AccountService.get_account_by_affiliated_identifier(identifier)) and
+        (account_response := AccountService.get_account_by_affiliated_identifier(identifier, flags)) and
         (orgs := account_response.get("orgs")) and
         any(str(org.get("id")) == account_id for org in orgs)
     )

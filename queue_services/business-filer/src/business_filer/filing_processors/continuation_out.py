@@ -35,11 +35,46 @@
 from contextlib import suppress
 
 import dpath
-from business_model.models import Business, Filing
+from business_model.models import Business, Comment, Document, DocumentType, Filing
 
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import filings
+
+# DocumentType.CONTINUATION_OUT is added to business-registry-model in this change, but the
+# filer installs that package from bcgov/lear@main, which won't have it until this lands.
+# Use the enum once it's available, otherwise fall back to the literal value (both are
+# "continuation_out"). This can drop to DocumentType.CONTINUATION_OUT.value once the model bumps.
+CONTINUATION_OUT_DOCUMENT_TYPE = (
+    DocumentType.CONTINUATION_OUT.value
+    if getattr(DocumentType, "CONTINUATION_OUT", None)
+    else "continuation_out"
+)
+
+
+def create_uploaded_documents(continuation_out: dict,
+                              business: Business,
+                              filing: Filing,
+                              filing_meta: FilingMeta):
+    """Create document records for the supporting documents uploaded with the continuation out filing."""
+    files = []
+    for file in continuation_out.get("documents", []):
+        document = Document()
+        document.type = CONTINUATION_OUT_DOCUMENT_TYPE
+        document.file_key = file.get("fileKey")
+        document.file_name = file.get("fileName")
+        document.filing_id = filing.id
+        business.documents.append(document)
+        files.append({
+            "fileKey": document.file_key,
+            "fileName": document.file_name
+        })
+
+    if files:
+        filing_meta.continuation_out = {
+            **filing_meta.continuation_out,
+            "uploadedDocuments": files,
+        }
 
 
 def process(business: Business, continuation_out_filing: Filing, filing: dict, filing_meta: FilingMeta):
@@ -77,3 +112,13 @@ def process(business: Business, continuation_out_filing: Filing, filing: dict, f
         "legalName": legal_name,
         "continuationOutDate": continuation_out_date_str
     }
+
+    if details := continuation_out_json.get("details"):
+        continuation_out_filing.comments.append(
+            Comment(
+                comment=details,
+                staff_id=continuation_out_filing.submitter_id
+            )
+        )
+
+    create_uploaded_documents(continuation_out_json, business, continuation_out_filing, filing_meta)

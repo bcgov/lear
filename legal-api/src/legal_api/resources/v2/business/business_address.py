@@ -20,18 +20,16 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Address, Business, db
+from business_model.models import Address, Business, db
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
 from .bp import bp
 
-# noqa: I003; the multiple route decorators cause an erroneous error in line space counting
-
 
 @bp.route("/<string:identifier>/addresses", methods=["GET", "OPTIONS"], strict_slashes=False)
 @bp.route("/<string:identifier>/addresses/<int:addresses_id>", methods=["GET", "OPTIONS"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_addresses(identifier, addresses_id=None):
     """Return a JSON of the addresses on file."""

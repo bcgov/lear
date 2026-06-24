@@ -13,15 +13,13 @@
 # limitations under the License.
 
 """API endpoints for managing an Digital Credentials resource."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
-from typing import Union
 
 from flask import Blueprint, current_app, g, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.decorators import can_access_digital_credentials
-from legal_api.models import (
+from business_model.models import (
     Business,
     DCBusinessUser,
     DCConnection,
@@ -30,14 +28,15 @@ from legal_api.models import (
     DCRevocationReason,
     User,
 )
-from legal_api.services import digital_credentials
-from legal_api.services.digital_credentials_helpers import (
+from business_registry_digital_credentials import DigitalCredentialsRulesService
+from business_registry_digital_credentials.digital_credentials_helpers import (
     extract_invitation_message_id,
     get_digital_credential_data,
     get_or_create_business_user,
     get_roles,
 )
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
+from legal_api.decorators import can_access_digital_credentials
+from legal_api.services import digital_credentials
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -48,7 +47,7 @@ bp_dc = Blueprint("DIGITAL_CREDENTIALS", __name__,
 rules = DigitalCredentialsRulesService()
 
 
-def get_business_user(identifier) -> tuple[Union[DCBusinessUser, None], Union[dict, None], Union[HTTPStatus, None]]:
+def get_business_user(identifier) -> tuple[DCBusinessUser | None, dict | None, HTTPStatus | None]:
     """Get the business, user, and business user if they exist and the user is authorized."""
     if not (business := Business.find_by_identifier(identifier)):
         return None, jsonify({"message": f"{identifier} not found."}), HTTPStatus.NOT_FOUND
@@ -63,7 +62,7 @@ def get_business_user(identifier) -> tuple[Union[DCBusinessUser, None], Union[di
 
 
 @bp.route("/<string:identifier>/digitalCredentials/invitation", methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def create_invitation(identifier):
@@ -107,7 +106,7 @@ def create_invitation(identifier):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/connections", methods=["GET", "OPTIONS"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def get_connections(identifier):
@@ -131,7 +130,7 @@ def get_connections(identifier):
 
 @bp.route("/<string:identifier>/digitalCredentials/connections/<string:connection_id>/attest",
           methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def attest_connection(identifier, connection_id):
@@ -150,7 +149,7 @@ def attest_connection(identifier, connection_id):
 
 @bp.route("/<string:identifier>/digitalCredentials/connections/<string:connection_id>",
           methods=["DELETE"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def delete_connection(identifier, connection_id):
@@ -170,7 +169,7 @@ def delete_connection(identifier, connection_id):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/activeConnection", methods=["DELETE"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def delete_active_connection(identifier):
@@ -190,7 +189,7 @@ def delete_active_connection(identifier):
 
 
 @bp.route("/<string:identifier>/digitalCredentials", methods=["GET", "OPTIONS"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def get_credentials(identifier):
@@ -219,7 +218,7 @@ def get_credentials(identifier):
 
 
 @bp.route("/<string:identifier>/digitalCredentials/<string:credential_type>", methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def send_credential(identifier, credential_type):  # noqa: PLR0911
@@ -284,7 +283,7 @@ def send_credential(identifier, credential_type):  # noqa: PLR0911
 
 @bp.route("/<string:identifier>/digitalCredentials/<string:credential_id>/revoke",
           methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def revoke_credential(identifier, credential_id):
@@ -309,14 +308,14 @@ def revoke_credential(identifier, credential_id):
                                              reason) is None:
         return jsonify({"message": "Failed to revoke credential."}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-    credential.date_of_issue = datetime.now(timezone.utc)
+    credential.date_of_issue = datetime.now(UTC)
     credential.is_revoked = True
     credential.save()
     return jsonify({"message": "Credential has been revoked."}), HTTPStatus.OK
 
 
 @bp.route("/<string:identifier>/digitalCredentials/<string:credential_id>", methods=["DELETE"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 @can_access_digital_credentials
 def delete_credential(identifier, credential_id):
@@ -336,7 +335,7 @@ def delete_credential(identifier, credential_id):
 
 
 @bp_dc.route("/topic/<string:topic_name>", methods=["POST"], strict_slashes=False)
-@cross_origin(origin="*")
+@cross_origin()
 def webhook_notification(topic_name: str):
     """To receive notification from aca-py admin api."""
     json_input = request.get_json()
@@ -361,7 +360,7 @@ def webhook_notification(topic_name: str):
         elif topic_name == "issue_credential_v2_0" and state == "done":
             cred_ex_id = json_input.get("cred_ex_id", None)
             if (credential := DCCredential.find_by_credential_exchange_id(cred_ex_id)):
-                credential.date_of_issue = datetime.now(timezone.utc)
+                credential.date_of_issue = datetime.now(UTC)
                 credential.is_issued = True
                 credential.save()
         elif topic_name == "present_proof_v2_0" and state == "done":
@@ -369,7 +368,7 @@ def webhook_notification(topic_name: str):
             verified = json_input.get("verified", "false") == "true"
             if connection_id and (connection := DCConnection.find_by_connection_id(connection_id)):
                 connection.is_attested = verified
-                connection.last_attested = datetime.now(timezone.utc)
+                connection.last_attested = datetime.now(UTC)
                 connection.save()
     except Exception as err:
         current_app.logger.error(err)

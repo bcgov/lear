@@ -23,7 +23,7 @@ import requests
 from flask import Flask, current_app
 from simple_cloudevent import SimpleCloudEvent, to_queue_message
 
-from business_account.AccountService import AccountService
+from business_account import AccountService
 from business_common.utils.datetime import datetime as datetime_util
 from business_model.models import Address, Batch, BatchProcessing, Business, Furnishing, db
 from dissolution_service import InvoluntaryDissolutionService

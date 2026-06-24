@@ -18,14 +18,14 @@ from http import HTTPStatus
 from flask import Blueprint, jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import NaicsStructure
+from business_model.models import NaicsStructure
 from legal_api.utils.auth import jwt
 
 bp = Blueprint("NAICS2", __name__, url_prefix="/api/v2/naics")
 
 
 @bp.route("", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_naics_results():
     """Return naics results matching search term."""
@@ -54,7 +54,7 @@ def get_naics_results():
 
 
 @bp.route("/<string:naics_code_or_key>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_naics_code(naics_code_or_key: str):
     """Return naics code."""

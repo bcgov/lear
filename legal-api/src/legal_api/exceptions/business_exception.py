@@ -13,19 +13,9 @@
 # limitations under the License.
 """Application Specific Exceptions, to manage the business errors.
 
-@log_error - a decorator to automatically log the exception to the logger provided
-
-BusinessException - error, status_code - Business rules error
-error - a description of the error {code / description: classname / full text}
-status_code - where possible use HTTP Error Codes
+Re-exports `business_model.exceptions.BusinessException` so `try/except`
+sites in legal-api catch the same class that the model layer raises.
 """
+from business_model.exceptions import BusinessException
 
-
-class BusinessException(Exception): # noqa: N818
-    """Exception that adds error code and error name, that can be used for i18n support."""
-
-    def __init__(self, error, status_code, *args, **kwargs):
-        """Return a valid BusinessException."""
-        super().__init__(*args, **kwargs)
-        self.error = error
-        self.status_code = status_code
+__all__ = ("BusinessException",)

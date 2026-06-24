@@ -19,7 +19,7 @@ Test-Suite to ensure that the /permissions endpoint is working as expected.
 import pytest
 from http import HTTPStatus
 
-from legal_api.models import AuthorizedRole, AuthorizedRolePermission, Permission
+from business_model.models import AuthorizedRole, AuthorizedRolePermission, Permission
 from legal_api.services.authz import STAFF_ROLE, PUBLIC_USER
 
 from tests.unit.services.utils import create_header

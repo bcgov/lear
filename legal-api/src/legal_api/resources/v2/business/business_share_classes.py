@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify
 from flask_cors import cross_origin
 
-from legal_api.models import Business, ShareClass
+from business_model.models import Business, ShareClass
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -27,7 +27,7 @@ from .bp import bp
 # @cors_preflight('GET,')
 @bp.route("/<string:identifier>/share-classes", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/share-classes/<int:share_class_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_share_class(identifier, share_class_id=None):
     """Return a JSON of the share classes."""

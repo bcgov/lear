@@ -38,6 +38,7 @@ puts a message onto the Filers queue to process the file.
 """
 from __future__ import annotations
 
+from cloud_sql_connector import setup_pg8000_close_event_listener
 from flask import Flask
 
 from .config import Config, ProdConfig
@@ -55,20 +56,10 @@ def create_app(environment: Config = ProdConfig, **kwargs) -> Flask:
     if app.config.get("LD_SDK_KEY", None):
         flags.init_app(app)
 
-    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
-        from cloud_sql_connector import DBConfig
-
-        db_config = DBConfig(
-            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
-            database=app.config.get("DB_NAME", ""),
-            user=app.config.get("DB_USER", ""),
-            ip_type=app.config["DB_IP_TYPE"],
-            pool_recycle=60,
-            schema="public",
-        )
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
-
     db.init_app(app)
+
+    with app.app_context():
+        setup_pg8000_close_event_listener(db.engine)
     register_endpoints(app)
     gcp_queue.init_app(app)
 

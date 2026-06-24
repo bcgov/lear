@@ -199,6 +199,7 @@
 
 	td.col-22 { width: 22% !important; }
 	td.col-33 { width: 33% !important; }
+	td.col-35 { width: 35% !important; }
 	td.col-67 { width: 67% !important; }
 	td.col-50 { width: 50% !important; }
 
@@ -346,9 +347,8 @@
 	.retrieved-date-time {
 		font-family: 'BCSans-Italic', sans-serif !important;
 		font-size: 13px;
-		line-height: 15px;
 		color: #212529;
-		padding: 1rem 1rem 0.6rem 1rem;
+		padding: 0rem 0rem 0.6rem 1rem;
 	}
 
 	.record-to-be-withdrawn-table {
@@ -464,6 +464,7 @@
 	.mt-15 { margin-top: 3.75rem; }
 	.mt-16 { margin-top: 4rem; }
 
+	.mb-2 { margin-bottom: 0.5rem; }
 	.mb-4 { margin-bottom: 1rem; }
 	.mb-5 { margin-bottom: 1.25rem; }
 
@@ -475,6 +476,15 @@
 	.pt-6 { padding-top: 1.5rem; }
 	.pt-7 { padding-top: 1.75rem; }
 	.pt-8 { padding-top: 2rem; }
+
+
+	/* apply margin top to all children except first child */
+	.gap-y-2 > * + * {
+    margin-top: 0.5rem;
+	}
+	.gap-y > * + * { /* default size */
+    margin-top: 1rem;
+	}
 
 	.chip {
 		font-size: 8px;

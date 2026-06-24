@@ -15,22 +15,21 @@
 import copy
 from unittest.mock import patch
 from http import HTTPStatus
-from datetime import date
+from datetime import date, datetime, timezone
 
-from legal_api.errors import Error
-from legal_api.services.permissions import PermissionService
 import pytest
 from freezegun import freeze_time
-import datetime
+
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
+from legal_api.errors import Error
+from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
+from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_businesses
+from legal_api.services.filings.validations.validation import validate
+from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
-from legal_api.models import AmalgamatingBusiness, Amalgamation, Business, Filing
-from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
-from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_identifier
-from legal_api.services.filings.validations.validation import validate
-from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_businesses
-
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
+from tests.unit.services.utils import jwt_request_context
 
 
 class MockResponse:
@@ -823,13 +822,12 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.resources.v2.business.business.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': [{'id': account_id}]} if test_status == 'SUCCESS' else {})
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -857,15 +855,14 @@ def test_has_pending_filing(mocker, app, session, jwt, test_status, expected_cod
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.models.business.Business.find_by_identifier',
+    mocker.patch('business_model.models.business.Business.find_by_identifier',
                  return_value=Business(identifier='BC1234567',
                                        legal_type=Business.LegalTypes.BCOMP.value))
-    mocker.patch('legal_api.models.filing.Filing.get_filings_by_status',
+    mocker.patch('business_model.models.filing.Filing.get_filings_by_status',
                  return_value=[Filing()] if test_status == 'FAIL' else [])
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(None, filing)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -894,15 +891,14 @@ def test_in_future_effective_amalgamation_filing(mocker, app, session, jwt,
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.models.business.Business.find_by_identifier',
+    mocker.patch('business_model.models.business.Business.find_by_identifier',
                  return_value=Business(identifier='BC1234567',
                                        legal_type=Business.LegalTypes.BCOMP.value))
-    mocker.patch('legal_api.models.business.Business.is_pending_amalgamating_business',
+    mocker.patch('business_model.models.business.Business.is_pending_amalgamating_business',
                  return_value=[Filing()] if test_status == 'FAIL' else [])
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(None, filing)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -943,18 +939,16 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
-                        founding_date=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, timezone.utc),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_account_by_affiliated_identifier',
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.resources.v2.business.business.AccountService.get_account_by_affiliated_identifier',
                  return_value={'orgs': [{'id': account_id}]} if test_status in  'SUCCESS_AFFILIATED' else {})
-
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
 
@@ -962,9 +956,9 @@ def test_is_business_affliated(mocker, app, session, jwt, test_status, flag_enab
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate an unaffiliated business.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
-    with app.test_request_context(headers={'account-id': account_id}):
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)
 
     # validate outcomes
@@ -1013,7 +1007,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
     ]
 
     def mock_find_by_identifier(identifier):
-        utc_now = datetime.datetime.now(datetime.timezone.utc)
+        utc_now = datetime.now(timezone.utc)
         is_good_standing = test_status in ( 'SUCCESS_GOOD_STANDING', 'SUCCESS_FLAG_ON_WITH_PERMISSION')
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BCOMP.value,
@@ -1027,9 +1021,7 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
@@ -1038,9 +1030,9 @@ def test_is_business_in_good_standing(mocker, app, session, jwt, test_status, fl
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate business which is not in good standing.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
 
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
-    with app.test_request_context(headers={'account-id': account_id}):
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)
 
     # validate outcomes
@@ -1088,7 +1080,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
             return None
 
         return Business(identifier=identifier,
-                        founding_date=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, timezone.utc),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -1097,11 +1089,10 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)  # Client
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -1134,7 +1125,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
 
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
-                        founding_date=datetime.datetime.fromtimestamp(0, tz=datetime.timezone.utc),
+                        founding_date=datetime.fromtimestamp(0, tz=timezone.utc),
                         legal_type=Business.LegalTypes.BCOMP.value)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
@@ -1143,13 +1134,7 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-
-    def mock_validate_roles(required_roles):
-        if role in required_roles:
-            return True
-        return False
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
 
@@ -1157,9 +1142,9 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         HTTPStatus.BAD_REQUEST, [{'message': 'Permission Denied - You do not have permissions to amalgamate a foreign corporation.'}])
     mocker.patch.object(PermissionService, 'check_user_permission', return_value=permission_error)
     
-    mocker.patch('legal_api.services.bootstrap.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
+    mocker.patch('legal_api.services.filings.validations.common_validations.AccountService.get_contacts', return_value={'contacts': [{'email': 'test@example.com'}]})
 
-    with app.test_request_context(headers={'account-id': account_id}):
+    with jwt_request_context(app, jwt, [role], 'test-user', account_id):
         err = validate(None, filing, account_id)
 
     # validate outcomes
@@ -1169,35 +1154,6 @@ def test_amalgamating_foreign_business(mocker, app, session, jwt, test_status, r
         assert expected_code == err.code
         error_msg = err.msg[0].get('error') or err.msg[0].get('message')
         assert expected_msg == error_msg
-
-
-@pytest.mark.parametrize(
-    'legal_name, expects_error',
-    [
-        ('AB', True),          # 2 chars - below the 3 minimum
-        ('ABC', False),        # 3 chars - minimum boundary
-        ('A' * 150, False),    # 150 chars - maximum boundary
-        ('A' * 151, True),     # 151 chars - above the 150 maximum
-    ]
-)
-def test_foreign_business_legal_name_length(legal_name, expects_error):
-    """Assert _validate_foreign_businesses enforces a 3 to 150 character legal name."""
-    path = '/filing/amalgamationApplication/amalgamatingBusinesses/0'
-    msg = _validate_foreign_businesses(
-        is_staff=True,
-        is_any_bc_company=False,
-        is_any_ulc=False,
-        legal_type=Business.LegalTypes.BCOMP.value,
-        foreign_legal_name=legal_name,
-        amalgamating_business={'role': AmalgamatingBusiness.Role.amalgamating.name,
-                               'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
-        amalgamating_business_path=path)
-
-    length_error = {
-        'error': 'Length of foreign business legal name must be from 3 to 150 characters.',
-        'path': f'{path}/legalName'
-    }
-    assert (length_error in msg) is expects_error
 
 
 @pytest.mark.parametrize(
@@ -1231,15 +1187,10 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(mocker, app, sessi
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    def mock_validate_roles(required_roles):
-        if role in required_roles:
-            return True
-        return False
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [role], 'test-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -1279,15 +1230,10 @@ def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jw
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    def mock_validate_roles(required_roles):
-        if role in required_roles:
-            return True
-        return False
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', side_effect=mock_validate_roles)
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [role], 'test-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -1328,11 +1274,10 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -1387,11 +1332,10 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     expected_msg = 'An extra-Pro cannot amalgamate with anything to become a BC Unlimited Liability Company or a BC Community Contribution Company.'
@@ -1444,11 +1388,10 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
                  return_value=False)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -1501,11 +1444,10 @@ def test_duplicate_amalgamating_businesses(mocker, app, session, jwt, test_statu
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if test_status == 'SUCCESS':
@@ -1590,11 +1532,10 @@ def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_typ
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if expected_code:
@@ -1648,11 +1589,10 @@ def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type,
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if expected_code:
@@ -1693,11 +1633,10 @@ def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
-    mocker.patch('legal_api.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)  # Staff
-
-    err = validate(None, filing, account_id)
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
 
     # validate outcomes
     if expected_code:
@@ -1773,10 +1712,11 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
-            HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
-                'path': '/filing/header/effectiveDate'
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
+            HTTPStatus.UNPROCESSABLE_CONTENT, [{
+                'path': 'filing/header/effectiveDate',
+                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                'context': []
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
@@ -1898,56 +1838,4 @@ def test_amalgamation_permission_and_completing_party_flag(mocker, app, session,
         assert expected_msg in str(err.msg[0].get('message', err.msg[0].get('error', '')))
     else:
         assert err is None
-
-
-@pytest.mark.parametrize(
-    'test_name, amalgamating_business, expected_errors',
-    [
-        (
-            'baseline_valid_mras',
-            {'identifier': 'A1234567',
-             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
-            []
-        ),
-        (
-            'mras_missing_identifier',
-            {'identifier': '',
-             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
-            [{'error': 'Identifier is required for foreign businesses from MRAS jurisdictions.',
-              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
-        ),
-        (
-            'identifier_too_short',
-            {'identifier': 'AB',
-             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
-            [{'error': 'Foreign business identifier must be between 3 and 40 characters.',
-              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
-        ),
-        (
-            'identifier_too_long',
-            {'identifier': 'A' * 41,
-             'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}},
-            [{'error': 'Foreign business identifier must be between 3 and 40 characters.',
-              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
-        ),
-        (
-            'identifier_disallowed_char',
-            {'identifier': 'SK#99001',
-             'foreignJurisdiction': {'country': 'CA', 'region': 'SK'}},
-            [{'error': 'Foreign business identifier may only contain letters, numbers, and hyphens.',
-              'path': '/filing/amalgamationApplication/amalgamatingBusinesses/1/identifier'}]
-        ),
-        (
-            'non_mras_no_identifier_ok',
-            {'identifier': '',
-             'foreignJurisdiction': {'country': 'CA', 'region': 'NB'}},
-            []
-        ),
-    ]
-)
-def test_validate_foreign_identifier(test_name, amalgamating_business, expected_errors):
-    """Assert _validate_foreign_identifier mirrors the frontend MRAS + format rules."""
-    path = '/filing/amalgamationApplication/amalgamatingBusinesses/1'
-    errors = _validate_foreign_identifier(amalgamating_business, path)
-    assert errors == expected_errors
  

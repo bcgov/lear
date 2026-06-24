@@ -36,13 +36,14 @@ import copy
 import random
 
 from datetime import datetime, timezone
-from business_model.models import Business, Filing
+from business_model.models import Business, Document, Filing
 
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
 from business_filer.common.legislation_datetime import LegislationDatetime
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import continuation_out
+from business_filer.filing_processors.continuation_out import CONTINUATION_OUT_DOCUMENT_TYPE
 from tests.unit import create_business, create_filing
 
 
@@ -85,3 +86,70 @@ def tests_filer_continuation_out(app, session):
     assert filing_meta.continuation_out['region'] == foreign_jurisdiction_json['region']
     assert filing_meta.continuation_out['continuationOutDate'] == continuation_out_date_str
     assert filing_meta.continuation_out['legalName'] == filing_json['filing']['continuationOut']['legalName']
+
+
+def tests_filer_continuation_out_uploaded_documents(app, session):
+    """Assert that uploaded supporting documents are persisted as Document records and filing meta data."""
+    identifier = f'BC{random.SystemRandom().randint(1000000, 9999999)}'
+    business = create_business(identifier, legal_type='CP')
+
+    uploaded_documents = [
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'supporting-document-1.pdf'},
+        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'supporting-document-2.pdf'}
+    ]
+
+    filing_json = copy.deepcopy(FILING_TEMPLATE)
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['header']['name'] = 'continuationOut'
+    filing_json['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
+    filing_json['filing']['continuationOut']['documents'] = uploaded_documents
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    continuation_out_filing = create_filing(payment_id, filing_json, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # Test
+    continuation_out.process(business, continuation_out_filing, filing_json['filing'], filing_meta)
+    business.save()
+
+    # Check outcome
+    final_filing = Filing.find_by_id(continuation_out_filing.id)
+
+    documents = Document.find_all_by(final_filing.id, CONTINUATION_OUT_DOCUMENT_TYPE)
+    assert len(documents) == len(uploaded_documents)
+    for document in documents:
+        file = next(x for x in uploaded_documents if x.get('fileKey') == document.file_key)
+        assert document.file_name == file.get('fileName')
+        assert document.filing_id == final_filing.id
+
+    meta_documents = filing_meta.continuation_out['uploadedDocuments']
+    assert len(meta_documents) == len(uploaded_documents)
+    for file in uploaded_documents:
+        assert file in meta_documents
+
+
+def tests_filer_continuation_out_no_uploaded_documents(app, session):
+    """Assert that no uploadedDocuments meta data is set when no documents are uploaded."""
+    identifier = f'BC{random.SystemRandom().randint(1000000, 9999999)}'
+    business = create_business(identifier, legal_type='CP')
+
+    filing_json = copy.deepcopy(FILING_TEMPLATE)
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['header']['name'] = 'continuationOut'
+    filing_json['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
+    filing_json['filing']['continuationOut'].pop('documents', None)
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    continuation_out_filing = create_filing(payment_id, filing_json, business_id=business.id)
+
+    filing_meta = FilingMeta()
+
+    # Test
+    continuation_out.process(business, continuation_out_filing, filing_json['filing'], filing_meta)
+    business.save()
+
+    # Check outcome
+    final_filing = Filing.find_by_id(continuation_out_filing.id)
+    assert Document.find_all_by(final_filing.id, CONTINUATION_OUT_DOCUMENT_TYPE) == []
+    assert 'uploadedDocuments' not in filing_meta.continuation_out

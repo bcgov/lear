@@ -20,7 +20,7 @@ PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
 ##############################################################################
 
 # -- Tables to restore ------------------------------------------------------------
-RESTORE=(corp_processing colin_tracking mig_group mig_batch mig_corp_batch mig_corp_account corps_with_third_party email_domain_groups bar_corps bad_emails exclude_corps)
+RESTORE=(corp_processing auth_processing auth_component_operation colin_tracking mig_group mig_batch mig_corp_batch mig_corp_account corps_with_third_party email_domain_groups bar_corps bad_emails exclude_corps)
 
 # -- Runtime options -----------------------------------------------------------
 DUMP="${DUMP}"
@@ -67,7 +67,8 @@ fi
 # ── RESTORE DATA FOR THE PRESERVED TABLES                                   #
 ##############################################################################
 if [ "$DELTA_MODE" = "true" ]; then
-  printf "⚠️  DELTA_MODE is true: skipping restore of preserved tables, processing table only "corp_processing".\n"
+  printf "⚠️  DELTA_MODE is true: skipping restore of preserved tables, processing table only \"corp_processing\".\n"
+  printf "⚠️  Auth tables auth_processing and auth_component_operation are not restored or merged in delta mode.\n"
   psql $(pg_conn_opts) -v ON_ERROR_STOP=1 <<  SQL
   ALTER TABLE IF EXISTS corp_processing RENAME TO corp_processing_old;
   CREATE TABLE corp_processing (LIKE corp_processing_old INCLUDING ALL);

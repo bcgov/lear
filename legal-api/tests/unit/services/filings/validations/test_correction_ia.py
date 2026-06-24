@@ -21,13 +21,16 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
 
 from legal_api.services import NameXService
+from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
+from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
+
 from tests.unit import MockResponse
 from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit.services.filings.validations import lists_are_equal
+from tests.unit.services.utils import jwt_request_context
 
 
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
@@ -55,7 +58,7 @@ BC_COMMENT_ONLY_CORRECTION = {
 }
 
 
-def test_valid_ia_correction(mocker, session):
+def test_valid_ia_correction(session, app, jwt):
     """Test that a valid IA without NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -67,12 +70,9 @@ def test_valid_ia_correction(mocker, session):
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-
-    if err:
-        print(err.msg)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
     # check that validation passed
     assert None is err
@@ -84,7 +84,7 @@ def test_valid_ia_correction(mocker, session):
      'Name Request legal type is not same as the business legal type.'),
     ('nr_not_approved', 'BEN', 'CP', 'BECV', 'Name Request is not approved.')
 ])
-def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_type, err_msg):
+def test_nr_correction(session, app, jwt, new_name, legal_type, nr_legal_type, nr_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -117,12 +117,10 @@ def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_
     }
     nr_response = MockResponse(nr_response_json)
 
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-        err = validate(business, f)
-        if err:
-            print(err.msg)
+        with jwt_request_context(app, jwt, [STAFF_ROLE]):
+            if err := validate(business, f):
+                print(err.msg)
 
     if not err_msg:
         assert None is err
@@ -155,7 +153,7 @@ def test_nr_correction(mocker, session, new_name, legal_type, nr_legal_type, nr_
     ('no_roles', 'ULC', 'STAFF', None),
     ('no_roles', 'CC', 'STAFF', None),
 ])
-def test_parties_correction(mocker, session, test_name, legal_type, correction_type, err_msg):
+def test_parties_correction(session, app, jwt, test_name, legal_type, correction_type, err_msg):
     """Test that a valid NR correction passes validation."""
     # setup
     identifier = 'BC1234567'
@@ -201,15 +199,12 @@ def test_parties_correction(mocker, session, test_name, legal_type, correction_t
     }
     nr_response = MockResponse(nr_response_json)
 
-    if correction_type == 'CLIENT':
-        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
-    else:
-        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
+    roles = [BASIC_USER] if correction_type == 'CLIENT' else [STAFF_ROLE]
 
     with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-        err = validate(business, f)
-        if err:
-            print(err.msg)
+        with jwt_request_context(app, jwt, roles):
+            if err := validate(business, f):
+                print(err.msg)
 
     if err_msg:
         assert err
@@ -223,7 +218,7 @@ def test_parties_correction(mocker, session, test_name, legal_type, correction_t
     ('STAFF', None),
     ('CLIENT', 'Only staff can file comment only Corrections.')
 ])
-def test_valid_comment_only_correction(mocker, session, correction_type, err_msg):
+def test_valid_comment_only_correction(session, app, jwt, correction_type, err_msg):
     """Test valid comment only IA validation."""
     # setup
     identifier = 'BC1234567'
@@ -235,15 +230,10 @@ def test_valid_comment_only_correction(mocker, session, correction_type, err_msg
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
-    if correction_type == 'CLIENT':
-        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
-    else:
-        mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=True)
-
-    err = validate(business, f)
-
-    if err:
-        print(err.msg)
+    roles = [BASIC_USER] if correction_type == 'CLIENT' else [STAFF_ROLE]
+    with jwt_request_context(app, jwt, roles):
+        if err := validate(business, f):
+                print(err.msg)
 
     if not err_msg:
         assert None is err
@@ -274,10 +264,9 @@ def test_valid_comment_only_correction(mocker, session, correction_type, err_msg
         ('BEN', True, False, True),
     ]
 )
-def test_correction_share_class_series_validation(mocker, session, legal_type, has_rights_or_restrictions,
+def test_correction_share_class_series_validation(session, app, jwt, legal_type, has_rights_or_restrictions,
                                                   has_series, should_pass):
     """Test share class/series validation in correction filing."""
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type=legal_type)
     corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
@@ -300,7 +289,8 @@ def test_correction_share_class_series_validation(mocker, session, legal_type, h
             if not has_series:
                 share_class.pop('series', None)
 
-    err = validate(business, filing)
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
 
     if should_pass:
         assert err is None
@@ -344,10 +334,9 @@ FOUNDING_DATE = NOW - datedelta.YEAR
         ]),
     ]
 )
-def test_correction_resolution_date(mocker, session, test_name, has_rights_or_restrictions,
+def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_restrictions,
                                     has_series, resolution_dates, expected_code, expected_msg):
     """Test share class/series resolution date validation in correction filings."""
-    mocker.patch('legal_api.utils.auth.jwt.validate_roles', return_value=False)
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
     business.founding_date = FOUNDING_DATE
@@ -381,7 +370,8 @@ def test_correction_resolution_date(mocker, session, test_name, has_rights_or_re
         share_classes.pop(1)
 
     with freeze_time(NOW):
-        err = validate(business, filing)
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            err = validate(business, filing)
 
     if expected_code:
         assert err

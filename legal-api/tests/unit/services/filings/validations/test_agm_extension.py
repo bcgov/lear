@@ -18,12 +18,10 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from registry_schemas.example_data import FILING_HEADER
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from legal_api.services.filings.validations.validation import validate
-from legal_api.utils.legislation_datetime import LegislationDatetime
-from legal_api.utils.datetime import datetime
-
+from registry_schemas.example_data import FILING_HEADER
 from tests.unit.models import factory_business
 
 
@@ -68,7 +66,7 @@ def test_validate_agm_extension(session, mocker, test_name, founding_date, agm_e
     filing['filing']['header']['name'] = 'agmExtension'
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'support-agm-extension-entities' else {}
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'support-agm-extension-entities' else default
     )
     with patch.object(LegislationDatetime, 'now', return_value=LegislationDatetime.as_legislation_timezone_from_date_str('2024-01-01')):
         err = validate(business, filing)

@@ -19,11 +19,10 @@ Test-Suite to ensure that the /businesses../summary endpoint works as expected.
 import copy
 from flask import current_app
 from http import HTTPStatus
-from legal_api.models.business import Business
 
 
-from legal_api.services.authz import STAFF_ROLE
-from legal_api.models.document import Document, DocumentType
+from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
+from business_model.models.document import Document, DocumentType
 from tests import integration_reports
 from tests.unit.models import factory_business, factory_completed_filing, factory_incorporation_filing
 from tests.unit.services.utils import create_header
@@ -287,7 +286,7 @@ def test_get_business_summary_involuntary_dissolution(requests_mock, session, cl
         lambda flag: "CP BEN SP GP CBEN BC CC ULC C CCC CUL"  if flag == 'enabled-business-summary-entities' else {}
     )
     # mock the meta_data property
-    with patch('legal_api.models.Filing.meta_data', new_callable=PropertyMock) as mock_meta_data:
+    with patch('business_model.models.Filing.meta_data', new_callable=PropertyMock) as mock_meta_data:
         mock_meta_data.return_value = {
             'dissolution': {
                 'dissolutionType': 'involuntary',
@@ -321,4 +320,35 @@ def test_get_business_summary_involuntary_dissolution(requests_mock, session, cl
         state_filing = response_json['stateFilings'][0]
         assert state_filing['filingType'] == 'dissolution'
         assert state_filing['filingName'] == 'Involuntary Dissolution'
+
+
+def test_regenerate_documents(mocker, session, client, jwt):
+    """Assert that we can regenerate documents for a filing."""
+    # setup
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'specialResolution'
+    filing_json['filing']['alteration'] = copy.deepcopy(ALTERATION)
+    filing_json['filing']['alteration']['memorandumInResolution'] = True
+    filing_json['filing']['alteration']['rulesInResolution'] = True
+    filing = factory_completed_filing(business, filing_json)
+
+    mocker.patch('legal_api.resources.v2.business.business_filings.business_documents.get_pdf',
+                 return_value=(b'pdf-content', HTTPStatus.OK))
+    headers = create_header(jwt, [SYSTEM_ROLE], identifier)
+    # test
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/regenerate', headers=headers)
+    # check
+    assert rv.status_code == HTTPStatus.OK
+
+
+def test_regenerate_documents_invalid_business_filing(session, client, jwt):
+    """Assert that regenerating documents for an invalid business or filing returns 404."""
+    identifier = 'CP7654321'
+    headers = create_header(jwt, [SYSTEM_ROLE], identifier)
+    # test with invalid filing id
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings/9999/documents/regenerate', headers=headers)
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
 

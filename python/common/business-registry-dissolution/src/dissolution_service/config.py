@@ -24,35 +24,34 @@ import sys
 
 from dotenv import find_dotenv, load_dotenv
 
-
 # this will load all the envars from a .env file located in the project root (api)
 load_dotenv(find_dotenv())
 
 CONFIGURATION = {
-    'development': 'business_account.config.DevConfig',
-    'testing': 'business_account.config.TestConfig',
-    'production': 'business_account.config.ProdConfig',
-    'default': 'business_account.config.ProdConfig'
+    "development": "business_account.config.DevConfig",
+    "testing": "business_account.config.TestConfig",
+    "production": "business_account.config.ProdConfig",
+    "default": "business_account.config.ProdConfig"
 }
 
 
-def get_named_config(config_name: str = 'production'):
+def get_named_config(config_name: str = "production"):
     """Return the configuration object based on the name.
 
     :raise: KeyError: if an unknown configuration is requested
     """
-    if config_name in ['production', 'staging', 'default']:
+    if config_name in ["production", "staging", "default"]:
         config = ProdConfig()
-    elif config_name == 'testing':
+    elif config_name == "testing":
         config = TestConfig()
-    elif config_name == 'development':
+    elif config_name == "development":
         config = DevConfig()
     else:
-        raise KeyError(f'Unknown configuration: {config_name}')
+        raise KeyError(f"Unknown configuration: {config_name}")
     return config
 
 
-class _Config():  # pylint: disable=too-few-public-methods
+class _Config:  # pylint: disable=too-few-public-methods
     """Base class configuration that should set reasonable defaults.
 
     Used as the base for all the other configurations.

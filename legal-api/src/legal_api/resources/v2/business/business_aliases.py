@@ -17,7 +17,7 @@ from http import HTTPStatus
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Alias, Business
+from business_model.models import Alias, Business
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -25,7 +25,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/aliases", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/aliases/<int:alias_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_aliases(identifier, alias_id=None):
     """Return a JSON of the aliases."""

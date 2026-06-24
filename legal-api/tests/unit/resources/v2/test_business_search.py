@@ -40,7 +40,7 @@ from http import HTTPStatus
 
 import pytest
 
-from legal_api.models import Business, Filing, RegistrationBootstrap
+from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import STAFF_ROLE, SYSTEM_ROLE
 from registry_schemas.example_data import FILING_HEADER
 

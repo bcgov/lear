@@ -1,0 +1,66 @@
+{% for key in relationships.keys() %}
+  <div class="no-page-break gap-y-2">
+    <div class="section-title">{{ relationships[key].title }}</div>
+    {% for rel in relationships[key]["items"] %}
+      <table class="section-data section-data-table">
+          <tr class="no-page-break">
+            <td class="upper-text section-sub-title">
+              {% if rel.entity.businessName %}
+                <span>{{ rel.entity.businessName }}</span>
+              {% else %}
+                <span>{{ rel.entity.familyName }}{% if rel.entity.givenName %}, {{ rel.entity.givenName }}{% endif %}</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="section-sub-title mb-2">
+                Mailing Address
+                {% if rel.mailingAddress is defined and rel.mailingAddress.changed %}
+                  {{ labelChanged() }}
+                {% endif %}
+              </div>
+              {% if rel.mailingAddress is defined %}
+                <div>{{ rel.mailingAddress.streetAddress }}</div>
+                <div>{{ rel.mailingAddress.streetAddressAdditional }}</div>
+                <div>
+                    {{ rel.mailingAddress.addressCity }}
+                    {{ rel.mailingAddress.addressRegion }}
+                    &nbsp;{{ rel.mailingAddress.postalCode }}
+                </div>
+                <div>{{ rel.mailingAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ rel.mailingAddress.deliveryInstructions }}</div>
+              {% else %}
+                <div>Not Available</div>
+              {% endif %}
+            </td>
+            <td>
+              <div class="section-sub-title mb-2">
+                Delivery Address
+                {% if rel.deliveryAddress is defined and rel.deliveryAddress.changed %}
+                  {{ labelChanged() }}
+                {% endif %}
+              </div>
+              {% if rel.deliveryAddress is defined %}
+                <div>{{ rel.deliveryAddress.streetAddress }}</div>
+                <div>{{ rel.deliveryAddress.streetAddressAdditional }}</div>
+                <div>
+                    {{ rel.deliveryAddress.addressCity }}
+                    {{ rel.deliveryAddress.addressRegion }}
+                    &nbsp;{{ rel.deliveryAddress.postalCode }}
+                </div>
+                <div>{{ rel.deliveryAddress.addressCountry }}</div>
+                <div class="delivery-instructions pt-1">{{ rel.deliveryAddress.deliveryInstructions }}</div>
+              {% else %}
+                <div>Not Available</div>
+              {% endif %}
+            </td>
+          </tr>
+      </table>
+      {% if not loop.last %}
+        <div class="solid-row-separator"></div>
+      {% endif %}
+    {% endfor %}
+  </div> 
+  {% if not loop.last %}
+    <div class="separator"></div>
+  {% endif %} 
+{% endfor %}

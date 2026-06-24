@@ -16,92 +16,74 @@
 Test suite to ensure that auth functions for digital credentials are working as expected
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-from legal_api.models.business import Business
-from legal_api.models.user import User
+import pytest
+
+from business_model.models.business import Business
+from business_model.models.user import User
+from business_registry_digital_credentials import DigitalCredentialsRulesService
 from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
-from legal_api.services.digital_credentials_auth import are_digital_credentials_allowed, get_digital_credentials_preconditions
-from legal_api.services.digital_credentials_rules import DigitalCredentialsRulesService
-from tests.unit.services.utils import create_business, helper_create_jwt
+from legal_api.services.digital_credentials_auth import (
+    DBC_ENABLED_BUSINESS_TYPES_FLAG,
+    _resolve_allowed_business_types,
+    are_digital_credentials_allowed,
+    get_digital_credentials_preconditions,
+)
+from tests.unit.services.utils import create_business, jwt_request_context
 
 token_json = {'username': 'test'}
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@pytest.fixture
+def mock_flags():
+    """Patch the flags accessor so tests stub the flag client instead of standing one up.
+
+    Yields the stub flags object — set ``mock_flags.is_on.return_value`` and
+    ``mock_flags.value.return_value`` per test.
+    """
+    with patch('legal_api.services.digital_credentials_auth._get_flags') as get_flags:
+        flags = MagicMock()
+        get_flags.return_value = flags
+        yield flags
+
+
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed(mock_rule, mock_user, monkeypatch, app, session, jwt):
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        app.app_ctx_globals_class.jwt_oidc_token_info = token_json
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
+def test_are_digital_credentials_allowed(mock_rule, mock_user, app, session, jwt):
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is True
 
 
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, monkeypatch, app, session, jwt):
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
+def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, app, session, jwt):
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': None}
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt, monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[PUBLIC_USER], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
+def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt, app, session, jwt):
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         app.app_ctx_globals_class.jwt_oidc_token_info = token_json
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
 
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, mock_jwt, monkeypatch, app, session, jwt):
-    token_json = {'username': 'test'}
-    token = helper_create_jwt(
-        jwt, roles=[STAFF_ROLE], username=token_json['username'])
-    headers = {'Authorization': 'Bearer ' + token}
-
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
-    with app.test_request_context():
-        app.app_ctx_globals_class.jwt_oidc_token_info = token_json
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
-
+def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, mock_jwt, app, session, jwt):
+    with jwt_request_context(app, jwt, [STAFF_ROLE], token_json['username']):
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['proprietor', 'director'])
 def test_get_digital_credentials_preconditions(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -116,7 +98,7 @@ def test_get_digital_credentials_preconditions(mock_preconditions, mock_user, ap
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=['proprietor', 'director'])
 def test_get_digital_credentials_preconditions_business_no_name(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -130,7 +112,7 @@ def test_get_digital_credentials_preconditions_business_no_name(mock_preconditio
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=[])
 def test_get_digital_credentials_preconditions_no_user(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -145,7 +127,7 @@ def test_get_digital_credentials_preconditions_no_user(mock_preconditions, mock_
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, username='testuser'))
 @patch.object(DigitalCredentialsRulesService, 'get_preconditions', return_value=[])
 def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_user, app):
     with app.test_request_context():
@@ -160,10 +142,106 @@ def test_get_digital_credentials_preconditions_none(mock_preconditions, mock_use
         }
 
 
-@patch('legal_api.models.User.find_by_jwt_token', return_value=None)
+@patch('business_model.models.User.find_by_jwt_token', return_value=None)
 def test_get_digital_credentials_preconditions_no_user(mock_user, app):
     with app.test_request_context():
         app.app_ctx_globals_class.jwt_oidc_token_info = {'username': 'test'}
         business = Business()
         result = get_digital_credentials_preconditions(business)
         assert result == {}
+
+
+# ----------------------------------------------------------------------------
+# _resolve_allowed_business_types — exercises the legal-api-owned FF resolution.
+# ----------------------------------------------------------------------------
+
+
+def test_resolve_allowed_business_types_flag_off(mock_flags, app):
+    """Flag OFF → returns empty list (DBC disabled)."""
+    mock_flags.is_on.return_value = False
+
+    with app.app_context():
+        assert _resolve_allowed_business_types() == []
+
+    mock_flags.is_on.assert_called_once_with(DBC_ENABLED_BUSINESS_TYPES_FLAG, None, None)
+    mock_flags.value.assert_not_called()
+
+
+def test_resolve_allowed_business_types_valid(mock_flags, app):
+    """Flag ON with a valid ``{"types": [...]}`` dict → returns the list."""
+    mock_flags.is_on.return_value = True
+    mock_flags.value.return_value = {"types": ["SP", "BEN", "GP"]}
+
+    with app.app_context():
+        assert _resolve_allowed_business_types() == ["SP", "BEN", "GP"]
+
+    mock_flags.value.assert_called_once_with(DBC_ENABLED_BUSINESS_TYPES_FLAG, None, None)
+
+
+def test_resolve_allowed_business_types_valid_empty_list(mock_flags, app):
+    """Flag ON with empty types list → returns empty list (caller filters in/out)."""
+    mock_flags.is_on.return_value = True
+    mock_flags.value.return_value = {"types": []}
+
+    with app.app_context():
+        assert _resolve_allowed_business_types() == []
+
+
+@pytest.mark.parametrize("bad_value", [
+    "not-a-dict",
+    123,
+    None,
+    [],
+    {},                              # missing "types" key
+    {"type": ["SP"]},                # wrong key name
+    {"types": "SP"},                 # types not a list
+    {"types": 123},                  # types not a list
+    {"types": None},                 # types not a list
+])
+def test_resolve_allowed_business_types_malformed(mock_flags, app, bad_value):
+    """Malformed flag payloads → empty list, no exception."""
+    mock_flags.is_on.return_value = True
+    mock_flags.value.return_value = bad_value
+
+    with app.app_context():
+        assert _resolve_allowed_business_types() == []
+
+
+# ----------------------------------------------------------------------------
+# Wrapper integration: are_digital_credentials_allowed threads the resolved
+# FF value through to the shared API.
+# ----------------------------------------------------------------------------
+
+
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
+def test_are_digital_credentials_allowed_passes_resolved_flag_to_rules(
+    mock_rules, mock_user, mock_flags, app, session, jwt,
+):
+    """The wrapper resolves the FF and forwards the list into the shared rules check."""
+    mock_flags.is_on.return_value = True
+    mock_flags.value.return_value = {"types": ["SP", "BEN", "GP"]}
+
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
+        business = create_business('SP', Business.State.ACTIVE)
+        assert are_digital_credentials_allowed(business, jwt) is True
+
+    # Shared rules service called as rules.are_digital_credentials_allowed(user, business, allowed_business_types).
+    args, _ = mock_rules.call_args
+    assert args[-1] == ["SP", "BEN", "GP"]
+
+
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
+def test_are_digital_credentials_allowed_passes_empty_list_when_flag_off(
+    mock_rules, mock_user, mock_flags, app, session, jwt,
+):
+    """When the FF is off, the wrapper still calls the rules check — with ``[]``."""
+    mock_flags.is_on.return_value = False
+
+    with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
+        business = create_business('SP', Business.State.ACTIVE)
+        are_digital_credentials_allowed(business, jwt)
+
+    args, _ = mock_rules.call_args
+    assert args[-1] == []

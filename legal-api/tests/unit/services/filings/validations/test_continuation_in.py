@@ -19,13 +19,14 @@ from datetime import date
 
 import pytest
 from freezegun import freeze_time
-from registry_schemas.example_data import CONTINUATION_IN
+import registry_schemas
 
-from legal_api.models import Business
+from business_common.utils.datetime import datetime as dt, timedelta
+from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
-from legal_api.utils.datetime import datetime as dt, timedelta
+from registry_schemas.example_data import CONTINUATION_IN
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
@@ -59,7 +60,7 @@ def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
     """Assert that nr is invalid."""
     monkeypatch.setattr(
             'legal_api.services.flags.value',
-            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+            lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -100,7 +101,7 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
     """Assert that continuation in party roles can be validated for missing roles."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
     min_director_count_info = {
@@ -355,7 +356,7 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
     """Assert that offices can be validated."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
     filing = {'filing': {}}
@@ -649,7 +650,7 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
     """Assert that validator validates share class correctly."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -723,7 +724,7 @@ def test_continuation_in_court_orders(mocker, app, session,
     """Assert valid court orders."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -769,7 +770,7 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
     """Assert valid continuation in foreign business."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -801,7 +802,7 @@ def test_validate_business_in_colin(mocker, app, session, monkeypatch):
     """Assert valid continuation EXPRO business"""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
     filing = {'filing': {}}
@@ -837,7 +838,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
         'foundingDate': '2009-07-23T07:00:00.000+00:00'
     }
 
-    mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
         status_code=HTTPStatus.OK,
         json=lambda: {
             'business': {
@@ -869,7 +870,7 @@ def test_validate_business_in_colin_founding_date_match(mocker, app, session):
         'foundingDate': '2009-07-23T18:31:24-00:00'
     }
 
-    mocker.patch('legal_api.services.colin.query_business', return_value=mocker.Mock(
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
         status_code=HTTPStatus.OK,
         json=lambda: {
             'business': {
@@ -933,7 +934,7 @@ def test_validate_before_and_after_approval(mocker, app, session, test_status, i
     """Assert not valid if these are ommited when approved."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -988,7 +989,7 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
     """Test share class/series validation in continuation in application."""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
-        lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+        lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -1037,7 +1038,7 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
 
     monkeypatch.setattr(
             'legal_api.services.flags.value',
-            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
+            lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         ) 
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
@@ -1076,10 +1077,11 @@ now = date(2020, 9, 17)
     [
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
-        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-18T00:00:00Z',
-            HTTPStatus.BAD_REQUEST, [{
-                'error': '2020-09-18T00:00:00Z is an invalid ISO format for effectiveDate.',
-                'path': '/filing/header/effectiveDate'
+        ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
+            HTTPStatus.UNPROCESSABLE_CONTENT, [{
+                'path': 'filing/header/effectiveDate',
+                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                'context': []
             }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
@@ -1092,13 +1094,13 @@ now = date(2020, 9, 17)
                 'path': '/filing/header/effectiveDate'
             }])
     ])
-def test_validate_continuation_in_effective_date(mocker, app, session, test_name,
+def test_validate_continuation_in_effective_date(mocker, app, session, jwt, test_name,
                                                effective_date, expected_code, expected_msg, monkeypatch):
     """Test effective date validation in continuation in application."""
     monkeypatch.setattr(
             'legal_api.services.flags.value',
-            lambda flag: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else {}
-        ) 
+            lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
+        )
     filing = {'filing': {}}
     filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
                                   'certifiedBy': 'full name', 'authorizationReceived': True,
@@ -1124,8 +1126,9 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
         err = validate(None, filing)
 
     if expected_code:
+        assert err
         assert err.code == expected_code
-        assert lists_are_equal(err.msg, expected_msg)
+        assert err.msg == expected_msg
     else:
         assert err is None
 
@@ -1149,43 +1152,6 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
             'C1234567',
             'A' * 1000,
             []
-        ),
-        (
-            'FAIL_IDENTIFIER_MISSING',
-            None,
-            'Test',
-            [
-                {
-                    'error': 'Identifier is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
-                }
-            ]
-        ),
-        (
-            'FAIL_LEGAL_NAME_MISSING',
-            'C1234567',
-            None,
-            [
-                {
-                    'error': 'Legal name is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
-                }
-            ]
-        ),
-        (
-            'FAIL_BOTH_MISSING',
-            None,
-            None,
-            [
-                {
-                    'error': 'Identifier is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/identifier'
-                },
-                {
-                    'error': 'Legal name is required.',
-                    'path': '/filing/continuationIn/foreignJurisdiction/legalName'
-                }
-            ]
         ),
         (
             'FAIL_IDENTIFIER_EXCEEDS_MAX_LENGTH',
@@ -1228,7 +1194,11 @@ def test_validate_continuation_in_effective_date(mocker, app, session, test_name
 )
 def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
                                                      test_name, identifier, legal_name, expected_errors):
-    """Assert that identifier and legalName are required and enforce max length for continuation in filings."""
+    """Assert that identifier and legalName enforce max length for continuation in filings.
+
+    The required (non-empty / non-whitespace) rule for these fields now lives in the schema;
+    see test_continuation_in_foreign_jurisdiction_name_rejected_by_schema.
+    """
     filing = {
         'filing': {
             'continuationIn': {
@@ -1262,3 +1232,18 @@ def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
     err = _validate_foreign_jurisdiction(filing, 'continuationIn', 'C')
 
     assert err == expected_errors
+
+
+@pytest.mark.parametrize('field', ['identifier', 'legalName'])
+@pytest.mark.parametrize('bad_value', ['', '   ', '\t', '\n'])
+def test_continuation_in_foreign_jurisdiction_name_rejected_by_schema(session, field, bad_value):
+    """Empty/whitespace-only foreignJurisdiction identifier/legalName is rejected by the schema.
+
+    This required rule moved from legal-api into the business-schemas continuation_in pattern.
+    """
+    ci = copy.deepcopy(CONTINUATION_IN)
+    ci['foreignJurisdiction'][field] = bad_value
+
+    valid, _ = registry_schemas.validate({'continuationIn': ci}, 'continuation_in')
+
+    assert not valid

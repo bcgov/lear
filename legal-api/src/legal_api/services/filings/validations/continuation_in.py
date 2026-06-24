@@ -13,12 +13,13 @@
 # limitations under the License.
 """Validation for the Continuation In filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Final, Optional
+from typing import Final
 
 from flask_babel import _ as babel
 
+from business_common.utils.datetime import datetime as dt
+from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from legal_api.models import Business, PartyRole
 from legal_api.services import colin, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
@@ -38,12 +39,11 @@ from legal_api.services.filings.validations.incorporation_application import (
     validate_parties_delivery_address,
 )
 from legal_api.services.utils import get_bool, get_str
-from legal_api.utils.datetime import datetime as dt
 
 FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH = 50
 FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH = 1000
 
-def validate(filing_json: dict) -> Optional[Error]:  # pylint: disable=too-many-branches;
+def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-branches;
     """Validate the Continuation In filing."""
     filing_type = "continuationIn"
     if not filing_json:
@@ -169,23 +169,19 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
     foreign_jurisdiction_path = f"/filing/{filing_type}/foreignJurisdiction"
     incorporation_date_path = f"/filing/{filing_type}/foreignJurisdiction/incorporationDate"
 
-    if not (identifier := foreign_jurisdiction.get("identifier")):
-        msg.append({
-            "error": "Identifier is required.",
-            "path": f"{foreign_jurisdiction_path}/identifier"
-        })
-    elif len(identifier) > FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH:
+    # identifier required (non-empty / non-whitespace) is enforced by the schema
+    # (business-schemas continuation_in foreignJurisdiction.identifier pattern).
+    identifier = foreign_jurisdiction.get("identifier")
+    if identifier and len(identifier) > FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH:
         msg.append({
             "error": f"Identifier must not exceed {FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH} characters.",
             "path": f"{foreign_jurisdiction_path}/identifier"
         })
 
-    if not (legal_name := foreign_jurisdiction.get("legalName")):
-        msg.append({
-            "error": "Legal name is required.",
-            "path": f"{foreign_jurisdiction_path}/legalName"
-        })
-    elif len(legal_name) > FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH:
+    # legalName required (non-empty / non-whitespace) is enforced by the schema
+    # (business-schemas continuation_in foreignJurisdiction.legalName pattern).
+    legal_name = foreign_jurisdiction.get("legalName")
+    if legal_name and len(legal_name) > FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH:
         msg.append({
             "error": f"Legal name must not exceed {FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH} characters.",
             "path": f"{foreign_jurisdiction_path}/legalName"

@@ -13,12 +13,11 @@
 # limitations under the License.
 """Validation for the Change of Registration filing."""
 from http import HTTPStatus  # pylint: disable=wrong-import-order
-from typing import Optional
 
 from flask_babel import _ as babel
 
+from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,
@@ -36,7 +35,7 @@ from legal_api.services.filings.validations.registration import (
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 
 
-def _check_permission_for_change_of_registration(business: Business, filing: dict, filing_type: str) -> Optional[Error]:
+def _check_permission_for_change_of_registration(business: Business, filing: dict, filing_type: str) -> Error | None:
     """Check permissions for Change of Registration filing."""
     if not flags.is_on("enabled-deeper-permission-action"):
         return None
@@ -64,7 +63,7 @@ def _check_permission_for_change_of_registration(business: Business, filing: dic
                 return error
     return None
 
-def validate(business: Business, filing: dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Error | None:
     """Validate the Change of Registration filing."""
     filing_type = "changeOfRegistration"
     if not filing:

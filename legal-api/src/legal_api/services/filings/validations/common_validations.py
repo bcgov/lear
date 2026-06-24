@@ -15,28 +15,27 @@
 import io
 import math
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
 import pycountry
 from flask import current_app, g, request
 from flask_babel import _
 from pypdf import PdfReader
 
+from business_account import AccountService
+from business_common.utils.datetime import date
+from business_common.utils.datetime import datetime as dt
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Address, Business, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models import Address, Business, PartyRole
-from legal_api.models.configuration import EMAIL_PATTERN
 from legal_api.services import MinioService, colin, flags, namex
-from legal_api.services.bootstrap import AccountService
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
-from legal_api.utils.datetime import date
-from legal_api.utils.datetime import datetime as dt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 NO_POSTAL_CODE_COUNTRY_CODES = {
     "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
@@ -47,10 +46,10 @@ NO_POSTAL_CODE_COUNTRY_CODES = {
     "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
 }
 
+# streetAddress, addressCity, and addressCountry no-leading/trailing-whitespace are enforced by
+# the schema (business-schemas address pattern). postalCode is not patterned (optional/nullable),
+# so it is still whitespace-validated here.
 WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
-    "streetAddress",
-    "addressCity",
-    "addressCountry",
     "postalCode",
 )
 
@@ -207,21 +206,10 @@ def validate_series(item, filing_type, index) -> Error: # noqa: PLR0912
         err_path = f"/filing/{filing_type}/shareClasses/{index}/series/{series_index}"
 
         series_name = series.get("name", "")
-        stripped_series_name = series_name.strip()
 
-        if not stripped_series_name:
-            msg.append({
-                "error": "Share series name is required.",
-                "path": f"{err_path}/name/"
-            })
-
-        elif series_name != stripped_series_name:
-            msg.append({
-                "error": "Share series name cannot start or end with whitespace.",
-                "path": f"{err_path}/name/"
-            })
-
-        elif not series_name.endswith(SHARE_NAME_SUFFIX):
+        # Non-empty and no leading/trailing whitespace are enforced by the schema
+        # (business-schemas share_structure shareSeries.name pattern).
+        if not series_name.endswith(SHARE_NAME_SUFFIX):
             msg.append({
                 "error": f"Share series name '{series_name}' must end with '{SHARE_NAME_SUFFIX}'.",
                 "path": f"{err_path}/name/"
@@ -294,28 +282,15 @@ def _class_name_has_reserved_words(share_name: str) -> bool:
     return any(word in EXCLUDED_WORDS_FOR_CLASS for word in name_words)
 
 
-def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error: # noqa: PLR0912
+def validate_shares(item, memoize_names, filing_type, index, legal_type) -> Error:
     """Validate a wellformed share structure."""
     msg = []
 
     share_name = item.get("name", "")
-    stripped_share_name = share_name.strip()
 
-    if not stripped_share_name:
-        err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-        msg.append({
-            "error": "Share class name is required.",
-            "path": err_path
-        })
-
-    elif share_name != stripped_share_name:
-        err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
-        msg.append({
-            "error": "Share class name cannot start or end with whitespace.",
-            "path": err_path
-        })
-    
-    elif not share_name.endswith(SHARE_NAME_SUFFIX):
+    # Non-empty and no leading/trailing whitespace are enforced by the schema
+    # (business-schemas share_structure shareClass.name pattern).
+    if not share_name.endswith(SHARE_NAME_SUFFIX):
         err_path = f"/filing/{filing_type}/shareClasses/{index}/name/"
         msg.append({
             "error": f"Share class name '{share_name}' must end with '{SHARE_NAME_SUFFIX}'.",
@@ -402,7 +377,7 @@ def _validate_par_value(par_value, share_class_name: str, err_path: str):
     if par_value is None:
         msg.append({"error": f"Share class {share_class_name} must specify par value", "path": err_path})
         return msg
-    if not isinstance(par_value, (int, float)) or isinstance(par_value, bool):
+    if not isinstance(par_value, (int | float)) or isinstance(par_value, bool):
         msg.append({"error": "Must be a valid number", "path": err_path})
         return msg
     # only floats can be non-finite; calling math.isfinite on a huge int raises OverflowError
@@ -519,7 +494,7 @@ def validate_court_order(court_order_path, court_order):
     if "orderDate" in court_order:
         try:
             court_order_date = dt.fromisoformat(court_order["orderDate"])
-            if court_order_date.timestamp() > datetime.utcnow().timestamp():
+            if court_order_date.timestamp() > datetime.now(UTC).timestamp():
                 err_path = court_order_date_path
                 msg.append({"error": "Court order date cannot be in the future.", "path": err_path})
         except ValueError:
@@ -537,7 +512,7 @@ def validate_court_order(court_order_path, court_order):
 
     return None
 
-def check_good_standing_permission(business: Business) -> Optional[Error]:
+def check_good_standing_permission(business: Business) -> Error | None:
     """Check if user has permission to file for a business not in good standing."""
     if business.good_standing:
         return None
@@ -549,7 +524,7 @@ def check_good_standing_permission(business: Business) -> Optional[Error]:
     message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
     return PermissionService.check_user_permission(required_permission, message=message)
 
-def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> Optional[list]:
+def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list | None:
     """Validate the PDF file."""
     msg = []
     try:
@@ -647,16 +622,10 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
                 err_msg = f"{party_roles_str} middle name cannot be longer than {custom_allowed_max_length} characters"
                 msg.append({"error": err_msg, "path": party_path})
 
-        last_name = officer.get("lastName", None)
-        stripped_last_name = last_name.strip()
-        if (legal_type in Business.CORPS) and (not stripped_last_name):
-            msg.append({"error": f"{party_roles_str} last name is required", "path": f"{party_path}"})
-        elif last_name != stripped_last_name:
-            msg.append({
-                "error": f"{party_roles_str} last name cannot start or end with whitespace",
-                "path": party_path
-            })
-        elif len(last_name) > last_name_max_length:
+        # last name required (non-empty) and no leading/trailing whitespace are enforced by the
+        # schema (business-schemas parties officer.lastName pattern).
+        last_name = officer.get("lastName") or ""
+        if len(last_name) > last_name_max_length:
             err_msg = f"{party_roles_str} last name cannot be longer than {last_name_max_length} characters"
             msg.append({"error": err_msg, "path": party_path})
         
@@ -664,18 +633,8 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
             err_msg = f"{party_roles_str} organization name should not be set for person party type"
             msg.append({"error": err_msg, "path": party_path})
     elif party_type == "organization":
-        if organization_name is None:
-            err_msg = "organization name is required"
-            msg.append({"error": err_msg, "path": party_path})
-        else:
-            stripped = organization_name.strip()
-            if not stripped:
-                err_msg = "organization name is required"
-                msg.append({"error": err_msg, "path": party_path})
-            elif organization_name != stripped:
-                err_msg = f"{party_roles_str} organization name cannot start or end with whitespace"
-                msg.append({"error": err_msg, "path": party_path})
-        
+        # organization name required (non-empty) and no leading/trailing whitespace are enforced
+        # by the schema (business-schemas parties officer.organizationName pattern).
         if officer.get("firstName") not in (None, ""):
             err_msg = f"{party_roles_str} first name should not be set for organization party type"
             msg.append({"error": err_msg, "path": party_path})
@@ -699,7 +658,7 @@ def validate_relationships( # noqa: PLR0913
     role_types: list[PartyRole.RoleTypes],
     allow_new: bool,
     allow_edits: bool,
-    role_types_for_colin_sync: Optional[list[PartyRole.RoleTypes]] = None
+    role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -707,7 +666,7 @@ def validate_relationships( # noqa: PLR0913
     party_path = f"/filing/{filing_type}/relationships"
 
     # get relevant parties for the business
-    today = datetime.now(tz=timezone.utc).date()
+    today = datetime.now(tz=UTC).date()
     party_roles: list[PartyRole] = []
     for role_type in role_types:
         if roles := PartyRole.get_party_roles(business.id, today, role_type.value):
@@ -871,9 +830,9 @@ def validate_relationship_roles(roles: list[dict[str, str]],
                                 path: str) -> list:
     """Validate relationship roles."""
     msg = []
-    converted_allowed_roles = [role.value.lower().replace(" ", "_") for role in allowed_roles]
+    converted_allowed_roles = [role.value for role in allowed_roles]
     for index, role in enumerate(roles):
-        if role.get("roleType").lower() not in converted_allowed_roles:
+        if role.get("roleType").lower().replace(" ", "_") not in converted_allowed_roles:
             err_msg = "Invalid role type for this filing."
             msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
         # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
@@ -884,7 +843,7 @@ def validate_relationship_roles(roles: list[dict[str, str]],
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
-                          accepted_request_types: Optional[list] = None) -> list:
+                          accepted_request_types: list | None = None) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -1104,30 +1063,6 @@ def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) 
 
     return msg
 
-def validate_email(filing_json: dict, filing_type: str) -> list:
-    """Validate email address format."""
-    contact_point_path = f"/filing/{filing_type}/contactPoint"
-    contact_point_dict = filing_json["filing"][filing_type].get("contactPoint", {})
-
-    msg = []
-
-    if email := contact_point_dict.get("email", None):
-        # Validate leading/trailing whitespace
-        if email != email.strip():
-            msg.append({
-                "error": "Email cannot start or end with whitespace.",
-                "path": f"{contact_point_path}/email"
-            })
-
-        # Validate format
-        elif not re.match(EMAIL_PATTERN, email):
-            msg.append({
-                "error": "Invalid email address format.",
-                "path": f"{contact_point_path}/email"
-            })
-
-    return msg
-
 def validate_effective_date(filing_json: dict) -> list:
     """Validate effective date"""
     msg = []
@@ -1311,7 +1246,7 @@ def is_address_changed(addr1: dict, addr2: dict) -> bool:
    ]
    return all(is_same_str(addr1.get(key), addr2.get(key)) for key in keys)
 
-def check_completing_party_permission(msg: list, filing_type:str) -> Optional[Error]:
+def check_completing_party_permission(msg: list, filing_type:str) -> Error | None:
     """Check completing party permission and append error message if not allowed."""
     permission_error = PermissionService.check_user_permission(
         ListActionsPermissionsAllowed.EDITABLE_COMPLETING_PARTY.value,
@@ -1392,8 +1327,15 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
 
     if legal_type not in Business.CORPS:
         return msg  # authorizationReceived is only required for corporations
-    
-    if filing_type not in FILINGS_REQUIRING_AUTHORIZATION and not is_voluntary_dissolution(filing_json, filing_type):
+
+    enabled_features: list[str] = flags.value("enable-new-feature", [])
+    filings_requiring_auth = FILINGS_REQUIRING_AUTHORIZATION
+    if "incorporationApplication-completingParty" in enabled_features:
+        filings_requiring_auth = FILINGS_REQUIRING_AUTHORIZATION | {
+            CoreFiling.FilingTypes.INCORPORATIONAPPLICATION
+        }
+
+    if filing_type not in filings_requiring_auth and not is_voluntary_dissolution(filing_json, filing_type):
         return msg  # authorizationReceived is only required for specific filings
 
     authorization_received = filing_json["filing"]["header"].get("authorizationReceived")
@@ -1404,14 +1346,14 @@ def validate_authorization_received(filing_json: dict, filing_type: str, legal_t
 
     return msg
 
-def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> Optional[str]:
+def is_officer_proprietor_replace_valid(business: Business, filing_json: dict, filing_type) -> str | None:
     """Validate that sole proprietor is not being replaced with another sole proprietor."""
     if business.legal_type!= Business.LegalTypes.SOLE_PROP.value:
         # Validation only for sole proprietorships
         return False
     
     # Existing proprietor in DB
-    existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=timezone.utc).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
+    existing_party_roles = PartyRole.get_party_roles(business.id, datetime.now(tz=UTC).date(), role= PartyRole.RoleTypes.PROPRIETOR.value)
     existing_proprietor = None
     for role in existing_party_roles:
         existing_proprietor = role.party
@@ -1581,8 +1523,8 @@ def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
 
     return result
 
-def validate_permission_and_completing_party(business: Optional[Business], filing_json: dict, filing_type: str, msg: list, check_options: Optional[dict] = None
-) -> Optional[Error]:
+def validate_permission_and_completing_party(business: Business | None, filing_json: dict, filing_type: str, msg: list, check_options: dict | None = None
+) -> Error | None:
     """Validate completing party permission and changes."""
     if not flags.is_on("enable-edit-completing-party-permission"):
         return None
@@ -1626,7 +1568,7 @@ def check_document_email_changes(
         filing_type: str,
         account_id: int,
         msg: list
-) -> Optional[Error]:
+) -> Error | None:
     """Check if document delivery email has changed."""
     document_optional_email = filing_json.get("filing", {}).get("header", {}).get("documentOptionalEmail")
     if not (document_optional_email and account_id):

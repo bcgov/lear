@@ -21,11 +21,11 @@ import click
 import requests
 from flask import Blueprint, current_app
 
-from legal_api.models import Filing, db
-from legal_api.models.business import Business
-from legal_api.models.colin_event_id import ColinEventId
-from legal_api.models.document import Document
-from legal_api.services import AccountService
+from business_account import AccountService
+from business_model.models import Filing, db
+from business_model.models.business import Business
+from business_model.models.colin_event_id import ColinEventId
+from business_model.models.document import Document
 
 document_service_bp = Blueprint("document_service", __name__)
 

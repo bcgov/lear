@@ -13,29 +13,28 @@
 # limitations under the License.
 """Retrieve the specified report for the entity."""
 from http import HTTPStatus
-from typing import Optional
 
 from flask import Response, current_app, jsonify, request, url_for
 from flask_cors import cross_origin
 
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, Filing
+from business_model.models.document import Document, DocumentType
 from legal_api.exceptions import ErrorCode, get_error_message
-from legal_api.models import Business, Filing
-from legal_api.models.document import Document, DocumentType
 from legal_api.reports.business_document import BusinessDocument
 from legal_api.services import authorized, flags
 from legal_api.services.business import validate_document_request
 from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 from .bp import bp
 
 
 @bp.route("/<string:identifier>/documents", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/documents/<string:document_name>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
-def get_business_documents(identifier: str, document_name: Optional[str] = None): # noqa: PLR0911
+def get_business_documents(identifier: str, document_name: str | None = None): # noqa: PLR0911
     """Return the business documents."""
     # basic checks
     if not authorized(identifier, jwt, ["view", ]):
@@ -91,8 +90,7 @@ def get_business_documents(identifier: str, document_name: Optional[str] = None)
 
 def _get_document_list(business):
     """Get list of business documents."""
-    base_url = current_app.config.get("LEGAL_API_BASE_URL")
-    base_url = base_url[:base_url.find("/api")]
+    base_url = current_app.config.get("BUSINESS_API_GW_URL")
     doc_url = url_for("API2.get_business_documents", identifier=business.identifier, document_name=None)
     documents = {"documents": {}}
 
@@ -129,8 +127,7 @@ def _get_coop_documents_and_info(business):
     if not business:
         return documents, info
 
-    base_url = current_app.config.get("LEGAL_API_BASE_URL")
-    base_url = base_url[:base_url.find("/api")]
+    base_url = current_app.config.get("BUSINESS_API_GW_URL")
 
     info["certifiedRules"], info["certifiedMemorandum"] = {}, {}
 

@@ -13,24 +13,22 @@
 # limitations under the License.
 """Validation for the Amalgamation Out filing."""
 from http import HTTPStatus
-from typing import Final, Optional
+from typing import Final
 
-from flask_babel import _ as babel  # noqa: N813, I004, I001; importing camelcase '_' as a name
+from flask_babel import _ as babel
 
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Business, ConsentContinuationOut
 from legal_api.errors import Error
-from legal_api.models import Business, ConsentContinuationOut
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
 )
 from legal_api.services.utils import get_date
-from legal_api.utils.legislation_datetime import LegislationDatetime
-
-# noqa: I003;
 
 
-def validate(business: Business, filing: dict) -> Optional[Error]:
+def validate(business: Business, filing: dict) -> Error | None:
     """Validate the Amalgamation Out filing."""
     if not business or not filing:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])

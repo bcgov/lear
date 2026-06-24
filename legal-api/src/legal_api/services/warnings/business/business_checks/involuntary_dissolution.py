@@ -16,9 +16,10 @@
 from datedelta import datedelta
 from flask import current_app
 
-from legal_api.models import BatchProcessing, Business
-from legal_api.services.involuntary_dissolution import InvoluntaryDissolutionService
-from legal_api.utils.datetime import datetime
+from business_common.utils.datetime import datetime
+from business_model.models import BatchProcessing, Business
+from dissolution_service import InvoluntaryDissolutionService
+from legal_api.services import flags
 
 from . import BusinessWarningCodes, WarningType
 
@@ -39,7 +40,10 @@ def check_business(business: Business) -> list:
     }
 
     eligibility, details = InvoluntaryDissolutionService.check_business_eligibility(
-        business.identifier, InvoluntaryDissolutionService.EligibilityFilters(exclude_future_effective_filing=True))
+        business.identifier,
+        InvoluntaryDissolutionService.EligibilityFilters(exclude_future_effective_filing=True),
+        flags
+    )
     if eligibility:
         if details.transition_overdue:
             result.append(transition_warning)
@@ -48,9 +52,9 @@ def check_business(business: Business) -> list:
     elif batch_datas := InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id):
         batch_processing, _ = batch_datas
         _, dis_details = InvoluntaryDissolutionService.check_business_eligibility(
-            business.identifier, InvoluntaryDissolutionService.EligibilityFilters(
-                exclude_in_dissolution=False, exclude_future_effective_filing=True
-            )
+            business.identifier,
+            InvoluntaryDissolutionService.EligibilityFilters(exclude_in_dissolution=False, exclude_future_effective_filing=True),
+            flags
         )
 
         # dis_details is None when the account is not included in FF filter

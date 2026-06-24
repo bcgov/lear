@@ -36,68 +36,79 @@
 This module is the API for the Legal Entity system.
 """
 import os
-from typing import Optional
 
-from flask import Flask, jsonify
-from registry_schemas import __version__ as registry_schemas_version
-from registry_schemas.flask import SchemaServices
+from flask import Flask, Response, current_app, jsonify, request
+from flask_migrate import Migrate
 
-from legal_api import config, models
-from legal_api.models import db
-from legal_api.models.db import init_db
+import business_model_migrations
+from business_model import models
+from business_model.models import db
+from business_model.models.db import init_db
+from cloud_sql_connector import setup_pg8000_close_event_listener
+from legal_api.config import DevConfig, MigrationConfig, ProdConfig, TestConfig
 from legal_api.resources import endpoints
 from legal_api.schemas import rsbc_schemas
+from legal_api.scripts.document_service_import import document_service_bp
 from legal_api.services import digital_credentials, flags, gcp_queue
 from legal_api.services.authz import cache
 from legal_api.translations import babel
 from legal_api.utils.auth import jwt
-from legal_api.utils.logging import setup_logging
 from legal_api.utils.run_version import get_run_version
+from registry_schemas import __version__ as registry_schemas_version
 from structured_logging import StructuredLogging
 
-from legal_api.scripts.document_service_import import document_service_bp  # noqa: I001, E501; pylint: disable=ungrouped-imports; conflicts with Flake8; isort: skip
+CONFIG_MAP = {
+    "development": DevConfig,
+    "testing": TestConfig,
+    "migration": MigrationConfig,
+    "production": ProdConfig,
+    "default": ProdConfig
+}
 
 
-setup_logging(os.path.join(os.path.abspath(os.path.dirname(__file__)), "logging.conf"))  # important to do this first
-
-
-def create_app(run_mode: Optional[str] = None, **kwargs) -> Flask:
+def create_app(environment: str = os.getenv("DEPLOYMENT_ENV", "production"), **kwargs) -> Flask:
     """Return a configured Flask App using the Factory method."""
-    run_mode = run_mode or os.getenv("RUN_MODE", "production")
     app = Flask(__name__)
-    app.register_blueprint(document_service_bp)
-
-    if _config := kwargs.get("config"):
-        app.config.from_object(_config)
-    else:
-        app.config.from_object(config.CONFIGURATION[run_mode])
-
-    if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
-        from cloud_sql_connector import DBConfig
-        db_config = DBConfig(
-            instance_name=app.config["CLOUDSQL_INSTANCE_CONNECTION_NAME"],
-            database=app.config.get("DB_NAME", ""),
-            user=app.config.get("DB_USER", ""),
-            ip_type=app.config["DB_IP_TYPE"],
-            pool_recycle = 60,
-            schema="public",
-        )
-        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = db_config.get_engine_options()
-
     app.logger = StructuredLogging(app).get_logger()
+    app.config.from_object(CONFIG_MAP.get(environment, CONFIG_MAP["default"]))
+
     init_db(app)
-    rsbc_schemas.init_app(app)
-    flags.init_app(app, kwargs.get("ld_test_data"))
-    gcp_queue.init_app(app)
-    babel.init_app(app)
-    endpoints.init_app(app)
 
     with app.app_context():  # db require app context
-        digital_credentials.init_app(app)
+        if app.config.get("CLOUDSQL_INSTANCE_CONNECTION_NAME"):  # pragma: no cover
+            setup_pg8000_close_event_listener(db.engine)
 
-    cache.init_app(app)
+    if environment == "migration":
+        migrations_path = business_model_migrations.__file__
+        migrations_dir = os.path.dirname(migrations_path)
+        Migrate(app, db, directory=migrations_dir)
+    
+    else:
+        rsbc_schemas.init_app(app)
+        flags.init_app(app, kwargs.get("ld_test_data"))
+        gcp_queue.init_app(app)
+        babel.init_app(app)
+        endpoints.init_app(app)
+        cache.init_app(app)
+        setup_jwt_manager(app, jwt)
+        app.register_blueprint(document_service_bp)
+        with app.app_context():  # db require app context
+            digital_credentials.init_app(app)
+    
+    @app.before_request
+    def add_logger_context():
+        current_app.logger.debug("path: %s, app_name: %s, account_id: %s",
+                                 request.path,
+                                 request.headers.get("app-name"),
+                                 request.headers.get("account-id"))
 
-    setup_jwt_manager(app, jwt)
+    @app.after_request
+    def add_version(response: Response):
+        """Add the api and schema version to the response headers."""
+        version = get_run_version()
+        response.headers["API"] = f"legal_api/{version}"
+        response.headers["SCHEMAS"] = f"registry_schemas/{registry_schemas_version}"
+        return response
 
     register_shellcontext(app)
 

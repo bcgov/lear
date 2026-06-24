@@ -22,17 +22,17 @@ from flask import current_app, g, jsonify, request
 from flask_babel import _ as babel
 from flask_cors import cross_origin
 
+from business_account import AccountService
+from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api.core import Filing as CoreFiling
-from legal_api.models import Business, Filing, RegistrationBootstrap
 from legal_api.resources.v2.business.business_filings import saving_filings
-from legal_api.services import (  # noqa: I001;
+from legal_api.services import (
     ACCOUNT_IDENTITY,
     SYSTEM_ROLE,
-    AccountService,
     RegistrationBootstrapService,
     check_warnings,
     flags,
-)  # noqa: I001;
+)
 from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
@@ -42,7 +42,7 @@ from .bp import bp
 
 
 @bp.route("/<string:identifier>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_businesses(identifier: str):
     """Return a JSON object with meta information about the Service."""
@@ -92,7 +92,7 @@ def get_businesses(identifier: str):
     q_account = request.args.get("account")
     current_app.logger.info("account info request, for account: %s", q_account)
     if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, ACCOUNT_IDENTITY]):
-        account_response = AccountService.get_account_by_affiliated_identifier(identifier)
+        account_response = AccountService.get_account_by_affiliated_identifier(identifier, flags)
         current_app.logger.info("VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s",
                                 q_account,
                                 g.jwt_oidc_token_info.get("preferred_username"),
@@ -111,7 +111,7 @@ def get_businesses(identifier: str):
 
 
 @bp.route("/<string:identifier>/public", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_businesses_public(identifier: str, slim = False):
     """Return a JSON object with public meta information about the business."""
@@ -137,7 +137,7 @@ def get_businesses_public(identifier: str, slim = False):
 
 
 @bp.route("", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def post_businesses():
     """Create a valid filing, else error out."""
@@ -188,7 +188,7 @@ def post_businesses():
 
 
 @bp.route("/<string:identifier>/ar-reminder", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_ar_reminder(identifier):
     """Return send ar reminder flag."""
@@ -203,7 +203,7 @@ def get_ar_reminder(identifier):
 
 
 @bp.route("/<string:identifier>/ar-reminder", methods=["PUT"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def set_ar_reminder(identifier):
     """Update send ar reminder flag."""
@@ -238,7 +238,7 @@ def set_ar_reminder(identifier):
 
 
 @bp.route("/search", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_roles([SYSTEM_ROLE])
 def search_businesses():
     """Return the list of businesses and draft businesses."""
@@ -277,7 +277,7 @@ def search_businesses():
 
 
 @bp.route("/search/affiliation_mappings", methods=["POST"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_roles([SYSTEM_ROLE])
 def get_filing_details():
     """Return the list of Business filings with name requests. Being called from auth api."""
@@ -293,7 +293,7 @@ def get_filing_details():
 
 
 @bp.route("/allowable/<string:business_type>/<string:business_state>", methods=["GET"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_allowable_for_business_type(business_type: str, business_state: str):
     """Return a JSON object with information about what a user could theoretically file for a business type."""

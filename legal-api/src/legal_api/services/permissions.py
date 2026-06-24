@@ -16,13 +16,12 @@
 """This manages all of the permissions service."""
 from enum import Enum
 from http import HTTPStatus
-from typing import Optional
 
 from flask import current_app, g
 
+from business_model.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.models.authorized_role_permission import AuthorizedRolePermission
 from legal_api.services import authz, flags
 from legal_api.services.cache import cache
 from legal_api.services.request_context import get_request_context
@@ -115,7 +114,7 @@ class PermissionService:
         return authorized_permissions
 
     @staticmethod
-    def get_authorized_user_role(token_info: Optional[dict] = None) -> str:
+    def get_authorized_user_role(token_info: dict | None = None) -> str:
         """Return the first matching authorized role from the JWT, based on priority."""
         role_priority = [
             authz.STAFF_ROLE,
@@ -232,7 +231,7 @@ class PermissionService:
         return False
 
     @staticmethod
-    def check_user_permission(required_permission, message: Optional[str] = None) -> Error:
+    def check_user_permission(required_permission, message: str | None = None) -> Error:
         """Check if the user has the required permission."""
         authorized_permissions = PermissionService.get_authorized_permissions_for_user()
         if required_permission not in authorized_permissions:

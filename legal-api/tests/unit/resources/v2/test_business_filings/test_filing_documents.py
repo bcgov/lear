@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses/_id_/filings LEDGER SEARCH endpoint is
 import copy
 import json
 import re
-from datetime import datetime
+from datetime import UTC, datetime
 from http import HTTPStatus
 import requests_mock
 
@@ -52,8 +52,8 @@ from registry_schemas.example_data import (
 from registry_schemas.example_data.schema_data import ALTERATION, INCORPORATION, CONTINUATION_IN
 
 from legal_api.core import Filing
-from legal_api.models import Business, RegistrationBootstrap
-from legal_api.services.authz import STAFF_ROLE
+from business_model.models import Business, RegistrationBootstrap
+from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from tests.unit.models import (  # noqa:E501,I001
     factory_business,
     factory_completed_filing,
@@ -76,7 +76,7 @@ def basic_test_helper():
 
     filing_json = FILING_HEADER
     filing_json['specialResolution'] = SPECIAL_RESOLUTION
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_completed_filing(business, filing_json, filing_date=filing_date)
 
     return business, filing
@@ -130,7 +130,7 @@ def test_unpaid_filing(session, client, jwt):
 
     filing_json = FILING_HEADER
     filing_json['specialResolution'] = SPECIAL_RESOLUTION
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
 
     rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
@@ -670,18 +670,108 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {}},
      HTTPStatus.OK, None
      ),
-    ('bc_change_of_liquidators_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('bc_change_of_liquidators_intent_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+         'legalFilings': [
+            {
+                'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators',
+            }
+        ]
      }},
      HTTPStatus.OK, '2020-10-01'
-     ),
-    ('bc_change_of_liquidators_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ),
+    ('bc_change_of_liquidators_intent_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.PAID,
-     {'documents': {}},
-     HTTPStatus.OK, None
-     ),
+     {'documents': {
+        'receipt': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }},
+     HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_appoint_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_appoint_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_cease_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_cease_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_change_address_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_change_address_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_liquidation_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_liquidation_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
      ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.COMPLETED,
      {'documents': {
@@ -1488,7 +1578,7 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
     if legal_filing_2:
         filing_json['filing'][filing_name_2] = legal_filing_2
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = status
@@ -1577,6 +1667,127 @@ def filer_action(filing_name, filing_json, meta_data, business):
     return meta_data
 
 
+def test_continuation_out_uploaded_documents(app, session, client, jwt, monkeypatch, mock_drs_service):
+    """Assert that uploaded continuation out documents are returned as staff-only static documents."""
+    identifier = 'BC7654321'
+    entity_type = Business.LegalTypes.COMP.value
+    business = factory_business(identifier, entity_type=entity_type)
+
+    uploaded_documents = [
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'supporting-document-1.pdf'},
+        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'supporting-document-2.pdf'}
+    ]
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'continuationOut'
+    filing_json['filing']['business']['legalType'] = entity_type
+    filing_json['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
+    filing_json['filing']['continuationOut']['documents'] = uploaded_documents
+
+    filing = factory_filing(business, filing_json)
+    filing.skip_status_listener = True
+    filing._status = Filing.Status.COMPLETED.value
+    filing._payment_completion_date = '2017-10-01'
+    filing.save()
+
+    # set the meta data the filer would have written for a completed filing
+    filing._meta_data = {
+        'legalFilings': ['continuationOut'],
+        'continuationOut': {'uploadedDocuments': uploaded_documents}
+    }
+    filing.save()
+
+    expected_msg = {'documents': {
+        'receipt': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/receipt',
+        'staticDocuments': [
+            {
+                'name': file.get('fileName'),
+                'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file.get("fileKey")}'
+            }
+            for file in uploaded_documents
+        ]
+    }}
+
+    account_id = '1'
+    headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with requests_mock.Mocker() as m:
+            mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
+            m.get(mock_url, json=[], status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv_data == expected
+
+
+@pytest.mark.parametrize('non_staff_role', [BASIC_USER, PUBLIC_USER])
+def test_continuation_out_uploaded_documents_not_returned_for_non_staff(non_staff_role, app, session, client, jwt,
+                                                                        monkeypatch, mock_drs_service):
+    """Assert that uploaded continuation out documents are returned to staff only, not other roles."""
+    identifier = 'BC7654321'
+    entity_type = Business.LegalTypes.COMP.value
+    business = factory_business(identifier, entity_type=entity_type)
+
+    uploaded_documents = [
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'supporting-document-1.pdf'},
+        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'supporting-document-2.pdf'}
+    ]
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'continuationOut'
+    filing_json['filing']['business']['legalType'] = entity_type
+    filing_json['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
+    filing_json['filing']['continuationOut']['documents'] = uploaded_documents
+
+    filing = factory_filing(business, filing_json)
+    filing.skip_status_listener = True
+    filing._status = Filing.Status.COMPLETED.value
+    filing._payment_completion_date = '2017-10-01'
+    filing.save()
+
+    # set the meta data the filer would have written for a completed filing
+    filing._meta_data = {
+        'legalFilings': ['continuationOut'],
+        'continuationOut': {'uploadedDocuments': uploaded_documents}
+    }
+    filing.save()
+
+    # a non-staff user is authorized to view the business, but not the staff-only static documents
+    expected_msg = {'documents': {
+        'receipt': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/receipt'
+    }}
+
+    account_id = '1'
+    headers = create_header(jwt, [non_staff_role], identifier, account_id=account_id)
+
+    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
+        return headers[one]
+
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        with requests_mock.Mocker() as m:
+            m.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                  json={'roles': ['view']}, status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert 'staticDocuments' not in rv_data['documents']
+    assert rv_data == expected
+
+
 @pytest.mark.parametrize('test_name, temp_identifier, identifier, entity_type, filing_name, legal_filing, status, expected_msg, expected_http_code', [
     ('ben_ia_paid', 'Tb31yQIuBw', None, Business.LegalTypes.BCOMP.value,
      'incorporationApplication', INCORPORATION, Filing.Status.PAID,
@@ -1654,7 +1865,7 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
         legal_filing['nameRequest']['legalType'] = entity_type
     filing_json['filing'][filing_name] = legal_filing
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
 
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = temp_identifier
@@ -1708,7 +1919,7 @@ def test_get_receipt(session, client, jwt, requests_mock):
     filing_json['filing'][filing_name] = INCORPORATION
     filing_json['filing'].pop('business')
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
@@ -1744,7 +1955,7 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
     filing_json['filing'][filing_name] = INCORPORATION
     filing_json['filing'].pop('business')
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
@@ -1782,7 +1993,7 @@ def test_get_receipt_no_receipt_ca(session, client, jwt, requests_mock):
     filing_json['filing'][filing_name] = INCORPORATION
     filing_json['filing'].pop('business')
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
     filing.skip_status_listener = True
     filing._status = 'PAID'
@@ -1837,7 +2048,7 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     filing_json['filing']['business']['legalType'] = entity_type
     filing_json['filing']['noticeOfWithdrawal'] = MOCK_NOTICE_OF_WITHDRAWAL
 
-    filing_date = datetime.utcnow()
+    filing_date = datetime.now(UTC)
 
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = temp_identifier

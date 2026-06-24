@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Retrieve the parties for the entity."""
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask import jsonify, request
 from flask_cors import cross_origin
 
-from legal_api.models import Business, PartyClass, PartyRole
+from business_model.models import Business, PartyRole
+from business_model.models.party_class import PartyClassType
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -27,7 +28,7 @@ from .bp import bp
 
 @bp.route("/<string:identifier>/parties", methods=["GET", "OPTIONS"])
 @bp.route("/<string:identifier>/parties/<int:party_id>", methods=["GET", "OPTIONS"])
-@cross_origin(origin="*")
+@cross_origin()
 @jwt.requires_auth
 def get_parties(identifier, party_id=None):  # noqa: PLR0912
     """Return a JSON of the parties."""
@@ -48,16 +49,16 @@ def get_parties(identifier, party_id=None):  # noqa: PLR0912
             return jsonify({"message": f"Party {party_id} not found"}), HTTPStatus.NOT_FOUND
     else:
         end_date = datetime.strptime(request.args.get("date"), "%Y-%m-%d").date() \
-            if request.args.get("date") else datetime.now(timezone.utc).date()
+            if request.args.get("date") else datetime.now(UTC).date()
         if str(request.args.get("all", None)).lower() == "true":
             end_date = None
 
         class_type_str = request.args.get("classType")
         if class_type_str:
             try:
-                class_type_enum = PartyClass.PartyClassType[class_type_str.upper()]
+                class_type_enum = PartyClassType[class_type_str.upper()]
             except KeyError:
-                valid_types = [e.name for e in PartyClass.PartyClassType]
+                valid_types = [e.name for e in PartyClassType]
                 return jsonify(
                     {"message": f"Invalid classType '{class_type_str}'. Valid types: {valid_types}"}
                 ), HTTPStatus.BAD_REQUEST

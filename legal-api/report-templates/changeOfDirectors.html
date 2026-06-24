@@ -1,66 +1,40 @@
 [[macros.html]]
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>{{ meta_title }}</title>
+    <title>Director Change</title>
     <meta charset="UTF-8">
     <meta name="author" content="BC Registries and Online Services">
-    <meta name="description" content="{{ meta_subject }}">
-
-[[style.html]]
-
+    [[common/style.html]]
+    {% if enable_sandbox %}
+      [[common/watermark.html]]
+    {% endif %}
   </head>
-
   <body>
-
-  [[logo.html]]
-
-    <div class="column-report">
-      <div class="column-report-headspace"></div>
-      <div class="header-blue">
-        BC COOPERATIVE DIRECTOR CHANGE
-      </div>
-      <div class="header-gold">
-        BC Cooperative &bull; Cooperative Association Act
-      </div>
-
-      <div class="column-report-inner">
-        <div class="entity-name">
-          {{ business.legalName }}
-        </div>
-
-        <!-- Struggling doing this with CSS, because weasyprint isn't laying it out the same as a browser. -->
-        <div class="section-data">
-          <table class="section-data-table">
-            <tr class="no-page-break">
-              <td class="table-name">Incorporation Number:</td>
-              <td class="table-value">{{ business.identifier }}</td>
-            </tr>
-            <tr class="no-page-break">
-              <td class="table-name">Business Number:</td>
-              <td class="table-value">{{ business.tax_id }}</td>
-            </tr>
-            <tr class="no-page-break">
-              <td class="table-name">Filing Date and Time:</td>
-              <td class="table-value">{{ filing_date_time }}</td>
-            </tr>
-            <tr class="no-page-break">
-              <td class="table-name">Effective Date of Change:</td>
-              <td class="table-value">{{ effective_date }}</td>
-            </tr>
-          </table>
-        </div>
-
-[[directors.html]]
-
-[[certification.html]]
-
-
+    <div class="header">
+      <table class="header-table" role="presentation">
+        <tr class="no-page-break">
+          <td>
+            [[logo.html]]
+          </td>
+          <td>
+            <div class="report-type">DIRECTOR CHANGE</div>
+            <div class="report-type-desc">{{entityDescription}} - {{ entityAct }}</div>
+          </td>
+        </tr>
+      </table>
+      <div class="business-name-header">
+        <label class="lbl-business-name">
+          {{business.legalName}}
+        </label>
       </div>
     </div>
-
-[[footer.html]]
-
+    [[common/businessDetails.html]]
+    <div class="container">
+      [[directors.html]]
+      {% if business.legalType == 'CP' %}
+        [[certification.html]]
+      {% endif %}
+    </div>
   </body>
 </html>

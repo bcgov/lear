@@ -17,13 +17,13 @@ from http import HTTPStatus
 import pycountry
 from flask_babel import _ as babel  # importing camelcase '_' as a name
 
+from business_common.utils.datetime import date, datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Address, Business, Filing
 from legal_api.errors import Error
-from legal_api.models import Address, Business, Filing
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import PARTY_NAME_MAX_LENGTH, validate_parties_addresses
 from legal_api.services.utils import get_str
-from legal_api.utils.datetime import date, datetime
-from legal_api.utils.legislation_datetime import LegislationDatetime
 
 
 def validate(business: Business, cod: dict) -> Error:
@@ -294,7 +294,6 @@ def validate_directors_name(cod: dict) -> list:
 
     name_fields = ["firstName", "middleInitial", "lastName",
                    "prevFirstName", "prevMiddleInitial", "prevLastName"]
-    required_fields = ["firstName", "lastName"]
     name_changed_required_fields = ["prevFirstName", "prevLastName"]
 
     for idx, director in enumerate(directors):
@@ -306,12 +305,8 @@ def validate_directors_name(cod: dict) -> list:
             value = officer.get(field)
             path = f"/filing/changeOfDirectors/directors/{idx}/officer/{field}"
 
-            if field in required_fields and (not value or not value.strip()):
-                msg.append({
-                    "error": babel(f"Director {field} is required."),
-                    "path": path
-                })
-                continue
+            # firstName/lastName required (non-empty) is enforced by the schema
+            # (business-schemas directors person firstName/lastName pattern).
 
             # Check prev first/last required when nameChanged
             if field in name_changed_required_fields and is_name_changed and (not value or not value.strip()):
