@@ -1,0 +1,80 @@
+<div class="gap-y">
+  <table class="business-details-container business-details-table" style="padding: 0.5rem 1rem 0.5rem 1rem !important;" role="presentation">
+    <tr>
+      <td class="col-33 gap-y-2">
+        <div class="bold">Incorporation Number:</div>
+        <div class="bold">Business Number:</div>
+        <div class="bold">Incorporation Date and Time:</div>
+        <div class="bold">{{ reportDateAndTimeTitle }}</div>
+        <div class="bold">Company Status:</div>
+      </td>
+      
+      <td class="col-67 gap-y-2">
+        <div>{{ business.identifier }}</div>
+        
+        <div>
+          {% if business.taxId is defined and business.taxId|length > 9 %}
+            <span>{{ business.taxId }}</span>
+          {% else %}
+            <span>Not Available</span>
+          {% endif %}
+        </div>
+        
+        <div>{{ recognition_date_time }}</div>
+        
+        <div>{{ effective_date_time }}</div>
+        
+        <div>
+          {% if business.inLiquidation %}
+            <span>IN LIQUIDATION</span>
+          {% else %}
+            <span class="uppercase-text">{{ business.state }}</span>
+          {% endif %}
+        </div>
+      </td>
+    </tr>
+  </table>
+  <div class="container">
+    <dl class="data-list section-data gap-y-2">
+      <div>
+        <dt class="bold">Liquidation Report:</dt>
+        <dd>{{ lastReportDate if lastReportDate else 'Not Available' }}</dd>
+      </div>
+
+      <div>
+        <dt class="bold">Receiver:</dt>
+        <dd>{{ 'Yes' if hasReceivers else 'No' }}</dd>
+      </div>
+
+      <div>
+        <dt class="bold">Plan of Arrangement:</dt>
+        <dd>{{ 'Yes' if hasPoa else 'No' }}</dd>
+      </div>
+
+      <div>
+        <dt class="bold">Court Order:</dt>
+        <dd>{{ courtOrderNumber if courtOrderNumber else 'N/A' }}</dd>
+      </div>
+    </dl>
+  </div>
+</div>
+
+<!-- this block is hidden but is needed for the footer: -->
+<div class="filing-identifier" style="margin-top: -1rem;">
+  Filing #{{header.filingId}}
+  <span> | Incorporation #{{business.identifier}}</span>
+</div>
+
+<style>
+  .data-list {
+    margin: 0;
+    padding: 0;
+  }
+  .data-list dt {
+    display: inline;
+  }
+  .data-list dd {
+    display: inline;
+    margin: 0 0 0 4px;
+  }
+</style>
