@@ -1,6 +1,8 @@
 import argparse
 import os
+from dataclasses import dataclass
 from pathlib import Path
+from enum import Enum
 import re
 import subprocess
 import sys
@@ -24,6 +26,122 @@ _DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postg
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 _REFRESH_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'refresh_colin_extract_views.sh'
 _BUILD_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_views_ddl'
+
+
+# =========================
+# cfg_* (types & config)
+# =========================
+
+class cfg_GenerationMode(str, Enum):
+    REFRESH = "refresh"  # delete + reload
+    LOAD = "load"        # load only
+
+
+class cfg_RenderMode(str, Enum):
+    INLINE = "inline"    # render templates into chunk files (no vset)
+    VSET = "vset"        # legacy behavior (runtime vset substitution)
+
+
+class cfg_OracleInStrategy(str, Enum):
+    AUTO = "auto"
+    CHUNK_FILES = "chunk_files"
+    OR_OF_IN_LISTS = "or_of_in_lists"
+
+
+class cfg_PgDisableMethod(str, Enum):
+    TABLE_TRIGGERS = "table_triggers"  # ALTER TABLE ... DISABLE/ENABLE TRIGGER ALL (default)
+    REPLICA_ROLE = "replica_role"      # SET session_replication_role=replica|origin (superuser only)
+
+@dataclass
+class SubsetConfig:
+    corp_file: Path
+    mode: cfg_GenerationMode
+    delta_scope: str = 'batch'
+    chunk_size: int
+    threads: int
+    prefix_numeric_bc: bool
+    include_cp: bool
+
+    pg_fastload: bool
+    pg_disable_method: cfg_PgDisableMethod
+
+    out_master: Path
+    run_dbschemacli: bool
+    dbschemacli_cmd: str
+
+    refresh_views: bool
+
+    reset_extract_postgres: bool
+
+    source_connection: str
+    target_connection: str
+    target_schema: str
+
+
+
+# @dataclass
+# class ExtractSubsetConfig:
+#     """Configuration for Extract-Subset-Flow execution."""
+#     corp_file: str
+#     mode: str = 'refresh'
+#     delta_scope: str = 'batch'
+#     chunk_size: int = 900
+#     threads: int = 4
+#     pg_fastload: bool = False
+#     include_cp: bool = False
+#     pg_disable_method: str = 'table_triggers'
+#     out: str | None = None
+#     run_dbschemacli: bool = False
+#     refresh_views: bool = True
+#     dbschemacli_cmd: str = 'dbschemacli'
+#     reset_extract_postgres: bool = True
+#     source_connection: str = 'ctst'
+#     target_connection: str = _DEFAULT_TARGET_CONNECTION
+#     target_schema: str = 'public'
+    
+#     @classmethod
+#     def from_args(cls, args: argparse.Namespace) -> 'ExtractSubsetConfig':
+#         """Create config from parsed arguments."""
+#         return cls(
+#             corp_file=args.corp_file,
+#             mode=args.mode,
+#             delta_scope=args.delta_scope,
+#             chunk_size=args.chunk_size,
+#             threads=args.threads,
+#             pg_fastload=args.pg_fastload,
+#             include_cp=args.include_cp,
+#             pg_disable_method=args.pg_disable_method,
+#             out=args.out,
+#             run_dbschemacli=args.run_dbschemacli,
+#             refresh_views=args.refresh_views,
+#             dbschemacli_cmd=args.dbschemacli_cmd,
+#             reset_extract_postgres=args.reset_extract_postgres,
+#             source_connection=args.source_connection,
+#             target_connection=args.target_connection,
+#             target_schema=args.target_schema,
+#         )
+    
+def build_configs(args: argparse.Namespace) -> SubsetConfig:
+    """Build SubsetConfig from parsed arguments."""
+    return SubsetConfig(
+        corp_file=Path(args.corp_file).expanduser().resolve(),
+        mode=cfg_GenerationMode(args.mode),
+        delta_scope=args.delta_scope,
+        chunk_size=args.chunk_size,
+        threads=args.threads,
+        prefix_numeric_bc=(args.mode == 'refresh'),
+        include_cp=args.include_cp,
+        pg_fastload=args.pg_fastload,
+        pg_disable_method=cfg_PgDisableMethod(args.pg_disable_method),
+        out_master=_resolve_master_script_path(args.out),
+        run_dbschemacli=args.run_dbschemacli,
+        dbschemacli_cmd=args.dbschemacli_cmd,
+        refresh_views=args.refresh_views,
+        reset_extract_postgres=args.reset_extract_postgres,
+        source_connection=args.source_connection,
+        target_connection=args.target_connection,
+        target_schema=args.target_schema
+    )
 
 
 def _resolve_master_script_path(out: str | None) -> Path:
@@ -334,9 +452,9 @@ def extract_pull_flow(
         prune_identifiers = get_fallen_identifiers(updated_corp_nums)
         prune_fallen_identifiers(prune_identifiers)
     
-if __name__ == '__main__':
+def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
-    p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
+    p.add_argument('--corp_file', default='../data-tool/scripts/generated/corp_ids_ctst.txt', help='Path to newline-delimited corp identifiers')
     p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
     p.add_argument('--delta-scope', default='batch', choices=('batch', 'full'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
@@ -349,5 +467,18 @@ if __name__ == '__main__':
     p.add_argument('--refresh-views', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
-    p.add_argument('--target-connection', default=_DEFAULT_TARGET_CONNECTION)
-    extract_pull_flow(**vars(p.parse_args()))
+    p.add_argument('--source-connection', default='ctst')
+    p.add_argument('--target-connection', default='ctst_pg')
+    p.add_argument('--target-schema', default='public')
+    return p
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_arg_parser().parse_args(argv)
+    config = build_configs(args)
+    extract_pull_flow(**vars(config))
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
