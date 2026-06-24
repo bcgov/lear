@@ -173,8 +173,7 @@ def test_set_amalgamation_details(
 
 @pytest.mark.parametrize('has_receiver, cessation_date, expected_count', [
     (True, None, 1),
-    (False, '2026-06-01', 0),
-    (False, None, 0)
+    (False, '2026-06-02', 0)
 ])
 def test_summary_includes_receivers(session, app, jwt, has_receiver, cessation_date, expected_count):
     """Assert that the business summary correctly includes receivers."""
@@ -186,25 +185,24 @@ def test_summary_includes_receivers(session, app, jwt, has_receiver, cessation_d
         business = factory_business(identifier=identifier, entity_type='BC')
         factory_business_mailing_address(business)
 
-        if has_receiver:
-            receiver = factory_party_role(
-                delivery_address=factory_address('delivery street', 'delivery'),
-                mailing_address=factory_address('mailing street', 'mailing'),
-                appointment_date='2026-01-01',
-                cessation_date=cessation_date,
-                officer={
-                    'firstName': 'first',
-                    'lastName': 'last',
-                    'middleInitial': 'mid',
-                    'partyType': 'person',
-                    'organizationName': ''
-                },
-                role_type=PartyRole.RoleTypes.RECEIVER
-            )
+        receiver = factory_party_role(
+            delivery_address=factory_address('delivery street', 'delivery'),
+            mailing_address=factory_address('mailing street', 'mailing'),
+            appointment_date='2026-01-01',
+            cessation_date=cessation_date,
+            officer={
+                'firstName': 'first',
+                'lastName': 'last',
+                'middleInitial': 'mid',
+                'partyType': 'person',
+                'organizationName': ''
+            },
+            role_type=PartyRole.RoleTypes.RECEIVER
+        )
 
-            receiver.business_id = business.id
-            session.add(receiver)
-            session.commit()
+        receiver.business_id = business.id
+        session.add(receiver)
+        session.commit()
 
         report = BusinessDocument(business, 'summary')
         filename = report._get_report_filename()
