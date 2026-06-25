@@ -68,6 +68,7 @@ EXCLUDED_OBJECTS=(
   mv_addr_quality_screening_by_corp
   mv_share_class_issue_flags
   mv_corp_event_filing_rollup
+  mv_admin_email_bad_email_flags
   mv_legacy_corps_data
   mv_corp_issue_flags
   mv_issue_counts_by_corp_type

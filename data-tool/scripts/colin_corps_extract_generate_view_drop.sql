@@ -44,6 +44,7 @@ VALUES
   ('mv_addr_quality_screening_by_corp', 'm'),
   ('mv_share_class_issue_flags', 'm'),
   ('mv_corp_event_filing_rollup', 'm'),
+  ('mv_admin_email_bad_email_flags', 'm'),
   ('mv_legacy_corps_data', 'm'),
   ('mv_corp_issue_flags', 'm'),
   ('mv_issue_counts_by_corp_type', 'm');
