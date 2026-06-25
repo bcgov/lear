@@ -18,7 +18,7 @@ from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from flask import current_app
@@ -48,7 +48,8 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
-from tests.unit.models import factory_address, factory_business, factory_business_office, factory_completed_filing, factory_party_role, factory_pending_filing # noqa:E501,I001
+from tests.unit.models import factory_address, factory_business, factory_business_office, factory_completed_filing, factory_party_role, factory_pending_filing
+from legal_api.reports.utils import ColinService
 
 
 def create_report(identifier, entity_type, report_type, filing_type, template):
@@ -928,3 +929,158 @@ def test_format_change_address_liquidator_data(session, mocker):
     assert 'recordsOffice' in filing_data
     assert filing_data['recordsOffice']['mailingAddress']['changed'] is True
     assert filing_data['recordsOffice']['deliveryAddress']['changed'] is True
+
+# ---------------------------------------------------------------------------
+# Tests for Report._set_amalgamating_businesses
+# ---------------------------------------------------------------------------
+
+def _make_report_with_amalgamating_businesses(amalgamating_businesses_list, session,
+                                               identifier='BC9900001', entity_type='BC'):
+    """Return a Report instance whose filing_json contains the given amalgamatingBusinesses list."""
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'amalgamationApplication'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = entity_type
+    filing_json['filing']['amalgamationApplication'] = {
+        'amalgamatingBusinesses': amalgamating_businesses_list,
+        'type': 'regular',
+        'courtApproval': False,
+    }
+
+    business = factory_business(identifier=identifier, entity_type=entity_type)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'amalgamationApplication'
+    return report
+
+
+@pytest.mark.parametrize(
+    'test_name, foreign_jurisdiction, foreign_region, colin_status, colin_jurisdiction, expected_id, expected_jurisdiction',
+    [
+        ('expro-on', 'CA', 'BC', HTTPStatus.OK, 'ON', 'A1234567', 'Ontario'),
+        ('expro-federal', 'CA', 'BC', HTTPStatus.OK, 'FD', 'A1234567', 'Federal'),
+        ('a-prefix-colin-404', 'US', 'WA', HTTPStatus.NOT_FOUND, None, 'N/A', 'United States'),
+    ],
+    ids=[
+        '_set_amalgamating_businesses: expro ON',
+        '_set_amalgamating_businesses: expro FD federal',
+        '_set_amalgamating_businesses: A-prefix colin 404 stays N/A',
+    ]
+)
+def test_set_amalgamating_businesses_foreign(
+        session, monkeypatch, test_name,
+        foreign_jurisdiction, foreign_region,
+        colin_status, colin_jurisdiction,
+        expected_id, expected_jurisdiction):
+    """Assert that _set_amalgamating_businesses correctly formats foreign and expro entries."""
+    foreign_identifier = 'A1234567'
+    foreign_name = 'Foreign Expro Corp'
+
+    amalgamating_businesses = [
+        {
+            'identifier': foreign_identifier,
+            'legalName': foreign_name,
+            'foreignJurisdiction': {
+                'country': foreign_jurisdiction,
+                'region': foreign_region,
+            },
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    colin_call_count = {'count': 0}
+
+    def mock_colin(id_):
+        colin_call_count['count'] += 1
+        resp = MagicMock()
+        resp.status_code = colin_status
+        resp.json.return_value = {'business': {'jurisdiction': colin_jurisdiction}}
+        return resp
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin)
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['legalName'] == foreign_name
+    assert entry['identifier'] == expected_id
+    assert entry['jurisdiction'] == expected_jurisdiction
+
+
+def test_set_amalgamating_businesses_bc_domestic(session, monkeypatch):
+    """Assert that _set_amalgamating_businesses correctly formats a domestic BC ting business."""
+    bc_identifier = 'BC8887776'
+    bc_legal_name = 'Ting Corp Ltd.'
+
+    amalgamating_businesses = [
+        {
+            'identifier': bc_identifier,
+            # No legalName key: domestic businesses trigger the ting_business path
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    # Provide a mock ting_business from _get_versioned_amalgamating_business
+    ting_mock = MagicMock()
+    ting_mock._identifier = bc_identifier  # pylint: disable=protected-access
+    ting_mock.legal_name = bc_legal_name
+    report._get_versioned_amalgamating_business = lambda id_: ting_mock
+
+    # COLIN must not be called for domestic businesses
+    monkeypatch.setattr(ColinService, 'query_business',
+                        lambda id_: (_ for _ in ()).throw(AssertionError('COLIN must not be called for domestic businesses')))
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['legalName'] == bc_legal_name
+    assert entry['identifier'] == bc_identifier
+    assert entry['jurisdiction'] == 'British Columbia'
+
+
+def test_set_amalgamating_businesses_foreign_non_a_prefix(session, monkeypatch):
+    """Assert that a foreign business with a non-A identifier is not treated as expro and COLIN is not called."""
+    foreign_identifier = 'UK9876543'
+    foreign_name = 'UK Corp'
+
+    amalgamating_businesses = [
+        {
+            'identifier': foreign_identifier,
+            'legalName': foreign_name,
+            'foreignJurisdiction': {'country': 'GB', 'region': None},
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    colin_call_count = {'count': 0}
+
+    def mock_colin_no_call(id_):
+        colin_call_count['count'] += 1
+        return MagicMock()
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin_no_call)
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['identifier'] == 'N/A'
+    assert entry['legalName'] == foreign_name
+    assert entry['jurisdiction'] == 'United Kingdom'
+    assert colin_call_count['count'] == 0

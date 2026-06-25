@@ -28,7 +28,8 @@
 from unittest.mock import MagicMock
 
 from legal_api.reports import business_document
-from legal_api.reports.business_document import Amalgamation, AmalgamatingBusiness, BusinessDocument, Filing, colin
+from legal_api.reports.business_document import Amalgamation, AmalgamatingBusiness, BusinessDocument, Filing
+from legal_api.reports.utils import ColinService
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
@@ -87,7 +88,7 @@ def set_amalgamation_details(app, jwt, session, monkeypatch,
 
     # Optionally patch colin.query_business.
     if colin_query_side_effect is not None:
-        monkeypatch.setattr(colin, 'query_business', colin_query_side_effect)
+        monkeypatch.setattr(ColinService, 'query_business', colin_query_side_effect)
 
     request_ctx = app.test_request_context(headers=create_header(jwt, [STAFF_ROLE], identifier))
     with request_ctx:
