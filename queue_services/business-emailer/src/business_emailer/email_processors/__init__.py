@@ -362,7 +362,7 @@ def get_pdfs(  # noqa: PLR0913
     effective_date: str,
     extra_pdf_type_list: list[str]
 ) -> list:
-    """Get the pdfs for the incorporation output."""
+    """Get the pdfs for the filing output."""
     pdfs = []
     attach_order = 1
     # add filing application document
