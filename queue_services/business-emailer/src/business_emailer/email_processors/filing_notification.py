@@ -62,6 +62,22 @@ def _get_additional_recipients(filing: Filing, token: str) -> str:
     return recipients
 
 
+def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: Filing, legal_type_key: str) -> tuple[list[str], list[str]]:
+    """Get attachments for a filing type."""
+    attachments = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("attachments", [])
+    extra_pdf_types = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("extraPdfTypes", [])
+    if (_get_additional_info(filing).get("nameChange", False)
+        and (attachments_con := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-con", {}))
+    ):
+        attachments = attachments_con.get("attachments", [])
+        extra_pdf_types = attachments_con.get("extraPdfTypes", [])
+
+    if status != Filing.Status.COMPLETED.value:
+        extra_pdf_types = []
+
+    return attachments, extra_pdf_types
+
+
 def process(email_info: dict, token: str) -> dict:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
@@ -115,17 +131,7 @@ def process(email_info: dict, token: str) -> dict:
         business_number = NOT_AVAILABLE
 
     # attachments and future attachments
-    filing_additional_info = _get_additional_info(filing)
-    has_name_change = filing_additional_info.get("nameChange", False)
-    future_attachments = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("attachments", [])
-    extra_pdf_types = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("extraPdfTypes", [])
-
-    if has_name_change and (attachments_con := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-con", {})):
-        future_attachments = attachments_con.get("attachments", [])
-        extra_pdf_types = attachments_con.get("extraPdfTypes", [])
-
-    if status != Filing.Status.COMPLETED.value:
-        extra_pdf_types = []
+    future_attachments, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
 
     pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types)
 
@@ -138,7 +144,6 @@ def process(email_info: dict, token: str) -> dict:
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=dashboard_url,
         filing_type=filing_type,
-        additional_info=filing_additional_info,
         attachments_list=attachments_list,
         business_name=business_name,
         business_identifier=business_identifier,
@@ -156,6 +161,7 @@ def process(email_info: dict, token: str) -> dict:
         recipients = f"{recipients}, {additional_recipients}"
 
     if not recipients:
+        current_app.logger.error("No recipients found for filing notification email: %s", email_info)
         return
 
     # assign subject

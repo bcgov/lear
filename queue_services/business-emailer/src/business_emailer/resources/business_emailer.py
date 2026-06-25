@@ -286,7 +286,7 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "ceaseReceiver" and option == Filing.Status.COMPLETED.value:
             email = cease_receiver_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype in FILING_TITLE.keys():
+        elif etype in FILING_TITLE:
             if email := filing_notification.process(email_msg["email"], token):
                 send_email(email, token)
             else:
