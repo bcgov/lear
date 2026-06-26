@@ -224,17 +224,19 @@
                {% endif %}
             </td>
          {% elif header.name == 'changeOfDirectors' %}
+            {% set show_director_change_date = header.status == 'COMPLETED'
+               and (listOfDirectors.directorsAppointed or listOfDirectors.directorsCeased) %}
             <td>
                <div class="bold">Incorporation Number:</div>
                <div class="bold pt-2">Filed Date and Time:</div>
-               {% if header.status == 'COMPLETED' %}
+               {% if show_director_change_date %}
                   <div class="bold pt-2">Director Change Date:</div>
                {% endif %}
             </td>
             <td>
                <div>{{business.identifier}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
-               {% if header.status == 'COMPLETED' %}
+               {% if show_director_change_date %}
                   <div class="pt-2">{{effective_date}}</div>
                {% endif %}
             </td>
