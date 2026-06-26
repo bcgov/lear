@@ -312,6 +312,7 @@ def factory_business_comment(business: Business = None, comment_text: str = 'som
     c.business_id = business.id
     c.timestamp = EPOCH_DATETIME
     c.comment = comment_text
+    c.comment_type = comment_type
     if user:
         c.staff_id = user.id
     c.save()
