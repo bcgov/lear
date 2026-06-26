@@ -99,8 +99,7 @@ def get_user_email_from_auth(user_name: str, token: str) -> str:
     contacts = user_info.json()["contacts"]
 
     if not contacts:
-        return user_info.get("email")  # idir user
-
+        return user_info.json().get("email")  # idir user
     return contacts[0]["email"]
 
 
@@ -295,6 +294,10 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
     if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
         file_name = f"{ar_date[:4]} {file_name}"
+    elif document_type == "changeOfAddress":
+        file_name = "Address Change"
+    elif document_type == "changeOfDirectors":
+        file_name = "Director Change"
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token)

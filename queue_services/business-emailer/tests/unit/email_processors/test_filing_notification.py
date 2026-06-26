@@ -366,8 +366,7 @@ def test_filing_attachments_change_of_address_paid(session, mocker, config):
 
     attachments = output['content']['attachments']
     assert len(attachments) == 2
-    # _add_filing_document_pdf replaces " Of " -> " of " so "changeOfAddress" -> "Change of Address"
-    assert attachments[0]['fileName'] == 'Change of Address.pdf'
+    assert attachments[0]['fileName'] == 'Address Change.pdf'
     assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
     assert attachments[1]['fileName'] == 'Receipt.pdf'
     assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
@@ -601,7 +600,7 @@ def test_future_attachments_list_in_ia_future_effective_paid_corp(app, session, 
     (
         'annualReport',
         'COMPLETED',
-        'You have successfully completed your 2018 Annual Report with the BC Business Registry',
+        'You have successfully completed your 2018 annual report with the BC Business Registry',
         'test business - Successful Annual Report',
     ),
     (
