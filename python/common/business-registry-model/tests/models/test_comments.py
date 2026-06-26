@@ -33,6 +33,7 @@ def test_minimal_comment(session):
     """Assert that a minimal comment can be created."""
     comment = Comment()
     comment.comment = 'some words'
+    comment.comment_type = Comment.CommentType.STAFF
     comment.save()
 
     assert comment.id is not None
@@ -79,6 +80,7 @@ def test_filing_comment_dump_json(session):
                 'id': c.id,
                 'submitterDisplayName': 'Registry Staff',
                 'comment': 'a comment',
+                'commentType': 'STAFF',
                 'filingId': f.id,
                 'businessId': None,
                 'timestamp': now.isoformat()
@@ -109,6 +111,7 @@ def test_comment_save(session):
     comment = Comment()
     comment.timestamp = EPOCH_DATETIME
     comment.comment = 'a comment'
+    comment.comment_type = Comment.CommentType.STAFF
 
     assert not session.new
     assert not Session.object_session(comment)
