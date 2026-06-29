@@ -98,7 +98,7 @@ TMPL_TOKEN_CORP_IDS = "&corp_ids_in"  # used by delete template (Postgres-side)
 TMPL_TOKEN_TARGET_PRED = "&target_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_PRED = "&oracle_corp_num_predicate"  # used by transfer template (Oracle-side)
 TMPL_TOKEN_ORACLE_CORP_TYPE_PRED = "&oracle_corp_type_predicate"  # used by transfer template (Oracle-side)
-TMPL_TOKEN_SCHEMA = "&test"
+TMPL_TOKEN_SCHEMA = "TARGET_SCHEMA"
 
 @dataclass(frozen=True)
 class tmpl_TemplateSpec:
@@ -324,7 +324,6 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
     disable_triggers = tmpl_TemplateSpec(
         name="subset_disable_triggers",
         path=subset_dir / "subset_disable_triggers.sql",
-        required_tokens=(TMPL_TOKEN_SCHEMA),
         schema=schema,
     )
     enable_triggers = tmpl_TemplateSpec(
@@ -401,12 +400,6 @@ def tmpl_load_text(spec: tmpl_TemplateSpec) -> str:
     tmpl_validate_tokens(spec, text)
     return text
 
-def tmpl_schema_text(spec: tmpl_TemplateSpec) -> str:
-    if not spec.schema:
-        raise SystemExit(f"Missing required template: {spec.name}\nPath: {spec.path}")
-    text = spec.schema
-    return text
-
 def tmpl_validate_tokens(spec: tmpl_TemplateSpec, template_text: str) -> None:
     if not spec.required_tokens:
         return
@@ -426,15 +419,23 @@ def tmpl_render(template_text: str, *, replacements: Dict[str, str]) -> str:
         out = out.replace(token, value)
     return out
 
-def tmpl_render_schema(template_text: str) -> str:
-    out = template_text
-    return out
+def tmpl_resolve_execute_path(spec: tmpl_TemplateSpec, *, out_dir:Path) -> str:
+    text = tmpl_load_text(spec)
+    if TMPL_TOKEN_SCHEMA not in text:
+        return spec.path
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rendered = tmpl_render(text, replacements={TMPL_TOKEN_SCHEMA: spec.schema})
+    out_path = out_dir / f"{spec.name}.sql"
+    gen_write_text(out_path, rendered)
+    print(f"substitued =>{out_path}")
+    return out_path
 
 # =========================
 # chunk_* (chunk planning)
 # =========================
 
 def chunk_chunked(items: Sequence[str], size: int) -> List[List[str]]:
+
     if size <= 0:
         raise ValueError("chunk size must be > 0")
     return [list(items[i:i + size]) for i in range(0, len(items), size)]
@@ -524,17 +525,14 @@ def gen_build_chunk_sql(
         rendered_transfer = tmpl_render(transfer_template_text, replacements=replacements)
         if (TMPL_TOKEN_TARGET_PRED in rendered_transfer or
                 TMPL_TOKEN_ORACLE_PRED in rendered_transfer or
-                TMPL_TOKEN_ORACLE_CORP_TYPE_PRED in rendered_transfer):
+                TMPL_TOKEN_ORACLE_CORP_TYPE_PRED in rendered_transfer or
+                TMPL_TOKEN_SCHEMA in rendered_transfer):
             raise SystemExit(
                 f"Internal error: token(s) remained after rendering transfer template for chunk {chunk.index:03d}."
             )
         parts.append(rendered_transfer.rstrip())
         parts.append("")
 
-    if schema:
-        rendered_schema = tmpl_render(schema, replacements=replacements)
-        parts.append(rendered_schema.rstrip())
-        parts.append("")
     return "\n".join(parts)
 
 
@@ -591,7 +589,7 @@ def gen_write_chunk_files(
 
 def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, templates: tmpl_TemplateBundle) -> None:
     if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
-        lines.append(f"execute {templates.disable_triggers.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.disable_triggers, out_dir=cfg.out_chunks_dir).as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: preserved processing/tracking tables still reference corporation/event rows.")
             lines.append("ALTER TABLE corp_processing DISABLE TRIGGER ALL;")
@@ -611,7 +609,7 @@ def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, t
 
 def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, templates: tmpl_TemplateBundle) -> None:
     if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
-        lines.append(f"execute {templates.enable_triggers.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.enable_triggers, out_dir=cfg.out_chunks_dir).as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: restore preserved processing/tracking table triggers too.")
             lines.append("ALTER TABLE corp_processing ENABLE TRIGGER ALL;")
@@ -672,7 +670,7 @@ def gen_build_master_script_inline(
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
     lines.append("-- Serialize subset runs on this target DB.")
-    lines.append(f"execute {templates.pg_acquire_advisory_lock.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_acquire_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
     lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
@@ -687,18 +685,12 @@ def gen_build_master_script_inline(
 
     if cfg.pg_fastload:
         lines.append("-- Postgres fast-load mode (session-level settings)")
-        lines.append(f"execute {templates.pg_fastload_begin.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_begin, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
-    lines.append("-- Postgres helper: allow VARCHAR/BPCHAR -> BOOLEAN assignment (DbSchemaCLI boolean inserts)")
-    lines.append(f"execute {templates.pg_boolean_casts.path.as_posix()}")
-    lines.append("-- Fail-fast: verify varchar/bpchar -> boolean casts exist")
-    lines.append("select 't'::varchar::boolean;")
-    lines.append("select 'f'::bpchar::boolean;")
-    lines.append("")
     if cfg.mode == cfg_GenerationMode.REFRESH:
         lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
-        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_orphan_children, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
@@ -710,7 +702,7 @@ def gen_build_master_script_inline(
 
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
-        lines.append(f"execute {templates.delete_cars.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.delete_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append(f"execute {templates.transfer_cars.path.as_posix()}")
         lines.append("")
 
@@ -736,15 +728,15 @@ def gen_build_master_script_inline(
     _gen_emit_pg_disable_end(lines, cfg=cfg, templates=templates)
 
     lines.append("-- Cleanup shared address staging table")
-    lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
     lines.append("-- Release subset-run advisory lock")
-    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
-        lines.append(f"execute {templates.pg_fastload_end.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_end, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     return "\n".join(lines)
@@ -777,10 +769,10 @@ def gen_build_master_script_vset(
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
     lines.append("-- Serialize subset runs on this target DB.")
-    lines.append(f"execute {templates.pg_acquire_advisory_lock.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_acquire_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
-    lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_prepare_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
@@ -791,31 +783,26 @@ def gen_build_master_script_vset(
 
     if cfg.pg_fastload:
         lines.append("-- Postgres fast-load mode (session-level settings)")
-        lines.append(f"execute {templates.pg_fastload_begin.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_begin, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
-    lines.append("-- Postgres helper: allow VARCHAR/BPCHAR -> BOOLEAN assignment (DbSchemaCLI boolean inserts)")
-    lines.append(f"execute {templates.pg_boolean_casts.path.as_posix()}")
-    lines.append("-- Fail-fast: verify varchar/bpchar -> boolean casts exist")
-    lines.append("select 't'::varchar::boolean;")
-    lines.append("select 'f'::bpchar::boolean;")
-    lines.append("")
+
     if cfg.mode == cfg_GenerationMode.REFRESH:
         lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
-        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_orphan_children, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
     _gen_emit_refresh_fk_note(lines, cfg=cfg)
     if cfg.mode == cfg_GenerationMode.REFRESH:
         lines.append("-- Cleanup stale orphan child rows before chunked refresh deletes.")
-        lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_orphan_children, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
-        lines.append(f"execute {templates.delete_cars.path.as_posix()}")
-        lines.append(f"execute {templates.transfer_cars.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.delete_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.transfer_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     def _vset_predicates(target_values: Sequence[str], oracle_values: Sequence[str]) -> None:
@@ -844,13 +831,13 @@ def gen_build_master_script_vset(
         for idx, ch in enumerate(delete_chunks, start=1):
             lines.append(f"-- delete chunk {idx:03d}/{total_del:03d} (target corps={len(ch)})")
             lines.append(f"vset corp_ids_in={','.join(sql_quote_literal(v) for v in ch)}")
-            lines.append(f"execute {templates.delete_chunk.path.as_posix()}")
+            lines.append(f"execute {tmpl_resolve_execute_path(templates.delete_chunk, out_dir=cfg.out_chunks_dir).as_posix()}")
             lines.append("")
 
     if effective_strategy == cfg_OracleInStrategy.OR_OF_IN_LISTS:
         lines.append("-- transfer subset (single pass via OR-of-IN-lists predicate)")
         _vset_predicates(corp_ids, oracle_ids_all)
-        lines.append(f"execute {templates.transfer_chunk.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.transfer_chunk, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
     else:
         lines.append("-- transfer subset (chunked)")
@@ -861,25 +848,25 @@ def gen_build_master_script_vset(
                 f"-- transfer chunk {idx:03d}/{total_tr:03d} (target corps={len(ch)}, oracle corp_num={len(oracle_ids)})"
             )
             _vset_predicates(ch, oracle_ids)
-            lines.append(f"execute {templates.transfer_chunk.path.as_posix()}")
+            lines.append(f"execute {tmpl_resolve_execute_path(templates.transfer_chunk, out_dir=cfg.out_chunks_dir).as_posix()}")
             lines.append("")
 
     lines.append("-- purge BCOMPS-excluded corps (computed in Postgres after load)")
-    lines.append(f"execute {templates.pg_purge_bcomps_excluded.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_purge_bcomps_excluded, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
 
     _gen_emit_pg_disable_end(lines, cfg=cfg, templates=templates)
 
     lines.append("-- Cleanup shared address staging table")
-    lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
     lines.append("-- Release subset-run advisory lock")
-    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
-        lines.append(f"execute {templates.pg_fastload_end.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_end, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     return "\n".join(lines)
@@ -1006,6 +993,7 @@ def cfg_resolve_repo_root() -> Path:
 
 def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
     repo_root = cfg_resolve_repo_root()
+    print(repo_root)
 
     corp_file = Path(args.corp_file).expanduser().resolve()
     if not corp_file.exists():
@@ -1024,12 +1012,15 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
     out_master = (
         Path(args.out).expanduser().resolve()
         if args.out
-        else (repo_root / "data-tool" / "scripts" / "generated" / f"subset_{mode.value}.sql")
+        else (repo_root / "colin-extract-refresh" / "src" / "subset" / "generated" / f"subset_{mode.value}.sql")
     )
     out_master.parent.mkdir(parents=True, exist_ok=True)
 
     # Chunk scripts dir is always derived from master output stem for determinism.
     out_chunks_dir = out_master.parent / f"{out_master.stem}_chunks"
+
+    print(out_master, out_chunks_dir)
+
     if render_mode == cfg_RenderMode.INLINE:
         out_chunks_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1075,7 +1066,6 @@ def run(cfg: cfg_GenerationConfig) -> int:
     # Load/validate templates we depend on (fail fast if template contract changes).
     delete_template_text = tmpl_load_text(templates.delete_chunk)
     transfer_template_text = tmpl_load_text(templates.transfer_chunk)
-    disable_triggers_text = tmpl_schema_text(templates.disable_triggers)
     # Ensure the execute-only templates exist too (even though we don't render them).
     for spec in (
         templates.pg_acquire_advisory_lock,
@@ -1121,7 +1111,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 max_in_list=cfg.chunk_size,
                 include_cp=cfg.include_cp,
                 pg_debug_session_probes=cfg.pg_debug_session_probes,
-                schema=disable_triggers_text,
+                schema=cfg.target_schema,
             )
             transfer_files = combined_files
 
@@ -1139,7 +1129,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
                     max_in_list=cfg.chunk_size,
                     include_cp=cfg.include_cp,
                     pg_debug_session_probes=cfg.pg_debug_session_probes,
-                    schema=disable_triggers_text,
+                    schema=cfg.target_schema,
                 )
 
             oracle_ids_all = corp_to_oracle_ids(target_ids)
@@ -1160,14 +1150,14 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 max_in_list=cfg.chunk_size,
                 include_cp=cfg.include_cp,
                 pg_debug_session_probes=cfg.pg_debug_session_probes,
-                schema=disable_triggers_text
+                schema=cfg.target_schema,
             )
 
-        pg_purge_script_path = templates.pg_purge_bcomps_excluded.path
+        pg_purge_script_path = tmpl_resolve_execute_path(templates.pg_purge_bcomps_excluded, out_dir=cfg.out_chunks_dir)
         if cfg.pg_debug_session_probes:
             pg_purge_script_path = gen_write_pg_debug_copy(
                 out_path=cfg.out_chunks_dir / "pg_purge_bcomps_excluded_debug.sql",
-                source_path=templates.pg_purge_bcomps_excluded.path,
+                source_path=pg_purge_script_path,
                 probe_label="execute:pg_purge_bcomps_excluded",
             )
 
