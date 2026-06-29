@@ -30,7 +30,6 @@ from business_emailer.email_processors import (
     ar_reminder_notification,
     bn_notification,
     cease_receiver_notification,
-    change_of_registration_notification,
     consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
@@ -44,7 +43,6 @@ from business_emailer.email_processors import (
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
-    registration_notification,
     restoration_notification,
     special_resolution_notification,
 )
@@ -239,29 +237,9 @@ def test_dissolution_dispatches(app, session, mocker, mock_send_email):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_registration_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(registration_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "registration", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_restoration_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(restoration_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "restoration", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_change_of_registration_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(change_of_registration_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "changeOfRegistration", "option": COMPLETED}
 
     worker.process_email(_ce({"email": email}))
 
@@ -401,14 +379,22 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
 
 
 # --------------------------------------------------------------------------- #
-# FILING_TYPE_CONVERTER branch                                                #
+# filing_notification branch                                                #
 # --------------------------------------------------------------------------- #
 
-def test_filing_type_converter_dispatches(app, session, mocker, mock_send_email):
-    """An etype in FILING_TYPE_CONVERTER (e.g. 'alteration') that isn't handled
-    earlier routes to filing_notification.process."""
+@pytest.mark.parametrize('filing_type', [
+    "alteration",
+    "annualReport",
+    "changeOfAddress",
+    "changeOfDirectors",
+    "changeOfRegistration",
+    "incorporationApplication",
+    "registration",
+])
+def test_filing_notification_dispatches(app, session, mocker, mock_send_email, filing_type):
+    """Assert that the filing_notification branch works as expected."""
     mock_process = mocker.patch.object(filing_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "alteration", "option": "PAID"}
+    email = {"type": filing_type, "option": "COMPLETED"}
 
     worker.process_email(_ce({"email": email}))
 

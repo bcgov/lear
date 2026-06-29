@@ -17,11 +17,16 @@ import requests_mock
 
 from business_model.models import Business
 
+from unittest.mock import patch
+
 from business_emailer.email_processors import (
     get_account_by_affiliated_identifier,
     get_entity_dashboard_url,
     get_filled_template,
     get_org_id_for_temp_identifier,
+    get_party_emails,
+    get_recipient_from_auth,
+    get_recipients,
     get_subject,
     substitute_template_parts,
 )
@@ -202,3 +207,216 @@ def test_get_subject_numbered_company(app, business_name, legal_type):
     expected_description = Business.BUSINESSES[Business.LegalTypes(legal_type)]['numberedDescription']
     assert subject == f'{expected_description} - Incorporation Application Filed'
 
+
+
+# ---------------------------------------------------------------------------
+# get_party_emails
+# ---------------------------------------------------------------------------
+
+def test_get_party_emails_returns_email_for_matching_role(app):
+    """Assert that get_party_emails returns the officer email for a party with a matching role."""
+    parties = [
+        {
+            'officer': {'email': 'joe@example.com'},
+            'roles': [{'roleType': 'Completing Party'}, {'roleType': 'Proprietor'}]
+        }
+    ]
+    with app.app_context():
+        result = get_party_emails(parties, ['Completing Party', 'Partner', 'Proprietor'])
+    assert result == ['joe@example.com']
+
+
+def test_get_party_emails_break_after_first_match_per_party(app):
+    """Assert that get_party_emails adds only one email per party even when multiple roles match."""
+    parties = [
+        {
+            'officer': {'email': 'joe@example.com'},
+            'roles': [{'roleType': 'Completing Party'}, {'roleType': 'Partner'}]
+        }
+    ]
+    with app.app_context():
+        result = get_party_emails(parties, ['Completing Party', 'Partner'])
+    assert result == ['joe@example.com']
+    assert len(result) == 1
+
+
+def test_get_party_emails_skips_non_matching_role(app):
+    """Assert that get_party_emails returns an empty list when no party role matches."""
+    parties = [
+        {
+            'officer': {'email': 'joe@example.com'},
+            'roles': [{'roleType': 'Director'}]
+        }
+    ]
+    with app.app_context():
+        result = get_party_emails(parties, ['Completing Party', 'Partner', 'Proprietor'])
+    assert result == []
+
+
+def test_get_party_emails_includes_none_when_party_has_no_email(app):
+    """Assert that get_party_emails appends None when a matching party has no email field."""
+    parties = [
+        {
+            'officer': {},
+            'roles': [{'roleType': 'Completing Party'}]
+        }
+    ]
+    with app.app_context():
+        result = get_party_emails(parties, ['Completing Party'])
+    assert result == [None]
+
+
+def test_get_party_emails_multiple_parties_each_contribute_one_email(app):
+    """Assert that get_party_emails collects one email per matching party."""
+    parties = [
+        {
+            'officer': {'email': 'joe@example.com'},
+            'roles': [{'roleType': 'Partner'}]
+        },
+        {
+            'officer': {'email': 'jane@example.com'},
+            'roles': [{'roleType': 'Partner'}]
+        }
+    ]
+    with app.app_context():
+        result = get_party_emails(parties, ['Partner'])
+    assert 'joe@example.com' in result
+    assert 'jane@example.com' in result
+    assert len(result) == 2
+
+
+# ---------------------------------------------------------------------------
+# get_recipients
+# ---------------------------------------------------------------------------
+
+def _make_filing_json(filing_type, header_name=None, contact_email='contact@example.com',
+                      parties=None, business_identifier=None):
+    """Build a minimal filing_json dict for get_recipients tests."""
+    header_name = header_name if header_name is not None else filing_type
+    filing_data = {}
+    if contact_email is not None:
+        filing_data['contactPoint'] = {'email': contact_email}
+    elif contact_email is None:
+        pass  # omit contactPoint entirely
+    if parties is not None:
+        filing_data['parties'] = parties
+    result = {
+        'filing': {
+            'header': {'name': header_name},
+            filing_type: filing_data,
+        }
+    }
+    if business_identifier:
+        result['filing']['business'] = {'identifier': business_identifier}
+    return result
+
+
+def test_get_recipients_returns_contact_point_email(app):
+    """Assert that get_recipients returns the contactPoint email when no parties match."""
+    filing_json = _make_filing_json(
+        'incorporationApplication',
+        parties=[{'officer': {'email': 'other@example.com'}, 'roles': [{'roleType': 'Director'}]}]
+    )
+    with app.app_context():
+        result = get_recipients('PAID', filing_json)
+    assert result == 'contact@example.com'
+
+
+def test_get_recipients_appends_party_emails_when_header_matches(app):
+    """Assert that party emails are appended when header.name matches filing_type."""
+    filing_json = _make_filing_json(
+        'incorporationApplication',
+        parties=[{'officer': {'email': 'comp@example.com'}, 'roles': [{'roleType': 'Completing Party'}]}]
+    )
+    with app.app_context():
+        result = get_recipients('PAID', filing_json)
+    assert 'contact@example.com' in result
+    assert 'comp@example.com' in result
+
+
+def test_get_recipients_mras_option_excludes_party_emails(app):
+    """Assert that party emails are not appended when option is 'mras'."""
+    filing_json = _make_filing_json(
+        'incorporationApplication',
+        parties=[{'officer': {'email': 'comp@example.com'}, 'roles': [{'roleType': 'Completing Party'}]}]
+    )
+    with app.app_context():
+        result = get_recipients('mras', filing_json)
+    assert result == 'contact@example.com'
+    assert 'comp@example.com' not in result
+
+
+def test_get_recipients_header_mismatch_excludes_party_emails(app):
+    """Assert that party emails are not appended when header.name differs from filing_type."""
+    filing_json = _make_filing_json(
+        'incorporationApplication',
+        header_name='someOtherFiling',
+        parties=[{'officer': {'email': 'comp@example.com'}, 'roles': [{'roleType': 'Completing Party'}]}]
+    )
+    with app.app_context():
+        result = get_recipients('PAID', filing_json)
+    assert result == 'contact@example.com'
+    assert 'comp@example.com' not in result
+
+
+def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
+    """Assert that a missing contactPoint email is coalesced to an empty string (not None)."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'incorporationApplication'},
+            'incorporationApplication': {
+                'parties': []
+            }
+        }
+    }
+    with app.app_context():
+        result = get_recipients('PAID', filing_json)
+    # recipients starts as "" when contactPoint is absent; no parties, so stays ""
+    assert result == ''
+
+
+def test_get_recipients_coop_identifier_skips_auth_call(app):
+    """Assert that CP (coop) identifiers return empty string without calling get_recipient_from_auth."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'annualReport'},
+            'business': {'identifier': 'CP1234567'},
+        }
+    }
+    with app.app_context():
+        with patch('business_emailer.email_processors.get_recipient_from_auth') as mock_auth:
+            result = get_recipients('COMPLETED', filing_json, token='token', filing_type='annualReport')
+    assert result == ''
+    mock_auth.assert_not_called()
+
+
+def test_get_recipients_non_coop_identifier_calls_get_recipient_from_auth(app):
+    """Assert that non-coop identifiers call get_recipient_from_auth for the business email."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'annualReport'},
+            'business': {'identifier': 'BC1234567'},
+        }
+    }
+    with app.app_context():
+        with patch('business_emailer.email_processors.get_recipient_from_auth',
+                   return_value='auth@example.com') as mock_auth:
+            result = get_recipients('COMPLETED', filing_json, token='token', filing_type='annualReport')
+    assert result == 'auth@example.com'
+    mock_auth.assert_called_once_with('BC1234567', 'token')
+
+
+def test_get_recipients_uses_incorporationapplication_as_default_filing_type(app):
+    """Assert that filing_type defaults to 'incorporationApplication' when not provided."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'incorporationApplication'},
+            'incorporationApplication': {
+                'contactPoint': {'email': 'default@example.com'},
+                'parties': []
+            }
+        }
+    }
+    with app.app_context():
+        result = get_recipients('PAID', filing_json)
+    assert result == 'default@example.com'

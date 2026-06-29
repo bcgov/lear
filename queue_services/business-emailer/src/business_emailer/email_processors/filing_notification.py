@@ -33,7 +33,7 @@ from business_emailer.email_processors.util import (
     OFFICE_NAME,
     get_legal_type_key,
 )
-from business_model.models import Business, Filing, UserRoles
+from business_model.models import Business, CorpType, Filing, UserRoles
 
 
 def _get_additional_info(filing: Filing) -> dict:
@@ -118,6 +118,9 @@ def process(email_info: dict, token: str) -> dict:
     business_name = business.get("legalName") or NOT_AVAILABLE
     filing_name_short = FILING_TITLE_SHORT.get(filing_type)
     legal_type_key = get_legal_type_key(legal_type)
+    business_description = "Business"
+    if corp_type := CorpType.find_by_id(legal_type):
+        business_description: str = corp_type.full_desc.replace("BC ", "")
 
     business_number = None
     if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
@@ -145,6 +148,7 @@ def process(email_info: dict, token: str) -> dict:
         entity_dashboard_url=dashboard_url,
         filing_type=filing_type,
         attachments_list=attachments_list,
+        business_description=business_description,
         business_name=business_name,
         business_identifier=business_identifier,
         business_number=business_number,
@@ -152,6 +156,7 @@ def process(email_info: dict, token: str) -> dict:
         filing_name_short=filing_name_short,
         future_attachments_list=future_attachments,
         office_name=OFFICE_NAME.get(legal_type_key),
+        number_description="Registration" if legal_type_key == "FIRM" else "Incorporation",
         show_effective_date=show_effective_date,
     )
 

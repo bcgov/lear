@@ -51,7 +51,6 @@ from business_emailer.email_processors import (
     ar_reminder_notification,
     bn_notification,
     cease_receiver_notification,
-    change_of_registration_notification,
     consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_in_notification,
@@ -65,7 +64,6 @@ from business_emailer.email_processors import (
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
-    registration_notification,
     restoration_notification,
     special_resolution_notification,
 )
@@ -241,15 +239,9 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "dissolution":
             email = dissolution_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "registration":
-            email = registration_notification.process(email_msg["email"], token)
-            send_email(email, token)
         elif etype == "restoration":
             email_object = restoration_notification.process(email_msg["email"], token)
             send_email(email_object, token)
-        elif etype == "changeOfRegistration":
-            email = change_of_registration_notification.process(email_msg["email"], token)
-            send_email(email, token)
         elif etype == "correction":
             email = correction_notification.process(email_msg["email"], token)
             send_email(email, token)

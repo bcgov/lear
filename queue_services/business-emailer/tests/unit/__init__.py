@@ -142,7 +142,7 @@ def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None)
     return filing
 
 
-def prep_registration_filing(session, identifier, payment_id, option, legal_type, legal_name):
+def prep_registration_filing(session, identifier, payment_id, option, legal_type, legal_name, parties=None):
     """Return a new registration filing prepped for email notification."""
     now = datetime.now().strftime('%Y-%m-%d')
     REGISTRATION['business']['naics'] = {
@@ -187,7 +187,7 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     if option == 'PAID':
         del filing_template['filing']['business']
     elif option == 'COMPLETED':
-        business = create_business(identifier, legal_type)
+        business = create_business(identifier, legal_type, parties=parties)
         business.founding_date = datetime.fromisoformat(now)
         business.save()
         business_id = business.id
