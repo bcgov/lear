@@ -18,7 +18,7 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from business_model.models import Business
+from business_model.models import Business, CorpType
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from business_emailer.email_processors import filing_notification
@@ -524,7 +524,6 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, submitter_role, firm_parties())
-
     email = process_filing(filing, filing_type, status)
 
     assert email is not None
