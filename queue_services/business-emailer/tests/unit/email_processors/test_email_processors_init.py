@@ -254,7 +254,7 @@ def test_get_party_emails_skips_non_matching_role(app):
 
 
 def test_get_party_emails_includes_none_when_party_has_no_email(app):
-    """Assert that get_party_emails appends None when a matching party has no email field."""
+    """Assert that get_party_emails does not append when a matching party has no email field."""
     parties = [
         {
             'officer': {},
@@ -263,7 +263,7 @@ def test_get_party_emails_includes_none_when_party_has_no_email(app):
     ]
     with app.app_context():
         result = get_party_emails(parties, ['Completing Party'])
-    assert result == [None]
+    assert result == []
 
 
 def test_get_party_emails_multiple_parties_each_contribute_one_email(app):

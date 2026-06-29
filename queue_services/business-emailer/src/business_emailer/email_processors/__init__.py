@@ -53,8 +53,8 @@ def get_party_emails(parties: list[dict], roles: list[str]) -> list[str]:
     recipients = []
     for party in parties:
         for role in party["roles"]:
-            if role["roleType"] in roles:
-                recipients.append(party["officer"].get("email"))
+            if role["roleType"] in roles and (email := party["officer"].get("email")):
+                recipients.append(email)
                 break
 
     return recipients
