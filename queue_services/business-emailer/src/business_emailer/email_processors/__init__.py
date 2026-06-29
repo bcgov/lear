@@ -48,7 +48,7 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
-def get_party_emails(parties: list[dict], roles: list[str]) -> str:
+def get_party_emails(parties: list[dict], roles: list[str]) -> list[str]:
     """Return the emails for the specified party types."""
     recipients = []
     for party in parties:
