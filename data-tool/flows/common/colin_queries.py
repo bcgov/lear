@@ -76,13 +76,15 @@ def get_identifiers_per_batch(mig_batch_id: int) -> str:
     WHERE mcb.mig_batch_id IN ({mig_batch_id})
     """
 
-def unfreeze_identifiers() -> str:
+def unfreeze_identifiers(target_schema: str | None = 'public') -> str:
+    safe_schema = (target_schema or 'public').strip() or 'public'
+    safe_schema = '"' + safe_schema.replace('"', '""') + '"'
     return f"""
-    UPDATE corporation AS c
+    UPDATE {safe_schema}.corporation AS c
     SET corp_frozen_type_cd = NULL
-    FROM mig_group AS mg
-            JOIN mig_batch AS mb ON mb.mig_group_id = mg.id
-            JOIN mig_corp_batch AS mcb ON mcb.mig_batch_id = mb.id
+    FROM {safe_schema}.mig_group AS mg
+            JOIN {safe_schema}.mig_batch AS mb ON mb.mig_group_id = mg.id
+            JOIN {safe_schema}.mig_corp_batch AS mcb ON mcb.mig_batch_id = mb.id
     WHERE c.corp_num = mcb.corp_num
     -- cprd
     and mg.name in ('group_0', 'group_1', 'group_3', 'group_4','gcp_migration_group_test','misc_group')
