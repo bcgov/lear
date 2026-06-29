@@ -66,33 +66,38 @@ Options:
   -h, --help                 show help
 
 Refresh profiles:
-  legacy        refresh mv_corp_event_filing_rollup, mv_admin_email_bad_email_flags,
-                then mv_legacy_corps_data
-                (safe default for legacy-screening data, including rolling two-year counts
-                and bad-email flag updates)
+  legacy        refresh mv_admin_email_count, mv_corp_event_filing_rollup,
+                mv_admin_email_bad_email_flags, then mv_legacy_corps_data
+                (safe default for legacy-screening data, including normalized email-used
+                counts, rolling two-year counts, and bad-email flag updates)
   legacy-direct refresh mv_legacy_corps_data only
-                (advanced/leaf-only path when all upstream sidecars/derived MVs are already current)
-  event-filing  alias of legacy; refresh mv_corp_event_filing_rollup,
-                mv_admin_email_bad_email_flags, then mv_legacy_corps_data
-  share         refresh mv_share_class_issue_flags, plus the event rollup,
-                mv_admin_email_bad_email_flags, then mv_legacy_corps_data
-  address       refresh the shared address entity rollup and the legacy-only
-                address screening chain: mv_addr_issue_counts_by_entity,
-                mv_addr_quality_screening_by_corp, then mv_corp_event_filing_rollup,
-                mv_admin_email_bad_email_flags, then mv_legacy_corps_data
-  address-full  refresh the shared address entity rollup, both address-quality
-                layers, the event rollup, mv_admin_email_bad_email_flags,
-                legacy MV, and corp issue reporting MVs
+                (advanced/leaf-only path when all upstream sidecars/derived MVs are already current and analyzed)
+  event-filing  alias of legacy; refresh mv_admin_email_count,
+                mv_corp_event_filing_rollup, mv_admin_email_bad_email_flags,
+                then mv_legacy_corps_data
+  share         refresh mv_admin_email_count, mv_share_class_issue_flags,
+                mv_corp_event_filing_rollup, mv_admin_email_bad_email_flags,
+                then mv_legacy_corps_data
+  address       refresh mv_admin_email_count, then the shared address entity
+                rollup and legacy-only address screening chain:
+                mv_addr_issue_counts_by_entity, mv_addr_quality_screening_by_corp,
+                mv_corp_event_filing_rollup, mv_admin_email_bad_email_flags,
+                then mv_legacy_corps_data
+  address-full  refresh mv_admin_email_count, the shared address entity rollup,
+                both address-quality layers, the event rollup,
+                mv_admin_email_bad_email_flags, legacy MV, and corp issue reporting MVs
   party         refresh the legacy-only corp_party screening chain plus the
-                shared address entity rollup: mv_corps_with_officers,
-                mv_corps_party_role_count, mv_addr_issue_counts_by_entity,
-                mv_addr_quality_screening_by_corp, then mv_corp_event_filing_rollup,
+                normalized email count and shared address entity rollup:
+                mv_corps_with_officers, mv_corps_party_role_count,
+                mv_admin_email_count, mv_addr_issue_counts_by_entity,
+                mv_addr_quality_screening_by_corp, mv_corp_event_filing_rollup,
                 mv_admin_email_bad_email_flags, then mv_legacy_corps_data
-  party-full    refresh the corp_party chain, shared address entity rollup,
-                both address-quality layers, event rollup, mv_admin_email_bad_email_flags,
-                legacy MV, and corp issue reporting MVs
+  party-full    refresh the corp_party chain, normalized email count, shared
+                address entity rollup, both address-quality layers, event rollup,
+                mv_admin_email_bad_email_flags, legacy MV, and corp issue reporting MVs
   admin-email   refresh mv_admin_email_count, plus the event rollup,
                 mv_admin_email_bad_email_flags, then mv_legacy_corps_data
+                (refreshes the normalized email-used count sidecar before legacy)
   email-domain  refresh mv_admin_email_domain_count only
   corp-issues   refresh mv_addr_issue_counts_by_entity, mv_addr_quality_by_corp,
                 mv_corp_issue_flags, then mv_issue_counts_by_corp_type
@@ -119,9 +124,9 @@ Examples:
     --db colin-mig-corps-test-subset
 
 Notes:
-  - Any safe profile that refreshes `mv_legacy_corps_data` now refreshes the event/filing rollup and `mv_admin_email_bad_email_flags` first, except `legacy-direct`.
-  - `legacy` is the safe/default profile for legacy-screening data, including manual `bad_emails` row edits.
-  - `legacy-direct` is an advanced/leaf-only path that assumes all upstream sidecars/derived MVs, including `mv_admin_email_bad_email_flags`, are already current; otherwise `mv_legacy_corps_data` can be refreshed against stale inputs.
+  - Any safe profile that refreshes `mv_legacy_corps_data` now refreshes `mv_admin_email_count`, the event/filing rollup, and `mv_admin_email_bad_email_flags` first, except `legacy-direct`.
+  - `legacy` is the safe/default profile for legacy-screening data, including normalized email-used count updates and manual `bad_emails` row edits.
+  - `legacy-direct` is an advanced/leaf-only path that assumes all upstream sidecars/derived MVs, including `mv_admin_email_count` and `mv_admin_email_bad_email_flags`, are already current and analyzed; otherwise `mv_legacy_corps_data` can be refreshed against stale inputs.
   - `event-filing` is kept as an explicit alias of `legacy` for event/filing-driven refreshes.
   - Address-driven profiles now refresh `mv_addr_issue_counts_by_entity` first so the slim and full address-quality MVs share the same upstream rollup.
   - `address` / `party` stop at the slim screening MV for legacy-only refreshes.
@@ -264,6 +269,7 @@ expand_target() {
   local target="$1"
   case "$target" in
     legacy|event-filing)
+      append_unique_mv mv_admin_email_count
       append_unique_mv mv_corp_event_filing_rollup
       append_unique_mv mv_admin_email_bad_email_flags
       append_unique_mv mv_legacy_corps_data
@@ -273,6 +279,7 @@ expand_target() {
       ;;
     share)
       append_unique_mv mv_share_class_issue_flags
+      append_unique_mv mv_admin_email_count
       append_unique_mv mv_corp_event_filing_rollup
       append_unique_mv mv_admin_email_bad_email_flags
       append_unique_mv mv_legacy_corps_data
@@ -280,6 +287,7 @@ expand_target() {
     address)
       append_unique_mv mv_addr_issue_counts_by_entity
       append_unique_mv mv_addr_quality_screening_by_corp
+      append_unique_mv mv_admin_email_count
       append_unique_mv mv_corp_event_filing_rollup
       append_unique_mv mv_admin_email_bad_email_flags
       append_unique_mv mv_legacy_corps_data
@@ -288,6 +296,7 @@ expand_target() {
       append_unique_mv mv_addr_issue_counts_by_entity
       append_unique_mv mv_addr_quality_by_corp
       append_unique_mv mv_addr_quality_screening_by_corp
+      append_unique_mv mv_admin_email_count
       append_unique_mv mv_corp_event_filing_rollup
       append_unique_mv mv_admin_email_bad_email_flags
       append_unique_mv mv_legacy_corps_data
@@ -299,6 +308,7 @@ expand_target() {
       append_unique_mv mv_corps_party_role_count
       append_unique_mv mv_addr_issue_counts_by_entity
       append_unique_mv mv_addr_quality_screening_by_corp
+      append_unique_mv mv_admin_email_count
       append_unique_mv mv_corp_event_filing_rollup
       append_unique_mv mv_admin_email_bad_email_flags
       append_unique_mv mv_legacy_corps_data
@@ -309,6 +319,7 @@ expand_target() {
       append_unique_mv mv_addr_issue_counts_by_entity
       append_unique_mv mv_addr_quality_by_corp
       append_unique_mv mv_addr_quality_screening_by_corp
+      append_unique_mv mv_admin_email_count
       append_unique_mv mv_corp_event_filing_rollup
       append_unique_mv mv_admin_email_bad_email_flags
       append_unique_mv mv_legacy_corps_data
@@ -366,14 +377,14 @@ resolve_targets() {
 print_targets() {
   cat <<'TARGETS'
 Available refresh profiles:
-  legacy        -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
-  legacy-direct -> mv_legacy_corps_data only (advanced/leaf-only path; assumes upstream sidecars/MVs are current)
+  legacy        -> mv_admin_email_count -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
+  legacy-direct -> mv_legacy_corps_data only (advanced/leaf-only path; assumes upstream sidecars/MVs are current and analyzed)
   event-filing  -> alias of legacy
-  share         -> mv_share_class_issue_flags -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
-  address       -> mv_addr_issue_counts_by_entity -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
-  address-full  -> mv_addr_issue_counts_by_entity -> mv_addr_quality_by_corp -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data -> mv_corp_issue_flags -> mv_issue_counts_by_corp_type
-  party         -> mv_corps_with_officers -> mv_corps_party_role_count -> mv_addr_issue_counts_by_entity -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
-  party-full    -> mv_corps_with_officers -> mv_corps_party_role_count -> mv_addr_issue_counts_by_entity -> mv_addr_quality_by_corp -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data -> mv_corp_issue_flags -> mv_issue_counts_by_corp_type
+  share         -> mv_admin_email_count -> mv_share_class_issue_flags -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
+  address       -> mv_admin_email_count -> mv_addr_issue_counts_by_entity -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
+  address-full  -> mv_admin_email_count -> mv_addr_issue_counts_by_entity -> mv_addr_quality_by_corp -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data -> mv_corp_issue_flags -> mv_issue_counts_by_corp_type
+  party         -> mv_corps_with_officers -> mv_corps_party_role_count -> mv_admin_email_count -> mv_addr_issue_counts_by_entity -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
+  party-full    -> mv_corps_with_officers -> mv_corps_party_role_count -> mv_admin_email_count -> mv_addr_issue_counts_by_entity -> mv_addr_quality_by_corp -> mv_addr_quality_screening_by_corp -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data -> mv_corp_issue_flags -> mv_issue_counts_by_corp_type
   admin-email   -> mv_admin_email_count -> mv_corp_event_filing_rollup -> mv_admin_email_bad_email_flags -> mv_legacy_corps_data
   email-domain  -> mv_admin_email_domain_count
   corp-issues   -> mv_addr_issue_counts_by_entity -> mv_addr_quality_by_corp -> mv_corp_issue_flags -> mv_issue_counts_by_corp_type
@@ -395,7 +406,7 @@ write_plan() {
       quoted_mv="$(quote_ident "$mv_name")"
       printf 'REFRESH MATERIALIZED VIEW %s.%s;\n' "$quoted_schema" "$quoted_mv"
       if [[ "$SKIP_ANALYZE" != "true" \
-          && "$mv_name" == "mv_admin_email_bad_email_flags" ]] \
+          && ( "$mv_name" == "mv_admin_email_count" || "$mv_name" == "mv_admin_email_bad_email_flags" ) ]] \
           && contains_item "mv_legacy_corps_data" "${selected_mvs[@]}"; then
         printf 'ANALYZE %s.%s;\n' "$quoted_schema" "$quoted_mv"
       fi
@@ -404,7 +415,7 @@ write_plan() {
     if [[ "$SKIP_ANALYZE" != "true" ]]; then
       printf '\n'
       for mv_name in "${selected_mvs[@]}"; do
-        if [[ "$mv_name" == "mv_admin_email_bad_email_flags" ]] \
+        if [[ ( "$mv_name" == "mv_admin_email_count" || "$mv_name" == "mv_admin_email_bad_email_flags" ) ]] \
             && contains_item "mv_legacy_corps_data" "${selected_mvs[@]}"; then
           continue
         fi

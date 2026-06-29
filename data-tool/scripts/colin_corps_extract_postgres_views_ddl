@@ -30,11 +30,17 @@ ALTER MATERIALIZED VIEW mv_corps_party_role_count
 
 
 CREATE MATERIALIZED VIEW mv_admin_email_count AS
-select admin_email, count(*) as email_count
-from corporation
-group by admin_email
+select CAST(lower(btrim(c.admin_email)) AS varchar(254)) AS normalized_admin_email,
+       count(*)                                             AS email_count
+from corporation c
+where c.admin_email IS NOT NULL
+  and btrim(c.admin_email) <> ''
+group by CAST(lower(btrim(c.admin_email)) AS varchar(254))
 WITH NO DATA
 ;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_admin_email_count_normalized_email
+  ON mv_admin_email_count (normalized_admin_email);
 
 ALTER MATERIALIZED VIEW mv_admin_email_count
     owner to postgres;
@@ -1059,7 +1065,8 @@ FROM (
         AND cp.party_typ_cd = 'DIR'
       GROUP BY cp.corp_num
     ) dir_mail_loc ON dir_mail_loc.corp_num = c.corp_num
-    LEFT OUTER JOIN mv_admin_email_count aec ON c.admin_email = aec.admin_email
+    LEFT OUTER JOIN mv_admin_email_count aec
+      ON CAST(lower(btrim(c.admin_email)) AS varchar(254)) = aec.normalized_admin_email
     LEFT OUTER JOIN mv_addr_quality_screening_by_corp mvaqs ON c.corp_num = mvaqs.corp_num
     LEFT OUTER JOIN bar_corps bc ON c.corp_num = bc.identifier
     LEFT OUTER JOIN (
@@ -1525,6 +1532,7 @@ CREATE INDEX IF NOT EXISTS ix_legacy_recog_dts  ON mv_legacy_corps_data (recogni
 REFRESH MATERIALIZED VIEW mv_corps_with_officers;
 REFRESH MATERIALIZED VIEW mv_corps_party_role_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_count;
+ANALYZE mv_admin_email_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_domain_count;
 REFRESH MATERIALIZED VIEW mv_addr_issue_counts_by_entity;
 REFRESH MATERIALIZED VIEW mv_addr_quality_by_corp;
@@ -1539,7 +1547,6 @@ REFRESH MATERIALIZED VIEW mv_issue_counts_by_corp_type;
 
 ANALYZE mv_corps_with_officers;
 ANALYZE mv_corps_party_role_count;
-ANALYZE mv_admin_email_count;
 ANALYZE mv_admin_email_domain_count;
 ANALYZE mv_addr_issue_counts_by_entity;
 ANALYZE mv_addr_quality_by_corp;

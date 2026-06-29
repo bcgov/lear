@@ -170,7 +170,7 @@ pg_restore -l /tmp/colin-no-views-test.tar | grep -E 'VIEW|MATERIALIZED VIEW'
 
 ## Refreshing selected materialized views for data-only changes
 
-Use this when the **derived MV definitions have not changed** and you only need to rebuild the affected materialized views in dependency order.
+Use this when the **derived MV definitions have not changed** and you only need to rebuild the affected materialized views in dependency order. If a materialized-view definition changes, use the reset/recreate workflow instead of refresh-only.
 
 Files:
 - Wrapper: `data-tool/refresh_colin_extract_views.sh`
@@ -195,14 +195,14 @@ Options:
 ```
 
 Refresh profiles:
-- `legacy`: refresh `mv_corp_event_filing_rollup`, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data` (safe/default legacy-screening refresh; keeps rolling time-windowed counts and bad-email flags current)
-- `legacy-direct`: refresh `mv_legacy_corps_data` only (advanced/leaf-only path when all upstream sidecars/derived MVs are already current)
-- `event-filing`: alias of `legacy`; refresh `mv_corp_event_filing_rollup`, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
-- `share`: refresh `mv_share_class_issue_flags`, plus the event/filing rollup, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
-- `address`: refresh `mv_addr_issue_counts_by_entity`, then the legacy-only address screening chain: `mv_addr_quality_screening_by_corp`, then the event/filing rollup, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
-- `address-full`: refresh `mv_addr_issue_counts_by_entity`, both address-quality layers, then the event/filing rollup, `mv_admin_email_bad_email_flags`, legacy MV, and corp issue reporting MVs
-- `party`: refresh the legacy-only `corp_party` screening chain: `mv_corps_with_officers`, `mv_corps_party_role_count`, `mv_addr_issue_counts_by_entity`, `mv_addr_quality_screening_by_corp`, then the event/filing rollup, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
-- `party-full`: refresh the `corp_party` chain, `mv_addr_issue_counts_by_entity`, both address-quality layers, event/filing rollup, `mv_admin_email_bad_email_flags`, legacy MV, and corp issue reporting MVs
+- `legacy`: refresh `mv_admin_email_count`, then `mv_corp_event_filing_rollup`, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data` (safe/default legacy-screening refresh; keeps normalized email-used counts, rolling time-windowed counts, and bad-email flags current)
+- `legacy-direct`: refresh `mv_legacy_corps_data` only (advanced/leaf-only path when all upstream sidecars/derived MVs are already current and analyzed)
+- `event-filing`: alias of `legacy`; refresh `mv_admin_email_count`, then `mv_corp_event_filing_rollup`, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
+- `share`: refresh `mv_admin_email_count`, then `mv_share_class_issue_flags`, the event/filing rollup, `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
+- `address`: refresh `mv_admin_email_count`, then `mv_addr_issue_counts_by_entity`, the legacy-only address screening chain (`mv_addr_quality_screening_by_corp`), the event/filing rollup, `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
+- `address-full`: refresh `mv_admin_email_count`, then `mv_addr_issue_counts_by_entity`, both address-quality layers, the event/filing rollup, `mv_admin_email_bad_email_flags`, legacy MV, and corp issue reporting MVs
+- `party`: refresh the legacy-only `corp_party` screening chain, then normalized email count and address screening chain: `mv_corps_with_officers`, `mv_corps_party_role_count`, `mv_admin_email_count`, `mv_addr_issue_counts_by_entity`, `mv_addr_quality_screening_by_corp`, the event/filing rollup, `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
+- `party-full`: refresh the `corp_party` chain, `mv_admin_email_count`, `mv_addr_issue_counts_by_entity`, both address-quality layers, event/filing rollup, `mv_admin_email_bad_email_flags`, legacy MV, and corp issue reporting MVs
 - `admin-email`: refresh `mv_admin_email_count`, plus the event/filing rollup, then `mv_admin_email_bad_email_flags`, then `mv_legacy_corps_data`
 - `email-domain`: refresh `mv_admin_email_domain_count` only
 - `corp-issues`: refresh `mv_addr_issue_counts_by_entity`, `mv_addr_quality_by_corp`, `mv_corp_issue_flags`, then `mv_issue_counts_by_corp_type`
@@ -232,15 +232,17 @@ Examples:
 ```
 
 Notes:
-- Use `reset_colin_extract_views.sh` only when the view/MV DDL itself has changed.
+- Use `reset_colin_extract_views.sh` when the view/MV DDL itself has changed; refresh-only does not apply changed definitions.
+- `mv_legacy_corps_data.email_used_count` is based on normalized `lower(btrim(admin_email))` values from `mv_admin_email_count`, so case/space variants count as the same admin email.
 - BAR data is static and should no longer be treated as a reason to refresh `mv_legacy_corps_data`.
-- `legacy` is the safe/default profile for legacy-screening data, including refreshes after email exclusion table or `bad_emails` row edits.
-- `legacy-direct` is an advanced/leaf-only path that assumes all upstream sidecars/derived MVs, including `mv_admin_email_bad_email_flags`, are already current; otherwise `mv_legacy_corps_data` can be refreshed against stale inputs and stale bad-email flags.
+- `legacy` is the safe/default profile for legacy-screening data, including refreshes after normalized admin-email count changes, email exclusion table edits, or `bad_emails` row edits.
+- `legacy-direct` is an advanced/leaf-only path that assumes all upstream sidecars/derived MVs, including `mv_admin_email_count` and `mv_admin_email_bad_email_flags`, are already current and analyzed; otherwise `mv_legacy_corps_data` can be refreshed against stale inputs, stale email-used counts, and stale bad-email flags.
 - `event-filing` is kept as an explicit alias of `legacy` for event/filing-driven refreshes.
 - Address-driven profiles now refresh `mv_addr_issue_counts_by_entity` first so the slim and full address-quality MVs share the same upstream aggregation.
 - `address` / `party` stop at the slim screening MV for legacy-only refreshes.
 - `address-full` / `party-full` / `corp-issues` continue through `mv_addr_quality_by_corp` for full-wide address issue reporting.
 - The refresh helper assumes the materialized views already exist and now preflights the selected targets before generating/executing the plan.
+- Roll out normalized email-count definition changes by applying/recreating the derived MV definitions, refreshing/analyzing `mv_admin_email_count` before `mv_legacy_corps_data`, validating count and SAF eligibility deltas, and capturing a new refresh timing baseline.
 
 ---
 
