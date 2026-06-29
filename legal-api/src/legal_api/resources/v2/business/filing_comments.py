@@ -100,6 +100,7 @@ def post_filing_comments(identifier, filing_id):
     try:
         comment = Comment()
         comment.comment = json_input["comment"]["comment"]
+        comment.comment_type = Comment.CommentType.STAFF
         comment.staff_id = user.id
         comment.filing_id = filing_id
         comment.timestamp = datetime.now(UTC)

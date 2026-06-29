@@ -60,6 +60,7 @@ def process(correction_filing: Filing, filing: dict, filing_meta: FilingMeta, bu
         Comment(
             comment=f"This filing was corrected on "
                     f"{correction_filing.filing_date.astimezone(local_timezone).date().isoformat()}.",
+            comment_type=Comment.CommentType.FILING,
             staff_id=correction_filing.submitter_id
         )
     )
@@ -70,6 +71,7 @@ def process(correction_filing: Filing, filing: dict, filing_meta: FilingMeta, bu
     correction_filing.comments.append(
         Comment(
             comment=filing["correction"]["comment"],
+            comment_type=Comment.CommentType.FILING,
             staff_id=correction_filing.submitter_id
         )
     )

@@ -59,10 +59,11 @@ def process(business: Business, amalgamation_out_filing: Filing, filing: dict, f
         "amalgamationOutDate": amalgamation_out_date_str
     }
 
-    # add comment to the filing
+    # add filing comment to the filing
     amalgamation_out_filing.comments.append(
         Comment(
             comment=details,
+            comment_type=Comment.CommentType.FILING,
             staff_id=amalgamation_out_filing.submitter_id
         )
     )

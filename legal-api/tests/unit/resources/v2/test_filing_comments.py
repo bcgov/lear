@@ -23,7 +23,7 @@ from http import HTTPStatus
 from freezegun import freeze_time
 
 from business_common.utils import datetime
-from business_model.models import User
+from business_model.models import Comment, User
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 from tests.unit.models import factory_business, factory_comment, factory_filing
@@ -166,6 +166,9 @@ def test_post_comment(session, client, jwt):
     b = factory_business('CP1111111')
     f = factory_filing(b, ANNUAL_REPORT)
 
+    pre_comments = f.comments.all()
+    assert len(pre_comments) == 0
+    
     json_data = copy.deepcopy(SAMPLE_JSON_DATA)
     json_data['comment']['filingId'] = f.id
 
@@ -174,6 +177,10 @@ def test_post_comment(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE]))
 
     assert HTTPStatus.CREATED == rv.status_code
+    
+    comments = f.comments.all()
+    assert len(comments) == 1
+    assert comments[0].comment_type == Comment.CommentType.STAFF
 
 
 def test_post_comment_missing_filingid_error(session, client, jwt):

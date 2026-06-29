@@ -15,11 +15,9 @@
 import copy
 import random
 
-from datetime import datetime, timezone
-from business_model.models import Business, Filing
-
-from registry_schemas.example_data import AMALGAMATION_OUT, FILING_TEMPLATE
+from business_model.models import Business, Comment, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
+from registry_schemas.example_data import AMALGAMATION_OUT, FILING_TEMPLATE
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import amalgamation_out
@@ -69,3 +67,4 @@ def tests_filer_amalgamation_out(app, session):
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == details
+    assert filing_comments[0].comment_type == Comment.CommentType.FILING
