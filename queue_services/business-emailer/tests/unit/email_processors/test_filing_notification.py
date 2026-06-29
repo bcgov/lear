@@ -61,7 +61,7 @@ def test_incorp_notification_completed(app, session):
     """Assert that IA COMPLETED returns an email with the Successful Incorporation subject."""
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
 
@@ -70,11 +70,10 @@ def test_incorp_notification_completed(app, session):
         assert 'test@test.com' in email['recipients']
         assert email['content']['body']
         assert email['content']['attachments'] == []
-        assert mock_get_pdfs.call_args[0][0] == 'COMPLETED'
-        assert mock_get_pdfs.call_args[0][1] == token
-        assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-        assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
-        assert mock_get_pdfs.call_args[0][3] == filing
+        assert mock_get_pdfs.call_args[0][0] == token
+        assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+        assert mock_get_pdfs.call_args[0][1]['legalType'] == 'BC'
+        assert mock_get_pdfs.call_args[0][2] == filing
 
 
 def test_incorp_notification_paid_non_future_returns_none(app, session):
@@ -82,9 +81,8 @@ def test_incorp_notification_paid_non_future_returns_none(app, session):
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
     make_non_future_effective(filing)
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
-        result = filing_notification.process(
-            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
+    result = filing_notification.process(
+        {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
     assert result is None
 
@@ -94,7 +92,7 @@ def test_incorp_notification_paid_future_effective(app, session):
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
     make_future_effective(filing)
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
@@ -102,9 +100,8 @@ def test_incorp_notification_paid_future_effective(app, session):
     assert 'Incorporation Application Filed' in email['content']['subject']
     assert email['content']['body']
     assert email['content']['attachments'] == []
-    assert mock_get_pdfs.call_args[0][0] == 'PAID'
-    assert mock_get_pdfs.call_args[0][1] == token
-    assert mock_get_pdfs.call_args[0][3] == filing
+    assert mock_get_pdfs.call_args[0][0] == token
+    assert mock_get_pdfs.call_args[0][2] == filing
 
 
 # ---------------------------------------------------------------------------
@@ -123,10 +120,7 @@ def test_numbered_incorp_notification_future_effective(app, session, mocker, leg
     filing = _prep_numbered_incorp_filing(session, 'BC1234567', '1', legal_type)
     make_future_effective(filing)
     token = 'token'
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]):
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
@@ -150,7 +144,7 @@ def test_numbered_incorp_notification_completed(app, session, legal_type):
     """Assert that for a COMPLETED IA the business legalName is used in the subject."""
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', legal_type=legal_type)
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]):
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
 
@@ -164,10 +158,9 @@ def test_numbered_incorp_notification_completed(app, session, legal_type):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
-    ('PAID', 'annualReport', None),
     ('PAID', 'changeOfAddress', None),
-    ('PAID', 'changeOfDirectors', None),
     ('PAID', 'alteration', None),
+    ('COMPLETED', 'annualReport', None),
     ('COMPLETED', 'changeOfAddress', None),
     ('COMPLETED', 'changeOfDirectors', None),
     ('COMPLETED', 'alteration', None),
@@ -177,38 +170,37 @@ def test_maintenance_notification(app, session, mocker, status, filing_type, sub
     """Assert that maintenance filings produce an email with the correct recipients and attachments."""
     # setup filing + business for email
     filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, submitter_role=submitter_role)
+    if status == 'PAID':
+        make_future_effective(filing)
     token = 'token'
     # test processor
     mocker.patch(
         'business_emailer.email_processors.filing_notification.get_user_email_from_auth',
         return_value='user@email.com')
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-                as mock_get_recipients:
-            email = filing_notification.process(
-                {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
+    with patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+        with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
+            with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
+                    as mock_get_recipients:
+                email = filing_notification.process(
+                    {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
 
-            if filing_type == 'alteration':
-                if submitter_role:
-                    assert f'{submitter_role}@email.com' in email['recipients']
-                else:
-                    assert 'user@email.com' in email['recipients']
+                if filing_type == 'alteration':
+                    if submitter_role:
+                        assert f'{submitter_role}@email.com' in email['recipients']
+                    else:
+                        assert 'user@email.com' in email['recipients']
 
-            assert 'test@test.com' in email['recipients']
-            assert email['content']['body']
-            assert email['content']['attachments'] == []
-            assert mock_get_pdfs.call_args[0][0] == status
-            assert mock_get_pdfs.call_args[0][1] == token
-            assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-            assert mock_get_pdfs.call_args[0][2]['legalType'] == Business.LegalTypes.BCOMP.value
-            assert mock_get_pdfs.call_args[0][2]['legalName'] == 'test business'
-            assert mock_get_pdfs.call_args[0][3] == filing
-            assert mock_get_recipients.call_args[0][0] == status
-            assert mock_get_recipients.call_args[0][1] == filing.filing_json
-            assert mock_get_recipients.call_args[0][2] == token
+                assert 'test@test.com' in email['recipients']
+                assert email['content']['body']
+                assert email['content']['attachments'] == []
+                assert mock_get_pdfs.call_args[0][0] == token
+                assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+                assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.BCOMP.value
+                assert mock_get_pdfs.call_args[0][1]['legalName'] == 'test business'
+                assert mock_get_pdfs.call_args[0][2] == filing
+                assert mock_get_recipients.call_args[0][0] == status
+                assert mock_get_recipients.call_args[0][1] == filing.filing_json
+                assert mock_get_recipients.call_args[0][2] == token
 
 
 def test_filing_attachments_ia_paid_future_effective(session, config):
@@ -325,7 +317,7 @@ def test_filing_attachments_ia_completed_coop(session, config):
         )
         m.get(
             f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
-            f'/filings/{filing.id}/documents/memorandum',
+            f'/filings/{filing.id}/documents/certifiedMemorandum',
             content=b'pdf_content_3',
             status_code=200,
         )
@@ -345,8 +337,7 @@ def test_filing_attachments_ia_completed_coop(session, config):
     # New _add_filing_document_pdf replaces " Of " -> " of " (lowercase "of")
     assert 'Certificate of Incorporation.pdf' in file_names
     assert 'Certified Rules.pdf' in file_names
-    # New naming: "Memorandum.pdf" (NOT "Certified Memorandum.pdf")
-    assert 'Memorandum.pdf' in file_names
+    assert 'Certified Memorandum.pdf' in file_names
     assert 'Receipt.pdf' in file_names
 
 
@@ -354,10 +345,9 @@ def test_filing_attachments_change_of_address_paid(session, mocker, config):
     """changeOfAddress PAID: filing PDF + receipt."""
     identifier = 'BC1234567'
     filing = prep_maintenance_filing(session, identifier, '1', 'PAID', 'changeOfAddress')
+    make_future_effective(filing)
     token = 'token'
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
+
     with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
         with requests_mock.Mocker() as m:
             m.get(
@@ -376,21 +366,17 @@ def test_filing_attachments_change_of_address_paid(session, mocker, config):
 
     attachments = output['content']['attachments']
     assert len(attachments) == 2
-    # _add_filing_document_pdf replaces " Of " -> " of " so "changeOfAddress" -> "Change of Address"
-    assert attachments[0]['fileName'] == 'Change of Address.pdf'
+    assert attachments[0]['fileName'] == 'Address Change.pdf'
     assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
     assert attachments[1]['fileName'] == 'Receipt.pdf'
     assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
 
 
-def test_filing_attachments_annual_report_paid(session, mocker, config):
-    """annualReport PAID: filing PDF (prefixed with the AR year) + receipt."""
+def test_filing_attachments_annual_report_completed(session, mocker, config):
+    """annualReport COMPLETED: filing PDF (prefixed with the AR year) + receipt."""
     identifier = 'BC1234567'
-    filing = prep_maintenance_filing(session, identifier, '1', 'PAID', 'annualReport')
+    filing = prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'annualReport')
     token = 'token'
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
         with requests_mock.Mocker() as m:
             m.get(
@@ -405,7 +391,7 @@ def test_filing_attachments_annual_report_paid(session, mocker, config):
                 status_code=201,
             )
             output = filing_notification.process(
-                {'filingId': filing.id, 'type': 'annualReport', 'option': 'PAID'}, token)
+                {'filingId': filing.id, 'type': 'annualReport', 'option': 'COMPLETED'}, token)
 
     attachments = output['content']['attachments']
     # annualReport PAID: filing application PDF + receipt
@@ -428,32 +414,44 @@ def test_filing_attachments_alteration_completed_name_change(session, mocker, co
     mocker.patch(
         'business_emailer.email_processors.filing_notification.get_user_email_from_auth',
         return_value='user@email.com')
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
         with requests_mock.Mocker() as m:
             m.get(
                 f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
-                f'/filings/{filing.id}/documents/noticeOfArticles',
+                f'/filings/{filing.id}/documents/alteration',
                 content=b'pdf_content_1',
                 status_code=200,
             )
             m.get(
                 f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
-                f'/filings/{filing.id}/documents/certificateOfNameChange',
+                f'/filings/{filing.id}/documents/noticeOfArticles',
                 content=b'pdf_content_2',
                 status_code=200,
+            )
+            m.get(
+                f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+                f'/filings/{filing.id}/documents/certificateOfNameChange',
+                content=b'pdf_content_3',
+                status_code=200,
+            )
+            m.post(
+                f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_4',
+                status_code=201,
             )
             output = filing_notification.process(
                 {'filingId': filing.id, 'type': 'alteration', 'option': 'COMPLETED'}, token)
 
     attachments = output['content']['attachments']
-    assert len(attachments) == 2
-    assert attachments[0]['fileName'] == 'Notice of Articles.pdf'
+    assert len(attachments) == 4
+    assert attachments[0]['fileName'] == 'Alteration.pdf'
+    assert attachments[1]['fileName'] == 'Notice of Articles.pdf'
+    assert attachments[2]['fileName'] == 'Certificate of Name Change.pdf'
+    assert attachments[3]['fileName'] == 'Receipt.pdf'
     assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
-    assert attachments[1]['fileName'] == 'Certificate of Name Change.pdf'
     assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
+    assert base64.b64decode(attachments[2]['fileBytes']).decode('utf-8') == 'pdf_content_3'
+    assert base64.b64decode(attachments[3]['fileBytes']).decode('utf-8') == 'pdf_content_4'
 
 
 def test_ia_future_effective_paid_body_contains_tombstone_fields(app, session):
@@ -461,7 +459,7 @@ def test_ia_future_effective_paid_body_contains_tombstone_fields(app, session):
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
     make_future_effective(filing)
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]):
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
@@ -480,7 +478,7 @@ def test_ia_completed_body_and_subject(app, session):
     """Assert that IA COMPLETED body uses non-future template and subject is Successful Incorporation."""
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]):
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
 
@@ -506,7 +504,7 @@ def test_business_number_rendering(app, session, legal_type, tax_id, expected):
     business.save()
 
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]):
         email = filing_notification.process(
             {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'COMPLETED'}, token)
 
@@ -521,75 +519,121 @@ def test_business_number_rendering(app, session, legal_type, tax_id, expected):
         assert '## Business Number' not in body
 
 
-def test_future_attachments_list_in_ia_future_effective_paid_coop(app, session):
+def test_future_attachments_list_in_ia_future_effective_paid_coop(app, session, mocker):
     """Assert that CP future_attachments_list is used for COOP future-effective PAID IA."""
     filing = prep_incorp_filing(session, 'CP1234567', '1', 'PAID', 'CP')
     make_future_effective(filing)
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
-        email = filing_notification.process(
-            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
+    with requests_mock.Mocker() as m:
+            m.get(
+                f'{app.config.get("LEGAL_API_URL")}/businesses/CP1234567'
+                f'/filings/{filing.id}/documents/incorporationApplication',
+                content=b'pdf_content_1',
+                status_code=200,
+            )
+            m.post(
+                f'{app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_2',
+                status_code=201,
+            )
+            email = filing_notification.process(
+                {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
     assert email is not None
-    body = email['content']['body']
-    # CP future attachments include Memorandum and Certified Rules (not Notice of Articles)
-    assert 'Memorandum' in body
-    assert 'Certified Rules' in body
+    attachments = email['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Incorporation Application.pdf'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
 
 
-def test_future_attachments_list_in_ia_future_effective_paid_corp(app, session):
+def test_future_attachments_list_in_ia_future_effective_paid_corp(app, session, mocker):
     """Assert that CORP future_attachments_list is used for non-COOP future-effective PAID IA."""
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
     make_future_effective(filing)
     token = 'token'
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
-        email = filing_notification.process(
-            {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
+    with requests_mock.Mocker() as m:
+            m.get(
+                f'{app.config.get("LEGAL_API_URL")}/businesses/BC1234567'
+                f'/filings/{filing.id}/documents/incorporationApplication',
+                content=b'pdf_content_1',
+                status_code=200,
+            )
+            m.post(
+                f'{app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+                content=b'pdf_content_2',
+                status_code=201,
+            )
+            email = filing_notification.process(
+                {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'PAID'}, token)
 
     assert email is not None
-    body = email['content']['body']
-    # CORP future attachments include Notice of Articles but not Memorandum
-    assert 'Notice of Articles' in body
-    assert 'Memorandum' not in body
+    assert email is not None
+    attachments = email['content']['attachments']
+    assert len(attachments) == 2
+    assert attachments[0]['fileName'] == 'Incorporation Application.pdf'
+    assert attachments[1]['fileName'] == 'Receipt.pdf'
+    assert base64.b64decode(attachments[0]['fileBytes']).decode('utf-8') == 'pdf_content_1'
+    assert base64.b64decode(attachments[1]['fileBytes']).decode('utf-8') == 'pdf_content_2'
 
 
-@pytest.mark.parametrize(['filing_type', 'body_snippets', 'subject'], [
+@pytest.mark.parametrize(['filing_type', 'status', 'expected_header', 'expected_subject'], [
     (
-        'annualReport',
-        ['Confirmation of Annual Report from the Business Registry',
-         'You have successfully filed your 2018 Annual Report with the BC Business Registry.',
-         '2018 Annual Report'],
-        'test business - Confirmation of Annual Report',
-    ),
-    (
-        'changeOfDirectors',
-        ['Confirmation of Director Change from the Business Registry',
-         'You have successfully filed your Director Change with the BC Business Registry.'],
-        'test business - Confirmation of Director Change',
+        'alteration',
+        'PAID',
+        'Your alteration has been filed',
+        'test business - Alteration Filed',
     ),
     (
         'changeOfAddress',
-        ['Confirmation of Address Change from the Business Registry',
-         'You have successfully filed your Address Change with the BC Business Registry.'],
-        'test business - Confirmation of Address Change',
+        'PAID',
+        'Your address change has been filed',
+        'test business - Address Change Filed',
+    ),
+    (
+        'alteration',
+        'COMPLETED',
+        'You have successfully completed your alteration with the BC Business Registry',
+        'test business - Successful Alteration',
+    ),
+    (
+        'annualReport',
+        'COMPLETED',
+        'You have successfully completed your 2018 annual report with the BC Business Registry',
+        'test business - Successful Annual Report',
+    ),
+    (
+        'changeOfAddress',
+        'COMPLETED',
+        'You have successfully completed your address change with the BC Business Registry',
+        'test business - Successful Address Change',
+    ),
+    (
+        'changeOfDirectors',
+        'COMPLETED',
+        'You have successfully completed your director change with the BC Business Registry',
+        'test business - Successful Director Change',
     ),
 ])
-def test_maintenance_filing_renders_body_and_subject(app, session, mocker, filing_type, body_snippets, subject):
-    """Assert AR, director change and address change PAID emails render the expected body and subject."""
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', 'PAID', filing_type)
+def test_maintenance_filing_fe_renders_body_and_subject(app, session, mocker, filing_type, status, expected_header, expected_subject):
+    """Assert alteration andaddress change future effective emails render the expected body and subject."""
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+    if status == 'PAID':
+        make_future_effective(filing)
+    filing.save()
     token = 'token'
     mocker.patch(
         'business_emailer.email_processors.filing_notification.get_user_email_from_auth',
         return_value='user@email.com')
-    with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+    with patch.object(filing_notification, 'get_pdfs', return_value=[]):
         with patch.object(filing_notification, 'get_recipients', return_value='test@test.com'):
             email = filing_notification.process(
-                {'filingId': filing.id, 'type': filing_type, 'option': 'PAID'}, token)
+                {'filingId': filing.id, 'type': filing_type, 'option': status}, token)
 
     assert email is not None
     body = email['content']['body']
-    for snippet in body_snippets:
-        assert snippet in body
+    assert expected_header in body
     assert not ".html]]" in body
     assert not ".md]]" in body
-    assert email['content']['subject'] == subject
+    assert email['content']['subject'] == expected_subject

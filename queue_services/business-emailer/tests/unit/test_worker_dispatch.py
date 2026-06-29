@@ -416,19 +416,8 @@ def test_filing_type_converter_dispatches(app, session, mocker, mock_send_email)
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_filing_type_converter_annual_report_completed_is_skipped(app, session, mocker, mock_send_email):
-    """annualReport + COMPLETED short-circuits before filing_notification is called."""
-    mock_process = mocker.patch.object(filing_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "annualReport", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_not_called()
-    mock_send_email.assert_not_called()
-
-
-def test_filing_type_converter_coops_none_return_is_skipped(app, session, mocker, mock_send_email):
-    """When filing_notification.process returns None (coops filing), send_email is skipped."""
+def test_filing_notification_none_return_is_skipped(app, session, mocker, mock_send_email):
+    """When filing_notification.process returns None, send_email is skipped."""
     mocker.patch.object(filing_notification, "process", return_value=None)
     email = {"type": "alteration", "option": "PAID"}
 
