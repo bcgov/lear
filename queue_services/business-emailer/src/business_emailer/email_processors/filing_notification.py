@@ -48,18 +48,14 @@ def _get_additional_info(filing: Filing) -> dict:
 
 def _get_additional_recipients(filing: Filing, token: str) -> str:
     """Get additional recipients for a filing type."""
-    recipients = None
     submitter_recipient_filings = ["alteration", "changeOfRegistration", "dissolution", "specialResolution"]
     if filing.filing_type in submitter_recipient_filings:
         optional_email = filing.filing_json["filing"]["header"].get("documentOptionalEmail")
         if filing.submitter_roles and UserRoles.staff in filing.submitter_roles and optional_email:
             # when staff do filing documentOptionalEmail may contain completing party email
-            recipients = f"{recipients}, {optional_email}"
+            return optional_email
         else:
-            user_email = get_user_email_from_auth(filing.filing_submitter.username, token)
-            recipients = f"{recipients}, {user_email}"
-
-    return recipients
+            return get_user_email_from_auth(filing.filing_submitter.username, token)
 
 
 def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: Filing, legal_type_key: str) -> tuple[list[str], list[str]]:
