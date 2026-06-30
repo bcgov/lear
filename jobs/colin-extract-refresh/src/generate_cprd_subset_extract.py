@@ -673,7 +673,7 @@ def gen_build_master_script_inline(
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_acquire_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
-    lines.append(f"execute {templates.pg_prepare_address_stage.path.as_posix()}")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_prepare_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
     lines.append(f"SET search_path TO {cfg.target_schema};")

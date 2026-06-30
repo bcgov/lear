@@ -114,6 +114,10 @@ WHERE corp_num IN (&corp_ids_in);
 DELETE FROM TARGET_SCHEMA.event
 WHERE corp_num IN (&corp_ids_in);
 
+
+DELETE FROM TARGET_SCHEMA.auth_processing
+WHERE corp_num IN (&corp_ids_in); 
+
 -- Delete the corp rows last.
 DELETE FROM TARGET_SCHEMA.corporation
 WHERE corp_num IN (&corp_ids_in);
