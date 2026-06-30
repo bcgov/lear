@@ -48,27 +48,42 @@ def get_filing_info(filing_id: str) -> tuple[Filing, dict, dict, str, str]:
     return filing, business_json, leg_tmz_filing_date, leg_tmz_effective_date
 
 
+def get_party_emails(parties: list[dict], roles: list[str]) -> list[str]:
+    """Return the emails for the specified party types."""
+    recipients = []
+    for party in parties:
+        for role in party["roles"]:
+            if role["roleType"] in roles and (email := party["officer"].get("email")):
+                recipients.append(email)
+                break
+
+    return recipients
+
+
 def get_recipients(option: str, filing_json: dict, token: str | None = None, filing_type: str | None = None) -> str:
     """Get the recipients for the email output."""
     recipients = ""
-    filing_type = filing_type if filing_type else "incorporationApplication"
-    if filing_json["filing"].get(filing_type):
-        recipients = filing_json["filing"][filing_type].get("contactPoint", {}).get("email", "")
-        if option in [Filing.Status.PAID.value, "bn"] and \
-            filing_json["filing"]["header"]["name"] == filing_type:
-            parties = filing_json["filing"][filing_type].get("parties")
-            comp_party_email = None
-            for party in parties:
-                for role in party["roles"]:
-                    if role["roleType"] == "Completing Party" and \
-                        (comp_party_email := party["officer"].get("email")):
-                        recipients = f"{recipients}, {comp_party_email}"
-                        break
-    else:
-        identifier = filing_json["filing"]["business"]["identifier"]
-        if identifier[:2] != "CP":
-            # only add recipients if not coop
-            recipients = get_recipient_from_auth(identifier, token)
+    identifier = filing_json["filing"]["business"]["identifier"]
+    is_coop = identifier.startswith("CP")
+
+    if filing_type and (filing_data := filing_json["filing"].get(filing_type)):
+        # add filing contact point email
+        recipients = filing_data.get("contactPoint", {}).get("email", "") or ""
+
+        # add relevant party emails
+        # FUTURE: after amalg and continuation have completing party removed 'temp_logic' can be removed
+        temp_logic = filing_type in ["amalgamationApplication", "continuationIn"] and option in ["PAID", "bn"]
+        is_coop_incorp_paid = is_coop and filing_type == "incorporationApplication" and option == "PAID"
+        is_valid_filing = filing_type in ["changeOfRegistration", "registration", "correction", "dissolution"]
+        if ((temp_logic or is_coop_incorp_paid or is_valid_filing)
+            and (parties := filing_data.get("parties"))
+            and (party_emails := get_party_emails(parties, ["Completing Party", "Custodian", "Partner", "Proprietor"]))
+        ):
+            recipients = f"{recipients}, {', '.join(party_emails)}"
+
+    elif not is_coop:
+        # only add business email recipient for non-coop
+        recipients = get_recipient_from_auth(identifier, token)
 
     return recipients
 
@@ -298,6 +313,8 @@ def _add_filing_document_pdf(  # noqa: PLR0913
         file_name = "Address Change"
     elif document_type == "changeOfDirectors":
         file_name = "Director Change"
+    elif document_type == "registration":
+        file_name = "Statement of Registration"
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token)

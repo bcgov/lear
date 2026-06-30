@@ -1,5 +1,5 @@
 **Business Name:** {{ business_name }}
-**Incorporation Number:** {{ business_identifier }}
+**{{number_description}} Number:** {{ business_identifier }}
 {% if business_number -%}
 **Business Number:** {{ business_number }}
 {% endif -%}

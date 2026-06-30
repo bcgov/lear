@@ -33,7 +33,7 @@ from business_emailer.email_processors.util import (
     OFFICE_NAME,
     get_legal_type_key,
 )
-from business_model.models import Business, Filing, UserRoles
+from business_model.models import Business, CorpType, Filing, UserRoles
 
 
 def _get_additional_info(filing: Filing) -> dict:
@@ -78,7 +78,7 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     return attachments, extra_pdf_types
 
 
-def process(email_info: dict, token: str) -> dict:
+def process(email_info: dict, token: str) -> dict | None:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
     filing_type, status = email_info["type"], email_info["option"]
@@ -92,7 +92,8 @@ def process(email_info: dict, token: str) -> dict:
     new_business_filings = ["amalgamationApplication", "continuationIn", "incorporationApplication", "registration"]
     filing_data = filing.json.get("filing", {}).get(filing_type, {})
     if filing_type in new_business_filings and not business:
-        # For new business filings, the business record is not created yet. So we get the business info from the nameRequest.
+        # For new business filings, the nameRequest contains relevant business details.
+        # We overwrite the business info from the nameRequest and then set the identifier back to the temp reg id.
         name_request = filing_data.get("nameRequest")
         business = name_request
         business["identifier"] = filing.temp_reg
@@ -103,6 +104,7 @@ def process(email_info: dict, token: str) -> dict:
     if not legal_type or not filing_name or not business_identifier:
         # Should never happen - log and return. It will be skipped.
         current_app.logger.error("Missing legal_type, identifier and/or filing_name. Email: %s", email_info)
+        return
     
     skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
     if legal_type == Business.LegalTypes.COOP.value and filing_type in skipped_coop_filing_types:
@@ -118,6 +120,9 @@ def process(email_info: dict, token: str) -> dict:
     business_name = business.get("legalName") or NOT_AVAILABLE
     filing_name_short = FILING_TITLE_SHORT.get(filing_type)
     legal_type_key = get_legal_type_key(legal_type)
+    business_description = "Business"
+    if corp_type := CorpType.find_by_id(legal_type):
+        business_description: str = corp_type.full_desc.replace("BC ", "")
 
     business_number = None
     if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
@@ -145,6 +150,7 @@ def process(email_info: dict, token: str) -> dict:
         entity_dashboard_url=dashboard_url,
         filing_type=filing_type,
         attachments_list=attachments_list,
+        business_description=business_description,
         business_name=business_name,
         business_identifier=business_identifier,
         business_number=business_number,
@@ -152,11 +158,17 @@ def process(email_info: dict, token: str) -> dict:
         filing_name_short=filing_name_short,
         future_attachments_list=future_attachments,
         office_name=OFFICE_NAME.get(legal_type_key),
+        number_description="Registration" if legal_type_key == "FIRM" else "Incorporation",
         show_effective_date=show_effective_date,
     )
 
     # get recipients
-    recipients = get_recipients(status, filing.filing_json, token)
+    recipient_filing_type = None
+    if filing_type in ["incorporationApplication", "registration", "changeOfRegistration"]:
+        recipient_filing_type = filing_type
+
+    recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)
+
     if additional_recipients := _get_additional_recipients(filing, token):
         recipients = f"{recipients}, {additional_recipients}"
 
