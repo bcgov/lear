@@ -18,7 +18,7 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from business_model.models import Business, CorpType
+from business_model.models import Business
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from business_emailer.email_processors import filing_notification

@@ -21,7 +21,6 @@ from business_emailer.email_processors import (
     get_filing_info,
     get_filled_template,
     get_pdfs,
-    get_recipient_from_auth,
     get_recipients,
     get_subject,
     get_user_email_from_auth,
