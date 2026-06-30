@@ -348,8 +348,7 @@ def test_process_bn_email(app, session):
                 )
             )
             # check email values
-            assert 'comp_party@email.com' in mock_send_email.call_args[0][0]['recipients']
-            assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+            assert 'test@test.com' == mock_send_email.call_args[0][0]['recipients']
             assert mock_send_email.call_args[0][0]['content']['subject'] == \
                    f'{business.legal_name} - Business Number Information'
             assert mock_send_email.call_args[0][0]['content']['body']

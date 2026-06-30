@@ -21,6 +21,7 @@ from business_emailer.email_processors import (
     get_filing_info,
     get_filled_template,
     get_pdfs,
+    get_recipient_from_auth,
     get_recipients,
     get_subject,
     get_user_email_from_auth,
@@ -161,7 +162,12 @@ def process(email_info: dict, token: str) -> dict:
     )
 
     # get recipients
-    recipients = get_recipients(status, filing.filing_json, token)
+    recipient_filing_type = None
+    if filing_type in ["incorporationApplication", "registration", "changeOfRegistration"]:
+        recipient_filing_type = filing_type
+
+    recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)
+
     if additional_recipients := _get_additional_recipients(filing, token):
         recipients = f"{recipients}, {additional_recipients}"
 

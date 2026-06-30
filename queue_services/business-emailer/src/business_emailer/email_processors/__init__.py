@@ -63,22 +63,27 @@ def get_party_emails(parties: list[dict], roles: list[str]) -> list[str]:
 def get_recipients(option: str, filing_json: dict, token: str | None = None, filing_type: str | None = None) -> str:
     """Get the recipients for the email output."""
     recipients = ""
-    filing_type = filing_type if filing_type else "incorporationApplication"
-    if filing_json["filing"].get(filing_type):
+    identifier = filing_json["filing"]["business"]["identifier"]
+    is_coop = identifier[:2] == "CP"
+
+    if filing_type and (filing_data := filing_json["filing"].get(filing_type)):
         # add filing contact point email
-        recipients = filing_json["filing"][filing_type].get("contactPoint", {}).get("email", "") or ""
+        recipients = filing_data.get("contactPoint", {}).get("email", "") or ""
+
         # add relevant party emails
-        if (option != "mras"
-            and filing_json["filing"]["header"]["name"] == filing_type
-            and (parties := filing_json["filing"][filing_type].get("parties"))
-            and (party_emails := get_party_emails(parties, ["Completing Party", "Partner", "Proprietor"]))
+        # FUTURE: after amalg and continuation have completing party removed 'temp_logic' can be removed
+        temp_logic = filing_type in ["amalgamationApplication", "continuationIn"] and option in ["PAID", "bn"]
+        is_coop_incorp_paid = is_coop and filing_type == "incorporationApplication" and option == "PAID"
+        is_valid_filing = filing_type in ["changeOfRegistration", "registration", "correction", "dissolution"]
+        if ((temp_logic or is_coop_incorp_paid or is_valid_filing)
+            and (parties := filing_data.get("parties"))
+            and (party_emails := get_party_emails(parties, ["Completing Party", "Custodian", "Partner", "Proprietor"]))
         ):
             recipients = f"{recipients}, {', '.join(party_emails)}"
-    else:
-        identifier = filing_json["filing"]["business"]["identifier"]
-        if identifier[:2] != "CP":
-            # only add business email recipient for non-coop
-            recipients = get_recipient_from_auth(identifier, token)
+
+    elif not is_coop:
+        # only add business email recipient for non-coop
+        recipients = get_recipient_from_auth(identifier, token)
 
     return recipients
 

@@ -514,7 +514,7 @@ def test_maintenance_filing_fe_renders_body_and_subject(app, session, filing_typ
     ('COMPLETED', 'changeOfRegistration', Business.LegalTypes.PARTNERSHIP.value, None),
 ])
 def test_firm_filing_via_filing_notification(app, session, status, filing_type, legal_type, submitter_role,
-                                             mock_pdfs, mock_recipients, mock_user_email):
+                                             mock_pdfs, mock_user_email):
     """Assert that FIRM registration and changeOfRegistration produce correct emails via filing_notification."""
     legal_name = 'test business'
     if filing_type == 'registration':
@@ -522,7 +522,7 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, submitter_role, firm_parties())
-    token = 'token'
+
     email = process_filing(filing, filing_type, status)
 
     assert email is not None
@@ -535,18 +535,25 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     assert '[[' not in body
     assert ']]' not in body
     assert '## Attachments' in body
+    assert mock_pdfs.call_args[0][1]['identifier'] == 'FM1234567'
+    assert mock_pdfs.call_args[0][2] == filing
+    assert 'contact@point.com' in email['recipients']
+    assert 'party1@email.com' in email['recipients']
+    
     if filing_type == 'registration':
         assert '## About these documents' in body
         assert '## Business Number' in body
-    assert mock_pdfs.call_args[0][1]['identifier'] == 'FM1234567'
-    assert mock_pdfs.call_args[0][2] == filing
-    assert mock_recipients.call_args[0][0] == status
-    assert mock_recipients.call_args[0][2] == token
-    assert 'test@test.com' in email['recipients']
-    if filing_type == 'changeOfRegistration':
+        assert not mock_user_email.called
+        assert not f'{submitter_role}@email.com' in email['recipients']
+        assert not 'user@email.com' in email['recipients']
+        if legal_type == Business.LegalTypes.PARTNERSHIP.value:
+            assert 'party2@email.com' in email['recipients']
+
+    else:
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
         else:
+            assert mock_user_email.called
             assert 'user@email.com' in email['recipients']
 
 
