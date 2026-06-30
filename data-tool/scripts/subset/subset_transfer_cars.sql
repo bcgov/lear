@@ -4,14 +4,14 @@
 -- These tables are NOT corp-scoped. The full dataset is transferred without filtering.
 -- Volume is low enough that a full refresh is appropriate.
 
-transfer public.carsfile from cprd using
+transfer TARGET_SCHEMA.carsfile from cprd using
 select
     documtid,
     filedate,
     regiracf
 from carsfile;
 
-transfer public.carsbox from cprd using
+transfer TARGET_SCHEMA.carsbox from cprd using
 select
     documtid,
     accesnum,
@@ -19,14 +19,14 @@ select
     boxrracf
 from carsbox;
 
-transfer public.carsrept from cprd using
+transfer TARGET_SCHEMA.carsrept from cprd using
 select
     documtid,
     docutype,
     compnumb
 from carsrept;
 
-transfer public.carindiv from cprd using
+transfer TARGET_SCHEMA.carindiv from cprd using
 select
     documtid,
     replace(surname, CHR(0), '') as surname,

@@ -23,33 +23,33 @@
 -- DbSchemaCLI splits statements on semicolons and does not reliably handle semicolons inside dollar-quoted
 -- bodies. Keep dollar-quoted bodies free of internal semicolons and avoid DO $$ blocks.
 
-CREATE OR REPLACE FUNCTION public.dbcli_varchar_to_boolean(val varchar)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-STRICT
-AS $$
-    SELECT (val::text)::boolean
-$$;
+-- CREATE OR REPLACE FUNCTION public.dbcli_varchar_to_boolean(val varchar)
+-- RETURNS boolean
+-- LANGUAGE sql
+-- IMMUTABLE
+-- STRICT
+-- AS $$
+--     SELECT (val::text)::boolean
+-- $$;
 
-CREATE OR REPLACE FUNCTION public.dbcli_bpchar_to_boolean(val bpchar)
-RETURNS boolean
-LANGUAGE sql
-IMMUTABLE
-STRICT
-AS $$
-    SELECT (val::text)::boolean
-$$;
+-- CREATE OR REPLACE FUNCTION public.dbcli_bpchar_to_boolean(val bpchar)
+-- RETURNS boolean
+-- LANGUAGE sql
+-- IMMUTABLE
+-- STRICT
+-- AS $$
+--     SELECT (val::text)::boolean
+-- $$;
 
--- Recreate casts in an idempotent way (Postgres has no CREATE CAST IF NOT EXISTS).
-DROP CAST IF EXISTS (varchar AS boolean);
-CREATE CAST (varchar AS boolean)
-    WITH FUNCTION public.dbcli_varchar_to_boolean(varchar)
-    AS IMPLICIT -- DbSchemaCLI workaround: avoid keyword being last token
-;
+-- -- Recreate casts in an idempotent way (Postgres has no CREATE CAST IF NOT EXISTS).
+-- DROP CAST IF EXISTS (varchar AS boolean);
+-- CREATE CAST (varchar AS boolean)
+--     WITH FUNCTION public.dbcli_varchar_to_boolean(varchar)
+--     AS IMPLICIT -- DbSchemaCLI workaround: avoid keyword being last token
+-- ;
 
-DROP CAST IF EXISTS (bpchar AS boolean);
-CREATE CAST (bpchar AS boolean)
-    WITH FUNCTION public.dbcli_bpchar_to_boolean(bpchar)
-    AS IMPLICIT -- DbSchemaCLI workaround: avoid keyword being last token
-;
+-- DROP CAST IF EXISTS (bpchar AS boolean);
+-- CREATE CAST (bpchar AS boolean)
+--     WITH FUNCTION public.dbcli_bpchar_to_boolean(bpchar)
+--     AS IMPLICIT -- DbSchemaCLI workaround: avoid keyword being last token
+-- ;
