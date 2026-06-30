@@ -25,11 +25,12 @@ from business_emailer.email_processors import (
     get_filled_template,
     get_org_id_for_temp_identifier,
     get_party_emails,
-    get_recipient_from_auth,
     get_recipients,
     get_subject,
     substitute_template_parts,
 )
+
+from tests.unit import CONTACT_POINT
 
 
 @pytest.fixture
@@ -289,13 +290,11 @@ def test_get_party_emails_multiple_parties_each_contribute_one_email(app):
 # get_recipients
 # ---------------------------------------------------------------------------
 
-def _make_filing_json(filing_type, contact_email='contact@point.com', parties=None, identifier='BC1234567'):
+def _make_filing_json(filing_type, contact_email=CONTACT_POINT, parties=None, identifier='BC1234567'):
     """Build a minimal filing_json dict for get_recipients tests."""
     filing_data = {}
     if contact_email is not None:
         filing_data['contactPoint'] = {'email': contact_email}
-    elif contact_email is None:
-        pass  # omit contactPoint entirely
     if parties is not None:
         filing_data['parties'] = parties
     result = {
@@ -316,7 +315,7 @@ def test_get_recipients_returns_contact_point_email(app):
     )
     with app.app_context():
         result = get_recipients('PAID', filing_json, None, 'incorporationApplication')
-    assert result == 'contact@point.com'
+    assert result == CONTACT_POINT
 
 
 @pytest.mark.parametrize('filing_type', [
@@ -332,7 +331,7 @@ def test_get_recipients_mras_option_excludes_party_emails(app, filing_type):
     )
     with app.app_context():
         result = get_recipients('mras', filing_json, None, filing_type)
-    assert result == 'contact@point.com'
+    assert result == CONTACT_POINT
     assert 'comp@example.com' not in result
 
 

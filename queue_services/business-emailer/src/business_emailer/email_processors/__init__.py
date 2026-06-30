@@ -64,7 +64,7 @@ def get_recipients(option: str, filing_json: dict, token: str | None = None, fil
     """Get the recipients for the email output."""
     recipients = ""
     identifier = filing_json["filing"]["business"]["identifier"]
-    is_coop = identifier[:2] == "CP"
+    is_coop = identifier.startswith("CP")
 
     if filing_type and (filing_data := filing_json["filing"].get(filing_type)):
         # add filing contact point email

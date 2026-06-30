@@ -18,12 +18,13 @@ from unittest.mock import patch
 
 import pytest
 import requests_mock
-from business_model.models import Business, CorpType
+from business_model.models import Business
 from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from business_emailer.email_processors import filing_notification
-from tests.unit import (create_filing, prep_change_of_registration_filing, prep_incorp_filing,
-                         prep_maintenance_filing, prep_registration_filing)
+from tests.unit import (CONTACT_POINT, PARTY_EMAIL_1, PARTY_EMAIL_2,
+                        create_filing, prep_change_of_registration_filing, prep_incorp_filing,
+                        prep_maintenance_filing, prep_registration_filing)
 from tests.unit.helpers import generate_temp_filing, make_future_effective, make_non_future_effective
 
 
@@ -537,17 +538,17 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     assert '## Attachments' in body
     assert mock_pdfs.call_args[0][1]['identifier'] == 'FM1234567'
     assert mock_pdfs.call_args[0][2] == filing
-    assert 'contact@point.com' in email['recipients']
-    assert 'party1@email.com' in email['recipients']
+    assert CONTACT_POINT in email['recipients']
+    assert PARTY_EMAIL_1 in email['recipients']
     
     if filing_type == 'registration':
         assert '## About these documents' in body
         assert '## Business Number' in body
         assert not mock_user_email.called
-        assert not f'{submitter_role}@email.com' in email['recipients']
-        assert not 'user@email.com' in email['recipients']
+        assert f'{submitter_role}@email.com' not in email['recipients']
+        assert 'user@email.com' not in email['recipients']
         if legal_type == Business.LegalTypes.PARTNERSHIP.value:
-            assert 'party2@email.com' in email['recipients']
+            assert PARTY_EMAIL_2 in email['recipients']
 
     else:
         if submitter_role:

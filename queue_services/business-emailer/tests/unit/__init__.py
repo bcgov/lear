@@ -63,7 +63,10 @@ FILING_TYPE_MAPPER = {
     'alteration': ALTERATION
 }
 
+CONTACT_POINT = 'contact@point.com'
 LEGAL_NAME = 'test business'
+PARTY_EMAIL_1 = 'party1@email.com'
+PARTY_EMAIL_2 = 'party2@email.com'
 
 
 def create_user(user_name: str):
@@ -155,17 +158,17 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     gp_registration['filing']['registration'] = copy.deepcopy(REGISTRATION)
     gp_registration['filing']['registration']['startDate'] = now
     gp_registration['filing']['registration']['nameRequest']['legalName'] = legal_name
-    gp_registration['filing']['registration']['parties'][0]['officer']['email'] = 'party1@email.com'
-    gp_registration['filing']['registration']['parties'][1]['officer']['email'] = 'party2@email.com'
-    gp_registration['filing']['registration']['contactPoint']['email'] = 'contact@point.com'
+    gp_registration['filing']['registration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
+    gp_registration['filing']['registration']['parties'][1]['officer']['email'] = PARTY_EMAIL_2
+    gp_registration['filing']['registration']['contactPoint']['email'] = CONTACT_POINT
 
     sp_registration = copy.deepcopy(FILING_HEADER)
     sp_registration['filing']['header']['name'] = 'registration'
     sp_registration['filing']['registration'] = copy.deepcopy(REGISTRATION)
     sp_registration['filing']['registration']['startDate'] = now
-    sp_registration['filing']['registration']['parties'][0]['officer']['email'] = 'party1@email.com'
+    sp_registration['filing']['registration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
     sp_registration['filing']['registration']['businessType'] = 'SP'
-    sp_registration['filing']['registration']['contactPoint']['email'] = 'contact@point.com'
+    sp_registration['filing']['registration']['contactPoint']['email'] = CONTACT_POINT
     sp_registration['filing']['registration']['parties'][0]['roles'] = [
         {
             'roleType': 'Completing Party',
@@ -428,8 +431,8 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
     gp_change_of_registration = copy.deepcopy(FILING_HEADER)
     gp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
     gp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
-    gp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party1@email.com'
-    gp_change_of_registration['filing']['changeOfRegistration']['contactPoint']['email'] = 'contact@point.com'
+    gp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
+    gp_change_of_registration['filing']['changeOfRegistration']['contactPoint']['email'] = CONTACT_POINT
 
     sp_change_of_registration = copy.deepcopy(FILING_HEADER)
     sp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
@@ -446,8 +449,8 @@ def prep_change_of_registration_filing(session, identifier, payment_id, legal_ty
 
         }
     ]
-    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = 'party1@email.com'
-    sp_change_of_registration['filing']['changeOfRegistration']['contactPoint']['email'] = 'contact@point.com'
+    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
+    sp_change_of_registration['filing']['changeOfRegistration']['contactPoint']['email'] = CONTACT_POINT
 
     if legal_type == Business.LegalTypes.SOLE_PROP.value:
         filing_template = sp_change_of_registration
