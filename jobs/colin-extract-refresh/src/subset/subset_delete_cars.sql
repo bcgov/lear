@@ -3,7 +3,7 @@
 --
 -- These tables are NOT corp-scoped, so we truncate the entire dataset and reload from Oracle.
 -- Volume is low enough that a full refresh is appropriate.
--- SET search_path TO TARGET_SCHEMA;
+SET search_path TO TARGET_SCHEMA;
 
 TRUNCATE TABLE TARGET_SCHEMA.carindiv;
 TRUNCATE TABLE TARGET_SCHEMA.carsrept;

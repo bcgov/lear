@@ -19,6 +19,7 @@
 -- merges them into public.address by addr_id.
 
 -- Delete child tables first (event-scoped).
+SET search_path TO TARGET_SCHEMA;
 
 DELETE FROM TARGET_SCHEMA.notification_resend
 WHERE event_id IN (SELECT event_id FROM event WHERE corp_num IN (&corp_ids_in));

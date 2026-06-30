@@ -703,7 +703,7 @@ def gen_build_master_script_inline(
     if cfg.include_cars:
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.delete_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
-        lines.append(f"execute {templates.transfer_cars.path.as_posix()}")
+        lines.append(f"execute {tmpl_resolve_execute_path(templates.transfer_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
 
     if delete_chunk_files:

@@ -267,7 +267,7 @@ join filing_user u on u.event_id = e.event_id;
 
 
 -- address (shared/global table; stage then merge before loading dependents)
-TRUNCATE TABLE colin_extract_temp.subset_address_stage;
+TRUNCATE TABLE TARGET_SCHEMA.subset_address_stage;
 
 transfer TARGET_SCHEMA.subset_address_stage from cprd using
 with corp_list as (
@@ -347,7 +347,7 @@ from (
 	join address a on x.mailing_addr_id = a.addr_id
 );
 
-INSERT INTO colin_extract_temp.address (
+INSERT INTO TARGET_SCHEMA.address (
 	addr_id,
 	province,
 	country_typ_cd,
@@ -375,7 +375,7 @@ FROM (
 		   addr_line_2,
 		   addr_line_3,
 		   city
-	FROM colin_extract_temp.subset_address_stage
+	FROM TARGET_SCHEMA.subset_address_stage
 	WHERE addr_id IS NOT NULL
 	ORDER BY addr_id
 ) s

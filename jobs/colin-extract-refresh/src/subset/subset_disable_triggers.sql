@@ -1,3 +1,4 @@
+SET search_path TO TARGET_SCHEMA;
 
 ALTER TABLE TARGET_SCHEMA.notification 
   DROP CONSTRAINT fk_notification_filing ;
