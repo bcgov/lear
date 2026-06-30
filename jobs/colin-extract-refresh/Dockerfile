@@ -65,9 +65,8 @@ RUN apt-get update; \
 ENV PATH="${DBSCHEMA_HOME}:${PATH}"
 
 COPY src/ ./colin-exrtact-refresh/src/
-RUN mkdir -p /opt/app-root/colin-extract-refresh/src/subset/generated && chmod 755 /opt/app-root/colin-extract-refresh/src/subset/generated
-
-USER 1001
+RUN mkdir -p /opt/app-root/colin-extract-refresh/src/subset/generated && \
+    chmod -R 777 /opt/app-root/colin-extract-refresh/src/subset/generated /opt/app-root/.DbSchema
 
 WORKDIR /opt/app-root/colin-extract-refresh/src
 
@@ -75,5 +74,5 @@ EXPOSE 8080
 
 COPY src .
 
-ENTRYPOINT [ "python", "generate_cprd_subset_extract.py" ]
-CMD ["--corp-file", "corp.txt", "--mode", "refresh" ]
+ENTRYPOINT ["python", "generate_cprd_subset_extract.py"]
+CMD ["--corp-file", "corp.txt", "--mode", "refresh"]
