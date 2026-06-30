@@ -670,18 +670,108 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      {'documents': {}},
      HTTPStatus.OK, None
      ),
-    ('bc_change_of_liquidators_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ('bc_change_of_liquidators_intent_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.COMPLETED,
      {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+         'legalFilings': [
+            {
+                'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators',
+            }
+        ]
      }},
      HTTPStatus.OK, '2020-10-01'
-     ),
-    ('bc_change_of_liquidators_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+    ),
+    ('bc_change_of_liquidators_intent_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.PAID,
-     {'documents': {}},
-     HTTPStatus.OK, None
-     ),
+     {'documents': {
+        'receipt': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }},
+     HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_appoint_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_appoint_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_cease_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_cease_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_change_address_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
+                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_change_address_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_liquidation_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, None, None, Filing.Status.COMPLETED,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
+    (
+        'bc_change_of_liquidators_liquidation_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
+        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, None, None, Filing.Status.PAID,
+        {
+            'documents': {
+                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+            }
+        },
+        HTTPStatus.OK, '2020-10-01'
+    ),
      ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
      'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.COMPLETED,
      {'documents': {

@@ -567,6 +567,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
     def address_revision_json(address_revision):
         """Return a dict of this object, with keys in JSON format."""
         country_description = ""
+        if not address_revision:
+            return {}
+
         if address_revision.country:
             country_description = pycountry.countries.search_fuzzy(address_revision.country)[0].name
         return {

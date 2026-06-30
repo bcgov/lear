@@ -79,6 +79,7 @@ def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: F
         cco_filing.comments.append(
             Comment(
                 comment=details,
+                comment_type=Comment.CommentType.FILING,
                 staff_id=cco_filing.submitter_id
             )
         )

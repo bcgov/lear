@@ -18,13 +18,13 @@ from contextlib import suppress
 from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from flask import current_app
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, db
+from business_model.models import Business, PartyRole, db
 from business_model.models.db import VersioningProxy
 from legal_api.exceptions import BusinessException
 from legal_api.reports.document_service import DocumentService
@@ -36,6 +36,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_DIRECTORS_MAILING,
+    CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_NAME,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_COMBINED_AR,
@@ -47,7 +48,8 @@ from registry_schemas.example_data import (
     SPECIAL_RESOLUTION,
     TRANSITION_FILING_TEMPLATE,
 )
-from tests.unit.models import factory_business, factory_completed_filing, factory_pending_filing  # noqa:E501,I001
+from tests.unit.models import factory_address, factory_business, factory_business_office, factory_completed_filing, factory_party_role, factory_pending_filing
+from legal_api.reports.utils import ColinService
 
 
 def create_report(identifier, entity_type, report_type, filing_type, template):
@@ -134,9 +136,52 @@ def set_tax_id(report):
     assert filing_json.get('taxId')
 
 
-def set_addresses(report):
+def set_addresses(report, mocker):
     """Assert _set_addresses works as expected."""
     filing_json = report._filing.filing_json
+    
+    previous_filing_json = copy.deepcopy(FILING_HEADER)
+    previous_filing_json['filing']['header']['name'] = 'changeOfAddress'
+    previous_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    previous_filing_json['filing']['business']['legalType'] = 'BC'
+    previous_filing_json['filing']['changeOfAddress'] = {}
+    previous_filing = factory_completed_filing(report._business, previous_filing_json, filing_date=datetime(2020, 1, 1))
+
+    mocker.patch('business_model.models.Filing.get_previous_completed_filing', return_value=previous_filing)
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_office_revision', return_value={
+        'registeredOffice': {
+            'mailingAddress': {
+                'streetAddress': 'Old Mailing Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P5'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'Old Delivery Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P4'
+            }
+        },
+        'recordsOffice': {
+            'mailingAddress': {
+                'streetAddress': 'Old Mailing Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P5'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'Old Delivery Street',
+                'addressCity': 'Victoria',
+                'addressRegion': 'BC',
+                'addressCountry': 'CA',
+                'postalCode': 'V8W1P4'
+            }
+        }
+    })
 
     with suppress(KeyError):
         with patch.object(report, '_format_address', return_value=None):
@@ -183,7 +228,7 @@ def set_meta_info(report):
         ('BEN TRANP', 'BC1234567', 'BEN', 'transition', 'transition', TRANSITION_FILING_TEMPLATE),
     ]
 )
-def test_get_pdf(session, test_name, identifier, entity_type, report_type, filing_type, template):
+def test_get_pdf(session, mocker, test_name, identifier, entity_type, report_type, filing_type, template):
     """Assert all filings can be returned as a PDF."""
     # TODO: add checks on set_directors, noa
     # setup
@@ -199,7 +244,7 @@ def test_get_pdf(session, test_name, identifier, entity_type, report_type, filin
     set_meta_info(report)
 
     if report_type in ['annualReport', 'changeOfAddress']:
-        set_addresses(report)
+        set_addresses(report, mocker)
 
     if report._business.legal_type != 'CP':
         set_tax_id(report)
@@ -529,3 +574,513 @@ def test_set_corp_flag(session, test_name, identifier, entity_type, expected_is_
 
     assert filing['business']['isCorp'] == expected_is_corp, \
         f'{test_name}: expected isCorp={expected_is_corp} for legalType={entity_type}'
+
+
+def _create_previous_liquidation_report(business):
+    lr_filing_json = copy.deepcopy(FILING_HEADER)
+    lr_filing_json['filing']['header']['name'] = 'changeOfLiquidators'
+    lr_filing_json['filing']['business']['identifier'] = business.identifier
+    lr_filing_json['filing']['changeOfLiquidators'] = {'type': 'liquidationReport'}
+    factory_completed_filing(
+        business=business,
+        data_dict=lr_filing_json,
+        filing_date=datetime(2026, 5, 15, 10, 0, 0),
+        filing_type='changeOfLiquidators',
+        filing_sub_type='liquidationReport'
+    )
+
+def _get_col_filing_json(business, col_data):
+    return {
+        'filing': {
+            'header': {
+                'name': 'changeOfLiquidators',
+                'date': '2026-06-10T12:00:00+00:00',
+                'effectiveDate': '2026-06-10T12:00:00+00:00'
+            },
+            'business': {
+                'identifier': business.identifier,
+                'legalType': business.legal_type
+            },
+            'changeOfLiquidators': col_data
+        }
+    }
+
+def _create_existing_liquidator(session, business):
+    liquidator = factory_party_role(
+        delivery_address=factory_address('123 Existing St', 'delivery'),
+        mailing_address=factory_address('123 Existing St', 'mailing'),
+        appointment_date=datetime(2025, 5, 15, 10, 0, 0),
+        cessation_date=None,
+        officer={
+            'firstName': 'EXISTING LIQUIDATOR',
+            'lastName': '',
+            'middleInitial': '',
+            'partyType': 'person',
+            'organizationName': ''
+        },
+        role_type=PartyRole.RoleTypes.LIQUIDATOR
+    )
+    liquidator.business_id = business.id
+    session.add(liquidator)
+    session.commit()
+
+    return liquidator
+
+def test_format_appoint_liquidator_data(session):
+    """Assert _format_liquidator_data correctly formats an appointLiquidator filing."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+    _create_previous_liquidation_report(business)
+    _create_existing_liquidator(session, business)
+
+    col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    col['type'] = 'appointLiquidator'
+    col['courtOrder'] = {
+        'hasPlanOfArrangement': True,
+        'fileNumber': '12345678'
+    }
+
+    current_filing_json = _get_col_filing_json(business, col)
+    current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+
+    report = Report(current_filing)
+    report._business = business
+
+    filing_data = current_filing_json['filing']
+    report._format_liquidator_data(filing_data)
+
+    assert filing_data['reportTitle'] == 'Notice to Appoint Liquidators'
+    assert filing_data['reportDateAndTimeTitle'] == 'Appointed Date and Time:'
+    assert filing_data['lastReportDate'] == 'May 15, 2026'
+    assert filing_data['hasReceivers'] is False
+    assert filing_data['hasPoa'] is True
+    assert filing_data['courtOrderNumber'] == '12345678'
+
+    rels = filing_data.get('relationships', {})
+    assert 'appointed' in rels
+    assert 'effectiveDate' in rels
+    assert 'ceased' not in rels
+
+    appointed_items = rels['appointed']['items']
+    assert len(appointed_items) == 2
+
+    first_liquidator = appointed_items[0]
+    assert first_liquidator['entity']['familyName'] == 'Miller'
+    assert first_liquidator['entity']['givenName'] == 'Phillip Tandy'
+
+    assert 'mailingAddress' in first_liquidator
+    assert 'deliveryAddress' in first_liquidator
+
+    second_liquidator = appointed_items[1]
+    assert second_liquidator['entity']['businessName'] == 'Test Business'
+
+    effective_items = rels['effectiveDate']['items']
+    existing_liquidator_found = any(
+        item['entity'].get('givenName') == 'EXISTING LIQUIDATOR'
+        for item in effective_items
+    )
+    assert existing_liquidator_found is True
+
+def test_format_cease_liquidator_data(session):
+    """Assert _format_liquidator_data correctly formats a ceaseLiquidator filing."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+    _create_previous_liquidation_report(business)
+    _create_existing_liquidator(session, business)
+
+    col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    col['type'] = 'ceaseLiquidator'
+
+    for rel in col['relationships']:
+        for role in rel['roles']:
+            role['cessationDate'] = '2026-01-02'
+
+    current_filing_json = _get_col_filing_json(business, col)
+    current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+
+    report = Report(current_filing)
+    report._business = business
+
+    filing_data = current_filing_json['filing']
+    report._format_liquidator_data(filing_data)
+
+    assert filing_data['reportTitle'] == 'Notice to Cease Liquidators'
+    assert filing_data['reportDateAndTimeTitle'] == 'Ceased Date and Time:'
+    assert filing_data['lastReportDate'] == 'May 15, 2026'
+    assert filing_data['hasReceivers'] is False
+    assert filing_data['hasPoa'] is False
+    assert filing_data['courtOrderNumber'] is False
+
+    rels = filing_data.get('relationships', {})
+    assert 'appointed' not in rels
+    assert 'effectiveDate' in rels
+    assert 'ceased' in rels
+
+    ceased_items = rels['ceased']['items']
+    assert len(ceased_items) == 2
+
+    first_liquidator = ceased_items[0]
+    assert first_liquidator['entity']['familyName'] == 'Miller'
+    assert first_liquidator['entity']['givenName'] == 'Phillip Tandy'
+
+    assert 'mailingAddress' in first_liquidator
+    assert 'deliveryAddress' in first_liquidator
+
+    second_liquidator = ceased_items[1]
+    assert second_liquidator['entity']['businessName'] == 'Test Business'
+
+    effective_items = rels['effectiveDate']['items']
+    existing_liquidator_found = any(
+        item['entity'].get('givenName') == 'EXISTING LIQUIDATOR'
+        for item in effective_items
+    )
+    assert existing_liquidator_found is True
+
+def test_format_intent_liquidator_data(session):
+    """Assert _format_liquidator_data correctly formats a intentToLiquidate filing."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+
+    receiver = factory_party_role(
+        delivery_address=factory_address('delivery street', 'delivery'),
+        mailing_address=factory_address('mailing street', 'mailing'),
+        appointment_date=datetime(2026, 5, 15, 10, 0, 0),
+        cessation_date=None,
+        officer={
+            'firstName': 'first',
+            'lastName': 'last',
+            'middleInitial': 'mid',
+            'partyType': 'person',
+            'organizationName': ''
+        },
+        role_type=PartyRole.RoleTypes.RECEIVER
+    )
+
+    receiver.business_id = business.id
+    session.add(receiver)
+    session.commit()
+
+    col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    col['type'] = 'intentToLiquidate'
+
+    current_filing_json = _get_col_filing_json(business, col)
+    current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+
+    report = Report(current_filing)
+    report._business = business
+
+    filing_data = current_filing_json['filing']
+    report._format_liquidator_data(filing_data)
+
+    assert filing_data['reportTitle'] == 'Statement of Intent to Liquidate'
+    assert filing_data['reportDateAndTimeTitle'] == 'Summary Date and Time:'
+    assert 'lastReportDate' not in filing_data
+    assert filing_data['hasReceivers'] is True
+    assert filing_data['hasPoa'] is False
+    assert filing_data['courtOrderNumber'] is False
+
+    rels = filing_data.get('relationships', {})
+    assert 'appointed' in rels
+    assert 'effectiveDate' not in rels
+    assert 'ceased' not in rels
+
+    appointed_items = rels['appointed']['items']
+    assert len(appointed_items) == 2
+
+    assert 'recordsOffice' in filing_data
+
+def test_format_change_address_liquidator_data(session, mocker):
+    """Assert _format_liquidator_data correctly formats a changeAddressLiquidator filing."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+    _create_previous_liquidation_report(business)
+
+    factory_business_office(business, "liquidationRecordsOffice")
+    liquidator = factory_party_role(
+        delivery_address=factory_address('delivery street', 'delivery'),
+        mailing_address=factory_address('mailing street', 'mailing'),
+        appointment_date=datetime(2024, 5, 15, 10, 0, 0),
+        cessation_date=None,
+        officer={
+            'firstName': 'first',
+            'lastName': 'last',
+            'middleInitial': 'mid',
+            'partyType': 'person',
+            'organizationName': ''
+        },
+        role_type=PartyRole.RoleTypes.LIQUIDATOR
+    )
+
+    liquidator.business_id = business.id
+    session.add(liquidator)
+    session.commit()
+
+    col = {
+        'type': 'changeAddressLiquidator',
+        'changeOfLiquidatorsDate': '2025-05-15',
+        'relationships': [
+            {
+                'entity': {
+                    'givenName': 'Phillip Tandy',
+                    'familyName': 'Miller',
+                    'alternateName': 'Phil Miller',
+                    'identifier': f"{liquidator.id}"
+                },
+                'deliveryAddress': {
+                    'streetAddress': 'CHANGED',
+                    'addressCity': 'delivery_address city',
+                    'addressCountry': 'CA',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC'
+                },
+                'mailingAddress': {
+                    'streetAddress': 'CHANGED',
+                    'addressCity': 'mailing_address city',
+                    'addressCountry': 'CA',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC'
+                },
+                'roles': [
+                    {
+                        'roleType': 'Liquidator'
+                    }
+                ]
+            }
+        ],
+        'offices': {
+            'liquidationRecordsOffice': {
+                'deliveryAddress': {
+                    'streetAddress': 'CHANGED',
+                    'addressCity': 'delivery_address city',
+                    'addressCountry': 'CA',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC'
+                },
+                'mailingAddress': {
+                    'streetAddress': 'CHANGED',
+                    'addressCity': 'mailing_address city',
+                    'addressCountry': 'CA',
+                    'postalCode': 'H0H0H0',
+                    'addressRegion': 'BC'
+                }
+            }
+        }
+    }
+
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_office_revision', return_value={
+        'liquidationRecordsOffice': {
+            'deliveryAddress': {
+                'streetAddress': 'OLD',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'mailingAddress': {
+                'streetAddress': 'OLD',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            }
+        }
+    })
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=object())
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json', return_value={
+        'mailingAddress': {
+            'streetAddress': 'Old Mailing Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P5'
+        },
+        'deliveryAddress': {
+            'streetAddress': 'Old Delivery Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P4'
+        }
+    })
+
+    current_filing_json = _get_col_filing_json(business, col)
+    current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+
+    report = Report(current_filing)
+    report._business = business
+
+    filing_data = current_filing_json['filing']
+    report._format_liquidator_data(filing_data)
+
+    assert filing_data['reportTitle'] == 'Liquidators Change of Address'
+    assert filing_data['reportDateAndTimeTitle'] == 'Change Date and Time:'
+    assert filing_data['lastReportDate'] == 'May 15, 2026'
+    assert filing_data['hasReceivers'] is False
+    assert filing_data['hasPoa'] is False
+    assert filing_data['courtOrderNumber'] is False
+
+    rels = filing_data.get('relationships', {})
+    assert 'appointed' not in rels
+    assert 'effectiveDate' in rels
+    assert 'ceased' not in rels
+
+    effective = rels['effectiveDate']['items']
+    assert len(effective) == 1
+    changed_rel = effective[0]
+    assert changed_rel['mailingAddress']['changed'] is True
+    assert changed_rel['deliveryAddress']['changed'] is True
+
+    assert 'recordsOffice' in filing_data
+    assert filing_data['recordsOffice']['mailingAddress']['changed'] is True
+    assert filing_data['recordsOffice']['deliveryAddress']['changed'] is True
+
+# ---------------------------------------------------------------------------
+# Tests for Report._set_amalgamating_businesses
+# ---------------------------------------------------------------------------
+
+def _make_report_with_amalgamating_businesses(amalgamating_businesses_list, session,
+                                               identifier='BC9900001', entity_type='BC'):
+    """Return a Report instance whose filing_json contains the given amalgamatingBusinesses list."""
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'amalgamationApplication'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = entity_type
+    filing_json['filing']['amalgamationApplication'] = {
+        'amalgamatingBusinesses': amalgamating_businesses_list,
+        'type': 'regular',
+        'courtApproval': False,
+    }
+
+    business = factory_business(identifier=identifier, entity_type=entity_type)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'amalgamationApplication'
+    return report
+
+
+@pytest.mark.parametrize(
+    'test_name, foreign_jurisdiction, foreign_region, colin_status, colin_jurisdiction, expected_id, expected_jurisdiction',
+    [
+        ('expro-on', 'CA', 'BC', HTTPStatus.OK, 'ON', 'A1234567', 'Ontario'),
+        ('expro-federal', 'CA', 'BC', HTTPStatus.OK, 'FD', 'A1234567', 'Federal'),
+        ('a-prefix-colin-404', 'US', 'WA', HTTPStatus.NOT_FOUND, None, 'N/A', 'United States'),
+    ],
+    ids=[
+        '_set_amalgamating_businesses: expro ON',
+        '_set_amalgamating_businesses: expro FD federal',
+        '_set_amalgamating_businesses: A-prefix colin 404 stays N/A',
+    ]
+)
+def test_set_amalgamating_businesses_foreign(
+        session, monkeypatch, test_name,
+        foreign_jurisdiction, foreign_region,
+        colin_status, colin_jurisdiction,
+        expected_id, expected_jurisdiction):
+    """Assert that _set_amalgamating_businesses correctly formats foreign and expro entries."""
+    foreign_identifier = 'A1234567'
+    foreign_name = 'Foreign Expro Corp'
+
+    amalgamating_businesses = [
+        {
+            'identifier': foreign_identifier,
+            'legalName': foreign_name,
+            'foreignJurisdiction': {
+                'country': foreign_jurisdiction,
+                'region': foreign_region,
+            },
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    colin_call_count = {'count': 0}
+
+    def mock_colin(id_):
+        colin_call_count['count'] += 1
+        resp = MagicMock()
+        resp.status_code = colin_status
+        resp.json.return_value = {'business': {'jurisdiction': colin_jurisdiction}}
+        return resp
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin)
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['legalName'] == foreign_name
+    assert entry['identifier'] == expected_id
+    assert entry['jurisdiction'] == expected_jurisdiction
+
+
+def test_set_amalgamating_businesses_bc_domestic(session, monkeypatch):
+    """Assert that _set_amalgamating_businesses correctly formats a domestic BC ting business."""
+    bc_identifier = 'BC8887776'
+    bc_legal_name = 'Ting Corp Ltd.'
+
+    amalgamating_businesses = [
+        {
+            'identifier': bc_identifier,
+            # No legalName key: domestic businesses trigger the ting_business path
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    # Provide a mock ting_business from _get_versioned_amalgamating_business
+    ting_mock = MagicMock()
+    ting_mock._identifier = bc_identifier  # pylint: disable=protected-access
+    ting_mock.legal_name = bc_legal_name
+    report._get_versioned_amalgamating_business = lambda id_: ting_mock
+
+    # COLIN must not be called for domestic businesses
+    monkeypatch.setattr(ColinService, 'query_business',
+                        lambda id_: (_ for _ in ()).throw(AssertionError('COLIN must not be called for domestic businesses')))
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['legalName'] == bc_legal_name
+    assert entry['identifier'] == bc_identifier
+    assert entry['jurisdiction'] == 'British Columbia'
+
+
+def test_set_amalgamating_businesses_foreign_non_a_prefix(session, monkeypatch):
+    """Assert that a foreign business with a non-A identifier is not treated as expro and COLIN is not called."""
+    foreign_identifier = 'UK9876543'
+    foreign_name = 'UK Corp'
+
+    amalgamating_businesses = [
+        {
+            'identifier': foreign_identifier,
+            'legalName': foreign_name,
+            'foreignJurisdiction': {'country': 'GB', 'region': None},
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    colin_call_count = {'count': 0}
+
+    def mock_colin_no_call(id_):
+        colin_call_count['count'] += 1
+        return MagicMock()
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin_no_call)
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['identifier'] == 'N/A'
+    assert entry['legalName'] == foreign_name
+    assert entry['jurisdiction'] == 'United Kingdom'
+    assert colin_call_count['count'] == 0

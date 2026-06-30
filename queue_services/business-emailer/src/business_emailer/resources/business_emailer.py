@@ -69,6 +69,7 @@ from business_emailer.email_processors import (
     restoration_notification,
     special_resolution_notification,
 )
+from business_emailer.email_processors.util import FILING_TITLE
 from business_emailer.exceptions import EmailException, QueueException
 from business_emailer.services import flags, gcp_queue, verify_gcp_jwt
 from business_model.models import Filing, Furnishing
@@ -285,15 +286,11 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "ceaseReceiver" and option == Filing.Status.COMPLETED.value:
             email = cease_receiver_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype in filing_notification.FILING_TYPE_CONVERTER:
-            if etype == "annualReport" and option == Filing.Status.COMPLETED.value:
-                current_app.logger.debug("No email to send for: %s", email_msg)
+        elif etype in FILING_TITLE:
+            if email := filing_notification.process(email_msg["email"], token):
+                send_email(email, token)
             else:
-                email = filing_notification.process(email_msg["email"], token)
-                if email:
-                    send_email(email, token)
-                else:
-                    # should only be if this was for a coops filing
-                    current_app.logger.debug("No email to send for: %s", email_msg)
+                # should only be if this was for a coops filing
+                current_app.logger.debug("No email to send for: %s", email_msg)
         else:
             current_app.logger.debug("No email to send for: %s", email_msg)

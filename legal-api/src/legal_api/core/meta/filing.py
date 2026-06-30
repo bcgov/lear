@@ -984,6 +984,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
     def get_all_outputs(business_type: str, filing_name: str) -> list:
         """Return list of all outputs."""
         filing = FILINGS.get(filing_name)
+
+        # try to find filing sub type config if filing_name not found
+        if not filing:
+            for parent_filing in FILINGS.values():
+                if isinstance(parent_filing, dict) and filing_name in parent_filing:
+                    filing = parent_filing.get(filing_name)
+                    break
+
         for docs in filing.get("additional", []):
             if business_type in docs.get("types", []):
                 return docs.get("outputs")

@@ -21,6 +21,7 @@ from sqlalchemy import event, func
 from sqlalchemy.orm import backref
 
 from business_model.exceptions import BusinessException
+from business_model.utils.base import BaseEnum, auto
 
 from .db import db
 from .user import User
@@ -31,11 +32,18 @@ class Comment(db.Model):
 
     This class does NOT have a continuum shadow as comments should not be edited.
     """
+    
+    class CommentType(BaseEnum):
+        """Render an Enum of the types of comments."""
+
+        FILING = auto()
+        STAFF = auto()
 
     __tablename__ = 'comments'
 
     id = db.Column(db.Integer, primary_key=True)
     comment = db.Column(db.String(4096))
+    comment_type = db.Column('comment_type', db.Enum(CommentType), nullable=False)
     timestamp = db.Column('timestamp', db.DateTime(timezone=True), default=func.now())
 
     # parent keys
@@ -60,6 +68,7 @@ class Comment(db.Model):
                 'id': self.id,
                 'submitterDisplayName': user.display_name if user else REDACTED_STAFF_SUBMITTER,
                 'comment': self.comment,
+                'commentType': self.comment_type.name,
                 'filingId': self.filing_id,
                 'businessId': self.business_id,
                 'timestamp': self.timestamp.isoformat() if self.timestamp else None

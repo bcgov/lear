@@ -37,7 +37,7 @@ import random
 from datetime import datetime, timezone
 
 import pytest
-from business_model.models import ConsentContinuationOut, Filing
+from business_model.models import Comment, ConsentContinuationOut, Filing
 from business_filer.common.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import CONSENT_CONTINUATION_OUT, FILING_TEMPLATE
 
@@ -112,3 +112,8 @@ def tests_filer_consent_continuation_out(app, session, mocker, test_name, effect
     assert final_filing.meta_data['consentContinuationOut']['region'] == \
         filing_json['filing']['consentContinuationOut']['foreignJurisdiction']['region']
     assert final_filing.meta_data['consentContinuationOut']['expiry'] == expiry_date_utc.isoformat()
+    
+    filing_comments = final_filing.comments.all()
+    assert len(filing_comments) == 1
+    assert filing_comments[0].comment == filing_json['filing']['consentContinuationOut']['details']
+    assert filing_comments[0].comment_type == Comment.CommentType.FILING

@@ -172,6 +172,7 @@ def test_ledger_comment_count(app, session, client, jwt, monkeypatch, mock_drs_s
     business, filing_storage = ledger_element_setup_help(identifier)
     for c in range(number_of_comments):
         comment = Comment()
+        comment.comment_type = Comment.CommentType.STAFF
         comment.comment = f'this comment {c}'
         filing_storage.comments.append(comment)
     filing_storage.save()

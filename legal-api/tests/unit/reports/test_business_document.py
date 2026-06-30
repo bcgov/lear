@@ -18,11 +18,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from business_model.models import PartyRole
 from legal_api.reports.business_document import BusinessDocument
 from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
-from tests.unit.models import factory_business, factory_business_mailing_address
+from tests.unit.models import factory_address, factory_business, factory_business_mailing_address, factory_party_role
 from tests.unit.reports import make_amalgamation_filing_mock, make_foreign_amalgamating_business, set_amalgamation_details
 
 
@@ -168,3 +169,50 @@ def test_set_amalgamation_details(
     assert entity['identifier'] == expected_id
     assert entity['jurisdiction'] == expected_jurisdiction
     assert entity['legalName'] == foreign_name
+
+
+@pytest.mark.parametrize('has_receiver, cessation_date, expected_count', [
+    (True, None, 1),
+    (False, '2026-06-02', 0)
+])
+def test_summary_includes_receivers(session, app, jwt, has_receiver, cessation_date, expected_count):
+    """Assert that the business summary correctly includes receivers."""
+    identifier = 'BC7654321'
+    request_ctx = app.test_request_context(
+        headers=create_header(jwt, [STAFF_ROLE], identifier)
+    )
+    with request_ctx:
+        business = factory_business(identifier=identifier, entity_type='BC')
+        factory_business_mailing_address(business)
+
+        receiver = factory_party_role(
+            delivery_address=factory_address('delivery street', 'delivery'),
+            mailing_address=factory_address('mailing street', 'mailing'),
+            appointment_date='2026-01-01',
+            cessation_date=cessation_date,
+            officer={
+                'firstName': 'first',
+                'lastName': 'last',
+                'middleInitial': 'mid',
+                'partyType': 'person',
+                'organizationName': ''
+            },
+            role_type=PartyRole.RoleTypes.RECEIVER
+        )
+
+        receiver.business_id = business.id
+        session.add(receiver)
+        session.commit()
+
+        report = BusinessDocument(business, 'summary')
+        filename = report._get_report_filename()
+        assert filename
+        template = report._get_template()
+        assert template
+        template_data = report._get_template_data()
+
+        assert 'receivers' in template_data
+        assert len(template_data['receivers']) == expected_count
+
+        if expected_count > 0:
+            assert template_data['receivers'][0]['role'] == 'receiver'

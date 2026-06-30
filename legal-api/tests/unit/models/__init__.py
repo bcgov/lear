@@ -211,6 +211,36 @@ def factory_business_mailing_address(business):
     return business
 
 
+def factory_business_office(business, office_type):
+    """Create a business entity."""
+    mailing_address = Address(
+        city='Test City',
+        street=f'{business.identifier}-Test Street MAILING',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+        address_type=Address.MAILING
+    )
+    delivery_address = Address(
+        city='Test City',
+        street=f'{business.identifier}-Test Street DELIVERY',
+        postal_code='T3S3T3',
+        country='TA',
+        region='BC',
+        address_type=Address.DELIVERY
+    )
+
+    office = Office(
+        office_type=office_type
+    )
+
+    office.addresses.append(mailing_address)
+    office.addresses.append(delivery_address)
+    business.offices.append(office)
+    business.save()
+    return business
+
+
 def factory_filing(business, data_dict,
                    filing_date=FROZEN_DATETIME,
                    filing_type=None,
@@ -330,6 +360,7 @@ def factory_business_comment(business: Business = None, comment_text: str = 'som
 
     c = Comment()
     c.business_id = business.id
+    c.comment_type = Comment.CommentType.STAFF
     c.timestamp = EPOCH_DATETIME
     c.comment = comment_text
     if user:
@@ -352,6 +383,7 @@ def factory_comment(
     c.filing_id = filing.id
     c.timestamp = EPOCH_DATETIME
     c.comment = comment_text
+    c.comment_type = Comment.CommentType.STAFF
     if user:
         c.staff_id = user.id
     c.save()

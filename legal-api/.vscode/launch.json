@@ -9,7 +9,8 @@
             "type": "debugpy",
             "request": "launch",
             "program": "wsgi.py",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false
         },
         {
             "name": "Python: Debug Unit Tests",
