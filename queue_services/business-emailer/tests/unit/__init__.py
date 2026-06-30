@@ -121,12 +121,10 @@ def create_filing(token=None, filing_json=None, business_id=None,
 
 def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None):
     """Return a new incorp filing prepped for email notification."""
-    business = create_business(identifier, legal_type=legal_type, legal_name=LEGAL_NAME)
     filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing_template['filing']['business'] = {'identifier': business.identifier}
-    if business.legal_type:
-        filing_template['filing']['business']['legalType'] = business.legal_type
-        filing_template['filing']['incorporationApplication']['nameRequest']['legalType'] = business.legal_type
+    if legal_type:
+        filing_template['filing']['business']['legalType'] = legal_type
+        filing_template['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
     for party in filing_template['filing']['incorporationApplication']['parties']:
         for role in party['roles']:
             if role['roleType'] == 'Completing Party':
@@ -134,14 +132,18 @@ def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None)
     filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
 
     temp_identifier = generate_temp_filing()
+    filing_template['filing']['business']['identifier'] = temp_identifier
     filing = create_filing(token=payment_id, filing_json=filing_template,
-                           business_id=business.id, bootstrap_id=temp_identifier)
+                           business_id=None, bootstrap_id=temp_identifier)
     filing.payment_completion_date = filing.filing_date
-    filing.save()
-    if option in ['COMPLETED', 'bn']:
+
+    if option in ['COMPLETED', 'bn', 'mras']:
+        business = create_business(identifier, legal_type=legal_type, legal_name=LEGAL_NAME)
+        filing.business_id = business.id
         transaction_id = VersioningProxy.get_transaction_id(session())
         filing.transaction_id = transaction_id
-        filing.save()
+
+    filing.save()
     return filing
 
 
@@ -188,29 +190,23 @@ def prep_registration_filing(session, identifier, payment_id, option, legal_type
     elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
         filing_template = gp_registration
 
-    business_id = None
-    if option == 'PAID':
-        del filing_template['filing']['business']
-    elif option == 'COMPLETED':
+    temp_identifier = generate_temp_filing()
+    filing_template['filing']['business'] = {
+        'identifier': temp_identifier,
+        'legalType': legal_type
+    }
+    filing = create_filing(token=payment_id, filing_json=filing_template,
+                           business_id=None, bootstrap_id=temp_identifier)
+    filing.payment_completion_date = filing.filing_date
+
+    if option in ['COMPLETED']:
         business = create_business(identifier, legal_type, parties=parties)
         business.founding_date = datetime.fromisoformat(now)
-        business.save()
-        business_id = business.id
-        filing_template['filing']['business'] = {
-            'identifier': business.identifier,
-            'legalType': business.legal_type,
-            'foundingDate': business.founding_date.isoformat()
-        }
-
-    temp_identifier = generate_temp_filing()
-    filing = create_filing(token=payment_id, filing_json=filing_template,
-                           business_id=business_id, bootstrap_id=temp_identifier)
-    filing.payment_completion_date = filing.filing_date
-    filing.save()
-    if option in ['COMPLETED']:
+        filing.business_id = business.id
         transaction_id = VersioningProxy.get_transaction_id(session())
         filing.transaction_id = transaction_id
-        filing.save()
+
+    filing.save()
     return filing
 
 

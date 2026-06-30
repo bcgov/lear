@@ -92,7 +92,8 @@ def process(email_info: dict, token: str) -> dict:
     new_business_filings = ["amalgamationApplication", "continuationIn", "incorporationApplication", "registration"]
     filing_data = filing.json.get("filing", {}).get(filing_type, {})
     if filing_type in new_business_filings and not business:
-        # For new business filings, the business record is not created yet. So we get the business info from the nameRequest.
+        # For new business filings, the nameRequest contains relevant business details.
+        # We overwrite the business info from the nameRequest and then set the identifier back to the temp reg id.
         name_request = filing_data.get("nameRequest")
         business = name_request
         business["identifier"] = filing.temp_reg
@@ -103,6 +104,7 @@ def process(email_info: dict, token: str) -> dict:
     if not legal_type or not filing_name or not business_identifier:
         # Should never happen - log and return. It will be skipped.
         current_app.logger.error("Missing legal_type, identifier and/or filing_name. Email: %s", email_info)
+        return
     
     skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
     if legal_type == Business.LegalTypes.COOP.value and filing_type in skipped_coop_filing_types:

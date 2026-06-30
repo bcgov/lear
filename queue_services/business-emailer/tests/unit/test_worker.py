@@ -77,6 +77,7 @@ def test_process_incorp_email_paid_future_effective(app, session, mocker):
     """Assert that an INCORP PAID future-effective email is sent with the Filed subject."""
     # setup filing + business for email
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
+    temp_reg_id = filing.temp_reg
     make_future_effective(filing)
     token = '1'
     # test worker
@@ -90,7 +91,7 @@ def test_process_incorp_email_paid_future_effective(app, session, mocker):
                 )
 
                 assert mock_get_pdfs.call_args[0][0] == token
-                assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+                assert mock_get_pdfs.call_args[0][1]['identifier'] == temp_reg_id
                 assert mock_get_pdfs.call_args[0][1]['legalType'] == 'BC'
                 assert mock_get_pdfs.call_args[0][2] == filing
 

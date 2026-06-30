@@ -252,11 +252,11 @@ def test_maintenance_notification(app, session, status, filing_type, submitter_r
 
 def test_filing_attachments_ia_paid_future_effective(session, config):
     """IA PAID future-effective: filing PDF + receipt are attached."""
-    identifier = 'BC1234567'
-    filing = prep_incorp_filing(session, identifier, '1', 'PAID', 'BC')
+    filing = prep_incorp_filing(session, None, '1', 'PAID', 'BC')
+    temp_reg_id = filing.temp_reg
     make_future_effective(filing)
     with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, identifier, filing,
+        mock_filing_docs(m, config, temp_reg_id, filing,
                          {'incorporationApplication': b'pdf_content_1'}, receipt=b'pdf_content_2')
         output = process_filing(filing, 'incorporationApplication', 'PAID')
 
@@ -428,16 +428,17 @@ def test_business_number_rendering(app, session, legal_type, tax_id, expected, m
         assert '## Business Number' not in body
 
 
-@pytest.mark.parametrize(['identifier', 'legal_type'], [
-    ('CP1234567', 'CP'),
-    ('BC1234567', 'BC'),
-], ids=['coop', 'corp'])
-def test_future_attachments_list_in_ia_future_effective_paid(app, session, config, identifier, legal_type):
+@pytest.mark.parametrize('legal_type', [
+    ('CP'),
+    ('BC'),
+])
+def test_future_attachments_list_in_ia_future_effective_paid(app, session, config, legal_type):
     """Assert that the future_attachments_list is used for COOP and non-COOP future-effective PAID IA."""
-    filing = prep_incorp_filing(session, identifier, '1', 'PAID', legal_type)
+    filing = prep_incorp_filing(session, None, '1', 'PAID', legal_type)
+    temp_reg_id = filing.temp_reg
     make_future_effective(filing)
     with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, identifier, filing,
+        mock_filing_docs(m, config, temp_reg_id, filing,
                          {'incorporationApplication': b'pdf_content_1'}, receipt=b'pdf_content_2')
         email = process_filing(filing, 'incorporationApplication', 'PAID')
 
