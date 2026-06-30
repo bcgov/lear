@@ -78,7 +78,7 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     return attachments, extra_pdf_types
 
 
-def process(email_info: dict, token: str) -> dict:
+def process(email_info: dict, token: str) -> dict | None:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
     filing_type, status = email_info["type"], email_info["option"]
