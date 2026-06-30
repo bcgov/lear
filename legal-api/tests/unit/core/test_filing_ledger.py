@@ -58,6 +58,7 @@ def load_ledger(business, founding_date):
         for c in range(i):
             comment = Comment()
             comment.comment = f'this comment {c}'
+            comment.comment_type = Comment.CommentType.STAFF
             f.comments.append(comment)
         f.save()
         i += 1

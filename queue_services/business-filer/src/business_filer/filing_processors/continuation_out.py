@@ -117,6 +117,7 @@ def process(business: Business, continuation_out_filing: Filing, filing: dict, f
         continuation_out_filing.comments.append(
             Comment(
                 comment=details,
+                comment_type=Comment.CommentType.FILING,
                 staff_id=continuation_out_filing.submitter_id
             )
         )

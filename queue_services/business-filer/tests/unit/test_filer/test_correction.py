@@ -36,7 +36,7 @@ import copy
 import pytest
 import random
 
-from business_model.models import Business, Filing, PartyRole
+from business_model.models import Business, Comment, Filing, PartyRole
 from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS,
     CHANGE_OF_RECEIVERS,
@@ -65,6 +65,23 @@ def _assert_common_data(business: Business, filing: Filing):
     assert filing.transaction_id
     assert filing.business_id == business.id
     assert filing.status == Filing.Status.COMPLETED.value
+    
+
+def _assert_correction_comments(filing: Filing):
+    """Assert the expected correction comments were added."""
+    original_filing = Filing.find_by_id(filing.filing_json["filing"]["correction"]["correctedFilingId"])
+
+    filing_comments = filing.comments.all()
+    original_filing_comments = original_filing.comments.all()
+
+    assert len(filing_comments) == 1
+    assert len(original_filing_comments) == 1
+    
+    assert original_filing_comments[0].comment_type == Comment.CommentType.FILING
+    assert filing_comments[0].comment_type == Comment.CommentType.FILING
+
+    assert "This filing was corrected on " in original_filing_comments[0].comment
+    assert filing_comments[0].comment == filing.filing_json["filing"]["correction"]["comment"]
 
 
 def _get_filing(filing_type: str, data: dict, identifier = 'BC1234567', needs_template = True):
@@ -129,6 +146,7 @@ def test_process_correction_filing_with_relationships(app, session, mocker, fili
     correction_processed_filing: Filing = Filing.find_by_id(correction_filing_rec.id)
     # assert changes
     _assert_common_data(business, correction_processed_filing)
+    _assert_correction_comments(correction_processed_filing)
     assert correction_processed_filing.lear_only == expected_lear_only
     party_roles: list[PartyRole] = business.party_roles.all()
     assert len(party_roles) == 2

@@ -35,12 +35,10 @@
 import copy
 import random
 
-from datetime import datetime, timezone
-from business_model.models import Business, Document, Filing
-
+from business_model.models import Business, Comment, Document, Filing
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
-from business_filer.common.legislation_datetime import LegislationDatetime
 
+from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import continuation_out
 from business_filer.filing_processors.continuation_out import CONTINUATION_OUT_DOCUMENT_TYPE
@@ -127,6 +125,11 @@ def tests_filer_continuation_out_uploaded_documents(app, session):
     assert len(meta_documents) == len(uploaded_documents)
     for file in uploaded_documents:
         assert file in meta_documents
+    
+    filing_comments = final_filing.comments.all()
+    assert len(filing_comments) == 1
+    assert filing_comments[0].comment == filing_json['filing']['continuationOut']['details']
+    assert filing_comments[0].comment_type == Comment.CommentType.FILING
 
 
 def tests_filer_continuation_out_no_uploaded_documents(app, session):

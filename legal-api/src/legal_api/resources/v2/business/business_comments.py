@@ -93,6 +93,7 @@ def post_comments(identifier):
     try:
         comment = Comment()
         comment.comment = json_input["comment"]["comment"]
+        comment.comment_type = Comment.CommentType.STAFF
         comment.staff_id = user.id
         comment.business_id = business.id
         comment.timestamp = datetime.now(UTC)
