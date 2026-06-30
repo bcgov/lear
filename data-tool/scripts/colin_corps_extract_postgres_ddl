@@ -1,44 +1,42 @@
-SET search_path TO TARGET_SCHEMA;
-
 create sequence affiliation_processing_id_seq;
 
-alter sequence affiliation_processing_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence affiliation_processing_id_seq owner to postgres;
 
 create sequence if not exists auth_processing_id_seq;
 
-alter sequence auth_processing_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence auth_processing_id_seq owner to postgres;
 
 create sequence if not exists auth_component_operation_id_seq;
 
-alter sequence auth_component_operation_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence auth_component_operation_id_seq owner to postgres;
 
 create sequence corp_processing_id_seq;
 
-alter sequence corp_processing_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence corp_processing_id_seq owner to postgres;
 
 create sequence colin_tracking_id_seq;
 
-alter sequence colin_tracking_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence colin_tracking_id_seq owner to postgres;
 
 create sequence mig_group_id_seq;
 
-alter sequence mig_group_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence mig_group_id_seq owner to postgres;
 
 create sequence mig_batch_id_seq;
 
-alter sequence mig_batch_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence mig_batch_id_seq owner to postgres;
 
 create sequence mig_corp_batch_id_seq;
 
-alter sequence mig_corp_batch_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence mig_corp_batch_id_seq owner to postgres;
 
 create sequence if not exists mig_corp_account_id_seq;
 
-alter sequence mig_corp_account_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence mig_corp_account_id_seq owner to postgres;
 
 create sequence if not exists bad_emails_id_seq;
 
-alter sequence bad_emails_id_seq owner to DB_USER_COLIN_MIGR;
+alter sequence bad_emails_id_seq owner to postgres;
 
 create table if not exists address
 (
@@ -70,7 +68,7 @@ create table if not exists address
 );
 
 alter table address
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists subset_address_stage
 (
@@ -85,7 +83,7 @@ create table if not exists subset_address_stage
 );
 
 alter table subset_address_stage
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists subset_excluded_corps
 (
@@ -95,7 +93,7 @@ create table if not exists subset_excluded_corps
 );
 
 alter table subset_excluded_corps
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists subset_excluded_events
 (
@@ -105,7 +103,7 @@ create table if not exists subset_excluded_events
 );
 
 alter table subset_excluded_events
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists subset_excluded_corp_parties
 (
@@ -115,7 +113,7 @@ create table if not exists subset_excluded_corp_parties
 );
 
 alter table subset_excluded_corp_parties
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corporation
 (
@@ -136,7 +134,7 @@ create table if not exists corporation
 );
 
 alter table corporation
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create index if not exists idx_corporation_corp_type_cd
     on corporation (corp_type_cd);
@@ -155,7 +153,7 @@ create table if not exists event
 );
 
 alter table event
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create index if not exists idx_event_event_type_cd
     on event (event_type_cd);
@@ -184,7 +182,7 @@ create table if not exists filing
 );
 
 alter table filing
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create index if not exists idx_filing_filing_type_cd
     on filing (filing_type_cd);
@@ -205,7 +203,7 @@ create table if not exists filing_user
 );
 
 alter table filing_user
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists jurisdiction
 (
@@ -227,7 +225,7 @@ create table if not exists jurisdiction
 comment on table jurisdiction is 'new table \n\nThis table does hold continued in company former home jurisdiction information, and XPRO company home jurisdiction information. which will not be going over to the new system quite yet.\n\nevery "Continued In" has one and only one row with a corp_num starting with a C';
 
 alter table jurisdiction
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists ledger_text
 (
@@ -240,7 +238,7 @@ create table if not exists ledger_text
 );
 
 alter table ledger_text
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists notification
 (
@@ -262,7 +260,7 @@ create table if not exists notification
 comment on table notification is 'new table\n\n2,999,121 rows.  recipient of filing outputs for 35 different filing types\n\nIts not displayed on the ledger anywhere. I found this info regarding the EVENT_ID and notifications. - COLIN updates the Notification table with the notification method details';
 
 alter table notification
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists notification_resend
 (
@@ -284,7 +282,7 @@ create table if not exists notification_resend
 comment on table notification_resend is 'new table\n\nThis is displayed in the ledger when a staff member has resent a document to the client after the original filing.  It appears in the notification information on the original filing';
 
 alter table notification_resend
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists office
 (
@@ -307,7 +305,7 @@ create table if not exists office
 );
 
 alter table office
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists resolution
 (
@@ -325,7 +323,7 @@ create table if not exists resolution
 );
 
 alter table resolution
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists share_struct
 (
@@ -345,7 +343,7 @@ create table if not exists share_struct
 comment on table share_struct is 'new table\n\n972,136 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
 
 alter table share_struct
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists share_struct_cls
 (
@@ -369,7 +367,7 @@ create table if not exists share_struct_cls
 comment on table share_struct_cls is 'new table\n\n3,441,652 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
 
 alter table share_struct_cls
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists submitting_party
 (
@@ -410,7 +408,7 @@ comment on column submitting_party.notify_last_nme is '2846 different from last_
 comment on column submitting_party.phone_number is 'all for PICKUP, does the new application have pickup?';
 
 alter table submitting_party
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists affiliation_processing
 (
@@ -435,7 +433,7 @@ create table if not exists affiliation_processing
 );
 
 alter table affiliation_processing
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists business_description
 (
@@ -454,7 +452,7 @@ create table if not exists business_description
 );
 
 alter table business_description
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists completing_party
 (
@@ -473,7 +471,7 @@ create table if not exists completing_party
 comment on table completing_party is 'new table\n\ncompleting_party table only used for incorporations.  parties.party_type=person.  party_roles.role= incorporator';
 
 alter table completing_party
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists cont_out
 (
@@ -493,7 +491,7 @@ create table if not exists cont_out
 comment on table cont_out is 'new table\n\nWhen a BC company continues out to another jurisdiction, the information is saved here, and it shows on the corporate summary';
 
 alter table cont_out
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists conv_event
 (
@@ -512,7 +510,7 @@ create table if not exists conv_event
 comment on table conv_event is 'new table \n\n1,243,749 rows, 15 have a filing, pre-COLIN ARs are a different format and maybe use this? Exclusively used by event_typ_cd CONV*';
 
 alter table conv_event
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists conv_ledger
 (
@@ -527,7 +525,7 @@ create table if not exists conv_ledger
 comment on table conv_ledger is 'new table\n\n"4,072,795 rows, event is FILE except for 5, filing is always CONVL, 4 rows after March 26, 2004\nCOLIN ledger displays:\nledger_title_txt\nevent.event_timestmp\nledger_desc and filing.effective_dt and filing_user"\n\nthis is the ledger_text table prior to March 26, 2004.  filing_typ_cd =''CONVL'' may be best way to detect this';
 
 alter table conv_ledger
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists carsfile
 (
@@ -537,7 +535,7 @@ create table if not exists carsfile
 );
 
 alter table carsfile
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists carsbox
 (
@@ -548,7 +546,7 @@ create table if not exists carsbox
 );
 
 alter table carsbox
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists carsrept
 (
@@ -558,7 +556,7 @@ create table if not exists carsrept
 );
 
 alter table carsrept
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists carindiv
 (
@@ -579,7 +577,7 @@ create table if not exists carindiv
 );
 
 alter table carindiv
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_comments
 (
@@ -596,7 +594,7 @@ create table if not exists corp_comments
 );
 
 alter table corp_comments
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_flag
 (
@@ -615,7 +613,7 @@ create table if not exists corp_flag
 comment on table corp_flag is 'new table\n\n114,405 businesses have 29 different flags (mostly societies)\n\nsome flags are for societies, some for XPROs, and some are set on BC companies by staff';
 
 alter table corp_flag
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_involved_amalgamating
 (
@@ -639,7 +637,7 @@ create table if not exists corp_involved_amalgamating
 comment on table corp_involved_amalgamating is 'new table\n\nused for almagmations\n\nselect all where TED is a BC Corp, 37 will not be be BC Corps';
 
 alter table corp_involved_amalgamating
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_name
 (
@@ -657,7 +655,7 @@ create table if not exists corp_name
 );
 
 alter table corp_name
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_party
 (
@@ -695,7 +693,7 @@ create table if not exists corp_party
 );
 
 alter table corp_party
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create index if not exists idx_corp_party_party_typ_cd
     on corp_party (party_typ_cd);
@@ -736,7 +734,7 @@ comment on column corp_party_relationship.corp_party_id is 'This column is used 
 comment on column corp_party_relationship.relationship_typ_cd is 'Court ordered person, Heir, Shareholder, officer, director';
 
 alter table corp_party_relationship
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists mig_group
 (
@@ -751,7 +749,7 @@ create table if not exists mig_group
 );
 
 alter table mig_group
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 create table if not exists mig_batch
@@ -772,7 +770,7 @@ create table if not exists mig_batch
 );
 
 alter table mig_batch
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 create table if not exists mig_corp_batch
@@ -787,7 +785,7 @@ create table if not exists mig_corp_batch
 );
 
 alter table mig_corp_batch
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 create table if not exists mig_corp_account
@@ -803,7 +801,7 @@ create table if not exists mig_corp_account
 );
 
 alter table mig_corp_account
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_processing
 (
@@ -840,7 +838,7 @@ create table if not exists corp_processing
 );
 
 alter table corp_processing
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create index if not exists idx_corp_processing_processed_status
     on corp_processing (processed_status);
@@ -904,7 +902,7 @@ create table if not exists auth_processing
 	)
 );
 
-alter table auth_processing owner to DB_USER_COLIN_MIGR;
+alter table auth_processing owner to postgres;
 
 create index if not exists idx_auth_processing_claim_batch
 	on auth_processing (environment, flow_name, flow_run_id, processed_status, claimed_at);
@@ -944,7 +942,7 @@ create table if not exists auth_component_operation
 	create_date         timestamp with time zone default current_timestamp not null
 );
 
-alter table auth_component_operation owner to DB_USER_COLIN_MIGR;
+alter table auth_component_operation owner to postgres;
 
 create index if not exists idx_auth_component_operation_auth_processing_id
 	on auth_component_operation (auth_processing_id);
@@ -969,7 +967,7 @@ create table if not exists corp_restriction
 comment on table corp_restriction is 'new table\n\n726,574 rows, pre-existing company provisions';
 
 alter table corp_restriction
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_state
 (
@@ -987,7 +985,7 @@ create table if not exists corp_state
 );
 
 alter table corp_state
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists correction
 (
@@ -1003,7 +1001,7 @@ create table if not exists correction
 comment on table correction is 'new table\n\nAny correction filings completed appear to have this kind of entry, which includes BC Companyies, and the details show on the filing history on the ledger.';
 
 alter table correction
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists offices_held
 (
@@ -1018,7 +1016,7 @@ comment on table offices_held is 'new table\n\nBoth BC companies and XPROs can i
 comment on column offices_held.officer_typ_cd is '9 values:  secretary, president, treasurer etc.';
 
 alter table offices_held
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists party_notification
 (
@@ -1039,7 +1037,7 @@ create table if not exists party_notification
 );
 
 alter table party_notification
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists share_series
 (
@@ -1060,7 +1058,7 @@ create table if not exists share_series
 comment on table share_series is 'new table\n\n55,484 rows, right padded with blanks, select id from businesses where identifier=:corp_num';
 
 alter table share_series
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corp_involved_cont_in
 (
@@ -1075,7 +1073,7 @@ create table if not exists corp_involved_cont_in
 comment on table corp_involved_cont_in is 'new table\n\n"Optionally, a ""Continuation In"" causes an existing xpro in CPRD to become ""Historical Continued In"".\nSearching the xpro shows the Continue In corp_num, date, and status.\nSearching the Continued In corp shows the xpro corp_num and name on the certificate and the Corporate Summary."';
 
 alter table corp_involved_cont_in
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists payment
 (
@@ -1087,7 +1085,7 @@ create table if not exists payment
 );
 
 alter table payment
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 create table if not exists colin_tracking
@@ -1114,7 +1112,7 @@ create table if not exists colin_tracking
 );
 
 alter table colin_tracking
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create index if not exists idx_colin_tracking_claim_batch
 	on colin_tracking (environment, flow_name, flow_run_id, processed_status, claimed_at);
@@ -1126,7 +1124,7 @@ create table if not exists colin_extract_version (
     extracted_at timestamp with time zone not null default current_timestamp
 );
 alter table colin_tracking
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists corps_with_third_party
 (
@@ -1136,7 +1134,7 @@ create table if not exists corps_with_third_party
 );
 
 alter table corps_with_third_party
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 create table if not exists bar_corps
 (
@@ -1150,7 +1148,7 @@ create table if not exists bar_corps
 );
 
 alter table bar_corps
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 -- helper so that `is_blank(text)` returns TRUE for '' (but NULL stays NULL)
@@ -1164,7 +1162,7 @@ select btrim(t) = ''
 $$;
 
 alter function is_blank
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 -- helper to count significant decimal places (ignoring trailing zeros)
@@ -1182,7 +1180,7 @@ end
 $$;
 
 alter function significant_decimal_places
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 
 CREATE TABLE IF NOT EXISTS email_domain_groups (
@@ -1191,7 +1189,7 @@ CREATE TABLE IF NOT EXISTS email_domain_groups (
 );
 
 alter table email_domain_groups
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 CREATE TABLE IF NOT EXISTS bad_emails (
 	id integer default nextval('bad_emails_id_seq'::regclass) not null
@@ -1201,7 +1199,7 @@ CREATE TABLE IF NOT EXISTS bad_emails (
 );
 
 alter table bad_emails
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 CREATE TABLE IF NOT EXISTS exclude_corps (
     corp_num varchar(10) NOT NULL
@@ -1210,7 +1208,7 @@ CREATE TABLE IF NOT EXISTS exclude_corps (
 );
 
 alter table exclude_corps
-    owner to DB_USER_COLIN_MIGR;
+    owner to postgres;
 
 CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
 
