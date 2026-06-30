@@ -1,0 +1,3 @@
+# Local-only generated DbSchemaCLI scripts and corp-id lists.
+# Keep this folder in git, but not the generated artifacts.
+*.txt
