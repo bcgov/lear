@@ -206,6 +206,7 @@ def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: s
     tr_required = business.state != Business.State.HISTORICAL.value and business.legal_type not in entity_types_no_tr
     if tr_required and (tr_start_date := current_app.config.get("TR_START_DATE", None)):
         # Initial TR todo
+        print('tr required and tr_start_date is set')
         if not pending_tr_type:
             tr_start_datetime = LegislationDatetime.as_legislation_timezone_from_date(
                 datetime.fromisoformat(tr_start_date))
