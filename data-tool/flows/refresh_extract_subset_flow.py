@@ -144,6 +144,7 @@ def _reset_extract_postgres_db(target_schema: str | None = 'public') -> None:
     safe_schema = '"' + target_schema.replace('"', '""') + '"'
     search_path_sql = f'SET search_path TO {safe_schema};'
     create_schema_sql = f'CREATE SCHEMA IF NOT EXISTS {safe_schema};'
+    psql_schema_vars = ['-v', f'schema_name={target_schema}']
 
     require_file(_DEFAULT_DDL, 'Extract DDL File')
 
@@ -160,9 +161,9 @@ def _reset_extract_postgres_db(target_schema: str | None = 'public') -> None:
     _run_cmd(['psql', *pg_flags, '-d', 'postgres', '-c', terminate_sql ], env=run_env)
     _run_cmd(['dropdb', *pg_flags, '--maintenance-db=postgres', '--if-exists', dbname ], env=run_env)
     _run_cmd(['createdb', *pg_flags, '--maintenance-db=postgres', '-T', 'template0', dbname ], env=run_env)
-    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-c', create_schema_sql], env=run_env)
-    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-c', search_path_sql, '-f', str(_DEFAULT_DDL)], env=run_env)
-    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-c', search_path_sql, '-f', str(_BUILD_VIEWS_SCRIPT)], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', *psql_schema_vars, '-c', create_schema_sql], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', *psql_schema_vars, '-c', search_path_sql, '-f', str(_DEFAULT_DDL)], env=run_env)
+    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', *psql_schema_vars, '-c', search_path_sql, '-f', str(_BUILD_VIEWS_SCRIPT)], env=run_env)
 
 
 
@@ -377,9 +378,10 @@ def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli
     )
 
 @task(name='Refresh-Views', cache_policy=NO_CACHE)
-def run_refresh_views(mode: str = 'refresh', targets: str =  'all') -> subprocess.CompletedProcess:
+def run_refresh_views(mode: str = 'refresh', targets: str = 'all', schema: str | None = 'public') -> subprocess.CompletedProcess:
     cfg = get_named_config()
     script = require_file(_REFRESH_VIEWS_SCRIPT, 'refresh_colin_extract_views.sh')
+    normalized_schema = _normalize_target_schema(schema)
     argv = [
         str(script),
         '--mode', mode,
@@ -387,7 +389,8 @@ def run_refresh_views(mode: str = 'refresh', targets: str =  'all') -> subproces
         '--db', cfg.DB_NAME_COLIN_MIGR,
         '--host', cfg.DB_HOST_COLIN_MIGR,
         '--port', str(cfg.DB_PORT_COLIN_MIGR),
-        '--user', cfg.DB_USER_COLIN_MIGR
+        '--user', cfg.DB_USER_COLIN_MIGR,
+        '--schema', normalized_schema,
     ]
     run_env = dict(os.environ)
     if cfg.DB_PASSWORD_COLIN_MIGR and 'PGPASSWORD' not in run_env:
@@ -470,7 +473,7 @@ def extract_flow(cfg: SubsetConfig) -> None:
     run_unfreeze_identifiers(cfg.target_schema)
     
     if cfg.refresh_views and cfg.delta_scope == 'batch':
-        refresh_result = run_refresh_views('refresh', 'all')
+        refresh_result = run_refresh_views('refresh', 'all', cfg.target_schema)
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
     if cfg.mode == 'refresh' and cfg.delta_scope == 'batch':
@@ -571,7 +574,7 @@ def extract_pull_flow(
     run_unfreeze_identifiers()
     
     if refresh_views and delta_scope == 'batch':
-        refresh_result = run_refresh_views('refresh', 'all')
+        refresh_result = run_refresh_views('refresh', 'all', target_schema)
         if refresh_result.returncode !=0:
             raise RuntimeError(f'Refresh-Views exited with code {refresh_result.returncode}')
     if mode == 'refresh' and delta_scope == 'batch':
