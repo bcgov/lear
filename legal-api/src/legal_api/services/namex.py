@@ -85,7 +85,7 @@ class NameXService:
     @staticmethod
     def update_nr(nr_json):
         """Update name request with nr_json."""
-        auth_url = current_app.config.get("NAMEX_AUTH_SVC_URL")
+        auth_url = current_app.config.get("ACCOUNT_SVC_AUTH_URL")
         username = current_app.config.get("NAMEX_SERVICE_CLIENT_USERNAME")
         secret = current_app.config.get("NAMEX_SERVICE_CLIENT_SECRET")
         namex_url = current_app.config.get("NAMEX_SVC_URL")
