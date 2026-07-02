@@ -36,6 +36,7 @@ from legal_api.services import MinioService, colin, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
+from legal_api.utils.auth import jwt
 
 NO_POSTAL_CODE_COUNTRY_CODES = {
     "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
@@ -1434,8 +1435,8 @@ def validate_completing_party(filing_json: dict, filing_type: str, org_id: int) 
     filing_firstname = officer.get("firstName")
     filing_lastname = officer.get("lastName")
     filing_email = officer.get("email")
-    
-    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+
+    contacts_response = AccountService.get_contacts(org_id, jwt.get_token_auth_header())
     if contacts_response is None:
         return {
             "error":[{
@@ -1508,7 +1509,7 @@ def validate_document_delivery_email_changed(email: str, org_id: int) -> dict:
     if not email:
         return result
 
-    contacts_response = AccountService.get_contacts(current_app.config, org_id)
+    contacts_response = AccountService.get_contacts(org_id, jwt.get_token_auth_header())
     if contacts_response is None:
         result["errors"].append({
             "error": "Unable to verify document delivery email against account contacts."

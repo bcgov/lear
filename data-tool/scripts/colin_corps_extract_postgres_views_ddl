@@ -38,11 +38,17 @@ ALTER MATERIALIZED VIEW mv_corps_party_role_count
 
 
 CREATE MATERIALIZED VIEW mv_admin_email_count AS
-select admin_email, count(*) as email_count
-from corporation
-group by admin_email
+select CAST(lower(btrim(c.admin_email)) AS varchar(254)) AS normalized_admin_email,
+       count(*)                                             AS email_count
+from corporation c
+where c.admin_email IS NOT NULL
+  and btrim(c.admin_email) <> ''
+group by CAST(lower(btrim(c.admin_email)) AS varchar(254))
 WITH NO DATA
 ;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_admin_email_count_normalized_email
+  ON mv_admin_email_count (normalized_admin_email);
 
 ALTER MATERIALIZED VIEW mv_admin_email_count
     owner to postgres;
@@ -788,6 +794,35 @@ ALTER MATERIALIZED VIEW mv_corp_event_filing_rollup
     owner to postgres;
 
 
+CREATE MATERIALIZED VIEW mv_admin_email_bad_email_flags AS
+WITH normalized_admin_emails AS (
+  SELECT DISTINCT
+    lower(btrim(c.admin_email)) AS normalized_admin_email
+  FROM corporation c
+  WHERE c.admin_email IS NOT NULL
+    AND btrim(c.admin_email) <> ''
+),
+normalized_bad_emails AS (
+  SELECT DISTINCT
+    lower(btrim(be.email)) AS normalized_email
+  FROM bad_emails be
+)
+SELECT
+  nae.normalized_admin_email,
+  CAST((nbe.normalized_email IS NOT NULL) AS boolean) AS is_bad_email
+FROM normalized_admin_emails nae
+LEFT JOIN normalized_bad_emails nbe
+  ON nbe.normalized_email = nae.normalized_admin_email
+WITH NO DATA
+;
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_admin_email_bad_email_flags_normalized_email
+  ON mv_admin_email_bad_email_flags (normalized_admin_email);
+
+ALTER MATERIALIZED VIEW mv_admin_email_bad_email_flags
+    owner to postgres;
+
+
 CREATE MATERIALIZED VIEW mv_legacy_corps_data AS
 WITH cp_completed AS (
   /* One completed migration row per corp in prod */
@@ -840,12 +875,23 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         tblFe.email_domain,
         admin_email,
         CAST(email_used_count as integer) as email_used_count,
-        CAST(EXISTS (
-          SELECT 1
-          FROM bad_emails be
-          WHERE btrim(tblFe.admin_email) <> ''
-            AND lower(btrim(be.email)) = lower(btrim(tblFe.admin_email))
-        ) AS boolean) AS is_bad_email,
+        CAST(COALESCE(bad_email_flags.is_bad_email, false) AS boolean) AS is_bad_email,
+        CAST((excluded_email_match.email IS NOT NULL) AS boolean) AS is_email_excluded_by_address,
+        CAST((excluded_email_domain_match.email_domain IS NOT NULL) AS boolean) AS is_email_excluded_by_domain,
+        CAST((excluded_email_pattern_match.id IS NOT NULL) AS boolean) AS is_email_excluded_by_domain_pattern,
+        CAST((
+          excluded_email_match.email IS NOT NULL
+          OR excluded_email_domain_match.email_domain IS NOT NULL
+          OR excluded_email_pattern_match.id IS NOT NULL
+        ) AS boolean) AS is_email_excluded,
+        CASE
+          WHEN excluded_email_match.email IS NOT NULL THEN 'email=' || btrim(excluded_email_match.email)
+          WHEN excluded_email_domain_match.email_domain IS NOT NULL THEN 'email_domain=' || btrim(excluded_email_domain_match.email_domain)
+          WHEN excluded_email_pattern_match.id IS NOT NULL THEN
+            'email_domain=' || btrim(excluded_email_pattern_match.email_domain)
+            || '; local_part_pattern=' || btrim(excluded_email_pattern_match.local_part_pattern)
+          ELSE NULL
+        END AS email_exclusion_criteria,
         corp_num,
         corp_name,
         corp_type_cd,
@@ -908,7 +954,7 @@ SELECT COALESCE(edg.group_name, NULL) AS group_name,
         CAST(bar_account_has_mailing_address as boolean) as bar_account_has_mailing_address,
         ting_corps
 FROM (
-    SELECT DISTINCT
+    SELECT
            LOWER(SPLIT_PART(c.admin_email, '@', 2)) as email_domain,
            LOWER(c.admin_email) as admin_email,
            aec.email_count AS email_used_count,
@@ -1027,7 +1073,8 @@ FROM (
         AND cp.party_typ_cd = 'DIR'
       GROUP BY cp.corp_num
     ) dir_mail_loc ON dir_mail_loc.corp_num = c.corp_num
-    LEFT OUTER JOIN mv_admin_email_count aec ON c.admin_email = aec.admin_email
+    LEFT OUTER JOIN mv_admin_email_count aec
+      ON CAST(lower(btrim(c.admin_email)) AS varchar(254)) = aec.normalized_admin_email
     LEFT OUTER JOIN mv_addr_quality_screening_by_corp mvaqs ON c.corp_num = mvaqs.corp_num
     LEFT OUTER JOIN bar_corps bc ON c.corp_num = bc.identifier
     LEFT OUTER JOIN (
@@ -1041,7 +1088,35 @@ LEFT JOIN mig_status ms USING (corp_num)
 LEFT JOIN mig_batch  mb ON mb.id = ms.mig_batch_id
 LEFT JOIN mig_group  mg ON mg.id = mb.mig_group_id
 LEFT JOIN email_domain_groups edg ON tblFe.email_domain = edg.email_domain
+LEFT JOIN mv_admin_email_bad_email_flags bad_email_flags
+  ON bad_email_flags.normalized_admin_email = lower(btrim(tblFe.admin_email))
 LEFT JOIN mv_share_class_issue_flags sif USING (corp_num)
+LEFT JOIN LATERAL (
+  SELECT ee.email
+  FROM excluded_emails ee
+  WHERE lower(btrim(tblFe.admin_email)) <> ''
+    AND lower(btrim(ee.email)) = lower(btrim(tblFe.admin_email))
+  LIMIT 1
+) excluded_email_match ON true
+LEFT JOIN LATERAL (
+  SELECT eed.email_domain
+  FROM excluded_email_domains eed
+  WHERE lower(btrim(tblFe.email_domain)) <> ''
+    AND lower(btrim(eed.email_domain)) = lower(btrim(tblFe.email_domain))
+  LIMIT 1
+) excluded_email_domain_match ON true
+-- `excluded_email_domain_patterns` matches an exact email domain plus a literal
+-- local-part substring; it does not perform partial-domain matching.
+LEFT JOIN LATERAL (
+  SELECT eedp.id, eedp.email_domain, eedp.local_part_pattern
+  FROM excluded_email_domain_patterns eedp
+  WHERE lower(btrim(tblFe.admin_email)) <> ''
+    AND lower(btrim(tblFe.email_domain)) <> ''
+    AND lower(btrim(eedp.email_domain)) = lower(btrim(tblFe.email_domain))
+    AND POSITION(lower(btrim(eedp.local_part_pattern)) IN lower(btrim(split_part(tblFe.admin_email, '@', 1)))) > 0
+  ORDER BY eedp.id
+  LIMIT 1
+) excluded_email_pattern_match ON true
 where 1=1
 WITH NO DATA
 ;
@@ -1465,19 +1540,21 @@ CREATE INDEX IF NOT EXISTS ix_legacy_recog_dts  ON mv_legacy_corps_data (recogni
 REFRESH MATERIALIZED VIEW mv_corps_with_officers;
 REFRESH MATERIALIZED VIEW mv_corps_party_role_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_count;
+ANALYZE mv_admin_email_count;
 REFRESH MATERIALIZED VIEW mv_admin_email_domain_count;
 REFRESH MATERIALIZED VIEW mv_addr_issue_counts_by_entity;
 REFRESH MATERIALIZED VIEW mv_addr_quality_by_corp;
 REFRESH MATERIALIZED VIEW mv_addr_quality_screening_by_corp;
 REFRESH MATERIALIZED VIEW mv_share_class_issue_flags;
 REFRESH MATERIALIZED VIEW mv_corp_event_filing_rollup;
+REFRESH MATERIALIZED VIEW mv_admin_email_bad_email_flags;
+ANALYZE mv_admin_email_bad_email_flags;
 REFRESH MATERIALIZED VIEW mv_legacy_corps_data;
 REFRESH MATERIALIZED VIEW mv_corp_issue_flags;
 REFRESH MATERIALIZED VIEW mv_issue_counts_by_corp_type;
 
 ANALYZE mv_corps_with_officers;
 ANALYZE mv_corps_party_role_count;
-ANALYZE mv_admin_email_count;
 ANALYZE mv_admin_email_domain_count;
 ANALYZE mv_addr_issue_counts_by_entity;
 ANALYZE mv_addr_quality_by_corp;

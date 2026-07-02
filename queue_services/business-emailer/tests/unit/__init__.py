@@ -99,7 +99,9 @@ def create_filing(token=None, filing_json=None, business_id=None,
     filing = Filing()
     if token:
         filing.payment_token = str(token)
+    filing._payment_completion_date = filing_date
     filing.filing_date = filing_date
+    filing.effective_date = filing_date
 
     if filing_json:
         filing.filing_json = filing_json
@@ -537,11 +539,12 @@ def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
 
 def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None):
     """Return a new maintenance filing prepped for email notification."""
-    business = create_business(identifier, Business.LegalTypes.BCOMP.value, LEGAL_NAME)
+    legal_type = Business.LegalTypes.COOP.value if identifier.startswith('CP') else Business.LegalTypes.BCOMP.value
+    business = create_business(identifier, legal_type, LEGAL_NAME)
     filing_template = copy.deepcopy(FILING_TEMPLATE)
     filing_template['filing']['header']['name'] = filing_type
     filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalype': Business.LegalTypes.BCOMP.value, 'legalName': LEGAL_NAME}
+        {'identifier': f'{identifier}', 'legalType': legal_type, 'legalName': LEGAL_NAME}
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
 
     if submitter_role:

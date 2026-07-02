@@ -25,10 +25,10 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Alias, AmalgamatingBusiness, Amalgamation, Business, CorpType, Filing, Jurisdiction
 from legal_api.reports.document_service import DocumentService
 from legal_api.reports.registrar_meta import RegistrarInfo
-from legal_api.reports.utils import get_amalg_formatted_jurisdiction
+from legal_api.reports.utils import get_formatted_amalg_business_data
 from legal_api.resources.v2.business import get_addresses, get_directors
 from legal_api.resources.v2.business.business_parties import get_parties
-from legal_api.services import VersionedBusinessDetailsService, colin, flags
+from legal_api.services import VersionedBusinessDetailsService, flags
 from legal_api.services.request_context import RequestContext, get_request_context
 from legal_api.utils.auth import jwt
 
@@ -592,41 +592,17 @@ class BusinessDocument:
                 amalgamating_businesses = AmalgamatingBusiness.get_revision(amalgamation_application.transaction_id,
                                                                             amalgamation.id)
                 for amalgamating_business in amalgamating_businesses:
-                    if amalgamating_business.foreign_name:
-                        # Set identifier to 'N/A' for foreign businesses (we are showing the 'Number in BC' in the output)
-                        identifier = "N/A"
-                        foreign_identifier = amalgamating_business.foreign_identifier
-                        business_legal_name = amalgamating_business.foreign_name or "N/A"
-                        country_code = amalgamating_business.foreign_jurisdiction
-                        region_code = amalgamating_business.foreign_jurisdiction_region
-                        # FUTURE: rework this once expros are in lear
-                        # Check if this is an expro
-                        if (foreign_identifier.startswith("A")
-                            and (colin_resp := colin.query_business(foreign_identifier))
-                            and colin_resp.status_code == HTTPStatus.OK
-                        ):
-                            # this is an expro so set the identifier (it is the BC expro identifier)
-                            identifier = foreign_identifier
-                            # overwrite the region_code if jurisdiction is available in the response
-                            region_code = colin_resp.json().get("business", {}).get("jurisdiction")
-                            
-                    else:
-                        ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
-                            amalgamation_application,
-                            amalgamating_business.business_id)
-                        identifier = ting_business._identifier  # pylint: disable=protected-access;
-                        business_legal_name = ting_business.legal_name
-                        country_code = "CA"
-                        region_code = "BC"
-
-                    jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
-                    
-                    amalgamated_businesses_info = {
-                        "legalName": business_legal_name or "N/A",
-                        "identifier": identifier or "N/A",
-                        "jurisdiction": jurisdiction or "N/A"
-                    }
+                    ting_business = None
+                    if not (foreign_name := amalgamating_business.foreign_name):
+                        ting_business = VersionedBusinessDetailsService.get_business_revision_obj(amalgamation_application,
+                                                                                                  amalgamating_business.business_id)
+                    amalgamated_businesses_info = get_formatted_amalg_business_data(amalgamating_business.foreign_identifier,
+                                                                                    foreign_name,
+                                                                                    amalgamating_business.foreign_jurisdiction,
+                                                                                    amalgamating_business.foreign_jurisdiction_region,
+                                                                                    ting_business)
                     amalgamated_businesses.append(amalgamated_businesses_info)
+
         business["amalgamatedEntities"] = amalgamated_businesses
 
     def _set_amalgamating_details(self, business: dict):

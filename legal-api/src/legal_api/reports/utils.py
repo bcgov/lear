@@ -25,8 +25,14 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """Common helper functions for reports flows."""
+from http import HTTPStatus
+
 import pycountry
 from flask import current_app
+
+from business_model.models import Business
+from legal_api.exceptions import BusinessException
+from legal_api.services.colin import ColinService
 
 
 def get_amalg_formatted_jurisdiction(identifier: str, country_code: str, region_code: str | None = None):
@@ -49,3 +55,49 @@ def get_amalg_formatted_jurisdiction(identifier: str, country_code: str, region_
                                    region_code,
                                    err.with_traceback(None))
         return "N/A"
+
+
+def get_formatted_amalg_business_data(
+    identifier: str | None = None,
+    foreign_name: str | None = None,
+    foreign_country_code: str | None = None,
+    foreign_region_code: str | None = None,
+    ting_business: Business | None = None
+):
+    """Return the amalgamation business data for the report output."""
+    if foreign_name:
+        # Set identifier to 'N/A' for foreign businesses (we are showing the 'Number in BC' in the output)
+        display_identifier = "N/A"
+        business_legal_name = foreign_name or "N/A"
+        country_code = foreign_country_code
+        region_code = foreign_region_code
+        # FUTURE: rework this once expros are in lear
+        # Check if this is an expro
+        if (identifier
+            and identifier.startswith("A")
+            and (colin_resp := ColinService.query_business(identifier))
+            and colin_resp.status_code == HTTPStatus.OK
+        ):
+            # this is an expro so set the identifier (it is the BC expro identifier)
+            display_identifier = identifier
+            # overwrite the region_code if jurisdiction is available in the response
+            region_code = colin_resp.json().get("business", {}).get("jurisdiction")
+            
+    else:
+        if not ting_business:
+            raise BusinessException(
+                "Error: Tried to process an amalgamating business which is not a foreign business or a ting business",
+                HTTPStatus.UNPROCESSABLE_ENTITY)
+
+        display_identifier = ting_business._identifier
+        business_legal_name = ting_business.legal_name
+        country_code = "CA"
+        region_code = "BC"
+
+    jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
+    
+    return {
+        "legalName": business_legal_name or "N/A",
+        "identifier": display_identifier or "N/A",
+        "jurisdiction": jurisdiction or "N/A"
+    }

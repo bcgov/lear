@@ -125,16 +125,14 @@ class _Config:  # pylint: disable=too-few-public-methods
     except (TypeError, ValueError):
         JWT_OIDC_JWKS_CACHE_TIMEOUT = 300
 
-    # NAMEX PROXY Settings
-    NAMEX_AUTH_SVC_URL = os.getenv("NAMEX_AUTH_SVC_URL", "http://")
-    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv("NAMEX_SERVICE_CLIENT_USERNAME")
-    NAMEX_SERVICE_CLIENT_SECRET = os.getenv("NAMEX_SERVICE_CLIENT_SECRET")
-
     # service accounts
     ACCOUNT_SVC_AUTH_URL = os.getenv("ACCOUNT_SVC_AUTH_URL")
     ACCOUNT_SVC_CLIENT_ID = os.getenv("ACCOUNT_SVC_CLIENT_ID")
     ACCOUNT_SVC_CLIENT_SECRET = os.getenv("ACCOUNT_SVC_CLIENT_SECRET")
     ACCOUNT_SVC_TIMEOUT = os.getenv("ACCOUNT_SVC_TIMEOUT")
+    # NAMEX service account creds
+    NAMEX_SERVICE_CLIENT_USERNAME = os.getenv("NAMEX_SERVICE_CLIENT_USERNAME")
+    NAMEX_SERVICE_CLIENT_SECRET = os.getenv("NAMEX_SERVICE_CLIENT_SECRET")
 
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")

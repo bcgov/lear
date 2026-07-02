@@ -51,11 +51,8 @@ def test_process_incorp_email_completed(app, session, mocker):
     filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
     token = '1'
     # test worker
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     SimpleCloudEvent(
@@ -63,11 +60,10 @@ def test_process_incorp_email_completed(app, session, mocker):
                     )
                 )
 
-                assert mock_get_pdfs.call_args[0][0] == 'COMPLETED'
-                assert mock_get_pdfs.call_args[0][1] == token
-                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-                assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
-                assert mock_get_pdfs.call_args[0][3] == filing
+                assert mock_get_pdfs.call_args[0][0] == token
+                assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+                assert mock_get_pdfs.call_args[0][1]['legalType'] == 'BC'
+                assert mock_get_pdfs.call_args[0][2] == filing
 
                 assert mock_send_email.call_args[0][0]['content']['subject'] == \
                        'test business - Successful Incorporation'
@@ -84,11 +80,8 @@ def test_process_incorp_email_paid_future_effective(app, session, mocker):
     make_future_effective(filing)
     token = '1'
     # test worker
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     SimpleCloudEvent(
@@ -96,11 +89,10 @@ def test_process_incorp_email_paid_future_effective(app, session, mocker):
                     )
                 )
 
-                assert mock_get_pdfs.call_args[0][0] == 'PAID'
-                assert mock_get_pdfs.call_args[0][1] == token
-                assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-                assert mock_get_pdfs.call_args[0][2]['legalType'] == 'BC'
-                assert mock_get_pdfs.call_args[0][3] == filing
+                assert mock_get_pdfs.call_args[0][0] == token
+                assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+                assert mock_get_pdfs.call_args[0][1]['legalType'] == 'BC'
+                assert mock_get_pdfs.call_args[0][2] == filing
 
                 assert 'Incorporation Application Filed' in \
                        mock_send_email.call_args[0][0]['content']['subject']
@@ -117,11 +109,8 @@ def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker
     make_non_future_effective(filing)
     token = '1'
     # test worker
-    mocker.patch(
-        'business_emailer.email_processors.filing_notification.get_entity_dashboard_url',
-        return_value='https://dummyurl.gov.bc.ca')
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(filing_notification, '_get_pdfs', return_value=[]):
+        with patch.object(filing_notification, 'get_pdfs', return_value=[]):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     SimpleCloudEvent(
@@ -134,9 +123,9 @@ def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker
 
 
 @pytest.mark.parametrize(['status', 'filing_type'], [
-    ('PAID', 'annualReport'),
     ('PAID', 'changeOfAddress'),
-    ('PAID', 'changeOfDirectors'),
+    ('COMPLETED', 'alteration'),
+    ('COMPLETED', 'annualReport'),
     ('COMPLETED', 'changeOfAddress'),
     ('COMPLETED', 'changeOfDirectors')
 ])
@@ -144,40 +133,42 @@ def test_maintenance_notification(app, session, status, filing_type):
     """Assert that the legal name is changed."""
     # setup filing + business for email
     filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+    if status == 'PAID':
+        make_future_effective(filing)
     token = 'token'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(filing_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-            with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-                as mock_get_recipients:
-                with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                    worker.process_email(
-                        SimpleCloudEvent(
-                            data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+        with patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
+                with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
+                    as mock_get_recipients:
+                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                        worker.process_email(
+                            SimpleCloudEvent(
+                                data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                            )
                         )
-                    )
 
-                    assert mock_get_pdfs.call_args[0][0] == status
-                    assert mock_get_pdfs.call_args[0][1] == token
+                        assert mock_get_pdfs.call_args[0][0] == token
 
-                    assert mock_get_pdfs.call_args[0][2]['identifier'] == 'BC1234567'
-                    assert mock_get_pdfs.call_args[0][2]['legalType'] == Business.LegalTypes.BCOMP.value
-                    assert mock_get_pdfs.call_args[0][2]['legalName'] == 'test business'
+                        assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+                        assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.BCOMP.value
+                        assert mock_get_pdfs.call_args[0][1]['legalName'] == 'test business'
 
-                    assert mock_get_pdfs.call_args[0][3] == filing
-                    assert mock_get_recipients.call_args[0][0] == status
-                    assert mock_get_recipients.call_args[0][1] == filing.filing_json
-                    assert mock_get_recipients.call_args[0][2] == token
+                        assert mock_get_pdfs.call_args[0][2] == filing
+                        assert mock_get_recipients.call_args[0][0] == status
+                        assert mock_get_recipients.call_args[0][1] == filing.filing_json
+                        assert mock_get_recipients.call_args[0][2] == token
 
-                    assert mock_send_email.call_args[0][0]['content']['subject']
-                    assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
-                    assert mock_send_email.call_args[0][0]['content']['body']
-                    assert mock_send_email.call_args[0][0]['content']['attachments'] == []
-                    assert mock_send_email.call_args[0][1] == token
+                        assert mock_send_email.call_args[0][0]['content']['subject']
+                        assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                        assert mock_send_email.call_args[0][0]['content']['body']
+                        assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                        assert mock_send_email.call_args[0][1] == token
 
 
 @pytest.mark.parametrize(['status', 'filing_type', 'identifier'], [
-    ('COMPLETED', 'annualReport', 'BC1234567'),
+    ('PAID', 'annualReport', 'BC1234567'),
     ('PAID', 'changeOfAddress', 'CP1234567'),
     ('PAID', 'changeOfDirectors', 'CP1234567'),
     ('COMPLETED', 'changeOfAddress', 'CP1234567'),
@@ -190,15 +181,16 @@ def test_skips_notification(app, session, status, filing_type, identifier):
     token = 'token'
     # test processor
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(filing_notification, '_get_pdfs', return_value=[]):
-            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email(
-                    SimpleCloudEvent(
-                        data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+        with patch.object(filing_notification, 'get_pdfs', return_value=[]):
+            with patch.object(filing_notification, 'get_recipients', return_value='testemail@test.com'):
+                with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                    worker.process_email(
+                        SimpleCloudEvent(
+                            data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                        )
                     )
-                )
 
-                assert not mock_send_email.call_args
+                    assert not mock_send_email.call_args
 
 
 def test_process_mras_email(app, session):
