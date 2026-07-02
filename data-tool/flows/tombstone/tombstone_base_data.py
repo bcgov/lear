@@ -33,6 +33,7 @@ USER = {
 COMMENT = {
     'comment': None,
     'timestamp': None,
+    'comment_type': None,  # 'STAFF' or None
     # FK
     'business_id': None,
     'staff_id': None,
