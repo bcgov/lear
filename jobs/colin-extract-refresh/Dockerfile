@@ -7,19 +7,13 @@ ENV VCS_REF=${VCS_REF}
 ENV BUILD_DATE=${BUILD_DATE}
 ENV PYTHONUNBUFFERED=1
 
-
-
-
-
 LABEL org.label-schema.vcs-ref=${VCS_REF} \
       org.label-schema.build-date=${BUILD_DATE}
-
 
 USER root
 
 ENV ORACLE_CLIENT_LIB_DIR=/opt/oracle/instantclient_21_4
 ENV LD_LIBRARY_PATH=${ORACLE_CLIENT_LIB_DIR}
-
 
 WORKDIR /opt/oracle/
 RUN set -eux; \
@@ -54,12 +48,6 @@ RUN set -eux; \
     ln -sf "${DBSCHEMA_HOME}/DbSchemaCLI" /usr/local/bin/dbschemacli; \
     test -x "${DBSCHEMA_HOME}/DbSchemaCLI"; \
     rm -rf /var/lib/apt/lists/*
-    
-
- 
-# Create directories with proper permissions
-RUN mkdir -p /opt/app-root && \
-    chmod 755 /opt/app-root
 
 ENV HOME=/opt/app-root
 RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
@@ -76,10 +64,15 @@ RUN apt-get update; \
 
 ENV PATH="${DBSCHEMA_HOME}:${PATH}"
 
-USER 1001
+COPY src/ ./colin-exrtact-refresh/src/
+RUN mkdir -p /opt/app-root/colin-extract-refresh/src/subset/generated && \
+    chmod -R 777 /opt/app-root/colin-extract-refresh/src/subset/generated /opt/app-root/.DbSchema
+
+WORKDIR /opt/app-root/colin-extract-refresh/src
 
 EXPOSE 8080
 
 COPY src .
 
-CMD [ "python", "test_connectivity.py" ]
+ENTRYPOINT ["python", "generate_cprd_subset_extract.py"]
+CMD ["--corp-file", "corp.txt", "--mode", "refresh"]
