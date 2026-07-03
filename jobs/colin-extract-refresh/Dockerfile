@@ -64,7 +64,7 @@ RUN apt-get update; \
 
 ENV PATH="${DBSCHEMA_HOME}:${PATH}"
 
-COPY src/ ./colin-exrtact-refresh/src/
+COPY src/ ./colin-extract-refresh/src/
 RUN mkdir -p /opt/app-root/colin-extract-refresh/src/subset/generated && \
     chmod -R 777 /opt/app-root/colin-extract-refresh/src/subset/generated /opt/app-root/.DbSchema
 
