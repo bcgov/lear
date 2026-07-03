@@ -225,6 +225,7 @@ def load_corp_snapshot(conn: Connection, tombstone_data: dict, users_mapper: dic
         username = comment['staff_id']
         staff_id = users_mapper.get(username)
         comment['staff_id'] = staff_id
+        comment['comment_type'] = 'STAFF'
         load_data(conn, 'comments', comment, versioned=False)
 
     if in_dissolution := tombstone_data['in_dissolution']:
@@ -296,6 +297,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
                 username = comment['staff_id']
                 staff_id = users_mapper.get(username)
                 comment['staff_id'] = staff_id
+                comment['comment_type'] = 'STAFF'
                 load_data(conn, 'comments', comment, versioned=False)
 
         if cco_data := data['consent_continuation_out']:
