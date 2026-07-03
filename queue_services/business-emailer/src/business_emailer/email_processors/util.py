@@ -32,7 +32,9 @@ FILING_TITLE = {
     "annualReport": "Annual Report",
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
+    "changeOfRegistration": "Change of Registration",
     "incorporationApplication": "Incorporation Application",
+    "registration": "Registration",
 }
 
 FILING_TITLE_SHORT = {
@@ -85,6 +87,14 @@ FILING_ATTACHMENTS = {
         }
     },
     "FIRM": {
+        "changeOfRegistration": {
+            "attachments": ["Change of Registration", "Amended Registration Statement", "Receipt"],
+            "extraPdfTypes": ["amendedRegistrationStatement"],
+        },
+        "registration": {
+            "attachments": ["Statement of Registration","Receipt"],
+            "extraPdfTypes": [],
+        }
     }
 }
 

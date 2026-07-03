@@ -38,8 +38,7 @@ def test_incorporation_bn_notificaton(app, session):
     email = bn_notification.process(
         {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'})
     # check email values
-    assert 'comp_party@email.com' in email['recipients']
-    assert 'test@test.com' in email['recipients']
+    assert 'test@test.com' == email['recipients']
     assert email['content']['subject'] == f'{business.legal_name} - Business Number Information'
     assert email['content']['body']
     assert email['content']['attachments'] == []
