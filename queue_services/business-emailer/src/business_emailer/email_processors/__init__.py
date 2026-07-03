@@ -245,7 +245,7 @@ def get_filing_document(business_identifier, filing_id, document_type, token, re
         "Authorization": f"Bearer {token}"
     }
 
-    params = {'regenerate': regenerate}
+    params = {"regenerate": regenerate}
     document = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business_identifier}/filings/{filing_id}'
         f'/documents/{document_type}', headers=headers, params=params

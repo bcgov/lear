@@ -102,17 +102,17 @@ BC_DESC = Business.BUSINESSES[Business.LegalTypes('BC')]['numberedDescription']
     ('amalgamationApplication', 'PAID', False, f'{LEGAL_NAME} - Amalgamation Application Filed'),
     ('amalgamationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Amalgamation'),
     ('amalgamationApplication', 'PAID', True, f'{BC_DESC} - Amalgamation Application Filed'),
-    ('amalgamationApplication', 'COMPLETED', True, f'{BC_DESC} - Successful Amalgamation'),
+    ('amalgamationApplication', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Amalgamation'),
     ('continuationIn', 'PAID', False, f'{LEGAL_NAME} - Continuation Application Filed'),
     ('continuationIn', 'RESUBMITTED', False, f'{LEGAL_NAME} - Continuation Application Filed'),
     ('continuationIn', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Continuation In'),
     ('continuationIn', 'PAID', True, f'{BC_DESC} - Continuation Application Filed'),
     ('continuationIn', 'RESUBMITTED', True, f'{BC_DESC} - Continuation Application Filed'),
-    ('continuationIn', 'COMPLETED', True, f'{BC_DESC} - Successful Continuation In'),
+    ('continuationIn', 'COMPLETED', True, f'1234567 B.C. Ltd. - Successful Continuation In'),
     ('incorporationApplication', 'PAID', False, f'{LEGAL_NAME} - Incorporation Application Filed'),
     ('incorporationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Incorporation'),
     ('incorporationApplication', 'PAID', True, f'{BC_DESC} - Incorporation Application Filed'),
-    ('incorporationApplication', 'COMPLETED', True, f'{BC_DESC} - Successful Incorporation'),
+    ('incorporationApplication', 'COMPLETED', True, f'1234567 B.C. Ltd. - Successful Incorporation'),
 ])
 def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, status, is_numbered, expected_subject):
     """Assert that bootstrap filings return an email with the expected subject."""

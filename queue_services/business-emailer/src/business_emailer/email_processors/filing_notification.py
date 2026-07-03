@@ -79,6 +79,16 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     return attachments, extra_pdf_types
 
 
+def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name: str, business_identifier: str) -> bool:
+    """Determine if the email should be skipped."""
+    invalid_status = status == Filing.Status.PAID.value and not filing.is_future_effective
+    invalid_data = not legal_type or not filing_name or not business_identifier
+    skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
+    invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
+    
+    return invalid_status or invalid_data or invalid_coop_filing
+
+
 def process(email_info: dict, token: str) -> dict | None:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
@@ -93,10 +103,6 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
-    
-    if status == Filing.Status.PAID.value and not filing.is_future_effective:
-        # We no longer send an email for this case
-        return
 
     new_business_filings = ["amalgamationApplication", "continuationIn", "incorporationApplication", "registration"]
     filing_data = filing.json.get("filing", {}).get(filing_type, {})
@@ -110,13 +116,8 @@ def process(email_info: dict, token: str) -> dict | None:
     legal_type = business.get("legalType")
     filing_name = FILING_TITLE.get(filing_type)
     business_identifier = business.get("identifier")
-    if not legal_type or not filing_name or not business_identifier:
-        # Should never happen - log and return. It will be skipped.
-        current_app.logger.error("Missing legal_type, identifier and/or filing_name. Email: %s", email_info)
-        return
-    
-    skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
-    if legal_type == Business.LegalTypes.COOP.value and filing_type in skipped_coop_filing_types:
+
+    if _skip_email_check(status, filing, legal_type, filing_name, business_identifier):
         return
 
     dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
