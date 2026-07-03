@@ -55,14 +55,25 @@ from tests.unit.helpers import generate_temp_filing
 from tests import EPOCH_DATETIME
 
 
+AMALGAMATION_APPLICATION_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+AMALGAMATION_APPLICATION_TEMPLATE['filing']['header']['name'] = 'amalgamationApplication'
+AMALGAMATION_APPLICATION_TEMPLATE['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+
+BOOTSTRAP_TYPE_MAPPER = {
+    'amalgamationApplication': AMALGAMATION_APPLICATION_TEMPLATE,
+    'continuationIn': CONTINUATION_IN_FILING_TEMPLATE,
+    'incorporationApplication': INCORPORATION_FILING_TEMPLATE,
+}
+
+# NB: These do not include the header or business in their templates
 FILING_TYPE_MAPPER = {
-    # annual report structure is different than other 2
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
     'alteration': ALTERATION
 }
 
+COMP_PARTY_EMAIL = 'comp_party@email.com'
 CONTACT_POINT = 'contact@point.com'
 LEGAL_NAME = 'test business'
 PARTY_EMAIL_1 = 'party1@email.com'
@@ -119,32 +130,50 @@ def create_filing(token=None, filing_json=None, business_id=None,
     return filing
 
 
-def prep_incorp_filing(session, identifier, payment_id, option, legal_type=None):
-    """Return a new incorp filing prepped for email notification."""
-    filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    if legal_type:
-        filing_template['filing']['business']['legalType'] = legal_type
-        filing_template['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
-    for party in filing_template['filing']['incorporationApplication']['parties']:
+def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, legal_name=None, filing_sub_type=None):
+    """Return a new bootstrap filing prepped for email notification."""
+    if not filing_sub_type and filing_type == 'amalgamationApplication':
+        filing_sub_type = 'regular'
+
+    filing_template = copy.deepcopy(BOOTSTRAP_TYPE_MAPPER[filing_type])
+    filing_template['filing']['business'] = {
+        'legalType': legal_type
+    }
+    filing_template['filing'][filing_type]['nameRequest'] = {'legalType': legal_type}
+    filing_template['filing'][filing_type]['contactPoint']['email'] = CONTACT_POINT
+
+    if legal_name:
+        filing_template['filing'][filing_type]['nameRequest']['legalName'] = legal_name
+    
+    if filing_sub_type:
+        sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, 'type')
+        filing_template['filing'][filing_type][sub_type_key] = filing_sub_type
+
+    for party in filing_template['filing'][filing_type]['parties']:
         for role in party['roles']:
             if role['roleType'] == 'Completing Party':
-                party['officer']['email'] = 'comp_party@email.com'
-    filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
+                party['officer']['email'] = COMP_PARTY_EMAIL
 
     temp_identifier = generate_temp_filing()
     filing_template['filing']['business']['identifier'] = temp_identifier
-    filing = create_filing(token=payment_id, filing_json=filing_template,
-                           business_id=None, bootstrap_id=temp_identifier)
+    filing = create_filing(token='1', filing_json=filing_template, bootstrap_id=temp_identifier)
+    filing._filing_sub_type = filing_sub_type
     filing.payment_completion_date = filing.filing_date
 
     if option in ['COMPLETED', 'bn', 'mras']:
-        business = create_business(identifier, legal_type=legal_type, legal_name=LEGAL_NAME)
+        legal_name = legal_name or f'{identifier[2:]} B.C. Ltd.'
+        business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
         filing.business_id = business.id
         transaction_id = VersioningProxy.get_transaction_id(session())
         filing.transaction_id = transaction_id
 
     filing.save()
     return filing
+    
+
+def prep_incorp_filing(session, identifier, option, legal_type='BC', legal_name=LEGAL_NAME):
+    """Return a new incorp filing prepped for email notification."""
+    return prep_bootstrap_filing(session, 'incorporationApplication', identifier, legal_type, option, legal_name=legal_name)
 
 
 def prep_registration_filing(session, identifier, payment_id, option, legal_type, legal_name, parties=None):
@@ -715,62 +744,6 @@ def prep_cp_special_resolution_correction_upload_memorandum_filing(session, busi
     filing._meta_data = {'correction': {'uploadNewMemorandum': True}}
     filing.save()
     if option in ['COMPLETED']:
-        transaction_id = VersioningProxy.get_transaction_id(session())
-        filing.transaction_id = transaction_id
-        filing.save()
-    return filing
-
-
-def prep_amalgamation_filing(session, identifier, payment_id, option, legal_name):
-    """Return a new incorp filing prepped for email notification."""
-    business = create_business(identifier, legal_type=Business.LegalTypes.BCOMP.value, legal_name=legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'amalgamationApplication'
-
-    filing_template['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
-    filing_template['filing']['amalgamationApplication']['nameRequest'] = {
-        'identifier': business.identifier,
-        'legalType': Business.LegalTypes.BCOMP.value,
-        'legalName': legal_name
-    }
-    filing_template['filing']['business'] = {'identifier': business.identifier}
-    for party in filing_template['filing']['amalgamationApplication']['parties']:
-        for role in party['roles']:
-            if role['roleType'] == 'Completing Party':
-                party['officer']['email'] = 'comp_party@email.com'
-    filing_template['filing']['amalgamationApplication']['contactPoint']['email'] = 'test@test.com'
-
-    temp_identifier = generate_temp_filing()
-    filing = create_filing(token=payment_id, filing_json=filing_template,
-                           business_id=business.id, bootstrap_id=temp_identifier)
-    filing.payment_completion_date = filing.filing_date
-    filing.save()
-    if option in [Filing.Status.COMPLETED.value, 'bn']:
-        transaction_id = VersioningProxy.get_transaction_id(session())
-        filing.transaction_id = transaction_id
-        filing.save()
-    return filing
-
-
-def prep_continuation_in_filing(session, identifier, payment_id, option):
-    """Return a new incorp filing prepped for email notification."""
-    business = create_business(identifier, legal_type=Business.LegalTypes.BCOMP_CONTINUE_IN.value)
-    filing_template = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
-    if business.legal_type:
-        filing_template['filing']['continuationIn']['nameRequest']['legalType'] = business.legal_type
-    for party in filing_template['filing']['continuationIn']['parties']:
-        for role in party['roles']:
-            if role['roleType'] == 'Completing Party':
-                party['officer']['email'] = 'comp_party@email.com'
-    filing_template['filing']['continuationIn']['contactPoint']['email'] = 'test@test.com'
-    filing_template['filing']['business'] = {'identifier': identifier}
-
-    temp_identifier = generate_temp_filing()
-    filing = create_filing(token=payment_id, filing_json=filing_template,
-                           business_id=business.id, bootstrap_id=temp_identifier)
-    filing.payment_completion_date = filing.filing_date
-    filing.save()
-    if option in [Filing.Status.COMPLETED.value, 'bn']:
         transaction_id = VersioningProxy.get_transaction_id(session())
         filing.transaction_id = transaction_id
         filing.save()

@@ -45,7 +45,6 @@ from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
     agm_location_change_notification,
-    amalgamation_notification,
     amalgamation_out_notification,
     appoint_receiver_notification,
     ar_reminder_notification,
@@ -53,7 +52,6 @@ from business_emailer.email_processors import (
     cease_receiver_notification,
     consent_amalgamation_out_notification,
     consent_continuation_out_notification,
-    continuation_in_notification,
     continuation_out_notification,
     correction_notification,
     dissolution_notification,
@@ -259,12 +257,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             send_email(email, token)
         elif etype == "specialResolution":
             email = special_resolution_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "amalgamationApplication":
-            email = amalgamation_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "continuationIn":
-            email = continuation_in_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "intentToLiquidate":
             email = intent_to_liquidate_notification.process(email_msg["email"], token)

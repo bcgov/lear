@@ -33,7 +33,7 @@ from business_emailer.email_processors.util import (
     OFFICE_NAME,
     get_legal_type_key,
 )
-from business_model.models import Business, CorpType, Filing, UserRoles
+from business_model.models import Business, CorpType, Filing, ReviewStatus, UserRoles
 
 
 def _get_additional_info(filing: Filing) -> dict:
@@ -62,6 +62,11 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     """Get attachments for a filing type."""
     attachments = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("attachments", [])
     extra_pdf_types = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("extraPdfTypes", [])
+    # filing sub type overrides attachments and extraPdfTypes if present
+    if filing.filing_sub_type and (attachments_sub := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-{filing.filing_sub_type}", {})):
+        attachments = attachments_sub.get("attachments", [])
+        extra_pdf_types = attachments_sub.get("extraPdfTypes", [])
+    # filing attachments with change of name cert can override attachments and extraPdfTypes if present
     if (_get_additional_info(filing).get("nameChange", False)
         and (attachments_con := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-con", {}))
     ):
@@ -78,6 +83,14 @@ def process(email_info: dict, token: str) -> dict | None:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
     filing_type, status = email_info["type"], email_info["option"]
+
+    regenerate = False
+    # TODO: need to confirm this case for continuationIn
+    if status == ReviewStatus.RESUBMITTED.name:
+        status = Filing.Status.PAID.value
+        # regenerate the filing documents for resubmitted filings
+        regenerate = True
+
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     
@@ -134,7 +147,7 @@ def process(email_info: dict, token: str) -> dict | None:
     # attachments and future attachments
     future_attachments, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
 
-    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types)
+    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types, regenerate=regenerate)
 
     # render template with vars
     attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
@@ -160,7 +173,7 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # get recipients
     recipient_filing_type = None
-    if filing_type in ["incorporationApplication", "registration", "changeOfRegistration"]:
+    if filing_type in new_business_filings or filing_type == "changeOfRegistration":
         recipient_filing_type = filing_type
 
     recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)

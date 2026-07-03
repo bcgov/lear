@@ -21,7 +21,6 @@ from unittest.mock import patch
 
 from business_emailer.email_processors import (
     get_account_by_affiliated_identifier,
-    get_entity_dashboard_url,
     get_filled_template,
     get_org_id_for_temp_identifier,
     get_party_emails,
@@ -96,26 +95,6 @@ def test_get_org_id_for_temp_identifier_raises_when_no_orgs(app, auth_url, ident
         m.get(url, json=response_json, status_code=200)
         with pytest.raises(Exception):
             get_org_id_for_temp_identifier(identifier, 'token')
-
-
-def test_get_entity_dashboard_url_non_temp_uses_dashboard_url(app, auth_url, config):
-    """Assert non-temp identifiers return DASHBOARD_URL + identifier and make no HTTP calls."""
-    identifier = 'BC1234567'
-    with app.app_context(), requests_mock.Mocker() as m:
-        url = get_entity_dashboard_url(identifier, 'token')
-        assert url == config.get('DASHBOARD_URL') + identifier
-        assert m.call_count == 0
-
-
-def test_get_entity_dashboard_url_temp_uses_auth_web_url(app, auth_url):
-    """Assert temp identifiers resolve to AUTH_WEB_URL + account/<org_id>/business."""
-    identifier = 'T12345'
-    orgs_url = f'{auth_url}/orgs?affiliation={identifier}'
-
-    with app.app_context(), requests_mock.Mocker() as m:
-        m.get(orgs_url, json={'orgs': [{'id': 77}]}, status_code=200)
-        url = get_entity_dashboard_url(identifier, 'token')
-        assert url == 'https://auth-web-url/account/77/business'
 
 
 def test_substitute_template_parts_md_replaces_footer_marker(app):
