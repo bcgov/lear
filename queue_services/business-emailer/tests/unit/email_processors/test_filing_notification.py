@@ -97,19 +97,28 @@ def firm_parties():
 # Tests for non firm bootstrap filings (amalgamation, continuationIn, incorporation)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize('filing_type, status, expected_subject', [
-    ('amalgamationApplication', 'PAID', f'{LEGAL_NAME} - Amalgamation Application Filed'),
-    ('amalgamationApplication', 'COMPLETED', f'{LEGAL_NAME} - Successful Amalgamation'),
-    ('continuationIn', 'PAID', f'{LEGAL_NAME} - Continuation Application Filed'),
-    ('continuationIn', 'RESUBMITTED', f'{LEGAL_NAME} - Continuation Application Filed'),
-    ('continuationIn', 'COMPLETED', f'{LEGAL_NAME} - Successful Continuation In'),
-    ('incorporationApplication', 'PAID', f'{LEGAL_NAME} - Incorporation Application Filed'),
-    ('incorporationApplication', 'COMPLETED', f'{LEGAL_NAME} - Successful Incorporation')
+BC_DESC = Business.BUSINESSES[Business.LegalTypes('BC')]['numberedDescription']
+@pytest.mark.parametrize('filing_type, status, is_numbered, expected_subject', [
+    ('amalgamationApplication', 'PAID', False, f'{LEGAL_NAME} - Amalgamation Application Filed'),
+    ('amalgamationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Amalgamation'),
+    ('amalgamationApplication', 'PAID', True, f'{BC_DESC} - Amalgamation Application Filed'),
+    ('amalgamationApplication', 'COMPLETED', True, f'{BC_DESC} - Successful Amalgamation'),
+    ('continuationIn', 'PAID', False, f'{LEGAL_NAME} - Continuation Application Filed'),
+    ('continuationIn', 'RESUBMITTED', False, f'{LEGAL_NAME} - Continuation Application Filed'),
+    ('continuationIn', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Continuation In'),
+    ('continuationIn', 'PAID', True, f'{BC_DESC} - Continuation Application Filed'),
+    ('continuationIn', 'RESUBMITTED', True, f'{BC_DESC} - Continuation Application Filed'),
+    ('continuationIn', 'COMPLETED', True, f'{BC_DESC} - Successful Continuation In'),
+    ('incorporationApplication', 'PAID', False, f'{LEGAL_NAME} - Incorporation Application Filed'),
+    ('incorporationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Incorporation'),
+    ('incorporationApplication', 'PAID', True, f'{BC_DESC} - Incorporation Application Filed'),
+    ('incorporationApplication', 'COMPLETED', True, f'{BC_DESC} - Successful Incorporation'),
 ])
-def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, status, expected_subject):
+def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, status, is_numbered, expected_subject):
     """Assert that bootstrap filings return an email with the expected subject."""
     identifier = 'BC1234567'
-    filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', status, LEGAL_NAME)
+    legal_name = None if is_numbered else LEGAL_NAME
+    filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', status, legal_name)
     if status in ['PAID', 'RESUBMITTED']:
         make_future_effective(filing)
         identifier = filing.temp_reg
