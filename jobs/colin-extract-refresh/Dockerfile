@@ -45,8 +45,6 @@ RUN set -eux; \
     rm /tmp/dbschema.tar.gz; \
     mkdir -p "${DBSCHEMA_HOME}/lib"; \
     curl -fsSL "https://repo1.maven.org/maven2/org/testfx/openjfx-monocle/17.0.10/openjfx-monocle-17.0.10.jar" -o "${DBSCHEMA_HOME}/lib/monocle.jar"; \
-    mkdir -p /root/.DbSchema/drivers/Oracle; \
-    curl -fsSL "https://maven.org" -o /root/.DbSchema/drivers/Oracle/ojdbc11.jar; \
     ln -sf "${DBSCHEMA_HOME}/DbSchemaCLI" /usr/local/bin/dbschemacli; \
     test -x "${DBSCHEMA_HOME}/DbSchemaCLI"; \
     rm -rf /var/lib/apt/lists/*
@@ -54,6 +52,8 @@ RUN set -eux; \
 ENV HOME=/opt/app-root
 RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
     curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar && \
+    mkdir -p /opt/app-root/.DbSchema/drivers/Oracle; \
+    curl -fsSL "https://maven.org" -o /opt/app-root/.DbSchema/drivers/Oracle/ojdbc11.jar; \
     chmod -R g+rwX /opt/app-root/.DbSchema && \
     chmod 755 /opt/app-root
 
