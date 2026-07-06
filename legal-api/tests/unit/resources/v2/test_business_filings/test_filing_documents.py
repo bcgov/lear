@@ -1668,7 +1668,7 @@ def filer_action(filing_name, filing_json, meta_data, business):
 
 
 def test_continuation_out_uploaded_documents(app, session, client, jwt, monkeypatch, mock_drs_service):
-    """Assert that uploaded continuation out documents are returned as staff-only static documents."""
+    """Assert that uploaded continuation out documents are returned as static documents to staff."""
     identifier = 'BC7654321'
     entity_type = Business.LegalTypes.COMP.value
     business = factory_business(identifier, entity_type=entity_type)
@@ -1730,9 +1730,13 @@ def test_continuation_out_uploaded_documents(app, session, client, jwt, monkeypa
 
 
 @pytest.mark.parametrize('non_staff_role', [BASIC_USER, PUBLIC_USER])
-def test_continuation_out_uploaded_documents_not_returned_for_non_staff(non_staff_role, app, session, client, jwt,
-                                                                        monkeypatch, mock_drs_service):
-    """Assert that uploaded continuation out documents are returned to staff only, not other roles."""
+def test_continuation_out_uploaded_documents_returned_for_non_staff(non_staff_role, app, session, client, jwt,
+                                                                    monkeypatch, mock_drs_service):
+    """Assert that uploaded continuation out documents are returned to non-staff users as well as staff.
+
+    See https://github.com/bcgov/entity/issues/33788 - continuation out uploaded documents are
+    visible to clients, unlike other static documents which remain staff-only.
+    """
     identifier = 'BC7654321'
     entity_type = Business.LegalTypes.COMP.value
     business = factory_business(identifier, entity_type=entity_type)
@@ -1761,9 +1765,16 @@ def test_continuation_out_uploaded_documents_not_returned_for_non_staff(non_staf
     }
     filing.save()
 
-    # a non-staff user is authorized to view the business, but not the staff-only static documents
+    # a non-staff user authorized to view the business now also sees the continuation out uploaded documents
     expected_msg = {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/receipt'
+        'receipt': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/receipt',
+        'staticDocuments': [
+            {
+                'name': file.get('fileName'),
+                'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file.get("fileKey")}'
+            }
+            for file in uploaded_documents
+        ]
     }}
 
     account_id = '1'
@@ -1784,7 +1795,7 @@ def test_continuation_out_uploaded_documents_not_returned_for_non_staff(non_staf
     expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
 
     assert rv.status_code == HTTPStatus.OK
-    assert 'staticDocuments' not in rv_data['documents']
+    assert 'staticDocuments' in rv_data['documents']
     assert rv_data == expected
 
 

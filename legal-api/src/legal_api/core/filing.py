@@ -639,8 +639,15 @@ class Filing:  # pylint: disable=too-many-public-methods
             for doc in additional:
                 documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 
+            # continuationOut uploaded documents are visible to clients as well as staff
+            # (see https://github.com/bcgov/entity/issues/33788); all other static
+            # documents (e.g. continuationIn affidavit/authorization files) remain staff-only.
+            static_documents_visible = (
+                has_roles(jwt, [UserRoles.staff]) or
+                filing.storage.filing_type == Filing.FilingTypes.CONTINUATIONOUT.value
+            )
             if (
-                has_roles(jwt, [UserRoles.staff]) and
+                static_documents_visible and
                 (static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"))
             ):
                 documents["documents"]["staticDocuments"] = static_docs
