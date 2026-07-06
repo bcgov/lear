@@ -13,19 +13,16 @@
 # limitations under the License.
 """The Unit Tests for the Incorporation email processor."""
 import base64
-import copy
-from unittest.mock import patch
 
 import pytest
 import requests_mock
 from business_model.models import Business
-from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
 from business_emailer.email_processors import filing_notification
-from tests.unit import (CONTACT_POINT, PARTY_EMAIL_1, PARTY_EMAIL_2,
-                        create_filing, prep_change_of_registration_filing, prep_incorp_filing,
+from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
+                        prep_bootstrap_filing, prep_change_of_registration_filing, prep_incorp_filing,
                         prep_maintenance_filing, prep_registration_filing)
-from tests.unit.helpers import generate_temp_filing, make_future_effective, make_non_future_effective
+from tests.unit.helpers import make_future_effective, make_non_future_effective
 
 
 # ---------------------------------------------------------------------------
@@ -96,74 +93,158 @@ def firm_parties():
     }]
 
 
-def _prep_numbered_incorp_filing(session, identifier, payment_id, legal_type):
-    """Return a PAID IA filing for a numbered company (business has no legal name in DB)."""
-    filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
-    filing_template['filing']['business'] = {'identifier': identifier}
-    if legal_type:
-        filing_template['filing']['business']['legalType'] = legal_type
-        filing_template['filing']['incorporationApplication']['nameRequest']['legalType'] = legal_type
-    for party in filing_template['filing']['incorporationApplication']['parties']:
-        for role in party['roles']:
-            if role['roleType'] == 'Completing Party':
-                party['officer']['email'] = 'comp_party@email.com'
-    filing_template['filing']['incorporationApplication']['contactPoint']['email'] = 'test@test.com'
-    # Remove legalName from nameRequest to ensure numbered path
-    filing_template['filing']['incorporationApplication']['nameRequest'].pop('legalName', None)
-
-    temp_identifier = generate_temp_filing()
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=None,
-        bootstrap_id=temp_identifier,
-    )
-    filing.payment_completion_date = filing.filing_date
-    filing.save()
-    return filing
-
-
 # ---------------------------------------------------------------------------
-# test_incorp_notification (split from original parametrized test)
+# Tests for non firm bootstrap filings (amalgamation, continuationIn, incorporation)
 # ---------------------------------------------------------------------------
 
-def test_incorp_notification_completed(app, session, mock_pdfs):
-    """Assert that IA COMPLETED returns an email with the Successful Incorporation subject."""
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
+BC_DESC = Business.BUSINESSES[Business.LegalTypes('BC')]['numberedDescription']
+@pytest.mark.parametrize('filing_type, status, is_numbered, expected_subject', [
+    ('amalgamationApplication', 'PAID', False, f'{LEGAL_NAME} - Amalgamation Application Filed'),
+    ('amalgamationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Amalgamation'),
+    ('amalgamationApplication', 'PAID', True, f'{BC_DESC} - Amalgamation Application Filed'),
+    ('amalgamationApplication', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Amalgamation'),
+    ('continuationIn', 'PAID', False, f'{LEGAL_NAME} - Continuation Application Filed'),
+    ('continuationIn', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Continuation In'),
+    ('continuationIn', 'PAID', True, f'{BC_DESC} - Continuation Application Filed'),
+    ('continuationIn', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Continuation In'),
+    ('incorporationApplication', 'PAID', False, f'{LEGAL_NAME} - Incorporation Application Filed'),
+    ('incorporationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Incorporation'),
+    ('incorporationApplication', 'PAID', True, f'{BC_DESC} - Incorporation Application Filed'),
+    ('incorporationApplication', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Incorporation'),
+])
+def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, status, is_numbered, expected_subject):
+    """Assert that bootstrap filings return an email with the expected subject."""
+    identifier = 'BC1234567'
+    legal_name = None if is_numbered else LEGAL_NAME
+    filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', status, legal_name)
+    if status == 'PAID':
+        make_future_effective(filing)
+        identifier = filing.temp_reg
     token = 'token'
-    email = process_filing(filing, 'incorporationApplication', 'COMPLETED')
+
+    email = process_filing(filing, filing_type, status, token)
 
     assert email is not None
-    assert email['content']['subject'] == 'test business - Successful Incorporation'
-    assert 'test@test.com' in email['recipients']
+    assert email['content']['subject'] == expected_subject
+    assert CONTACT_POINT in email['recipients']
     assert email['content']['body']
     assert email['content']['attachments'] == []
     assert mock_pdfs.call_args[0][0] == token
-    assert mock_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
+    assert mock_pdfs.call_args[0][1]['identifier'] == identifier
     assert mock_pdfs.call_args[0][1]['legalType'] == 'BC'
     assert mock_pdfs.call_args[0][2] == filing
 
 
-def test_incorp_notification_paid_future_effective(app, session, mock_pdfs):
-    """Assert that IA PAID future-effective returns an email with the Filed subject."""
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
-    make_future_effective(filing)
-    token = 'token'
-    email = process_filing(filing, 'incorporationApplication', 'PAID')
+@pytest.mark.parametrize('filing_type, filing_sub_type, status, expected_attachments', [
+    ('amalgamationApplication', 'regular', 'PAID', [
+        {'fileName': 'Amalgamation Application (Regular).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
+    ]),
+    ('amalgamationApplication', 'regular', 'COMPLETED', [
+        {'fileName': 'Amalgamation Application (Regular).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certificate of Amalgamation.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '4'}
+    ]),
+    ('amalgamationApplication', 'horizontal', 'PAID', [
+        {'fileName': 'Amalgamation Application Short-form (Horizontal).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
+    ]),
+    ('amalgamationApplication', 'horizontal', 'COMPLETED', [
+        {'fileName': 'Amalgamation Application Short-form (Horizontal).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certificate of Amalgamation.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '4'}
+    ]),
+    ('amalgamationApplication', 'vertical', 'PAID', [
+        {'fileName': 'Amalgamation Application Short-form (Vertical).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
+    ]),
+    ('amalgamationApplication', 'vertical', 'COMPLETED', [
+        {'fileName': 'Amalgamation Application Short-form (Vertical).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certificate of Amalgamation.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '4'}
+    ]),
+    ('continuationIn', None, 'PAID', [
+        {'fileName': 'Continuation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
+    ]),
+    ('continuationIn', None, 'COMPLETED', [
+        {'fileName': 'Continuation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certificate of Continuation.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '4'}
+    ]),
+    ('incorporationApplication', None, 'PAID', [
+        {'fileName': 'Incorporation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
+    ]),
+    ('incorporationApplication', None, 'COMPLETED', [
+        {'fileName': 'Incorporation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certificate of Incorporation.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '4'}
+    ])
+])
+def test_bootstrap_bc_filing_attachments(session, config, filing_type, filing_sub_type, status, expected_attachments):
+    """Assert that BC bootstrap filings return an email with the expected attachments."""
+    identifier = 'BC1234567'
+    filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', status, LEGAL_NAME, filing_sub_type)
+    if status == 'PAID':
+        make_future_effective(filing)
+        identifier = filing.temp_reg
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing, {
+            f'{filing_type}': b'pdf_content_0',
+            'noticeOfArticles': b'pdf_content_1',
+            'certificateOfAmalgamation': b'pdf_content_2',
+            'certificateOfContinuation': b'pdf_content_2',
+            'certificateOfIncorporation': b'pdf_content_2',
+        }, receipt=b'pdf_content_3')
+        output = process_filing(filing, filing_type, status)
 
-    assert email is not None
-    assert 'Incorporation Application Filed' in email['content']['subject']
-    assert email['content']['body']
-    assert email['content']['attachments'] == []
-    assert mock_pdfs.call_args[0][0] == token
-    assert mock_pdfs.call_args[0][2] == filing
+    assert output is not None
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
 
 
-@pytest.mark.parametrize('filing_type', ['incorporationApplication', 'registration'])
+def test_bootstrap_cp_filing_attachments(session, config):
+    """IA COMPLETED COOP: IncorporationApplication + Certificate + Certified Rules + Memorandum + Receipt."""
+    identifier = 'CP1234567'
+    filing = prep_incorp_filing(session, identifier, 'COMPLETED', 'CP')
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing, {
+            'incorporationApplication': b'pdf_content_0',
+            'certificateOfIncorporation': b'pdf_content_1',
+            'certifiedRules': b'pdf_content_2',
+            'certifiedMemorandum': b'pdf_content_3',
+        }, receipt=b'pdf_content_4')
+        output = process_filing(filing, 'incorporationApplication', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    # IA COMPLETED COOP: IncorporationApplication + Certificate + Rules + Memorandum + Receipt = 5 attachments
+    assert len(attachments) == 5
+    file_names = [a['fileName'] for a in attachments]
+    assert 'Incorporation Application.pdf' in file_names
+    assert 'Certificate of Incorporation.pdf' in file_names
+    assert 'Certified Rules.pdf' in file_names
+    assert 'Certified Memorandum.pdf' in file_names
+    assert 'Receipt.pdf' in file_names
+
+
+@pytest.mark.parametrize('filing_type', [
+    'amalgamationApplication',
+    'continuationIn',
+    'incorporationApplication',
+    'registration'
+])
 def test_paid_non_future_effective_returns_none(app, session, filing_type):
     """Assert that a PAID non-future-effective filing returns None (no email is sent)."""
-    if filing_type == 'incorporationApplication':
-        filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
+    if filing_type != 'registration':
+        filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', 'PAID', LEGAL_NAME)
         make_non_future_effective(filing)
     else:
         filing = prep_registration_filing(
@@ -174,41 +255,75 @@ def test_paid_non_future_effective_returns_none(app, session, filing_type):
     assert result is None
 
 
-# ---------------------------------------------------------------------------
-# test_numbered_incorp_notification
-# ---------------------------------------------------------------------------
-
 @pytest.mark.parametrize('legal_type', ['BEN', 'BC', 'ULC', 'CC'])
-def test_numbered_incorp_notification_future_effective(app, session, legal_type, mock_pdfs):
-    """Assert that future-effective PAID IA with no legal name uses the numbered description as business_name."""
+@pytest.mark.parametrize('status', ['PAID', 'COMPLETED'])
+@pytest.mark.parametrize('filing_type,', ['amalgamationApplication', 'continuationIn', 'incorporationApplication'])
+def test_bootstrap_body_details(app, mock_pdfs, session, legal_type, status, filing_type):
+    """Assert that bootstrap filings with no legal name use the numbered description as business_name."""
     # Create a filing where the business has no legal name (numbered company scenario)
-    filing = _prep_numbered_incorp_filing(session, 'BC1234567', '1', legal_type)
+    filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', legal_type, status, None)
     make_future_effective(filing)
-    email = process_filing(filing, 'incorporationApplication', 'PAID')
+    email = process_filing(filing, filing_type, status)
 
     assert email is not None
-    assert email['content']['body']
-    # When legalName is absent from the DB business:
-    # - falls back to numberedDescription as business_name in subject
-    # - falls back to 'Not Available' in the tombstone
-    numbered_description = Business.BUSINESSES[Business.LegalTypes(legal_type)]['numberedDescription']
-    assert numbered_description in email['content']['subject']
-    assert "Business Name: Not Available" not in email['content']['body']
+    body = email['content']['body']
+    assert body
+    assert 'Business Name:' in body
+    assert 'Incorporation Number:' in body
+    assert '**Effective Date and Time:**' in body
+    assert 'Attachments' in body
+    if status == 'PAID':
+        # When legalName is absent from the DB business:
+        # - falls back to numberedDescription as business_name in subject
+        # - falls back to 'Not Available' in the tombstone
+        numbered_description = Business.BUSINESSES[Business.LegalTypes(legal_type)]['numberedDescription']
+        assert numbered_description in email['content']['subject']
+        assert '**Business Name:** Not Available' in body
+        assert '**Incorporation Number:** Not Available' in body
+        assert 'What happens next' in body
+    else:
+        assert '**Business Name:** 1234567 B.C. Ltd.' in body
+        assert '**Incorporation Number:** BC1234567' in body
+        assert '1234567 B.C. Ltd.' in email['content']['subject']
+        assert 'What happens next' not in body
 
 
-@pytest.mark.parametrize('legal_type', ['BEN', 'BC', 'ULC', 'CC'])
-def test_numbered_incorp_notification_completed(app, session, legal_type, mock_pdfs):
-    """Assert that for a COMPLETED IA the business legalName is used in the subject."""
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', legal_type=legal_type)
-    email = process_filing(filing, 'incorporationApplication', 'COMPLETED')
+@pytest.mark.parametrize("filing_type, legal_type, tax_id, expected", [
+    ("amalgamationApplication", "BC", "123456789BC0001", "123456789 BC0001"),
+    ("amalgamationApplication", "BC", "123456789", "Not Available"),
+    ("amalgamationApplication", "BC", None, "Not Available"),
+    ("continuationIn", "BC", "123456789BC0001", "123456789 BC0001"),
+    ("continuationIn", "BC", "123456789", "Not Available"),
+    ("continuationIn", "BC", None, "Not Available"),
+    ("incorporationApplication", "BC", "123456789BC0001", "123456789 BC0001"),
+    ("incorporationApplication", "BC", "123456789", "Not Available"),
+    ("incorporationApplication", "BC", None, "Not Available"),
+    ("incorporationApplication", "CP", None, None),
+])
+def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_type, tax_id, expected):
+    """Assert business number renders as expected."""
+    identifier = f'{legal_type}1234567'
+
+    filing = prep_bootstrap_filing(session, filing_type, identifier, legal_type, 'COMPLETED')
+    business = Business.find_by_identifier(identifier)
+    business.tax_id = tax_id
+    business.save()
+
+    email = process_filing(filing, filing_type, 'COMPLETED')
 
     assert email is not None
-    assert email['content']['body']
-    assert 'test business - Successful Incorporation' == email['content']['subject']
+    body = email['content']['body']
+    if expected:
+        assert f'**Business Number:** {expected}' in body
+        if expected == 'Not Available':
+            assert '## Business Number' in body
+    else:
+        assert '**Business Number:**' not in body
+        assert '## Business Number' not in body
 
 
 # ---------------------------------------------------------------------------
-# test_maintenance_notification
+# tests for non firm maintenance filings (changeOfAddress, changeOfDirectors, alteration, annualReport)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
@@ -248,72 +363,6 @@ def test_maintenance_notification(app, session, status, filing_type, submitter_r
     assert mock_recipients.call_args[0][0] == status
     assert mock_recipients.call_args[0][1] == filing.filing_json
     assert mock_recipients.call_args[0][2] == token
-
-
-def test_filing_attachments_ia_paid_future_effective(session, config):
-    """IA PAID future-effective: filing PDF + receipt are attached."""
-    filing = prep_incorp_filing(session, None, '1', 'PAID', 'BC')
-    temp_reg_id = filing.temp_reg
-    make_future_effective(filing)
-    with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, temp_reg_id, filing,
-                         {'incorporationApplication': b'pdf_content_1'}, receipt=b'pdf_content_2')
-        output = process_filing(filing, 'incorporationApplication', 'PAID')
-
-    assert output is not None
-    attachments = output['content']['attachments']
-    # IA always adds the filing application PDF + receipt.
-    assert len(attachments) == 2
-    assert_attachment(attachments[0], 'Incorporation Application.pdf', 'pdf_content_1', '1')
-    assert_attachment(attachments[1], 'Receipt.pdf', 'pdf_content_2', '2')
-
-
-def test_filing_attachments_ia_completed_bc(session, config):
-    """IA COMPLETED BC: IncorporationApplication + Notice of Articles + Certificate of Incorporation + Receipt."""
-    identifier = 'BC1234567'
-    filing = prep_incorp_filing(session, identifier, '1', 'COMPLETED', 'BC')
-    with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, identifier, filing, {
-            'incorporationApplication': b'pdf_content_0',
-            'noticeOfArticles': b'pdf_content_1',
-            'certificateOfIncorporation': b'pdf_content_2',
-        }, receipt=b'pdf_content_3')
-        output = process_filing(filing, 'incorporationApplication', 'COMPLETED')
-
-    attachments = output['content']['attachments']
-    # IA COMPLETED BC: IncorporationApplication + NOA + Certificate + Receipt = 4 attachments
-    assert len(attachments) == 4
-    file_names = [a['fileName'] for a in attachments]
-    assert 'Incorporation Application.pdf' in file_names
-    assert 'Notice of Articles.pdf' in file_names
-    # New _add_filing_document_pdf replaces " Of " -> " of " (lowercase "of")
-    assert 'Certificate of Incorporation.pdf' in file_names
-    assert 'Receipt.pdf' in file_names
-
-
-def test_filing_attachments_ia_completed_coop(session, config):
-    """IA COMPLETED COOP: IncorporationApplication + Certificate + Certified Rules + Memorandum + Receipt."""
-    identifier = 'CP1234567'
-    filing = prep_incorp_filing(session, identifier, '1', 'COMPLETED', 'CP')
-    with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, identifier, filing, {
-            'incorporationApplication': b'pdf_content_0',
-            'certificateOfIncorporation': b'pdf_content_1',
-            'certifiedRules': b'pdf_content_2',
-            'certifiedMemorandum': b'pdf_content_3',
-        }, receipt=b'pdf_content_4')
-        output = process_filing(filing, 'incorporationApplication', 'COMPLETED')
-
-    attachments = output['content']['attachments']
-    # IA COMPLETED COOP: IncorporationApplication + Certificate + Rules + Memorandum + Receipt = 5 attachments
-    assert len(attachments) == 5
-    file_names = [a['fileName'] for a in attachments]
-    assert 'Incorporation Application.pdf' in file_names
-    # New _add_filing_document_pdf replaces " Of " -> " of " (lowercase "of")
-    assert 'Certificate of Incorporation.pdf' in file_names
-    assert 'Certified Rules.pdf' in file_names
-    assert 'Certified Memorandum.pdf' in file_names
-    assert 'Receipt.pdf' in file_names
 
 
 def test_filing_attachments_change_of_address_paid(session, config, mock_recipients):
@@ -370,83 +419,6 @@ def test_filing_attachments_alteration_completed_name_change(session, config, mo
     assert_attachment(attachments[1], 'Notice of Articles.pdf', 'pdf_content_2')
     assert_attachment(attachments[2], 'Certificate of Name Change.pdf', 'pdf_content_3')
     assert_attachment(attachments[3], 'Receipt.pdf', 'pdf_content_4')
-
-
-def test_ia_future_effective_paid_body_contains_tombstone_fields(app, session, mock_pdfs):
-    """Assert that IA future-effective PAID body contains business name and incorporation number."""
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
-    make_future_effective(filing)
-    email = process_filing(filing, 'incorporationApplication', 'PAID')
-
-    assert email is not None
-    body = email['content']['body']
-    # The future template includes business-tombstone.md which renders these labels
-    assert 'Business Name:' in body
-    assert 'Incorporation Number:' in body
-    # The future template includes what-happens-next.md
-    assert 'What happens next' in body
-    # Subject uses the "Filed" format
-    assert 'Incorporation Application Filed' in email['content']['subject']
-
-
-def test_ia_completed_body_and_subject(app, session, mock_pdfs):
-    """Assert that IA COMPLETED body uses non-future template and subject is Successful Incorporation."""
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
-    email = process_filing(filing, 'incorporationApplication', 'COMPLETED')
-
-    assert email is not None
-    body = email['content']['body']
-    assert 'successfully incorporated' in body
-    assert email['content']['subject'] == 'test business - Successful Incorporation'
-
-
-@pytest.mark.parametrize("legal_type, tax_id, expected", [
-    ("BC", "123456789BC0001", "123456789 BC0001"),
-    ("BC", "123456789", "Not Available"),
-    ("BC", None, "Not Available"),
-    ("CP", None, None),
-], ids=["BC with bn15", "BC with bn9", "BC with no bn", "CP doesn't show bn"])
-def test_business_number_rendering(app, session, legal_type, tax_id, expected, mock_pdfs):
-    """Assert business number renders as expected."""
-    identifier = f'{legal_type}1234567'
-
-    filing = prep_incorp_filing(session, identifier, '1', 'COMPLETED', legal_type)
-    business = Business.find_by_identifier(identifier)
-    business.tax_id = tax_id
-    business.save()
-
-    email = process_filing(filing, 'incorporationApplication', 'COMPLETED')
-
-    assert email is not None
-    body = email['content']['body']
-    if expected:
-        assert f'**Business Number:** {expected}' in body
-        if expected == 'Not Available':
-            assert '## Business Number' in body
-    else:
-        assert '**Business Number:**' not in body
-        assert '## Business Number' not in body
-
-
-@pytest.mark.parametrize('legal_type', [
-    ('CP'),
-    ('BC'),
-])
-def test_future_attachments_list_in_ia_future_effective_paid(app, session, config, legal_type):
-    """Assert that the future_attachments_list is used for COOP and non-COOP future-effective PAID IA."""
-    filing = prep_incorp_filing(session, None, '1', 'PAID', legal_type)
-    temp_reg_id = filing.temp_reg
-    make_future_effective(filing)
-    with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, temp_reg_id, filing,
-                         {'incorporationApplication': b'pdf_content_1'}, receipt=b'pdf_content_2')
-        email = process_filing(filing, 'incorporationApplication', 'PAID')
-
-    assert email is not None
-    attachments = email['content']['attachments']
-    assert len(attachments) == 2
-    assert_attachment(attachments[0], 'Incorporation Application.pdf', 'pdf_content_1')
-    assert_attachment(attachments[1], 'Receipt.pdf', 'pdf_content_2')
 
 
 @pytest.mark.parametrize(['filing_type', 'status', 'expected_header', 'expected_subject'], [
@@ -524,7 +496,6 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, submitter_role, firm_parties())
-
     email = process_filing(filing, filing_type, status)
 
     assert email is not None

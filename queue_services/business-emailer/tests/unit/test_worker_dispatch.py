@@ -24,7 +24,6 @@ from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
     agm_location_change_notification,
-    amalgamation_notification,
     amalgamation_out_notification,
     appoint_receiver_notification,
     ar_reminder_notification,
@@ -32,7 +31,6 @@ from business_emailer.email_processors import (
     cease_receiver_notification,
     consent_amalgamation_out_notification,
     consent_continuation_out_notification,
-    continuation_in_notification,
     continuation_out_notification,
     correction_notification,
     dissolution_notification,
@@ -317,27 +315,6 @@ def test_special_resolution_dispatches(app, session, mocker, mock_send_email):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_amalgamation_application_non_mras_dispatches(app, session, mocker, mock_send_email):
-    """amalgamationApplication with a non-'mras' option hits the dedicated branch."""
-    mock_process = mocker.patch.object(amalgamation_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "amalgamationApplication", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_continuation_in_non_mras_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(continuation_in_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "continuationIn", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_intent_to_liquidate_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(intent_to_liquidate_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "intentToLiquidate", "option": COMPLETED}
@@ -383,11 +360,13 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize('filing_type', [
+    "amalgamationApplication",
     "alteration",
     "annualReport",
     "changeOfAddress",
     "changeOfDirectors",
     "changeOfRegistration",
+    "continuationIn",
     "incorporationApplication",
     "registration",
 ])

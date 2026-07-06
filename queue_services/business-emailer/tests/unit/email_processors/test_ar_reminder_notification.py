@@ -23,7 +23,7 @@ from tests.unit import prep_incorp_filing
 def test_ar_reminder_notification(app, session):
     """Assert that the ar reminder notification can be processed."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED')
+    filing = prep_incorp_filing(session, 'BC1234567', 'COMPLETED')
     business = Business.find_by_internal_id(filing.business_id)
     business.legal_type = 'BC'
     business.legal_name = 'test business'

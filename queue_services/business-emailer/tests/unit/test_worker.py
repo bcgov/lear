@@ -17,13 +17,14 @@ from unittest.mock import patch
 
 import pytest
 from simple_cloudevent import SimpleCloudEvent
-from business_model.models import Business, Furnishing
+from business_model.models import Business, Furnishing, ReviewStatus, Filing
 from business_emailer.services.namex import NameXService
 from business_account import AccountService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.email_processors import (
     ar_reminder_notification,
+    continuation_in_notification,
     correction_notification,
     filing_notification,
     name_request,
@@ -35,8 +36,10 @@ from business_emailer.resources import business_emailer as worker
 
 from tests import MockResponse
 from tests.unit import (
+    CONTACT_POINT,
     create_business,
     create_furnishing,
+    prep_bootstrap_filing,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_incorp_filing,
@@ -48,7 +51,7 @@ from tests.unit.helpers import make_future_effective, make_non_future_effective
 def test_process_incorp_email_completed(app, session, mocker):
     """Assert that an INCORP COMPLETED email is sent with the Successful Incorporation subject."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', 'BC')
+    filing = prep_incorp_filing(session, 'BC1234567', 'COMPLETED', 'BC')
     token = '1'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -67,7 +70,7 @@ def test_process_incorp_email_completed(app, session, mocker):
 
                 assert mock_send_email.call_args[0][0]['content']['subject'] == \
                        'test business - Successful Incorporation'
-                assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                assert CONTACT_POINT in mock_send_email.call_args[0][0]['recipients']
                 assert mock_send_email.call_args[0][0]['content']['body']
                 assert mock_send_email.call_args[0][0]['content']['attachments'] == []
                 assert mock_send_email.call_args[0][1] == token
@@ -76,7 +79,7 @@ def test_process_incorp_email_completed(app, session, mocker):
 def test_process_incorp_email_paid_future_effective(app, session, mocker):
     """Assert that an INCORP PAID future-effective email is sent with the Filed subject."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
+    filing = prep_incorp_filing(session, 'BC1234567', 'PAID', 'BC')
     temp_reg_id = filing.temp_reg
     make_future_effective(filing)
     token = '1'
@@ -97,7 +100,7 @@ def test_process_incorp_email_paid_future_effective(app, session, mocker):
 
                 assert 'Incorporation Application Filed' in \
                        mock_send_email.call_args[0][0]['content']['subject']
-                assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                assert CONTACT_POINT in mock_send_email.call_args[0][0]['recipients']
                 assert mock_send_email.call_args[0][0]['content']['body']
                 assert mock_send_email.call_args[0][0]['content']['attachments'] == []
                 assert mock_send_email.call_args[0][1] == token
@@ -106,7 +109,7 @@ def test_process_incorp_email_paid_future_effective(app, session, mocker):
 def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker):
     """Assert that an INCORP PAID non-future-effective filing does not trigger send_email."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'PAID', 'BC')
+    filing = prep_incorp_filing(session, 'BC1234567', 'PAID', 'BC')
     make_non_future_effective(filing)
     token = '1'
     # test worker
@@ -197,7 +200,7 @@ def test_skips_notification(app, session, status, filing_type, identifier):
 def test_process_mras_email(app, session):
     """Assert that an MRAS email msg is processed correctly."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'mras')
+    filing = prep_incorp_filing(session, 'BC1234567', 'mras', 'BC')
     token = '1'
     # run worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -210,7 +213,7 @@ def test_process_mras_email(app, session):
 
             # check vals
             assert mock_send_email.call_args[0][0]['content']['subject'] == 'BC Business Registry Partner Information'
-            assert mock_send_email.call_args[0][0]['recipients'] == 'test@test.com'
+            assert mock_send_email.call_args[0][0]['recipients'] == CONTACT_POINT
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
             assert mock_send_email.call_args[0][1] == token
@@ -298,14 +301,14 @@ def test_process_ar_reminder_email(app, session):
     # setup filing + business for email
     app.env = 'development'
 
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED')
+    filing = prep_incorp_filing(session, 'BC1234567', 'COMPLETED', 'BC')
     business = Business.find_by_internal_id(filing.business_id)
     business.legal_type = 'BC'
     business.legal_name = 'test business'
     token = 'token'
     # test processor
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value='test@test.com'):
+        with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value=CONTACT_POINT):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     SimpleCloudEvent(
@@ -323,7 +326,7 @@ def test_process_ar_reminder_email(app, session):
 
                 call_args = mock_send_email.call_args
                 assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
-                assert call_args[0][0]['recipients'] == 'test@test.com'
+                assert call_args[0][0]['recipients'] == CONTACT_POINT
                 assert call_args[0][0]['content']['body']
                 assert 'Dye & Durham' not in call_args[0][0]['content']['body']
                 assert call_args[0][0]['content']['attachments'] == []
@@ -334,7 +337,7 @@ def test_process_bn_email(app, session):
     """Assert that a BN email msg is processed correctly."""
     # setup filing + business for email
     identifier = 'BC1234567'
-    filing = prep_incorp_filing(session, identifier, '1', 'bn')
+    filing = prep_incorp_filing(session, identifier, 'bn', 'BC')
     business = Business.find_by_identifier(identifier)
     # sanity check
     assert filing.id
@@ -349,7 +352,7 @@ def test_process_bn_email(app, session):
                 )
             )
             # check email values
-            assert 'test@test.com' == mock_send_email.call_args[0][0]['recipients']
+            assert CONTACT_POINT == mock_send_email.call_args[0][0]['recipients']
             assert mock_send_email.call_args[0][0]['content']['subject'] == \
                    f'{business.legal_name} - Business Number Information'
             assert mock_send_email.call_args[0][0]['content']['body']
@@ -594,3 +597,29 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
             assert updated_furnishing.status.name == expected_furnishing_status
             if expected_furnishing_status == 'FAILED':
                 assert updated_furnishing.notes == 'Failure to send email'
+
+
+@pytest.mark.parametrize(['option', 'expected_processor'], [
+    (Filing.Status.PAID.value, filing_notification),
+    (Filing.Status.COMPLETED.value, filing_notification),
+    (ReviewStatus.APPROVED.name, continuation_in_notification),
+    (ReviewStatus.AWAITING_REVIEW.name, continuation_in_notification),
+    (ReviewStatus.CHANGE_REQUESTED.name, continuation_in_notification),
+    (ReviewStatus.REJECTED.name, continuation_in_notification),
+    (ReviewStatus.RESUBMITTED.name, continuation_in_notification),
+])
+def test_continuation_in_notification(app, db, session, mocker, option, expected_processor):
+    """Assert that the worker uses the correct continuation in processor for each option."""
+    filing = prep_bootstrap_filing(session, 'continuationIn', 'C1234567', 'BC', option)
+
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value='1'):
+        with patch.object(expected_processor, 'process', return_value={'email': True}) as mock_processor:
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': 'continuationIn', 'option': option}}
+                    )
+                )
+                assert mock_processor.called
+                assert mock_send_email.called

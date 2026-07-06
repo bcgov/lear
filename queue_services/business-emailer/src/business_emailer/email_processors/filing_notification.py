@@ -62,6 +62,11 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     """Get attachments for a filing type."""
     attachments = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("attachments", [])
     extra_pdf_types = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("extraPdfTypes", [])
+    # filing sub type overrides attachments and extraPdfTypes if present
+    if filing.filing_sub_type and (attachments_sub := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-{filing.filing_sub_type}", {})):
+        attachments = attachments_sub.get("attachments", [])
+        extra_pdf_types = attachments_sub.get("extraPdfTypes", [])
+    # filing attachments with change of name cert can override attachments and extraPdfTypes if present
     if (_get_additional_info(filing).get("nameChange", False)
         and (attachments_con := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-con", {}))
     ):
@@ -74,16 +79,24 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     return attachments, extra_pdf_types
 
 
+def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name: str, business_identifier: str) -> bool:
+    """Determine if the email should be skipped."""
+    invalid_status = (status not in [Filing.Status.COMPLETED.value, Filing.Status.PAID.value]
+                      or (status == Filing.Status.PAID.value and not filing.is_future_effective))
+    invalid_data = not legal_type or not filing_name or not business_identifier
+    skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
+    invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
+    
+    return invalid_status or invalid_data or invalid_coop_filing
+
+
 def process(email_info: dict, token: str) -> dict | None:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
     filing_type, status = email_info["type"], email_info["option"]
+
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
-    
-    if status == Filing.Status.PAID.value and not filing.is_future_effective:
-        # We no longer send an email for this case
-        return
 
     new_business_filings = ["amalgamationApplication", "continuationIn", "incorporationApplication", "registration"]
     filing_data = filing.json.get("filing", {}).get(filing_type, {})
@@ -97,13 +110,8 @@ def process(email_info: dict, token: str) -> dict | None:
     legal_type = business.get("legalType")
     filing_name = FILING_TITLE.get(filing_type)
     business_identifier = business.get("identifier")
-    if not legal_type or not filing_name or not business_identifier:
-        # Should never happen - log and return. It will be skipped.
-        current_app.logger.error("Missing legal_type, identifier and/or filing_name. Email: %s", email_info)
-        return
-    
-    skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
-    if legal_type == Business.LegalTypes.COOP.value and filing_type in skipped_coop_filing_types:
+
+    if _skip_email_check(status, filing, legal_type, filing_name, business_identifier):
         return
 
     dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
@@ -160,7 +168,7 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # get recipients
     recipient_filing_type = None
-    if filing_type in ["incorporationApplication", "registration", "changeOfRegistration"]:
+    if filing_type in new_business_filings or filing_type == "changeOfRegistration":
         recipient_filing_type = filing_type
 
     recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)

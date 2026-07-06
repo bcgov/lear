@@ -25,7 +25,7 @@ from pathlib import Path
 import requests
 from flask import current_app
 
-from business_model.models import Business, Filing
+from business_model.models import Amalgamation, Business, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 
@@ -164,18 +164,6 @@ def get_org_id_for_temp_identifier(identifier, token: str) -> int:
     return orgs[0].get("id")  # Temp identifer cannot be present in more than one account
 
 
-def get_entity_dashboard_url(identifier: str, token: str) -> str:
-    """Get my business registry url when temp identifier otherwise entity dashboard url."""
-    entity_dashboard_url = None
-    if identifier.startswith("T"):
-        org_id = get_org_id_for_temp_identifier(identifier, token)
-        auth_web_url = current_app.config.get("AUTH_WEB_URL")
-        entity_dashboard_url = f"{auth_web_url}account/{org_id}/business"
-    else:
-        entity_dashboard_url = current_app.config.get("DASHBOARD_URL") + identifier
-    return entity_dashboard_url
-
-
 def substitute_template_parts(template_code: str, file_type = "html") -> str:
     """Substitute template parts in main template.
 
@@ -250,16 +238,17 @@ def get_jurisdictions(identifier: str, token: str) -> dict:
         return None
 
 
-def get_filing_document(business_identifier, filing_id, document_type, token):
+def get_filing_document(business_identifier, filing_id, document_type, token, regenerate=False):
     """Get the filing documents."""
     headers = {
         "Accept": "application/pdf",
         "Authorization": f"Bearer {token}"
     }
 
+    params = {"regenerate": regenerate}
     document = requests.get(
         f'{current_app.config.get("LEGAL_API_URL")}/businesses/{business_identifier}/filings/{filing_id}'
-        f'/documents/{document_type}', headers=headers
+        f'/documents/{document_type}', headers=headers, params=params
     )
 
     if document.status_code != HTTPStatus.OK:
@@ -303,6 +292,7 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     token: str,
     business: dict,
     filing: Filing,
+    regenerate=False
 ):
     """Add the specified filing document pdf to the pdfs list."""
     # File name
@@ -315,9 +305,18 @@ def _add_filing_document_pdf(  # noqa: PLR0913
         file_name = "Director Change"
     elif document_type == "registration":
         file_name = "Statement of Registration"
+    elif document_type == "continuationIn":
+        file_name = "Continuation Application"
+    elif document_type == "amalgamationApplication":
+        amalgamation_application_names = {
+            Amalgamation.AmalgamationTypes.regular.name: "Amalgamation Application (Regular)",
+            Amalgamation.AmalgamationTypes.vertical.name: "Amalgamation Application Short-form (Vertical)",
+            Amalgamation.AmalgamationTypes.horizontal.name: "Amalgamation Application Short-form (Horizontal)"
+        }
+        file_name = amalgamation_application_names.get(filing.filing_sub_type, file_name)
 
     # Get pdf and add it to the list
-    filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token)
+    filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
     if filing_pdf_encoded:
         pdfs.append(
             {
@@ -380,16 +379,17 @@ def get_pdfs(  # noqa: PLR0913
     filing: Filing,
     filing_date_time: str,
     effective_date: str,
-    extra_pdf_type_list: list[str]
+    extra_pdf_type_list: list[str],
+    regenerate=False
 ) -> list:
     """Get the pdfs for the filing output."""
     pdfs = []
     attach_order = 1
     # add filing application document
-    attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing)
+    attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, regenerate=regenerate)
     # add extra documents
     for pdf_type in extra_pdf_type_list:
-        attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing)
+        attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)
     # add receipt
     attach_order = _add_receipt_pdf(pdfs, attach_order, token, business, filing, filing_date_time, effective_date)
     return pdfs

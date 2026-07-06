@@ -23,7 +23,7 @@ import requests
 from flask import current_app
 from jinja2 import Template
 
-from business_emailer.email_processors import get_entity_dashboard_url, get_jurisdictions, substitute_template_parts
+from business_emailer.email_processors import get_jurisdictions, substitute_template_parts
 from business_model.models import Business, Furnishing
 
 PROCESSABLE_FURNISHING_NAMES = [
@@ -61,7 +61,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     html_out = jnja_template.render(
         business=business.json(),
-        entity_dashboard_url=get_entity_dashboard_url(business_identifier, token),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business_identifier,
         extra_provincials=extra_provincials,
         furnishing_name=furnishing.furnishing_name.name
     )

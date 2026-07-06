@@ -29,15 +29,19 @@ from business_model.models import Business
 
 FILING_TITLE = {
     "alteration": "Alteration",
+    "amalgamationApplication": "Amalgamation Application",
     "annualReport": "Annual Report",
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
+    "continuationIn": "Continuation Application",
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
 }
 
 FILING_TITLE_SHORT = {
+    "amalgamationApplication": "Amalgamation",
+    "continuationIn": "Continuation In",
     "incorporationApplication": "Incorporation"
 }
 
@@ -69,6 +73,18 @@ FILING_ATTACHMENTS = {
             "attachments": ["Alteration","Notice of Articles","Certificate of Name Change","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfNameChange"],
         },
+        "amalgamationApplication-horizontal": {
+            "attachments": ["Amalgamation Application Short-form (Horizontal)","Notice of Articles","Certificate of Amalgamation","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfAmalgamation"],
+        },
+        "amalgamationApplication-regular": {
+            "attachments": ["Amalgamation Application (Regular)","Notice of Articles","Certificate of Amalgamation","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfAmalgamation"],
+        },
+        "amalgamationApplication-vertical": {
+            "attachments": ["Amalgamation Application Short-form (Vertical)","Notice of Articles","Certificate of Amalgamation","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfAmalgamation"],
+        },
         "annualReport": {
             "attachments": ["Annual Report","Receipt"],
             "extraPdfTypes": [],
@@ -80,6 +96,10 @@ FILING_ATTACHMENTS = {
         "changeOfDirectors": {
             "attachments": ["Director Change","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"],
+        },
+        "continuationIn": {
+            "attachments": ["Continuation Application","Notice of Articles","Certificate of Continuation","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfContinuation"],
         },
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
