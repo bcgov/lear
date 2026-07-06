@@ -33,7 +33,7 @@ from business_emailer.email_processors.util import (
     OFFICE_NAME,
     get_legal_type_key,
 )
-from business_model.models import Business, CorpType, Filing, ReviewStatus, UserRoles
+from business_model.models import Business, CorpType, Filing, UserRoles
 
 
 def _get_additional_info(filing: Filing) -> dict:
@@ -82,7 +82,7 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
 def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name: str, business_identifier: str) -> bool:
     """Determine if the email should be skipped."""
     invalid_status = (status not in [Filing.Status.COMPLETED.value, Filing.Status.PAID.value]
-                      or status == Filing.Status.PAID.value and not filing.is_future_effective)
+                      or (status == Filing.Status.PAID.value and not filing.is_future_effective))
     invalid_data = not legal_type or not filing_name or not business_identifier
     skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
     invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
