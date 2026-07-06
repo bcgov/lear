@@ -104,22 +104,20 @@ BC_DESC = Business.BUSINESSES[Business.LegalTypes('BC')]['numberedDescription']
     ('amalgamationApplication', 'PAID', True, f'{BC_DESC} - Amalgamation Application Filed'),
     ('amalgamationApplication', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Amalgamation'),
     ('continuationIn', 'PAID', False, f'{LEGAL_NAME} - Continuation Application Filed'),
-    ('continuationIn', 'RESUBMITTED', False, f'{LEGAL_NAME} - Continuation Application Filed'),
     ('continuationIn', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Continuation In'),
     ('continuationIn', 'PAID', True, f'{BC_DESC} - Continuation Application Filed'),
-    ('continuationIn', 'RESUBMITTED', True, f'{BC_DESC} - Continuation Application Filed'),
-    ('continuationIn', 'COMPLETED', True, f'1234567 B.C. Ltd. - Successful Continuation In'),
+    ('continuationIn', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Continuation In'),
     ('incorporationApplication', 'PAID', False, f'{LEGAL_NAME} - Incorporation Application Filed'),
     ('incorporationApplication', 'COMPLETED', False, f'{LEGAL_NAME} - Successful Incorporation'),
     ('incorporationApplication', 'PAID', True, f'{BC_DESC} - Incorporation Application Filed'),
-    ('incorporationApplication', 'COMPLETED', True, f'1234567 B.C. Ltd. - Successful Incorporation'),
+    ('incorporationApplication', 'COMPLETED', True, '1234567 B.C. Ltd. - Successful Incorporation'),
 ])
 def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, status, is_numbered, expected_subject):
     """Assert that bootstrap filings return an email with the expected subject."""
     identifier = 'BC1234567'
     legal_name = None if is_numbered else LEGAL_NAME
     filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', status, legal_name)
-    if status in ['PAID', 'RESUBMITTED']:
+    if status == 'PAID':
         make_future_effective(filing)
         identifier = filing.temp_reg
     token = 'token'
@@ -172,10 +170,6 @@ def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, st
         {'fileName': 'Continuation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
     ]),
-    ('continuationIn', None, 'RESUBMITTED', [
-        {'fileName': 'Continuation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
-        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_3', 'order': '2'}
-    ]),
     ('continuationIn', None, 'COMPLETED', [
         {'fileName': 'Continuation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
         {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_1', 'order': '2'},
@@ -197,7 +191,7 @@ def test_bootstrap_bc_filing_attachments(session, config, filing_type, filing_su
     """Assert that BC bootstrap filings return an email with the expected attachments."""
     identifier = 'BC1234567'
     filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', status, LEGAL_NAME, filing_sub_type)
-    if status in ['PAID', 'RESUBMITTED']:
+    if status == 'PAID':
         make_future_effective(filing)
         identifier = filing.temp_reg
     with requests_mock.Mocker() as m:

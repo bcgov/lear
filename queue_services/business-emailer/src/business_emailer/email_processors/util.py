@@ -97,7 +97,6 @@ FILING_ATTACHMENTS = {
             "attachments": ["Director Change","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"],
         },
-        # TODO: resubmitted continuationIn filings may need something - nothing in design doc, but double checking
         "continuationIn": {
             "attachments": ["Continuation Application","Notice of Articles","Certificate of Continuation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfContinuation"],

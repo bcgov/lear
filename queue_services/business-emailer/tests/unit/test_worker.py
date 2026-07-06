@@ -17,13 +17,14 @@ from unittest.mock import patch
 
 import pytest
 from simple_cloudevent import SimpleCloudEvent
-from business_model.models import Business, Furnishing
+from business_model.models import Business, Furnishing, ReviewStatus, Filing
 from business_emailer.services.namex import NameXService
 from business_account import AccountService
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.email_processors import (
     ar_reminder_notification,
+    continuation_in_notification,
     correction_notification,
     filing_notification,
     name_request,
@@ -38,6 +39,7 @@ from tests.unit import (
     CONTACT_POINT,
     create_business,
     create_furnishing,
+    prep_bootstrap_filing,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_filing,
     prep_incorp_filing,
@@ -595,3 +597,29 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
             assert updated_furnishing.status.name == expected_furnishing_status
             if expected_furnishing_status == 'FAILED':
                 assert updated_furnishing.notes == 'Failure to send email'
+
+
+@pytest.mark.parametrize(['option', 'expected_processor'], [
+    (Filing.Status.PAID.value, filing_notification),
+    (Filing.Status.COMPLETED.value, filing_notification),
+    (ReviewStatus.APPROVED.name, continuation_in_notification),
+    (ReviewStatus.AWAITING_REVIEW.name, continuation_in_notification),
+    (ReviewStatus.CHANGE_REQUESTED.name, continuation_in_notification),
+    (ReviewStatus.REJECTED.name, continuation_in_notification),
+    (ReviewStatus.RESUBMITTED.name, continuation_in_notification),
+])
+def test_continuation_in_notification(app, db, session, mocker, option, expected_processor):
+    """Assert that the worker uses the correct continuation in processor for each option."""
+    filing = prep_bootstrap_filing(session, 'continuationIn', 'C1234567', 'BC', option)
+
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value='1'):
+        with patch.object(expected_processor, 'process', return_value={'email': True}) as mock_processor:
+            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                worker.process_email(
+                    SimpleCloudEvent(
+                        data={'email': {'filingId': filing.id, 'type': 'continuationIn', 'option': option}}
+                    )
+                )
+                assert mock_processor.called
+                assert mock_send_email.called

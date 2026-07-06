@@ -81,7 +81,8 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
 
 def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name: str, business_identifier: str) -> bool:
     """Determine if the email should be skipped."""
-    invalid_status = status == Filing.Status.PAID.value and not filing.is_future_effective
+    invalid_status = (status not in [Filing.Status.COMPLETED.value, Filing.Status.PAID.value]
+                      or status == Filing.Status.PAID.value and not filing.is_future_effective)
     invalid_data = not legal_type or not filing_name or not business_identifier
     skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
     invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
@@ -93,13 +94,6 @@ def process(email_info: dict, token: str) -> dict | None:
     """Build the email the filing notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
     filing_type, status = email_info["type"], email_info["option"]
-
-    regenerate = False
-    # TODO: need to confirm this case for continuationIn
-    if status == ReviewStatus.RESUBMITTED.name:
-        status = Filing.Status.PAID.value
-        # regenerate the filing documents for resubmitted filings
-        regenerate = True
 
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
@@ -148,7 +142,7 @@ def process(email_info: dict, token: str) -> dict | None:
     # attachments and future attachments
     future_attachments, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
 
-    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types, regenerate=regenerate)
+    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types)
 
     # render template with vars
     attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
