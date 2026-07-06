@@ -45,6 +45,8 @@ RUN set -eux; \
     rm /tmp/dbschema.tar.gz; \
     mkdir -p "${DBSCHEMA_HOME}/lib"; \
     curl -fsSL "https://repo1.maven.org/maven2/org/testfx/openjfx-monocle/17.0.10/openjfx-monocle-17.0.10.jar" -o "${DBSCHEMA_HOME}/lib/monocle.jar"; \
+    mkdir -p /root/.DbSchema/drivers/Oracle; \
+    curl -fsSL "https://maven.org" -o /root/.DbSchema/drivers/Oracle/ojdbc11.jar; \
     ln -sf "${DBSCHEMA_HOME}/DbSchemaCLI" /usr/local/bin/dbschemacli; \
     test -x "${DBSCHEMA_HOME}/DbSchemaCLI"; \
     rm -rf /var/lib/apt/lists/*
