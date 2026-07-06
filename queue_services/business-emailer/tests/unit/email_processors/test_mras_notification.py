@@ -23,7 +23,7 @@ from tests.unit import CONTACT_POINT, prep_bootstrap_filing
     'amalgamationApplication',
     'continuationIn'
 ])
-def test_incorporation_app_mras_notification(app, session, filing_type):
+def test_mras_notification(app, session, filing_type):
     """Assert mras notification email for relevant filings."""
     # setup filing + business for email
     filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', 'mras')
