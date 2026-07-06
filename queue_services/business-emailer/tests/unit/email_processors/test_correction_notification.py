@@ -92,7 +92,7 @@ def test_bc_correction_notification(app, session, status, legal_type):
     """Assert that email attributes are correct."""
     # setup filing + business for email
     legal_name = 'test business'
-    original_filing = prep_incorp_filing(session, 'BC1234567', '1', 'COMPLETED', legal_type=legal_type)
+    original_filing = prep_incorp_filing(session, 'BC1234567', 'COMPLETED', legal_type=legal_type)
     token = 'token'
     business = Business.find_by_identifier('BC1234567')
     filing = prep_incorporation_correction_filing(session, business, original_filing.id, '1', status)

@@ -12,48 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Unit Tests for the mras email processor."""
+import pytest
+
 from business_emailer.email_processors import mras_notification
-from tests.unit import prep_amalgamation_filing, prep_continuation_in_filing, prep_incorp_filing
+from tests.unit import CONTACT_POINT, prep_bootstrap_filing
 
 
-def test_incorporation_app_mras_notification(app, session):
-    """Assert mras notification email for Incorporation application filing."""
+@pytest.mark.parametrize('filing_type', [
+    'incorporationApplication',
+    'amalgamationApplication',
+    'continuationIn'
+])
+def test_mras_notification(app, session, filing_type):
+    """Assert mras notification email for relevant filings."""
     # setup filing + business for email
-    filing = prep_incorp_filing(session, 'BC1234567', '1', 'mras')
+    filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', 'mras')
     # run processor
     email = mras_notification.process(
-        {'filingId': filing.id, 'type': 'incorporationApplication', 'option': 'mras'})
+        {'filingId': filing.id, 'type': filing_type, 'option': 'mras'})
     # check email values
-    assert email['recipients'] == 'test@test.com'
-    assert email['content']['subject'] == 'BC Business Registry Partner Information'
-    assert email['content']['body']
-    assert email['content']['attachments'] == []
-
-
-def test_amalgamation_mras_notification(app, session):
-    """Assert mras notification email for Amalgamation filing."""
-    # setup filing + business for email
-    filing = prep_amalgamation_filing(session, 'BC1234567', '1', 'mras', 'TED business')
-    # run processor
-    email = mras_notification.process(
-        {'filingId': filing.id, 'type': 'amalgamationApplication', 'option': 'mras'})
-    # check email values
-    assert email['recipients'] == 'test@test.com'
-    assert email['content']['subject'] == 'BC Business Registry Partner Information'
-    assert email['content']['body']
-    assert email['content']['attachments'] == []
-
-
-def test_continuation_mras_notification(app, session):
-    """Assert mras notification email for Continuation In filing."""
-    # setup filing + business for email
-    filing = prep_continuation_in_filing(session, 'BC1234567', '1', 'mras')
-
-    # run processor
-    email = mras_notification.process(
-        {'filingId': filing.id, 'type': 'continuationIn', 'option': 'mras'})
-    # check email values
-    assert email['recipients'] == 'test@test.com'
+    assert email['recipients'] == CONTACT_POINT
     assert email['content']['subject'] == 'BC Business Registry Partner Information'
     assert email['content']['body']
     assert email['content']['attachments'] == []

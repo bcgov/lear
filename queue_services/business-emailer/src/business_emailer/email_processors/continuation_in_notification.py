@@ -14,18 +14,14 @@
 """Email processing rules and actions for Continuation In notifications."""
 from __future__ import annotations
 
-import base64
 import re
-from http import HTTPStatus
 from pathlib import Path
 
 import pycountry
-import requests
 from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import (
-    get_entity_dashboard_url,
     get_filing_document,
     get_filing_info,
     get_recipients,
@@ -34,72 +30,21 @@ from business_emailer.email_processors import (
 from business_model.models import Business, Filing, ReviewResult
 
 
-def _get_pdfs( # noqa: PLR0913
+def _get_pdfs(
     status: str,
     token: str,
     business: dict,
     filing: Filing,
-    filing_date_time: str,
-    effective_date: str
 ) -> list:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements, too-many-arguments
     """Get the outputs for the Continuation In notification."""
     pdfs = []
     attach_order = 1
-    headers = {
-        "Accept": "application/pdf",
-        "Authorization": f"Bearer {token}"
-    }
 
-    if status == Filing.Status.PAID.value:
+    if status == "RESUBMITTED":
         # add filing pdf
         filing_pdf_type = "continuationIn"
-        filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, filing_pdf_type, token)
-        if filing_pdf_encoded:
-            pdfs.append(
-                {
-                    "fileName": "Continuation Application - Pending.pdf",
-                    "fileBytes": filing_pdf_encoded.decode("utf-8"),
-                    "fileUrl": "",
-                    "attachOrder": str(attach_order)
-                }
-            )
-            attach_order += 1
-
-        # add receipt
-        if not (corp_name := business.get("legalName")):  # pylint: disable=superfluous-parens
-            legal_type = business.get("legalType")
-            corp_name = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
-
-        receipt = requests.post(
-            f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-            json={
-                "corpName": corp_name,
-                "filingDateTime": filing_date_time,
-                "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
-                "filingIdentifier": str(filing.id),
-                "businessNumber": business.get("taxId", "")
-            },
-            headers=headers
-        )
-        if receipt.status_code != HTTPStatus.CREATED:
-            current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
-        else:
-            receipt_encoded = base64.b64encode(receipt.content)
-            pdfs.append(
-                {
-                    "fileName": "Receipt.pdf",
-                    "fileBytes": receipt_encoded.decode("utf-8"),
-                    "fileUrl": "",
-                    "attachOrder": str(attach_order)
-                }
-            )
-            attach_order += 1
-
-    elif status == "RESUBMITTED":
-        # add filing pdf
-        filing_pdf_type = "continuationIn"
-        filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, filing_pdf_type, token)
+        filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, filing_pdf_type, token, True)
         if filing_pdf_encoded:
             pdfs.append(
                 {
@@ -111,40 +56,11 @@ def _get_pdfs( # noqa: PLR0913
             )
             attach_order += 1
 
-    elif status == Filing.Status.COMPLETED.value:
-        # add certificate of continuation
-        certificate_pdf_type = "certificateOfContinuation"
-        certificate_encoded = get_filing_document(business["identifier"], filing.id, certificate_pdf_type, token)
-        if certificate_encoded:
-            pdfs.append(
-                {
-                    "fileName": "Certificate of Continuation.pdf",
-                    "fileBytes": certificate_encoded.decode("utf-8"),
-                    "fileUrl": "",
-                    "attachOrder": str(attach_order)
-                }
-            )
-            attach_order += 1
-
-        # add notice of articles
-        noa_pdf_type = "noticeOfArticles"
-        noa_encoded = get_filing_document(business["identifier"], filing.id, noa_pdf_type, token)
-        if noa_encoded:
-            pdfs.append(
-                {
-                    "fileName": "Notice of Articles.pdf",
-                    "fileBytes": noa_encoded.decode("utf-8"),
-                    "fileUrl": "",
-                    "attachOrder": str(attach_order)
-                }
-            )
-            attach_order += 1
-
     return pdfs
 
 
 def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-locals, , too-many-branches
-    """Build the email for Continuation notification."""
+    """Build the email for Continuation In review notification."""
     current_app.logger.debug("filing_notification: %s", email_info)
 
     # get template vars from email info
@@ -154,7 +70,8 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
     filing_name = filing.filing_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", filing.filing_type[1:]))
     filing_data = (filing.json)["filing"][filing_type]
-    if not business:  # if filing status PAID
+    if not business:
+        # Should always enter this branch for a continuationIn filing thats in the review step
         business = filing_data["nameRequest"]
         business["identifier"] = filing.temp_reg
     legal_type = business.get("legalType")
@@ -186,7 +103,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         header=(filing.json)["filing"]["header"],
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
-        entity_dashboard_url=get_entity_dashboard_url(business.get("identifier"), token),
+        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business["identifier"],
         email_header=filing_name.upper(),
         filing_type=filing_type,
         numbered_description=numbered_description,
@@ -198,12 +115,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     html_out = html_out.replace("\\n", "<br>")
 
     # get attachments
-    pdfs = _get_pdfs(status,
-                     token,
-                     business,
-                     filing,
-                     leg_tmz_filing_date,
-                     leg_tmz_effective_date)
+    pdfs = _get_pdfs(status, token, business, filing)
 
     # get recipients
     recipients = get_recipients(status, filing.filing_json, token, filing_type)
@@ -222,10 +134,6 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
         subject = "Changes Needed to Authorization"
     elif status == "RESUBMITTED":
         subject = "Authorization Updates Received"
-    elif status == Filing.Status.COMPLETED.value:
-        subject = "Successful Continuation into B.C."
-    elif status == Filing.Status.PAID.value:
-        subject = "Continuation Application Received"
 
     subject = f"{legal_name} - {subject}" if legal_name else subject
 

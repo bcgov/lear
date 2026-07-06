@@ -14,22 +14,28 @@
 """The Unit Tests for business number email processor."""
 from unittest.mock import patch
 
+import pytest
 from business_model.models import Business
 
 from business_emailer.email_processors import bn_notification
 from tests.unit import (
-    prep_amalgamation_filing,
-    prep_continuation_in_filing,
-    prep_incorp_filing,
+    COMP_PARTY_EMAIL,
+    CONTACT_POINT,
+    prep_bootstrap_filing,
     prep_registration_filing,
 )
 
 
-def test_incorporation_bn_notificaton(app, session):
+@pytest.mark.parametrize('filing_type, expected_emails', [
+    ('incorporationApplication', CONTACT_POINT),
+    ('amalgamationApplication', f'{CONTACT_POINT}, {COMP_PARTY_EMAIL}'),
+    ('continuationIn', f'{CONTACT_POINT}, {COMP_PARTY_EMAIL}')
+])
+def test_bootstrap_bn_notificaton(app, session, filing_type, expected_emails):
     """Assert that the bn email processor builds the email correctly."""
     # setup filing + business for email
     identifier = 'BC1234567'
-    filing = prep_incorp_filing(session, identifier, '1', 'bn')
+    filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', 'COMPLETED')
     business = Business.find_by_identifier(identifier)
     # sanity check
     assert filing.id
@@ -38,47 +44,7 @@ def test_incorporation_bn_notificaton(app, session):
     email = bn_notification.process(
         {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'})
     # check email values
-    assert 'test@test.com' == email['recipients']
-    assert email['content']['subject'] == f'{business.legal_name} - Business Number Information'
-    assert email['content']['body']
-    assert email['content']['attachments'] == []
-
-
-def test_amalgamation_bn_notificaton(app, session):
-    """Assert bn notification email for Amalgamation filing."""
-    # setup filing + business for email
-    identifier = 'BC1234567'
-    filing = prep_amalgamation_filing(session, identifier, '1', 'bn', 'TED business')
-    business = Business.find_by_identifier(identifier)
-    # sanity check
-    assert filing.id
-    assert business.id
-    # run processor
-    email = bn_notification.process(
-        {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'})
-    # check email values
-    assert 'comp_party@email.com' in email['recipients']
-    assert 'test@test.com' in email['recipients']
-    assert email['content']['subject'] == f'{business.legal_name} - Business Number Information'
-    assert email['content']['body']
-    assert email['content']['attachments'] == []
-
-
-def test_continuation_bn_notificaton(mocker, app, session):
-    """Assert bn notification email for Continuation filing."""
-    # setup filing + business for email
-    identifier = 'BC1234567'
-    filing = prep_continuation_in_filing(session, identifier, '1', 'bn')
-    business = Business.find_by_identifier(identifier)
-    # sanity check
-    assert filing.id
-    assert business.id
-    # run processor
-    email = bn_notification.process(
-        {'filingId': None, 'type': 'businessNumber', 'option': 'bn', 'identifier': 'BC1234567'})
-    # check email values
-    assert 'comp_party@email.com' in email['recipients']
-    assert 'test@test.com' in email['recipients']
+    assert expected_emails == email['recipients']
     assert email['content']['subject'] == f'{business.legal_name} - Business Number Information'
     assert email['content']['body']
     assert email['content']['attachments'] == []

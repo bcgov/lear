@@ -45,7 +45,6 @@ from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
     agm_location_change_notification,
-    amalgamation_notification,
     amalgamation_out_notification,
     appoint_receiver_notification,
     ar_reminder_notification,
@@ -70,7 +69,7 @@ from business_emailer.email_processors import (
 from business_emailer.email_processors.util import FILING_TITLE
 from business_emailer.exceptions import EmailException, QueueException
 from business_emailer.services import flags, gcp_queue, verify_gcp_jwt
-from business_model.models import Filing, Furnishing
+from business_model.models import Filing, Furnishing, ReviewStatus
 
 bp = Blueprint("worker", __name__)
 
@@ -260,10 +259,8 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "specialResolution":
             email = special_resolution_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "amalgamationApplication":
-            email = amalgamation_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "continuationIn":
+        elif etype == "continuationIn" and option in ReviewStatus._member_names_:
+            # Special case for review step of continuation in filing. Regular filing notifications are handled by the filing_notification processor.
             email = continuation_in_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "intentToLiquidate":
