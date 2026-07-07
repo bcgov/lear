@@ -14,6 +14,9 @@
 """Email processing rules and actions corp filing notifications."""
 from __future__ import annotations
 
+import copy
+from contextlib import suppress
+
 from flask import current_app
 from jinja2 import Template
 
@@ -42,36 +45,46 @@ def _get_additional_info(filing: Filing) -> dict:
     if filing.filing_type == "alteration":
         meta_data_alteration = filing.meta_data.get("alteration", {}) if filing.meta_data else {}
         additional_info["nameChange"] = "toLegalName" in meta_data_alteration
+    elif filing.filing_type == "specialResolution":
+        additional_info["nameChange"] = filing.filing_json["filing"].get("changeOfName")
+        additional_info["rulesChange"] = bool(filing.filing_json["filing"].get("alteration", {}).get("rulesFileKey"))
 
     return additional_info
 
 
-def _get_additional_recipients(filing: Filing, token: str) -> str:
+def _get_additional_recipients(filing: Filing, token: str) -> str | None:
     """Get additional recipients for a filing type."""
     submitter_recipient_filings = ["alteration", "changeOfRegistration", "dissolution", "specialResolution"]
     if filing.filing_type in submitter_recipient_filings:
-        optional_email = filing.filing_json["filing"]["header"].get("documentOptionalEmail")
-        if filing.submitter_roles and UserRoles.staff in filing.submitter_roles and optional_email:
+        if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
             # when staff do filing documentOptionalEmail may contain completing party email
-            return optional_email
+            return filing.filing_json["filing"]["header"].get("documentOptionalEmail")
         else:
             return get_user_email_from_auth(filing.filing_submitter.username, token)
 
 
 def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: Filing, legal_type_key: str) -> tuple[list[str], list[str]]:
     """Get attachments for a filing type."""
-    attachments = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("attachments", [])
-    extra_pdf_types = FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("extraPdfTypes", [])
+    attachments = copy.deepcopy(FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("attachments", []))
+    extra_pdf_types = copy.deepcopy(FILING_ATTACHMENTS.get(legal_type_key, {}).get(filing_type, {}).get("extraPdfTypes", []))
+
     # filing sub type overrides attachments and extraPdfTypes if present
-    if filing.filing_sub_type and (attachments_sub := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-{filing.filing_sub_type}", {})):
+    if filing.filing_sub_type and (attachments_sub := copy.deepcopy(FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-{filing.filing_sub_type}", {}))):
         attachments = attachments_sub.get("attachments", [])
         extra_pdf_types = attachments_sub.get("extraPdfTypes", [])
-    # filing attachments with change of name cert can override attachments and extraPdfTypes if present
-    if (_get_additional_info(filing).get("nameChange", False)
-        and (attachments_con := FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-con", {}))
-    ):
-        attachments = attachments_con.get("attachments", [])
-        extra_pdf_types = attachments_con.get("extraPdfTypes", [])
+
+    # adjust attachments for some filings that have dynamic attachments based on the filing data
+    additional_info = _get_additional_info(filing)
+    with suppress(ValueError):
+        if not additional_info.get("nameChange"):
+            # remove con if in the attachments list
+            attachments.remove("Certificate of Name Change")
+            extra_pdf_types.remove("certificateOfNameChange")
+
+        if not additional_info.get("rulesChange"):
+            # remove cr if in the attachments list
+            attachments.remove("Certified Rules")
+            extra_pdf_types.remove("certifiedRules")
 
     if status != Filing.Status.COMPLETED.value:
         extra_pdf_types = []
@@ -84,7 +97,7 @@ def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name:
     invalid_status = (status not in [Filing.Status.COMPLETED.value, Filing.Status.PAID.value]
                       or (status == Filing.Status.PAID.value and not filing.is_future_effective))
     invalid_data = not legal_type or not filing_name or not business_identifier
-    skipped_coop_filing_types = ["changeOfDirectors", "changeOfAddress"]
+    skipped_coop_filing_types = ["annualReport", "changeOfDirectors", "changeOfAddress"]
     invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
     
     return invalid_status or invalid_data or invalid_coop_filing

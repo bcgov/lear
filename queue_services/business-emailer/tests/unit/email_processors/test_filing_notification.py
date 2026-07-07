@@ -21,7 +21,7 @@ from business_model.models import Business
 from business_emailer.email_processors import filing_notification
 from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
                         prep_bootstrap_filing, prep_change_of_registration_filing, prep_incorp_filing,
-                        prep_maintenance_filing, prep_registration_filing)
+                        prep_maintenance_filing, prep_registration_filing, prep_special_resolution_filing)
 from tests.unit.helpers import make_future_effective, make_non_future_effective
 
 
@@ -323,7 +323,7 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
 
 
 # ---------------------------------------------------------------------------
-# tests for non firm maintenance filings (changeOfAddress, changeOfDirectors, alteration, annualReport)
+# tests for non firm maintenance filings (changeOfAddress, changeOfDirectors, alteration, annualReport, etc.)
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
@@ -333,7 +333,9 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('COMPLETED', 'changeOfAddress', None),
     ('COMPLETED', 'changeOfDirectors', None),
     ('COMPLETED', 'alteration', None),
-    ('COMPLETED', 'alteration', 'staff')
+    ('COMPLETED', 'alteration', 'staff'),
+    ('COMPLETED', 'specialResolution', None),
+    ('COMPLETED', 'specialResolution', 'staff'),
 ])
 def test_maintenance_notification(app, session, status, filing_type, submitter_role,
                                   mock_pdfs, mock_recipients, mock_user_email):
@@ -419,6 +421,51 @@ def test_filing_attachments_alteration_completed_name_change(session, config, mo
     assert_attachment(attachments[1], 'Notice of Articles.pdf', 'pdf_content_2')
     assert_attachment(attachments[2], 'Certificate of Name Change.pdf', 'pdf_content_3')
     assert_attachment(attachments[3], 'Receipt.pdf', 'pdf_content_4')
+
+
+@pytest.mark.parametrize('has_name_change, has_rule_change, expected_attachments', [
+    (False, False, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_1', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_2', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '3'},
+    ]),
+    (True, False, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_1', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_2', 'order': '2'},
+        {'fileName': 'Certificate of Name Change.pdf', 'content': 'pdf_content_3', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '4'},
+    ]),
+    (False, True, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_1', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_2', 'order': '2'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_4', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '4'},
+    ]),
+    (True, True, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_1', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_2', 'order': '2'},
+        {'fileName': 'Certificate of Name Change.pdf', 'content': 'pdf_content_3', 'order': '3'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_4', 'order': '4'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '5'},
+    ]),
+], ids=['No name or rule changes', 'Name change included', 'Rule change included', 'Name and Rule change included'])
+def test_filing_attachments_special_resolution(session, config, mock_recipients, mock_user_email, has_name_change, has_rule_change, expected_attachments):
+    """special resolution COMPLETED cases."""
+    identifier = 'CP1234567'
+    filing = prep_special_resolution_filing(session, has_name_change=has_name_change, has_rule_change=has_rule_change)
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing, {
+            'specialResolution': b'pdf_content_1',
+            'specialResolutionApplication': b'pdf_content_2',
+            'certificateOfNameChange': b'pdf_content_3',
+            'certifiedRules': b'pdf_content_4',
+        }, receipt=b'pdf_content_5')
+        output = process_filing(filing, 'specialResolution', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
 
 
 @pytest.mark.parametrize(['filing_type', 'status', 'expected_header', 'expected_subject'], [

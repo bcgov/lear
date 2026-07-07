@@ -37,6 +37,7 @@ FILING_TITLE = {
     "continuationIn": "Continuation Application",
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
+    "specialResolution": "Special Resolution"
 }
 
 FILING_TITLE_SHORT = {
@@ -62,14 +63,14 @@ FILING_ATTACHMENTS = {
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Memorandum","Receipt"],
             "extraPdfTypes": ["certificateOfIncorporation","certifiedRules","certifiedMemorandum"],
-        }
+        },
+        "specialResolution": {
+            "attachments": ["Special Resolution","Special Resolution Application","Certificate of Name Change","Certified Rules","Receipt"],
+            "extraPdfTypes": ["specialResolutionApplication","certificateOfNameChange","certifiedRules"],
+        },
     },
     "CORP": {
         "alteration": {
-            "attachments": ["Alteration","Notice of Articles","Receipt"],
-            "extraPdfTypes": ["noticeOfArticles"],
-        },
-        "alteration-con": {
             "attachments": ["Alteration","Notice of Articles","Certificate of Name Change","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfNameChange"],
         },

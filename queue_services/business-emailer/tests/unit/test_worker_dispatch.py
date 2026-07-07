@@ -42,7 +42,6 @@ from business_emailer.email_processors import (
     notice_of_withdrawal_notification,
     nr_notification,
     restoration_notification,
-    special_resolution_notification,
 )
 from business_emailer.resources import business_emailer as worker
 from business_emailer.services import flags
@@ -305,16 +304,6 @@ def test_continuation_out_completed_dispatches(app, session, mocker, mock_send_e
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_special_resolution_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(special_resolution_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "specialResolution", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_intent_to_liquidate_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(intent_to_liquidate_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "intentToLiquidate", "option": COMPLETED}
@@ -369,6 +358,7 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
     "continuationIn",
     "incorporationApplication",
     "registration",
+    "specialResolution"
 ])
 def test_filing_notification_dispatches(app, session, mocker, mock_send_email, filing_type):
     """Assert that the filing_notification branch works as expected."""

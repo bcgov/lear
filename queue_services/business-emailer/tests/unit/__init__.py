@@ -67,10 +67,11 @@ BOOTSTRAP_TYPE_MAPPER = {
 
 # NB: These do not include the header or business in their templates
 FILING_TYPE_MAPPER = {
+    'alteration': ALTERATION,
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
-    'alteration': ALTERATION
+    'specialResolution': CP_SPECIAL_RESOLUTION_TEMPLATE['filing']['specialResolution']
 }
 
 COMP_PARTY_EMAIL = 'comp_party@email.com'
@@ -569,7 +570,7 @@ def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
     return filing
 
 
-def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None):
+def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None, template_overrides={}):
     """Return a new maintenance filing prepped for email notification."""
     legal_type = Business.LegalTypes.COOP.value if identifier.startswith('CP') else Business.LegalTypes.BCOMP.value
     business = create_business(identifier, legal_type, LEGAL_NAME)
@@ -581,6 +582,13 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
 
     if submitter_role:
         filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
+    
+    filing_template['filing'] = {
+        **filing_template['filing'],
+        # add any extra data or overwrite as required
+        **template_overrides
+    }
+
     filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
 
     user = create_user('test_user')
@@ -666,33 +674,23 @@ def prep_firm_correction_filing(session, identifier, payment_id, legal_type, leg
     return filing
 
 
-def prep_cp_special_resolution_filing(identifier, payment_id, legal_type, legal_name, submitter_role=None):
-    """Return a new cp special resolution out filing prepped for email notification."""
-    business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
-    filing_template = copy.deepcopy(CP_SPECIAL_RESOLUTION_TEMPLATE)
-    filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalype': legal_type, 'legalName': legal_name}
-    filing_template['filing']['alteration'] = {
-        'business': {
-            'identifier': 'BC1234567',
-            'legalType': 'BEN'
-        },
-        'contactPoint': {
-            'email': 'joe@email.com'
-        },
-        'rulesInResolution': True,
-        'rulesFileKey': 'cooperative/a8abe1a6-4f45-4105-8a05-822baee3b743.pdf'
-    }
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
-
-    user = create_user('cp_test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-    filing.save()
-    return filing
+def prep_special_resolution_filing(session, identifier='CP1234567', submitter_role=None, has_name_change=False, has_rule_change=False):
+    """Return a new special resolution out filing prepped for email notification."""
+    filing_template_overrides = {}
+    if has_name_change:
+        filing_template_overrides['changeOfName'] = {
+            'nameRequest': {
+                'nrNumber': 'NR 8798956',
+                'legalName': 'HAULER MEDIA INC.',
+                'legalType': 'BC'
+            }   
+        }
+    if has_rule_change:
+        filing_template_overrides['alteration'] = {
+            'rulesInResolution': True,
+            'rulesFileKey': 'cooperative/a8abe1a6-4f45-4105-8a05-822baee3b743.pdf'
+        }
+    return prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'specialResolution', submitter_role, filing_template_overrides)
 
 
 def prep_cp_special_resolution_correction_filing(session, business, original_filing_id,

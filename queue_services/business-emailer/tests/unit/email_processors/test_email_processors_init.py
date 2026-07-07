@@ -326,23 +326,8 @@ def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
     assert result == ''
 
 
-def test_get_recipients_coop_identifier_skips_auth_call(app):
-    """Assert that CP (coop) identifiers return empty string without calling get_recipient_from_auth."""
-    filing_json = {
-        'filing': {
-            'header': {'name': 'annualReport'},
-            'business': {'identifier': 'CP1234567'},
-        }
-    }
-    with app.app_context():
-        with patch('business_emailer.email_processors.get_recipient_from_auth') as mock_auth:
-            result = get_recipients('COMPLETED', filing_json, token='token', filing_type='annualReport')
-    assert result == ''
-    mock_auth.assert_not_called()
-
-
-def test_get_recipients_non_coop_identifier_calls_get_recipient_from_auth(app):
-    """Assert that non-coop identifiers call get_recipient_from_auth for the business email."""
+def test_get_recipients_calls_get_recipient_from_auth(app):
+    """Assert that get_recipients calls get_recipient_from_auth for the business email."""
     filing_json = {
         'filing': {
             'header': {'name': 'annualReport'},
