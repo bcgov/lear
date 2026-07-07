@@ -82,7 +82,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
 
     # compute Foreign Jurisdiction string as in report.py and business_document.py
     country_code = filing_data["foreignJurisdiction"]["country"]
-    region_code = filing_data["foreignJurisdiction"]["region"]
+    region_code = filing_data["foreignJurisdiction"].get("region")
     country = pycountry.countries.get(alpha_2=country_code)
     region = None
     if region_code and region_code.upper() != "FEDERAL":

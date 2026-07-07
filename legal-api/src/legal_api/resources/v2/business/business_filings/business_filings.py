@@ -1218,7 +1218,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
         # emailer notification
         publish_to_queue(
-            data={"email": {"filingId": filing.id, "type": filing.filing_type, "option": review.status}},
+            data={"email": {"filingId": filing.id, "type": filing.filing_type, "option": review.status.name}},
             subject=current_app.config.get("BUSINESS_EMAILER_TOPIC"),
             identifier=business.identifier if business else None,
             event_type=None,
