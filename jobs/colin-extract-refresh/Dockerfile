@@ -56,9 +56,9 @@ RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/Postgre
 RUN printf '%s\n' 'download driver oracle' > /tmp/download_oracle_driver.sql && \
     mkdir -p /opt/app-root/.DbSchema/drivers/Oracle && \
     dbschemacli /tmp/download_oracle_driver.sql && \
-    if [ -f /opt/app-root/.DbSchema/drivers/Oracle/drivers.zip ]; then \
-        unzip -o /opt/app-root/.DbSchema/drivers/Oracle/drivers.zip -d /opt/app-root/.DbSchema/drivers/Oracle && \
-        rm -f /opt/app-root/.DbSchema/drivers/Oracle/drivers.zip; \
+    if [ -f /opt/app-root/.DbSchema/drivers/Oracle/driver.zip ]; then \
+        unzip -o /opt/app-root/.DbSchema/drivers/Oracle/driver.zip -d /opt/app-root/.DbSchema/drivers/Oracle && \
+        rm -f /opt/app-root/.DbSchema/drivers/Oracle/driver.zip; \
     fi
     
 RUN chmod -R g+rwX /opt/app-root/.DbSchema && \
@@ -83,4 +83,4 @@ EXPOSE 8080
 
 COPY src .
 
-CMD ["/bin/sh", "-c", "python /opt/app-root/colin-extract-refresh/src/generate_cprd_subset_extract.py --corp-file corp.txt --target-connection my_proxy_test --target-schema colin_extract_temp --mode refresh  && dbschemacli /opt/app-root/colin-extract-refresh/src/subset/generated/subset_refresh.sql"]
+CMD ["/bin/sh", "-c", "python /opt/app-root/colin-extract-refresh/src/test_connectivity.py && python /opt/app-root/colin-extract-refresh/src/generate_cprd_subset_extract.py --corp-file corp.txt --target-connection my_proxy_test --target-schema colin_extract_temp --mode refresh  && dbschemacli /opt/app-root/colin-extract-refresh/src/subset/generated/subset_refresh.sql"]
