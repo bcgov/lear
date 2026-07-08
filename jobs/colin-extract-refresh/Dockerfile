@@ -51,10 +51,12 @@ RUN set -eux; \
 
 ENV HOME=/opt/app-root
 RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
-    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar && \
-    mkdir -p /opt/app-root/.DbSchema/drivers/Oracle; \
-    curl -fsSL "https://maven.org" -o /opt/app-root/.DbSchema/drivers/Oracle/ojdbc11.jar; \
-    chmod -R g+rwX /opt/app-root/.DbSchema && \
+    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar
+
+RUN printf '%s\n' 'download driver oracle' > /tmp/download_oracle_driver.sql && \
+    dbschemacli /tmp/download_oracle_driver.sql 
+    
+RUN chmod -R g+rwX /opt/app-root/.DbSchema && \
     chmod 755 /opt/app-root
 
 WORKDIR /opt/app-root
