@@ -53,8 +53,7 @@ ENV HOME=/opt/app-root
 RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
     curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar && \
     mkdir -p /opt/app-root/.DbSchema/drivers/Oracle && \
-    curl -fsSL "https://maven.org" \
-    -o /opt/app-root/.DbSchema/drivers/Oracle/ojdbc11.jar
+    curl -fsSL "https://maven.org" -o /opt/app-root/.DbSchema/drivers/Oracle/ojdbc11.jar
 
     
 RUN chmod -R g+rwX /opt/app-root/.DbSchema && \
