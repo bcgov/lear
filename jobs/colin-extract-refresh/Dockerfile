@@ -55,11 +55,12 @@ RUN mkdir -p ${HOME}/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql &&
     curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o ${HOME}/.DbSchema/drivers/PostgreSql/postgresql.jar && \
     mkdir -p ${HOME}/.DbSchema/drivers/Oracle && \
     curl -fsSL "https://maven.org" -o ${HOME}/.DbSchema/drivers/Oracle/ojdbc11.jar && \
-    chown -R 1001:0 ${HOME}/.DbSchema && \
-    chmod -R g+rwX ${HOME}/.DbSchema
+    unzip -o $HOME/.DbSchema/drivers/Oracle/driver.zip -d $HOME/.DbSchema/drivers/Oracle/
+
+
 
     
-RUN chmod -R g+rwX /opt/app-root/.DbSchema && \
+RUN chmod 755 $HOME/.DbSchema/drivers/Oracle/ && \
     chmod 755 /opt/app-root
 
 WORKDIR /opt/app-root
