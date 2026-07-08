@@ -56,10 +56,8 @@ RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/Postgre
 RUN printf '%s\n' 'download driver oracle' > /tmp/download_oracle_driver.sql && \
     mkdir -p /opt/app-root/.DbSchema/drivers/Oracle && \
     dbschemacli /tmp/download_oracle_driver.sql && \
-    if [ -f /opt/app-root/.DbSchema/drivers/Oracle/driver.zip ]; then \
-        unzip -o /opt/app-root/.DbSchema/drivers/Oracle/driver.zip -d /opt/app-root/.DbSchema/drivers/Oracle && \
-        rm -f /opt/app-root/.DbSchema/drivers/Oracle/driver.zip; \
-    fi
+    unzip -o /opt/app-root/.DbSchema/drivers/Oracle/driver.zip -d /opt/app-root/.DbSchema/drivers/Oracle && \
+    rm -f /opt/app-root/.DbSchema/drivers/Oracle/driver.zip
     
 RUN chmod -R g+rwX /opt/app-root/.DbSchema && \
     chmod 755 /opt/app-root
