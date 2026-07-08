@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test suite to ensure Special Resolution is validated correctly."""
 import copy
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 
 import pytest
@@ -27,7 +27,7 @@ from . import create_utc_future_date_str
 @pytest.mark.parametrize(
     'test_name, resolution, identifier, resolution_date, signing_date, signatory_given_name, signatory_family_name, business_founding_date, expected_code, expected_msg',
     [
-        ('SUCCESS', 'some resolution', 'CP1234567', '2021-01-10', '2021-01-10', 'jane', 'doe', '2010-01-10', None, None),
+        ('SUCCESS - resolution date before UTC founding date', 'some resolution', 'CP1234567', '2010-01-09', '2010-01-09', 'jane', 'doe', '2010-01-10', None, None),
         ('MISSING - resolution', None, 'CP1234567', '2021-01-10', '2021-01-10', 'jane', 'doe', '2010-01-10',
          HTTPStatus.BAD_REQUEST, 'Resolution must be provided.'),
         ('MISSING - resolution date', 'some resolution', 'CP1234567', None, '2021-01-10', 'jane', 'doe', '2010-01-10',
@@ -61,7 +61,10 @@ def test_validate(session, test_name, resolution, identifier, resolution_date, s
     """Assert that a SR can be validated."""
     # setup
     business = Business(identifier=identifier)
-    business.founding_date = datetime.strptime(business_founding_date, '%Y-%m-%d')
+    business.founding_date = datetime.strptime(
+        business_founding_date,
+        '%Y-%m-%d'
+    ).replace(tzinfo=timezone.utc)
 
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
