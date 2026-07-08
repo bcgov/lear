@@ -137,7 +137,7 @@ def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker
 def test_maintenance_notification(app, session, status, filing_type, identifier, submitter_role):
     """Assert that valid maintenance filing cases send an email."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, submitter_role)
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, None, submitter_role)
     if status == 'PAID':
         make_future_effective(filing)
     token = 'token'

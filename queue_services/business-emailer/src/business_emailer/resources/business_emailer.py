@@ -63,7 +63,6 @@ from business_emailer.email_processors import (
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
-    restoration_notification,
 )
 from business_emailer.email_processors.util import FILING_TITLE
 from business_emailer.exceptions import EmailException, QueueException
@@ -238,9 +237,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "dissolution":
             email = dissolution_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "restoration":
-            email_object = restoration_notification.process(email_msg["email"], token)
-            send_email(email_object, token)
         elif etype == "correction":
             email = correction_notification.process(email_msg["email"], token)
             send_email(email, token)

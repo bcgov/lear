@@ -59,8 +59,7 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
         if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
             # when staff do filing documentOptionalEmail may contain completing party email
             return filing.filing_json["filing"]["header"].get("documentOptionalEmail")
-        else:
-            return get_user_email_from_auth(filing.filing_submitter.username, token)
+        return get_user_email_from_auth(filing.filing_submitter.username, token)
 
 
 def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: Filing, legal_type_key: str) -> tuple[list[str], list[str]]:
@@ -111,9 +110,8 @@ def process(email_info: dict, token: str) -> dict | None:
     # get template vars from filing
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
 
-    new_business_filings = ["amalgamationApplication", "continuationIn", "incorporationApplication", "registration"]
     filing_data = filing.json.get("filing", {}).get(filing_type, {})
-    if filing_type in new_business_filings and not business:
+    if filing_type in Filing.TempCorpFilingType and not business:
         # For new business filings, the nameRequest contains relevant business details.
         # We overwrite the business info from the nameRequest and then set the identifier back to the temp reg id.
         name_request = filing_data.get("nameRequest")
@@ -130,7 +128,7 @@ def process(email_info: dict, token: str) -> dict | None:
     dashboard_url = current_app.config.get("DASHBOARD_URL") + business_identifier
 
     is_future_effective_paid = filing.is_future_effective and status == Filing.Status.PAID.value
-    if filing_type in new_business_filings and is_future_effective_paid:
+    if filing_type in Filing.TempCorpFilingType and is_future_effective_paid:
         business_identifier = NOT_AVAILABLE
 
     show_effective_date = filing.is_future_effective
@@ -165,6 +163,7 @@ def process(email_info: dict, token: str) -> dict | None:
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=dashboard_url,
+        filing_sub_type=filing.filing_sub_type,
         filing_type=filing_type,
         attachments_list=attachments_list,
         business_description=business_description,
@@ -181,7 +180,7 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # get recipients
     recipient_filing_type = None
-    if filing_type in new_business_filings or filing_type == "changeOfRegistration":
+    if filing_type in Filing.TempCorpFilingType or filing_type == "changeOfRegistration":
         recipient_filing_type = filing_type
 
     recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)
@@ -195,6 +194,10 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # assign subject
     short_filing_name = FILING_TITLE_SHORT.get(filing_type) or filing_name
+    if filing.filing_sub_type and isinstance(short_filing_name, dict):
+        # This filing has different subjects based on the filing sub type
+        short_filing_name = short_filing_name.get(filing.filing_sub_type) or filing_name
+
     subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, short_filing_name)
 
     return {

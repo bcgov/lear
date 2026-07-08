@@ -313,6 +313,14 @@ def _add_filing_document_pdf(  # noqa: PLR0913
             Amalgamation.AmalgamationTypes.horizontal.name: "Amalgamation Application Short-form (Horizontal)"
         }
         file_name = amalgamation_application_names.get(filing.filing_sub_type, file_name)
+    elif document_type == "restoration":
+        restoration_application_names = {
+            "fullRestoration": "Full Restoration Application",
+            "limitedRestoration": "Limited Restoration Application",
+            "limitedRestorationExtension": "Limited Restoration Extension Application",
+            "limitedRestorationToFull": "Conversion to Full Restoration Application",
+        }
+        file_name = restoration_application_names.get(filing.filing_sub_type, file_name)
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
