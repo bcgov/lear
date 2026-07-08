@@ -64,7 +64,6 @@ from business_emailer.email_processors import (
     notice_of_withdrawal_notification,
     nr_notification,
     restoration_notification,
-    special_resolution_notification,
 )
 from business_emailer.email_processors.util import FILING_TITLE
 from business_emailer.exceptions import EmailException, QueueException
@@ -166,6 +165,7 @@ def send_email(email: dict, token: str):
         )
         current_app.logger.debug("NOTIFY API response: %s", resp.status_code)
         if resp.status_code != HTTPStatus.OK:
+            current_app.logger.debug("NOTIFY API error: %s", resp.json())
             raise EmailException
     except Exception:
         # this should log the error and put the email msg back on the queue
@@ -256,9 +256,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "continuationOut" and option == Filing.Status.COMPLETED.value:
             email = continuation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "specialResolution":
-            email = special_resolution_notification.process(email_msg["email"], token)
-            send_email(email, token)
         elif etype == "continuationIn" and option in ReviewStatus._member_names_:
             # Special case for review step of continuation in filing. Regular filing notifications are handled by the filing_notification processor.
             email = continuation_in_notification.process(email_msg["email"], token)
@@ -279,7 +276,7 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             if email := filing_notification.process(email_msg["email"], token):
                 send_email(email, token)
             else:
-                # should only be if this was for a coops filing
+                # should only be if this was for a coops filing or an invalid publish option
                 current_app.logger.debug("No email to send for: %s", email_msg)
         else:
             current_app.logger.debug("No email to send for: %s", email_msg)

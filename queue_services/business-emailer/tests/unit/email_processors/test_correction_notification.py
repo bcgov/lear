@@ -21,12 +21,13 @@ from business_model.models import Business
 
 from business_emailer.email_processors import correction_notification
 from tests.unit import (
+    LEGAL_NAME,
     prep_cp_special_resolution_correction_filing,
     prep_cp_special_resolution_correction_upload_memorandum_filing,
-    prep_cp_special_resolution_filing,
     prep_firm_correction_filing,
     prep_incorp_filing,
     prep_incorporation_correction_filing,
+    prep_special_resolution_filing,
 )
 
 
@@ -127,8 +128,8 @@ def test_bc_correction_notification(app, session, status, legal_type):
 def test_cp_special_resolution_correction_notification(app, session, status, legal_type):
     """Assert that email attributes are correct."""
     # setup filing + business for email
-    legal_name = 'cp business'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
+    legal_name = LEGAL_NAME
+    original_filing = prep_special_resolution_filing(session, CP_IDENTIFIER, submitter_role=None)
     token = 'token'
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
@@ -159,11 +160,9 @@ def test_cp_special_resolution_correction_notification(app, session, status, leg
 def test_complete_special_resolution_correction_attachments(session, config):
     """Test completed special resolution correction notification."""
     # setup filing + business for email
-    legal_type = Business.LegalTypes.COOP.value
-    legal_name = 'test cp sr business'
     token = 'token'
     status = 'COMPLETED'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
+    original_filing = prep_special_resolution_filing(session, CP_IDENTIFIER, submitter_role=None)
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
@@ -209,11 +208,9 @@ def test_complete_special_resolution_correction_attachments(session, config):
 def test_paid_special_resolution_correction_attachments(session, config):
     """Test paid special resolution correction notification."""
     # setup filing + business for email
-    legal_type = Business.LegalTypes.COOP.value
-    legal_name = 'test cp sr business'
     token = 'token'
     status = 'PAID'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
+    original_filing = prep_special_resolution_filing(session, CP_IDENTIFIER, submitter_role=None)
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
                                                           '1', status, SPECIAL_RESOLUTION_FILING_TYPE)
@@ -250,9 +247,8 @@ def test_paid_special_resolution_correction_attachments(session, config):
 def test_paid_special_resolution_correction_on_correction(session, config, legal_type, filing_type):
     """Assert that email attributes are correct."""
     # setup filing + business for email
-    legal_name = 'cp business'
-    original_filing = prep_cp_special_resolution_filing(CP_IDENTIFIER, '1', legal_type,
-                                                        legal_name, submitter_role=None)
+    legal_name = LEGAL_NAME
+    original_filing = prep_special_resolution_filing(session, CP_IDENTIFIER, submitter_role=None)
     token = 'token'
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing_correction = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
@@ -279,11 +275,8 @@ def test_complete_special_resolution_correction_memorandum_attachments(session, 
     Memorandum (3 attachments). The point of this test is to exercise the
     `if memorandum_changed:` branch in special_resolution_helper.get_completed_pdfs.
     """
-    legal_type = Business.LegalTypes.COOP.value
-    legal_name = 'test cp sr business'
     token = 'token'
-    original_filing = prep_cp_special_resolution_filing(
-        CP_IDENTIFIER, '1', legal_type, legal_name, submitter_role=None)
+    original_filing = prep_special_resolution_filing(session, CP_IDENTIFIER, submitter_role=None)
     business = Business.find_by_identifier(CP_IDENTIFIER)
     filing = prep_cp_special_resolution_correction_upload_memorandum_filing(
         session, business, original_filing.id, '1', 'COMPLETED', SPECIAL_RESOLUTION_FILING_TYPE)
