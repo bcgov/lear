@@ -50,10 +50,13 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 ENV HOME=/opt/app-root
-RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
-    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar && \
-    mkdir -p /opt/app-root/.DbSchema/drivers/Oracle && \
-    curl -fsSL "https://maven.org" -o /opt/app-root/.DbSchema/drivers/Oracle/ojdbc11.jar
+
+RUN mkdir -p ${HOME}/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
+    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o ${HOME}/.DbSchema/drivers/PostgreSql/postgresql.jar && \
+    mkdir -p ${HOME}/.DbSchema/drivers/Oracle && \
+    curl -fsSL "https://maven.org" -o ${HOME}/.DbSchema/drivers/Oracle/ojdbc11.jar && \
+    chown -R 1001:0 ${HOME}/.DbSchema && \
+    chmod -R g+rwX ${HOME}/.DbSchema
 
     
 RUN chmod -R g+rwX /opt/app-root/.DbSchema && \
