@@ -81,8 +81,7 @@ def get_recipients(option: str, filing_json: dict, token: str | None = None, fil
         ):
             recipients = f"{recipients}, {', '.join(party_emails)}"
 
-    elif not is_coop:
-        # only add business email recipient for non-coop
+    else:
         recipients = get_recipient_from_auth(identifier, token)
 
     return recipients
@@ -99,7 +98,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
         f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
         headers=headers
     )
-    contacts = contact_info.json()["contacts"]
+    contacts = (contact_info.json()).get("contacts")
 
     if not contacts:
         current_app.logger.error("Queue Error: No email in business (%s) profile to send output to.", identifier, exc_info=True)
@@ -111,7 +110,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
 def get_user_email_from_auth(user_name: str, token: str) -> str:
     """Get user email from auth."""
     user_info = get_user_from_auth(user_name, token)
-    contacts = user_info.json()["contacts"]
+    contacts = (user_info.json()).get("contacts")
 
     if not contacts:
         return user_info.json().get("email")  # idir user
@@ -314,6 +313,14 @@ def _add_filing_document_pdf(  # noqa: PLR0913
             Amalgamation.AmalgamationTypes.horizontal.name: "Amalgamation Application Short-form (Horizontal)"
         }
         file_name = amalgamation_application_names.get(filing.filing_sub_type, file_name)
+    elif document_type == "restoration":
+        restoration_application_names = {
+            "fullRestoration": "Full Restoration Application",
+            "limitedRestoration": "Limited Restoration Application",
+            "limitedRestorationExtension": "Limited Restoration Extension Application",
+            "limitedRestorationToFull": "Conversion to Full Restoration Application",
+        }
+        file_name = restoration_application_names.get(filing.filing_sub_type, file_name)
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
