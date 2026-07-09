@@ -53,14 +53,14 @@ def corpnum_to_oracle_ids(target_ids: str | bytes | tuple | list | None) -> List
         return None
     return ",".join("'" + x.replace("'", "''") + "'" for x in out)
 
-def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list) -> str:
+def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list, target_schema: str) -> str:
     in_list = colin_oracle_corp_num_list_format(updated_corp_nums)
     return f"""
-    SELECT corp_num FROM mv_legacy_corps_data
+    SELECT corp_num FROM {target_schema}.mv_legacy_corps_data
     WHERE 1 = 1
     AND corp_num IN {in_list}
     AND corp_num NOT IN (
-    SELECT corp_num FROM mv_legacy_corps_data
+    SELECT corp_num FROM {target_schema}.mv_legacy_corps_data
     WHERE 1 = 1
     AND is_active = true
     AND is_frozen = false
@@ -82,34 +82,34 @@ def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list) -> s
     )
 """
 
-def get_fallout_corp_nums(criteria: str, updated_corp_nums: list) -> str:
+def get_fallout_corp_nums(criteria: str, updated_corp_nums: list, target_schema: str) -> str:
     key = (criteria or '').strip().upper()
     if key == 'SAF':
-        return get_candidates_not_matching_saf_criteria_query(updated_corp_nums)
+        return get_candidates_not_matching_saf_criteria_query(updated_corp_nums, target_schema)
     raise ValueError(f'unsupported criteria: {criteria}')
 
-def prune_candidates_from_cp(pruning_corps_list: list) -> str:
+def prune_candidates_from_cp(pruning_corps_list: list, target_schema: str) -> str:
     in_list = colin_oracle_corp_num_list_format(pruning_corps_list)
     return f"""
-    DELETE FROM corp_processing
+    DELETE FROM {target_schema}.corp_processing
     WHERE corp_num IN {in_list}
     """
 
-def prune_candidates_from_batch(pruning_corps_list: list) -> str:
+def prune_candidates_from_batch(pruning_corps_list: list, target_schema: str) -> str:
     in_list = colin_oracle_corp_num_list_format(pruning_corps_list)
     return f"""
-    DELETE FROM mig_corp_batch
+    DELETE FROM {target_schema}.mig_corp_batch
     WHERE corp_num IN {in_list}
     """
 
-def prune_candidates_from_account(pruning_corps_list: list) -> str:
+def prune_candidates_from_account(pruning_corps_list: list, target_schema: str) -> str:
     in_list = colin_oracle_corp_num_list_format(pruning_corps_list)
     return f"""
-    DELETE FROM mig_corp_account
+    DELETE FROM {target_schema}.mig_corp_account
     WHERE corp_num IN {in_list}
     """
 
-def get_cutoff_timestamp_query() -> str:
+def get_cutoff_timestamp_query(target_schema: str) -> str:
     return f"""
-    SELECT extracted_at FROM colin_extract_version
+    SELECT extracted_at FROM {target_schema}.colin_extract_version
     """

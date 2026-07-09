@@ -110,6 +110,7 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     DATA_LOAD_ENV = os.getenv('DATA_LOAD_ENV', '')
     TARGET_CONNECTION = os.getenv('TARGET_CONNECTION', 'ctst_pg')
+    TARGET_SCHEMA = os.getenv('TARGET_SCHEMA', '')
     CORP_NAME_SUFFIX = os.getenv('CORP_NAME_SUFFIX', '')
     UPDATE_ENTITY = os.getenv('UPDATE_ENTITY', 'False') == 'True'
     AFFILIATE_ENTITY = os.getenv('AFFILIATE_ENTITY', 'False') == 'True'

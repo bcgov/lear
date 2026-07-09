@@ -17,6 +17,7 @@ from common.init_utils import colin_oracle_init, get_config
 from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
 _DEFAULT_TARGET_CONNECTION = get_named_config().TARGET_CONNECTION
+_DEFAULT_TARGET_SCHEMA = get_named_config().TARGET_SCHEMA
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
 _GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
@@ -81,7 +82,7 @@ def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
     if not updated_corp_nums:
         return []
     cfg = get_named_config()
-    corp_nums_prune_list_query = get_fallout_corp_nums('SAF', updated_corp_nums)
+    corp_nums_prune_list_query = get_fallout_corp_nums('SAF', updated_corp_nums, target_schema=cfg.TARGET_SCHEMA)
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
         result = conn.execute(text(corp_nums_prune_list_query)).scalars().all()
         rows = [str(row).strip() for row in result]
@@ -97,9 +98,9 @@ def prune_fallen_identifiers(fallenout_corp_nums: list) -> list[dict]:
         return
     cfg = get_named_config()
     fallen_out_identifiers_list = get_fallen_identifiers(fallenout_corp_nums)
-    cp_query = prune_candidates_from_cp(fallen_out_identifiers_list)
-    batch_query = prune_candidates_from_batch(fallen_out_identifiers_list)
-    account_query = prune_candidates_from_account(fallen_out_identifiers_list)
+    cp_query = prune_candidates_from_cp(fallen_out_identifiers_list, target_schema=cfg.TARGET_SCHEMA)
+    batch_query = prune_candidates_from_batch(fallen_out_identifiers_list, target_schema=cfg.TARGET_SCHEMA)
+    account_query = prune_candidates_from_account(fallen_out_identifiers_list, target_schema=cfg.TARGET_SCHEMA)
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
         prune_cp = conn.execute(text(cp_query))
         prune_batch = conn.execute(text(batch_query))
@@ -109,7 +110,7 @@ def prune_fallen_identifiers(fallenout_corp_nums: list) -> list[dict]:
 def get_cuttoff_timestamp() -> datetime:
 
     cfg = get_named_config()
-    cuttoff_timestamp = get_cutoff_timestamp_query()
+    cuttoff_timestamp = get_cutoff_timestamp_query(cfg.TARGET_SCHEMA)
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
         cuttoff_timestamp_result = conn.execute(text(cuttoff_timestamp)).scalar()
     print(f"cuttoff timestamp is {cuttoff_timestamp_result}")
@@ -124,7 +125,7 @@ def cleanup_extract_postgres_db() -> None:
 def run_unfreeze_identifiers() -> None:
     cfg = get_named_config()
     with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
-        result = conn.execute(text(unfreeze_identifiers()))
+        result = conn.execute(text(unfreeze_identifiers(target_schema=cfg.TARGET_SCHEMA)))
     print(f'Unfroze corporation rows={result.rowcount}')
 
 @task(name='Get-Updated-Identifiers-Colin', cache_policy=NO_CACHE)
@@ -135,7 +136,7 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     cfg = get_named_config()
     corp_list = ''
     if scope == 'batch':
-        mig_sql = get_identifiers_per_batch(mig_batch_id)
+        mig_sql = get_identifiers_per_batch(mig_batch_id, target_schema=cfg.TARGET_SCHEMA)
         with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
             row = conn.execute(text(mig_sql)).fetchone()
     
@@ -159,6 +160,7 @@ def run_cprd_subset_extract_generator(
     out: str | None,
     include_cp: bool = False,
     target_connection: str = _DEFAULT_TARGET_CONNECTION,
+    target_schema: str = _DEFAULT_TARGET_SCHEMA,
     prefix_numeric_bc: bool = False,
 ) -> subprocess.CompletedProcess:
     """
@@ -182,6 +184,7 @@ def run_cprd_subset_extract_generator(
         pg_disable_method,
     ]
     argv.extend(['--target-connection', target_connection])
+    argv.extend(['--target-schema', target_schema])
     if pg_fastload:
         argv.append('--pg-fastload')
     if include_cp:
@@ -252,6 +255,7 @@ def extract_pull_flow(
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
     target_connection: str = _DEFAULT_TARGET_CONNECTION,
+    target_schema: str = _DEFAULT_TARGET_SCHEMA,
     delta_scope: str = 'batch'
 ) -> None:
     """
@@ -305,6 +309,7 @@ def extract_pull_flow(
             pg_disable_method=pg_disable_method,
             out=out,
             target_connection=target_connection,
+            target_schema=target_schema,
             prefix_numeric_bc=(mode=='refresh'),
         )
     finally:
@@ -350,4 +355,5 @@ if __name__ == '__main__':
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--reset-extract-postgres', action='store_false')
     p.add_argument('--target-connection', default=_DEFAULT_TARGET_CONNECTION)
+    p.add_argument('--target-schema', default=_DEFAULT_TARGET_SCHEMA)
     extract_pull_flow(**vars(p.parse_args()))

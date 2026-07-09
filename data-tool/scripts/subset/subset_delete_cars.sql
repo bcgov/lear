@@ -4,7 +4,7 @@
 -- These tables are NOT corp-scoped, so we truncate the entire dataset and reload from Oracle.
 -- Volume is low enough that a full refresh is appropriate.
 
-TRUNCATE TABLE carindiv;
-TRUNCATE TABLE carsrept;
-TRUNCATE TABLE carsbox;
-TRUNCATE TABLE carsfile;
+TRUNCATE TABLE TARGET_SCHEMA.carindiv;
+TRUNCATE TABLE TARGET_SCHEMA.carsrept;
+TRUNCATE TABLE TARGET_SCHEMA.carsbox;
+TRUNCATE TABLE TARGET_SCHEMA.carsfile;

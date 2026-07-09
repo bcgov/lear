@@ -294,7 +294,7 @@ def sql_render_pg_session_probe(label: str) -> str:
 # =========================
 
 def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
-    subset_dir = repo_root / "colin-extract-refresh" / "src" / "subset"
+    subset_dir = repo_root / "data-tool" / "scripts" / "subset"
     
     pg_acquire_advisory_lock = tmpl_TemplateSpec(
         name="subset_pg_acquire_advisory_lock",
@@ -592,9 +592,9 @@ def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, t
         lines.append(f"execute {tmpl_resolve_execute_path(templates.disable_triggers, out_dir=cfg.out_chunks_dir).as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: preserved processing/tracking tables still reference corporation/event rows.")
-            lines.append("ALTER TABLE corp_processing DISABLE TRIGGER ALL;")
-            # lines.append("ALTER TABLE auth_processing DISABLE TRIGGER ALL;")
-            lines.append("ALTER TABLE colin_tracking DISABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.corp_processing DISABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.auth_processing DISABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.colin_tracking DISABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -612,9 +612,9 @@ def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, tem
         lines.append(f"execute {tmpl_resolve_execute_path(templates.enable_triggers, out_dir=cfg.out_chunks_dir).as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: restore preserved processing/tracking table triggers too.")
-            lines.append("ALTER TABLE corp_processing ENABLE TRIGGER ALL;")
-            # lines.append("ALTER TABLE auth_processing ENABLE TRIGGER ALL;")
-            lines.append("ALTER TABLE colin_tracking ENABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.corp_processing ENABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.auth_processing ENABLE TRIGGER ALL;")
+            lines.append(f"ALTER TABLE {cfg.target_schema}.colin_tracking ENABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -678,8 +678,8 @@ def gen_build_master_script_inline(
     lines.append("")
     lines.append(f"SET search_path TO {cfg.target_schema};")
 
-    lines.append("truncate table colin_extract_version; "
-                 "insert into colin_extract_version (extracted_at) values (current_timestamp); "
+    lines.append(f"truncate table {cfg.target_schema}.colin_extract_version; "
+                 f"insert into {cfg.target_schema}.colin_extract_version (extracted_at) values (current_timestamp); "
     )
     lines.append("")
 
