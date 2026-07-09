@@ -41,7 +41,6 @@ from business_emailer.email_processors import (
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
-    restoration_notification,
 )
 from business_emailer.resources import business_emailer as worker
 from business_emailer.services import flags
@@ -234,16 +233,6 @@ def test_dissolution_dispatches(app, session, mocker, mock_send_email):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_restoration_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(restoration_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "restoration", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_correction_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(correction_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "correction", "option": "PAID"}
@@ -358,7 +347,8 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
     "continuationIn",
     "incorporationApplication",
     "registration",
-    "specialResolution"
+    "restoration",
+    "specialResolution",
 ])
 def test_filing_notification_dispatches(app, session, mocker, mock_send_email, filing_type):
     """Assert that the filing_notification branch works as expected."""

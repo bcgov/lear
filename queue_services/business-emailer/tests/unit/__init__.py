@@ -71,6 +71,7 @@ FILING_TYPE_MAPPER = {
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
+    'restoration': RESTORATION,
     'specialResolution': CP_SPECIAL_RESOLUTION_TEMPLATE['filing']['specialResolution']
 }
 
@@ -415,40 +416,6 @@ def prep_continuation_out_filing(session, identifier, payment_id, legal_type, le
     return filing
 
 
-def prep_restoration_filing(identifier, payment_id, legal_type, legal_name, r_type='fullRestoration'):
-    """Return a new restoration filing prepped for email notification.
-
-    @param r_type:
-    @param identifier:
-    @param payment_id:
-    @param legal_type:
-    @param legal_name:
-    @return:
-    """
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'restoration'
-    filing_template['filing']['restoration'] = copy.deepcopy(RESTORATION)
-    filing_template['filing']['restoration']['type'] = r_type
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-
-    filing.save()
-    return filing
-
-
 def prep_change_of_registration_filing(session, identifier, payment_id, legal_type,
                                        legal_name, submitter_role, parties=None):
     """Return a new change of registration filing prepped for email notification."""
@@ -570,7 +537,7 @@ def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
     return filing
 
 
-def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, submitter_role=None, template_overrides={}):
+def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, filing_sub_type=None, submitter_role=None, template_overrides={}):
     """Return a new maintenance filing prepped for email notification."""
     legal_type = Business.LegalTypes.COOP.value if identifier.startswith('CP') else Business.LegalTypes.BCOMP.value
     business = create_business(identifier, legal_type, LEGAL_NAME)
@@ -579,6 +546,10 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     filing_template['filing']['business'] = \
         {'identifier': f'{identifier}', 'legalType': legal_type, 'legalName': LEGAL_NAME}
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
+
+    if filing_sub_type:
+        sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, 'type')
+        filing_template['filing'][filing_type][sub_type_key] = filing_sub_type
 
     if submitter_role:
         filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
@@ -690,7 +661,7 @@ def prep_special_resolution_filing(session, identifier='CP1234567', submitter_ro
             'rulesInResolution': True,
             'rulesFileKey': 'cooperative/a8abe1a6-4f45-4105-8a05-822baee3b743.pdf'
         }
-    return prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'specialResolution', submitter_role, filing_template_overrides)
+    return prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'specialResolution', None, submitter_role, filing_template_overrides)
 
 
 def prep_cp_special_resolution_correction_filing(session, business, original_filing_id,
