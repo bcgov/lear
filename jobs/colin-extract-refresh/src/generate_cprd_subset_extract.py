@@ -592,9 +592,9 @@ def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, t
         lines.append(f"execute {tmpl_resolve_execute_path(templates.disable_triggers, out_dir=cfg.out_chunks_dir).as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: preserved processing/tracking tables still reference corporation/event rows.")
-            lines.append("ALTER TABLE corp_processing DISABLE TRIGGER ALL;")
-            # lines.append("ALTER TABLE auth_processing DISABLE TRIGGER ALL;")
-            lines.append("ALTER TABLE colin_tracking DISABLE TRIGGER ALL;")
+            # lines.append("ALTER TABLE corp_processing DISABLE TRIGGER ALL;")
+            # # lines.append("ALTER TABLE auth_processing DISABLE TRIGGER ALL;")
+            # lines.append("ALTER TABLE colin_tracking DISABLE TRIGGER ALL;")
         lines.append("")
         return
 
@@ -612,9 +612,9 @@ def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, tem
         lines.append(f"execute {tmpl_resolve_execute_path(templates.enable_triggers, out_dir=cfg.out_chunks_dir).as_posix()}")
         if cfg.mode == cfg_GenerationMode.REFRESH:
             lines.append("-- Refresh-only: restore preserved processing/tracking table triggers too.")
-            lines.append("ALTER TABLE corp_processing ENABLE TRIGGER ALL;")
-            # lines.append("ALTER TABLE auth_processing ENABLE TRIGGER ALL;")
-            lines.append("ALTER TABLE colin_tracking ENABLE TRIGGER ALL;")
+            # lines.append("ALTER TABLE corp_processing ENABLE TRIGGER ALL;")
+            # # lines.append("ALTER TABLE auth_processing ENABLE TRIGGER ALL;")
+            # lines.append("ALTER TABLE colin_tracking ENABLE TRIGGER ALL;")
         lines.append("")
         return
 

@@ -40,7 +40,7 @@ ENV DBSCHEMA_VERSION=9_7_1
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends default-jre-headless curl;\
-    curl -fsSL "https://www.dbschema.com/download/dbschema_unix_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
+    curl --http1.1 -fsSL "https://www.dbschema.com/download/dbschema_unix_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
     tar -xzf /tmp/dbschema.tar.gz -C /opt; \
     rm /tmp/dbschema.tar.gz; \
     mkdir -p "${DBSCHEMA_HOME}/lib"; \
@@ -50,9 +50,21 @@ RUN set -eux; \
     rm -rf /var/lib/apt/lists/*
 
 ENV HOME=/opt/app-root
-RUN mkdir -p /opt/app-root/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
-    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o /opt/app-root/.DbSchema/drivers/PostgreSql/postgresql.jar && \
-    chmod -R g+rwX /opt/app-root/.DbSchema && \
+
+RUN mkdir -p ${HOME}/.DbSchema/cli ${HOME}/.DbSchema/drivers/PostgreSql ${HOME}/.DbSchema/drivers/Oracle && \
+    curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o ${HOME}/.DbSchema/drivers/PostgreSql/postgresql.jar && \
+    printf '%s\n' 'download driver oracle' > /tmp/download_oracle_driver.sql && \
+    dbschemacli /tmp/download_oracle_driver.sql && \
+    if [ -f /root/.DbSchema/drivers/oracle/driver.zip ]; then \
+        unzip -o /root/.DbSchema/drivers/oracle/driver.zip -d ${HOME}/.DbSchema/drivers/Oracle/; \
+    elif [ -f ${HOME}/.DbSchema/drivers/oracle/driver.zip ]; then \
+        unzip -o ${HOME}/.DbSchema/drivers/oracle/driver.zip -d ${HOME}/.DbSchema/drivers/Oracle/; \
+    else \
+        echo "Oracle JDBC driver download failed" >&2; exit 1; \
+    fi && \
+    rm -rf /root/.DbSchema/drivers/oracle ${HOME}/.DbSchema/drivers/oracle/driver.zip
+    
+RUN chmod -R g+rwX ${HOME}/.DbSchema && \
     chmod 755 /opt/app-root
 
 WORKDIR /opt/app-root
@@ -64,7 +76,7 @@ RUN apt-get update; \
 
 ENV PATH="${DBSCHEMA_HOME}:${PATH}"
 
-COPY src/ ./colin-exrtact-refresh/src/
+COPY src/ ./colin-extract-refresh/src/
 RUN mkdir -p /opt/app-root/colin-extract-refresh/src/subset/generated && \
     chmod -R 777 /opt/app-root/colin-extract-refresh/src/subset/generated /opt/app-root/.DbSchema
 
@@ -74,5 +86,4 @@ EXPOSE 8080
 
 COPY src .
 
-ENTRYPOINT ["python", "generate_cprd_subset_extract.py"]
-CMD ["--corp-file", "corp.txt", "--mode", "refresh"]
+CMD ["/bin/sh", "-c", "python /opt/app-root/colin-extract-refresh/src/test_connectivity.py && python /opt/app-root/colin-extract-refresh/src/generate_cprd_subset_extract.py --corp-file corp.txt --target-connection my_proxy_test --target-schema colin_extract_temp --mode refresh  && dbschemacli /opt/app-root/colin-extract-refresh/src/subset/generated/subset_refresh.sql"]
