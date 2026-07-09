@@ -51,16 +51,20 @@ RUN set -eux; \
 
 ENV HOME=/opt/app-root
 
-RUN mkdir -p ${HOME}/.DbSchema/cli /opt/app-root/.DbSchema/drivers/PostgreSql && \
+RUN mkdir -p ${HOME}/.DbSchema/cli ${HOME}/.DbSchema/drivers/PostgreSql ${HOME}/.DbSchema/drivers/Oracle && \
     curl -fsSL "https://repo1.maven.org/maven2/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar" -o ${HOME}/.DbSchema/drivers/PostgreSql/postgresql.jar && \
-    mkdir -p ${HOME}/.DbSchema/drivers/Oracle && \
-    curl -fsSL "https://maven.org" -o ${HOME}/.DbSchema/drivers/Oracle/ojdbc11.jar && \
-    unzip -o $HOME/.DbSchema/drivers/Oracle/driver.zip -d $HOME/.DbSchema/drivers/Oracle/
-
-
-
+    printf '%s\n' 'download driver oracle' > /tmp/download_oracle_driver.sql && \
+    dbschemacli /tmp/download_oracle_driver.sql && \
+    if [ -f /root/.DbSchema/drivers/oracle/driver.zip ]; then \
+        unzip -o /root/.DbSchema/drivers/oracle/driver.zip -d ${HOME}/.DbSchema/drivers/Oracle/; \
+    elif [ -f ${HOME}/.DbSchema/drivers/oracle/driver.zip ]; then \
+        unzip -o ${HOME}/.DbSchema/drivers/oracle/driver.zip -d ${HOME}/.DbSchema/drivers/Oracle/; \
+    else \
+        echo "Oracle JDBC driver download failed" >&2; exit 1; \
+    fi && \
+    rm -rf /root/.DbSchema/drivers/oracle ${HOME}/.DbSchema/drivers/oracle/driver.zip
     
-RUN chmod 755 $HOME/.DbSchema/drivers/Oracle/ && \
+RUN chmod -R g+rwX ${HOME}/.DbSchema && \
     chmod 755 /opt/app-root
 
 WORKDIR /opt/app-root
