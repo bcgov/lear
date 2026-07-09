@@ -203,13 +203,7 @@ def validate_directors_addresses(business: Business, cod: dict) -> list:
         for address_type in Address.JSON_ADDRESS_TYPES:
             address = director.get(address_type)
 
-            if not address:
-                if business.legal_type in Business.CORPS:
-                    msg.append({
-                        "error": f"missing {address_type}",
-                        "path": f"/filing/changeOfDirectors/directors/{idx}/{address_type}"
-                    })
-            elif address_type == Address.JSON_MAILING:
+            if address and address_type == Address.JSON_MAILING:
                 for field in mailing_required_fields:
                     if not address.get(field):
                         msg.append({
