@@ -593,8 +593,8 @@ def test_maintenance_filing_fe_renders_body_and_subject(app, session, mock_pdfs,
     assert email is not None
     body = email['content']['body']
     assert expected_header in body
-    assert not ".html]]" in body
-    assert not ".md]]" in body
+    assert ".html]]" not in body
+    assert ".md]]" not in body
     assert email['content']['subject'] == expected_subject
 
 
