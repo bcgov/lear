@@ -109,7 +109,9 @@ def prune_candidates_from_account(pruning_corps_list: list) -> str:
     WHERE corp_num IN {in_list}
     """
 
-def get_cutoff_timestamp_query() -> str:
+def get_cutoff_timestamp_query(target_schema: str | None = 'public') -> str:
+    safe_schema = (target_schema or 'public').strip() or 'public'
+    safe_schema = '"' + safe_schema.replace('"', '""') + '"'
     return f"""
-    SELECT extracted_at FROM colin_extract_version
+    SELECT extracted_at FROM {safe_schema}.colin_extract_version
     """

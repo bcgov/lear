@@ -1,6 +1,14 @@
 -- The following views are used mainly to help with bad data analysis and to help with determining eligibility of
 -- groups & batches of businesses we can migrate at specific points in time.
 
+\if :{?schema_name}
+\else
+\set schema_name public
+\endif
+
+CREATE SCHEMA IF NOT EXISTS :"schema_name";
+SET search_path TO :"schema_name", public;
+
 CREATE MATERIALIZED VIEW mv_corps_with_officers AS
 select distinct cp.corp_num
 from corporation c

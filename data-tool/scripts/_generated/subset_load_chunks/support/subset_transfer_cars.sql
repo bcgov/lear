@@ -1,17 +1,17 @@
--- Global transfer of cars* tables from SOURCE Oracle DB (__DBSCHEMA_SOURCE_CONNECTION__) into TARGET Postgres extract DB (__DBSCHEMA_TARGET_SCHEMA__ schema).
--- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (__DBSCHEMA_TARGET_SCHEMA__ schema).
+-- Global transfer of cars* tables from SOURCE Oracle DB (ctst) into TARGET Postgres extract DB (colin_extract schema).
+-- Intended to be executed from a master DbSchemaCLI script connected to the target Postgres DB (colin_extract schema).
 --
 -- These tables are NOT corp-scoped. The full dataset is transferred without filtering.
 -- Volume is low enough that a full refresh is appropriate.
 
-transfer __DBSCHEMA_TARGET_SCHEMA__.carsfile from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer colin_extract.carsfile from ctst using
 select
     documtid,
     filedate,
     regiracf
 from carsfile;
 
-transfer __DBSCHEMA_TARGET_SCHEMA__.carsbox from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer colin_extract.carsbox from ctst using
 select
     documtid,
     accesnum,
@@ -19,14 +19,14 @@ select
     boxrracf
 from carsbox;
 
-transfer __DBSCHEMA_TARGET_SCHEMA__.carsrept from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer colin_extract.carsrept from ctst using
 select
     documtid,
     docutype,
     compnumb
 from carsrept;
 
-transfer __DBSCHEMA_TARGET_SCHEMA__.carindiv from __DBSCHEMA_SOURCE_CONNECTION__ using
+transfer colin_extract.carindiv from ctst using
 select
     documtid,
     replace(surname, CHR(0), '') as surname,

@@ -461,8 +461,13 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --schema)
-      PGSCHEMA="${2:-}"
-      shift 2
+      if [[ $# -gt 1 && "$2" != -* ]]; then
+        PGSCHEMA="$2"
+        shift 2
+      else
+        PGSCHEMA="${PGSCHEMA:-public}"
+        shift
+      fi
       ;;
     --psql-bin)
       PSQL_BIN="${2:-}"
