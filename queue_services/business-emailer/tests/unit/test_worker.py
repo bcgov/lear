@@ -25,7 +25,6 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 from business_emailer.email_processors import (
     ar_reminder_notification,
     continuation_in_notification,
-    correction_notification,
     filing_notification,
     name_request,
     nr_notification,
@@ -40,7 +39,7 @@ from tests.unit import (
     create_business,
     create_furnishing,
     prep_bootstrap_filing,
-    prep_cp_special_resolution_correction_filing,
+    prep_correction_filing,
     prep_incorp_filing,
     prep_maintenance_filing,
     prep_special_resolution_filing
@@ -124,6 +123,45 @@ def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker
 
                 # process() returns None for non-future-effective PAID IA; worker skips send_email
                 assert not mock_send_email.call_args
+
+
+def test_correction_notification(app, session):
+    """Assert that valid correction filing cases send an email."""
+    # setup filing + business for email
+    identifier = 'BC1234567'
+    original_filing = prep_bootstrap_filing(session, 'incorporationApplication', identifier, 'BC', 'COMPLETED', LEGAL_NAME)
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(session, business, original_filing.id, 'incorporationApplication', 'COMPLETED')
+    token = 'token'
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
+                with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
+                    as mock_get_recipients:
+                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                        worker.process_email(
+                            SimpleCloudEvent(
+                                data={'email': {'filingId': corrected_filing.id, 'type': 'correction', 'option': 'COMPLETED'}}
+                            )
+                        )
+
+                        assert mock_get_pdfs.call_args[0][0] == token
+                        assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
+                        business: Business = Business.find_by_identifier(identifier)
+                        assert mock_get_pdfs.call_args[0][1]['legalType'] == business.legal_type
+                        assert mock_get_pdfs.call_args[0][1]['legalName'] == 'test business'
+
+                        assert mock_get_pdfs.call_args[0][2] == corrected_filing
+                        assert mock_get_recipients.call_args[0][0] == 'COMPLETED'
+                        assert mock_get_recipients.call_args[0][1] == corrected_filing.filing_json
+                        assert mock_get_recipients.call_args[0][2] == token
+
+                        assert mock_send_email.call_args[0][0]['content']['subject']
+                        assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                        assert mock_send_email.call_args[0][0]['content']['body']
+                        assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                        assert mock_send_email.call_args[0][1] == token
 
 
 @pytest.mark.parametrize(['status', 'filing_type', 'identifier', 'submitter_role'], [
@@ -222,40 +260,6 @@ def test_process_mras_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
             assert mock_send_email.call_args[0][1] == token
-
-
-@pytest.mark.parametrize('option', [
-    ('PAID'),
-    ('COMPLETED'),
-])
-def test_process_correction_cp_sr_email(app, session, option):
-    """Assert that a correction email msg is processed correctly."""
-    identifier = 'CP1234567'
-    original_filing = prep_special_resolution_filing(session, identifier, submitter_role=None)
-    token = '1'
-    business = Business.find_by_identifier(identifier)
-    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
-                                                          '1', option, 'specialResolution')
-    # test worker
-    with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(correction_notification, '_get_pdfs', return_value=[]):
-            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email(
-                    SimpleCloudEvent(
-                        data={'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}
-                    )
-                )
-
-                if option == 'PAID':
-                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                           f'{LEGAL_NAME} - Confirmation of correction'
-                else:
-                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                           f'{LEGAL_NAME} - Correction Documents from the Business Registry'
-                assert 'cp_sr@test.com' in mock_send_email.call_args[0][0]['recipients']
-                assert mock_send_email.call_args[0][0]['content']['body']
-                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
-                assert mock_send_email.call_args[0][1] == token
 
 
 def test_process_ar_reminder_email(app, session):

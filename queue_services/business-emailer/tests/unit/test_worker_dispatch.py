@@ -32,7 +32,6 @@ from business_emailer.email_processors import (
     consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_out_notification,
-    correction_notification,
     dissolution_notification,
     filing_notification,
     intent_to_liquidate_notification,
@@ -233,16 +232,6 @@ def test_dissolution_dispatches(app, session, mocker, mock_send_email):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_correction_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(correction_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "correction", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_consent_amalgamation_out_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(consent_amalgamation_out_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "consentAmalgamationOut", "option": COMPLETED}
@@ -338,13 +327,14 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize('filing_type', [
-    "amalgamationApplication",
     "alteration",
+    "amalgamationApplication",
     "annualReport",
     "changeOfAddress",
     "changeOfDirectors",
     "changeOfRegistration",
     "continuationIn",
+    "correction",
     "incorporationApplication",
     "registration",
     "restoration",

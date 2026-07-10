@@ -35,6 +35,7 @@ FILING_TITLE = {
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
     "continuationIn": "Continuation Application",
+    "correction": "Correction",
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
@@ -67,8 +68,12 @@ FILING_ATTACHMENTS = {
             "attachments": ["Director Change","Receipt"],
             "extraPdfTypes": [],
         },
+        "correction": {
+            "attachments": ["Register Correction Application","Certificate of Name Correction","Certified Rules","Certified Memorandum","Receipt"],
+            "extraPdfTypes": ["certificateOfNameCorrection","certifiedRules","certifiedMemorandum"]
+        },
         "incorporationApplication": {
-            "attachments": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Memorandum","Receipt"],
+            "attachments": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Certified Memorandum","Receipt"],
             "extraPdfTypes": ["certificateOfIncorporation","certifiedRules","certifiedMemorandum"],
         },
         "specialResolution": {
@@ -109,6 +114,10 @@ FILING_ATTACHMENTS = {
             "attachments": ["Continuation Application","Notice of Articles","Certificate of Continuation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfContinuation"],
         },
+        "correction": {
+            "attachments": ["Register Correction Application","Notice of Articles","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles"]
+        },
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfIncorporation"],
@@ -134,6 +143,10 @@ FILING_ATTACHMENTS = {
         "changeOfRegistration": {
             "attachments": ["Change of Registration", "Amended Registration Statement", "Receipt"],
             "extraPdfTypes": ["amendedRegistrationStatement"],
+        },
+        "correction": {
+            "attachments": ["Register Correction Application","Corrected Registration Statement","Receipt"],
+            "extraPdfTypes": ["correctedRegistrationStatement"]
         },
         "registration": {
             "attachments": ["Statement of Registration","Receipt"],

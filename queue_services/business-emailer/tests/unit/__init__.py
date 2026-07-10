@@ -15,7 +15,7 @@
 import copy
 import json
 from datetime import datetime, timedelta
-from random import randrange, choices
+from random import randrange
 
 from unittest.mock import Mock
 
@@ -41,7 +41,6 @@ from registry_schemas.example_data import (
     CORRECTION_CP_SPECIAL_RESOLUTION,
     CORRECTION_INCORPORATION,
     CORRECTION_REGISTRATION,
-    CP_SPECIAL_RESOLUTION_TEMPLATE,
     DISSOLUTION,
     FILING_HEADER,
     FILING_TEMPLATE,
@@ -49,6 +48,7 @@ from registry_schemas.example_data import (
     NOTICE_OF_WITHDRAWAL,
     REGISTRATION,
     RESTORATION,
+    SPECIAL_RESOLUTION,
 )
 
 from tests.unit.helpers import generate_temp_filing
@@ -58,11 +58,15 @@ from tests import EPOCH_DATETIME
 AMALGAMATION_APPLICATION_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
 AMALGAMATION_APPLICATION_TEMPLATE['filing']['header']['name'] = 'amalgamationApplication'
 AMALGAMATION_APPLICATION_TEMPLATE['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+REGISTRATION_TEMPLATE = copy.deepcopy(FILING_TEMPLATE)
+REGISTRATION_TEMPLATE['filing']['header']['name'] = 'registration'
+REGISTRATION_TEMPLATE['filing']['registration'] = copy.deepcopy(REGISTRATION)
 
 BOOTSTRAP_TYPE_MAPPER = {
     'amalgamationApplication': AMALGAMATION_APPLICATION_TEMPLATE,
     'continuationIn': CONTINUATION_IN_FILING_TEMPLATE,
     'incorporationApplication': INCORPORATION_FILING_TEMPLATE,
+    'registration': REGISTRATION_TEMPLATE,
 }
 
 # NB: These do not include the header or business in their templates
@@ -71,8 +75,15 @@ FILING_TYPE_MAPPER = {
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
+    'changeOfRegistration': CHANGE_OF_REGISTRATION,
     'restoration': RESTORATION,
-    'specialResolution': CP_SPECIAL_RESOLUTION_TEMPLATE['filing']['specialResolution']
+    'specialResolution': SPECIAL_RESOLUTION
+}
+
+CORRECTION_TYPE_MAPPER = {
+    'incorporationApplication': CORRECTION_INCORPORATION['filing']['correction'],
+    'registration': CORRECTION_REGISTRATION['filing']['correction'],
+    'specialResolution': CORRECTION_CP_SPECIAL_RESOLUTION
 }
 
 COMP_PARTY_EMAIL = 'comp_party@email.com'
@@ -81,6 +92,34 @@ LEGAL_NAME = 'test business'
 PARTY_EMAIL_1 = 'party1@email.com'
 PARTY_EMAIL_2 = 'party2@email.com'
 
+
+def _prep_parties_for_filing(filing_template: dict, filing_type: str, legal_type: str):
+    """Update the parties in the filing template with expected data."""
+    if filing_template['filing'][filing_type].get('parties'):
+        filing_template['filing'][filing_type]['parties'] = filing_template['filing'][filing_type]['parties'][:2]
+        for index, party in enumerate(filing_template['filing'][filing_type]['parties']):
+            for role in party['roles']:
+                if legal_type not in ['SP', 'GP'] and role['roleType'] == 'Completing Party':
+                    party['officer']['email'] = COMP_PARTY_EMAIL
+                    break
+                elif index == 0:
+                    party['officer']['email'] = PARTY_EMAIL_1
+                else:
+                    party['officer']['email'] = PARTY_EMAIL_2
+        if legal_type == 'SP':
+            filing_template['filing'][filing_type]['parties'] = filing_template['filing'][filing_type]['parties'][:1]
+            filing_template['filing'][filing_type]['parties'][0]['roles'] = [
+                {
+                    'roleType': 'Completing Party',
+                    'appointmentDate': '2022-01-01'
+
+                },
+                {
+                    'roleType': 'Proprietor',
+                    'appointmentDate': '2022-01-01'
+
+                }
+            ]
 
 def create_user(user_name: str):
     """Return a new user model."""
@@ -132,7 +171,7 @@ def create_filing(token=None, filing_json=None, business_id=None,
     return filing
 
 
-def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, legal_name=None, filing_sub_type=None):
+def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, legal_name=None, filing_sub_type=None, parties=None):
     """Return a new bootstrap filing prepped for email notification."""
     if not filing_sub_type and filing_type == 'amalgamationApplication':
         filing_sub_type = 'regular'
@@ -142,7 +181,7 @@ def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, 
         'legalType': legal_type
     }
     filing_template['filing'][filing_type]['nameRequest'] = {'legalType': legal_type}
-    filing_template['filing'][filing_type]['contactPoint']['email'] = CONTACT_POINT
+    filing_template['filing'][filing_type]['contactPoint'] = {'email': CONTACT_POINT}
 
     if legal_name:
         filing_template['filing'][filing_type]['nameRequest']['legalName'] = legal_name
@@ -150,12 +189,24 @@ def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, 
     if filing_sub_type:
         sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, 'type')
         filing_template['filing'][filing_type][sub_type_key] = filing_sub_type
+    
+    _prep_parties_for_filing(filing_template, filing_type, legal_type)
+    
+    if filing_type == 'registration':
+        filing_template['filing']['business']['naics'] = {
+            'naicsCode': '112320',
+            'naicsDescription': 'Broiler and other meat-type chicken production'
+        }
+        filing_template['filing']['registration']['startDate'] = datetime.now().strftime('%Y-%m-%d')
+        if legal_type != 'GP':
+            filing_template['filing']['registration']['businessType'] = legal_type
 
-    for party in filing_template['filing'][filing_type]['parties']:
-        for role in party['roles']:
-            if role['roleType'] == 'Completing Party':
-                party['officer']['email'] = COMP_PARTY_EMAIL
-
+    if legal_type == 'CP':
+        filing_template['filing'][filing_type]['cooperative'] = {
+            'cooperativeAssociationType': 'CP',
+            'rulesFileKey': 'rulekey1234',
+            'memorandumFileKey': 'memkey1234'
+        }
     temp_identifier = generate_temp_filing()
     filing_template['filing']['business']['identifier'] = temp_identifier
     filing = create_filing(token='1', filing_json=filing_template, bootstrap_id=temp_identifier)
@@ -164,7 +215,7 @@ def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, 
 
     if option in ['COMPLETED', 'bn', 'mras']:
         legal_name = legal_name or f'{identifier[2:]} B.C. Ltd.'
-        business = create_business(identifier, legal_type=legal_type, legal_name=legal_name)
+        business = create_business(identifier, legal_type=legal_type, legal_name=legal_name, parties=parties)
         filing.business_id = business.id
         transaction_id = VersioningProxy.get_transaction_id(session())
         filing.transaction_id = transaction_id
@@ -178,67 +229,9 @@ def prep_incorp_filing(session, identifier, option, legal_type='BC', legal_name=
     return prep_bootstrap_filing(session, 'incorporationApplication', identifier, legal_type, option, legal_name=legal_name)
 
 
-def prep_registration_filing(session, identifier, payment_id, option, legal_type, legal_name, parties=None):
+def prep_registration_filing(session, identifier, option, legal_type, legal_name, parties=None):
     """Return a new registration filing prepped for email notification."""
-    now = datetime.now().strftime('%Y-%m-%d')
-    REGISTRATION['business']['naics'] = {
-        'naicsCode': '112320',
-        'naicsDescription': 'Broiler and other meat-type chicken production'
-    }
-
-    gp_registration = copy.deepcopy(FILING_HEADER)
-    gp_registration['filing']['header']['name'] = 'registration'
-    gp_registration['filing']['registration'] = copy.deepcopy(REGISTRATION)
-    gp_registration['filing']['registration']['startDate'] = now
-    gp_registration['filing']['registration']['nameRequest']['legalName'] = legal_name
-    gp_registration['filing']['registration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
-    gp_registration['filing']['registration']['parties'][1]['officer']['email'] = PARTY_EMAIL_2
-    gp_registration['filing']['registration']['contactPoint']['email'] = CONTACT_POINT
-
-    sp_registration = copy.deepcopy(FILING_HEADER)
-    sp_registration['filing']['header']['name'] = 'registration'
-    sp_registration['filing']['registration'] = copy.deepcopy(REGISTRATION)
-    sp_registration['filing']['registration']['startDate'] = now
-    sp_registration['filing']['registration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
-    sp_registration['filing']['registration']['businessType'] = 'SP'
-    sp_registration['filing']['registration']['contactPoint']['email'] = CONTACT_POINT
-    sp_registration['filing']['registration']['parties'][0]['roles'] = [
-        {
-            'roleType': 'Completing Party',
-            'appointmentDate': '2022-01-01'
-
-        },
-        {
-            'roleType': 'Proprietor',
-            'appointmentDate': '2022-01-01'
-
-        }
-    ]
-    del sp_registration['filing']['registration']['parties'][1]
-
-    if legal_type == Business.LegalTypes.SOLE_PROP.value:
-        filing_template = sp_registration
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
-        filing_template = gp_registration
-
-    temp_identifier = generate_temp_filing()
-    filing_template['filing']['business'] = {
-        'identifier': temp_identifier,
-        'legalType': legal_type
-    }
-    filing = create_filing(token=payment_id, filing_json=filing_template,
-                           business_id=None, bootstrap_id=temp_identifier)
-    filing.payment_completion_date = filing.filing_date
-
-    if option in ['COMPLETED']:
-        business = create_business(identifier, legal_type, parties=parties)
-        business.founding_date = datetime.fromisoformat(now)
-        filing.business_id = business.id
-        transaction_id = VersioningProxy.get_transaction_id(session())
-        filing.transaction_id = transaction_id
-
-    filing.save()
-    return filing
+    return prep_bootstrap_filing(session, 'registration', identifier, legal_type, option, legal_name=legal_name, parties=parties)
 
 
 def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
@@ -419,58 +412,7 @@ def prep_continuation_out_filing(session, identifier, payment_id, legal_type, le
 def prep_change_of_registration_filing(session, identifier, payment_id, legal_type,
                                        legal_name, submitter_role, parties=None):
     """Return a new change of registration filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name, parties)
-
-    gp_change_of_registration = copy.deepcopy(FILING_HEADER)
-    gp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
-    gp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
-    gp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
-    gp_change_of_registration['filing']['changeOfRegistration']['contactPoint']['email'] = CONTACT_POINT
-
-    sp_change_of_registration = copy.deepcopy(FILING_HEADER)
-    sp_change_of_registration['filing']['header']['name'] = 'changeOfRegistration'
-    sp_change_of_registration['filing']['changeOfRegistration'] = copy.deepcopy(CHANGE_OF_REGISTRATION)
-    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['roles'] = [
-        {
-            'roleType': 'Completing Party',
-            'appointmentDate': '2022-01-01'
-
-        },
-        {
-            'roleType': 'Proprietor',
-            'appointmentDate': '2022-01-01'
-
-        }
-    ]
-    sp_change_of_registration['filing']['changeOfRegistration']['parties'][0]['officer']['email'] = PARTY_EMAIL_1
-    sp_change_of_registration['filing']['changeOfRegistration']['contactPoint']['email'] = CONTACT_POINT
-
-    if legal_type == Business.LegalTypes.SOLE_PROP.value:
-        filing_template = sp_change_of_registration
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
-        filing_template = gp_change_of_registration
-
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
+    return prep_maintenance_filing(session, identifier, payment_id, 'COMPLETED', 'changeOfRegistration', None, submitter_role, legal_type, parties)
 
 
 def prep_alteration_filing(session, identifier, option, company_name):
@@ -537,15 +479,22 @@ def prep_agm_extension_filing(identifier, payment_id, legal_type, legal_name):
     return filing
 
 
-def prep_maintenance_filing(session, identifier, payment_id, status, filing_type, filing_sub_type=None, submitter_role=None, template_overrides={}):
+def prep_maintenance_filing(session, identifier, payment_id, status, filing_type,
+                            filing_sub_type=None, submitter_role=None, legal_type=None, parties=None, template_overrides={}):
     """Return a new maintenance filing prepped for email notification."""
-    legal_type = Business.LegalTypes.COOP.value if identifier.startswith('CP') else Business.LegalTypes.BCOMP.value
-    business = create_business(identifier, legal_type, LEGAL_NAME)
+    if not legal_type:
+        legal_type = Business.LegalTypes.COOP.value if identifier.startswith('CP') else Business.LegalTypes.BCOMP.value
+    business = create_business(identifier, legal_type, LEGAL_NAME, parties)
     filing_template = copy.deepcopy(FILING_TEMPLATE)
     filing_template['filing']['header']['name'] = filing_type
-    filing_template['filing']['business'] = \
-        {'identifier': f'{identifier}', 'legalType': legal_type, 'legalName': LEGAL_NAME}
+    filing_template['filing']['business'] = {
+        'identifier': identifier,
+        'legalType': legal_type,
+        'legalName': business.legal_name
+    }
     filing_template['filing'][filing_type] = copy.deepcopy(FILING_TYPE_MAPPER[filing_type])
+    filing_template['filing'][filing_type]['contactPoint'] = {'email': CONTACT_POINT}
+    _prep_parties_for_filing(filing_template, filing_type, legal_type)
 
     if filing_sub_type:
         sub_type_key = Filing.FILING_SUB_TYPE_KEYS.get(filing_type, 'type')
@@ -576,75 +525,6 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     return filing
 
 
-def prep_incorporation_correction_filing(session, business, original_filing_id, payment_id, option):
-    """Return a new incorporation correction filing prepped for email notification."""
-    filing_template = copy.deepcopy(CORRECTION_INCORPORATION)
-    filing_template['filing']['business'] = {'identifier': business.identifier}
-    for party in filing_template['filing']['correction']['parties']:
-        for role in party['roles']:
-            if role['roleType'] == 'Completing Party':
-                party['officer']['email'] = 'comp_party@email.com'
-    filing_template['filing']['correction']['contactPoint']['email'] = 'test@test.com'
-    filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-    filing.save()
-    if option in ['COMPLETED']:
-        transaction_id = VersioningProxy.get_transaction_id(session())
-        filing.transaction_id = transaction_id
-        filing.save()
-    return filing
-
-
-def prep_firm_correction_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role, parties=None):
-    """Return a firm correction filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name, parties)
-
-    gp_correction = copy.deepcopy(CORRECTION_REGISTRATION)
-    gp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
-
-    sp_correction = copy.deepcopy(CORRECTION_REGISTRATION)
-    sp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
-    sp_correction['filing']['correction']['parties'][0]['roles'] = [
-        {
-            'roleType': 'Completing Party',
-            'appointmentDate': '2022-01-01'
-
-        },
-        {
-            'roleType': 'Proprietor',
-            'appointmentDate': '2022-01-01'
-
-        }
-    ]
-    sp_correction['filing']['correction']['parties'][0]['officer']['email'] = 'party@email.com'
-
-    if legal_type == Business.LegalTypes.SOLE_PROP.value:
-        filing_template = sp_correction
-    elif legal_type == Business.LegalTypes.PARTNERSHIP.value:
-        filing_template = gp_correction
-
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
-
-
 def prep_special_resolution_filing(session, identifier='CP1234567', submitter_role=None, has_name_change=False, has_rule_change=False):
     """Return a new special resolution out filing prepped for email notification."""
     filing_template_overrides = {}
@@ -661,61 +541,80 @@ def prep_special_resolution_filing(session, identifier='CP1234567', submitter_ro
             'rulesInResolution': True,
             'rulesFileKey': 'cooperative/a8abe1a6-4f45-4105-8a05-822baee3b743.pdf'
         }
-    return prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'specialResolution', None, submitter_role, filing_template_overrides)
+    return prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'specialResolution', None, submitter_role, template_overrides=filing_template_overrides)
 
 
-def prep_cp_special_resolution_correction_filing(session, business, original_filing_id,
-                                                 payment_id, option, corrected_filing_type):
-    """Return a cp special resolution correction filing prepped for email notification."""
+def prep_correction_filing(session,
+                           business: Business,
+                           original_filing_id: int,
+                           original_filing_type: str,
+                           status: str,
+                           has_name_change=False,
+                           has_rule_change=False,
+                           has_memorandum_change=False):
+    """Return a correction filing prepped for email notification."""
     filing_template = copy.deepcopy(FILING_HEADER)
     filing_template['filing']['header']['name'] = 'correction'
-    filing_template['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
+    filing_template['filing']['correction'] = copy.deepcopy(CORRECTION_TYPE_MAPPER[original_filing_type])
     filing_template['filing']['business'] = {'identifier': business.identifier}
-    filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
+    filing_template['filing']['correction']['contactPoint']['email'] = CONTACT_POINT
     filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
-    filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
+    filing_template['filing']['correction']['correctedFilingType'] = original_filing_type
+    # Update the parties (schema examples do not reflect a real payload for the correction case)
+    filing_template['filing']['correction']['parties'] = filing_template['filing']['correction']['parties'][:1]
+    # Remove completing party role (examples contain it as an extra role, but the real payload does not)
+    filing_template['filing']['correction']['parties'][0]['roles'] = [
+        role for role in filing_template['filing']['correction']['parties'][0]['roles']
+        if role['roleType'] != 'Completing Party'
+    ]
+    # Add completing party as a separate party with no email
+    filing_template['filing']['correction']['parties'].append({
+        'officer': {
+            'firstName': 'Completing',
+            'lastName': 'Party',
+            'partyType': 'person'
+        },
+        'mailingAddress': {
+            'streetAddress': 'mailing_address - address line one',
+            'addressCity': 'mailing_address city',
+            'addressCountry': 'CA',
+            'postalCode': 'H0H0H0',
+            'addressRegion': 'BC'
+        },
+        'roles': [
+            {
+                'roleType': 'Completing Party',
+                'appointmentDate': datetime.now().strftime('%Y-%m-%d')
+            }
+        ]
+    })
+
+    _prep_parties_for_filing(filing_template, 'correction', business.legal_type)
+
     filing_template['filing']['correction']['nameRequest'] = {
         'nrNumber': 'NR 8798956',
         'legalName': 'HAULER MEDIA INC.',
-        'legalType': 'BC',
-        'requestType': 'CHG'
+        'legalType': business.legal_type,
+        'requestTypeCd': 'CHG'
     }
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-    # Triggered from the filer.
-    filing._meta_data = {'correction': {'uploadNewRules': True, 'toLegalName': True}}
+    filing_template['filing']['correction']['rulesFileKey'] = 'ruleskey1234'
+    filing_template['filing']['correction']['memorandumFileKey'] = 'memkey1234'
+
+    if not has_name_change:
+        del filing_template['filing']['correction']['nameRequest']
+    if not has_rule_change:
+        del filing_template['filing']['correction']['rulesFileKey']
+    if not has_memorandum_change:
+        del filing_template['filing']['correction']['memorandumFileKey']
+
+    filing = create_filing(token='1', filing_json=filing_template, business_id=business.id)
+
     filing.save()
-    if option in ['COMPLETED']:
+    if status == 'COMPLETED':
         transaction_id = VersioningProxy.get_transaction_id(session())
         filing.transaction_id = transaction_id
         filing.save()
-    return filing
 
-
-def prep_cp_special_resolution_correction_upload_memorandum_filing(session, business,
-                                                                   original_filing_id,
-                                                                   payment_id, option,
-                                                                   corrected_filing_type):
-    """Return a cp special resolution correction filing prepped for email notification."""
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'correction'
-    filing_template['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
-    filing_template['filing']['business'] = {'identifier': business.identifier}
-    filing_template['filing']['correction']['contactPoint']['email'] = 'cp_sr@test.com'
-    filing_template['filing']['correction']['correctedFilingId'] = original_filing_id
-    filing_template['filing']['correction']['correctedFilingType'] = corrected_filing_type
-    del filing_template['filing']['correction']['resolution']
-    filing_template['filing']['correction']['memorandumFileKey'] = '28f73dc4-8e7c-4c89-bef6-a81dff909ca6.pdf'
-    filing_template['filing']['correction']['memorandumFileName'] = 'test.pdf'
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-    # Triggered from the filer.
-    filing._meta_data = {'correction': {'uploadNewMemorandum': True}}
-    filing.save()
-    if option in ['COMPLETED']:
-        transaction_id = VersioningProxy.get_transaction_id(session())
-        filing.transaction_id = transaction_id
-        filing.save()
     return filing
 
 

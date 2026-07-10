@@ -291,36 +291,16 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     token: str,
     business: dict,
     filing: Filing,
+    file_attachment_name: str | None = None,
     regenerate=False
 ):
     """Add the specified filing document pdf to the pdfs list."""
     # File name
-    file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
+    if not (file_name := file_attachment_name):
+        file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
+
     if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
         file_name = f"{ar_date[:4]} {file_name}"
-    elif document_type == "changeOfAddress":
-        file_name = "Address Change"
-    elif document_type == "changeOfDirectors":
-        file_name = "Director Change"
-    elif document_type == "registration":
-        file_name = "Statement of Registration"
-    elif document_type == "continuationIn":
-        file_name = "Continuation Application"
-    elif document_type == "amalgamationApplication":
-        amalgamation_application_names = {
-            Amalgamation.AmalgamationTypes.regular.name: "Amalgamation Application (Regular)",
-            Amalgamation.AmalgamationTypes.vertical.name: "Amalgamation Application Short-form (Vertical)",
-            Amalgamation.AmalgamationTypes.horizontal.name: "Amalgamation Application Short-form (Horizontal)"
-        }
-        file_name = amalgamation_application_names.get(filing.filing_sub_type, file_name)
-    elif document_type == "restoration":
-        restoration_application_names = {
-            "fullRestoration": "Full Restoration Application",
-            "limitedRestoration": "Limited Restoration Application",
-            "limitedRestorationExtension": "Limited Restoration Extension Application",
-            "limitedRestorationToFull": "Conversion to Full Restoration Application",
-        }
-        file_name = restoration_application_names.get(filing.filing_sub_type, file_name)
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
@@ -333,7 +313,9 @@ def _add_filing_document_pdf(  # noqa: PLR0913
                 "attachOrder": str(attach_order)
             }
         )
-        return attach_order + 1
+        attach_order += 1
+
+    return attach_order
 
 
 def _add_receipt_pdf(  # noqa: PLR0913
@@ -387,13 +369,14 @@ def get_pdfs(  # noqa: PLR0913
     filing_date_time: str,
     effective_date: str,
     extra_pdf_type_list: list[str],
+    filing_attachment_name: str | None,
     regenerate=False
 ) -> list:
     """Get the pdfs for the filing output."""
     pdfs = []
     attach_order = 1
     # add filing application document
-    attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, regenerate=regenerate)
+    attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, filing_attachment_name, regenerate=regenerate)
     # add extra documents
     for pdf_type in extra_pdf_type_list:
         attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)
