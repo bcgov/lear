@@ -20,8 +20,8 @@ from business_model.models import Business
 
 from business_emailer.email_processors import filing_notification
 from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
-                        prep_bootstrap_filing, prep_change_of_registration_filing, prep_incorp_filing,
-                        prep_maintenance_filing, prep_registration_filing, prep_special_resolution_filing)
+                        prep_bootstrap_filing, prep_change_of_registration_filing, prep_correction_filing,
+                        prep_incorp_filing, prep_maintenance_filing, prep_registration_filing, prep_special_resolution_filing)
 from tests.unit.helpers import make_future_effective, make_non_future_effective
 
 
@@ -245,11 +245,10 @@ def test_paid_non_future_effective_returns_none(app, session, filing_type):
     """Assert that a PAID non-future-effective filing returns None (no email is sent)."""
     if filing_type != 'registration':
         filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', 'PAID', LEGAL_NAME)
-        make_non_future_effective(filing)
     else:
         filing = prep_registration_filing(
-            session, 'FM1234567', '1', 'PAID', Business.LegalTypes.SOLE_PROP.value, 'test business')
-
+            session, 'FM1234567', 'PAID', Business.LegalTypes.SOLE_PROP.value, 'test business')
+    make_non_future_effective(filing)
     result = process_filing(filing, filing_type, 'PAID')
 
     assert result is None
@@ -615,7 +614,7 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     """Assert that FIRM registration and changeOfRegistration produce correct emails via filing_notification."""
     legal_name = 'test business'
     if filing_type == 'registration':
-        filing = prep_registration_filing(session, 'FM1234567', '1', status, legal_type, legal_name, firm_parties())
+        filing = prep_registration_filing(session, 'FM1234567', status, legal_type, legal_name, firm_parties())
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, submitter_role, firm_parties())
@@ -657,7 +656,7 @@ def test_filing_attachments_registration_completed(session, config, mock_recipie
     """registration COMPLETED: Statement of Registration filing PDF + receipt."""
     identifier = 'FM1234567'
     filing = prep_registration_filing(
-        session, identifier, '1', 'COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'test business', firm_parties())
+        session, identifier, 'COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'test business', firm_parties())
     with requests_mock.Mocker() as m:
         mock_filing_docs(m, config, identifier, filing,
                          {'registration': b'pdf_content_1'}, receipt=b'pdf_content_2')
@@ -701,8 +700,7 @@ def test_firm_filing_subject(app, session, filing_type, expected_subject_suffix,
     legal_name = 'test business'
     legal_type = Business.LegalTypes.SOLE_PROP.value
     if filing_type == 'registration':
-        filing = prep_registration_filing(session, 'FM1234567', '1', 'COMPLETED', legal_type, legal_name,
-                                           firm_parties())
+        filing = prep_registration_filing(session, 'FM1234567', 'COMPLETED', legal_type, legal_name, firm_parties())
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, None, firm_parties())
@@ -710,3 +708,131 @@ def test_firm_filing_subject(app, session, filing_type, expected_subject_suffix,
 
     assert email is not None
     assert email['content']['subject'] == f'JANE A DOE - {expected_subject_suffix}'
+
+
+# ---------------------------------------------------------------------------
+# Corrections via filing_notification
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(['orig_filing_type', 'legal_type', 'identifier'], [
+    ('incorporationApplication', Business.LegalTypes.COMP.value, 'BC1234567'),
+    ('registration', Business.LegalTypes.PARTNERSHIP.value, 'FM1234567'),
+    ('registration', Business.LegalTypes.SOLE_PROP.value, 'FM1234567'),
+    ('specialResolution', Business.LegalTypes.COOP.value, 'CP1234567'),
+])
+def test_correction_filing_via_filing_notification(app, session, mock_pdfs,
+                                                   orig_filing_type, legal_type, identifier):
+    """Assert that Corrections send emails via filing_notification."""
+    if orig_filing_type == 'specialResolution':
+        original_filing = prep_special_resolution_filing(session, identifier)
+    else:
+        original_filing = prep_bootstrap_filing(session, orig_filing_type, identifier, legal_type, 'COMPLETED')
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(session, business, original_filing.id, orig_filing_type, 'COMPLETED')
+
+    email = process_filing(corrected_filing, 'correction', 'COMPLETED')
+
+    assert email is not None
+    body = email['content']['body']
+    assert body
+    assert email['content']['attachments'] == []
+    assert mock_pdfs.call_args[0][1]['identifier'] == identifier
+    assert mock_pdfs.call_args[0][2] == corrected_filing
+    assert CONTACT_POINT in email['recipients']
+    if orig_filing_type == 'registration':
+        assert PARTY_EMAIL_1 in email['recipients']
+
+
+@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments', [
+    ('incorporationApplication', 'BC', 'BC1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('registration', 'SP', 'FM1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('registration', 'GP', 'FM1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', True, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', False, True, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', True, True, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+])
+def test_correction_filing_attachments(session, config, mock_recipients, mock_user_email,
+                                       orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments):
+    """Assert correction filings add the correct attachments."""
+    # Setup
+    if orig_filing_type == 'specialResolution':
+        original_filing = prep_special_resolution_filing(session, identifier, has_name_change=has_name_change, has_rule_change=has_rule_change)
+    else:
+        original_filing = prep_bootstrap_filing(session, orig_filing_type, identifier, legal_type, 'COMPLETED')
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(
+        session, business, original_filing.id, orig_filing_type, 'COMPLETED',
+        has_name_change=has_name_change, has_rule_change=has_rule_change)
+
+    # Test
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, corrected_filing, {
+            'correction': b'pdf_content_filing',
+            'noticeOfArticles': b'pdf_content_noa',
+            'correctedRegistrationStatement': b'pdf_content_crs',
+            'certificateOfNameCorrection': b'pdf_content_con',
+            'certifiedRules': b'pdf_content_cr',
+        }, receipt=b'pdf_content_receipt')
+        output = process_filing(corrected_filing, 'correction', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
+
+
+@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, expected_header, expected_subject', [
+    ('incorporationApplication', 'BC', 'BC1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+    ('registration', 'SP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'JANE A DOE - Successful Correction'),
+    ('registration', 'GP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'JANE A DOE - Successful Correction'),
+    ('specialResolution', 'CP', 'CP1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+])
+def test_correction_filing_header_and_subject(session, config, mock_pdfs, mock_recipients, mock_user_email,
+                                       orig_filing_type, legal_type, identifier, expected_header, expected_subject):
+    """Assert correction filings add the correct header and subject."""
+    # Setup
+    if orig_filing_type == 'specialResolution':
+        original_filing = prep_special_resolution_filing(session, identifier)
+    else:
+        original_filing = prep_bootstrap_filing(session, orig_filing_type, identifier, legal_type, 'COMPLETED', LEGAL_NAME, parties=firm_parties())
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(session, business, original_filing.id, orig_filing_type, 'COMPLETED')
+
+    # Test
+    email = process_filing(corrected_filing, 'correction', 'COMPLETED')
+
+    assert email is not None
+    body = email['content']['body']
+    assert expected_header in body
+    assert not ".html]]" in body
+    assert not ".md]]" in body
+    assert email['content']['subject'] == expected_subject

@@ -54,7 +54,6 @@ from business_emailer.email_processors import (
     consent_continuation_out_notification,
     continuation_in_notification,
     continuation_out_notification,
-    correction_notification,
     dissolution_notification,
     filing_notification,
     intent_to_liquidate_notification,
@@ -236,9 +235,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             send_email(email, token)
         elif etype == "dissolution":
             email = dissolution_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "correction":
-            email = correction_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "consentAmalgamationOut":
             email = consent_amalgamation_out_notification.process(email_msg["email"], token)

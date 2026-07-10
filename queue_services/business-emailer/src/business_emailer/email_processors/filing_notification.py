@@ -48,6 +48,10 @@ def _get_additional_info(filing: Filing) -> dict:
     elif filing.filing_type == "specialResolution":
         additional_info["nameChange"] = filing.filing_json["filing"].get("changeOfName")
         additional_info["rulesChange"] = bool(filing.filing_json["filing"].get("alteration", {}).get("rulesFileKey"))
+    elif filing.filing_type == "correction":
+        additional_info["nameChange"] = "requestTypeCd" in filing.filing_json["filing"]["correction"].get("nameRequest", {})
+        additional_info["rulesChange"] = bool(filing.filing_json["filing"]["correction"].get("rulesFileKey"))
+        additional_info["memorandumChange"] = bool(filing.filing_json["filing"]["correction"].get("memorandumFileKey"))
 
     return additional_info
 
@@ -71,19 +75,33 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     if filing.filing_sub_type and (attachments_sub := copy.deepcopy(FILING_ATTACHMENTS.get(legal_type_key, {}).get(f"{filing_type}-{filing.filing_sub_type}", {}))):
         attachments = attachments_sub.get("attachments", [])
         extra_pdf_types = attachments_sub.get("extraPdfTypes", [])
+    
+    def _remove_from_list(list: list, value: str):
+        """Remove the value from the list.
+        Suppresses ValueError
+        """
+        with suppress(ValueError):
+            list.remove(value)
 
-    # adjust attachments for some filings that have dynamic attachments based on the filing data
-    additional_info = _get_additional_info(filing)
-    with suppress(ValueError):
+    if filing_type not in Filing.TempCorpFilingType:
+        # adjust attachments for some filings that have dynamic attachments based on the filing data
+        additional_info = _get_additional_info(filing)
         if not additional_info.get("nameChange"):
             # remove con if in the attachments list
-            attachments.remove("Certificate of Name Change")
-            extra_pdf_types.remove("certificateOfNameChange")
+            _remove_from_list(attachments, "Certificate of Name Change")
+            _remove_from_list(attachments, "Certificate of Name Change Correction")
+            _remove_from_list(extra_pdf_types, "certificateOfNameChange")
+            _remove_from_list(extra_pdf_types, "certificateOfNameCorrection")
 
         if not additional_info.get("rulesChange"):
             # remove cr if in the attachments list
-            attachments.remove("Certified Rules")
-            extra_pdf_types.remove("certifiedRules")
+            _remove_from_list(attachments, "Certified Rules")
+            _remove_from_list(extra_pdf_types, "certifiedRules")
+            
+        if not additional_info.get("memorandumChange"):
+            # remove cm if in the attachments list
+            _remove_from_list(attachments, "Certified Memorandum")
+            _remove_from_list(extra_pdf_types, "certifiedMemorandum")
 
     if status != Filing.Status.COMPLETED.value:
         extra_pdf_types = []
@@ -151,9 +169,9 @@ def process(email_info: dict, token: str) -> dict | None:
         business_number = NOT_AVAILABLE
 
     # attachments and future attachments
-    future_attachments, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
-
-    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types)
+    full_attachments_list, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
+    filing_attachment_name = full_attachments_list[0] if full_attachments_list else None
+    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types, filing_attachment_name)
 
     # render template with vars
     attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
@@ -172,7 +190,7 @@ def process(email_info: dict, token: str) -> dict | None:
         business_number=business_number,
         filing_name=filing_name,
         filing_name_short=filing_name_short,
-        future_attachments_list=future_attachments,
+        future_attachments_list=full_attachments_list,
         office_name=OFFICE_NAME.get(legal_type_key),
         number_description="Registration" if legal_type_key == "FIRM" else "Incorporation",
         show_effective_date=show_effective_date,
@@ -180,7 +198,7 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # get recipients
     recipient_filing_type = None
-    if filing_type in Filing.TempCorpFilingType or filing_type == "changeOfRegistration":
+    if filing_type in Filing.TempCorpFilingType or filing_type in ["changeOfRegistration", "correction"]:
         recipient_filing_type = filing_type
 
     recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)

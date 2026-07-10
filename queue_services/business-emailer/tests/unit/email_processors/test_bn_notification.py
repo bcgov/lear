@@ -54,7 +54,7 @@ def test_bn_move_notificaton(app, session):
     """Assert that the bn move email processor builds the email correctly."""
     # setup filing + business for email
     identifier = 'FM1234567'
-    filing = prep_registration_filing(session, identifier, '1', 'COMPLETED',
+    filing = prep_registration_filing(session, identifier, 'COMPLETED',
                                       Business.LegalTypes.SOLE_PROP.value, 'test business')
     token = 'token'
     business = Business.find_by_identifier(identifier)
