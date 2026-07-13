@@ -26,8 +26,10 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """This module contains the database model for a court order."""
 from __future__ import annotations
-from business_model.models import db
+
 from sql_versioning import Versioned
+
+from business_model.models import db
 
 
 class CourtOrder(db.Model, Versioned):

@@ -16,7 +16,7 @@
 
 Test-Suite to ensure that the CourtOrder Model is working as expected.
 """
-from datetime import datetime
+from datetime import UTC, datetime
 
 from business_model.models import CourtOrder
 from tests.models import factory_business, factory_filing
@@ -43,7 +43,7 @@ def test_court_order_json(session):
     business = factory_business('CP1234567')
     filing = factory_filing(business, data_dict={'filing': {'header': {'name': 'courtOrder'}}})
     from datetime import timezone
-    order_date = datetime.now(timezone.utc)
+    order_date = datetime.now(UTC)
 
     court_order = CourtOrder(
         filing_id=filing.id,
