@@ -46,6 +46,8 @@ ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_corp_party_delivery_address F
 ALTER TABLE TARGET_SCHEMA.corp_party ADD CONSTRAINT fk_corp_party_mailing_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
 ALTER TABLE TARGET_SCHEMA.completing_party ADD CONSTRAINT fk_completing_party_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
 ALTER TABLE TARGET_SCHEMA.notification ADD CONSTRAINT fk_notification_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+ALTER TABLE TARGET_SCHEMA.corp_processing ADD CONSTRAINT fk_corp_processing_corporation FOREIGN KEY (corp_num) REFERENCES TARGET_SCHEMA.corporation (corp_num);
+ALTER TABLE TARGET_SCHEMA.colin_tracking ADD CONSTRAINT fk_colin_tracking_corporation FOREIGN KEY (corp_num) REFERENCES TARGET_SCHEMA.corporation (corp_num);
 
 
 ALTER TABLE TARGET_SCHEMA.corporation ALTER COLUMN send_ar_ind TYPE boolean USING (CASE send_ar_ind WHEN 'true' THEN true WHEN 'false' THEN false ELSE true END);

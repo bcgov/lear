@@ -79,7 +79,7 @@ def get_identifiers_per_batch(mig_batch_id: int, target_schema: str) -> str:
 def unfreeze_identifiers(target_schema: str) -> str:
     return f"""
     UPDATE {target_schema}.corporation AS c
-    SET {target_schema}.corp_frozen_type_cd = NULL
+    SET corp_frozen_type_cd = NULL
     FROM {target_schema}.mig_group AS mg
             JOIN {target_schema}.mig_batch AS mb ON mb.mig_group_id = mg.id
             JOIN {target_schema}.mig_corp_batch AS mcb ON mcb.mig_batch_id = mb.id

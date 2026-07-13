@@ -1,3 +1,7 @@
+learn schema colin_extract;
+
+SET search_path TO colin_extract;
+
 create sequence affiliation_processing_id_seq;
 
 alter sequence affiliation_processing_id_seq owner to postgres;

@@ -35,7 +35,7 @@ PGHOST="${PGHOST:-localhost}"
 PGPORT="${PGPORT:-5432}"
 PGUSER="${PGUSER:-postgres}"
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"
-PGSCHEMA="${PGSCHEMA:-public}"
+PGSCHEMA="${PGSCHEMA:-colin_extract}"
 MODE="plan"
 ASSUME_YES="false"
 ALLOW_EMPTY="false"
@@ -187,9 +187,9 @@ require_command "$PSQL_BIN"
 [[ -f "$VIEWS_DDL" ]] || die "missing views DDL: $VIEWS_DDL"
 setup_psql_cmd
 
-if [[ "$MODE" == "reset" && "$PGSCHEMA" != "public" ]]; then
-  die "reset mode currently supports only --schema public because the views DDL is not schema-qualified"
-fi
+# if [[ "$MODE" == "reset" && "$PGSCHEMA" != "public" ]]; then
+#   die "reset mode currently supports only --schema public because the views DDL is not schema-qualified"
+# fi
 
 if [[ "$MODE" == "reset" ]] && ! schema_exists; then
   die "schema '$PGSCHEMA' does not exist in database '$PGDATABASE'"

@@ -51,6 +51,10 @@ ALTER TABLE TARGET_SCHEMA.office
   DROP CONSTRAINT fk_corp_party_delivery_address ;
 ALTER TABLE TARGET_SCHEMA.notification 
   DROP CONSTRAINT fk_notification_address ;
+ALTER TABLE TARGET_SCHEMA.corp_processing 
+  DROP CONSTRAINT fk_corp_processing_corporation ;
+ALTER TABLE TARGET_SCHEMA.colin_tracking 
+  DROP CONSTRAINT fk_colin_tracking_corporation ;
 ALTER TABLE TARGET_SCHEMA.filing ALTER COLUMN arrangement_ind TYPE CHARACTER VARYING(255);
 ALTER TABLE TARGET_SCHEMA.corporation ALTER COLUMN send_ar_ind TYPE CHARACTER VARYING(255);
 ALTER TABLE TARGET_SCHEMA.share_series ALTER COLUMN max_share_ind TYPE CHARACTER VARYING(255);
