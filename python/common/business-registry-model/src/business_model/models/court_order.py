@@ -48,22 +48,22 @@ class CourtOrder(db.Model, Versioned):
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, db.ForeignKey('businesses.id'), nullable=False)
-    filing_id = db.Column(db.Integer, db.ForeignKey('filings.id'), nullable=False)
-    file_number = db.Column('file_number', db.String(20))
-    effect_of_order = db.Column('effect_of_order', db.String(20))
-    order_date = db.Column('order_date', db.DateTime(timezone=True), default=None)
-    order_details = db.Column('order_details', db.String(2000))
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
+    filing_id = db.Column(db.Integer, db.ForeignKey("filings.id"), nullable=False)
+    file_number = db.Column("file_number", db.String(20))
+    effect_of_order = db.Column("effect_of_order", db.String(20))
+    order_date = db.Column("order_date", db.DateTime(timezone=True), default=None)
+    order_details = db.Column("order_details", db.String(2000))
 
     @property
     def json(self) -> dict:
         return {
-            'id': self.id,
-            'filingId': self.filing_id,
-            'fileNumber': self.file_number,
-            'orderDate': self.order_date,
-            'effectOfOrder': self.effect_of_order,
-            'orderDetails': self.order_details
+            "id": self.id,
+            "filingId": self.filing_id,
+            "fileNumber": self.file_number,
+            "orderDate": self.order_date,
+            "effectOfOrder": self.effect_of_order,
+            "orderDetails": self.order_details
         }
   
     def save(self):
@@ -71,14 +71,14 @@ class CourtOrder(db.Model, Versioned):
         db.session.commit()
 
     @classmethod
-    def get_by_id(cls, id) -> CourtOrder:
+    def get_by_id(cls, id) -> CourtOrder | None:
         """Get a court order by ID."""
         if not id:
           return None
         return cls.query.filter_by(id=id).one_or_none()
 
     @classmethod
-    def get_by_filing_id(cls, filing_id) -> CourtOrder:
+    def get_by_filing_id(cls, filing_id) -> CourtOrder | None:
         """Get a court order by filing ID."""
         if not filing_id:
           return None
