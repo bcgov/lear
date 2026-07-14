@@ -316,6 +316,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     amalgamation = db.relationship('Amalgamation', lazy='dynamic')
     batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
     jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
+    court_orders = db.relationship('CourtOrder', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):

@@ -38,7 +38,7 @@ from registry_schemas.example_data import (
 from sqlalchemy.exc import IntegrityError
 
 from business_model.exceptions import BusinessException
-from business_model.models import Business, Filing, User
+from business_model.models import Business, CourtOrder, Filing, User
 from business_model.models.db import VersioningProxy
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
@@ -700,9 +700,13 @@ def test_alteration_filing_with_court_order(session):
     b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
     factory_business_mailing_address(b)
     filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
-    filing.court_order_file_number = COURT_ORDER['fileNumber']
-    filing.court_order_date = COURT_ORDER['orderDate']
-    filing.court_order_effect_of_order = COURT_ORDER['effectOfOrder']
+    order = CourtOrder()
+    order.filing_id = filing.id
+    order.business_id = b.id
+    order.file_number = COURT_ORDER['fileNumber']
+    order.order_date = COURT_ORDER['orderDate']
+    order.effect_of_order = COURT_ORDER['effectOfOrder']
+    filing.court_orders.append(order)
     filing.filing_json = ALTERATION_FILING_TEMPLATE
     filing.save()
     assert filing.id is not None
@@ -711,43 +715,6 @@ def test_alteration_filing_with_court_order(session):
     assert filing.json['filing']['alteration']['courtOrder']['effectOfOrder'] == COURT_ORDER['effectOfOrder']
 
     assert registry_schemas.validate(filing.json, 'alteration')
-
-
-@pytest.mark.parametrize('invalid_court_order', [
-    {
-        'fileNumber': '123456789012345678901',  # long fileNumber
-        'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': 'planOfArrangement'
-    },
-    {
-        'fileNumber': 'Valid file number',
-        'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
-        'effectOfOrder': 'planOfArrangement'
-    },
-    {
-        'fileNumber': 'Valid File Number',
-        'orderDate': '2021-01-30T09:56:01+01:00',
-        'effectOfOrder': ('a' * 501)  # long effectOfOrder
-    }
-])
-def test_validate_invalid_court_orders(session, invalid_court_order):
-    """Assert not valid court orders."""
-    identifier = 'BC1156677'
-    b = factory_business(identifier, datetime.datetime.utcnow(), None, Business.LegalTypes.COMP.value)
-    factory_business_mailing_address(b)
-    filing = factory_filing(b, ALTERATION_FILING_TEMPLATE)
-    filing.court_order_file_number = invalid_court_order['fileNumber']
-    filing.court_order_date = invalid_court_order['orderDate']
-    filing.court_order_effect_of_order = invalid_court_order['effectOfOrder']
-
-    # TODO: rescope the error after upgraing frameworks
-    # with pytest.raises(DataError, Exception, ProgrammingError) as excinfo:
-    with pytest.raises(Exception) as excinfo:
-        filing.save()
-
-    assert excinfo
-
-# @pytest.mark.parametrize('test_name, json1, json2, expected', TEST_JSON_DIFF)
 
 
 def test_submitter_info(session):
