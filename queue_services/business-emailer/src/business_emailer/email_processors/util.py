@@ -73,7 +73,7 @@ FILING_ATTACHMENTS = {
             "attachments": ["Register Correction Application","Certificate of Name Correction","Certified Rules","Certified Memorandum","Receipt"],
             "extraPdfTypes": ["certificateOfNameCorrection","certifiedRules","certifiedMemorandum"]
         },
-        "dissolution": {
+        "dissolution-voluntary": {
             "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Affidavit","Special Resolution","Receipt"],
             "extraPdfTypes": ["certificateOfDissolution","affidavit","specialResolution"],
         },
@@ -127,7 +127,7 @@ FILING_ATTACHMENTS = {
             "attachments": ["Register Correction Application","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"]
         },
-        "dissolution": {
+        "dissolution-voluntary": {
             "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Receipt"],
             "extraPdfTypes": ["certificateOfDissolution"],
         },
@@ -165,7 +165,7 @@ FILING_ATTACHMENTS = {
             "attachments": ["Register Correction Application","Corrected Registration Statement","Receipt"],
             "extraPdfTypes": ["correctedRegistrationStatement"]
         },
-        "dissolution": {
+        "dissolution-voluntary": {
             "attachments": ["Statement of Dissolution","Receipt"],
             "extraPdfTypes": [],
         },

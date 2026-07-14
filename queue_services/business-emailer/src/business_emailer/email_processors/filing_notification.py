@@ -131,8 +131,9 @@ def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name:
     invalid_data = not legal_type or not filing_name or not business_identifier
     skipped_coop_filing_types = ["annualReport", "changeOfDirectors", "changeOfAddress"]
     invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
-    
-    return invalid_status or invalid_data or invalid_coop_filing
+    invalid_dissolution_filing = filing.filing_type == "dissolution" and filing.filing_sub_type == "delay"
+
+    return invalid_status or invalid_data or invalid_coop_filing or invalid_dissolution_filing
 
 
 def process(email_info: dict, token: str) -> dict | None:
