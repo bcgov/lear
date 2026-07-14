@@ -21,7 +21,8 @@ from business_model.models import Business
 from business_emailer.email_processors import filing_notification
 from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
                         prep_bootstrap_filing, prep_change_of_registration_filing, prep_correction_filing,
-                        prep_incorp_filing, prep_maintenance_filing, prep_registration_filing, prep_special_resolution_filing)
+                        prep_dissolution_filing, prep_incorp_filing, prep_maintenance_filing,
+                        prep_registration_filing, prep_special_resolution_filing)
 from tests.unit.helpers import make_future_effective, make_non_future_effective
 
 
@@ -836,3 +837,168 @@ def test_correction_filing_header_and_subject(session, config, mock_pdfs, mock_r
     assert not ".html]]" in body
     assert not ".md]]" in body
     assert email['content']['subject'] == expected_subject
+
+# ---------------------------------------------------------------------------
+# Dissolutions via filing_notification
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def mock_jurisdictions(mocker):
+    """Patch get_jurisdictions to return no extraprovincial registrations."""
+    return mocker.patch.object(filing_notification, 'get_jurisdictions', return_value=None)
+
+
+@pytest.fixture
+def mock_auth_recipient(mocker):
+    """Patch get_recipient_from_auth to return the business contact email."""
+    return mocker.patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com')
+
+
+@pytest.mark.parametrize(['legal_type', 'identifier', 'submitter_role', 'expected_business_name'], [
+    (Business.LegalTypes.COMP.value, 'BC1234567', None, 'test business'),
+    (Business.LegalTypes.BCOMP.value, 'BC1234567', 'staff', 'test business'),
+    (Business.LegalTypes.COOP.value, 'CP1234567', None, 'test business'),
+    (Business.LegalTypes.SOLE_PROP.value, 'FM1234567', None, 'JANE A DOE'),
+    (Business.LegalTypes.PARTNERSHIP.value, 'FM1234567', None, 'JANE A DOE'),
+])
+def test_dissolution_filing_via_filing_notification(app, session, mock_pdfs, mock_user_email,
+                                                    mock_jurisdictions, mock_auth_recipient,
+                                                    legal_type, identifier, submitter_role, expected_business_name):
+    """Assert that dissolutions send emails via filing_notification."""
+    parties = firm_parties() if identifier.startswith('FM') else None
+    filing = prep_dissolution_filing(session, identifier, '1', 'COMPLETED', legal_type, 'test business',
+                                     submitter_role, parties=parties)
+
+    email = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    assert email is not None
+    body = email['content']['body']
+    assert body
+    assert 'You have successfully completed your dissolution with the BC Business Registry' in body
+    assert not ".html]]" in body
+    assert not ".md]]" in body
+    assert email['content']['subject'] == f'{expected_business_name} - Successful Dissolution'
+    # business contact email from auth + party emails from the filing
+    assert 'auth@email.com' in email['recipients']
+    assert 'custodian@email.com' in email['recipients']
+    if submitter_role:
+        assert f'{submitter_role}@email.com' in email['recipients']
+    else:
+        assert 'user@email.com' in email['recipients']
+    # extraprovincial paragraph is only rendered when the business has extraprovincial registrations
+    assert 'extraprovincial' not in body
+    if legal_type in [Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value]:
+        assert mock_jurisdictions.called
+    else:
+        assert not mock_jurisdictions.called
+
+
+def test_dissolution_future_effective(app, session, mock_pdfs, mock_user_email,
+                                      mock_jurisdictions, mock_auth_recipient):
+    """Assert that a future effective dissolution sends the filed email at PAID."""
+    filing = prep_dissolution_filing(session, 'BC1234567', '1', 'PAID', Business.LegalTypes.COMP.value,
+                                     'test business', None)
+    make_future_effective(filing)
+
+    email = process_filing(filing, 'dissolution', 'PAID')
+
+    assert email is not None
+    body = email['content']['body']
+    assert 'Your dissolution has been filed' in body
+    assert 'Effective Date and Time:' in body
+    # what-happens-next lists the documents sent once the dissolution is effective
+    assert 'Once the dissolution is effective on' in body
+    assert 'Certificate of Dissolution' in body
+    assert email['content']['subject'] == 'test business - Dissolution Filed'
+
+
+def test_dissolution_paid_non_future_effective_returns_none(app, session, mock_jurisdictions, mock_auth_recipient):
+    """Assert that a PAID non-future-effective dissolution returns None (no email is sent)."""
+    filing = prep_dissolution_filing(session, 'BC1234567', '1', 'PAID', Business.LegalTypes.COMP.value,
+                                     'test business', None)
+    make_non_future_effective(filing)
+
+    result = process_filing(filing, 'dissolution', 'PAID')
+
+    assert result is None
+
+
+@pytest.mark.parametrize(['jurisdictions', 'expected_text'], [
+    ([{'name': 'Alberta'}], 'registered in Alberta as an extraprovincial company'),
+    ([{'name': 'Alberta'}, {'name': 'Manitoba'}], 'registered in Alberta and Manitoba as an extraprovincial company'),
+    ([{'name': 'Alberta'}, {'name': 'Manitoba'}, {'name': 'Saskatchewan'}],
+     'registered in Alberta, Manitoba, and Saskatchewan as an extraprovincial company'),
+    ([{'name': 'Ontario'}], None),  # non NWPTA jurisdictions are excluded
+])
+def test_dissolution_extra_provincials(app, session, mocker, mock_pdfs, mock_user_email, mock_auth_recipient,
+                                       jurisdictions, expected_text):
+    """Assert the extraprovincial cancellation paragraph renders for extraprovincially registered companies."""
+    mocker.patch.object(filing_notification, 'get_jurisdictions', return_value={'jurisdictions': jurisdictions})
+    filing = prep_dissolution_filing(session, 'BC1234567', '1', 'COMPLETED', Business.LegalTypes.COMP.value,
+                                     'test business', None)
+
+    email = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    body = email['content']['body']
+    if expected_text:
+        assert expected_text in body
+        assert 'will automatically be cancelled as well' in body
+    else:
+        assert 'extraprovincial' not in body
+
+
+@pytest.mark.parametrize(['legal_type', 'identifier', 'doc_contents', 'expected_attachments'], [
+    (Business.LegalTypes.COMP.value, 'BC1234567',
+     {'dissolution': b'pdf_content_filing', 'certificateOfDissolution': b'pdf_content_cert'}, [
+        {'fileName': 'Voluntary Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Dissolution.pdf', 'content': 'pdf_content_cert', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    (Business.LegalTypes.COOP.value, 'CP1234567',
+     {'dissolution': b'pdf_content_filing', 'certificateOfDissolution': b'pdf_content_cert',
+      'affidavit': b'pdf_content_affidavit', 'specialResolution': b'pdf_content_sr'}, [
+        {'fileName': 'Voluntary Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Dissolution.pdf', 'content': 'pdf_content_cert', 'order': '2'},
+        {'fileName': 'Affidavit.pdf', 'content': 'pdf_content_affidavit', 'order': '3'},
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_sr', 'order': '4'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '5'},
+    ]),
+    (Business.LegalTypes.SOLE_PROP.value, 'FM1234567',
+     {'dissolution': b'pdf_content_filing'}, [
+        {'fileName': 'Statement of Dissolution.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+])
+def test_dissolution_filing_attachments(session, config, mock_user_email, mock_jurisdictions, mock_auth_recipient,
+                                        legal_type, identifier, doc_contents, expected_attachments):
+    """Assert dissolution filings add the correct attachments."""
+    filing = prep_dissolution_filing(session, identifier, '1', 'COMPLETED', legal_type, 'test business', None)
+
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing, doc_contents, receipt=b'pdf_content_receipt')
+        output = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
+
+
+def test_dissolution_administrative_attachments(session, config, mock_user_email, mock_jurisdictions,
+                                                mock_auth_recipient):
+    """Assert administrative dissolutions suppress the certificate of dissolution."""
+    identifier = 'BC1234567'
+    filing = prep_dissolution_filing(session, identifier, '1', 'COMPLETED', Business.LegalTypes.COMP.value,
+                                     'test business', None)
+    filing._filing_sub_type = 'administrative'
+    filing.save()
+
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing,
+                         {'dissolution': b'pdf_content_filing'}, receipt=b'pdf_content_receipt')
+        output = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert_attachment(attachments[0], 'Dissolution Application.pdf', 'pdf_content_filing', '1')
+    assert_attachment(attachments[1], 'Receipt.pdf', 'pdf_content_receipt', '2')
