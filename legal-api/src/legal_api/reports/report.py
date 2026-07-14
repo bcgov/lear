@@ -411,7 +411,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
         if is_corp_incorp and incorp_compparty_stmnt_enabled:
-            if self._filing.submitter_roles in [UserRoles.staff]:
+            if self._filing.submitter_roles in [UserRoles.staff, UserRoles.system]:
                 filing["header"]["certifiedBy"] = self._filing.filing_json["filing"]["header"].get("certifiedBy")
             else:
                 filing["header"]["certifiedBy"] = self._filing.filing_submitter.display_name

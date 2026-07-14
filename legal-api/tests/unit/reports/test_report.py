@@ -576,6 +576,36 @@ def test_set_corp_flag(session, test_name, identifier, entity_type, expected_is_
         f'{test_name}: expected isCorp={expected_is_corp} for legalType={entity_type}'
 
 
+@pytest.mark.parametrize('test_name, submitter_role, expected_certified_by', [
+    ('staff_uses_header', 'staff', 'Header Name'),
+    ('api_user_uses_header', 'system', 'Header Name'),
+])
+def test_set_completing_party_header_certified_by(session, test_name, submitter_role, expected_certified_by):
+    """Staff and API (system) submitters use the header certifiedBy for the completing party statement."""
+    from legal_api.services import flags
+    from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+
+    template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    template['filing']['header']['certifiedBy'] = 'Header Name'
+    report = create_report(
+        identifier='BC1234567',
+        entity_type='BEN',
+        report_type='incorporationApplication',
+        filing_type='incorporationApplication',
+        template=template
+    )
+    report._filing.submitter_roles = submitter_role
+
+    filing = report._filing.filing_json['filing']
+    filing['flags'] = {}
+
+    with patch.object(flags, 'value', return_value=['incorporationApplication-completingParty']):
+        report._set_completing_party(filing)
+
+    assert filing['flags']['incorporationApplication_completingParty'] is True
+    assert filing['header']['certifiedBy'] == expected_certified_by
+
+
 def _create_previous_liquidation_report(business):
     lr_filing_json = copy.deepcopy(FILING_HEADER)
     lr_filing_json['filing']['header']['name'] = 'changeOfLiquidators'
