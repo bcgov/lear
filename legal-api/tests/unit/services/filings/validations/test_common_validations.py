@@ -603,6 +603,39 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
             assert errors[0]['error'] == 'Certified by field is required.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
+@pytest.mark.parametrize('test_name, roles, certified_by, expected_error', [
+    ('api_user_missing', ['system'], '', 'Certified by field is required.'),
+    ('api_user_whitespace', ['system'], ' John Doe ', 'Certified by field cannot start or end with whitespace.'),
+    ('api_user_valid', ['system'], 'John Doe', None),
+    ('staff_missing', ['staff'], '', 'Certified by field is required.'),
+    ('staff_valid', ['staff'], 'John Doe', None),
+    ('public_user_not_required', [], '', None),
+])
+def test_validate_certified_by_corps_completing_party_ff(app, session, test_name, roles,
+                                                         certified_by, expected_error):
+    """Corps IA under the completing party ff requires certifiedBy for staff and API users."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['certifiedBy'] = certified_by
+    filing['filing']['incorporationApplication'] = INCORPORATION
+
+    with (
+        patch.object(flags, 'value', return_value=['incorporationApplication-completingParty']),
+        patch('legal_api.services.filings.validations.common_validations.jwt.validate_roles',
+              side_effect=lambda user, required: bool(set(required) & set(roles))),
+        app.test_request_context()
+    ):
+        from flask.globals import request_ctx
+        request_ctx.current_user = {'sub': 'test-user'}
+        errors = validate_certified_by(filing, 'incorporationApplication', 'BEN')
+
+    if expected_error:
+        assert errors
+        assert errors[0]['error'] == expected_error
+        assert errors[0]['path'] == '/filing/header/certifiedBy'
+    else:
+        assert errors == []
+
+
 @pytest.mark.parametrize(
     'legal_type',
     [

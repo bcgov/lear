@@ -21,7 +21,8 @@ from http import HTTPStatus
 from typing import Final
 
 import pycountry
-from flask import current_app, g, request
+from flask import current_app, g, has_request_context, request
+from flask.globals import request_ctx
 from flask_babel import _
 from pypdf import PdfReader
 
@@ -32,7 +33,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.services import MinioService, colin, flags, namex
+from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, MinioService, colin, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
@@ -1298,7 +1299,25 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
 
     if legal_type in Business.CORPS:
-        return msg  # certifiedBy is not required for corporations
+        # completing party statement takes its name from certifiedBy for staff and API users
+        enabled_features: list[str] = flags.value("enable-new-feature", []) or []
+        current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
+        if (filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION
+                and "incorporationApplication-completingParty" in enabled_features
+                and current_user
+                and (jwt.validate_roles(current_user, [STAFF_ROLE])
+                     or jwt.validate_roles(current_user, [SYSTEM_ROLE]))):
+            if not certified_by:
+                msg.append({
+                    "error": "Certified by field is required.",
+                    "path": "/filing/header/certifiedBy"
+                })
+            elif certified_by != certified_by.strip():
+                msg.append({
+                    "error": "Certified by field cannot start or end with whitespace.",
+                    "path": "/filing/header/certifiedBy"
+                })
+        return msg  # certifiedBy is not otherwise required for corporations
     is_cert_filing = filing_type in FILINGS_REQUIRING_CERTIFICATION
 
     is_client_correction = (
