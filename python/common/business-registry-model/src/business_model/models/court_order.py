@@ -48,7 +48,7 @@ class CourtOrder(db.Model, Versioned):
     }
 
     id = db.Column(db.Integer, primary_key=True)
-    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"), nullable=False)
+    business_id = db.Column(db.Integer, db.ForeignKey("businesses.id"))
     filing_id = db.Column(db.Integer, db.ForeignKey("filings.id"), nullable=False)
     file_number = db.Column("file_number", db.String(20))
     effect_of_order = db.Column("effect_of_order", db.String(20))
