@@ -162,10 +162,9 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     filing['filing']['registration']['parties'][0]['officer']['lastName'] = last_name
     filing['filing']['registration']['parties'][0]['officer']['middleName'] = middle_name
 
-    create_filing('123', filing)
+    filing_rec = create_filing('123', filing)
 
     effective_date = datetime.now(timezone.utc)
-    filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 
     naics_response = {
