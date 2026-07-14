@@ -111,9 +111,12 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
             assert len(filing_rec.filing_party_roles.all()) == 2
             assert len(business.share_classes.all()) == 2
             assert len(business.offices.all()) == 2  # One office is created in create_business method.
-        if legal_type == 'CC':
-            assert filing_rec.court_order_file_number == '12356'
-            assert filing_rec.court_order_effect_of_order == 'planOfArrangement'
+        if legal_type == 'CC':            
+            court_order_obj = business.court_orders[0]
+            court_order = filing['filing']['incorporationApplication']['courtOrder']
+            assert court_order['fileNumber'] == court_order_obj.file_number
+            assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+
         if legal_type == 'CP':
             assert len(filing_rec.filing_party_roles.all()) == 1
             assert len(business.offices.all()) == 1

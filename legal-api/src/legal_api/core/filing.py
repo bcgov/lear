@@ -472,7 +472,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         }
 
     @staticmethod
-    def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:
+    def _add_ledger_order(filing: FilingStorage, ledger_filing: dict):
         if not (court_order := filing.court_orders.one_or_none()) and not filing.details:
             return
 

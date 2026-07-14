@@ -207,9 +207,10 @@ def test_restoration_court_order(app, session, mocker, approval_type):
     final_filing = Filing.find_by_id(filing_id)
     assert filing['filing']['restoration']['approvalType'] == final_filing.approval_type
     if approval_type == 'courtOrder':
-        assert filing['filing']['restoration']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
+        court_order_obj = final_filing.court_orders[0]
+        assert filing['filing']['restoration']['courtOrder']['fileNumber'] == court_order_obj.file_number
     else:
-        assert final_filing.court_order_file_number is None
+        assert final_filing.court_orders.one_or_none() is None
 
 
 @pytest.mark.parametrize('approval_type', [

@@ -249,9 +249,10 @@ def tests_filer_change_of_registration_court_order(app, session, mocker, test_na
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert file_number == final_filing.court_order_file_number
-    assert datetime.fromisoformat(order_date) == final_filing.court_order_date
-    assert effect_of_order == final_filing.court_order_effect_of_order
+    court_order_obj = final_filing.court_orders[0]
+    assert file_number == court_order_obj.file_number
+    assert datetime.fromisoformat(order_date) == court_order_obj.order_date
+    assert effect_of_order == court_order_obj.effect_of_order
 
 
 def tests_filer_proprietor_name_and_address_change(app, session, mocker):
