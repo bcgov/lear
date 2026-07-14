@@ -32,20 +32,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the registrars order filing."""
-from contextlib import suppress
-from datetime import datetime
-
 from business_model.models import Filing
 
 from business_filer.filing_meta import FilingMeta
+from business_filer.filing_processors.filing_components import filings
 
 
 def process(registrars_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the registrars order filing into the business model objects."""
-    registrars_order_filing.court_order_file_number = filing["registrarsOrder"].get("fileNumber")
-    registrars_order_filing.court_order_effect_of_order = filing["registrarsOrder"].get("effectOfOrder")
-    registrars_order_filing.order_details = filing["registrarsOrder"]["orderDetails"]
-
-    with suppress(IndexError, KeyError, TypeError, ValueError):
-        registrars_order_filing.court_order_date = datetime.fromisoformat(
-            filing["registrarsOrder"].get("orderDate"))
+    filings.create_court_order(registrars_order_filing, {
+        "fileNumber": filing["registrarsOrder"].get("fileNumber"),
+        "effectOfOrder": filing["registrarsOrder"].get("effectOfOrder")
+    })
+    registrars_order_filing.details = filing["registrarsOrder"]["orderDetails"]

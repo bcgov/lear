@@ -94,7 +94,7 @@ def process(business: Business,  # pylint: disable=too-many-branches
 
     # update court order, if any is present
     if court_order := registration_filing.get("courtOrder"):
-        filings.update_filing_court_order(filing_rec, court_order)
+        filings.create_court_order(filing_rec, court_order, business)
 
     # Update the filing json with identifier and founding date.
     registration_json = copy.deepcopy(filing_rec.filing_json)

@@ -33,37 +33,43 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Name Request filing component."""
 import copy
+import random
 from datetime import datetime, timezone
 from typing import Final
 
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 
 from business_filer.filing_processors.filing_components import filings
-from tests.unit import create_filing
+from tests.unit import create_business, create_filing
 
 
-def test_update_filing_court_order(app, session):
+def test_create_court_order(app, session):
     """Assert that the new aliases are created."""
     # setup
     file_number: Final  = '#1234-5678/90'
     order_date: Final = '2021-01-30T09:56:01+08:00'
     effect_of_order: Final  = 'hasPlan'
+    order_details: Final = 'Some order details'
 
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_business(identifier, legal_type='BC')
     filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
-    alteration_filing = create_filing(token='123', json_filing=filing)
-    court_order_json= {'courtOrder':
+    alteration_filing = create_filing(token='123', json_filing=filing, business_id=business.id)
+    court_order_json = {'courtOrder':
                                    {
                                        'fileNumber': file_number,
                                        'orderDate': order_date,
-                                       'effectOfOrder': effect_of_order
+                                       'effectOfOrder': effect_of_order,
+                                       'orderDetails': order_details
                                     }
     }
 
     # test
-    filings.update_filing_court_order(alteration_filing, court_order_json['courtOrder'])
+    filings.create_court_order(alteration_filing, court_order_json['courtOrder'])
 
     # validate
-    assert file_number == alteration_filing.court_order_file_number
-    assert datetime.fromisoformat(order_date) == alteration_filing.court_order_date
-    assert effect_of_order == alteration_filing.court_order_effect_of_order
-    
+    court_order = alteration_filing.court_orders[0]
+    assert file_number == court_order.file_number
+    assert datetime.fromisoformat(order_date) == court_order.order_date
+    assert effect_of_order == court_order.effect_of_order
+    assert order_details == court_order.order_details

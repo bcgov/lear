@@ -53,6 +53,9 @@ def test_continuation_in_process(app, session):
     filing_rec = Filing.find_by_id(filing_rec.id)
     business = Business.find_by_identifier(next_corp_num)
 
+    court_order_obj = filing_rec.court_orders.all()
+    assert len(court_order_obj) == 0
+
     assert filing_rec.business_id == business.id
     assert filing_rec.status == Filing.Status.COMPLETED.value
     assert business.identifier

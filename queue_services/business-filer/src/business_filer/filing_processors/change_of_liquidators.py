@@ -40,7 +40,7 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_filer.common.services import InvoluntaryDissolutionService
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components.filings import update_filing_court_order
+from business_filer.filing_processors.filing_components.filings import create_court_order
 from business_filer.filing_processors.filing_components.offices import update_or_create_offices
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
@@ -96,4 +96,4 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfLiquidators"].get("courtOrder"):
-        update_filing_court_order(filing_rec, court_order)
+        create_court_order(filing_rec, court_order)

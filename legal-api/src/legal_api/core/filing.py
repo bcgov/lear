@@ -443,9 +443,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             if filing.meta_data:
                 ledger_filing["data"] = filing.meta_data
 
-            # orders
-            if filing.court_order_file_number or filing.order_details:
-                Filing._add_ledger_order(filing, ledger_filing)
+            Filing._add_ledger_order(filing, ledger_filing)
 
             core_filing: Filing = Filing()  # Filing.get_document_list needs a core Filing.
             core_filing._storage = filing  # pylint: disable=protected-access
@@ -475,13 +473,23 @@ class Filing:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:
-        court_order_data = {"fileNumber": filing.court_order_file_number}
-        if filing.court_order_date:
-            court_order_data["orderDate"] = filing.court_order_date
-        if filing.court_order_effect_of_order:
-            court_order_data["effectOfOrder"] = filing.court_order_effect_of_order
-        if filing.order_details:
-            court_order_data["orderDetails"] = filing.order_details
+        if not (court_order := filing.court_orders.one_or_none()) and not filing.details:
+            return
+
+        court_order_data = {}
+        if court_order and court_order.file_number:
+            court_order_data["fileNumber"] = court_order.file_number
+            if court_order.order_date:
+                court_order_data["orderDate"] = court_order.order_date
+            if court_order.effect_of_order:
+                court_order_data["effectOfOrder"] = court_order.effect_of_order
+            if court_order.order_details:
+                court_order_data["orderDetails"] = court_order.order_details
+
+        # None of the filings have both court_order.order_details and filing.details and UI depends on the orderDetails
+        # Future: would be ideal to sepatate the two and have both in the ledger_filing if they exist
+        if filing.details:
+            court_order_data["orderDetails"] = filing.details
 
         if not ledger_filing.get("data"):
             ledger_filing["data"] = {}

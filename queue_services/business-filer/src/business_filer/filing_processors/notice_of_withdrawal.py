@@ -30,7 +30,7 @@ def process(
     current_app.logger.debug("start notice_of_withdrawal filing process, noticeOfWithdrawal: %s", now_filing)
 
     if court_order := now_filing.get("courtOrder"):
-        filings.update_filing_court_order(filing_submission, court_order)
+        filings.create_court_order(filing_submission, court_order)
 
     withdrawn_filing_id = now_filing.get("filingId")
     withdrawn_filing = Filing.find_by_id(withdrawn_filing_id)

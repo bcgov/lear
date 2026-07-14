@@ -70,8 +70,10 @@ def tests_filer_continuation_out(app, session):
     continuation_out_date_str = filing_json['filing']['continuationOut']['continuationOutDate']
     continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(continuation_out_date_str)
 
-    assert filing_json['filing']['continuationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
-    assert filing_json['filing']['continuationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
+    court_order_obj = final_filing.court_orders[0]
+    court_order = filing_json['filing']['continuationOut']['courtOrder']
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
 
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == final_filing.id

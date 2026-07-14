@@ -108,6 +108,13 @@ def test_registration_process(app, session, legal_type, filing):
         business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
+    
+    court_order_obj = business.court_orders[0]
+    court_order = filing['filing']['registration']['courtOrder']
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+    assert court_order['orderDetails'] == court_order_obj.order_details
+
     assert business.identifier.startswith('FM')
     assert business.founding_date == effective_date
     assert business.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
