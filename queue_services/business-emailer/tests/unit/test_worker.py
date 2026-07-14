@@ -164,33 +164,37 @@ def test_correction_notification(app, session):
                         assert mock_send_email.call_args[0][1] == token
 
 
-@pytest.mark.parametrize(['status', 'filing_type', 'identifier', 'submitter_role'], [
-    ('PAID', 'changeOfAddress', 'BC1234567', None),
-    ('COMPLETED', 'alteration', 'BC1234567', None),
-    ('COMPLETED', 'annualReport', 'BC1234567', None),
-    ('COMPLETED', 'changeOfAddress', 'BC1234567', None),
-    ('COMPLETED', 'specialResolution', 'CP1234567', None),
-    ('COMPLETED', 'specialResolution', 'CP1234567', 'staff'),
+@pytest.mark.parametrize(['status', 'filing_type', 'filing_sub_type', 'identifier', 'submitter_role'], [
+    ('PAID', 'changeOfAddress', None, 'BC1234567', None),
+    ('COMPLETED', 'alteration', None, 'BC1234567', None),
+    ('COMPLETED', 'annualReport', None, 'BC1234567', None),
+    ('COMPLETED', 'changeOfAddress', None, 'BC1234567', None),
+    ('COMPLETED', 'dissolution', 'voluntary', 'BC1234567', None),
+    ('COMPLETED', 'dissolution', 'voluntary', 'CP1234567', None),
+    ('COMPLETED', 'specialResolution', None, 'CP1234567', None),
+    ('COMPLETED', 'specialResolution', None, 'CP1234567', 'staff'),
 ])
-def test_maintenance_notification(app, session, status, filing_type, identifier, submitter_role):
+def test_maintenance_notification(app, session, status, filing_type, filing_sub_type, identifier, submitter_role):
     """Assert that valid maintenance filing cases send an email."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, None, submitter_role)
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, filing_sub_type, submitter_role)
     if status == 'PAID':
         make_future_effective(filing)
     token = 'token'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com'):
-            with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
-                with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
-                    as mock_get_recipients:
-                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                        worker.process_email(
-                            SimpleCloudEvent(
-                                data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+            with patch.object(filing_notification, 'get_jurisdictions', return_value=None), \
+                    patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com'):
+                with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
+                    with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
+                        as mock_get_recipients:
+                        with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                            worker.process_email(
+                                SimpleCloudEvent(
+                                    data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                                )
                             )
-                        )
 
                         assert mock_get_pdfs.call_args[0][0] == token
                         assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
@@ -212,19 +216,20 @@ def test_maintenance_notification(app, session, status, filing_type, identifier,
                         assert mock_send_email.call_args[0][1] == token
 
 
-@pytest.mark.parametrize(['status', 'filing_type', 'identifier'], [
-    ('PAID', 'annualReport', 'BC1234567'),
-    ('PAID', 'changeOfAddress', 'CP1234567'),
-    ('PAID', 'changeOfDirectors', 'CP1234567'),
-    ('PAID', 'specialResolution', 'BC1234567'),
-    ('COMPLETED', 'annualReport', 'CP1234567'),
-    ('COMPLETED', 'changeOfAddress', 'CP1234567'),
-    ('COMPLETED', 'changeOfDirectors', 'CP1234567')
+@pytest.mark.parametrize(['status', 'filing_type', 'filing_sub_type', 'identifier'], [
+    ('PAID', 'annualReport', None, 'BC1234567'),
+    ('PAID', 'changeOfAddress', None, 'CP1234567'),
+    ('PAID', 'changeOfDirectors', None, 'CP1234567'),
+    ('PAID', 'specialResolution', None, 'BC1234567'),
+    ('COMPLETED', 'annualReport', None, 'CP1234567'),
+    ('COMPLETED', 'changeOfAddress', None, 'CP1234567'),
+    ('COMPLETED', 'changeOfDirectors', None, 'CP1234567'),
+    ('COMPLETED', 'dissolution', 'delay', 'BC1234567')
 ])
-def test_skips_notification(app, session, status, filing_type, identifier):
+def test_skips_notification(app, session, status, filing_type, filing_sub_type, identifier):
     """Assert that the emailer skips sending an email for invalid cases."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type)
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, filing_sub_type)
     token = 'token'
     # test processor
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
