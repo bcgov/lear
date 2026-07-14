@@ -184,8 +184,7 @@ def test_maintenance_notification(app, session, status, filing_type, filing_sub_
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
         with patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com'):
-            with patch.object(filing_notification, 'get_jurisdictions', return_value=None), \
-                    patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com'):
+            with patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com'):
                 with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
                     with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
                         as mock_get_recipients:

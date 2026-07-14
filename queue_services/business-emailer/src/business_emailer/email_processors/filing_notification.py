@@ -21,10 +21,8 @@ from flask import current_app
 from jinja2 import Template
 
 from business_emailer.email_processors import (
-    get_extra_provincials,
     get_filing_info,
     get_filled_template,
-    get_jurisdictions,
     get_pdfs,
     get_recipient_from_auth,
     get_recipients,
@@ -40,18 +38,6 @@ from business_emailer.email_processors.util import (
     get_legal_type_key,
 )
 from business_model.models import Business, CorpType, Filing, UserRoles
-
-
-def _get_extra_provincials_str(filing_type: str, legal_type_key: str, business_identifier: str, token: str) -> str:
-    """Return the formatted extraprovincial registrations impacted by a dissolution."""
-    if filing_type != "dissolution" or legal_type_key != "CORP":
-        return ""
-
-    # companies registered extraprovincially in NWPTA jurisdictions get cancelled there on dissolution
-    extra_provincials = get_extra_provincials(get_jurisdictions(business_identifier, token))
-    if len(extra_provincials) > 2:  # noqa: PLR2004
-        return ", ".join(extra_provincials[:-1]) + f", and {extra_provincials[-1]}"
-    return " and ".join(extra_provincials)
 
 
 def _get_additional_info(filing: Filing) -> dict:
@@ -197,7 +183,6 @@ def process(email_info: dict, token: str) -> dict | None:
         filing_date_time=leg_tmz_filing_date,
         effective_date_time=leg_tmz_effective_date,
         entity_dashboard_url=dashboard_url,
-        extra_provincials=_get_extra_provincials_str(filing_type, legal_type_key, business_identifier, token),
         filing_sub_type=filing.filing_sub_type,
         filing_type=filing_type,
         attachments_list=attachments_list,

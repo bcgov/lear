@@ -49,12 +49,6 @@ def mock_user_email(mocker):
 
 
 @pytest.fixture
-def mock_jurisdictions(mocker):
-    """Patch get_jurisdictions to return no extraprovincial registrations."""
-    return mocker.patch.object(filing_notification, 'get_jurisdictions', return_value=None)
-
-
-@pytest.fixture
 def mock_auth_recipient(mocker):
     """Patch get_recipient_from_auth to return the business contact email."""
     return mocker.patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com')
@@ -361,8 +355,7 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('COMPLETED', 'specialResolution', None, None, None, 'CP1234567'),
     ('COMPLETED', 'specialResolution', None, 'staff', None, 'CP1234567'),
 ])
-def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock_user_email,
-                                  mock_jurisdictions, mock_auth_recipient,
+def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
                                   status, filing_type, filing_sub_type, submitter_role, legal_type, identifier):
     """Assert that maintenance filings produce an email with the correct recipients and attachments."""
     # setup filing + business for email
@@ -402,12 +395,6 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         # party emails are pulled by get_recipients with the dissolution filing type
         assert mock_recipients.call_args[0][3] == 'dissolution'
         assert email['content']['subject'] == f'{expected_legal_name} - Successful Dissolution'
-        # extraprovincial paragraph is only rendered when the business has extraprovincial registrations
-        assert 'extraprovincial' not in email['content']['body']
-        if expected_legal_type in [Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value]:
-            assert mock_jurisdictions.called
-        else:
-            assert not mock_jurisdictions.called
     else:
         assert mock_recipients.call_args[0][3] is None
         assert not mock_auth_recipient.called
@@ -541,8 +528,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'dissolution - voluntary firm',
     'dissolution - administrative suppresses certificate'
 ])
-def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email,
-                                        mock_jurisdictions, mock_auth_recipient,
+def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email, mock_auth_recipient,
                                         filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments):
     """Assert maintenance filings add the correct attachments."""
     # Setup
@@ -672,7 +658,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
     ),
 ])
 def test_maintenance_filing_fe_renders_body_and_subject(app, session, mock_pdfs, mock_recipients, mock_user_email,
-                                                        mock_jurisdictions, mock_auth_recipient,
+                                                        mock_auth_recipient,
                                                         filing_type, filing_sub_type, status, expected_header, expected_subject):
     """Assert alteration and address change future effective emails render the expected body and subject."""
     filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, filing_sub_type)
@@ -934,32 +920,8 @@ def test_correction_filing_header_and_subject(session, config, mock_pdfs, mock_r
     assert email['content']['subject'] == expected_subject
 
 # ---------------------------------------------------------------------------
-# Dissolution-specific behaviour (extraprovincial paragraph, skipped sub types)
+# Dissolution-specific behaviour (skipped sub types)
 # ---------------------------------------------------------------------------
-
-@pytest.mark.parametrize(['jurisdictions', 'expected_text'], [
-    ([{'name': 'Alberta'}], 'registered in Alberta as an extraprovincial company'),
-    ([{'name': 'Alberta'}, {'name': 'Manitoba'}], 'registered in Alberta and Manitoba as an extraprovincial company'),
-    ([{'name': 'Alberta'}, {'name': 'Manitoba'}, {'name': 'Saskatchewan'}],
-     'registered in Alberta, Manitoba, and Saskatchewan as an extraprovincial company'),
-    ([{'name': 'Ontario'}], None),  # non NWPTA jurisdictions are excluded
-])
-def test_dissolution_extra_provincials(app, session, mocker, mock_pdfs, mock_user_email, mock_auth_recipient,
-                                       jurisdictions, expected_text):
-    """Assert the extraprovincial cancellation paragraph renders for extraprovincially registered companies."""
-    mocker.patch.object(filing_notification, 'get_jurisdictions', return_value={'jurisdictions': jurisdictions})
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', 'COMPLETED', 'dissolution', 'voluntary',
-                                     legal_type=Business.LegalTypes.COMP.value)
-
-    email = process_filing(filing, 'dissolution', 'COMPLETED')
-
-    body = email['content']['body']
-    if expected_text:
-        assert expected_text in body
-        assert 'will automatically be cancelled as well' in body
-    else:
-        assert 'extraprovincial' not in body
-
 
 def test_dissolution_delay_returns_none(app, session):
     """Assert that a delay of dissolution filing does not send the dissolution email."""
