@@ -17,7 +17,7 @@ PG_DUMP_BIN="${PG_DUMP_BIN:-pg_dump}"
 PGHOST="${PGHOST:-localhost}"          # or --host
 PGPORT="${PGPORT:-5432}"               # or --port
 PGUSER="${PGUSER:-postgres}"           # or --user
-PGDATABASE="${PGDATABASE:-colin-mig-corps-test-subset}" # or --dbname
+PGDATABASE="${PGDATABASE:-colin-mig-corps-test}" # or --dbname
 PGSCHEMA="${PGSCHEMA:-public}"
 TARGET_PGSCHEMA="${TARGET_PGSCHEMA:-colin-extract}"
 # Supply the password *either* via a .pgpass file *or* one-shot:
