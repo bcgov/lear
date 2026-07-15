@@ -1,6 +1,6 @@
 [project]
 name = "business-registry-dissolution"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 authors = [{name = "BC Business Registry"}]
 readme = "README.md"
@@ -9,7 +9,7 @@ dependencies = [
   "flask (>=3.1.0,<4.0.0)",
   "python-dotenv (>=1.1.0,<2.0.0)",
   # BCReg deps
-  "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
+  "business-model @ git+https://github.com/bcgov/lear.git@hotfix-34201-ar-schema-2#subdirectory=python/common/business-registry-model",
   "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
   "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
 ]

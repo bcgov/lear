@@ -113,7 +113,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.3.30"
+version = "3.3.33"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -133,14 +133,14 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2025.1,<2026.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.69"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.74"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "main"
-resolved_reference = "c9c4669cbe5630e05a48179619c7c19432e6fdec"
+reference = "hotfix-34201-ar-schema-2"
+resolved_reference = "7fe6877408a4aaca491892baaa161f4157e4cd87"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -1440,7 +1440,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.69"
+version = "2.18.74"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -1458,8 +1458,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.69"
-resolved_reference = "25282bd6cf4de87e9dc6bc44f619ed723b64c7f2"
+reference = "2.18.74"
+resolved_reference = "5abdc89a0f6eb06cbbac9ad66b580d7c76190ebc"
 
 [[package]]
 name = "requests"
@@ -2004,4 +2004,4 @@ tomli = "*"
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "67d6648063d51192a3ba4180430ba1e9b201f53b4f2f66d99708e4aa4cabbf05"
+content-hash = "4c95418ad2572b613c1a70a36e3a9d027c8f18306bb02df6cf16ee0e57fe0f9b"
