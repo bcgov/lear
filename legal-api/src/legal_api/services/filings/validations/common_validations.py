@@ -33,7 +33,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, MinioService, colin, flags, namex
+from legal_api.services import STAFF_ROLE, MinioService, colin, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
@@ -1299,14 +1299,14 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
 
     if legal_type in Business.CORPS:
-        # completing party statement takes its name from certifiedBy for staff and API users
-        enabled_features: list[str] = flags.value("enable-new-feature", []) or []
+        # the completing party statement takes its name from certifiedBy for staff and API users,
+        # so certifiedBy is required for them on a corp incorporation application
+        api_login_source = "API_GW"  # jwt loginSource of an API gateway user
         current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
         if (filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION
-                and "incorporationApplication-completingParty" in enabled_features
                 and current_user
                 and (jwt.validate_roles(current_user, [STAFF_ROLE])
-                     or jwt.validate_roles(current_user, [SYSTEM_ROLE]))):
+                     or current_user.get("loginSource") == api_login_source)):
             if not certified_by:
                 msg.append({
                     "error": "Certified by field is required.",
