@@ -218,40 +218,6 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
     return template_code
 
 
-def get_extra_provincials(response: dict) -> list[str]:
-    """Get extra provincials name."""
-    extra_provincials = []
-    if response:
-        jurisdictions = response.get("jurisdictions", [])
-        # List of NWPTA jurisdictions
-        nwpta_jurisdictions = ["Alberta", "British Columbia", "Manitoba", "Saskatchewan"]
-        for jurisdiction in jurisdictions:
-            name = jurisdiction.get("name")
-            if name and (name in nwpta_jurisdictions):
-                extra_provincials.append(name)
-        extra_provincials.sort()
-    return extra_provincials
-
-
-def get_jurisdictions(identifier: str, token: str) -> dict:
-    """Get jurisdictions call."""
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
-
-    response = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
-    )
-    if response.status_code != HTTPStatus.OK:
-        return None
-    try:
-        return response.json()
-    except Exception:
-        current_app.logger.error("Failed to get MRAS response")
-        return None
-
-
 def get_filing_document(business_identifier, filing_id, document_type, token, regenerate=False):
     """Get the filing documents."""
     headers = {

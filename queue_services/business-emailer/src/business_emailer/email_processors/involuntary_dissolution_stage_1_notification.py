@@ -23,7 +23,7 @@ import requests
 from flask import current_app
 from jinja2 import Template
 
-from business_emailer.email_processors import get_extra_provincials, get_jurisdictions, substitute_template_parts
+from business_emailer.email_processors import substitute_template_parts
 from business_model.models import Business, Furnishing
 
 PROCESSABLE_FURNISHING_NAMES = [
@@ -87,6 +87,40 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
             "attachments": pdfs
         }
     }
+
+
+def get_extra_provincials(response: dict) -> list[str]:
+    """Get extra provincials name."""
+    extra_provincials = []
+    if response:
+        jurisdictions = response.get("jurisdictions", [])
+        # List of NWPTA jurisdictions
+        nwpta_jurisdictions = ["Alberta", "British Columbia", "Manitoba", "Saskatchewan"]
+        for jurisdiction in jurisdictions:
+            name = jurisdiction.get("name")
+            if name and (name in nwpta_jurisdictions):
+                extra_provincials.append(name)
+        extra_provincials.sort()
+    return extra_provincials
+
+
+def get_jurisdictions(identifier: str, token: str) -> dict:
+    """Get jurisdictions call."""
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    response = requests.get(
+        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
+    )
+    if response.status_code != HTTPStatus.OK:
+        return None
+    try:
+        return response.json()
+    except Exception:
+        current_app.logger.error("Failed to get MRAS response")
+        return None
 
 
 def post_process(email_msg: dict, status: str):
