@@ -76,6 +76,7 @@ FILING_TYPE_MAPPER = {
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
     'changeOfRegistration': CHANGE_OF_REGISTRATION,
+    'dissolution': DISSOLUTION,
     'restoration': RESTORATION,
     'specialResolution': SPECIAL_RESOLUTION
 }
@@ -232,44 +233,6 @@ def prep_incorp_filing(session, identifier, option, legal_type='BC', legal_name=
 def prep_registration_filing(session, identifier, option, legal_type, legal_name, parties=None):
     """Return a new registration filing prepped for email notification."""
     return prep_bootstrap_filing(session, 'registration', identifier, legal_type, option, legal_name=legal_name, parties=parties)
-
-
-def prep_dissolution_filing(session, identifier, payment_id, option, legal_type,
-                            legal_name, submitter_role, parties=None):
-    """Return a new dissolution filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name, parties)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'dissolution'
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
-    filing_template['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    for party in filing_template['filing']['dissolution']['parties']:
-        for role in party['roles']:
-            if role['roleType'] == 'Custodian':
-                party['officer']['email'] = 'custodian@email.com'
-            elif role['roleType'] == 'Completing Party':
-                party['officer']['email'] = 'cp@email.com'
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
 
 
 def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):

@@ -32,7 +32,6 @@ from business_emailer.email_processors import (
     consent_amalgamation_out_notification,
     consent_continuation_out_notification,
     continuation_out_notification,
-    dissolution_notification,
     filing_notification,
     intent_to_liquidate_notification,
     intent_to_liquidate_notification as _intent_to_liquidate,  # noqa: F401 (keep alias import-safe)
@@ -222,16 +221,6 @@ def test_agm_extension_completed_dispatches(app, session, mocker, mock_send_emai
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_dissolution_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(dissolution_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "dissolution", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_consent_amalgamation_out_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(consent_amalgamation_out_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "consentAmalgamationOut", "option": COMPLETED}
@@ -335,6 +324,7 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
     "changeOfRegistration",
     "continuationIn",
     "correction",
+    "dissolution",
     "incorporationApplication",
     "registration",
     "restoration",

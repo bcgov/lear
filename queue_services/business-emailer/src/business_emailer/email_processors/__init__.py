@@ -218,25 +218,6 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
     return template_code
 
 
-def get_jurisdictions(identifier: str, token: str) -> dict:
-    """Get jurisdictions call."""
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
-
-    response = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
-    )
-    if response.status_code != HTTPStatus.OK:
-        return None
-    try:
-        return response.json()
-    except Exception:
-        current_app.logger.error("Failed to get MRAS response")
-        return None
-
-
 def get_filing_document(business_identifier, filing_id, document_type, token, regenerate=False):
     """Get the filing documents."""
     headers = {
