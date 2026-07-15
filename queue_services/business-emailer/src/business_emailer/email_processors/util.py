@@ -36,6 +36,7 @@ FILING_TITLE = {
     "changeOfRegistration": "Change of Registration",
     "continuationIn": "Continuation Application",
     "correction": "Correction",
+    "dissolution": "Dissolution",
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
@@ -71,6 +72,14 @@ FILING_ATTACHMENTS = {
         "correction": {
             "attachments": ["Register Correction Application","Certificate of Name Correction","Certified Rules","Certified Memorandum","Receipt"],
             "extraPdfTypes": ["certificateOfNameCorrection","certifiedRules","certifiedMemorandum"]
+        },
+        "dissolution-voluntary": {
+            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Affidavit","Special Resolution","Receipt"],
+            "extraPdfTypes": ["certificateOfDissolution","affidavit","specialResolution"],
+        },
+        "dissolution-administrative": {
+            "attachments": ["Dissolution Application","Affidavit","Special Resolution","Receipt"],
+            "extraPdfTypes": ["affidavit","specialResolution"],
         },
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Certified Memorandum","Receipt"],
@@ -118,6 +127,14 @@ FILING_ATTACHMENTS = {
             "attachments": ["Register Correction Application","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"]
         },
+        "dissolution-voluntary": {
+            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Receipt"],
+            "extraPdfTypes": ["certificateOfDissolution"],
+        },
+        "dissolution-administrative": {
+            "attachments": ["Dissolution Application","Receipt"],
+            "extraPdfTypes": [],
+        },
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfIncorporation"],
@@ -147,6 +164,10 @@ FILING_ATTACHMENTS = {
         "correction": {
             "attachments": ["Register Correction Application","Corrected Registration Statement","Receipt"],
             "extraPdfTypes": ["correctedRegistrationStatement"]
+        },
+        "dissolution-voluntary": {
+            "attachments": ["Statement of Dissolution","Receipt"],
+            "extraPdfTypes": [],
         },
         "registration": {
             "attachments": ["Statement of Registration","Receipt"],
