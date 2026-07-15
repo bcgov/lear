@@ -15,15 +15,15 @@ PGHOST="${PGHOST:-localhost}"        # or ‑‑host
 PGPORT="${PGPORT:-5432}"             # or ‑‑port
 PGUSER="${PGUSER:-postgres}"        # or ‑‑user
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
+# Optional PostgreSQL client binary directory. Leave empty to use PATH.
+# Example: PG_BIN=/opt/homebrew/opt/postgresql@15/bin ./restore_extract.sh
+PG_BIN="${PG_BIN:-}"
 # Supply the password *either* via a .pgpass file *or* one‑shot:
 #   PGPASSWORD=secret ./restore_extract.sh
 ##############################################################################
 
-# -- Tables to restore ------------------------------------------------------------
-RESTORE=(corp_processing auth_processing auth_component_operation colin_tracking mig_group mig_batch mig_corp_batch mig_corp_account corps_with_third_party email_domain_groups bar_corps bad_emails exclude_corps excluded_emails excluded_email_domains excluded_email_domain_patterns)
-
 # -- Runtime options -----------------------------------------------------------
-DUMP="${DUMP}"
+DUMP="${DUMP:-}"
 DELTA_MODE="${DELTA_MODE:-false}"
 
 ##############################################################################
@@ -32,14 +32,82 @@ DELTA_MODE="${DELTA_MODE:-false}"
 
 die() { printf >&2 "error: %s\n" "$*"; exit 1; }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRESERVED_TABLES_CONF="$SCRIPT_DIR/scripts/restore/preserved_tables.conf"
+REPAIR_SEQUENCES_SQL="$SCRIPT_DIR/scripts/restore/repair_sequences.sql"
+DELTA_RESTORE_SCRIPT="$SCRIPT_DIR/delta_restore_extract.sh"
+
+pg_tool() {
+  local tool="$1"
+  if [[ -n "$PG_BIN" ]]; then
+    printf '%s/%s' "${PG_BIN%/}" "$tool"
+  else
+    printf '%s' "$tool"
+  fi
+}
+
+PSQL_BIN="$(pg_tool psql)"
+PG_RESTORE_BIN="$(pg_tool pg_restore)"
+
 # Build a single “‑h … ‑p … ‑U …” string so every call is consistent
 pg_conn_opts() {
   printf -- "-h %s -p %s -d %s -U %s" "$PGHOST" "$PGPORT" "$PGDATABASE" "$PGUSER"
 }
 
-# Pass arrays (e.g., KEEP) as repeated --table switches
+# Pass arrays (e.g., RESTORE) as repeated --table switches
 as_table_opts() { local t; for t in "$@"; do printf -- '--table=%s ' "$t"; done; }
 
+load_preserved_tables() {
+  local table _rest
+
+  [[ -f "$PRESERVED_TABLES_CONF" ]] || die "missing preserved table config: $PRESERVED_TABLES_CONF"
+
+  RESTORE=()
+  while read -r table _rest; do
+    case "${table:-}" in
+      ''|'#'*) continue ;;
+      *) RESTORE+=("$table") ;;
+    esac
+  done < "$PRESERVED_TABLES_CONF"
+
+  [[ "${#RESTORE[@]}" -gt 0 ]] || die "no preserved tables found in $PRESERVED_TABLES_CONF"
+}
+
+##############################################################################
+# ── ARGUMENTS / DELTA GUARDS                                                #
+##############################################################################
+
+delta_requested=false
+delta_args=()
+for arg in "$@"; do
+  case "$arg" in
+    --delta)
+      delta_requested=true
+      ;;
+    *)
+      delta_args+=("$arg")
+      ;;
+  esac
+done
+
+if [[ "$delta_requested" = "true" ]]; then
+  if [[ -f "$DELTA_RESTORE_SCRIPT" ]]; then
+    exec bash "$DELTA_RESTORE_SCRIPT" "${delta_args[@]}"
+  fi
+  die "--delta requested, but $DELTA_RESTORE_SCRIPT is not available yet. Use data-tool/delta_restore_extract.sh when it is added."
+fi
+
+if [[ "${#delta_args[@]}" -gt 0 ]]; then
+  die "unknown argument(s): ${delta_args[*]}"
+fi
+
+if [[ "$DELTA_MODE" = "true" ]]; then
+  die "DELTA_MODE=true is no longer supported by restore_extract.sh. Use data-tool/delta_restore_extract.sh instead."
+fi
+
+[[ -n "$DUMP" ]] || die "DUMP is required, e.g. DUMP=/backups/keep_YYYY-MM-DD.dump ./restore_extract.sh"
+[[ -f "$REPAIR_SEQUENCES_SQL" ]] || die "missing sequence repair SQL: $REPAIR_SEQUENCES_SQL"
+load_preserved_tables
 
 ##############################################################################
 # ── RECREATE THE DATABASE FROM ORACLE                                       #
@@ -52,107 +120,26 @@ printf "🔄  Re‑importing Postgres from Oracle …\n"
 # -- EMPTY the tables but keep their structure                               #
 ##############################################################################
 printf "🧹  Truncating existing rows …\n"
-if [ "$DELTA_MODE" = "true" ]; then
-  printf "⚠️  DELTA_MODE is true: skipping truncation of preserved tables.\n"
-else
-   printf "DELTA_MODE is false: truncating preserved tables.\n"
-   psql $(pg_conn_opts) -v ON_ERROR_STOP=1 -q <<SQL
-   TRUNCATE TABLE $(IFS=,; echo "${RESTORE[*]}") RESTART IDENTITY;
+printf "Truncating preserved tables.\n"
+"$PSQL_BIN" $(pg_conn_opts) -v ON_ERROR_STOP=1 -q <<SQL
+TRUNCATE TABLE $(IFS=,; echo "${RESTORE[*]}") RESTART IDENTITY;
 SQL
-fi
 #  - RESTART IDENTITY zeros the sequences; we'll set them correctly later.
 #  - No CASCADE → we don’t wipe child tables that reference these rows.
 
 ##############################################################################
 # ── RESTORE DATA FOR THE PRESERVED TABLES                                   #
 ##############################################################################
-if [ "$DELTA_MODE" = "true" ]; then
-  printf "⚠️  DELTA_MODE is true: skipping restore of preserved tables, processing table only \"corp_processing\".\n"
-  printf "⚠️  Auth tables auth_processing and auth_component_operation are not restored or merged in delta mode.\n"
-  psql $(pg_conn_opts) -v ON_ERROR_STOP=1 <<  SQL
-  ALTER TABLE IF EXISTS corp_processing RENAME TO corp_processing_old;
-  CREATE TABLE corp_processing (LIKE corp_processing_old INCLUDING ALL);
-SQL
-  pg_restore $(pg_conn_opts) --section=data --data-only \
-            --disable-triggers \
-            --table="corp_processing" \
-            "$DUMP" 2>&1 | grep -v "ERROR" || true
-  psql $(pg_conn_opts) -v ON_ERROR_STOP=0 <<'MERGE'
-INSERT INTO corp_processing_old
-SELECT * FROM corp_processing
-ON CONFLICT (corp_num, flow_name, environment) DO UPDATE
-SET
-  corp_type_cd = EXCLUDED.corp_type_cd,
-  corp_name = EXCLUDED.corp_name,
-  filings_count = EXCLUDED.filings_count,
-  processed_status = EXCLUDED.processed_status,
-  failed_event_file_type = EXCLUDED.failed_event_file_type,
-  last_processed_event_id = EXCLUDED.last_processed_event_id,
-  failed_event_id = EXCLUDED.failed_event_id,
-  last_error = EXCLUDED.last_error,
-  claimed_at = EXCLUDED.claimed_at,
-  flow_run_id = EXCLUDED.flow_run_id,
-  mig_batch_id = EXCLUDED.mig_batch_id,
-  account_ids = EXCLUDED.account_ids,
-  last_modified = EXCLUDED.last_modified;
-
-DROP TABLE corp_processing;
-ALTER TABLE corp_processing_old RENAME TO corp_processing;
-MERGE
-
-else
-  printf "🚚  Copying preserved rows (constraints temporarily disabled) …\n"
-  pg_restore $(pg_conn_opts) --section=data --data-only \
-            --disable-triggers \
-            $(as_table_opts "${RESTORE[@]}") "$DUMP"
-fi
+printf "🚚  Copying preserved rows (constraints temporarily disabled) …\n"
+"$PG_RESTORE_BIN" $(pg_conn_opts) --section=data --data-only \
+          --disable-triggers \
+          $(as_table_opts "${RESTORE[@]}") "$DUMP"
 
 ##############################################################################
 # ── FIX ANY SEQUENCES                                                       #
 ##############################################################################
 
 printf "🛠  Advancing sequences …\n"
-psql $(pg_conn_opts) <<'SQL'
-DO $$
-DECLARE
-  r record;
-  max_val bigint;
-BEGIN
-  FOR r IN
-    -- For SERIAL/IDENTITY columns (auto-dependency from sequence to column)
-    SELECT seq.relname AS seq,
-           tbl.relname AS tbl,
-           col.attname AS col
-    FROM pg_class seq
-    JOIN pg_depend d ON d.objid = seq.oid AND d.deptype = 'a'
-    JOIN pg_class tbl  ON tbl.oid = d.refobjid
-    JOIN pg_attribute col
-           ON col.attrelid = tbl.oid AND col.attnum = d.refobjsubid
-    WHERE  seq.relkind = 'S'
-    UNION ALL
-    -- For columns with DEFAULT nextval('sequence') (normal dependency from column default to sequence)
-    SELECT
-      seq.relname as seq,
-      tbl.relname as tbl,
-      col.attname as col
-    FROM pg_depend d
-    JOIN pg_class seq ON seq.oid = d.refobjid AND seq.relkind = 'S'
-    JOIN pg_attrdef ad ON ad.oid = d.objid AND d.classid = 'pg_attrdef'::regclass
-    JOIN pg_attribute col ON col.attrelid = ad.adrelid AND col.attnum = ad.adnum
-    JOIN pg_class tbl ON tbl.oid = ad.adrelid
-    WHERE d.deptype = 'n'
-  LOOP
-    EXECUTE format('SELECT MAX(%I) FROM %I', r.col, r.tbl) INTO max_val;
-    IF max_val IS NULL THEN
-      -- Table is empty, reset sequence to start at 1. The next call to nextval() will return 1.
-      EXECUTE format('SELECT setval(%L, 1, false);', r.seq);
-    ELSE
-      -- Table has data, set sequence so nextval() returns max_val + 1.
-      EXECUTE format('SELECT setval(%L, %s);', r.seq, max_val);
-    END IF;
-  END LOOP;
-END;
-$$;
-SQL
+"$PSQL_BIN" $(pg_conn_opts) -f "$REPAIR_SEQUENCES_SQL"
 
 printf "✅  Done. Preserved tables restored; sequences synchronised.\n"
