@@ -5,3 +5,5 @@ python-dotenv==1.1.1
 pg8000==1.31.4
 
 cloud-sql-connector @  git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/cloud-sql-connector
+
+data-tool-query-connector @  git+https://github.com/bcgov/lear@main#subdirectory=data-tool/flows/common
