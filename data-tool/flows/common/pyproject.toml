@@ -1,15 +1,16 @@
 [project]
-name = "data_tool_query_connector"
+name = "common"
 version = "1.0.0"
 description = "Shared Utilities"
-authors = [
-]
+authors = []
 requires-python = ">=3.11"
-dependencies = [
-]
+dependencies = []
 
 [tools.setuptools]
 packages = ["common"]
+
+[tools.setuptools.package-dir]
+common = "."
 
 [build-system]
 requires = ["setuptools>=61"]
