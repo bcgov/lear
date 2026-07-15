@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [tools.setuptools]
-packages = ["common", "common.data"]
+packages = ["common"]
 
 [build-system]
 requires = ["setuptools>=61"]
