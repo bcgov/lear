@@ -69,20 +69,20 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, sco
     """
     return query
 
-def get_identifiers_per_batch(mig_batch_id: int) -> str:
+def get_identifiers_per_batch(mig_batch_id: int, target_schema: str) -> str:
     return f"""
     SELECT string_agg(pg_catalog.quote_literal(trim(CAST(mcb.corp_num AS text))), ',') AS corp_list
-    FROM mig_corp_batch mcb
+    FROM {target_schema}.mig_corp_batch mcb
     WHERE mcb.mig_batch_id IN ({mig_batch_id})
     """
 
-def unfreeze_identifiers() -> str:
+def unfreeze_identifiers(target_schema: str) -> str:
     return f"""
-    UPDATE corporation AS c
+    UPDATE {target_schema}.corporation AS c
     SET corp_frozen_type_cd = NULL
-    FROM mig_group AS mg
-            JOIN mig_batch AS mb ON mb.mig_group_id = mg.id
-            JOIN mig_corp_batch AS mcb ON mcb.mig_batch_id = mb.id
+    FROM {target_schema}.mig_group AS mg
+            JOIN {target_schema}.mig_batch AS mb ON mb.mig_group_id = mg.id
+            JOIN {target_schema}.mig_corp_batch AS mcb ON mcb.mig_batch_id = mb.id
     WHERE c.corp_num = mcb.corp_num
     -- cprd
     and mg.name in ('group_0', 'group_1', 'group_3', 'group_4','gcp_migration_group_test','misc_group')

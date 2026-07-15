@@ -11,52 +11,52 @@
 -- - corp-scoped rows deleted directly by corp_num are left to the regular chunk deletes
 
 -- Event-scoped children whose parent event row is missing.
-DELETE FROM notification_resend t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.notification_resend t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM notification t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.notification t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM filing_user t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.filing_user t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM payment t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.payment t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM ledger_text t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.ledger_text t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM conv_ledger t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.conv_ledger t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM conv_event t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.conv_event t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM completing_party t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.completing_party t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM submitting_party t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.submitting_party t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM corp_involved_amalgamating t
+DELETE FROM TARGET_SCHEMA.corp_involved_amalgamating t
 WHERE t.event_id IS NOT NULL
-  AND NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+  AND NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM corp_involved_cont_in t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.corp_involved_cont_in t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM correction t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.correction t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
-DELETE FROM filing t
-WHERE NOT EXISTS (SELECT 1 FROM event e WHERE e.event_id = t.event_id);
+DELETE FROM TARGET_SCHEMA.filing t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.event e WHERE e.event_id = t.event_id);
 
 -- Corp-party children whose parent corp_party row is missing.
-DELETE FROM party_notification t
-WHERE NOT EXISTS (SELECT 1 FROM corp_party cp WHERE cp.corp_party_id = t.party_id);
+DELETE FROM TARGET_SCHEMA.party_notification t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.corp_party cp WHERE cp.corp_party_id = t.party_id);
 
-DELETE FROM offices_held t
-WHERE NOT EXISTS (SELECT 1 FROM corp_party cp WHERE cp.corp_party_id = t.corp_party_id);
+DELETE FROM TARGET_SCHEMA.offices_held t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.corp_party cp WHERE cp.corp_party_id = t.corp_party_id);
 
-DELETE FROM corp_party_relationship t
-WHERE NOT EXISTS (SELECT 1 FROM corp_party cp WHERE cp.corp_party_id = t.corp_party_id);
+DELETE FROM TARGET_SCHEMA.corp_party_relationship t
+WHERE NOT EXISTS (SELECT 1 FROM TARGET_SCHEMA.corp_party cp WHERE cp.corp_party_id = t.corp_party_id);
