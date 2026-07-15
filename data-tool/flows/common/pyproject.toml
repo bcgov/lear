@@ -1,0 +1,16 @@
+[project]
+name = "data_tool_query_connector"
+version = "1.0.0"
+description = "Shared Utilities"
+authors = [
+]
+requires-python = ">=3.11"
+dependencies = [
+]
+
+[tools.setuptools]
+packages = ["common"]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
