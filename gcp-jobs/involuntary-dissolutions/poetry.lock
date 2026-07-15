@@ -351,23 +351,25 @@ subdirectory = "python/common/business-registry-account"
 
 [[package]]
 name = "business-registry-common"
-version = "0.1.0"
+version = "0.1.1"
 description = ""
 optional = false
-python-versions = "^3.13"
+python-versions = ">=3.13,<3.14"
 groups = ["main"]
 files = []
 develop = false
 
 [package.dependencies]
-datedelta = "^1.4"
-pytz = "^2025.1"
+datedelta = ">=1.4,<2.0"
+flask = ">=3.1.0,<4.0.0"
+python-dateutil = ">=2.9.0,<3.0.0"
+pytz = ">=2025.1,<2026.0"
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "HEAD"
-resolved_reference = "f888b656fa266eb108880a467bf6728dc6efc171"
+resolved_reference = "deecf506fc9e76fb9e52e91a69db0db10d93f068"
 subdirectory = "python/common/business-registry-common"
 
 [[package]]
