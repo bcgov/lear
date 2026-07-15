@@ -314,6 +314,18 @@ def test_get_recipients_mras_option_excludes_party_emails(app, filing_type):
     assert 'comp@example.com' not in result
 
 
+def test_get_recipients_dissolution_includes_party_emails(app):
+    """Assert that dissolution recipients include the custodian party email."""
+    filing_json = _make_filing_json(
+        'dissolution',
+        parties=[{'officer': {'email': 'custodian@example.com'}, 'roles': [{'roleType': 'Custodian'}]}]
+    )
+    with app.app_context():
+        result = get_recipients('COMPLETED', filing_json, None, 'dissolution')
+    assert CONTACT_POINT in result
+    assert 'custodian@example.com' in result
+
+
 def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
     """Assert that a missing contactPoint email is coalesced to an empty string (not None)."""
     filing_json = _make_filing_json(

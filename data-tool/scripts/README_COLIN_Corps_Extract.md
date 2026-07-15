@@ -68,6 +68,22 @@ Notes:
 
 ---
 
+## Preserved-table backup, full restore, and delta restore
+
+The preserved migration/tracking/auth side-table list is centralized in `data-tool/scripts/restore/preserved_tables.conf` and is shared by:
+
+- `data-tool/backup_extract_tables.sh` — creates a preserved-table dump and `<dump>.manifest.json` sidecar.
+- `data-tool/restore_extract.sh` — full preserved-table restore after an extract rebuild.
+- `data-tool/delta_restore_extract.sh` — preview/apply merge for preserved tables.
+
+For the delta workflow, see [restore/README_delta_restore.md](restore/README_delta_restore.md). It documents preview/apply usage, class semantics, selection files, blocked-row remediation, cleanup, and test harness commands.
+
+`DELTA_MODE=true ./restore_extract.sh` has been removed by design. The full restore script now aborts with a pointer to `data-tool/delta_restore_extract.sh`; run explicit delta preview/apply commands instead.
+
+Delta restore uses the same PostgreSQL advisory-lock SQL as the subset/full-refresh scripts. Avoid running migration flows or other non-cooperating writers against the target database during apply.
+
+---
+
 ## Resetting the derived COLIN view/materialized-view layer
 
 Use this when the **derived view/MV definitions** in `colin_corps_extract_postgres_views_ddl` have changed and you need to drop + recreate just that layer in an existing extract DB.

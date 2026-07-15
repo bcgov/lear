@@ -755,6 +755,9 @@ create table if not exists mig_group
 alter table mig_group
     owner to postgres;
 
+create index if not exists idx_mig_group_delta_nk
+    on mig_group (name, target_environment, source_db);
+
 
 create table if not exists mig_batch
 (
@@ -776,6 +779,9 @@ create table if not exists mig_batch
 alter table mig_batch
     owner to postgres;
 
+create index if not exists idx_mig_batch_delta_nk
+    on mig_batch (mig_group_id, name, target_environment);
+
 
 create table if not exists mig_corp_batch
 (
@@ -790,6 +796,9 @@ create table if not exists mig_corp_batch
 
 alter table mig_corp_batch
     owner to postgres;
+
+create index if not exists idx_mig_corp_batch_delta_nk
+    on mig_corp_batch (mig_batch_id, corp_num);
 
 
 create table if not exists mig_corp_account
@@ -806,6 +815,9 @@ create table if not exists mig_corp_account
 
 alter table mig_corp_account
     owner to postgres;
+
+create index if not exists idx_mig_corp_account_delta_nk
+    on mig_corp_account (corp_num, target_environment, account_id, mig_batch_id);
 
 create table if not exists corp_processing
 (
@@ -1140,6 +1152,9 @@ create table if not exists corps_with_third_party
 alter table corps_with_third_party
     owner to postgres;
 
+create index if not exists idx_corps_with_third_party_delta_nk
+    on corps_with_third_party (corp_num, vendor);
+
 create table if not exists bar_corps
 (
     identifier          varchar,
@@ -1153,6 +1168,9 @@ create table if not exists bar_corps
 
 alter table bar_corps
     owner to postgres;
+
+create index if not exists idx_bar_corps_delta_nk
+    on bar_corps (identifier);
 
 
 -- helper so that `is_blank(text)` returns TRUE for '' (but NULL stays NULL)

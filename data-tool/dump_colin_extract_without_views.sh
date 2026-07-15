@@ -19,6 +19,7 @@ PGPORT="${PGPORT:-5432}"               # or --port
 PGUSER="${PGUSER:-postgres}"           # or --user
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}" # or --dbname
 PGSCHEMA="${PGSCHEMA:-public}"
+TARGET_PGSCHEMA="${TARGET_PGSCHEMA:-colin-extract}"
 # Supply the password *either* via a .pgpass file *or* one-shot:
 #   PGPASSWORD=secret MODE=dump ./dump_colin_extract_without_views.sh
 ##############################################################################
@@ -46,6 +47,11 @@ print_command() {
   done
   printf '\n'
 }
+
+psql_cmd(){
+  "psql" -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -v ON_ERROR_STOP=1 "$@"
+}
+
 
 ##############################################################################
 # DERIVED VIEW/MV EXCLUSIONS
@@ -79,6 +85,11 @@ case "$MODE" in
   *) die "MODE must be 'print' or 'dump'" ;;
 esac
 
+psql_cmd -c "ALTER SCHEMA ${PGSCHEMA} RENAME TO \"${TARGET_PGSCHEMA}\";"
+printf "✅  schema renamed  to ${TARGET_PGSCHEMA}...... %s\n" "$DUMP"
+
+PGSCHEMA="$TARGET_PGSCHEMA"
+
 CMD=(
   "$PG_DUMP_BIN"
   -F t
@@ -90,6 +101,7 @@ CMD=(
   -p "$PGPORT"
   -U "$PGUSER"
   -d "$PGDATABASE"
+  -n "$PGSCHEMA"
 )
 
 for object in "${EXCLUDED_OBJECTS[@]}"; do
@@ -101,7 +113,7 @@ CMD+=(-f "$DUMP")
 printf "📦  COLIN extract dump without derived views/materialized views\n"
 printf "Mode: %s\n" "$MODE"
 printf "Database: %s@%s:%s/%s\n" "$PGUSER" "$PGHOST" "$PGPORT" "$PGDATABASE"
-printf "Schema: %s\n" "$PGSCHEMA"
+printf "Schema: %s\n" "$PGSCHEMA" "$TARGET_PGSCHEMA"
 printf "Output: %s\n" "$DUMP"
 printf "Excluded objects:\n"
 for object in "${EXCLUDED_OBJECTS[@]}"; do
@@ -119,3 +131,5 @@ mkdir -p "$(dirname "$DUMP")"
 printf "\nRunning pg_dump...\n"
 "${CMD[@]}"
 printf "✅  Dump written to %s\n" "$DUMP"
+psql_cmd -c "ALTER SCHEMA  \"${TARGET_PGSCHEMA}\" RENAME TO public;"
+printf "✅  schema naming back to public...... %s\n" "$DUMP"

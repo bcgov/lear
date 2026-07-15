@@ -24,6 +24,7 @@ from business_emailer.email_processors import (
     get_filing_info,
     get_filled_template,
     get_pdfs,
+    get_recipient_from_auth,
     get_recipients,
     get_subject,
     get_user_email_from_auth,
@@ -116,8 +117,9 @@ def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name:
     invalid_data = not legal_type or not filing_name or not business_identifier
     skipped_coop_filing_types = ["annualReport", "changeOfDirectors", "changeOfAddress"]
     invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
-    
-    return invalid_status or invalid_data or invalid_coop_filing
+    invalid_dissolution_filing = filing.filing_type == "dissolution" and filing.filing_sub_type == "delay"
+
+    return invalid_status or invalid_data or invalid_coop_filing or invalid_dissolution_filing
 
 
 def process(email_info: dict, token: str) -> dict | None:
@@ -198,10 +200,14 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # get recipients
     recipient_filing_type = None
-    if filing_type in Filing.TempCorpFilingType or filing_type in ["changeOfRegistration", "correction"]:
+    if filing_type in Filing.TempCorpFilingType or filing_type in ["changeOfRegistration", "correction", "dissolution"]:
         recipient_filing_type = filing_type
 
     recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)
+
+    if filing_type == "dissolution" and (business_email := get_recipient_from_auth(business_identifier, token)):
+        # dissolution also notifies the business contact email
+        recipients = f"{recipients}, {business_email}" if recipients else business_email
 
     if additional_recipients := _get_additional_recipients(filing, token):
         recipients = f"{recipients}, {additional_recipients}"
