@@ -1,6 +1,7 @@
 .PHONY: license
 .PHONY: setup
 .PHONY: run
+.PHONY: test-delta-restore
 
 # Get the absolute path of the Makefile's directory
 MKFILE_PATH:=$(abspath $(lastword $(MAKEFILE_LIST)))
@@ -163,6 +164,9 @@ run-auth-invite: ## Run auth invitation flow
 run-auth-delete: ## Run auth delete flow
 	. $(VENV_DIR)/bin/activate && \
 	$(AUTH_MODULE_RUNNER) auth.auth_delete_flow
+
+test-delta-restore: ## Run delta restore static/sql smoke harness
+	./tests/delta_restore/run_tests.sh
 
 
 #################################################################################
