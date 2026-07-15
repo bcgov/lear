@@ -1,5 +1,5 @@
 [project]
-name = "data-tool-query-connector"
+name = "data_tool_query_connector"
 version = "1.0.0"
 description = "Shared Utilities"
 authors = [
