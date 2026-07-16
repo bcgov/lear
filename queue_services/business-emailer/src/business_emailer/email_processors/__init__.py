@@ -316,5 +316,5 @@ def get_pdfs(  # noqa: PLR0913
     for pdf_type in extra_pdf_type_list:
         attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)
     # add receipt
-    attach_order = _add_filing_document_pdf(pdfs, attach_order, 'receipt', token, business, filing, regenerate=regenerate)
+    attach_order = _add_filing_document_pdf(pdfs, attach_order, "receipt", token, business, filing, regenerate=regenerate)
     return pdfs
