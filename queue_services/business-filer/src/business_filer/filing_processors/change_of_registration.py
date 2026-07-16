@@ -91,7 +91,7 @@ def process(business: Business, change_filing_rec: Filing, change_filing: dict, 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(change_filing, "/changeOfRegistration/courtOrder")
-        filings.update_filing_court_order(change_filing_rec, court_order_json)
+        filings.create_court_order(change_filing_rec, court_order_json)
 
 
 def update_parties(business: Business, parties: dict, change_filing_rec: Filing):

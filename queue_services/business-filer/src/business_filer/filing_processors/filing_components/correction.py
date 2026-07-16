@@ -139,7 +139,7 @@ def correct_business_data(business: Business,  # noqa: PLR0915
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(correction_filing, "/correction/courtOrder")
-        filings.update_filing_court_order(correction_filing_rec, court_order_json)
+        filings.create_court_order(correction_filing_rec, court_order_json)
 
     # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):

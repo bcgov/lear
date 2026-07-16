@@ -72,7 +72,12 @@ def tests_filer_notice_of_withdrawal(session, test_name, filing_type, filing_tem
     final_withdrawn_filing = Filing.find_by_id(withdrawn_filing.id)
     final_now_filing = Filing.find_by_id(now_filing.id)
 
-    assert now_filing_json['filing']['noticeOfWithdrawal']['courtOrder']['orderDetails'] == final_now_filing.order_details
+    court_order_obj = final_now_filing.court_orders[0]
+    court_order = now_filing_json['filing']['noticeOfWithdrawal']['courtOrder']
+    assert court_order['orderDetails'] == court_order_obj.order_details
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+
     assert final_withdrawn_filing.status == Filing.Status.WITHDRAWN.value
     assert final_withdrawn_filing.withdrawal_pending == False
     assert final_withdrawn_filing.meta_data.get('withdrawnDate')

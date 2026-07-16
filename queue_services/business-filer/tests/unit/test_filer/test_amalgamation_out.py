@@ -50,8 +50,10 @@ def tests_filer_amalgamation_out(app, session):
     amalgamation_out_date_str = filing_json['filing']['amalgamationOut']['amalgamationOutDate']
     amalgamation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(amalgamation_out_date_str)
 
-    assert filing_json['filing']['amalgamationOut']['courtOrder']['fileNumber'] == final_filing.court_order_file_number
-    assert filing_json['filing']['amalgamationOut']['courtOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
+    court_order_obj = final_filing.court_orders[0]
+    court_order = filing_json['filing']['amalgamationOut']['courtOrder']
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
 
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == final_filing.id

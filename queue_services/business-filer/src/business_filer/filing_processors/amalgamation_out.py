@@ -27,7 +27,7 @@ def process(business: Business, amalgamation_out_filing: Filing, filing: dict, f
     # update amalgamation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(filing, "/amalgamationOut/courtOrder")
-        filings.update_filing_court_order(amalgamation_out_filing, court_order_json)
+        filings.create_court_order(amalgamation_out_filing, court_order_json)
 
     amalgamation_out_json = filing["amalgamationOut"]
 

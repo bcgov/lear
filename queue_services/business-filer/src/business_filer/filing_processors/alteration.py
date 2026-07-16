@@ -91,7 +91,7 @@ def process(
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(filing, "/alteration/courtOrder")
-        filings.update_filing_court_order(filing_submission, court_order_json)
+        filings.create_court_order(filing_submission, court_order_json)
 
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):

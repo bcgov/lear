@@ -37,7 +37,7 @@ import copy
 from business_model.models import Business, Filing, PartyRole
 
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components.filings import update_filing_court_order
+from business_filer.filing_processors.filing_components.filings import create_court_order
 from business_filer.filing_processors.filing_components.relationships import (
     cease_relationships,
     create_relationships,
@@ -67,4 +67,4 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfReceivers"].get("courtOrder"):
-        update_filing_court_order(filing_rec, court_order)
+        create_court_order(filing_rec, court_order)

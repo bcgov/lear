@@ -27,7 +27,7 @@ def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: F
     # update consent amalgamation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
         consent_amalgamation_out_json = dpath.get(filing, "/consentAmalgamationOut/courtOrder")
-        filings.update_filing_court_order(cco_filing, consent_amalgamation_out_json)
+        filings.create_court_order(cco_filing, consent_amalgamation_out_json)
 
     foreign_jurisdiction = filing["consentAmalgamationOut"]["foreignJurisdiction"]
     consent_amalgamation_out = ConsentContinuationOut()

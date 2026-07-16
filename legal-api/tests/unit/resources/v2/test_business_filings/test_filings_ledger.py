@@ -24,7 +24,7 @@ from typing import Tuple
 import datedelta
 import pytest
 
-from business_model.models import Business, Comment, Filing as FilingStorage, UserRoles
+from business_model.models import Business, Comment, CourtOrder, Filing as FilingStorage, UserRoles
 from legal_api.core import Filing, FILINGS
 from legal_api.services.authz import STAFF_ROLE
 from registry_schemas.example_data import (
@@ -255,14 +255,18 @@ def test_ledger_court_order(app, session, client, jwt, test_name, file_number, o
     """Assert that the ledger returns court_order values."""
     # setup
     identifier = 'BC1234567'
-    business, filing_storage = ledger_element_setup_help(identifier)
+    business, filing = ledger_element_setup_help(identifier, filing_name='courtOrder')
 
-    filing_storage.court_order_file_number = file_number
-    filing_storage.court_order_date = order_date
-    filing_storage.court_order_effect_of_order = effect_of_order
-    filing_storage.order_details = order_details
+    if expected:
+        filing.court_orders.append(CourtOrder(
+            business_id=business.id,
+            file_number=file_number,
+            effect_of_order=effect_of_order,
+            order_details=order_details,
+            order_date=order_date
+        ))
+        filing.save()
 
-    filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
     def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
         return headers[one]

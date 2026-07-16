@@ -71,10 +71,10 @@ def tests_filer_consent_amalgamation_out(app, session, mocker, test_name, effect
     # Check outcome
     final_filing = Filing.find_by_id(cco_filing.id)
 
-    assert filing_json['filing']['consentAmalgamationOut']['courtOrder']['fileNumber'] == \
-        final_filing.court_order_file_number
-    assert filing_json['filing']['consentAmalgamationOut']['courtOrder']['effectOfOrder'] == \
-        final_filing.court_order_effect_of_order
+    court_order_obj = final_filing.court_orders[0]
+    court_order = filing_json['filing']['consentAmalgamationOut']['courtOrder']
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 

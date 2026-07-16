@@ -82,7 +82,7 @@ def process(business: Business, continuation_out_filing: Filing, filing: dict, f
     # update continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(filing, "/continuationOut/courtOrder")
-        filings.update_filing_court_order(continuation_out_filing, court_order_json)
+        filings.create_court_order(continuation_out_filing, court_order_json)
 
     continuation_out_json = filing["continuationOut"]
 
