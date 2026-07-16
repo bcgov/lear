@@ -17,7 +17,7 @@ import json
 import requests
 from flask import current_app
 
-from legal_api.models import Document
+from business_model.models import Document
 from legal_api.services import AccountService
 
 POST_DOCUMENT_PATH: str = "{url}/documents/{document_class}/{document_type}"
