@@ -576,12 +576,15 @@ def test_set_corp_flag(session, test_name, identifier, entity_type, expected_is_
         f'{test_name}: expected isCorp={expected_is_corp} for legalType={entity_type}'
 
 
-@pytest.mark.parametrize('test_name, submitter_role, expected_certified_by', [
-    ('staff_uses_header', 'staff', 'Header Name'),
-    ('api_user_uses_header', 'system', 'Header Name'),
+@pytest.mark.parametrize('test_name, submitter_role, login_source, expected_certified_by', [
+    ('staff_uses_header', 'staff', 'IDIR', 'Header Name'),
+    ('api_user_uses_header', None, 'API_GW', 'Header Name'),
+    ('public_user_uses_submitter', None, 'BCSC', 'Submitter Name'),
 ])
-def test_set_completing_party_header_certified_by(session, test_name, submitter_role, expected_certified_by):
-    """Staff and API (system) submitters use the header certifiedBy for the completing party statement."""
+def test_set_completing_party_header_certified_by(session, test_name, submitter_role,
+                                                  login_source, expected_certified_by):
+    """Staff and API users use the header certifiedBy; API users are identified by the jwt loginSource."""
+    from business_model.models import User
     from legal_api.services import flags
     from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
@@ -594,7 +597,12 @@ def test_set_completing_party_header_certified_by(session, test_name, submitter_
         filing_type='incorporationApplication',
         template=template
     )
+    submitter = User()
+    submitter.firstname = 'Submitter'
+    submitter.lastname = 'Name'
+    submitter.login_source = login_source
     report._filing.submitter_roles = submitter_role
+    report._filing.filing_submitter = submitter
 
     filing = report._filing.filing_json['filing']
     filing['flags'] = {}
