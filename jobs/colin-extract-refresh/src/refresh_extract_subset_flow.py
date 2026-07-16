@@ -10,7 +10,7 @@ from sqlalchemy.engine import Engine
 from datetime import datetime
 from config import get_named_config
 from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch, unfreeze_identifiers
-from common.init_utils import colin_oracle_init, get_config
+from common.query_utils import colin_oracle_init, get_config
 from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
 
 _DEFAULT_TARGET_CONNECTION = get_named_config().TARGET_CONNECTION
