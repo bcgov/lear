@@ -108,6 +108,13 @@ def test_registration_process(app, session, legal_type, filing):
         business, filing_rec, filing_meta = registration.process(None, filing, filing_rec, filing_meta)
 
     # Assertions
+    
+    court_order_obj = business.court_orders[0]
+    court_order = filing['filing']['registration']['courtOrder']
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+    assert court_order['orderDetails'] == court_order_obj.order_details
+
     assert business.identifier.startswith('FM')
     assert business.founding_date == effective_date
     assert business.start_date == datetime.fromisoformat(f'{now}T08:00:00+00:00')
@@ -155,10 +162,9 @@ def test_registration_affiliation(app, session, legal_type, filing, party_type, 
     filing['filing']['registration']['parties'][0]['officer']['lastName'] = last_name
     filing['filing']['registration']['parties'][0]['officer']['middleName'] = middle_name
 
-    create_filing('123', filing)
+    filing_rec = create_filing('123', filing)
 
     effective_date = datetime.now(timezone.utc)
-    filing_rec = Filing(effective_date=effective_date, filing_json=filing)
     filing_meta = FilingMeta(application_date=effective_date)
 
     naics_response = {

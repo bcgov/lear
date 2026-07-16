@@ -129,7 +129,7 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
         aliases.update_aliases(business, name_translations)
 
     if court_order := amalgamation_filing.get("courtOrder"):
-        filings.update_filing_court_order(filing_rec, court_order)
+        filings.create_court_order(filing_rec, court_order, business)
 
     # Update the filing json with identifier and founding date.
     amalgamation_json = copy.deepcopy(filing_rec.filing_json)

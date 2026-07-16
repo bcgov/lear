@@ -576,6 +576,44 @@ def test_set_corp_flag(session, test_name, identifier, entity_type, expected_is_
         f'{test_name}: expected isCorp={expected_is_corp} for legalType={entity_type}'
 
 
+@pytest.mark.parametrize('test_name, submitter_role, login_source, expected_certified_by', [
+    ('staff_uses_header', 'staff', 'IDIR', 'Header Name'),
+    ('api_user_uses_header', None, 'API_GW', 'Header Name'),
+    ('public_user_uses_submitter', None, 'BCSC', 'Submitter Name'),
+])
+def test_set_completing_party_header_certified_by(session, test_name, submitter_role,
+                                                  login_source, expected_certified_by):
+    """Staff and API users use the header certifiedBy; API users are identified by the jwt loginSource."""
+    from business_model.models import User
+    from legal_api.services import flags
+    from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+
+    template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    template['filing']['header']['certifiedBy'] = 'Header Name'
+    report = create_report(
+        identifier='BC1234567',
+        entity_type='BEN',
+        report_type='incorporationApplication',
+        filing_type='incorporationApplication',
+        template=template
+    )
+    submitter = User()
+    submitter.firstname = 'Submitter'
+    submitter.lastname = 'Name'
+    submitter.login_source = login_source
+    report._filing.submitter_roles = submitter_role
+    report._filing.filing_submitter = submitter
+
+    filing = report._filing.filing_json['filing']
+    filing['flags'] = {}
+
+    with patch.object(flags, 'value', return_value=['incorporationApplication-completingParty']):
+        report._set_completing_party(filing)
+
+    assert filing['flags']['incorporationApplication_completingParty'] is True
+    assert filing['header']['certifiedBy'] == expected_certified_by
+
+
 def _create_previous_liquidation_report(business):
     lr_filing_json = copy.deepcopy(FILING_HEADER)
     lr_filing_json['filing']['header']['name'] = 'changeOfLiquidators'

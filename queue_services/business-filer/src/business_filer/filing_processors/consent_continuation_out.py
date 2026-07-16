@@ -48,7 +48,7 @@ def process(business: Business, cco_filing: Filing, filing: dict, filing_meta: F
     # update consent continuation out, if any is present
     with suppress(IndexError, KeyError, TypeError):
         consent_continuation_out_json = dpath.get(filing, "/consentContinuationOut/courtOrder")
-        filings.update_filing_court_order(cco_filing, consent_continuation_out_json)
+        filings.create_court_order(cco_filing, consent_continuation_out_json)
 
     cco_json = filing["consentContinuationOut"]
     foreign_jurisdiction = cco_json["foreignJurisdiction"]

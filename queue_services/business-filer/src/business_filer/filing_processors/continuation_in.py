@@ -148,7 +148,7 @@ def process(business: Business,  # noqa: PLR0912
         aliases.update_aliases(business, name_translations)
 
     if court_order := continuation_in.get("courtOrder"):
-        filings.update_filing_court_order(filing_rec, court_order)
+        filings.create_court_order(filing_rec, court_order, business)
 
     if not filing_rec.colin_event_ids:
         # Update the filing json with identifier and founding date.
