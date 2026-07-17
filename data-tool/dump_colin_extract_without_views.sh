@@ -19,7 +19,7 @@ PGPORT="${PGPORT:-5432}"               # or --port
 PGUSER="${PGUSER:-postgres}"           # or --user
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}" # or --dbname
 PGSCHEMA="${PGSCHEMA:-public}"
-TARGET_PGSCHEMA="${TARGET_PGSCHEMA:-colin-extract}"
+TARGET_PGSCHEMA="${TARGET_PGSCHEMA:-colin_extract}"
 # Supply the password *either* via a .pgpass file *or* one-shot:
 #   PGPASSWORD=secret MODE=dump ./dump_colin_extract_without_views.sh
 ##############################################################################

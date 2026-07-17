@@ -6,11 +6,11 @@ authors = []
 requires-python = ">=3.11"
 dependencies = []
 
-[tools.setuptools]
+[tool.setuptools]
 packages = ["common"]
 
-[tools.setuptools.package-dir]
-common = "."
+[tool.setuptools.package-dir]
+common = "common"
 
 [build-system]
 requires = ["setuptools>=61"]
