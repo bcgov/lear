@@ -1,7 +1,6 @@
 import sys
 
 from checks.check_business import run_check as run_business_check
-from checks.check_colin import run_check as run_colin_check
 
 def main() -> int:
     print("== running test_connectivity.py ==")
