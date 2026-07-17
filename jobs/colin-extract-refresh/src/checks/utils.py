@@ -11,7 +11,7 @@ from sqlalchemy import create_engine, text
 def colin_oracle_init(config) -> None:
     try:
         lib_dir = os.environ.get("ORACLE_CLIENT_LIB_DIR", "")
-        oracledb.init_oracle_client(lib_dir="/opt/oracle/instantclient_23_3")
+        oracledb.init_oracle_client(lib_dir=lib_dir)
         print('👷 Enable thick mode:', not oracledb.is_thin_mode())
         print('👷 Instant Client version:', oracledb.clientversion())
         engine = create_engine(config.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE)
