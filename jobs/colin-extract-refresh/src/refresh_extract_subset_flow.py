@@ -16,7 +16,7 @@ _DEFAULT_TARGET_CONNECTION = get_named_config().TARGET_CONNECTION
 _DEFAULT_TARGET_SCHEMA = get_named_config().TARGET_SCHEMA
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT_PATH = _REPO_ROOT / 'colin-extract-refresh' / 'src' / 'generate_cprd_subset_extract.py'
-_GENERATED_DIR = _REPO_ROOT / 'colin-extract-refresh' / 'src' / 'generated'
+_GENERATED_DIR = _REPO_ROOT / 'colin-extract-refresh' / 'src' / 'subset' / 'generated'
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
 
 
@@ -150,7 +150,6 @@ def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli
     )
 
 def extract_pull_flow(
-    corp_file: str,
     mode: str = 'load',
     chunk_size: int = 999,
     threads: int = 4,
@@ -235,7 +234,6 @@ def extract_pull_flow(
     
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description='Run Extract-Pull flow....')
-    p.add_argument('--corp_file', default='../data-tool/scripts/generated/delta_ctst.txt', help='Path to newline-delimited corp identifiers')
     p.add_argument('--mode', default='refresh', choices=('refresh', 'load'))
     p.add_argument('--delta-scope', default='full', choices=('batch', 'full'))
     p.add_argument('--chunk-size', type=int, default=900, help='Max items per IN list.')
@@ -243,7 +241,7 @@ if __name__ == '__main__':
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
     p.add_argument('--include-cp', action='store_true', help='Include corp type CP in subset extract queries')
     p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
-    p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
+    p.add_argument('--out', default=_SUBSET, help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
     p.add_argument('--target-connection', default=_DEFAULT_TARGET_CONNECTION)
