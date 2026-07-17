@@ -1,15 +1,6 @@
-import os
-import sys
-import oracledb
 from sqlalchemy import create_engine, text
-from config import get_named_config
-
-def _colin_oracle_init() -> None:
-    lib_dir = os.environ.get("ORACLE_CLIENT_LIB_DIR", "")
-    oracledb.init_oracle_client(lib_dir=lib_dir)
-    print('👷 Enable thick mode:', not oracledb.is_thin_mode())
-    print('👷 Instant Client version:', oracledb.clientversion())
-        
+from config import get_named_config   
+from checks.utils import colin_oracle_init
     
 def run_check() -> int:
     cfg = get_named_config()
@@ -18,7 +9,7 @@ def run_check() -> int:
             "Missing colin env vars"
         )
     print("== running check_colin.py ==")
-    _colin_oracle_init()
+    colin_oracle_init()
     engine = create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_ORACLE)
     with engine.connect() as conn:
         row = conn.execute(text("SELECT * FROM corporation FETCH FIRST 1 ROWS ONLY")).mappings().first()
