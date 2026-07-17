@@ -78,26 +78,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
         from legal_api.services import MinioService
         response = MinioService.get_file(document.file_key)
-        document_data = response.data
-        if self._report_key == "affidavit":
-            # the affidavit is an uploaded document, so the registrar's certification stamp is applied here
-            document_data = self._certify_uploaded_document(document_data)
         return current_app.response_class(
-            response=document_data,
+            response=response.data,
             status=response.status,
             mimetype="application/pdf"
         )
-
-    def _certify_uploaded_document(self, document_bytes: bytes) -> bytes:
-        """Apply the registrar's certification stamp to an uploaded document."""
-        from legal_api.services import PdfService
-        from legal_api.services.pdf_service import RegistrarStampData
-        business = self._business
-        if not business and self._filing.business_id:
-            business = Business.find_by_internal_id(self._filing.business_id)
-        identifier = business.identifier if business else self._filing.temp_reg
-        stamp_data = RegistrarStampData(self._filing.filing_date, identifier)
-        return PdfService().create_certified_copy(document_bytes, stamp_data).read()
 
     def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
