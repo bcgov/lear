@@ -108,6 +108,18 @@ LANGUAGE sql
 IMMUTABLE PARALLEL SAFE
 AS $$ SELECT 'table' $$;
 
+CREATE OR REPLACE FUNCTION delta_ctl.class_header()
+RETURNS text
+LANGUAGE sql
+IMMUTABLE PARALLEL SAFE
+AS $$ SELECT 'class' $$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.truncated_rows_marker(p_limit integer)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE STRICT PARALLEL SAFE
+AS $$ SELECT format('# TRUNCATED at %s rows', p_limit) $$;
+
 CREATE OR REPLACE FUNCTION delta_ctl.parent_table_kind()
 RETURNS text
 LANGUAGE sql
@@ -1378,39 +1390,318 @@ LEFT JOIN delta_ctl.table_config tc ON tc.table_name = rc.table_name
 ORDER BY tc.load_phase ASC NULLS LAST, rc.table_name ASC, rc.count_name ASC;
 $$;
 
+CREATE OR REPLACE FUNCTION delta_ctl.tsv_escape(p_value text, p_max_len int DEFAULT 8192)
+RETURNS text
+LANGUAGE sql
+IMMUTABLE PARALLEL SAFE
+AS $$
+SELECT CASE
+  WHEN p_value IS NULL THEN E'\\N'
+  ELSE regexp_replace(
+    replace(replace(replace(replace(replace(
+      CASE WHEN length(p_value) > GREATEST(p_max_len, 1)
+        THEN left(p_value, GREATEST(p_max_len, 1)) || '…[truncated]'
+        ELSE p_value END,
+      E'\\', E'\\\\'), E'\t', E'\\t'), E'\n', E'\\n'), E'\r', E'\\r'), chr(27), '␛'),
+    '[[:cntrl:]]', '�', 'g')
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.display_text(p_value text, p_max_len int DEFAULT 60)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE PARALLEL SAFE
+AS $$
+DECLARE
+  v_value text;
+BEGIN
+  IF p_value IS NULL THEN
+    RETURN 'NULL';
+  END IF;
+  v_value := replace(replace(replace(replace(
+    p_value, E'\n', '␤'), E'\t', '␉'), E'\r', '␍'), chr(27), '␛');
+  v_value := regexp_replace(v_value, '[[:cntrl:]]', '�', 'g');
+  IF length(v_value) > GREATEST(p_max_len, 1) THEN
+    v_value := left(v_value, GREATEST(p_max_len, 1)) || '…';
+  END IF;
+  RETURN v_value;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.display_value(p_row jsonb, p_col text, p_max_len int DEFAULT 60)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE PARALLEL SAFE
+AS $$
+BEGIN
+  IF p_row IS NULL OR NOT (p_row ? p_col) OR p_row -> p_col = 'null'::jsonb THEN
+    RETURN 'NULL';
+  END IF;
+  RETURN delta_ctl.display_text(COALESCE(p_row ->> p_col, ''), p_max_len);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.display_columns(p_table text)
+RETURNS text[]
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_cfg delta_ctl.table_config%ROWTYPE;
+  v_cols text[];
+  v_expr text;
+  v_match text[];
+BEGIN
+  SELECT * INTO v_cfg FROM delta_ctl.table_config WHERE table_name = p_table;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'missing table_config row for %', p_table;
+  END IF;
+  IF array_length(v_cfg.nk_cols, 1) IS NOT NULL THEN
+    RETURN v_cfg.nk_cols;
+  END IF;
+  FOREACH v_expr IN ARRAY v_cfg.nk_stage_exprs LOOP
+    v_match := regexp_match(v_expr, '^s\\.([a-z_][a-z0-9_]*)$');
+    IF v_match IS NOT NULL AND NOT (v_match[1] = ANY(COALESCE(v_cols, '{}'))) THEN
+      v_cols := COALESCE(v_cols, '{}') || v_match[1];
+    END IF;
+  END LOOP;
+  IF array_length(v_cols, 1) IS NOT NULL THEN
+    RETURN v_cols;
+  END IF;
+  SELECT COALESCE(array_agg(attname ORDER BY attnum), '{}') INTO v_cols
+  FROM (
+    SELECT a.attname, a.attnum
+    FROM pg_attribute a
+    WHERE a.attrelid = delta_ctl.public_rel(p_table)::regclass
+      AND a.attnum > 0 AND NOT a.attisdropped
+      AND (v_cfg.pk_col IS NULL OR a.attname <> v_cfg.pk_col)
+    ORDER BY a.attnum
+    LIMIT 3
+  ) q;
+  RETURN v_cols;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION delta_ctl.render_samples(p_table text, p_class text, p_limit int DEFAULT 20)
 RETURNS SETOF text
 LANGUAGE plpgsql
 AS $$
 DECLARE
   r record;
+  v_cfg delta_ctl.table_config%ROWTYPE;
   v_sql text;
+  v_local_join text;
+  v_col text;
+  v_cols text[];
+  v_values text;
+  v_line text;
+  v_changed_count int;
   v_limit int := GREATEST(COALESCE(p_limit, 20), 0);
 BEGIN
   PERFORM delta_ctl.assert_table_name(p_table);
-  IF v_limit = 0 OR to_regclass(format('delta_diff.%I', delta_ctl.class_table_name(p_table))) IS NULL THEN
+  SELECT * INTO v_cfg FROM delta_ctl.table_config WHERE table_name = p_table;
+  IF v_limit = 0 OR NOT FOUND
+     OR to_regclass(format('delta_diff.%I', delta_ctl.class_table_name(p_table))) IS NULL THEN -- NOSONAR
     RETURN;
   END IF;
 
+  v_cols := delta_ctl.display_columns(p_table);
+  v_local_join := CASE
+    WHEN v_cfg.pk_col IS NULL THEN 'LEFT JOIN public.' || quote_ident(p_table) || ' l ON l.ctid = d.local_ctid'
+    ELSE format('LEFT JOIN public.%I l ON l.%I = d.local_pk', p_table, v_cfg.pk_col)
+  END;
   v_sql := format($fmt$
-    SELECT _delta_row_id, staged_pk, local_pk, class, changed_cols, block_reason, parent_pending
-    FROM delta_diff.%I
-    WHERE class = $1
-    ORDER BY _delta_row_id
+    SELECT d._delta_row_id, d.staged_pk, d.local_pk, d.changed_cols,
+           d.block_reason, d.parent_pending, to_jsonb(s) AS staged_json,
+           to_jsonb(l) AS local_json
+    FROM delta_diff.%I d
+    JOIN delta_stage.%I s ON s._delta_row_id = d._delta_row_id
+    %s
+    WHERE d.class = $1
+    ORDER BY d.staged_pk NULLS LAST, d._delta_row_id
     LIMIT $2
-  $fmt$, delta_ctl.class_table_name(p_table));
+  $fmt$, delta_ctl.class_table_name(p_table), p_table, v_local_join);
 
   FOR r IN EXECUTE v_sql USING p_class, v_limit LOOP
-    RETURN NEXT format('▸ staged row %s · staged id %s · local id %s%s%s',
+    v_values := '';
+    FOREACH v_col IN ARRAY v_cols LOOP
+      v_values := v_values || format(' · %s=%s', v_col,
+        delta_ctl.display_value(r.staged_json, v_col, 40));
+    END LOOP;
+    v_line := format('▸ %s%srow %s%s%s',
+      CASE WHEN v_cfg.pk_col IS NOT NULL THEN format('id %s · ', COALESCE(r.staged_pk::text, '—')) ELSE '' END,
+      '',
       r._delta_row_id,
-      COALESCE(r.staged_pk::text, '—'),
-      COALESCE(r.local_pk::text, '—'),
-      CASE WHEN r.parent_pending THEN ' · parent pending' ELSE '' END,
-      CASE WHEN r.block_reason IS NOT NULL THEN ' · ' || r.block_reason ELSE '' END);
-    IF r.changed_cols IS NOT NULL AND array_length(r.changed_cols, 1) IS NOT NULL THEN
-      RETURN NEXT format('    changed: %s', array_to_string(r.changed_cols, ', '));
+      v_values,
+      CASE WHEN r.parent_pending THEN ' · parent pending' ELSE '' END
+        || CASE WHEN r.block_reason IS NOT NULL
+             THEN ' · ' || delta_ctl.display_text(r.block_reason, 80) ELSE '' END);
+    IF length(v_line) > 220 THEN
+      v_line := left(v_line, 219) || '…';
+    END IF;
+    RETURN NEXT v_line;
+    IF r.changed_cols IS NOT NULL THEN
+      v_changed_count := 0;
+      FOREACH v_col IN ARRAY r.changed_cols LOOP
+        EXIT WHEN v_changed_count >= 5;
+        RETURN NEXT format('    changed %s: %s → %s', v_col,
+          delta_ctl.display_value(r.local_json, v_col, 60),
+          delta_ctl.display_value(r.staged_json, v_col, 60));
+        v_changed_count := v_changed_count + 1;
+      END LOOP;
     END IF;
   END LOOP;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.render_new_rows_tsv(p_table text, p_limit int DEFAULT 10000)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_cfg delta_ctl.table_config%ROWTYPE;
+  v_cols text[];
+  v_col text;
+  v_sql text;
+  v_line text;
+  r record;
+  v_limit int := GREATEST(COALESCE(p_limit, 10000), 0);
+BEGIN
+  PERFORM delta_ctl.assert_table_name(p_table);
+  SELECT * INTO v_cfg FROM delta_ctl.table_config WHERE table_name = p_table;
+  IF NOT FOUND OR NOT delta_ctl.stage_table_exists(p_table) THEN RETURN; END IF;
+  SELECT array_agg(a.attname ORDER BY a.attnum) INTO v_cols
+  FROM pg_attribute a
+  WHERE a.attrelid = delta_ctl.public_rel(p_table)::regclass
+    AND a.attnum > 0 AND NOT a.attisdropped;
+  RETURN NEXT 'selector_id' || E'\t' || 'delta_row_id' || E'\t' || array_to_string(v_cols, E'\t'); -- NOSONAR
+  v_sql := format($fmt$
+    SELECT d.staged_pk, d._delta_row_id, to_jsonb(s) AS staged_json
+    FROM delta_diff.%I d
+    JOIN delta_stage.%I s ON s._delta_row_id = d._delta_row_id
+    WHERE d.class = 'NEW'
+    ORDER BY d.staged_pk NULLS LAST, d._delta_row_id
+    LIMIT $1
+  $fmt$, delta_ctl.class_table_name(p_table), p_table);
+  FOR r IN EXECUTE v_sql USING v_limit LOOP
+    v_line := delta_ctl.tsv_escape(COALESCE(r.staged_pk, r._delta_row_id)::text)
+      || E'\t' || r._delta_row_id::text;
+    FOREACH v_col IN ARRAY v_cols LOOP
+      v_line := v_line || E'\t' || delta_ctl.tsv_escape(r.staged_json ->> v_col);
+    END LOOP;
+    RETURN NEXT v_line;
+  END LOOP;
+  IF (SELECT row_count FROM delta_ctl.run_counts
+      WHERE table_name = p_table AND count_name = 'NEW') > v_limit THEN
+    RETURN NEXT delta_ctl.truncated_rows_marker(v_limit);
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.render_changed_rows_tsv(p_table text, p_limit int DEFAULT 10000)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_cfg delta_ctl.table_config%ROWTYPE;
+  v_local_join text;
+  v_sql text;
+  v_col text;
+  r record;
+  v_limit int := GREATEST(COALESCE(p_limit, 10000), 0);
+BEGIN
+  PERFORM delta_ctl.assert_table_name(p_table);
+  SELECT * INTO v_cfg FROM delta_ctl.table_config WHERE table_name = p_table;
+  IF NOT FOUND OR NOT delta_ctl.stage_table_exists(p_table) THEN RETURN; END IF;
+  RETURN NEXT 'selector_id' || E'\t' || 'delta_row_id' || E'\t' || 'local_pk' -- NOSONAR
+    || E'\t' || delta_ctl.class_header() || E'\t' || 'column' || E'\t' || 'local_value' || E'\t' || 'dump_value';
+  v_local_join := CASE
+    WHEN v_cfg.pk_col IS NULL THEN format('JOIN public.%I l ON l.ctid = d.local_ctid', p_table)
+    ELSE format('JOIN public.%I l ON l.%I = d.local_pk', p_table, v_cfg.pk_col)
+  END;
+  v_sql := format($fmt$
+    WITH ranked AS (
+      SELECT d.staged_pk, d._delta_row_id, d.local_pk, d.class, d.changed_cols,
+             to_jsonb(s) AS staged_json, to_jsonb(l) AS local_json,
+             row_number() OVER (
+               PARTITION BY d.class ORDER BY d.staged_pk NULLS LAST, d._delta_row_id
+             ) AS class_row_number
+      FROM delta_diff.%I d
+      JOIN delta_stage.%I s ON s._delta_row_id = d._delta_row_id
+      %s
+      WHERE d.class IN ('CHANGED', 'CHANGED_LOCAL_NEWER')
+    )
+    SELECT staged_pk, _delta_row_id, local_pk, class, changed_cols, staged_json, local_json
+    FROM ranked
+    WHERE class_row_number <= $1
+    ORDER BY staged_pk NULLS LAST, _delta_row_id
+  $fmt$, delta_ctl.class_table_name(p_table), p_table, v_local_join);
+  FOR r IN EXECUTE v_sql USING v_limit LOOP
+    FOREACH v_col IN ARRAY COALESCE(r.changed_cols, '{}') LOOP
+      RETURN NEXT delta_ctl.tsv_escape(COALESCE(r.staged_pk, r._delta_row_id)::text)
+        || E'\t' || r._delta_row_id::text
+        || E'\t' || delta_ctl.tsv_escape(r.local_pk::text)
+        || E'\t' || r.class
+        || E'\t' || delta_ctl.tsv_escape(v_col)
+        || E'\t' || delta_ctl.tsv_escape(r.local_json ->> v_col)
+        || E'\t' || delta_ctl.tsv_escape(r.staged_json ->> v_col);
+    END LOOP;
+  END LOOP;
+  IF EXISTS (SELECT 1 FROM delta_ctl.run_counts
+      WHERE table_name = p_table AND count_name IN ('CHANGED', 'CHANGED_LOCAL_NEWER')
+        AND row_count > v_limit) THEN
+    RETURN NEXT delta_ctl.truncated_rows_marker(v_limit);
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.render_blocked_rows_tsv(p_table text, p_limit int DEFAULT 10000)
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_cols text[];
+  v_col text;
+  v_sql text;
+  v_line text;
+  r record;
+  v_limit int := GREATEST(COALESCE(p_limit, 10000), 0);
+BEGIN
+  PERFORM delta_ctl.assert_table_name(p_table);
+  SELECT array_agg(a.attname ORDER BY a.attnum) INTO v_cols
+  FROM pg_attribute a
+  WHERE a.attrelid = delta_ctl.public_rel(p_table)::regclass
+    AND a.attnum > 0 AND NOT a.attisdropped;
+  RETURN NEXT 'selector_id' || E'\t' || 'delta_row_id' || E'\t' || delta_ctl.class_header()
+    || E'\t' || array_to_string(v_cols, E'\t') || E'\t' || 'block_reason';
+  v_sql := format($fmt$
+    WITH ranked AS (
+      SELECT d.staged_pk, d._delta_row_id, d.class, d.block_reason,
+             to_jsonb(s) AS staged_json,
+             row_number() OVER (
+               PARTITION BY d.class ORDER BY d.staged_pk NULLS LAST, d._delta_row_id
+             ) AS class_row_number
+      FROM delta_diff.%I d
+      JOIN delta_stage.%I s ON s._delta_row_id = d._delta_row_id
+      WHERE d.class IN ('BLOCKED_FK', 'AMBIGUOUS_NK')
+    )
+    SELECT staged_pk, _delta_row_id, class, block_reason, staged_json
+    FROM ranked
+    WHERE class_row_number <= $1
+    ORDER BY staged_pk NULLS LAST, _delta_row_id
+  $fmt$, delta_ctl.class_table_name(p_table), p_table);
+  FOR r IN EXECUTE v_sql USING v_limit LOOP
+    v_line := delta_ctl.tsv_escape(COALESCE(r.staged_pk, r._delta_row_id)::text)
+      || E'\t' || r._delta_row_id::text || E'\t' || r.class;
+    FOREACH v_col IN ARRAY v_cols LOOP
+      v_line := v_line || E'\t' || delta_ctl.tsv_escape(r.staged_json ->> v_col);
+    END LOOP;
+    RETURN NEXT v_line || E'\t' || delta_ctl.tsv_escape(r.block_reason);
+  END LOOP;
+  IF EXISTS (SELECT 1 FROM delta_ctl.run_counts
+      WHERE table_name = p_table AND count_name IN ('BLOCKED_FK', 'AMBIGUOUS_NK')
+        AND row_count > v_limit) THEN
+    RETURN NEXT delta_ctl.truncated_rows_marker(v_limit);
+  END IF;
 END;
 $$;
 
@@ -1492,7 +1783,7 @@ BEGIN
   END LOOP;
 
   RETURN NEXT '';
-  RETURN NEXT 'Selection: edit selection.conf or pass apply selection flags, then run --mode apply.';
+  RETURN NEXT 'Selection: copy and edit selection.conf, check it with --mode validate, then run --mode apply.';
 END;
 $$;
 
@@ -1502,23 +1793,438 @@ LANGUAGE plpgsql
 AS $$
 DECLARE
   t record;
+  c record;
+  v_sha text;
+  v_staged text;
+  v_manifest_default text;
+  v_selector_limit_raw text;
+  v_selector_limit_normalized text;
+  v_selector_limit_present boolean;
+  v_selector_suggestion_limit integer := 50;
+  v_selector_suggestion_limit_max constant integer := 100000;
+  v_default_include text;
+  v_default_new bigint := 0;
+  v_default_changed bigint := 0;
+  v_default_total bigint := 0;
+  v_default_tables bigint := 0;
+  v_range_tokens text[];
+  v_range_sizes bigint[];
+  v_singleton_tokens text[];
+  v_singleton_lines text[];
+  v_total_rows bigint;
+  v_singleton_count bigint;
+  v_range_count bigint;
+  v_id_col text;
+  v_primary_kind text;
+  v_example_values text;
+  v_invalid_ids boolean;
+  v_class_width integer;
+  v_selector_line_max constant integer := 120;
+  v_selector_prefix text;
+  v_selector_line text;
+  v_range_annotation text;
+  v_token text;
+  v_count_token text;
+  v_token_index integer;
+  v_singleton_line_index integer;
 BEGIN
-  RETURN NEXT '# classes: new | changed | changed_local_newer   (others are never applyable)';
-  RETURN NEXT '[*]                include=new,changed';
+  SELECT value INTO v_sha FROM delta_ctl.run_metadata WHERE key = 'dump_sha256';
+  SELECT COALESCE(
+           (SELECT value FROM delta_ctl.run_metadata WHERE key = 'manifest_default'),
+           'new,changed') -- NOSONAR
+    INTO v_manifest_default;
+  IF v_manifest_default NOT IN ('new,changed', 'none') THEN
+    RAISE EXCEPTION 'unsupported manifest_default metadata value: %', v_manifest_default;
+  END IF;
+
+  SELECT EXISTS (
+           SELECT 1 FROM delta_ctl.run_metadata WHERE key = 'selector_suggestion_limit'), -- NOSONAR
+         (SELECT value FROM delta_ctl.run_metadata WHERE key = 'selector_suggestion_limit')
+    INTO v_selector_limit_present, v_selector_limit_raw;
+  IF v_selector_limit_present THEN
+    IF v_selector_limit_raw IS NULL OR v_selector_limit_raw !~ '^[0-9]+$' THEN
+      RAISE EXCEPTION
+        'invalid selector_suggestion_limit metadata value: % (allowed range: 0..100000)', -- NOSONAR
+        COALESCE(v_selector_limit_raw, '<NULL>');
+    END IF;
+    v_selector_limit_normalized := COALESCE(
+      NULLIF(regexp_replace(v_selector_limit_raw, '^0+', ''), ''), '0');
+    IF length(v_selector_limit_normalized) > length(v_selector_suggestion_limit_max::text) THEN
+      RAISE EXCEPTION
+        'invalid selector_suggestion_limit metadata value: % (allowed range: 0..100000)', -- NOSONAR
+        v_selector_limit_raw;
+    END IF;
+    v_selector_suggestion_limit := v_selector_limit_normalized::integer;
+    IF v_selector_suggestion_limit > v_selector_suggestion_limit_max THEN
+      RAISE EXCEPTION
+        'invalid selector_suggestion_limit metadata value: % (allowed range: 0..100000)', -- NOSONAR
+        v_selector_limit_raw;
+    END IF;
+  END IF;
+
+  v_default_include := CASE WHEN v_manifest_default = 'none' THEN '' ELSE 'new,changed' END;
+
+  SELECT string_agg(format('%s=%s', tc.table_name, COALESCE(rc.row_count, 0)), ' ' ORDER BY tc.load_phase, tc.table_name)
+    INTO v_staged
+  FROM delta_ctl.table_config tc
+  LEFT JOIN delta_ctl.run_counts rc
+    ON rc.table_name = tc.table_name AND rc.count_name = 'STAGED';
+
+  SELECT GREATEST(3, COALESCE(max(length(tc.table_name) + 2), 3)) + 2
+    INTO v_class_width
+  FROM delta_ctl.table_config tc;
+
+  IF v_manifest_default = 'new,changed' THEN
+    SELECT COALESCE(sum(counts.new_n), 0),
+           COALESCE(sum(counts.changed_n), 0),
+           count(*) FILTER (WHERE counts.new_n + counts.changed_n > 0)
+      INTO v_default_new, v_default_changed, v_default_tables
+    FROM (
+      SELECT tc.table_name,
+             COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = 'NEW'), 0) AS new_n,
+             COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = 'CHANGED'), 0) AS changed_n
+      FROM delta_ctl.table_config tc
+      LEFT JOIN delta_ctl.run_counts rc ON rc.table_name = tc.table_name
+      GROUP BY tc.table_name
+    ) counts;
+    v_default_total := v_default_new + v_default_changed;
+  END IF;
+
+  RETURN NEXT '# delta-selection v2';
+  RETURN NEXT '# dump_sha256=' || COALESCE(v_sha, '');
+  RETURN NEXT '# staged ' || COALESCE(v_staged, '');
+  RETURN NEXT '#';
+  RETURN NEXT '# The two binding headers above tie row selectors to this reviewed preview.';
+  RETURN NEXT '# Keep them unchanged when uncommenting any .rows selector.';
+  RETURN NEXT '# Class-only selection files remain backward compatible and do not require bindings.';
+  RETURN NEXT '#';
+  RETURN NEXT '# ---------------------------------------------------------------------------'; -- NOSONAR
+  RETURN NEXT '# ACTIVE SELECTION';
+  RETURN NEXT '# Edit these lines to choose which classes are eligible for apply.';
+  RETURN NEXT '# ---------------------------------------------------------------------------'; -- NOSONAR
+  RETURN NEXT '#';
+  RETURN NEXT rpad('[*]', v_class_width, ' ') || 'include=' || v_default_include;
+  RETURN NEXT format(
+    '# Default selection ([*] %s) currently matches %s rows across %s tables (new=%s changed=%s).',
+    v_manifest_default, v_default_total, v_default_tables, v_default_new, v_default_changed);
+  RETURN NEXT '#';
 
   FOR t IN
     SELECT tc.table_name, tc.load_phase,
            COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = 'NEW'), 0) AS new_n,
            COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = 'CHANGED'), 0) AS changed_n,
-           COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = 'CHANGED_LOCAL_NEWER'), 0) AS local_newer_n
+           COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = 'CHANGED_LOCAL_NEWER'), 0) AS local_newer_n,
+           COALESCE((
+             SELECT string_agg(DISTINCT fk.parent_name, ',' ORDER BY fk.parent_name)
+             FROM jsonb_each_text(tc.fk_map) AS fk(child_col, parent_name)
+             WHERE fk.parent_name NOT LIKE 'external:%'
+           ), '') AS parents
     FROM delta_ctl.table_config tc
     LEFT JOIN delta_ctl.run_counts rc ON rc.table_name = tc.table_name
-    GROUP BY tc.table_name, tc.load_phase
+    GROUP BY tc.table_name, tc.load_phase, tc.fk_map
     ORDER BY tc.load_phase, tc.table_name
   LOOP
-    RETURN NEXT format('[%s] include=new,changed # new=%s changed=%s changed_local_newer=%s',
-      t.table_name, t.new_n, t.changed_n, t.local_newer_n);
+    RETURN NEXT rpad(format('[%s]', t.table_name), v_class_width, ' ')
+      || format('include=%s # new=%s changed=%s changed_local_newer=%s%s',
+        v_default_include, t.new_n, t.changed_n, t.local_newer_n,
+        CASE WHEN t.parents = '' THEN '' ELSE ' parents=' || t.parents END);
   END LOOP;
+
+  RETURN NEXT '#';
+  FOR c IN
+    SELECT class_name, selector_name
+    FROM (VALUES ('NEW', 'new'), ('CHANGED', 'changed')) AS classes(class_name, selector_name)
+  LOOP
+    RETURN NEXT format(
+      '# Small %s sets receive ready-to-uncomment suggestions:', c.class_name);
+    FOR t IN
+      SELECT tc.table_name, tc.load_phase, tc.pk_col
+      FROM delta_ctl.table_config tc
+      LEFT JOIN delta_ctl.run_counts rc ON rc.table_name = tc.table_name
+      GROUP BY tc.table_name, tc.load_phase, tc.pk_col
+      HAVING COALESCE(max(rc.row_count) FILTER (WHERE rc.count_name = c.class_name), 0)
+             BETWEEN 1 AND v_selector_suggestion_limit
+      ORDER BY tc.load_phase, tc.table_name
+    LOOP
+      IF delta_ctl.stage_table_exists(t.table_name) THEN
+        v_id_col := CASE WHEN t.pk_col IS NULL THEN '_delta_row_id' ELSE t.pk_col END;
+        EXECUTE format($fmt$
+          WITH source AS (
+            SELECT s.%I::numeric AS n
+            FROM delta_stage.%I s
+            JOIN delta_diff.%I d ON d._delta_row_id = s._delta_row_id
+            WHERE d.class = $1
+          ), ordered AS (
+            SELECT n, n - row_number() OVER (ORDER BY n)::numeric AS grp
+            FROM source
+          ), runs AS (
+            SELECT min(n) AS lo, max(n) AS hi, count(*)::bigint AS row_count
+            FROM ordered
+            GROUP BY grp
+          )
+          SELECT
+            COALESCE(
+              array_agg((lo::text || '-' || hi::text) ORDER BY lo)
+                FILTER (WHERE row_count > 1),
+              '{}'::text[]),
+            COALESCE(
+              array_agg(row_count ORDER BY lo)
+                FILTER (WHERE row_count > 1),
+              '{}'::bigint[]),
+            COALESCE(
+              array_agg(lo::text ORDER BY lo)
+                FILTER (WHERE row_count = 1),
+              '{}'::text[]),
+            COALESCE(sum(row_count), 0)::bigint,
+            count(*) FILTER (WHERE row_count = 1)::bigint,
+            count(*) FILTER (WHERE row_count > 1)::bigint,
+            EXISTS (SELECT 1 FROM source WHERE n < 0)
+          FROM runs
+        $fmt$, v_id_col, t.table_name, delta_ctl.class_table_name(t.table_name))
+        INTO v_range_tokens, v_range_sizes, v_singleton_tokens,
+             v_total_rows, v_singleton_count, v_range_count, v_invalid_ids
+        USING c.class_name;
+
+        -- An actual blank line separates each table block, including the first
+        -- block from its section heading.
+        RETURN NEXT '';
+        RETURN NEXT format(
+          '# [%s] Exact %s set: rows=%s singletons=%s ranges=%s',
+          t.table_name, c.class_name, v_total_rows, v_singleton_count, v_range_count);
+
+        IF v_invalid_ids THEN
+          RETURN NEXT format(
+            '# [%s] Exact %s selector unavailable for this small set.',
+            t.table_name, c.class_name);
+          RETURN NEXT format(
+            '#   Review details/%s.%s.tsv; negative id: values are outside the selector grammar.',
+            t.table_name, c.selector_name);
+        ELSE
+          v_selector_prefix := format(
+            '# [%s] %s.rows include=%s:',
+            t.table_name, c.selector_name,
+            CASE WHEN t.pk_col IS NULL THEN 'row' ELSE 'id' END);
+
+          IF cardinality(v_range_tokens) > 0 THEN
+            v_selector_line := v_selector_prefix;
+            v_range_annotation := '#   Range counts:'; -- NOSONAR
+            FOR v_token_index IN 1..cardinality(v_range_tokens) LOOP
+              v_token := v_range_tokens[v_token_index];
+              v_count_token := format(
+                '%s (%s rows)', v_token, v_range_sizes[v_token_index]);
+              IF v_selector_line <> v_selector_prefix
+                 AND (length(v_selector_line) + 1 + length(v_token) > v_selector_line_max
+                      OR length(v_range_annotation) + 2 + length(v_count_token)
+                           > v_selector_line_max) THEN
+                RETURN NEXT v_selector_line;
+                RETURN NEXT v_range_annotation;
+                v_selector_line := v_selector_prefix;
+                v_range_annotation := '#   Range counts:'; -- NOSONAR
+              END IF;
+              v_selector_line := v_selector_line
+                || CASE WHEN v_selector_line = v_selector_prefix THEN '' ELSE ',' END
+                || v_token;
+              v_range_annotation := v_range_annotation
+                || CASE WHEN v_range_annotation = '#   Range counts:' THEN ' ' ELSE ', ' END
+                || v_count_token;
+            END LOOP;
+            RETURN NEXT v_selector_line;
+            RETURN NEXT v_range_annotation;
+          END IF;
+
+          IF cardinality(v_singleton_tokens) > 0 THEN
+            -- Keep the range/count pair adjacent, then separate singleton IDs
+            -- with one actual blank line when both categories exist.
+            IF cardinality(v_range_tokens) > 0 THEN
+              RETURN NEXT '';
+            END IF;
+
+            -- Build singleton lines before emitting them so long lists can be
+            -- split into visual paragraphs after every four selector lines.
+            v_singleton_lines := '{}'::text[];
+            v_selector_line := v_selector_prefix;
+            FOREACH v_token IN ARRAY v_singleton_tokens LOOP
+              IF v_selector_line <> v_selector_prefix
+                 AND length(v_selector_line) + 1 + length(v_token) > v_selector_line_max THEN
+                v_singleton_lines := array_append(v_singleton_lines, v_selector_line);
+                v_selector_line := v_selector_prefix;
+              END IF;
+              v_selector_line := v_selector_line
+                || CASE WHEN v_selector_line = v_selector_prefix THEN '' ELSE ',' END
+                || v_token;
+            END LOOP;
+            v_singleton_lines := array_append(v_singleton_lines, v_selector_line);
+
+            FOR v_singleton_line_index IN 1..cardinality(v_singleton_lines) LOOP
+              IF cardinality(v_singleton_lines) > 8
+                 AND v_singleton_line_index > 1
+                 AND mod(v_singleton_line_index - 1, 4) = 0 THEN
+                RETURN NEXT '';
+              END IF;
+              RETURN NEXT v_singleton_lines[v_singleton_line_index];
+            END LOOP;
+          END IF;
+        END IF;
+      END IF;
+    END LOOP;
+    RETURN NEXT '#';
+  END LOOP;
+
+  FOR c IN
+    SELECT class_name, selector_name
+    FROM (VALUES ('NEW', 'new'), ('CHANGED', 'changed')) AS classes(class_name, selector_name)
+  LOOP
+    RETURN NEXT format(
+      '# Large %s sets receive a useful pointer rather than no guidance:', c.class_name);
+    FOR t IN
+      SELECT tc.table_name, tc.load_phase, tc.pk_col,
+             COALESCE(max(rc.row_count)
+               FILTER (WHERE rc.count_name = c.class_name), 0) AS class_n
+      FROM delta_ctl.table_config tc
+      LEFT JOIN delta_ctl.run_counts rc ON rc.table_name = tc.table_name
+      GROUP BY tc.table_name, tc.load_phase, tc.pk_col
+      HAVING COALESCE(max(rc.row_count)
+               FILTER (WHERE rc.count_name = c.class_name), 0) > v_selector_suggestion_limit
+      ORDER BY tc.load_phase, tc.table_name
+    LOOP
+      v_primary_kind := CASE WHEN t.pk_col IS NULL THEN 'row' ELSE 'id' END;
+      v_example_values := CASE WHEN t.pk_col IS NULL THEN '4,10-15' ELSE '100,200-210' END;
+      RETURN NEXT format(
+        '# %s has %s %s rows; choose selector_id%s from:',
+        t.table_name, t.class_n, c.class_name,
+        CASE
+          WHEN t.table_name = delta_ctl.auth_component_op_table() THEN ''
+          WHEN delta_ctl.corp_col_expr(t.table_name) IS NOT NULL
+            THEN ' or corp values'
+          ELSE ''
+        END);
+      RETURN NEXT format('# details/%s.%s.tsv', t.table_name, c.selector_name);
+      RETURN NEXT '# Example syntax:';
+      RETURN NEXT format('# [%s] %s.rows include=%s:%s',
+        t.table_name, c.selector_name, v_primary_kind, v_example_values);
+      IF delta_ctl.corp_col_expr(t.table_name) IS NOT NULL THEN
+        IF t.table_name = delta_ctl.auth_component_op_table() THEN
+          RETURN NEXT '# corp: selectors are also supported via the staged auth_processing parent:';
+        END IF;
+        RETURN NEXT format('# [%s] %s.rows include=corp:BC0000001,BC0000002',
+          t.table_name, c.selector_name);
+      END IF;
+      RETURN NEXT '#';
+    END LOOP;
+  END LOOP;
+
+  RETURN NEXT '# ---------------------------------------------------------------------------'; -- NOSONAR
+  RETURN NEXT '# Full selector grammar and 13 worked examples: selection_cookbook.txt (this run dir)';
+  RETURN NEXT '# ---------------------------------------------------------------------------'; -- NOSONAR
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.render_selection_cookbook()
+RETURNS SETOF text
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  RETURN NEXT '# Classes: new | changed | changed_local_newer (other classes are never applyable).';
+  RETURN NEXT '# Selector kinds: id: for PK tables; row: for PK-less tables; corp: only where supported.';
+  RETURN NEXT '# Multiple includes union their matches; excludes subtract; --only-corps is a final intersection.';
+  RETURN NEXT '#';
+  RETURN NEXT '# ---------------------------------------------------------------------------'; -- NOSONAR
+  RETURN NEXT '# OPERATOR COOKBOOK';
+  RETURN NEXT '# Everything below is commented documentation. Copy or uncomment only the';
+  RETURN NEXT '# examples you intend to use. Row selectors never enable a class by themselves.';
+  RETURN NEXT '# ---------------------------------------------------------------------------'; -- NOSONAR
+  RETURN NEXT '#';
+  RETURN NEXT '# 1. Apply all NEW and CHANGED rows for a table:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [mig_corp_batch] include=new,changed';
+  RETURN NEXT '#';
+  RETURN NEXT '# 2. Apply only NEW rows for a table:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [mig_corp_batch] include=new';
+  RETURN NEXT '#';
+  RETURN NEXT '# 3. Apply only CHANGED rows for a table:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [corp_processing] include=changed';
+  RETURN NEXT '#';
+  RETURN NEXT '# 4. Disable a table entirely:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [mig_corp_batch] include=';
+  RETURN NEXT '#';
+  RETURN NEXT '# 5. Apply specific NEW rows by staged primary key.';
+  RETURN NEXT '#    Lists and inclusive ranges may be mixed:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [mig_corp_batch] include=new,changed';
+  RETURN NEXT '# [mig_corp_batch] new.rows include=id:3067,7922,8241-8242';
+  RETURN NEXT '#';
+  RETURN NEXT '# 6. Apply every NEW row except specific IDs:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [mig_corp_account] include=new,changed';
+  RETURN NEXT '# [mig_corp_account] new.rows exclude=id:23,100-105';
+  RETURN NEXT '#';
+  RETURN NEXT '# 7. Combine multiple includes, then subtract exclusions.';
+  RETURN NEXT '#    Include lines are unioned; exclude lines are applied afterward:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [corp_processing] include=new,changed'; -- NOSONAR
+  RETURN NEXT '# [corp_processing] new.rows include=id:53946-53959';
+  RETURN NEXT '# [corp_processing] new.rows include=corp:BC0000001,BC0000002';
+  RETURN NEXT '# [corp_processing] new.rows exclude=id:53947,53952';
+  RETURN NEXT '#';
+  RETURN NEXT '# 8. Apply specific CHANGED rows:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [corp_processing] include=new,changed'; -- NOSONAR
+  RETURN NEXT '# [corp_processing] changed.rows include=id:881,900-905';
+  RETURN NEXT '#';
+  RETURN NEXT '# 9. Apply CHANGED rows for selected corporations:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [corp_processing] include=new,changed'; -- NOSONAR
+  RETURN NEXT '# [corp_processing] changed.rows include=corp:BC0000001,BC0000002';
+  RETURN NEXT '#';
+  RETURN NEXT '# 10. Explicitly opt into locally newer rows.';
+  RETURN NEXT '#     CAUTION: these may overwrite more recently modified local values:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [corp_processing] include=new,changed,changed_local_newer';
+  RETURN NEXT '# [corp_processing] changed_local_newer.rows include=id:901';
+  RETURN NEXT '#';
+  RETURN NEXT '# 11. Select rows from a PK-less table using the staged row ordinal:';
+  RETURN NEXT '#';
+  RETURN NEXT '# [email_domain_groups] include=new';
+  RETURN NEXT '# [email_domain_groups] new.rows include=row:4,10-15';
+  RETURN NEXT '#';
+  RETURN NEXT '# 12. Parent dependency reminder:';
+  RETURN NEXT '#     A selected NEW child whose preserved parent is also NEW requires that';
+  RETURN NEXT '#     parent row to remain selected.';
+  RETURN NEXT '#';
+  RETURN NEXT '# [mig_batch] include=new';
+  RETURN NEXT '# [mig_batch] new.rows include=id:152';
+  RETURN NEXT '# [mig_corp_account] include=new';
+  RETURN NEXT '# [mig_corp_account] new.rows include=id:23643-23658';
+  RETURN NEXT '#';
+  RETURN NEXT '# 13. --only-corps is an additional global intersection:';
+  RETURN NEXT '#';
+  RETURN NEXT '# ./delta_restore_extract.sh ... ' || chr(92);
+  RETURN NEXT '#   --selection-file selection.conf ' || chr(92);
+  RETURN NEXT '#   --only-corps selected_corps.txt';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION delta_ctl.corp_col_expr(p_table text)
+RETURNS text
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  PERFORM delta_ctl.assert_table_name(p_table);
+  CASE p_table
+    WHEN delta_ctl.auth_component_op_table() THEN
+      IF delta_ctl.stage_table_exists(delta_ctl.auth_processing_table()) THEN
+        RETURN '(SELECT ap.corp_num::text FROM delta_stage.auth_processing ap WHERE ap.id = s.auth_processing_id LIMIT 1)';
+      END IF;
+      RETURN NULL;
+    WHEN 'corp_processing', 'colin_tracking', delta_ctl.auth_processing_table(),
+         'mig_corp_batch', 'mig_corp_account', 'exclude_corps', 'corps_with_third_party'
+      THEN RETURN 's.corp_num::text';
+    WHEN 'bar_corps' THEN RETURN 's.identifier::text';
+    ELSE RETURN NULL;
+  END CASE;
 END;
 $$;
 
@@ -1526,28 +2232,90 @@ CREATE OR REPLACE FUNCTION delta_ctl.selection_filter_expr(p_table text)
 RETURNS text
 LANGUAGE plpgsql
 AS $$
+DECLARE
+  v_corp text;
 BEGIN
-  PERFORM delta_ctl.assert_table_name(p_table);
+  PERFORM 1 FROM delta_ctl.only_corps LIMIT 1;
+  IF NOT FOUND THEN RETURN 'true'; END IF;
+  v_corp := delta_ctl.corp_col_expr(p_table);
+  IF v_corp IS NULL THEN RETURN 'true'; END IF;
+  RETURN format('EXISTS (SELECT 1 FROM delta_ctl.only_corps oc WHERE oc.corp_num = (%s))', v_corp);
+END;
+$$;
 
-  IF NOT EXISTS (SELECT 1 FROM delta_ctl.only_corps) THEN
-    RETURN 'true';
-  END IF;
+CREATE OR REPLACE FUNCTION delta_ctl.verify_row_selection()
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  r record;
+  v_cfg delta_ctl.table_config%ROWTYPE;
+  v_condition text;
+  v_corp text;
+  v_filter text;
+  v_matched bigint;
+  v_problem text;
+  v_dups boolean;
+BEGIN
+  TRUNCATE delta_ctl.selection_diagnostics;
+  FOR r IN
+    SELECT *, CASE WHEN kind = 'corp' THEN corp_num
+      WHEN is_range THEN value_from || '-' || value_to ELSE value_from::text END AS selector
+    FROM delta_ctl.row_selection
+    ORDER BY source_line, table_name, class, mode, kind, value_from, corp_num
+  LOOP
+    SELECT * INTO v_cfg FROM delta_ctl.table_config WHERE table_name = r.table_name;
+    v_problem := NULL;
+    v_matched := NULL;
+    IF NOT EXISTS (SELECT 1 FROM delta_ctl.selection s
+                   WHERE s.table_name = r.table_name AND s.class = r.class) THEN
+      v_problem := 'CLASS_NOT_INCLUDED';
+    ELSIF NOT delta_ctl.stage_table_exists(r.table_name)
+       OR to_regclass(format('delta_diff.%I', delta_ctl.class_table_name(r.table_name))) IS NULL THEN
+      v_matched := 0;
+      v_problem := 'NO_MATCH';
+    ELSIF r.kind = 'id' AND v_cfg.pk_col IS NULL THEN
+      v_problem := 'KIND_UNSUPPORTED';
+    ELSIF r.kind = 'corp' AND delta_ctl.corp_col_expr(r.table_name) IS NULL THEN
+      v_problem := 'KIND_UNSUPPORTED';
+    END IF;
 
-  CASE p_table
-    WHEN delta_ctl.auth_component_op_table()
-      THEN
-        IF delta_ctl.stage_table_exists(delta_ctl.auth_processing_table()) THEN
-          RETURN 'EXISTS (SELECT 1 FROM delta_stage.auth_processing ap JOIN delta_ctl.only_corps oc ON oc.corp_num = ap.corp_num::text WHERE ap.id = s.auth_processing_id)';
-        END IF;
-        RETURN delta_ctl.false_expr();
-    WHEN 'corp_processing', 'colin_tracking', delta_ctl.auth_processing_table(),
-         'mig_corp_batch', 'mig_corp_account', 'exclude_corps', 'corps_with_third_party'
-      THEN RETURN 'EXISTS (SELECT 1 FROM delta_ctl.only_corps oc WHERE oc.corp_num = s.corp_num::text)';
-    WHEN 'bar_corps'
-      THEN RETURN 'EXISTS (SELECT 1 FROM delta_ctl.only_corps oc WHERE oc.corp_num = s.identifier::text)';
-    ELSE
-      RETURN 'true';
-  END CASE;
+    IF v_problem IS NULL AND r.kind = 'id' THEN
+      EXECUTE format('SELECT EXISTS (SELECT 1 FROM delta_stage.%I GROUP BY %I HAVING count(*) > 1)',
+        r.table_name, v_cfg.pk_col) INTO v_dups;
+      IF v_dups THEN v_problem := 'DUP_STAGED_PK'; END IF;
+    END IF;
+
+    IF v_problem IS NULL THEN
+      IF r.kind = 'id' THEN
+        v_condition := format('s.%I::bigint BETWEEN $2 AND $3', v_cfg.pk_col);
+      ELSIF r.kind = 'row' THEN
+        v_condition := 's._delta_row_id BETWEEN $2 AND $3';
+      ELSE
+        v_corp := delta_ctl.corp_col_expr(r.table_name);
+        v_condition := format('(%s) = $4', v_corp);
+      END IF;
+      v_filter := delta_ctl.selection_filter_expr(r.table_name);
+      EXECUTE format($fmt$
+        SELECT count(*)
+        FROM delta_diff.%I d
+        JOIN delta_stage.%I s ON s._delta_row_id = d._delta_row_id
+        WHERE d.class = $1 AND (%s) AND (%s)
+      $fmt$, delta_ctl.class_table_name(r.table_name), r.table_name, v_condition, v_filter)
+      INTO v_matched USING r.class, r.value_from, r.value_to, r.corp_num;
+      IF v_matched = 0 THEN
+        v_problem := 'NO_MATCH';
+      ELSIF r.kind IN ('id', 'row') AND NOT r.is_range AND v_matched > 1 THEN
+        v_problem := 'SCALAR_MULTI_MATCH';
+      END IF;
+    END IF;
+
+    INSERT INTO delta_ctl.selection_diagnostics(
+      table_name, class, mode, kind, selector, source_line, matched, problem)
+    VALUES (r.table_name, r.class, r.mode, r.kind, r.selector,
+            r.source_line, v_matched, v_problem);
+  END LOOP;
+
 END;
 $$;
 
@@ -1558,9 +2326,15 @@ AS $$
 DECLARE
   r record;
   v_filter text;
+  v_corp text;
+  v_match text;
 BEGIN
+  PERFORM delta_ctl.verify_row_selection();
+  IF EXISTS (SELECT 1 FROM delta_ctl.selection_diagnostics WHERE problem IS NOT NULL) THEN
+    RAISE EXCEPTION 'SELECTION_INVALID: row selectors failed validation; query delta_ctl.selection_diagnostics';
+  END IF;
   FOR r IN
-    SELECT table_name
+    SELECT table_name, pk_col
     FROM delta_ctl.table_config
     WHERE delta_ctl.stage_table_exists(table_name)
     ORDER BY load_phase, table_name
@@ -1579,6 +2353,43 @@ BEGIN
         )
         AND (%s)
     $fmt$, delta_ctl.class_table_name(r.table_name), r.table_name, r.table_name, v_filter);
+
+    IF EXISTS (SELECT 1 FROM delta_ctl.row_selection rs WHERE rs.table_name = r.table_name) THEN
+      v_corp := delta_ctl.corp_col_expr(r.table_name);
+      v_match := '('
+        || CASE WHEN r.pk_col IS NULL THEN 'false'
+             ELSE format('(rs.kind = ''id'' AND s.%I::bigint BETWEEN rs.value_from AND rs.value_to)', r.pk_col) END
+        || ' OR (rs.kind = ''row'' AND s._delta_row_id BETWEEN rs.value_from AND rs.value_to)'
+        || CASE WHEN v_corp IS NULL THEN ''
+             ELSE format(' OR (rs.kind = ''corp'' AND (%s) = rs.corp_num)', v_corp) END
+        || ')';
+      EXECUTE format($fmt$
+        UPDATE delta_diff.%I d
+        SET selected = false
+        FROM delta_stage.%I s
+        WHERE d._delta_row_id = s._delta_row_id
+          AND d.selected
+          AND (
+            (
+              EXISTS (
+                SELECT 1 FROM delta_ctl.row_selection rs
+                WHERE rs.table_name = %L AND rs.class = d.class AND rs.mode = 'include'
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM delta_ctl.row_selection rs
+                WHERE rs.table_name = %L AND rs.class = d.class AND rs.mode = 'include'
+                  AND %s
+              )
+            )
+            OR EXISTS (
+              SELECT 1 FROM delta_ctl.row_selection rs
+              WHERE rs.table_name = %L AND rs.class = d.class AND rs.mode = 'exclude'
+                AND %s
+            )
+          )
+      $fmt$, delta_ctl.class_table_name(r.table_name), r.table_name,
+        r.table_name, r.table_name, v_match, r.table_name, v_match);
+    END IF;
   END LOOP;
 END;
 $$;
@@ -1612,6 +2423,7 @@ DECLARE
   p record;
   v_parent_pk text;
   v_count bigint;
+  v_sample_ids text;
 BEGIN
   TRUNCATE delta_ctl.dependency_violations;
 
@@ -1633,34 +2445,37 @@ BEGIN
       END IF;
 
       EXECUTE format($fmt$
-        SELECT count(*)
-        FROM delta_diff.%I cd
-        JOIN delta_stage.%I cs ON cs._delta_row_id = cd._delta_row_id
-        LEFT JOIN delta_stage.%I ps ON ps.%I = cs.%I
-        LEFT JOIN delta_diff.%I pd ON pd._delta_row_id = ps._delta_row_id
-        WHERE cd.selected
-          AND cs.%I IS NOT NULL
-          AND (
-            pd._delta_row_id IS NULL
-            OR pd.class IN ('BLOCKED_FK', 'AMBIGUOUS_NK', 'BLOCKED_PARENT')
-            OR (pd.class = 'NEW' AND NOT pd.selected)
-          )
+        WITH violations AS (
+          SELECT COALESCE(cd.staged_pk::text, cd._delta_row_id::text) AS sample_id
+          FROM delta_diff.%I cd
+          JOIN delta_stage.%I cs ON cs._delta_row_id = cd._delta_row_id
+          LEFT JOIN delta_stage.%I ps ON ps.%I = cs.%I
+          LEFT JOIN delta_diff.%I pd ON pd._delta_row_id = ps._delta_row_id
+          WHERE cd.selected
+            AND cs.%I IS NOT NULL
+            AND (
+              pd._delta_row_id IS NULL
+              OR pd.class IN ('BLOCKED_FK', 'AMBIGUOUS_NK', 'BLOCKED_PARENT')
+              OR (pd.class = 'NEW' AND NOT pd.selected)
+            )
+        )
+        SELECT count(*),
+               (SELECT string_agg(sample_id, ',' ORDER BY sample_id)
+                FROM (SELECT sample_id FROM violations ORDER BY sample_id LIMIT 10) q)
+        FROM violations
       $fmt$, delta_ctl.class_table_name(c.table_name), c.table_name, p.parent_table, v_parent_pk, p.fk_col,
             delta_ctl.class_table_name(p.parent_table), p.fk_col)
-      INTO v_count;
+      INTO v_count, v_sample_ids;
 
       IF v_count > 0 THEN
-        INSERT INTO delta_ctl.dependency_violations(child_table, parent_table, reason, row_count)
+        INSERT INTO delta_ctl.dependency_violations(child_table, parent_table, reason, row_count, sample_ids)
         VALUES (c.table_name, p.parent_table,
                 format('selected child rows require selected/non-blocked parent via %I', p.fk_col),
-                v_count);
+                v_count, v_sample_ids);
       END IF;
     END LOOP;
   END LOOP;
 
-  IF EXISTS (SELECT 1 FROM delta_ctl.dependency_violations) THEN
-    RAISE EXCEPTION 'SELECTION_INVALID: selected child rows have blocked, missing, or unselected NEW preserved parents. Query delta_ctl.dependency_violations for details.';
-  END IF;
 END;
 $$;
 
@@ -1892,6 +2707,9 @@ BEGIN
   PERFORM delta_ctl.run_preview_classification();
   PERFORM delta_ctl.stamp_selection();
   PERFORM delta_ctl.validate_dependencies();
+  IF EXISTS (SELECT 1 FROM delta_ctl.dependency_violations) THEN
+    RAISE EXCEPTION 'SELECTION_INVALID: selected child rows have blocked, missing, or unselected NEW preserved parents. Query delta_ctl.dependency_violations for details.';
+  END IF;
 
   TRUNCATE delta_ctl.apply_counts;
   TRUNCATE delta_ctl.touched_tables;
@@ -1923,7 +2741,7 @@ BEGIN
 
   RETURN NEXT 'Selected counts';
   RETURN NEXT '---------------';
-  RETURN NEXT format(c_summary_row_format, c_table_hdr, 'class', 'selected');
+  RETURN NEXT format(c_summary_row_format, c_table_hdr, delta_ctl.class_header(), 'selected');
   FOR r IN
     SELECT table_name, class, row_count, load_phase
     FROM delta_ctl.selected_counts()
@@ -1935,7 +2753,7 @@ BEGIN
   RETURN NEXT '';
   RETURN NEXT 'Affected counts';
   RETURN NEXT '---------------';
-  RETURN NEXT format('%-36s %-20s %-8s %10s %10s', c_table_hdr, 'class', 'action', 'expected', 'affected');
+  RETURN NEXT format('%-36s %-20s %-8s %10s %10s', c_table_hdr, delta_ctl.class_header(), 'action', 'expected', 'affected');
   FOR r IN
     SELECT table_name, class, action, expected_count, affected_count
     FROM delta_ctl.apply_counts
