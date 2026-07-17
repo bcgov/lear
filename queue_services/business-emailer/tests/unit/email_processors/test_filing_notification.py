@@ -647,8 +647,8 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'dissolution',
         'voluntary',
         'PAID',
-        'Your dissolution has been filed',
-        'test business - Dissolution Filed',
+        'Your voluntary dissolution application has been filed',
+        'test business - Voluntary Dissolution Application Filed',
     ),
     (
         'dissolution',
@@ -679,6 +679,32 @@ def test_maintenance_filing_fe_renders_body_and_subject(app, session, mock_pdfs,
         # what-happens-next lists the documents sent once the dissolution is effective
         assert 'Once the dissolution is effective on' in body
         assert 'Certificate of Dissolution' in body
+
+
+@pytest.mark.parametrize(['status', 'tax_id', 'shows_bn'], [
+    ('COMPLETED', None, False),
+    ('COMPLETED', '123456789BC0001', True),
+    ('PAID', None, False),
+])
+def test_dissolution_business_number_line(app, session, mock_pdfs, mock_recipients, mock_user_email,
+                                          mock_auth_recipient, status, tax_id, shows_bn):
+    """Assert dissolution emails only show the business number line when a bn exists (#32963)."""
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, 'dissolution', 'voluntary')
+    if status == 'PAID':
+        make_future_effective(filing)
+    business = Business.find_by_identifier('BC1234567')
+    business.tax_id = tax_id
+    business.save()
+    filing.save()
+
+    email = process_filing(filing, 'dissolution', status)
+
+    assert email is not None
+    body = email['content']['body']
+    if shows_bn:
+        assert '**Business Number:** 123456789 BC0001' in body
+    else:
+        assert '**Business Number:**' not in body
 
 
 # ---------------------------------------------------------------------------
