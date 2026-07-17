@@ -220,17 +220,17 @@ def extract_pull_flow(
         raise RuntimeError(f'Generator exited with code {result.returncode}')
     print(f'generator completed successfully')
     
-    if run_dbschemacli:
-        master_script = _resolve_master_script_path(out=out)
-        run_result = run_dbschemacli_task(
-            master_script=str(master_script),
-            dbschemacli_cmd=dbschemacli_cmd,
-        )
-        if run_result.returncode != 0:
-            raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
+    # if run_dbschemacli:
+    #     master_script = _resolve_master_script_path(out=out)
+    #     run_result = run_dbschemacli_task(
+    #         master_script=str(master_script),
+    #         dbschemacli_cmd=dbschemacli_cmd,
+    #     )
+    #     if run_result.returncode != 0:
+    #         raise RuntimeError(f'DbSchemaCLI exited with code {run_result.returncode}')
     
-    print('Running Unfreezing Corps.......')
-    run_unfreeze_identifiers()
+    # print('Running Unfreezing Corps.......')
+    # run_unfreeze_identifiers()
     
     
 if __name__ == '__main__':

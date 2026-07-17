@@ -6,4 +6,4 @@ pg8000==1.31.4
 
 cloud-sql-connector @  git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/cloud-sql-connector
 
-common @  git+https://github.com/bcgov/lear@main#subdirectory=data-tool/flows/common
+common @  git+https://github.com/bcgov/lear@main#subdirectory=data-tool/flows
