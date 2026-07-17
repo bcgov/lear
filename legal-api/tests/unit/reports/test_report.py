@@ -287,6 +287,49 @@ def test_special_resolution_sourced_from_dissolution_filing(session):
     assert filing_data['specialResolution']['signingDate'] == 'January 10, 2021'
 
 
+def test_affidavit_static_report_is_certified(session, mocker):
+    """Assert the uploaded coop dissolution affidavit is served with the registrar's certification stamp (#32963)."""
+    import io as _io
+
+    from pypdf import PdfReader
+    from reportlab.lib.pagesizes import letter as _letter
+    from reportlab.pdfgen import canvas as _canvas
+
+    from business_model.models import Document
+
+    # a plain uploaded affidavit pdf (no stamp)
+    buffer = _io.BytesIO()
+    can = _canvas.Canvas(buffer, pagesize=_letter)
+    can.drawString(100, 700, 'Affidavit body')
+    can.showPage()
+    can.save()
+    buffer.seek(0)
+
+    business = factory_business(identifier='CP1234567', entity_type='CP')
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['identifier'] = 'CP1234567'
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing = factory_completed_filing(business, filing_json, filing_date=LegislationDatetime.now())
+
+    document = Document(business_id=business.id, filing_id=filing.id, type='affidavit',
+                        file_key='affidavit.pdf', file_name='affidavit.pdf')
+    document.save()
+
+    minio_response = MagicMock()
+    minio_response.data = buffer.getvalue()
+    minio_response.status = 200
+    mocker.patch('legal_api.services.MinioService.get_file', return_value=minio_response)
+
+    response = Report(filing).get_pdf('affidavit')
+
+    stamped = PdfReader(_io.BytesIO(response.get_data()))
+    text = stamped.get_page(0).extract_text()
+    assert 'Filed on' in text
+    assert 'CP1234567' in text
+
+
 def test_set_directors_flags_address_changed_without_officer_id(session, mocker):
     """Assert addressChanged flags are set using previous filing lookup by name."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
