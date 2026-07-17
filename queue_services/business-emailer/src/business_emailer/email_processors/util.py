@@ -74,11 +74,11 @@ FILING_ATTACHMENTS = {
             "extraPdfTypes": ["certificateOfNameCorrection","certifiedRules","certifiedMemorandum"]
         },
         "dissolution-voluntary": {
-            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Affidavit","Special Resolution","Receipt"],
+            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Certified Affidavit","Certified Special Resolution","Receipt"],
             "extraPdfTypes": ["certificateOfDissolution","affidavit","specialResolution"],
         },
         "dissolution-administrative": {
-            "attachments": ["Dissolution Application","Affidavit","Special Resolution","Receipt"],
+            "attachments": ["Dissolution Application","Certified Affidavit","Certified Special Resolution","Receipt"],
             "extraPdfTypes": ["affidavit","specialResolution"],
         },
         "incorporationApplication": {

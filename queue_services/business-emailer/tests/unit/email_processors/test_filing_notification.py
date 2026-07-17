@@ -495,8 +495,8 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     ('dissolution', 'voluntary', Business.LegalTypes.COOP.value, 'COMPLETED', False, False, [
         {'fileName': 'Voluntary Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certificate of Dissolution.pdf', 'content': 'pdf_content_cod', 'order': '2'},
-        {'fileName': 'Affidavit.pdf', 'content': 'pdf_content_affidavit', 'order': '3'},
-        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_sr', 'order': '4'},
+        {'fileName': 'Certified Affidavit.pdf', 'content': 'pdf_content_affidavit', 'order': '3'},
+        {'fileName': 'Certified Special Resolution.pdf', 'content': 'pdf_content_sr', 'order': '4'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '5'},
     ]),
     ('dissolution', 'voluntary', Business.LegalTypes.SOLE_PROP.value, 'COMPLETED', False, False, [

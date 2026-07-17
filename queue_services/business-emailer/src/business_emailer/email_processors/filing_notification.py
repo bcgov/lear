@@ -67,6 +67,16 @@ def _get_dissolution_display_name(filing: Filing, filing_type: str, default: str
     }.get(filing.filing_sub_type, default)
 
 
+def _apply_certified_coop_dissolution_names(pdfs: list[dict], filing_type: str, legal_type: str) -> list[dict]:
+    """Rename coop dissolution attachments to their certified titles."""
+    if filing_type == "dissolution" and legal_type == Business.LegalTypes.COOP.value:
+        certified_names = {"Affidavit.pdf": "Certified Affidavit.pdf",
+                           "Special Resolution.pdf": "Certified Special Resolution.pdf"}
+        for pdf in pdfs:
+            pdf["fileName"] = certified_names.get(pdf["fileName"], pdf["fileName"])
+    return pdfs
+
+
 def _get_additional_recipients(filing: Filing, token: str) -> str | None:
     """Get additional recipients for a filing type."""
     submitter_recipient_filings = ["alteration", "changeOfRegistration", "dissolution", "specialResolution"]
@@ -186,7 +196,8 @@ def process(email_info: dict, token: str) -> dict | None:
     # attachments and future attachments
     full_attachments_list, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
     filing_attachment_name = full_attachments_list[0] if full_attachments_list else None
-    pdfs = get_pdfs(token, business, filing, extra_pdf_types, filing_attachment_name)
+    pdfs = _apply_certified_coop_dissolution_names(
+        get_pdfs(token, business, filing, extra_pdf_types, filing_attachment_name), filing_type, legal_type)
 
     # render template with vars
     attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
