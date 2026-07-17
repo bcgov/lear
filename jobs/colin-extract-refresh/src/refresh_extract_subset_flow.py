@@ -9,19 +9,15 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from datetime import datetime
 from config import get_named_config
-from common.colin_queries import get_identifiers_per_batch, get_updated_identifiers_for_batch, unfreeze_identifiers
-from common.query_utils import colin_oracle_init, get_config
-from common.query_utils import corpnum_to_oracle_ids, get_cutoff_timestamp_query, get_fallout_corp_nums, prune_candidates_from_account, prune_candidates_from_batch, prune_candidates_from_cp
+from checks.utils import colin_oracle_init, get_fallout_corp_nums, get_cutoff_timestamp_query, unfreeze_identifiers, get_identifiers_per_batch, corpnum_to_oracle_ids, get_updated_identifiers_for_batch
+
 
 _DEFAULT_TARGET_CONNECTION = get_named_config().TARGET_CONNECTION
 _DEFAULT_TARGET_SCHEMA = get_named_config().TARGET_SCHEMA
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_SCRIPT_PATH = _REPO_ROOT / 'data-tool' / 'scripts' / 'generate_cprd_subset_extract.py'
-_GENERATED_DIR = _REPO_ROOT / 'data-tool' / 'scripts' / 'generated'
-_DEFAULT_DDL = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_ddl'
+_SCRIPT_PATH = _REPO_ROOT / 'colin-extract-refresh' / 'src' / 'generate_cprd_subset_extract.py'
+_GENERATED_DIR = _REPO_ROOT / 'colin-extract-refresh' / 'src' / 'generated'
 _SUBSET = _GENERATED_DIR / 'subset_refresh.sql'
-_REFRESH_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'refresh_colin_extract_views.sh'
-_BUILD_VIEWS_SCRIPT = _REPO_ROOT / 'data-tool' / 'scripts' / 'colin_corps_extract_postgres_views_ddl'
 
 
 def _resolve_master_script_path(out: str | None) -> Path:
@@ -32,11 +28,6 @@ def _resolve_master_script_path(out: str | None) -> Path:
         return p.resolve()
     return (_REPO_ROOT / p).resolve()
 
-def _run_cmd(argv: list[str], env: dict[str, str] | None = None) -> None:
-    r = subprocess.run(argv, cwd=str(_REPO_ROOT), capture_output=False, text=True, env=env)
-    if r.returncode != 0:
-        raise RuntimeError(f'command failed ({r.returncode}): {" ".join(argv)}')
-    
 def require_file(path: str | Path, description: str) -> Path:
     """File Not Found Error"""
     resolved = Path(path).expanduser().resolve()
@@ -45,33 +36,6 @@ def require_file(path: str | Path, description: str) -> Path:
     return resolved
 
 
-def _reset_extract_postgres_db() -> None:
-    cfg = get_named_config()
-    dbname = cfg.DB_NAME_COLIN_MIGR
-    host = cfg.DB_HOST_COLIN_MIGR
-    port = str(cfg.DB_PORT_COLIN_MIGR)
-    user = cfg.DB_USER_COLIN_MIGR
-    password = cfg.DB_PASSWORD_COLIN_MIGR
-    
-    require_file(_DEFAULT_DDL, 'Extract DDL File')
-
-    pg_flags = ['-h', host, '-p', str(port), '-U', user]
-    run_env = dict(os.environ)
-    if password and 'PGPASSWORD' not in run_env:
-        run_env['PGPASSWORD'] = password
-    safe_db = str(dbname).replace("'", "''")
-    terminate_sql = (
-        "SELECT pg_terminate_backend(pg_stat_activity.pid) "
-        "FROM pg_stat_activity "
-        f"WHERE datname = '{safe_db}' AND pid <> pg_backend_pid();"
-    )
-    _run_cmd(['psql', *pg_flags, '-d', 'postgres', '-c', terminate_sql ], env=run_env)
-    _run_cmd(['dropdb', *pg_flags, '--maintenance-db=postgres', '--if-exists', dbname ], env=run_env)
-    _run_cmd(['createdb', *pg_flags, '--maintenance-db=postgres', '-T', 'template0', dbname ], env=run_env)
-    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_DEFAULT_DDL) ], env=run_env)
-    _run_cmd(['psql', *pg_flags, '-d', dbname, '-v', 'ON_ERROR_STOP=1', '-f', str(_BUILD_VIEWS_SCRIPT) ], env=run_env)
-
-@task(name='Get-Fallen-Out-Identifiers', cache_policy=NO_CACHE)
 def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
     """
     Get updated corp nums from colin with cutoff timestamp
@@ -85,25 +49,6 @@ def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
         rows = [str(row).strip() for row in result]
     return rows
 
-@task(name='Prune-Fallen-Out-Identifiers', cache_policy=NO_CACHE)
-def prune_fallen_identifiers(fallenout_corp_nums: list) -> list[dict]:
-    """
-    Get updated corp nums from colin with cutoff timestamp
-    """
-    if not fallenout_corp_nums:
-        print(f"No fallout corps to prune")
-        return
-    cfg = get_named_config()
-    fallen_out_identifiers_list = get_fallen_identifiers(fallenout_corp_nums)
-    cp_query = prune_candidates_from_cp(fallen_out_identifiers_list, target_schema=cfg.TARGET_SCHEMA)
-    batch_query = prune_candidates_from_batch(fallen_out_identifiers_list, target_schema=cfg.TARGET_SCHEMA)
-    account_query = prune_candidates_from_account(fallen_out_identifiers_list, target_schema=cfg.TARGET_SCHEMA)
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
-        prune_cp = conn.execute(text(cp_query))
-        prune_batch = conn.execute(text(batch_query))
-        prune_account = conn.execute(text(account_query))
-    print(f"Pruned corp_processing={prune_cp.rowcount}, mig_corp_batch={prune_batch.rowcount}, mig_corp_account={prune_account.rowcount}")
-
 def get_cuttoff_timestamp() -> datetime:
 
     cfg = get_named_config()
@@ -113,9 +58,6 @@ def get_cuttoff_timestamp() -> datetime:
     print(f"cuttoff timestamp is {cuttoff_timestamp_result}")
     return cuttoff_timestamp_result
     
-
-def cleanup_extract_postgres_db() -> None:
-    _reset_extract_postgres_db()
 
 def run_unfreeze_identifiers() -> None:
     cfg = get_named_config()
@@ -207,30 +149,6 @@ def run_dbschemacli_task(master_script: str, dbschemacli_cmd: str = 'dbschemacli
         text=True,
     )
 
-def run_refresh_views(mode: str = 'refresh', targets: str =  'all') -> subprocess.CompletedProcess:
-    cfg = get_named_config()
-    script = require_file(_REFRESH_VIEWS_SCRIPT, 'refresh_colin_extract_views.sh')
-    argv = [
-        str(script),
-        '--mode', mode,
-        '--targets', targets,
-        '--db', cfg.DB_NAME_COLIN_MIGR,
-        '--host', cfg.DB_HOST_COLIN_MIGR,
-        '--port', str(cfg.DB_PORT_COLIN_MIGR),
-        '--user', cfg.DB_USER_COLIN_MIGR
-    ]
-    run_env = dict(os.environ)
-    if cfg.DB_PASSWORD_COLIN_MIGR and 'PGPASSWORD' not in run_env:
-        run_env['PGPASSWORD'] = cfg.DB_PASSWORD_COLIN_MIGR
-    print(f'Running: {" ".join(argv)}')
-    return subprocess.run(argv,
-                          cwd=str(_REPO_ROOT),
-                          capture_output=False,
-                          text=True,
-                          env=run_env
-                          )
-
-
 def extract_pull_flow(
     corp_file: str,
     mode: str = 'load',
@@ -241,8 +159,6 @@ def extract_pull_flow(
     out: str | None=None,
     run_dbschemacli: bool = False,
     dbschemacli_cmd: str = 'dbschemacli',
-    refresh_views: bool = True,
-    reset_extract_postgres: bool = True,
     include_cp: bool = False,
     target_connection: str = _DEFAULT_TARGET_CONNECTION,
     target_schema: str = _DEFAULT_TARGET_SCHEMA,
@@ -251,15 +167,10 @@ def extract_pull_flow(
     """
     Generate files
     """
-    if mode == 'refresh':
-        reset_extract_postgres = False
-        print('Running in refresh mode: skipping Postgres DB reset')
-    if reset_extract_postgres:
-        cleanup_extract_postgres_db()
 
     cutoff = get_cuttoff_timestamp()
 
-    config = get_config()
+    config = get_named_config()
     colin_oracle_engine = colin_oracle_init(config)
     # Get Identifiers
     feed_path: Path | None = None
@@ -334,9 +245,7 @@ if __name__ == '__main__':
     p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
     p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_false')
-    p.add_argument('--refresh-views', action='store_false')
     p.add_argument('--dbschemacli-cmd', default='dbschemacli')
-    p.add_argument('--reset-extract-postgres', action='store_false')
     p.add_argument('--target-connection', default=_DEFAULT_TARGET_CONNECTION)
     p.add_argument('--target-schema', default=_DEFAULT_TARGET_SCHEMA)
     extract_pull_flow(**vars(p.parse_args()))
