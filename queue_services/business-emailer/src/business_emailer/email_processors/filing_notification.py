@@ -152,7 +152,9 @@ def process(email_info: dict, token: str) -> dict | None:
         business_identifier = NOT_AVAILABLE
 
     show_effective_date = filing.is_future_effective
-    business_name = business.get("legalName") or NOT_AVAILABLE
+
+    # businessName is added for FIRMs when legalName is set to the proprietor name or list of partners
+    business_name = business.get("businessName") or business.get("legalName") or NOT_AVAILABLE
     filing_name_short = FILING_TITLE_SHORT.get(filing_type)
     legal_type_key = get_legal_type_key(legal_type)
     business_description = "Business"
@@ -173,7 +175,7 @@ def process(email_info: dict, token: str) -> dict | None:
     # attachments and future attachments
     full_attachments_list, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
     filing_attachment_name = full_attachments_list[0] if full_attachments_list else None
-    pdfs = get_pdfs(token, business, filing, leg_tmz_filing_date, leg_tmz_effective_date, extra_pdf_types, filing_attachment_name)
+    pdfs = get_pdfs(token, business, filing, extra_pdf_types, filing_attachment_name)
 
     # render template with vars
     attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
