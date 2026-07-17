@@ -1,4 +1,7 @@
 Delta restore preview
 Class counts
+Detail artifacts
+Viewing tips
+--mode validate
 UNCHANGED
 selection.conf

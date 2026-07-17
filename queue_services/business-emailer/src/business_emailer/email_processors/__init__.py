@@ -231,7 +231,7 @@ def get_filing_document(business_identifier, filing_id, document_type, token, re
         f'/documents/{document_type}', headers=headers, params=params
     )
 
-    if document.status_code != HTTPStatus.OK:
+    if document.status_code not in [HTTPStatus.OK, HTTPStatus.CREATED]:
         current_app.logger.error("Failed to get %s pdf for filing: %s", document_type, filing_id)
         return None
     try:
@@ -299,56 +299,10 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     return attach_order
 
 
-def _add_receipt_pdf(  # noqa: PLR0913
-    pdfs: list[dict],
-    attach_order: int,
-    token: str,
-    business: dict,
-    filing: Filing,
-    filing_date_time: str,
-    effective_date: str
-):
-    """Add the filing receipt pdf to the pdfs list."""
-    headers = {
-        "Accept": "application/pdf",
-        "Authorization": f"Bearer {token}"
-    }
-    if not (corp_name := business.get("legalName")):  # pylint: disable=superfluous-parens
-        legal_type = business.get("legalType")
-        corp_name = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
-
-    receipt = requests.post(
-        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-        json={
-            "corpName": corp_name,
-            "filingDateTime": filing_date_time,
-            "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
-            "filingIdentifier": str(filing.id),
-            "businessNumber": business.get("taxId", "")
-        },
-        headers=headers
-    )
-    if receipt.status_code != HTTPStatus.CREATED:
-        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
-    else:
-        receipt_encoded = base64.b64encode(receipt.content)
-        pdfs.append(
-            {
-                "fileName": "Receipt.pdf",
-                "fileBytes": receipt_encoded.decode("utf-8"),
-                "fileUrl": "",
-                "attachOrder": str(attach_order)
-            }
-        )
-        return attach_order + 1
-
-
 def get_pdfs(  # noqa: PLR0913
     token: str,
     business: dict,
     filing: Filing,
-    filing_date_time: str,
-    effective_date: str,
     extra_pdf_type_list: list[str],
     filing_attachment_name: str | None,
     regenerate=False
@@ -362,5 +316,5 @@ def get_pdfs(  # noqa: PLR0913
     for pdf_type in extra_pdf_type_list:
         attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)
     # add receipt
-    attach_order = _add_receipt_pdf(pdfs, attach_order, token, business, filing, filing_date_time, effective_date)
+    attach_order = _add_filing_document_pdf(pdfs, attach_order, "receipt", token, business, filing, regenerate=regenerate)
     return pdfs

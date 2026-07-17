@@ -62,6 +62,35 @@ CREATE TABLE delta_ctl.selection (
   PRIMARY KEY (table_name, class)
 );
 
+CREATE TABLE delta_ctl.row_selection (
+  table_name text NOT NULL,
+  class text NOT NULL,
+  mode text NOT NULL CHECK (mode IN ('include', 'exclude')),
+  kind text NOT NULL CHECK (kind IN ('id', 'row', 'corp')),
+  value_from bigint,
+  value_to bigint,
+  corp_num text,
+  is_range boolean NOT NULL DEFAULT false,
+  source_line int NOT NULL,
+  CHECK (
+    (kind IN ('id', 'row') AND value_from IS NOT NULL AND value_to IS NOT NULL AND corp_num IS NULL)
+    OR (kind = 'corp' AND value_from IS NULL AND value_to IS NULL AND corp_num IS NOT NULL)
+  )
+);
+CREATE INDEX row_selection_lookup_idx
+  ON delta_ctl.row_selection (table_name, class, mode, kind);
+
+CREATE TABLE delta_ctl.selection_diagnostics (
+  table_name text,
+  class text,
+  mode text,
+  kind text,
+  selector text,
+  source_line int,
+  matched bigint,
+  problem text
+);
+
 CREATE TABLE delta_ctl.only_corps (
   corp_num text PRIMARY KEY
 );
@@ -70,7 +99,8 @@ CREATE TABLE delta_ctl.dependency_violations (
   child_table text NOT NULL,
   parent_table text NOT NULL,
   reason text NOT NULL,
-  row_count bigint NOT NULL
+  row_count bigint NOT NULL,
+  sample_ids text
 );
 
 CREATE TABLE delta_ctl.apply_counts (
