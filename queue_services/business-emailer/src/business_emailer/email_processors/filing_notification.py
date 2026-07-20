@@ -57,6 +57,16 @@ def _get_additional_info(filing: Filing) -> dict:
     return additional_info
 
 
+def _get_dissolution_display_name(filing: Filing, filing_type: str, default: str) -> str | None:
+    """Return the dissolution sub-type specific display name used in the subject and email title."""
+    if filing_type != "dissolution":
+        return None
+    return {
+        "voluntary": "Voluntary Dissolution Application",
+        "administrative": "Dissolution Application",
+    }.get(filing.filing_sub_type, default)
+
+
 def _get_additional_recipients(filing: Filing, token: str) -> str | None:
     """Get additional recipients for a filing type."""
     submitter_recipient_filings = ["alteration", "changeOfRegistration", "dissolution", "specialResolution"]
@@ -169,7 +179,8 @@ def process(email_info: dict, token: str) -> dict | None:
     # get template and fill in parts
     filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
 
-    if not business_number and legal_type != Business.LegalTypes.COOP.value:
+    # dissolution emails must not show a placeholder business number line when there is no bn
+    if not business_number and legal_type != Business.LegalTypes.COOP.value and filing_type != "dissolution":
         business_number = NOT_AVAILABLE
 
     # attachments and future attachments
@@ -194,6 +205,7 @@ def process(email_info: dict, token: str) -> dict | None:
         business_number=business_number,
         filing_name=filing_name,
         filing_name_short=filing_name_short,
+        dissolution_display_name=_get_dissolution_display_name(filing, filing_type, filing_name),
         future_attachments_list=full_attachments_list,
         office_name=OFFICE_NAME.get(legal_type_key),
         number_description="Registration" if legal_type_key == "FIRM" else "Incorporation",
@@ -224,7 +236,9 @@ def process(email_info: dict, token: str) -> dict | None:
         # This filing has different subjects based on the filing sub type
         short_filing_name = short_filing_name.get(filing.filing_sub_type) or filing_name
 
-    subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, short_filing_name)
+    subject = get_subject(is_future_effective_paid, business_name, legal_type,
+                          _get_dissolution_display_name(filing, filing_type, filing_name) or filing_name,
+                          short_filing_name)
 
     return {
         "recipients": recipients,

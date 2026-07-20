@@ -71,7 +71,8 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
         original_filing = factory_completed_filing(business, original_filing_json)
         filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
     if report_type == 'specialResolution' and filing_type != 'specialResolution':
-        filing_json['specialResolution'] = SPECIAL_RESOLUTION
+        # coop dissolutions carry the resolution in a specialResolution section under the filing
+        filing_json['filing']['specialResolution'] = SPECIAL_RESOLUTION
     filing = factory_completed_filing(business, filing_json)
 
     report = Report(filing)
@@ -253,6 +254,37 @@ def test_get_pdf(session, mocker, test_name, identifier, entity_type, report_typ
     assert filename
     template = report._get_template()
     assert template
+
+
+def test_special_resolution_sourced_from_dissolution_filing(session):
+    """Assert the special resolution report for a coop dissolution sources the resolution from the specialResolution section (#32963).
+
+    Before the fix the resolution was read from the (empty) correction section, leaving the resolution/signing
+    dates unformatted and the resolution content missing.
+    """
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type='CP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing_json['filing']['dissolution']['dissolutionType'] = 'voluntary'
+    filing_json['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'specialResolution'
+
+    filing_data = copy.deepcopy(filing.filing_json['filing'])
+    filing_data['header']['filingId'] = filing.id
+    report._format_special_resolution(filing_data)
+
+    # dates come from the specialResolution section and are formatted (not left as raw ISO strings)
+    assert filing_data['specialResolution']['resolutionDate'] == 'January 10, 2021'
+    assert filing_data['specialResolution']['signingDate'] == 'January 10, 2021'
 
 
 def test_set_directors_flags_address_changed_without_officer_id(session, mocker):

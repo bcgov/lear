@@ -1,4 +1,4 @@
-# Your dissolution has been filed
+# Your {{ (dissolution_display_name or "Dissolution Application") | lower }} has been filed
 
 --- 
 

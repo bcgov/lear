@@ -1502,7 +1502,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
-        filing_source = "specialResolution" if self._filing.filing_type == "specialResolution" else "correction"
+        # coop dissolutions carry a specialResolution section alongside the dissolution filing, so
+        # source the resolution from it rather than defaulting to the (empty) correction section
+        filing_source = "specialResolution" \
+            if self._filing.filing_type == "specialResolution" or filing.get("specialResolution") \
+            else "correction"
         filing["header"]["displayName"] = display_name
         resolution_date_str = filing.get(filing_source, {}).get("resolutionDate", None)
         signing_date_str = filing.get(filing_source, {}).get("signingDate", None)
