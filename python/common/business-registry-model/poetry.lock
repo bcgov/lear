@@ -1490,8 +1490,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.74"
-resolved_reference = "5abdc89a0f6eb06cbbac9ad66b580d7c76190ebc"
+reference = "2.18.75"
+resolved_reference = "bc53a51f1287f035ad7f4e70b4e878d21863e385"
 
 [[package]]
 name = "requests"
@@ -2085,4 +2085,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "0489944b5fb5cea4e4cc3f530370f6a44cc2ce62928e98472b019e5e197d562b"
+content-hash = "ebd56085ae624525505c87924d13dc3071c282aad8405845312d0290834ef2e7"
