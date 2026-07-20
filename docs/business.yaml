@@ -4363,9 +4363,9 @@ components:
               type: string
               title: The type of Amalgamation
               enum:
-              - regular
-              - vertical
-              - horizontal
+                - regular
+                - vertical
+                - horizontal
             amalgamatingBusinesses:
               type: array
               items:
@@ -4376,9 +4376,9 @@ components:
                   role:
                     type: string
                     enum:
-                    - amalgamating
-                    - holding
-                    - primary
+                      - amalgamating
+                      - holding
+                      - primary
                   identifier:
                     type: string
                   foreignJurisdiction:
