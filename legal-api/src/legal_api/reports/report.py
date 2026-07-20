@@ -411,10 +411,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
         if is_corp_incorp and incorp_compparty_stmnt_enabled:
-            if self._filing.submitter_roles in [UserRoles.staff]:
+            # staff and API gateway users supply the completing party name via header certifiedBy;
+            # for API users the token resolves to the account name, not a user name, so it can't be
+            # sourced from the submitter (API users are identified by the jwt loginSource, not a role).
+            api_login_source = "API_GW"  # jwt loginSource of an API gateway user
+            submitter = self._filing.filing_submitter
+            if (self._filing.submitter_roles == UserRoles.staff
+                    or (submitter and submitter.login_source == api_login_source)):
                 filing["header"]["certifiedBy"] = self._filing.filing_json["filing"]["header"].get("certifiedBy")
             else:
-                filing["header"]["certifiedBy"] = self._filing.filing_submitter.display_name
+                filing["header"]["certifiedBy"] = submitter.display_name
 
             if not filing["header"]["certifiedBy"]:
                 raise BusinessException(

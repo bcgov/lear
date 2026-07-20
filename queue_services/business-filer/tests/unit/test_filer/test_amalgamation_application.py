@@ -83,6 +83,13 @@ def test_regular_amalgamation_application_process(app, session, set_publish_mock
     filing_rec = Filing.find_by_id(filing_rec.id)
     business = Business.find_by_identifier(next_corp_num)
 
+    court_order_obj = filing_rec.court_orders[0]
+    court_order = filing['filing'][filing_type]['courtOrder']
+    assert business.id == court_order_obj.business_id
+    assert court_order['orderDetails'] == court_order_obj.order_details
+    assert court_order['fileNumber'] == court_order_obj.file_number
+    assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+
     assert filing_rec.business_id == business.id
     assert filing_rec.status == Filing.Status.COMPLETED.value
     assert business.identifier

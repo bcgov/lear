@@ -82,8 +82,9 @@ def mock_filing_docs(m, config, identifier, filing, doc_contents, receipt=b'rece
             status_code=200,
         )
     if receipt is not None:
-        m.post(
-            f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/receipt',
             content=receipt,
             status_code=201,
         )
@@ -394,7 +395,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         assert 'auth@email.com' in email['recipients']
         # party emails are pulled by get_recipients with the dissolution filing type
         assert mock_recipients.call_args[0][3] == 'dissolution'
-        assert email['content']['subject'] == f'{expected_legal_name} - Successful Dissolution'
+        assert email['content']['subject'] == f'{LEGAL_NAME} - Successful Dissolution'
     else:
         assert mock_recipients.call_args[0][3] is None
         assert not mock_auth_recipient.called
@@ -789,7 +790,7 @@ def test_firm_filing_subject(app, session, filing_type, expected_subject_suffix,
     email = process_filing(filing, filing_type, 'COMPLETED')
 
     assert email is not None
-    assert email['content']['subject'] == f'JANE A DOE - {expected_subject_suffix}'
+    assert email['content']['subject'] == f'test business - {expected_subject_suffix}'
 
 
 # ---------------------------------------------------------------------------
@@ -894,8 +895,8 @@ def test_correction_filing_attachments(session, config, mock_recipients, mock_us
 
 @pytest.mark.parametrize('orig_filing_type, legal_type, identifier, expected_header, expected_subject', [
     ('incorporationApplication', 'BC', 'BC1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
-    ('registration', 'SP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'JANE A DOE - Successful Correction'),
-    ('registration', 'GP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'JANE A DOE - Successful Correction'),
+    ('registration', 'SP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+    ('registration', 'GP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
     ('specialResolution', 'CP', 'CP1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
 ])
 def test_correction_filing_header_and_subject(session, config, mock_pdfs, mock_recipients, mock_user_email,

@@ -15,7 +15,7 @@ PGPORT="${PGPORT:-5432}"             # or ‑‑port
 PGUSER="${PGUSER:-postgres}"        # or ‑‑user
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
 # Optional PostgreSQL client binary directory. Leave empty to use PATH.
-# Example: PG_BIN=/opt/homebrew/opt/postgresql@15/bin ./backup_extract_tables.sh
+# Example: PG_BIN=/path/to/postgresql/bin ./backup_extract_tables.sh
 PG_BIN="${PG_BIN:-}"
 # Supply the password *either* via a .pgpass file *or* one‑shot:
 #   PGPASSWORD=secret ./backup_extract_tables.sh

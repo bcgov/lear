@@ -1459,3 +1459,28 @@ CREATE INDEX IF NOT EXISTS ix_mig_batch_target_env_dates
 CREATE INDEX IF NOT EXISTS ix_event_corpnum_eventid_cover
 	ON event (corp_num, event_id)
 	INCLUDE (event_type_cd, event_timerstamp);
+
+-- Associate standalone ID sequences with their owning columns.
+-- This allows pg_get_serial_sequence() and delta ID reallocation to resolve them.
+ALTER SEQUENCE public.affiliation_processing_id_seq
+	OWNED BY public.affiliation_processing.id;
+ALTER SEQUENCE public.auth_processing_id_seq
+	OWNED BY public.auth_processing.id;
+ALTER SEQUENCE public.auth_component_operation_id_seq
+	OWNED BY public.auth_component_operation.id;
+ALTER SEQUENCE public.corp_processing_id_seq
+	OWNED BY public.corp_processing.id;
+ALTER SEQUENCE public.colin_tracking_id_seq
+	OWNED BY public.colin_tracking.id;
+ALTER SEQUENCE public.mig_group_id_seq
+	OWNED BY public.mig_group.id;
+ALTER SEQUENCE public.mig_batch_id_seq
+	OWNED BY public.mig_batch.id;
+ALTER SEQUENCE public.mig_corp_batch_id_seq
+	OWNED BY public.mig_corp_batch.id;
+ALTER SEQUENCE public.mig_corp_account_id_seq
+	OWNED BY public.mig_corp_account.id;
+ALTER SEQUENCE public.bad_emails_id_seq
+	OWNED BY public.bad_emails.id;
+ALTER SEQUENCE public.excluded_email_domain_patterns_id_seq
+	OWNED BY public.excluded_email_domain_patterns.id;

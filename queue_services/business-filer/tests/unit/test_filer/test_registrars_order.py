@@ -64,6 +64,7 @@ def tests_filer_registrars_order(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(filing_id)
-    assert filing['filing']['registrarsOrder']['fileNumber'] == final_filing.court_order_file_number
-    assert filing['filing']['registrarsOrder']['effectOfOrder'] == final_filing.court_order_effect_of_order
-    assert filing['filing']['registrarsOrder']['orderDetails'] == final_filing.order_details
+    court_order = final_filing.court_orders[0]
+    assert filing['filing']['registrarsOrder']['fileNumber'] == court_order.file_number
+    assert filing['filing']['registrarsOrder']['effectOfOrder'] == court_order.effect_of_order
+    assert filing['filing']['registrarsOrder']['orderDetails'] == final_filing.details
