@@ -564,6 +564,12 @@ class DocumentService:
         if doc_list.get("specialResolutionApplication"):  # Not in configuration
             doc_list["specialResolutionApplication"] = doc_list["specialResolutionApplication"] + drs_params
             return doc_list
+        for legal_filing in (doc_list.get("legalFilings") or [])[1:]:
+            # A special resolution accompanying another filing is stored as FILING-2 (#34299); decorate
+            # its legal filing entry so the fallback below cannot attach the params to another output.
+            if "specialResolution" in legal_filing:
+                legal_filing["specialResolution"] = legal_filing["specialResolution"] + drs_params
+                return doc_list
         if doc_list.get("legalFilings"):
             legal_filing = doc_list["legalFilings"][0]
             filing_key = next(iter(legal_filing.keys()))

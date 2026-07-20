@@ -1154,3 +1154,38 @@ def test_set_amalgamating_businesses_foreign_non_a_prefix(session, monkeypatch):
     assert entry['legalName'] == foreign_name
     assert entry['jurisdiction'] == 'United Kingdom'
     assert colin_call_count['count'] == 0
+
+
+@pytest.mark.parametrize('filing_type,expected_report_type', [
+    ('dissolution', 'FILING-2'),
+    ('specialResolution', 'FILING'),
+])
+def test_special_resolution_drs_report_type(session, filing_type, expected_report_type):
+    """Assert a special resolution accompanying another filing uses a distinct DRS report type (#34299).
+
+    When stored with the same FILING report type as the filing's own report, the DRS-first lookup
+    serves whichever of the two documents was stored first.
+    """
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type='CP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_type
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    if filing_type == 'dissolution':
+        filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+        filing_json['filing']['dissolution']['dissolutionType'] = 'voluntary'
+    filing_json['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._report_key = 'specialResolution'
+    report._document_service = MagicMock()
+    report._document_service.get_filing_report_by_filing_id.return_value = (b'pdf', HTTPStatus.OK)
+
+    response = report._get_report()
+
+    report._document_service.get_filing_report_by_filing_id.assert_called_once_with(
+        identifier, filing.id, expected_report_type)
+    assert response.status_code == HTTPStatus.OK
