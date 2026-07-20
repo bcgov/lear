@@ -78,11 +78,11 @@ select c.target_corp_num as CORP_NUM,
 		c.ADMIN_EMAIL,
 		c.ACCESSION_NUM,
 		c.LAST_AR_FILED_DT,
-		CAST (
+		
 			case c.SEND_AR_IND 
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'true'
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else TRUE
 			end as VARCHAR2(5))
 		as SEND_AR_IND,
 		la.last_ar_reminder_year as LAST_AR_REMINDER_YEAR
@@ -217,21 +217,19 @@ select e.event_id,
        f.COURT_ORDER_NUM,
        f.CHANGE_DT,
        f.PERIOD_END_DT,
-       CAST (
+       
 		case f.ARRANGEMENT_IND
-           when 'N' then 'false'
-           when 'Y' then 'true'
-           else 'true'
-			end as VARCHAR2(5)
-		) as ARRANGEMENT_IND,
+           when 'N' then FALSE
+           when 'Y' then TRUE
+           else TRUE
+			end as  ARRANGEMENT_IND,
        f.AUTH_SIGN_DT,
-       CAST (
+       
 		case f.COURT_APPR_IND
-		when 'N' then 'false'
-		when 'Y' then 'true'
-		else 'true'
-		end as VARCHAR2(5)
-		) as COURT_APPR_IND
+		when 'N' then FALSE
+		when 'Y' then TRUE
+		else TRUE
+		end as  COURT_APPR_IND
 from corporation_cte c
 join event e on e.corp_num = c.corp_num
 join filing f on f.event_id = e.event_id;
@@ -756,13 +754,11 @@ corporation_cte as (
 )
 select e.event_id,
        ce.effective_dt,
-       CAST(
-			case ce.REPORT_CORP_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'true'
-			end as VARCHAR2(5)
-		) as REPORT_CORP_IND,
+       case ce.REPORT_CORP_IND
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else TRUE
+			end as  REPORT_CORP_IND,
        ce.ACTIVITY_USER_ID,
        ce.ACTIVITY_DT,
        ce.ANNUAL_FILE_DT,
@@ -834,13 +830,11 @@ select e.event_id as event_id,
 			end as ting_corp_num,
 		ci.CORP_INVOLVE_ID as corp_involve_id,
 		ci.CAN_JUR_TYP_CD as can_jur_typ_cd,
-		CAST(
-			case ci.ADOPTED_CORP_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as adopted_corp_ind,
+		case ci.ADOPTED_CORP_IND
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  adopted_corp_ind,
 		ci.HOME_JURI_NUM as home_juri_num,
 		ci.OTHR_JURI_DESC as othr_juri_desc,
 		ci.FOREIGN_NME as foreign_nme
@@ -858,13 +852,12 @@ select e.event_id as event_id,
 			end as ting_corp_num,
 		ci.CORP_INVOLVE_ID as corp_involve_id,
 		ci.CAN_JUR_TYP_CD as can_jur_typ_cd,
-		CAST (
+		
 			case ci.ADOPTED_CORP_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as adopted_corp_ind,
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  adopted_corp_ind,
 		ci.HOME_JURI_NUM as home_juri_num,
 		ci.OTHR_JURI_DESC as othr_juri_desc,
 		ci.FOREIGN_NME as foreign_nme
@@ -930,13 +923,12 @@ corporation_cte as (
 	where &target_corp_num_predicate
 )
 select c.target_corp_num as CORP_NUM,
-       CAST (
+       
 			case cr.RESTRICTION_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as RESTRICTION_IND,
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  RESTRICTION_IND,
        cr.start_event_id,
        cr.end_event_id
 from corporation_cte c
@@ -1094,28 +1086,25 @@ select c.target_corp_num as CORP_NUM,
        ssc.SHARE_CLASS_ID,
        replace(ssc.CLASS_NME, CHR(0), '') as CLASS_NME,
        ssc.CURRENCY_TYP_CD,
-       CAST (
+       
 			case ssc.MAX_SHARE_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as MAX_SHARE_IND,
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  MAX_SHARE_IND,
        ssc.SHARE_QUANTITY,
-       CAST (
+       
 			case ssc.SPEC_RIGHTS_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as SPEC_RIGHTS_IND,
-       CAST (
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  SPEC_RIGHTS_IND,
+       
 			case ssc.PAR_VALUE_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as PAR_VALUE_IND,
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  PAR_VALUE_IND,
 		ssc.PAR_VALUE_AMT + 0 as PAR_VALUE_AMT,
        ssc.OTHER_CURRENCY,
        ssc.start_event_id
@@ -1148,21 +1137,19 @@ corporation_cte as (
 select c.target_corp_num as CORP_NUM,
        ss.SHARE_CLASS_ID,
        ss.SERIES_ID,
-       CAST (
+       
 			case ss.MAX_SHARE_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as MAX_SHARE_IND,
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  MAX_SHARE_IND,
        ss.SHARE_QUANTITY,
-       CAST (
+       
 			case ss.SPEC_RIGHT_IND
-			when 'N' then 'false'
-			when 'Y' then 'true'
-			else 'false'
-			end as VARCHAR2(5)
-		) as SPEC_RIGHT_IND,
+			when 'N' then FALSE
+			when 'Y' then TRUE
+			else FALSE
+			end as  SPEC_RIGHT_IND,
        ss.SERIES_NME,
        ss.start_event_id
 from corporation_cte c
