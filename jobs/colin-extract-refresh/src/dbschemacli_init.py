@@ -19,7 +19,6 @@ def write_dbschema_init(cfg: _Config) -> Path:
     ora_name = cfg.DB_NAME_COLIN_ORACLE
     
     lines = [
-        'vset cli.settings.replace_variable=true'
         'register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>/<db>?reWriteBatchedInserts=true "port=5432"',
         'register driver Oracle oracle.jdbc.OracleDriver jdbc:oracle:thin:@<host>:<port>:<db> "port=1521"',
         f'connection my_proxy_test -d PostgreSql -u {user} -p {password} -h {host} -P {port} -D {name}',
