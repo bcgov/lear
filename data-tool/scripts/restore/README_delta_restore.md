@@ -8,6 +8,8 @@ The preserved table set and phase order are centralized in `data-tool/scripts/re
 - `data-tool/restore_extract.sh` — full restore path.
 - `data-tool/delta_restore_extract.sh` — delta preview, validate, and apply path.
 
+For orientation, see the [preserved-table overview](README_add_preserved_table_overview.md). To add a table, use the [quick reference](README_add_preserved_table_quickref.md) or [full guide](README_add_preserved_table.md); a config-only change is not sufficient for delta restore.
+
 ## Quick reference
 
 ### Contents

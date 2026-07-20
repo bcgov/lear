@@ -76,6 +76,8 @@ The preserved migration/tracking/auth side-table list is centralized in `data-to
 - `data-tool/restore_extract.sh` — full preserved-table restore after an extract rebuild.
 - `data-tool/delta_restore_extract.sh` — preview/validate/apply merge for preserved tables.
 
+Start with the [preserved-table overview](restore/README_add_preserved_table_overview.md). To add a table, use the [quick reference](restore/README_add_preserved_table_quickref.md) or [full guide](restore/README_add_preserved_table.md).
+
 For the delta workflow, see [restore/README_delta_restore.md](restore/README_delta_restore.md). It provides the golden path, a complete CLI/environment reference, and troubleshooting by exit code.
 
 `DELTA_MODE=true ./restore_extract.sh` has been removed by design. The full restore script now aborts with a pointer to `data-tool/delta_restore_extract.sh`; run explicit delta preview, validate, and apply commands instead.
