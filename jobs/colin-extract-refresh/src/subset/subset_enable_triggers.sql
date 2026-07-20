@@ -1,12 +1,12 @@
-SET search_path TO TARGET_SCHEMA;
+-- SET search_path TO TARGET_SCHEMA;
 
-ALTER TABLE TARGET_SCHEMA.notification ADD CONSTRAINT fk_notification_filing FOREIGN KEY (event_id) REFERENCES TARGET_SCHEMA.filing (event_id);
-ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_office_mailing_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
-ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_office_delivery_address FOREIGN KEY (delivery_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
-ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_corp_party_delivery_address FOREIGN KEY (delivery_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
-ALTER TABLE TARGET_SCHEMA.corp_party ADD CONSTRAINT fk_corp_party_mailing_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
-ALTER TABLE TARGET_SCHEMA.completing_party ADD CONSTRAINT fk_completing_party_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
-ALTER TABLE TARGET_SCHEMA.notification ADD CONSTRAINT fk_notification_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+-- ALTER TABLE TARGET_SCHEMA.notification ADD CONSTRAINT fk_notification_filing FOREIGN KEY (event_id) REFERENCES TARGET_SCHEMA.filing (event_id);
+-- ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_office_mailing_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+-- ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_office_delivery_address FOREIGN KEY (delivery_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+-- ALTER TABLE TARGET_SCHEMA.office ADD CONSTRAINT fk_corp_party_delivery_address FOREIGN KEY (delivery_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+-- ALTER TABLE TARGET_SCHEMA.corp_party ADD CONSTRAINT fk_corp_party_mailing_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+-- ALTER TABLE TARGET_SCHEMA.completing_party ADD CONSTRAINT fk_completing_party_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
+-- ALTER TABLE TARGET_SCHEMA.notification ADD CONSTRAINT fk_notification_address FOREIGN KEY (mailing_addr_id) REFERENCES TARGET_SCHEMA.address (addr_id);
 
 
 -- ALTER TABLE TARGET_SCHEMA.corporation ALTER COLUMN send_ar_ind TYPE boolean USING (CASE send_ar_ind WHEN 'true' THEN true WHEN 'false' THEN false ELSE true END);
