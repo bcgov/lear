@@ -283,6 +283,11 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
         file_name = f"{ar_date[:4]} {file_name}"
 
+    if (filing.filing_type == "dissolution" and business.get("legalType") == Business.LegalTypes.COOP.value
+            and document_type in ["affidavit", "specialResolution"]):
+        # coop dissolution affidavit and special resolution attachments are certified copies
+        file_name = f"Certified {file_name}"
+
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
     if filing_pdf_encoded:
