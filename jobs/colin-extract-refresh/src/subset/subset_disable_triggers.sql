@@ -16,7 +16,7 @@ begin
         order by c.relname, con.conname
     loop
         execute format(
-            'ALTER TABLE %I.%I DROP CONSTRAINT',
+            'ALTER TABLE %I.%I DROP CONSTRAINT %I',
             r.schema_name,
             r.table_name,
             r.constraint_name
