@@ -1228,7 +1228,7 @@ insert into TARGET_SCHEMA.share_struct_cls(
     share_class_id,
     class_nme,
     currency_typ_cd,
-    max_share_ind,
+    max_share_ind::boolean,
     share_quantity,
     spec_rights_ind,
     par_value_ind,
