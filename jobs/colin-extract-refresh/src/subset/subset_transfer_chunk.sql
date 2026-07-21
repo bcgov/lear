@@ -840,7 +840,7 @@ insert into TARGET_SCHEMA.conv_event (
 )
 select event_id,
     effective_dt,
-    report_corp_ind,
+    report_corp_ind::boolean,
     activity_user_id,
     activity_dt,
     annual_file_dt,
@@ -964,7 +964,7 @@ select event_id,
 	ting_corp_num,
 	corp_involve_id,
 	can_jur_typ_cd,
-	adopted_corp_ind,
+	adopted_corp_ind::boolean,
 	home_juri_num,
 	othr_juri_desc,
 	foreign_nme
@@ -1242,7 +1242,7 @@ select corp_num,
     currency_typ_cd,
     max_share_ind,
     share_quantity,
-    spec_rights_ind,
+    spec_rights_ind::boolean,
     par_value_ind,
     par_value_amt,
     other_currency,
@@ -1309,7 +1309,7 @@ select corp_num,
     share_quantity,
     spec_right_ind::boolean,
     series_nme,
-    start_event_id::boolean
+    start_event_id
 from TARGET_SCHEMA.subset_share_series_bool_stage;
 truncate table TARGET_SCHEMA.subset_share_series_bool_stage;
 
