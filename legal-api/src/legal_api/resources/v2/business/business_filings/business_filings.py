@@ -533,7 +533,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return filing
 
     @staticmethod
-    def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:
+    def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:  # noqa: PLR0911
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json(silent=True)
         if not json_input:
