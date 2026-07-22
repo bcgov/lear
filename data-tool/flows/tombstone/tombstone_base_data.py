@@ -204,9 +204,7 @@ FILING = {
         'submitter_id': None,
         'withdrawn_filing_id': None,
         # others
-        'submitter_roles': None,
-        'court_order_file_number' : None,  # optional
-        'court_order_effect_of_order' : None,  # optional
+        'submitter_roles': None
     },
     'jurisdiction': None,  # optional
     'amalgamations': None,  # optional
