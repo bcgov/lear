@@ -1536,6 +1536,11 @@ ALTER TABLE notification ENABLE TRIGGER ALL;
 ALTER TABLE notification_resend ENABLE TRIGGER ALL;
 ALTER TABLE party_notification ENABLE TRIGGER ALL;
 
+-- Normalize active-corp party/office addresses while the subset-run advisory lock is held.
+-- The result-bearing CALL returns one JSON value with phase counts, their total, and elapsed seconds.
+SET search_path TO public;
+CALL public.colin_address_transpose(NULL);
+
 -- Release COLIN extract refresh advisory lock.
 SELECT pg_advisory_unlock(
     hashtext('lear:data-tool:colin_subset_extract'),
