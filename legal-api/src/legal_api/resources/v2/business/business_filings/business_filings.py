@@ -533,7 +533,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return filing
 
     @staticmethod
-    def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:
+    def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:  # noqa: PLR0911
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json(silent=True)
         if not json_input:
@@ -549,6 +549,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         filing_type = json_input.get("filing", {}).get("header", {}).get("name")
         if not filing_type:
             return ({"message": "filing/header/name is a required property"}, HTTPStatus.BAD_REQUEST)
+
+        filing_business_identifier = json_input.get("filing", {}).get("business", {}).get("identifier")
+        if filing_business_identifier != identifier:
+            return ({"message": "filing/business/identifier does not equal the identifier in the request path."}, HTTPStatus.BAD_REQUEST)
 
         if filing_type not in [*CoreFiling.NEW_BUSINESS_FILING_TYPES, CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
            and business is None:
