@@ -112,6 +112,7 @@ class tmpl_TemplateSpec:
 class tmpl_TemplateBundle:
     pg_acquire_advisory_lock: tmpl_TemplateSpec
     pg_release_advisory_lock: tmpl_TemplateSpec
+    pg_call_address_transpose: tmpl_TemplateSpec
     pg_prepare_address_stage: tmpl_TemplateSpec
     pg_cleanup_address_stage: tmpl_TemplateSpec
     pg_cleanup_orphan_children: tmpl_TemplateSpec
@@ -306,6 +307,11 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
         path=subset_dir / "subset_pg_release_advisory_lock.sql",
         schema=schema,
     )
+    pg_call_address_transpose = tmpl_TemplateSpec(
+        name="subset_pg_call_address_transpose",
+        path=subset_dir / "subset_pg_call_address_transpose.sql",
+        schema=schema,
+    )
     pg_prepare_address_stage = tmpl_TemplateSpec(
         name="subset_pg_prepare_address_stage",
         path=subset_dir / "subset_pg_prepare_address_stage.sql",
@@ -377,6 +383,7 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
     return tmpl_TemplateBundle(
         pg_acquire_advisory_lock=pg_acquire_advisory_lock,
         pg_release_advisory_lock=pg_release_advisory_lock,
+        pg_call_address_transpose=pg_call_address_transpose,
         pg_prepare_address_stage=pg_prepare_address_stage,
         pg_cleanup_address_stage=pg_cleanup_address_stage,
         pg_cleanup_orphan_children=pg_cleanup_orphan_children,
@@ -730,14 +737,20 @@ def gen_build_master_script_inline(
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
-    lines.append("-- Release subset-run advisory lock")
-    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
-    lines.append("")
-
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_end, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
+
+    lines.append("-- Execute the provisioned address transpose while the advisory lock is held.")
+    lines.append(
+        f"execute {tmpl_resolve_execute_path(templates.pg_call_address_transpose, out_dir=cfg.out_chunks_dir).as_posix()}"
+    )
+    lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(
+        f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}"
+    )
 
     return "\n".join(lines)
 
@@ -860,14 +873,20 @@ def gen_build_master_script_vset(
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
-    lines.append("-- Release subset-run advisory lock")
-    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
-    lines.append("")
-
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_end, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
+
+    lines.append("-- Execute the provisioned address transpose while the advisory lock is held.")
+    lines.append(
+        f"execute {tmpl_resolve_execute_path(templates.pg_call_address_transpose, out_dir=cfg.out_chunks_dir).as_posix()}"
+    )
+    lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(
+        f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}"
+    )
 
     return "\n".join(lines)
 
@@ -1070,6 +1089,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
     for spec in (
         templates.pg_acquire_advisory_lock,
         templates.pg_release_advisory_lock,
+        templates.pg_call_address_transpose,
         templates.pg_prepare_address_stage,
         templates.pg_cleanup_address_stage,
         templates.pg_cleanup_orphan_children,

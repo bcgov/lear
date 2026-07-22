@@ -425,7 +425,7 @@ Success: `Summary: N passed, 0 failed`. PostgreSQL-backed checks skip (with a me
 
 ```bash
 createdb -h localhost -p 5432 -U postgres -T template0 preserved-ddl-check
-psql -h localhost -p 5432 -U postgres -d preserved-ddl-check \
+psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U postgres -d preserved-ddl-check \
   -f data-tool/scripts/colin_corps_extract_postgres_ddl
 ```
 

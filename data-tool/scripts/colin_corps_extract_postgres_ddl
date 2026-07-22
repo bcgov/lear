@@ -1484,3 +1484,7 @@ ALTER SEQUENCE public.bad_emails_id_seq
 	OWNED BY public.bad_emails.id;
 ALTER SEQUENCE public.excluded_email_domain_patterns_id_seq
 	OWNED BY public.excluded_email_domain_patterns.id;
+
+-- Address-transpose routine module (psql-only include; see header of the
+-- included file). DbSchemaCLI/SQLAlchemy must NOT be pointed at this DDL.
+\ir colin_address_transpose_updates.sql
