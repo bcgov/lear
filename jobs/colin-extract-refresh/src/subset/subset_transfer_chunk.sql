@@ -33,8 +33,9 @@
 -- vset oracle_corp_num_predicate=c.CORP_NUM in ('1111585','1226175');
 SET search_path TO TARGET_SCHEMA;
 
+truncate table TARGET_SCHEMA.subset_corporation_bool_stage;
 -- corporation
-transfer TARGET_SCHEMA.corporation from cprd using
+transfer TARGET_SCHEMA.subset_corporation_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -87,6 +88,35 @@ select c.target_corp_num as CORP_NUM,
 from corporation_cte c
 left join last_ar la on la.corp_num = c.corp_num;
 
+INSERT INTO TARGET_SCHEMA.corporation(
+	corp_num,
+	corp_frozen_type_cd,
+	corp_type_cd,
+	corp_password,
+	recognition_dts,
+	bn_9,
+	bn_15,
+	admin_email,
+	accession_num,
+	last_ar_filed_dt,
+	send_ar_ind,
+	last_ar_reminder_year
+)
+select corp_num,
+	corp_frozen_type_cd,
+	corp_type_cd,
+	corp_password,
+	recognition_dts,
+	bn_9,
+	bn_15,
+	admin_email,
+	accession_num,
+	last_ar_filed_dt,
+	send_ar_ind::boolean,
+	last_ar_reminder_year
+from TARGET_SCHEMA.subset_corporation_bool_stage;
+
+truncate table TARGET_SCHEMA.subset_corporation_bool_stage;
 
 -- event
 transfer TARGET_SCHEMA.event from cprd using
@@ -185,7 +215,9 @@ join corp_op_state cos on cos.state_typ_cd = cs.state_typ_cd;
 
 
 -- filing
-transfer TARGET_SCHEMA.filing from cprd using
+truncate table TARGET_SCHEMA.subset_filing_bool_stage;
+
+transfer TARGET_SCHEMA.subset_filing_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -229,6 +261,36 @@ select e.event_id,
 from corporation_cte c
 join event e on e.corp_num = c.corp_num
 join filing f on f.event_id = e.event_id;
+
+insert into TARGET_SCHEMA.filing( 
+	event_id,
+	filing_type_cd,
+    effective_dt,
+    withdrawn_event_id,
+    ods_type_cd,
+    nr_num,
+    court_order_num,
+    change_dt,
+    period_end_dt,
+    arrangement_ind,
+    auth_sign_dt,
+    court_appr_ind
+)
+select event_id,
+	filing_type_cd,
+    effective_dt,
+    withdrawn_event_id,
+    ods_type_cd,
+    nr_num,
+    court_order_num,
+    change_dt,
+    period_end_dt,
+    arrangement_ind::boolean,
+    auth_sign_dt,
+    court_appr_ind::boolean
+from TARGET_SCHEMA.subset_filing_bool_stage;
+
+truncate table TARGET_SCHEMA.subset_filing_bool_stage;
 
 
 -- filing_user
@@ -727,7 +789,9 @@ join CONT_OUT co on co.corp_num = c.corp_num;
 
 
 -- conv_event
-transfer TARGET_SCHEMA.conv_event from cprd using
+truncate table TARGET_SCHEMA.subset_conv_event_bool_stage;
+
+transfer TARGET_SCHEMA.subset_conv_event_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -764,6 +828,26 @@ from corporation_cte c
 join event e on e.corp_num = c.corp_num
 join CONV_EVENT ce on ce.event_id = e.event_id;
 
+insert into TARGET_SCHEMA.conv_event (
+	event_id,
+    effective_dt,
+    report_corp_ind,
+    activity_user_id,
+    activity_dt,
+    annual_file_dt,
+    accession_num,
+    remarks
+)
+select event_id,
+    effective_dt,
+    report_corp_ind::boolean,
+    activity_user_id,
+    activity_dt,
+    annual_file_dt,
+    accession_num,
+    remarks
+from TARGET_SCHEMA.subset_conv_event_bool_stage;
+truncate table TARGET_SCHEMA.subset_conv_event_bool_stage;
 
 -- conv_ledger
 transfer TARGET_SCHEMA.conv_ledger from cprd using
@@ -797,7 +881,8 @@ join CONV_LEDGER cl on cl.event_id = e.event_id;
 
 
 -- corp_involved - amalgamaTING_businesses
-transfer TARGET_SCHEMA.corp_involved_amalgamating from cprd using
+truncate table TARGET_SCHEMA.subset_corp_involved_amalgamating_bool_stage;
+transfer TARGET_SCHEMA.subset_corp_involved_amalgamating_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -863,7 +948,29 @@ join CORP_INVOLVED ci on ci.event_id = e.event_id
 join corporation c2 on c2.corp_num = ci.corp_num
 where f.filing_typ_cd in ('AMALH', 'AMALV', 'AMALR', 'AMLHU', 'AMLVU', 'AMLRU', 'AMLHC', 'AMLVC', 'AMLRC');
 
+insert into TARGET_SCHEMA.corp_involved_amalgamating (
+	event_id,
+	ted_corp_num,
+	ting_corp_num,
+	corp_involve_id,
+	can_jur_typ_cd,
+	adopted_corp_ind,
+	home_juri_num,
+	othr_juri_desc,
+	foreign_nme
+)
+select event_id,
+	ted_corp_num,
+	ting_corp_num,
+	corp_involve_id,
+	can_jur_typ_cd,
+	adopted_corp_ind::boolean,
+	home_juri_num,
+	othr_juri_desc,
+	foreign_nme
+from TARGET_SCHEMA.subset_corp_involved_amalgamating_bool_stage;
 
+truncate table TARGET_SCHEMA.subset_corp_involved_amalgamating_bool_stage;
 -- corp_involved - continue_in_historical_xpro
 transfer TARGET_SCHEMA.corp_involved_cont_in from cprd using
 with corp_list as (
@@ -896,7 +1003,8 @@ where f.filing_typ_cd in ('CONTI', 'CONTU', 'CONTC')
 
 
 -- corp_restriction
-transfer TARGET_SCHEMA.corp_restriction from cprd using
+truncate table TARGET_SCHEMA.subset_corp_restriction_bool_stage;
+transfer TARGET_SCHEMA.subset_corp_restriction_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -928,6 +1036,18 @@ select c.target_corp_num as CORP_NUM,
 from corporation_cte c
 join CORP_RESTRICTION cr on cr.corp_num = c.corp_num;
 
+insert into TARGET_SCHEMA.corp_restriction (
+	corp_num,
+	restriction_ind,
+	start_event_id,
+	end_event_id
+)
+select corp_num,
+		restriction_ind::boolean,
+		start_event_id,
+		end_event_id
+from TARGET_SCHEMA.subset_corp_restriction_bool_stage;
+truncate table TARGET_SCHEMA.subset_corp_restriction_bool_stage;
 
 -- correction
 transfer TARGET_SCHEMA.correction from cprd using
@@ -1055,7 +1175,8 @@ join SHARE_STRUCT ss on ss.corp_num = c.corp_num;
 
 
 -- share_struct_cls
-transfer TARGET_SCHEMA.share_struct_cls from cprd using
+truncate table TARGET_SCHEMA.subset_share_struct_cls_bool_stage;
+transfer TARGET_SCHEMA.subset_share_struct_cls_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1102,9 +1223,36 @@ select c.target_corp_num as CORP_NUM,
 from corporation_cte c
 join SHARE_STRUCT_CLS ssc on ssc.corp_num = c.corp_num;
 
+insert into TARGET_SCHEMA.share_struct_cls(
+	corp_num,
+    share_class_id,
+    class_nme,
+    currency_typ_cd,
+    max_share_ind,
+    share_quantity,
+    spec_rights_ind,
+    par_value_ind,
+    par_value_amt,
+    other_currency,
+    start_event_id
+)
+select corp_num,
+    share_class_id,
+    class_nme,
+    currency_typ_cd,
+    max_share_ind::boolean,
+    share_quantity,
+    spec_rights_ind::boolean,
+    par_value_ind::boolean,
+    par_value_amt,
+    other_currency,
+    start_event_id
+from TARGET_SCHEMA.subset_share_struct_cls_bool_stage;
+truncate table TARGET_SCHEMA.subset_share_struct_cls_bool_stage;
 
 -- share_series
-transfer TARGET_SCHEMA.share_series from cprd using
+truncate table TARGET_SCHEMA.subset_share_series_bool_stage;
+transfer TARGET_SCHEMA.subset_share_series_bool_stage from cprd using
 with corp_list as (
 	select /*+ materialize */ c.corp_num
 	from corporation c
@@ -1144,6 +1292,26 @@ select c.target_corp_num as CORP_NUM,
 from corporation_cte c
 join SHARE_SERIES ss on ss.corp_num = c.corp_num;
 
+insert into TARGET_SCHEMA.share_series(
+	corp_num,
+	share_class_id,
+    series_id,
+    max_share_ind,
+    share_quantity,
+    spec_right_ind,
+    series_nme,
+    start_event_id
+)
+select corp_num,
+	share_class_id,
+    series_id,
+    max_share_ind::boolean,
+    share_quantity,
+    spec_right_ind::boolean,
+    series_nme,
+    start_event_id
+from TARGET_SCHEMA.subset_share_series_bool_stage;
+truncate table TARGET_SCHEMA.subset_share_series_bool_stage;
 
 -- notification
 transfer TARGET_SCHEMA.notification from cprd using

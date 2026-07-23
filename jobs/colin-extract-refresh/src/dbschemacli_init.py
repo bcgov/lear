@@ -23,6 +23,7 @@ def write_dbschema_init(cfg: _Config) -> Path:
         'register driver Oracle oracle.jdbc.OracleDriver jdbc:oracle:thin:@<host>:<port>:<db> "port=1521"',
         f'connection my_proxy_test -d PostgreSql -u {user} -p {password} -h {host} -P {port} -D {name}',
         f'connection cprd -d Oracle -u {ora_user} -p {ora_password} -h {ora_host} -P {ora_port} -D {ora_name}',
+
     ]
 
     init_path.write_text('\n'.join(lines) + '\n')

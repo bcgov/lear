@@ -115,6 +115,8 @@ class tmpl_TemplateBundle:
     pg_call_address_transpose: tmpl_TemplateSpec
     pg_prepare_address_stage: tmpl_TemplateSpec
     pg_cleanup_address_stage: tmpl_TemplateSpec
+    pg_prepare_boolean_stage: tmpl_TemplateSpec
+    pg_cleanup_boolean_stage: tmpl_TemplateSpec
     pg_cleanup_orphan_children: tmpl_TemplateSpec
     disable_triggers: tmpl_TemplateSpec
     enable_triggers: tmpl_TemplateSpec
@@ -289,6 +291,8 @@ def sql_render_pg_session_probe(label: str) -> str:
         "       clock_timestamp() AS observed_at;"
     )
 
+def sql_running(word: str) -> str:
+    return f"SELECT {sql_quote_literal(word)} AS running;"
 
 # =========================
 # tmpl_* (template loading/validation/rendering)
@@ -320,6 +324,16 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
     pg_cleanup_address_stage = tmpl_TemplateSpec(
         name="subset_pg_cleanup_address_stage",
         path=subset_dir / "subset_pg_cleanup_address_stage.sql",
+        schema=schema,
+    )
+    pg_prepare_boolean_stage = tmpl_TemplateSpec(
+        name="subset_pg_prepare_boolean_stage",
+        path=subset_dir/ "subset_pg_prepare_boolean_stage.sql",
+        schema=schema,
+    )
+    pg_cleanup_boolean_stage = tmpl_TemplateSpec(
+        name="subset_pg_cleanup_boolean_stage",
+        path=subset_dir/ "subset_pg_cleanup_boolean_stage.sql",
         schema=schema,
     )
     pg_cleanup_orphan_children = tmpl_TemplateSpec(
@@ -386,6 +400,8 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
         pg_call_address_transpose=pg_call_address_transpose,
         pg_prepare_address_stage=pg_prepare_address_stage,
         pg_cleanup_address_stage=pg_cleanup_address_stage,
+        pg_prepare_boolean_stage=pg_prepare_boolean_stage,
+        pg_cleanup_boolean_stage=pg_cleanup_boolean_stage,
         pg_cleanup_orphan_children=pg_cleanup_orphan_children,
         disable_triggers=disable_triggers,
         enable_triggers=enable_triggers,
@@ -681,6 +697,9 @@ def gen_build_master_script_inline(
     lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_prepare_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
+    lines.append("-- Prepare shared boolean staging table before learning schema")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_prepare_boolean_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
     lines.append(f"SET search_path TO {cfg.target_schema};")
@@ -696,6 +715,7 @@ def gen_build_master_script_inline(
         lines.append("")
 
     if cfg.mode == cfg_GenerationMode.REFRESH:
+        lines.append(sql_running("orphans"))
         lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_orphan_children, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append("")
@@ -703,11 +723,13 @@ def gen_build_master_script_inline(
     _gen_emit_pg_disable_begin(lines, cfg=cfg, templates=templates)
     _gen_emit_refresh_fk_note(lines, cfg=cfg)
     if cfg.pg_debug_session_probes:
+        lines.append(sql_running("disable"))
         lines.append("-- Debug probe: backend/session state in the master script after trigger/FK suppression.")
         lines.append(sql_render_pg_session_probe("master:after_disable"))
         lines.append("")
 
     if cfg.include_cars:
+        lines.append(sql_running("carsdel"))
         lines.append("-- global cars* refresh (not corp-scoped; full dataset truncate + reload)")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.delete_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.transfer_cars, out_dir=cfg.out_chunks_dir).as_posix()}")
@@ -716,6 +738,7 @@ def gen_build_master_script_inline(
     if delete_chunk_files:
         total = len(delete_chunk_files)
         lines.append("-- delete corp-scoped subset (refresh mode)")
+        lines.append(sql_running("delete"))
         for idx, chunk_file in enumerate(delete_chunk_files, start=1):
             lines.append(f"-- delete chunk {idx:03d}/{total:03d}")
             lines.append(f"execute {chunk_file.as_posix()}")
@@ -723,20 +746,32 @@ def gen_build_master_script_inline(
     if transfer_chunk_files:
         total = len(transfer_chunk_files)
         lines.append("-- transfer corp-scoped subset from Oracle to Postgres")
+        lines.append(sql_running("transfer"))
         for idx, chunk_file in enumerate(transfer_chunk_files, start=1):
             lines.append(f"-- transfer chunk {idx:03d}/{total:03d}")
             lines.append(f"execute {chunk_file.as_posix()}")
             lines.append("")
 
     lines.append("-- purge BCOMPS-excluded corps (computed in Postgres after load)")
+    lines.append(sql_running("purge"))
     lines.append(f"execute {pg_purge_script_path.as_posix()}")
     lines.append("")
 
+    lines.append(sql_running("enable"))
     _gen_emit_pg_disable_end(lines, cfg=cfg, templates=templates)
 
     lines.append("-- Cleanup shared address staging table")
+    lines.append(sql_running("unstage"))
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
+    lines.append("-- Cleanup shared idicators staging table")
+    lines.append(sql_running("unstage"))
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_boolean_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(sql_running("unlock"))
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
+
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_end, out_dir=cfg.out_chunks_dir).as_posix()}")
@@ -786,6 +821,8 @@ def gen_build_master_script_vset(
     lines.append("")
     lines.append("-- Prepare shared address staging table before learning schema")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_prepare_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("-- Prepare shared address indicator table before learning schema")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_prepare_boolean_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append(f"learn schema {cfg.target_schema};")
     lines.append("")
 
@@ -873,6 +910,13 @@ def gen_build_master_script_vset(
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_address_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
+    lines.append("-- Cleanup shared indicator staging table")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_cleanup_boolean_stage, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_release_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
+
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
         lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_fastload_end, out_dir=cfg.out_chunks_dir).as_posix()}")
@@ -1092,6 +1136,8 @@ def run(cfg: cfg_GenerationConfig) -> int:
         templates.pg_call_address_transpose,
         templates.pg_prepare_address_stage,
         templates.pg_cleanup_address_stage,
+        templates.pg_prepare_boolean_stage,
+        templates.pg_cleanup_boolean_stage,
         templates.pg_cleanup_orphan_children,
         templates.disable_triggers,
         templates.enable_triggers,
