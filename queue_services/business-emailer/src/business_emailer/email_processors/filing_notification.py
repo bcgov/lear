@@ -16,10 +16,13 @@ from __future__ import annotations
 
 import copy
 from contextlib import suppress
+from datetime import datetime
 
+import pycountry
 from flask import current_app
 from jinja2 import Template
 
+from business_common.utils import LegislationDatetime
 from business_emailer.email_processors import (
     get_filing_info,
     get_filled_template,
@@ -57,19 +60,16 @@ def _get_additional_info(filing: Filing) -> dict:
     return additional_info
 
 
-def _get_dissolution_display_name(filing: Filing, filing_type: str, default: str) -> str | None:
-    """Return the dissolution sub-type specific display name used in the subject and email title."""
-    if filing_type != "dissolution":
-        return None
-    return {
-        "voluntary": "Voluntary Dissolution Application",
-        "administrative": "Dissolution Application",
-    }.get(filing.filing_sub_type, default)
-
-
 def _get_additional_recipients(filing: Filing, token: str) -> str | None:
     """Get additional recipients for a filing type."""
-    submitter_recipient_filings = ["alteration", "changeOfRegistration", "dissolution", "specialResolution"]
+    submitter_recipient_filings = [
+        "alteration",
+        "changeOfRegistration",
+        "consentContinuationOut",
+        "continuationOut",
+        "dissolution",
+        "specialResolution"
+    ]
     if filing.filing_type in submitter_recipient_filings:
         if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
             # when staff do filing documentOptionalEmail may contain completing party email
@@ -120,6 +120,86 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
     return attachments, extra_pdf_types
 
 
+def _get_business_number_display(business: dict, filing_type: str, legal_type: str):
+    """Return the formatted business number to display in the email."""
+    business_number = None
+    if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
+        # Only show if bn15 is saved, format for ux
+        business_number = business["taxId"].replace("BC", " BC")
+
+    # Coops do not get a BN so it will be omitted from the email
+    # Dissolution emails the BN label will be omitted when there is none available (unlikely to happen in prod)
+    if not business_number and legal_type != Business.LegalTypes.COOP.value and filing_type != "dissolution":
+        business_number = NOT_AVAILABLE
+
+    return business_number
+
+
+def _get_datetime_str_display(date_str: str | None):
+    """Return the formatted date string to display in the email."""
+    if date_str:
+        try:
+            date_time = datetime.fromisoformat(date_str)
+            date_time = LegislationDatetime.as_legislation_timezone(date_time)
+            return date_time.strftime(f"%B %-d, %Y")
+        except Exception as err:
+            current_app.logger.warning(err.with_traceback(None))
+
+
+def _get_jurisdiction_display(country_code: str, region_code: str | None):
+    """Return the formatted jurisdiction to display in the email."""
+    country = pycountry.countries.get(alpha_2=country_code)
+    jurisdiction = country.name if country else country_code
+    if region_code and (region := pycountry.subdivisions.get(code=f"{country_code}-{region_code}")):
+        jurisdiction = f"{region.name}, {jurisdiction}"
+    return jurisdiction
+
+
+def _get_out_filing_details(filing: Filing) -> dict | None:
+    """Return details for continuation/amalgation out filings or their consent filings when applicable."""
+    out_filing_info = {
+        "amalgamationOut": {
+            "action": "completed its amalgamation"
+        },
+        "consentAmalgamationOut": {
+            "action": "amalgamate",
+            "desc": "amalgamation"
+        },
+        "consentContinuationOut": {
+            "action": "continue",
+            "desc": "continuation"
+        },
+        "continuationOut": {
+            "action": "continued"
+        },
+    }
+    if filing.filing_type in out_filing_info:
+        meta_details = filing.meta_data.get(filing.filing_type) or {}
+        jurisdiction = _get_jurisdiction_display(meta_details.get("country") or "Unknown", meta_details.get("region"))
+        return {
+            "consent_expiry_date": _get_datetime_str_display(meta_details.get("expiry")),
+            "consent_filing_desc": out_filing_info[filing.filing_type].get("desc"),
+            "new_jurisdiction": jurisdiction,
+            "out_action": out_filing_info[filing.filing_type].get("action"),
+            "out_date": _get_datetime_str_display(meta_details.get("amalgamationOutDate") or meta_details.get("continuationOutDate")),
+            "out_name": meta_details.get("legalName") or "Unknown"
+        }
+
+
+def _get_filing_display_names(filing_type: str, filing_subtype: str | None):
+    """Return the filing display names for the given type and subtype."""
+    filing_name, filing_name_short = FILING_TITLE.get(filing_type), FILING_TITLE_SHORT.get(filing_type)
+
+    # check if this filing has different display names based on the filing subtype
+    if filing_subtype:
+        if isinstance(filing_name, dict):
+            filing_name = filing_name.get(filing_subtype)
+        if isinstance(filing_name_short, dict):
+            filing_name_short = filing_name_short.get(filing_subtype)
+
+    return filing_name, filing_name_short or filing_name
+
+
 def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name: str, business_identifier: str) -> bool:
     """Determine if the email should be skipped."""
     invalid_status = (status not in [Filing.Status.COMPLETED.value, Filing.Status.PAID.value]
@@ -149,7 +229,8 @@ def process(email_info: dict, token: str) -> dict | None:
         business["identifier"] = filing.temp_reg
 
     legal_type = business.get("legalType")
-    filing_name = FILING_TITLE.get(filing_type)
+    filing_name, filing_name_short = _get_filing_display_names(filing_type, filing.filing_sub_type)
+    what_happens_next_name = filing_name_short if filing_type in ["dissolution", "amalgamation"] else filing_name
     business_identifier = business.get("identifier")
 
     if _skip_email_check(status, filing, legal_type, filing_name, business_identifier):
@@ -165,31 +246,24 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # businessName is added for FIRMs when legalName is set to the proprietor name or list of partners
     business_name = business.get("businessName") or business.get("legalName") or NOT_AVAILABLE
-    filing_name_short = FILING_TITLE_SHORT.get(filing_type)
     legal_type_key = get_legal_type_key(legal_type)
     business_description = "Business"
     if corp_type := CorpType.find_by_id(legal_type):
         business_description: str = corp_type.full_desc.replace("BC ", "")
 
-    business_number = None
-    if len(business.get("taxId", "")) > 9:  # noqa: PLR2004
-        # Only show if bn15 is saved, format for ux
-        business_number = business["taxId"].replace("BC", " BC")
+    business_number = _get_business_number_display(business, filing_type, legal_type)
+    out_filing_details = _get_out_filing_details(filing) or {}
 
     # get template and fill in parts
     filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
-
-    # dissolution emails must not show a placeholder business number line when there is no bn
-    if not business_number and legal_type != Business.LegalTypes.COOP.value and filing_type != "dissolution":
-        business_number = NOT_AVAILABLE
 
     # attachments and future attachments
     full_attachments_list, extra_pdf_types = _get_attachments_and_extra_pdf_types(status, filing_type, filing, legal_type_key)
     filing_attachment_name = full_attachments_list[0] if full_attachments_list else None
     pdfs = get_pdfs(token, business, filing, extra_pdf_types, filing_attachment_name)
+    attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
 
     # render template with vars
-    attachments_list = [pdf["fileName"].replace(".pdf", "") for pdf in pdfs]
     jnja_template: Template = Template(filled_template, autoescape=True)
     rendered_template = jnja_template.render(
         ar_date=filing_data.get("annualReportDate","")[:4],
@@ -205,11 +279,13 @@ def process(email_info: dict, token: str) -> dict | None:
         business_number=business_number,
         filing_name=filing_name,
         filing_name_short=filing_name_short,
-        dissolution_display_name=_get_dissolution_display_name(filing, filing_type, filing_name),
         future_attachments_list=full_attachments_list,
         office_name=OFFICE_NAME.get(legal_type_key),
         number_description="Registration" if legal_type_key == "FIRM" else "Incorporation",
         show_effective_date=show_effective_date,
+        what_happens_next_name=what_happens_next_name,
+        # consent/continuation/amalgamation out values
+        **out_filing_details
     )
 
     # get recipients
@@ -231,14 +307,9 @@ def process(email_info: dict, token: str) -> dict | None:
         return
 
     # assign subject
-    short_filing_name = FILING_TITLE_SHORT.get(filing_type) or filing_name
-    if filing.filing_sub_type and isinstance(short_filing_name, dict):
-        # This filing has different subjects based on the filing sub type
-        short_filing_name = short_filing_name.get(filing.filing_sub_type) or filing_name
-
-    subject = get_subject(is_future_effective_paid, business_name, legal_type,
-                          _get_dissolution_display_name(filing, filing_type, filing_name) or filing_name,
-                          short_filing_name)
+    subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, filing_name_short)
+    if filing_type in ["consentAmalgamationOut", "consentContinuationOut"]:
+        subject = f"{business_name} - {filing_name_short} Granted"
 
     return {
         "recipients": recipients,

@@ -572,13 +572,14 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
 
 
-@pytest.mark.parametrize(['filing_type', 'filing_sub_type', 'status', 'expected_header', 'expected_subject'], [
+@pytest.mark.parametrize(['filing_type', 'filing_sub_type', 'status', 'expected_header', 'expected_subject', 'expected_body_snippets'], [
     (
         'alteration',
         None,
         'PAID',
         'Your alteration has been filed',
         'test business - Alteration Filed',
+        ['Effective Date and Time:', 'Once the alteration is effective on'],
     ),
     (
         'changeOfAddress',
@@ -586,62 +587,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'PAID',
         'Your address change has been filed',
         'test business - Address Change Filed',
-    ),
-    (
-        'alteration',
-        None,
-        'COMPLETED',
-        'You have successfully completed your alteration with the BC Business Registry',
-        'test business - Successful Alteration',
-    ),
-    (
-        'annualReport',
-        None,
-        'COMPLETED',
-        'You have successfully completed your 2018 annual report with the BC Business Registry',
-        'test business - Successful Annual Report',
-    ),
-    (
-        'changeOfAddress',
-        None,
-        'COMPLETED',
-        'You have successfully completed your address change with the BC Business Registry',
-        'test business - Successful Address Change',
-    ),
-    (
-        'changeOfDirectors',
-        None,
-        'COMPLETED',
-        'You have successfully completed your director change with the BC Business Registry',
-        'test business - Successful Director Change',
-    ),
-    (
-        'restoration',
-        'fullRestoration',
-        'COMPLETED',
-        'You have successfully restored your business with the BC Business Registry',
-        'test business - Successful Restoration',
-    ),
-    (
-        'restoration',
-        'limitedRestoration',
-        'COMPLETED',
-        'You have successfully restored your business with the BC Business Registry',
-        'test business - Successful Restoration',
-    ),
-    (
-        'restoration',
-        'limitedRestorationExtension',
-        'COMPLETED',
-        'You have successfully extended your period of restoration with the BC Business Registry',
-        'test business - Successful Extension of Limited Restoration',
-    ),
-    (
-        'restoration',
-        'limitedRestorationToFull',
-        'COMPLETED',
-        'You have successfully restored your business with the BC Business Registry',
-        'test business - Successful Conversion to Full Restoration',
+        ['Effective Date and Time:', 'Once the address change is effective on'],
     ),
     (
         'dissolution',
@@ -649,6 +595,71 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'PAID',
         'Your voluntary dissolution application has been filed',
         'test business - Voluntary Dissolution Application Filed',
+        ['Effective Date and Time:', 'Once the dissolution is effective on', 'Certificate of Dissolution'],
+    ),
+    (
+        'alteration',
+        None,
+        'COMPLETED',
+        'You have successfully completed your alteration with the BC Business Registry',
+        'test business - Successful Alteration',
+        []
+    ),
+    (
+        'annualReport',
+        None,
+        'COMPLETED',
+        'You have successfully completed your 2018 annual report with the BC Business Registry',
+        'test business - Successful Annual Report',
+        []
+    ),
+    (
+        'changeOfAddress',
+        None,
+        'COMPLETED',
+        'You have successfully completed your address change with the BC Business Registry',
+        'test business - Successful Address Change',
+        []
+    ),
+    (
+        'changeOfDirectors',
+        None,
+        'COMPLETED',
+        'You have successfully completed your director change with the BC Business Registry',
+        'test business - Successful Director Change',
+        []
+    ),
+    (
+        'restoration',
+        'fullRestoration',
+        'COMPLETED',
+        'You have successfully restored your business with the BC Business Registry',
+        'test business - Successful Restoration',
+        []
+    ),
+    (
+        'restoration',
+        'limitedRestoration',
+        'COMPLETED',
+        'You have successfully restored your business with the BC Business Registry',
+        'test business - Successful Restoration',
+        []
+    ),
+    (
+        'restoration',
+        'limitedRestorationExtension',
+        'COMPLETED',
+        'You have successfully extended your period of restoration with the BC Business Registry',
+        'test business - Successful Extension of Limited Restoration',
+        []
+    ),
+    (
+        'restoration',
+        'limitedRestorationToFull',
+        'COMPLETED',
+        'You have successfully restored your business with the BC Business Registry',
+        'test business - Successful Conversion to Full Restoration',
+        []
     ),
     (
         'dissolution',
@@ -656,12 +667,14 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'COMPLETED',
         'You have successfully completed your dissolution with the BC Business Registry',
         'test business - Successful Dissolution',
+        []
     ),
 ])
-def test_maintenance_filing_fe_renders_body_and_subject(app, session, mock_pdfs, mock_recipients, mock_user_email,
-                                                        mock_auth_recipient,
-                                                        filing_type, filing_sub_type, status, expected_header, expected_subject):
-    """Assert alteration and address change future effective emails render the expected body and subject."""
+def test_maintenance_filing_renders_body_and_subject(app, session,
+                                                     mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
+                                                     filing_type, filing_sub_type, status,
+                                                     expected_header, expected_subject, expected_body_snippets):
+    """Assert maintenance filing emails render the expected body and subject."""
     filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, filing_sub_type)
     if status == 'PAID':
         make_future_effective(filing)
@@ -669,16 +682,13 @@ def test_maintenance_filing_fe_renders_body_and_subject(app, session, mock_pdfs,
     email = process_filing(filing, filing_type, status)
 
     assert email is not None
+    assert email['content']['subject'] == expected_subject
     body = email['content']['body']
     assert expected_header in body
+    for snippet in expected_body_snippets:
+        assert snippet in expected_body_snippets
     assert ".html]]" not in body
     assert ".md]]" not in body
-    assert email['content']['subject'] == expected_subject
-    if filing_type == 'dissolution' and status == 'PAID':
-        assert 'Effective Date and Time:' in body
-        # what-happens-next lists the documents sent once the dissolution is effective
-        assert 'Once the dissolution is effective on' in body
-        assert 'Certificate of Dissolution' in body
 
 
 @pytest.mark.parametrize(['status', 'tax_id', 'shows_bn'], [
