@@ -60,6 +60,12 @@ class cfg_OracleInStrategy(str, Enum):
 class cfg_PgDisableMethod(str, Enum):
     TABLE_TRIGGERS = "table_triggers"  # ALTER TABLE ... DISABLE/ENABLE TRIGGER ALL (default)
     REPLICA_ROLE = "replica_role"      # SET session_replication_role=replica|origin (superuser only)
+    DROP_CONSTRAINTS = "drop_constraints"  # Drop/re-add public FKs via owner-invoked procedures
+
+
+class cfg_PgCastMode(str, Enum):
+    INSTALL = "install"
+    VERIFY = "verify"
 
 
 @dataclass(frozen=True)
@@ -78,6 +84,7 @@ class cfg_GenerationConfig:
 
     pg_fastload: bool
     pg_disable_method: cfg_PgDisableMethod
+    pg_cast_mode: cfg_PgCastMode
     pg_debug_session_probes: bool
 
     oracle_in_strategy: cfg_OracleInStrategy
@@ -117,7 +124,10 @@ class tmpl_TemplateBundle:
     pg_cleanup_orphan_children: tmpl_TemplateSpec
     disable_triggers: tmpl_TemplateSpec
     enable_triggers: tmpl_TemplateSpec
+    pg_fk_drop: tmpl_TemplateSpec
+    pg_fk_restore: tmpl_TemplateSpec
     pg_boolean_casts: tmpl_TemplateSpec
+    pg_boolean_casts_verify: tmpl_TemplateSpec
     pg_fastload_begin: tmpl_TemplateSpec
     pg_fastload_end: tmpl_TemplateSpec
     pg_purge_bcomps_excluded: tmpl_TemplateSpec
@@ -328,9 +338,21 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
         name="subset_enable_triggers",
         path=subset_dir / "subset_enable_triggers.sql",
     )
+    pg_fk_drop = tmpl_TemplateSpec(
+        name="subset_pg_fk_drop",
+        path=subset_dir / "subset_pg_fk_drop.sql",
+    )
+    pg_fk_restore = tmpl_TemplateSpec(
+        name="subset_pg_fk_restore",
+        path=subset_dir / "subset_pg_fk_restore.sql",
+    )
     pg_boolean_casts = tmpl_TemplateSpec(
         name="subset_pg_boolean_casts",
         path=subset_dir / "subset_pg_boolean_casts.sql",
+    )
+    pg_boolean_casts_verify = tmpl_TemplateSpec(
+        name="subset_pg_boolean_casts_verify",
+        path=subset_dir / "subset_pg_boolean_casts_verify.sql",
     )
     pg_fastload_begin = tmpl_TemplateSpec(
         name="subset_pg_fastload_begin",
@@ -372,7 +394,10 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
         pg_cleanup_orphan_children=pg_cleanup_orphan_children,
         disable_triggers=disable_triggers,
         enable_triggers=enable_triggers,
+        pg_fk_drop=pg_fk_drop,
+        pg_fk_restore=pg_fk_restore,
         pg_boolean_casts=pg_boolean_casts,
+        pg_boolean_casts_verify=pg_boolean_casts_verify,
         pg_fastload_begin=pg_fastload_begin,
         pg_fastload_end=pg_fastload_end,
         pg_purge_bcomps_excluded=pg_purge_bcomps_excluded,
@@ -562,6 +587,20 @@ def gen_write_chunk_files(
     return out_paths
 
 
+def _gen_emit_pg_casts(lines: List[str], *, cfg: cfg_GenerationConfig, templates: tmpl_TemplateBundle) -> None:
+    lines.append("-- Postgres helper: allow VARCHAR/BPCHAR -> BOOLEAN assignment (DbSchemaCLI boolean inserts)")
+    if cfg.pg_cast_mode == cfg_PgCastMode.INSTALL:
+        lines.append(f"execute {templates.pg_boolean_casts.path.as_posix()}")
+        lines.append("-- Fail-fast: verify varchar/bpchar -> boolean casts exist")
+        lines.append("select 't'::varchar::boolean;")
+        lines.append("select 'f'::bpchar::boolean;")
+    elif cfg.pg_cast_mode == cfg_PgCastMode.VERIFY:
+        lines.append(f"execute {templates.pg_boolean_casts_verify.path.as_posix()}")
+    else:
+        raise SystemExit(f"Unsupported pg_cast_mode: {cfg.pg_cast_mode}")
+    lines.append("")
+
+
 def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, templates: tmpl_TemplateBundle) -> None:
     if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
         lines.append(f"execute {templates.disable_triggers.path.as_posix()}")
@@ -576,6 +615,11 @@ def _gen_emit_pg_disable_begin(lines: List[str], *, cfg: cfg_GenerationConfig, t
     if cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
         lines.append("-- Disable triggers / FK checks for this session (requires superuser privileges).")
         lines.append("SET session_replication_role = replica;")
+        lines.append("")
+        return
+
+    if cfg.pg_disable_method == cfg_PgDisableMethod.DROP_CONSTRAINTS:
+        lines.append(f"execute {templates.pg_fk_drop.path.as_posix()}")
         lines.append("")
         return
 
@@ -599,6 +643,11 @@ def _gen_emit_pg_disable_end(lines: List[str], *, cfg: cfg_GenerationConfig, tem
         lines.append("")
         return
 
+    if cfg.pg_disable_method == cfg_PgDisableMethod.DROP_CONSTRAINTS:
+        lines.append(f"execute {templates.pg_fk_restore.path.as_posix()}")
+        lines.append("")
+        return
+
     raise SystemExit(f"Unsupported pg_disable_method: {cfg.pg_disable_method}")
 
 
@@ -609,6 +658,8 @@ def _gen_emit_refresh_fk_note(lines: List[str], *, cfg: cfg_GenerationConfig) ->
     lines.append("-- Refresh mode preserves processing/tracking rows while deleting and reloading corporation/event rows.")
     if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
         lines.append("-- table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables too.")
+    elif cfg.pg_disable_method == cfg_PgDisableMethod.DROP_CONSTRAINTS:
+        lines.append("-- drop_constraints mode removes all public FKs, including those owned by preserved tables.")
     else:
         lines.append("-- replica_role mode relies on session_replication_role remaining active for nested execute/transfer work.")
     lines.append("")
@@ -662,12 +713,7 @@ def gen_build_master_script_inline(
         lines.append(f"execute {templates.pg_fastload_begin.path.as_posix()}")
         lines.append("")
 
-    lines.append("-- Postgres helper: allow VARCHAR/BPCHAR -> BOOLEAN assignment (DbSchemaCLI boolean inserts)")
-    lines.append(f"execute {templates.pg_boolean_casts.path.as_posix()}")
-    lines.append("-- Fail-fast: verify varchar/bpchar -> boolean casts exist")
-    lines.append("select 't'::varchar::boolean;")
-    lines.append("select 'f'::bpchar::boolean;")
-    lines.append("")
+    _gen_emit_pg_casts(lines, cfg=cfg, templates=templates)
     if cfg.mode == cfg_GenerationMode.REFRESH:
         lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
         lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
@@ -769,12 +815,7 @@ def gen_build_master_script_vset(
         lines.append(f"execute {templates.pg_fastload_begin.path.as_posix()}")
         lines.append("")
 
-    lines.append("-- Postgres helper: allow VARCHAR/BPCHAR -> BOOLEAN assignment (DbSchemaCLI boolean inserts)")
-    lines.append(f"execute {templates.pg_boolean_casts.path.as_posix()}")
-    lines.append("-- Fail-fast: verify varchar/bpchar -> boolean casts exist")
-    lines.append("select 't'::varchar::boolean;")
-    lines.append("select 'f'::bpchar::boolean;")
-    lines.append("")
+    _gen_emit_pg_casts(lines, cfg=cfg, templates=templates)
     if cfg.mode == cfg_GenerationMode.REFRESH:
         lines.append("-- Cleanup stale orphan child rows before entering the trigger-suppressed refresh window.")
         lines.append(f"execute {templates.pg_cleanup_orphan_children.path.as_posix()}")
@@ -954,7 +995,15 @@ def cli_parse_args(argv: List[str] | None = None) -> argparse.Namespace:
         default=cfg_PgDisableMethod.TABLE_TRIGGERS.value,
         help="How to suppress triggers during load. "
              "table_triggers=ALTER TABLE ... DISABLE/ENABLE TRIGGER ALL (default). "
-             "replica_role=SET session_replication_role=replica|origin (requires superuser; disables triggers/FKs for session).",
+             "replica_role=SET session_replication_role=replica|origin (requires superuser; disables triggers/FKs for session). "
+             "drop_constraints=drop/re-add all public FKs via owner-invoked procedures.",
+    )
+    parser.add_argument(
+        "--pg-cast-mode",
+        choices=[m.value for m in cfg_PgCastMode],
+        default=cfg_PgCastMode.INSTALL.value,
+        help="install=recreate VARCHAR/BPCHAR -> BOOLEAN casts (default; requires superuser). "
+             "verify=only verify that bootstrap-installed casts exist.",
     )
     parser.add_argument(
         "--pg-debug-session-probes",
@@ -998,6 +1047,7 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
         raise SystemExit("--or-of-in-max-ids must be > 0")
 
     pg_disable_method = cfg_PgDisableMethod(args.pg_disable_method)
+    pg_cast_mode = cfg_PgCastMode(args.pg_cast_mode)
 
     out_master = (
         Path(args.out).expanduser().resolve()
@@ -1028,6 +1078,7 @@ def cfg_build_config(args: argparse.Namespace) -> cfg_GenerationConfig:
         include_cp=bool(args.include_cp),
         pg_fastload=bool(args.pg_fastload),
         pg_disable_method=pg_disable_method,
+        pg_cast_mode=pg_cast_mode,
         pg_debug_session_probes=bool(args.pg_debug_session_probes),
         oracle_in_strategy=oracle_in_strategy,
         or_of_in_max_ids=or_of_in_max_ids,
@@ -1063,7 +1114,10 @@ def run(cfg: cfg_GenerationConfig) -> int:
         templates.pg_cleanup_orphan_children,
         templates.disable_triggers,
         templates.enable_triggers,
+        templates.pg_fk_drop,
+        templates.pg_fk_restore,
         templates.pg_boolean_casts,
+        templates.pg_boolean_casts_verify,
         templates.pg_fastload_begin,
         templates.pg_fastload_end,
         templates.pg_purge_bcomps_excluded,
@@ -1188,6 +1242,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
         print(" - address transpose CALL returns JSON metrics before the advisory lock is explicitly released.")
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
+        print(f" - Postgres boolean cast mode: {cfg.pg_cast_mode.value} (--pg-cast-mode)")
         print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
         print(" - Address loads use the predeclared helper table public.subset_address_stage and merge into public.address by addr_id.")
         print("   - BCOMPS purge keysets also use predeclared helper tables in the extract schema (subset_excluded_*).")
@@ -1202,10 +1257,13 @@ def run(cfg: cfg_GenerationConfig) -> int:
             if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
                 print("   - table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables.")
                 print("   - table_triggers changes table state globally while the refresh runs; use it against a quiesced extract DB with sufficient privileges.")
-            else:
+            elif cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
                 print("   - replica_role is session-local; if FK errors still occur, probe current_setting('session_replication_role') inside nested execute files.")
         if cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
             print("   - NOTE: replica_role requires superuser and disables triggers/FKs for the session.")
+        elif cfg.pg_disable_method == cfg_PgDisableMethod.DROP_CONSTRAINTS:
+            print("   - drop_constraints re-adds public foreign keys NOT VALID after the load.")
+            print("   - recovery after a failed run: CALL public.colin_fk_restore_all(NULL);")
         return 0
 
     # vset mode: generate only a master script (no chunk files)
@@ -1243,6 +1301,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
     print(" - address transpose CALL returns JSON metrics before the advisory lock is explicitly released.")
     print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
     print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
+    print(f" - Postgres boolean cast mode: {cfg.pg_cast_mode.value} (--pg-cast-mode)")
     print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
     print(" - Address loads use the predeclared helper table public.subset_address_stage and merge into public.address by addr_id.")
     print("   - BCOMPS purge keysets also use predeclared helper tables in the extract schema (subset_excluded_*).")
@@ -1257,10 +1316,13 @@ def run(cfg: cfg_GenerationConfig) -> int:
         if cfg.pg_disable_method == cfg_PgDisableMethod.TABLE_TRIGGERS:
             print("   - table_triggers mode adds refresh-only trigger suppression for the preserved FK-owning tables.")
             print("   - table_triggers changes table state globally while the refresh runs; use it against a quiesced extract DB with sufficient privileges.")
-        else:
+        elif cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
             print("   - replica_role is session-local; if FK errors still occur, probe current_setting('session_replication_role') inside nested execute files.")
     if cfg.pg_disable_method == cfg_PgDisableMethod.REPLICA_ROLE:
         print("   - NOTE: replica_role requires superuser and disables triggers/FKs for the session.")
+    elif cfg.pg_disable_method == cfg_PgDisableMethod.DROP_CONSTRAINTS:
+        print("   - drop_constraints re-adds public foreign keys NOT VALID after the load.")
+        print("   - recovery after a failed run: CALL public.colin_fk_restore_all(NULL);")
     return 0
 
 

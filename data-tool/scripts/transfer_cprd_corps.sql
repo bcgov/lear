@@ -19,38 +19,9 @@ values (current_timestamp);
 
 
 
--- disable triggers
-ALTER TABLE corporation DISABLE TRIGGER ALL;
-ALTER TABLE corp_name DISABLE TRIGGER ALL;
-ALTER TABLE corp_state DISABLE TRIGGER ALL;
-ALTER TABLE event DISABLE TRIGGER ALL;
-ALTER TABLE filing DISABLE TRIGGER ALL;
-ALTER TABLE filing_user DISABLE TRIGGER ALL;
-ALTER TABLE office DISABLE TRIGGER ALL;
-ALTER TABLE address DISABLE TRIGGER ALL;
-ALTER TABLE corp_comments DISABLE TRIGGER ALL;
-ALTER TABLE ledger_text DISABLE TRIGGER ALL;
-ALTER TABLE corp_party DISABLE TRIGGER ALL;
-ALTER TABLE corp_party_relationship DISABLE TRIGGER ALL;
-ALTER TABLE offices_held DISABLE TRIGGER ALL;
-ALTER TABLE completing_party DISABLE TRIGGER ALL;
-ALTER TABLE submitting_party DISABLE TRIGGER ALL;
-ALTER TABLE corp_flag DISABLE TRIGGER ALL;
-ALTER TABLE cont_out DISABLE TRIGGER ALL;
-ALTER TABLE conv_event DISABLE TRIGGER ALL;
-ALTER TABLE conv_ledger DISABLE TRIGGER ALL;
-ALTER TABLE corp_involved_amalgamating DISABLE TRIGGER ALL;
-ALTER TABLE corp_involved_cont_in DISABLE TRIGGER ALL;
-ALTER TABLE corp_restriction DISABLE TRIGGER ALL;
-ALTER TABLE correction DISABLE TRIGGER ALL;
-ALTER TABLE jurisdiction DISABLE TRIGGER ALL;
-ALTER TABLE resolution DISABLE TRIGGER ALL;
-ALTER TABLE share_series DISABLE TRIGGER ALL;
-ALTER TABLE share_struct DISABLE TRIGGER ALL;
-ALTER TABLE share_struct_cls DISABLE TRIGGER ALL;
-ALTER TABLE notification DISABLE TRIGGER ALL;
-ALTER TABLE notification_resend DISABLE TRIGGER ALL;
-ALTER TABLE party_notification DISABLE TRIGGER ALL;
+-- Drop public foreign keys so all DbSchemaCLI writer sessions can load without
+-- superuser-only constraint-trigger suppression. Definitions are captured for recovery.
+CALL public.colin_fk_drop_all(NULL);
 
 
 -- alter tables
@@ -1503,38 +1474,9 @@ alter table share_series
    alter column spec_right_ind type boolean using spec_right_ind::boolean;
 
 
--- enable triggers
-ALTER TABLE corporation ENABLE TRIGGER ALL;
-ALTER TABLE corp_name ENABLE TRIGGER ALL;
-ALTER TABLE corp_state ENABLE TRIGGER ALL;
-ALTER TABLE event ENABLE TRIGGER ALL;
-ALTER TABLE filing ENABLE TRIGGER ALL;
-ALTER TABLE filing_user ENABLE TRIGGER ALL;
-ALTER TABLE office ENABLE TRIGGER ALL;
-ALTER TABLE address ENABLE TRIGGER ALL;
-ALTER TABLE corp_comments ENABLE TRIGGER ALL;
-ALTER TABLE ledger_text ENABLE TRIGGER ALL;
-ALTER TABLE corp_party ENABLE TRIGGER ALL;
-ALTER TABLE corp_party_relationship ENABLE TRIGGER ALL;
-ALTER TABLE offices_held ENABLE TRIGGER ALL;
-ALTER TABLE completing_party ENABLE TRIGGER ALL;
-ALTER TABLE submitting_party ENABLE TRIGGER ALL;
-ALTER TABLE corp_flag ENABLE TRIGGER ALL;
-ALTER TABLE cont_out ENABLE TRIGGER ALL;
-ALTER TABLE conv_event ENABLE TRIGGER ALL;
-ALTER TABLE conv_ledger ENABLE TRIGGER ALL;
-ALTER TABLE corp_involved_amalgamating ENABLE TRIGGER ALL;
-ALTER TABLE corp_involved_cont_in ENABLE TRIGGER ALL;
-ALTER TABLE corp_restriction ENABLE TRIGGER ALL;
-ALTER TABLE correction ENABLE TRIGGER ALL;
-ALTER TABLE jurisdiction ENABLE TRIGGER ALL;
-ALTER TABLE resolution ENABLE TRIGGER ALL;
-ALTER TABLE share_series ENABLE TRIGGER ALL;
-ALTER TABLE share_struct ENABLE TRIGGER ALL;
-ALTER TABLE share_struct_cls ENABLE TRIGGER ALL;
-ALTER TABLE notification ENABLE TRIGGER ALL;
-ALTER TABLE notification_resend ENABLE TRIGGER ALL;
-ALTER TABLE party_notification ENABLE TRIGGER ALL;
+-- Restore captured foreign keys as NOT VALID: new writes are enforced without
+-- scanning or rejecting known-invalid legacy extract rows.
+CALL public.colin_fk_restore_all(NULL);
 
 -- Normalize active-corp party/office addresses while the subset-run advisory lock is held.
 -- The result-bearing CALL returns one JSON value with phase counts, their total, and elapsed seconds.

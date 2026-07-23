@@ -11,9 +11,6 @@ where 1 = 1
 WITH NO DATA
 ;
 
-ALTER MATERIALIZED VIEW mv_corps_with_officers
-    owner to postgres;
-
 
 CREATE MATERIALIZED VIEW mv_corps_party_role_count AS
 select c.corp_num, cp.party_typ_cd, count(cp.party_typ_cd) as party_typ_count
@@ -24,9 +21,6 @@ where 1 = 1
 group by c.corp_num, cp.party_typ_cd
 WITH NO DATA
 ;
-
-ALTER MATERIALIZED VIEW mv_corps_party_role_count
-    owner to postgres;
 
 
 CREATE MATERIALIZED VIEW mv_admin_email_count AS
@@ -42,9 +36,6 @@ WITH NO DATA
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_admin_email_count_normalized_email
   ON mv_admin_email_count (normalized_admin_email);
 
-ALTER MATERIALIZED VIEW mv_admin_email_count
-    owner to postgres;
-
 
 CREATE MATERIALIZED VIEW mv_admin_email_domain_count AS
 select LOWER(SPLIT_PART(c.admin_email, '@', 2)) as email_domain,
@@ -54,9 +45,6 @@ group by LOWER(SPLIT_PART(c.admin_email, '@', 2))
 order by domain_count desc
 WITH NO DATA
 ;
-
-ALTER MATERIALIZED VIEW mv_admin_email_domain_count
-    owner to postgres;
 
 
 create view v_addr_links as
@@ -95,9 +83,6 @@ from current_party
 union all
 select *
 from current_office;
-
-ALTER VIEW v_addr_links
-    owner to postgres;
 
 create or replace view v_addr_issues as
 with link_rows as (
@@ -195,9 +180,6 @@ select
   not rf.any_bad as is_healthy
 from row_flags rf;
 
-ALTER VIEW v_addr_issues
-    owner to postgres;
-
 
 /* Shared per-corp/entity-type address issue counts reused by both the
    slim screening MV and the wide/full address-quality MV. */
@@ -226,9 +208,6 @@ WITH NO DATA
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_addr_issue_counts_by_entity
   ON mv_addr_issue_counts_by_entity (corp_num, entity_kind, entity_type);
-
-ALTER MATERIALIZED VIEW mv_addr_issue_counts_by_entity
-    owner to postgres;
 
 
 create materialized view mv_addr_quality_by_corp as
@@ -598,9 +577,6 @@ WITH NO DATA
 
 create unique index on mv_addr_quality_by_corp (corp_num);
 
-ALTER MATERIALIZED VIEW mv_addr_quality_by_corp
-    owner to postgres;
-
 
 CREATE MATERIALIZED VIEW mv_addr_quality_screening_by_corp AS
 WITH
@@ -632,9 +608,6 @@ WITH NO DATA
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_addr_quality_screening_by_corp_corpnum
   ON mv_addr_quality_screening_by_corp (corp_num);
-
-ALTER MATERIALIZED VIEW mv_addr_quality_screening_by_corp
-    owner to postgres;
 
 /* ---------------------------------------------------------------------
    Share class eligibility issue flags (1 row per corp_num)
@@ -680,9 +653,6 @@ WITH NO DATA
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_share_class_issue_flags_corpnum
   ON mv_share_class_issue_flags (corp_num);
-
-ALTER MATERIALIZED VIEW mv_share_class_issue_flags
-    owner to postgres;
 
 
 CREATE MATERIALIZED VIEW mv_corp_event_filing_rollup AS
@@ -782,9 +752,6 @@ WITH NO DATA
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_corp_event_filing_rollup_corpnum
   ON mv_corp_event_filing_rollup (corp_num);
 
-ALTER MATERIALIZED VIEW mv_corp_event_filing_rollup
-    owner to postgres;
-
 
 CREATE MATERIALIZED VIEW mv_admin_email_bad_email_flags AS
 WITH normalized_admin_emails AS (
@@ -810,9 +777,6 @@ WITH NO DATA
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_admin_email_bad_email_flags_normalized_email
   ON mv_admin_email_bad_email_flags (normalized_admin_email);
-
-ALTER MATERIALIZED VIEW mv_admin_email_bad_email_flags
-    owner to postgres;
 
 
 CREATE MATERIALIZED VIEW mv_legacy_corps_data AS
@@ -1113,9 +1077,6 @@ where 1=1
 WITH NO DATA
 ;
 
-ALTER MATERIALIZED VIEW mv_legacy_corps_data
-    owner to postgres;
-
 CREATE OR REPLACE VIEW v_business_state AS
 SELECT cs.corp_num,
        CASE cs.op_state_type_cd
@@ -1125,9 +1086,6 @@ SELECT cs.corp_num,
        END AS business_state
 FROM corp_state cs
 WHERE cs.end_event_id IS NULL;
-
-ALTER VIEW v_business_state
-    owner to postgres;
 
 CREATE OR REPLACE VIEW v_auth_component_operation_audit AS
 SELECT
@@ -1175,9 +1133,6 @@ SELECT
 FROM auth_component_operation aco
 JOIN auth_processing ap ON ap.id = aco.auth_processing_id
 LEFT JOIN corporation c ON c.corp_num = aco.corp_num;
-
-ALTER VIEW v_auth_component_operation_audit
-    owner to postgres;
 
 CREATE MATERIALIZED VIEW mv_corp_issue_flags AS
 SELECT
@@ -1378,9 +1333,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_mv_corp_issue_flags_corp
 CREATE INDEX IF NOT EXISTS ix_mv_corp_issue_flags_state_type
   ON mv_corp_issue_flags (business_state, corp_type_cd);
 
-ALTER MATERIALIZED VIEW mv_corp_issue_flags
-    owner to postgres;
-
 CREATE OR REPLACE VIEW v_corp_issue_flags_long AS
 WITH base AS (
   SELECT f.*, lcd.group_name, lcd.recognition_dts
@@ -1493,9 +1445,6 @@ UNION ALL SELECT corp_num, business_state, corp_type_cd, group_name, recognition
 UNION ALL SELECT corp_num, business_state, corp_type_cd, group_name, recognition_dts, 'office','DS','Missing addr1',    office_ds_missing_addr1,    has_office_ds_link, has_office_ds_real FROM base
 ;
 
-ALTER VIEW v_corp_issue_flags_long
-    owner to postgres;
-
 CREATE MATERIALIZED VIEW mv_issue_counts_by_corp_type AS
 SELECT
   business_state,
@@ -1518,9 +1467,6 @@ WITH NO DATA
 CREATE INDEX IF NOT EXISTS ix_mv_issue_counts_by_corp_type
   ON mv_issue_counts_by_corp_type (corp_type_cd, business_state);
 ;
-
-ALTER MATERIALIZED VIEW mv_issue_counts_by_corp_type
-    owner to postgres;
 
 CREATE UNIQUE INDEX IF NOT EXISTS ux_legacy_corps_data_corpnum ON mv_legacy_corps_data (corp_num);
 

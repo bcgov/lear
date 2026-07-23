@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import argparse
 import os
 from pathlib import Path
@@ -160,6 +162,7 @@ def run_cprd_subset_extract_generator(
     include_cp: bool = False,
     target_connection: str = _DEFAULT_TARGET_CONNECTION,
     prefix_numeric_bc: bool = False,
+    pg_cast_mode: str = 'install',
 ) -> subprocess.CompletedProcess:
     """
     Generate Commands
@@ -180,6 +183,8 @@ def run_cprd_subset_extract_generator(
         str(threads),
         '--pg-disable-method',
         pg_disable_method,
+        '--pg-cast-mode',
+        pg_cast_mode,
     ]
     argv.extend(['--target-connection', target_connection])
     if pg_fastload:
@@ -252,7 +257,8 @@ def extract_pull_flow(
     reset_extract_postgres: bool = True,
     include_cp: bool = False,
     target_connection: str = _DEFAULT_TARGET_CONNECTION,
-    delta_scope: str = 'batch'
+    delta_scope: str = 'batch',
+    pg_cast_mode: str = 'install',
 ) -> None:
     """
     Generate files
@@ -305,6 +311,7 @@ def extract_pull_flow(
             pg_fastload=pg_fastload,
             include_cp=include_cp,
             pg_disable_method=pg_disable_method,
+            pg_cast_mode=pg_cast_mode,
             out=out,
             target_connection=target_connection,
             prefix_numeric_bc=(mode=='refresh'),
@@ -345,7 +352,8 @@ if __name__ == '__main__':
     p.add_argument('--threads', type=int, default=4, help='DBSchemaCLI transfer threads')
     p.add_argument('--pg-fastload', action='store_true', help='Enable Postgres fast-load')
     p.add_argument('--include-cp', action='store_true', help='Include corp type CP in subset extract queries')
-    p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role'))
+    p.add_argument('--pg-disable-method', default='table_triggers', choices=('table_triggers', 'replica_role', 'drop_constraints'))
+    p.add_argument('--pg-cast-mode', default='install', choices=('install', 'verify'))
     p.add_argument('--out', default='data-tool/scripts/subset/generated/subset_refresh.sql', help='Output path for generated master script.')
     p.add_argument('--run-dbschemacli', action='store_false')
     p.add_argument('--refresh-views', action='store_false')
