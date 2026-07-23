@@ -393,3 +393,23 @@ def test_get_document(app, session, mock_bearer_token, mock_doc_service):
     assert response
     assert status == HTTPStatus.OK
     assert document_service.has_document(completed_filing.id, 'annualReport') != False
+
+
+def test_update_additional_filing_special_resolution(session):
+    """Assert a FILING-2 record decorates the accompanying special resolution, not another output (#34299)."""
+    doc_service = DocumentService()
+    drs_params = '?reportType=FILING-2&drsId=DSR0000200001'
+    doc_list = {
+        'legalFilings': [
+            {'dissolution': 'http://test/documents/dissolution'},
+            {'specialResolution': 'http://test/documents/specialResolution'},
+        ],
+        'affidavit': 'http://test/documents/affidavit',
+        'certificateOfDissolution': 'http://test/documents/certificateOfDissolution',
+    }
+
+    result = doc_service._update_additional_filing(doc_list, drs_params)
+
+    assert result['legalFilings'][1]['specialResolution'] == f'http://test/documents/specialResolution{drs_params}'
+    assert result['affidavit'] == 'http://test/documents/affidavit'
+    assert result['legalFilings'][0]['dissolution'] == 'http://test/documents/dissolution'

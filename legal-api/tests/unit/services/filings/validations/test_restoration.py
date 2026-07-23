@@ -23,9 +23,10 @@ import pytest
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from legal_api.services.filings.validations.validation import validate
-from registry_schemas.example_data import FILING_HEADER, RESTORATION
+from registry_schemas.example_data import RESTORATION, get_filing_template
 
-from tests.unit.services.filings.validations import lists_are_equal
+
+TEST_IDENTIFIER = 'BC1234567'
 
 date_format = '%Y-%m-%d'
 now = datetime.now().strftime(date_format)
@@ -72,8 +73,8 @@ def execute_test_restoration_nr(mocker, filing_sub_type, legal_type, nr_number, 
     expiry_date_str = expiry_date.strftime(date_format)
     mocker.patch('legal_api.services.NameXService.validate_nr', return_value=validate_nr_result)
 
-    business = Business(identifier='BC1234567', legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
-    filing = copy.deepcopy(FILING_HEADER)
+    business = Business(identifier=TEST_IDENTIFIER, legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
+    filing = get_filing_template('restoration', TEST_IDENTIFIER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['restoration']['type'] = filing_sub_type
     filing['filing']['restoration']['expiry'] = expiry_date_str
@@ -133,8 +134,8 @@ class MockResponse:
 )
 def test_validate_party(session, test_name, party_role, expected_msg):
     """Assert that party is validated."""
-    business = Business(identifier='BC1234567', legal_type='BC')
-    filing = copy.deepcopy(FILING_HEADER)
+    business = Business(identifier=TEST_IDENTIFIER, legal_type='BC')
+    filing = get_filing_template('restoration', TEST_IDENTIFIER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['relationships'] = relationships
@@ -170,11 +171,11 @@ def test_validate_party(session, test_name, party_role, expected_msg):
 )
 def test_validate_relationship(session, test_status, restoration_type, expected_code, expected_msg):
     """Assert that applicant's relationship is validated."""
-    business = Business(identifier='BC1234567', legal_type='BC', restoration_expiry_date=LegislationDatetime.now())
+    business = Business(identifier=TEST_IDENTIFIER, legal_type='BC', restoration_expiry_date=LegislationDatetime.now())
     limited_restoration_filing = None
     if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
         limited_restoration_filing = factory_limited_restoration_filing()
-    filing = copy.deepcopy(FILING_HEADER)
+    filing = get_filing_template('restoration', TEST_IDENTIFIER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['type'] = restoration_type
@@ -228,9 +229,9 @@ def test_validate_expiry_date(session, test_name, restoration_type, delta_date, 
         expiry_date = restoration_expiry_date
     if delta_date:
         expiry_date = expiry_date + delta_date
-    business = Business(identifier='BC1234567', legal_type='BC', restoration_expiry_date=restoration_expiry_date)
+    business = Business(identifier=TEST_IDENTIFIER, legal_type='BC', restoration_expiry_date=restoration_expiry_date)
 
-    filing = copy.deepcopy(FILING_HEADER)
+    filing = get_filing_template('restoration', TEST_IDENTIFIER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     if restoration_type == 'limitedRestorationExtension':
@@ -278,8 +279,8 @@ def test_approval_type(session, test_status, restoration_types, legal_types, app
         if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
             limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
         for legal_type in legal_types:
-            business = Business(identifier='BC1234567', legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
-            filing = copy.deepcopy(FILING_HEADER)
+            business = Business(identifier=TEST_IDENTIFIER, legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
+            filing = get_filing_template('restoration', TEST_IDENTIFIER)
             filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
             filing['filing']['header']['name'] = 'restoration'
             filing['filing']['restoration']['type'] = restoration_type
@@ -333,8 +334,8 @@ def test_restoration_court_orders(session, test_status, restoration_types, legal
         if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
             limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
         for legal_type in legal_types:
-            business = Business(identifier='BC1234567', legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
-            filing = copy.deepcopy(FILING_HEADER)
+            business = Business(identifier=TEST_IDENTIFIER, legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
+            filing = get_filing_template('restoration', TEST_IDENTIFIER)
             filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
             filing['filing']['header']['name'] = 'restoration'
             filing['filing']['restoration']['type'] = restoration_type
@@ -395,8 +396,8 @@ def test_restoration_registrar(session, test_status, restoration_types, legal_ty
         if restoration_type in ('limitedRestorationExtension', 'limitedRestorationToFull'):
             limited_restoration_filing = factory_limited_restoration_filing(limited_restoration_approval_type)
         for legal_type in legal_types:
-            business = Business(identifier='BC1234567', legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
-            filing = copy.deepcopy(FILING_HEADER)
+            business = Business(identifier=TEST_IDENTIFIER, legal_type=legal_type, restoration_expiry_date=LegislationDatetime.now())
+            filing = get_filing_template('restoration', TEST_IDENTIFIER)
             filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
             filing['filing']['header']['name'] = 'restoration'
             filing['filing']['restoration']['type'] = restoration_type
@@ -523,12 +524,12 @@ def test_restoration_nr_type(session, mocker, test_status, filing_sub_type, lega
 )
 def test_validate_contact_point(session, test_status, restoration_type, has_contact_point, expected_code, expected_msg):
     """Assert that contact point is not allowed for limited restoration filings."""
-    business = Business(identifier='BC1234567', legal_type='BC', restoration_expiry_date=LegislationDatetime.now())
+    business = Business(identifier=TEST_IDENTIFIER, legal_type='BC', restoration_expiry_date=LegislationDatetime.now())
     limited_restoration_filing = None
     if restoration_type == 'limitedRestorationExtension':
         limited_restoration_filing = factory_limited_restoration_filing()
 
-    filing = copy.deepcopy(FILING_HEADER)
+    filing = get_filing_template('restoration', TEST_IDENTIFIER)
     filing['filing']['restoration'] = copy.deepcopy(RESTORATION)
     filing['filing']['header']['name'] = 'restoration'
     filing['filing']['restoration']['type'] = restoration_type

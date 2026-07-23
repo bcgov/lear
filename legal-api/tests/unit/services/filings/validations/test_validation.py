@@ -100,7 +100,7 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
 
     f = copy.deepcopy(FILING_HEADER)
     f['filing']['header']['date'] = now.isoformat()
-    f['filing']['header']['name'] = 'changeOfDirectors'
+    f['filing']['header']['name'] = 'changeOfAddress'
     f['filing']['business']['identifier'] = identifier
     f['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
     office = f['filing']['changeOfAddress']['offices']['registeredOffice']
@@ -113,6 +113,9 @@ def test_validate_coa_basic(session, test_name, now, delivery_region, delivery_c
         err = validate(business, f)
 
     # validate outcomes
+    if err:
+        print(err.code)
+        print(err.msg)
     if expected_code:
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)

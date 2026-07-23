@@ -34,9 +34,14 @@ FILING_TITLE = {
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
+    "consentContinuationOut": "Consent to Continue Out",
     "continuationIn": "Continuation Application",
+    "continuationOut": "Continuation Out",
     "correction": "Correction",
-    "dissolution": "Dissolution",
+    "dissolution": {
+        "administrative": "Dissolution Application",
+        "voluntary": "Voluntary Dissolution Application"
+    },
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
@@ -46,6 +51,7 @@ FILING_TITLE = {
 FILING_TITLE_SHORT = {
     "amalgamationApplication": "Amalgamation",
     "continuationIn": "Continuation In",
+    "dissolution": "Dissolution",
     "incorporationApplication": "Incorporation",
     "restoration": {
         "fullRestoration": "Restoration",
@@ -74,11 +80,11 @@ FILING_ATTACHMENTS = {
             "extraPdfTypes": ["certificateOfNameCorrection","certifiedRules","certifiedMemorandum"]
         },
         "dissolution-voluntary": {
-            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Affidavit","Special Resolution","Receipt"],
+            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Certified Affidavit","Certified Special Resolution","Receipt"],
             "extraPdfTypes": ["certificateOfDissolution","affidavit","specialResolution"],
         },
         "dissolution-administrative": {
-            "attachments": ["Dissolution Application","Affidavit","Special Resolution","Receipt"],
+            "attachments": ["Dissolution Application","Certified Affidavit","Certified Special Resolution","Receipt"],
             "extraPdfTypes": ["affidavit","specialResolution"],
         },
         "incorporationApplication": {
@@ -119,9 +125,17 @@ FILING_ATTACHMENTS = {
             "attachments": ["Director Change","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"],
         },
+        "consentContinuationOut": {
+            "attachments": ["Continue Out Application", "Letter of Consent", "Receipt"],
+            "extraPdfTypes": ["letterOfConsent"]
+        },
         "continuationIn": {
             "attachments": ["Continuation Application","Notice of Articles","Certificate of Continuation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfContinuation"],
+        },
+        "continuationOut": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": []
         },
         "correction": {
             "attachments": ["Register Correction Application","Notice of Articles","Receipt"],

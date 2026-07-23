@@ -10,15 +10,19 @@
 ### create empty db for the first time
 ```bash
 createdb -h localhost -p 5432 -U postgres -T template0 colin-mig-corps-data-test &&
-psql -h localhost -p 5432 -U postgres -d colin-mig-corps-data-test -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
+psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U postgres -d colin-mig-corps-data-test -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
 
 kill connection & recreate empty db
 
 psql -h localhost -p 5432 -U postgres -d colin-mig-corps-data-test -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE datname = 'colin-mig-corps-data-test' AND pid <> pg_backend_pid();" &&
 dropdb -h localhost -p 5432 -U postgres colin-mig-corps-data-test &&
 createdb -h localhost -p 5432 -U postgres -T template0 colin-mig-corps-data-test &&
-psql -h localhost -p 5432 -U postgres -d colin-mig-corps-test -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
+psql -v ON_ERROR_STOP=1 -h localhost -p 5432 -U postgres -d colin-mig-corps-test -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
 ```
+
+The canonical DDL installs the address-transpose routines through
+`\ir colin_address_transpose_updates.sql`. Run this DDL with `psql`; it installs
+the routines but does not run the transpose.
 
 3. Install DbSchemaCLI (previously named DbShell) - [DbSchemaCLI | Free Universal SQL Command-Line Client](https://dbschema.com/dbschemacli.html).
    More general info around configuration and data transfer can be found at: [DbSchemaCLI | Universal Command Line Client](https://dbschema.com/documentation/dbschemacli.html)
@@ -64,7 +68,9 @@ Transfer using 8 thread(s) filing_user ...      20889 rows in 00:27. Reader wait
 
 Notes:
 1. Update number of threads (e.g. `vset cli.settings.transfer_threads=4`) to use as appropriate in `transfer_cprd_corps.sql`.
-2. As of February 2026, the database extract script runs without error using DbSchema 9.7.1(DbSchemaCLI #250319).
+2. After loading the data, `transfer_cprd_corps.sql` calls
+   `public.colin_address_transpose(NULL)` while holding the advisory lock, then
+   releases the lock. DbSchemaCLI displays one JSON value with eight phase counts, their total, and elapsed seconds.
 
 ---
 
@@ -286,6 +292,7 @@ Core templates (always used in subset workflow):
 - `data-tool/scripts/subset/subset_pg_cleanup_orphan_children.sql` (refresh-only orphan child cleanup before chunked deletes)
 - `data-tool/scripts/subset/subset_pg_boolean_casts.sql` (required so DbSchemaCLI can insert 't'/'f' into boolean columns)
 - `data-tool/scripts/subset/subset_pg_purge_bcomps_excluded.sql` (run once after transfer)
+- `data-tool/scripts/subset/subset_pg_call_address_transpose.sql` (runs address transpose once)
 
 Optional Postgres session performance templates (only when `--pg-fastload` is used):
 - `data-tool/scripts/subset/subset_pg_fastload_begin.sql`
@@ -350,13 +357,12 @@ Generated scripts (gitignored by default):
    Optional flags:
    - Add `--include-cp` to opt in corp type `CP` for the subset transfer queries.
    - `--include-cp` affects the **subset workflow only**. Full refresh (`transfer_cprd_corps.sql`) and downstream reservation flows still use the historical corp-type cohort unless updated separately.
-
    Optional performance flags:
    - Add `--pg-fastload` to enable Postgres session settings for faster bulk writes (templates `subset_pg_fastload_begin.sql` / `subset_pg_fastload_end.sql`).
    - `--pg-disable-method` currently accepts only `table_triggers` and `replica_role`.
    - The actual generator default is `table_triggers`, not `replica_role`.
    - In refresh mode, preserved rows in `corp_processing`, `auth_processing`, `affiliation_processing`, and `colin_tracking` still reference `corporation` / `event`, so FK enforcement must stay suppressed across delete/reload. The generator now adds refresh-only trigger suppression for those preserved FK-owning tables when `--pg-disable-method table_triggers` is used.
-   - Subset load/refresh scripts now acquire a session-level Postgres advisory lock at the start and release it at the end so overlapping subset runs on the same target DB serialize instead of interleaving. The same lock key is also used by the full refresh script.
+   - Subset load/refresh scripts acquire a session-level Postgres advisory lock at the start and release it at the end. The same lock key is used by the full refresh script.
    - `table_triggers` changes table trigger state globally while the refresh runs, so use it against a quiesced/disposable extract DB and with a role that can disable the relevant triggers.
    - If you use `replica_role`, remember it is session-local. If FK errors still occur, verify `current_setting('session_replication_role')` inside the nested delete/purge scripts being executed by DbSchemaCLI.
    - `address` is treated as a shared/global table during subset refresh/load. The generator now reuses the predeclared helper staging table `public.subset_address_stage`, transfers incoming Oracle addresses into it, and merges them into `public.address` by `addr_id` instead of deleting/reinserting address rows directly. The address extract also includes `notification_resend` references.
@@ -386,6 +392,9 @@ Generated scripts (gitignored by default):
 - If `--no-cars` is used, cars* tables are skipped entirely.
 - Chunk templates are rendered at generation time (inline mode), so the resulting SQL is self-contained.
 - If you need legacy runtime substitution behavior, generate with `--render-mode vset` (uses DbSchemaCLI `vset` + &placeholders).
+- The generated master calls address transpose once after all chunks are loaded
+  and before releasing the advisory lock. The returned JSON includes each phase count,
+  their total, and elapsed seconds.
 
 ### Oracle IN-list strategy (`--oracle-in-strategy`)
 

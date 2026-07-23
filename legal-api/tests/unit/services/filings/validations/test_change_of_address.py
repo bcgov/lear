@@ -17,10 +17,8 @@ import copy
 import pytest
 from http import HTTPStatus
 
-from registry_schemas.example_data import CHANGE_OF_ADDRESS, FILING_HEADER
+from registry_schemas.example_data import CHANGE_OF_ADDRESS, get_filing_template
 
-from legal_api.errors import Error
-from business_model.models import Business
 from legal_api.services.filings.validations.validation import validate
 
 from tests.unit.models import factory_business
@@ -29,7 +27,7 @@ from tests.unit.models import factory_business
 def test_valid_address_change(session):
     """Test that a valid address change passes validation."""
     business = factory_business('CP1234567')
-    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json = get_filing_template('changeOfAddress', 'CP1234567')
     filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
     error = validate(business, filing_json)
     assert error is None
@@ -43,7 +41,7 @@ def test_validate_max_length_street_addresses(session, test_data):
     """Test that validation fails when street addresses exceed max length."""
     field, value, msg = test_data
     business = factory_business('CP1234567')
-    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json = get_filing_template('changeOfAddress', 'CP1234567')
     filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
     filing_json['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress'][field] = value
     error = validate(business, filing_json)
@@ -58,7 +56,7 @@ def test_exceed_max_length_street_addresses(session, test_data):
     """Test that validation fails when street addresses exceed max length."""
     field, value, msg = test_data
     business = factory_business('CP1234567')
-    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json = get_filing_template('changeOfAddress', 'CP1234567')
     filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
     filing_json['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress'][field] = value
     error = validate(business, filing_json)
@@ -68,7 +66,7 @@ def test_exceed_max_length_street_addresses(session, test_data):
 def test_invalid_region(session):
     """Test that validation fails when region is not BC."""
     business = factory_business('CP1234567')
-    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json = get_filing_template('changeOfAddress', 'CP1234567')
     filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
     filing_json['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressRegion'] = 'AB'
 
@@ -82,7 +80,7 @@ def test_invalid_region(session):
 def test_invalid_country(session):
     """Test that validation fails when country is not CA."""
     business = factory_business('CP1234567')
-    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json = get_filing_template('changeOfAddress', 'CP1234567')
     filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
     filing_json['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'US'
 

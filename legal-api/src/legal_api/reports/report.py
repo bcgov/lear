@@ -93,6 +93,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         report_meta: dict = ReportMeta.reports.get(self._report_key)
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
+        if self._report_key == "specialResolution" and self._filing.filing_type != "specialResolution":
+            # A special resolution accompanying another filing (e.g. a coop dissolution) must not share
+            # the FILING report type with that filing's own report, or the DRS lookup below serves
+            # whichever of the two documents was stored first (#34299).
+            report_meta = {**report_meta, "reportType": ReportTypes.FILING_2.value}
         report_type = report_meta.get("reportType")
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
@@ -1502,7 +1507,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
-        filing_source = "specialResolution" if self._filing.filing_type == "specialResolution" else "correction"
+        # coop dissolutions carry a specialResolution section alongside the dissolution filing, so
+        # source the resolution from it rather than defaulting to the (empty) correction section
+        filing_source = "specialResolution" \
+            if self._filing.filing_type == "specialResolution" or filing.get("specialResolution") \
+            else "correction"
         filing["header"]["displayName"] = display_name
         resolution_date_str = filing.get(filing_source, {}).get("resolutionDate", None)
         signing_date_str = filing.get(filing_source, {}).get("signingDate", None)

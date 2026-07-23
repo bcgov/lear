@@ -180,6 +180,10 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
             "business-number",
             "business-registry-footer",
             "business-tombstone",
+            "business-tombstone-out-filing",
+            "consent",
+            "consent-next-steps",
+            "out-details",
             "what-happens-next"
         ]
     else:
@@ -283,6 +287,11 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
         file_name = f"{ar_date[:4]} {file_name}"
 
+    if (filing.filing_type == "dissolution" and business.get("legalType") == Business.LegalTypes.COOP.value
+            and document_type in ["affidavit", "specialResolution"]):
+        # coop dissolution affidavit and special resolution attachments are certified copies
+        file_name = f"Certified {file_name}"
+
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
     if filing_pdf_encoded:
@@ -310,8 +319,10 @@ def get_pdfs(  # noqa: PLR0913
     """Get the pdfs for the filing output."""
     pdfs = []
     attach_order = 1
-    # add filing application document
-    attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, filing_attachment_name, regenerate=regenerate)
+    filings_with_unimplemented_outputs = ["amalgamationOut", "consentAmalgamationOut", "continuationOut"]
+    if filing.filing_type not in filings_with_unimplemented_outputs:
+        # add filing application document
+        attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, filing_attachment_name, regenerate=regenerate)
     # add extra documents
     for pdf_type in extra_pdf_type_list:
         attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)

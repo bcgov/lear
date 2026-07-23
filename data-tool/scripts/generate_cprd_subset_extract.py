@@ -111,6 +111,7 @@ class tmpl_TemplateSpec:
 class tmpl_TemplateBundle:
     pg_acquire_advisory_lock: tmpl_TemplateSpec
     pg_release_advisory_lock: tmpl_TemplateSpec
+    pg_call_address_transpose: tmpl_TemplateSpec
     pg_prepare_address_stage: tmpl_TemplateSpec
     pg_cleanup_address_stage: tmpl_TemplateSpec
     pg_cleanup_orphan_children: tmpl_TemplateSpec
@@ -303,6 +304,10 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
         name="subset_pg_release_advisory_lock",
         path=subset_dir / "subset_pg_release_advisory_lock.sql",
     )
+    pg_call_address_transpose = tmpl_TemplateSpec(
+        name="subset_pg_call_address_transpose",
+        path=subset_dir / "subset_pg_call_address_transpose.sql",
+    )
     pg_prepare_address_stage = tmpl_TemplateSpec(
         name="subset_pg_prepare_address_stage",
         path=subset_dir / "subset_pg_prepare_address_stage.sql",
@@ -361,6 +366,7 @@ def tmpl_default_bundle(repo_root: Path) -> tmpl_TemplateBundle:
     return tmpl_TemplateBundle(
         pg_acquire_advisory_lock=pg_acquire_advisory_lock,
         pg_release_advisory_lock=pg_release_advisory_lock,
+        pg_call_address_transpose=pg_call_address_transpose,
         pg_prepare_address_stage=pg_prepare_address_stage,
         pg_cleanup_address_stage=pg_cleanup_address_stage,
         pg_cleanup_orphan_children=pg_cleanup_orphan_children,
@@ -704,14 +710,17 @@ def gen_build_master_script_inline(
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
     lines.append("")
-    lines.append("-- Release subset-run advisory lock")
-    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
-    lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
         lines.append(f"execute {templates.pg_fastload_end.path.as_posix()}")
         lines.append("")
+
+    lines.append("-- Run address transpose while the subset-run advisory lock is held")
+    lines.append(f"execute {templates.pg_call_address_transpose.path.as_posix()}")
+    lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
 
     return "\n".join(lines)
 
@@ -839,14 +848,17 @@ def gen_build_master_script_vset(
     lines.append("-- Cleanup shared address staging table")
     lines.append(f"execute {templates.pg_cleanup_address_stage.path.as_posix()}")
     lines.append("")
-    lines.append("-- Release subset-run advisory lock")
-    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
-    lines.append("")
 
     if cfg.pg_fastload:
         lines.append("-- Reset Postgres fast-load session settings")
         lines.append(f"execute {templates.pg_fastload_end.path.as_posix()}")
         lines.append("")
+
+    lines.append("-- Run address transpose while the subset-run advisory lock is held")
+    lines.append(f"execute {templates.pg_call_address_transpose.path.as_posix()}")
+    lines.append("")
+    lines.append("-- Release subset-run advisory lock")
+    lines.append(f"execute {templates.pg_release_advisory_lock.path.as_posix()}")
 
     return "\n".join(lines)
 
@@ -1045,7 +1057,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
     # Ensure the execute-only templates exist too (even though we don't render them).
     for spec in (
         templates.pg_acquire_advisory_lock,
-        templates.pg_release_advisory_lock,
+        templates.pg_call_address_transpose,
         templates.pg_prepare_address_stage,
         templates.pg_cleanup_address_stage,
         templates.pg_cleanup_orphan_children,
@@ -1173,6 +1185,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
         else:
             print(" - cars* tables will NOT be refreshed (--no-cars was set).")
         print(f" - CP corp type inclusion: {'ENABLED' if cfg.include_cp else 'disabled'} (--include-cp)")
+        print(" - address transpose CALL returns JSON metrics before the advisory lock is explicitly released.")
         print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
         print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
         print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")
@@ -1227,6 +1240,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
     if cfg.oracle_in_strategy == cfg_OracleInStrategy.AUTO:
         print(f" - auto threshold (--or-of-in-max-ids): {cfg.or_of_in_max_ids}")
     print(" - Prefer --render-mode inline for faster runs (inline generates static SQL per chunk).")
+    print(" - address transpose CALL returns JSON metrics before the advisory lock is explicitly released.")
     print(f" - Postgres fast-load session settings: {'ENABLED' if cfg.pg_fastload else 'disabled'} (--pg-fastload)")
     print(f" - Postgres trigger suppression: {cfg.pg_disable_method.value} (--pg-disable-method)")
     print(" - subset runs acquire a session-level advisory lock on the target DB to prevent overlap.")

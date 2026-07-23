@@ -220,6 +220,7 @@ def test_maintenance_notification(app, session, status, filing_type, filing_sub_
     ('PAID', 'changeOfAddress', None, 'CP1234567'),
     ('PAID', 'changeOfDirectors', None, 'CP1234567'),
     ('PAID', 'specialResolution', None, 'BC1234567'),
+    ('PAID', 'consentContinuationOut', None, 'BC1234567'),
     ('COMPLETED', 'annualReport', None, 'CP1234567'),
     ('COMPLETED', 'changeOfAddress', None, 'CP1234567'),
     ('COMPLETED', 'changeOfDirectors', None, 'CP1234567'),
