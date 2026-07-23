@@ -74,6 +74,175 @@ Notes:
 
 ---
 
+## Running without superuser
+
+The supported restricted path uses one owner identity for the extract database and all
+objects in `public`. During a load, `drop_constraints` temporarily removes every
+foreign key in `public`, so suppression applies to all DbSchemaCLI writer sessions.
+The constraints are restored afterward as `NOT VALID`. The database must be quiesced
+during the drop/load/restore window. Any user-defined triggers added outside this
+repository are **not** disabled by this method and will continue to fire.
+
+### One-time bootstrap vs. steady-state privileges
+
+| Phase | PostgreSQL privileges / ownership | Oracle privileges |
+|---|---|---|
+| One-time DBA bootstrap | Superuser creates or adopts the login and database, transfers database and `public` schema ownership, and installs the `varchar -> boolean` and `bpchar -> boolean` casts. Repeat the cast install whenever the database is dropped/recreated. | None. |
+| DDL installation | The restricted role owns the database and `public` schema and applies both DDL files itself, thereby owning all extract tables, sequences, views, materialized views, functions, and procedures. | None. |
+| Steady-state load/refresh | `LOGIN` plus object ownership. The role does **not** need `SUPERUSER`, `CREATEDB`, or `CREATEROLE`, and no additional grantable PostgreSQL privileges are required. | Existing source login plus `SELECT` on every COLIN source object used by the full/subset queries. See the privilege audit in `docs/plans/nonsuperuser_refresh_plan.md`. |
+
+Optional privileges are not part of the supported path: `pg_signal_backend` is needed
+only to terminate other users' sessions, and PostgreSQL 15+
+`GRANT SET ON PARAMETER session_replication_role` is relevant only to the legacy
+`replica_role` method. Neither is needed with `drop_constraints`, and restricted
+runs must not drop/recreate their database.
+
+If policy separates login and ownership, a non-login owner role granted to the login
+is equivalent, but both runtime connection mechanisms must receive the same membership
+and must be tested for owner checks.
+
+### Provision in this order
+
+Use a PostgreSQL superuser from a maintenance database. The bootstrap file is
+idempotent where PostgreSQL permits and deliberately does not contain a password;
+configure authentication through the deployment's approved secret mechanism.
+
+1. **Create/adopt the role and database, then transfer the database and schema:**
+
+   ```bash
+   psql -X -v ON_ERROR_STOP=1 -h <host> -p <port> -U <dba> -d postgres \
+     -v role=colin_extract -v dbname=colin_extract \
+     -f <lear-repo-base-path>/data-tool/scripts/bootstrap/colin_extract_restricted_bootstrap.sql
+   ```
+
+2. **Apply the base DDL and then the derived view/MV DDL as that restricted role:**
+
+   ```bash
+   psql -X -v ON_ERROR_STOP=1 -h <host> -p <port> -U colin_extract -d colin_extract \
+     -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_ddl
+   psql -X -v ON_ERROR_STOP=1 -h <host> -p <port> -U colin_extract -d colin_extract \
+     -f <lear-repo-base-path>/data-tool/scripts/colin_corps_extract_postgres_views_ddl
+   ```
+
+3. **Install the database-scoped casts once as a superuser:**
+
+   ```bash
+   psql -X -v ON_ERROR_STOP=1 -h <host> -p <port> -U <dba> -d colin_extract \
+     -f <lear-repo-base-path>/data-tool/scripts/subset/subset_pg_boolean_casts.sql
+   ```
+
+   The installer is self-contained and technically may run any time after database
+   creation. Running it after the role-owned DDL makes the ownership boundary explicit:
+   the DBA owns the cast helper functions/casts, and restricted runs only verify them.
+   A missing bootstrap fails before transfer at
+   `subset_pg_boolean_casts_verify.sql`.
+
+4. **Run the full or subset workflow with the restricted identity.** The full
+   refresh needs no boolean casts because it temporarily converts the affected columns
+   to integers. Register `cprd_pg` with the restricted role and run the existing
+   `transfer_cprd_corps.sql`; it now uses the FK drop/restore procedures automatically.
+
+   For a subset load/refresh, generate with both restricted modes:
+
+   ```bash
+   python <lear-repo-base-path>/data-tool/scripts/generate_cprd_subset_extract.py \
+     --corp-file <corp-id-file> \
+     --mode refresh \
+     --pg-disable-method drop_constraints \
+     --pg-cast-mode verify \
+     --out <lear-repo-base-path>/data-tool/scripts/_generated/subset_refresh.sql
+   ```
+
+   For the flow entry point, pass the same privilege modes and explicitly disable its
+   database reset:
+
+   ```bash
+   python <lear-repo-base-path>/data-tool/flows/refresh_extract_subset_flow.py \
+     --mode refresh \
+     --pg-disable-method drop_constraints \
+     --pg-cast-mode verify \
+     --reset-extract-postgres
+   ```
+
+   **Flag inversion warning:** `--reset-extract-postgres` is implemented with
+   `action='store_false'`; passing it disables reset, while omitting it enables the
+   destructive drop/create path. Restricted runs must pass it. The
+   `--run-dbschemacli` and `--refresh-views` flags have the same inverted behavior:
+   passing either flag disables that action, so omit them when the flow should execute
+   DbSchemaCLI and refresh views.
+
+### Runtime identity requirement
+
+The flow's psql/SQLAlchemy connections use the `DATABASE_*_COLIN_MIGR`
+credentials, while DbSchemaCLI uses the registered target connection
+(`cprd_pg`, `cprd_pg_subset`, or `--target-connection`). Both must authenticate
+as the same restricted owner identity; otherwise one half of the run can fail owner
+checks even if the other succeeds. Confirm the DbSchemaCLI registration and environment
+together before the first run. A direct generator diagnostic run may add
+`--pg-debug-session-probes` to print `current_user` for the generated master/nested
+sessions; the ownership model still requires the separately opened transfer writers
+to use the same identity.
+
+### Existing extract databases
+
+Before the edited full-refresh script or a subset run using `drop_constraints`, an
+existing database created from older DDL needs the FK module installed once by its
+object-owning restricted role:
+
+```bash
+psql -X -v ON_ERROR_STOP=1 -h <host> -p <port> -U colin_extract -d <existing-db> \
+  -f <lear-repo-base-path>/data-tool/scripts/colin_fk_constraint_updates.sql
+```
+
+Also install the boolean casts as the DBA if they are absent, then use
+`--pg-cast-mode verify`. If the existing extract objects are still owned by
+`postgres`, grants alone are insufficient: have the DBA transfer the complete
+extract object set to the restricted owner or, preferably, provision a fresh database
+with the ordered procedure above. Do not reapply the full base DDL over a populated
+database merely to obtain the FK module.
+
+Dropping/recreating a restricted database is a DBA re-provisioning event: rerun the
+bootstrap, reapply both DDLs as the restricted owner, and reinstall the casts as the
+DBA. For load mode, target a pre-provisioned empty database and keep the flow reset
+disabled.
+
+### `NOT VALID`, trigger, and recovery caveats
+
+Restored foreign keys enforce all new writes but do not scan existing rows.
+`pg_constraint.convalidated` remains false, and `psql \d` reports `NOT VALID`.
+This is intentional because the extract can contain known legacy exceptions, including
+amalgamating-corporation references outside the extracted cohort. Do not run blanket
+`VALIDATE CONSTRAINT`; validate only a specifically understood constraint when its
+data is known to be clean.
+
+The FK procedures must be invoked as top-level autocommit `CALL` statements, not
+inside an explicit transaction. If a run fails in the suppression window:
+
+1. Stop other writers and reconnect as the same restricted owner. A disconnected
+   DbSchemaCLI session releases its session advisory lock.
+2. Restore every captured constraint (safe to repeat; a second call is a no-op):
+
+   ```sql
+   CALL public.colin_fk_restore_all(NULL);
+   ```
+
+3. For an interrupted full refresh, re-run the reverse
+   `ALTER COLUMN ... TYPE boolean USING ...::boolean` statements if any indicator
+   columns were left as integers.
+4. Confirm `public.colin_dropped_fks` is empty, repair any reported restore error, and
+   rerun the extract. A failed restore retains its helper row, so the same `CALL` can
+   resume without catalog surgery.
+
+### Performance validation status
+
+The manual comparison of the standard Oracle corp list under superuser
+`table_triggers` versus restricted `drop_constraints` is **deferred** because it
+requires Oracle and DbSchemaCLI access. No timing result is claimed here. When those
+external dependencies are available, record both runs with the same corp list,
+PostgreSQL target class, DbSchemaCLI version/thread count, and fast-load settings.
+
+---
+
 ## Preserved-table backup, full restore, and delta restore
 
 The preserved migration/tracking/auth side-table list is centralized in `data-tool/scripts/restore/preserved_tables.conf` and is shared by:
@@ -359,7 +528,7 @@ Generated scripts (gitignored by default):
    - `--include-cp` affects the **subset workflow only**. Full refresh (`transfer_cprd_corps.sql`) and downstream reservation flows still use the historical corp-type cohort unless updated separately.
    Optional performance flags:
    - Add `--pg-fastload` to enable Postgres session settings for faster bulk writes (templates `subset_pg_fastload_begin.sql` / `subset_pg_fastload_end.sql`).
-   - `--pg-disable-method` currently accepts only `table_triggers` and `replica_role`.
+   - `--pg-disable-method` accepts `table_triggers`, `replica_role`, and `drop_constraints`; use `drop_constraints` for the restricted-owner path, which restores foreign keys as `NOT VALID`.
    - The actual generator default is `table_triggers`, not `replica_role`.
    - In refresh mode, preserved rows in `corp_processing`, `auth_processing`, `affiliation_processing`, and `colin_tracking` still reference `corporation` / `event`, so FK enforcement must stay suppressed across delete/reload. The generator now adds refresh-only trigger suppression for those preserved FK-owning tables when `--pg-disable-method table_triggers` is used.
    - Subset load/refresh scripts acquire a session-level Postgres advisory lock at the start and release it at the end. The same lock key is used by the full refresh script.
