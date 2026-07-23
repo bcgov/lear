@@ -499,7 +499,7 @@ FILINGS: Final = {
         "additional": [
             {
                 "types": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CCC", "CUL"],
-                "outputs": ["letterOfConsent"]
+                "outputs": ["letterOfConsent", "continueOutApplication"]
             },
         ]
     },

@@ -272,6 +272,7 @@ TEST_REPORT_META_DATA = [
     (True, "certificateOfRestoration", "CERT"),
     (True, "letterOfConsent", "FILING-3"),
     (True, "letterOfConsentAmalgamationOut", "FILING-2"),
+    (True, "continueOutApplication", "FILING-4"),
     (True, "letterOfAgmExtension", "FILING-2"),
     (True, "letterOfAgmLocationChange", "FILING-2"),
     (True, "continuationIn", "FILING"),
