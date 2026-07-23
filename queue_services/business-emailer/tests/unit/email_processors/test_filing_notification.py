@@ -291,6 +291,9 @@ def test_bootstrap_body_details(app, mock_pdfs, session, legal_type, status, fil
         assert '**Business Name:** Not Available' in body
         assert '**Incorporation Number:** Not Available' in body
         assert 'What happens next' in body
+        if filing_type == 'amalgamationApplication':
+            # what-happens-next uses the short name for amalgamations
+            assert 'Once the amalgamation is effective on' in body
     else:
         assert '**Business Name:** 1234567 B.C. Ltd.' in body
         assert '**Incorporation Number:** BC1234567' in body
@@ -355,6 +358,10 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('COMPLETED', 'restoration', 'limitedRestorationToFull', None, None, 'BC1234567'),
     ('COMPLETED', 'specialResolution', None, None, None, 'CP1234567'),
     ('COMPLETED', 'specialResolution', None, 'staff', None, 'CP1234567'),
+    ('COMPLETED', 'consentContinuationOut', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'consentContinuationOut', None, 'staff', None, 'BC1234567'),
+    ('COMPLETED', 'continuationOut', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'continuationOut', None, 'staff', None, 'BC1234567'),
 ])
 def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
                                   status, filing_type, filing_sub_type, submitter_role, legal_type, identifier):
@@ -369,7 +376,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     # test processor
     email = process_filing(filing, filing_type, status)
 
-    if filing_type in ['alteration', 'dissolution']:
+    if filing_type in ['alteration', 'consentContinuationOut', 'continuationOut', 'dissolution']:
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
         else:
@@ -507,6 +514,14 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         {'fileName': 'Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
+    ('consentContinuationOut', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Continue Out Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Letter of Consent.pdf', 'content': 'pdf_content_loc', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('continuationOut', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
+    ]),
 ], ids=[
     'alteration - PAID no name change',
     'alteration - PAID name change included',
@@ -527,7 +542,9 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'dissolution - voluntary corp',
     'dissolution - voluntary coop',
     'dissolution - voluntary firm',
-    'dissolution - administrative suppresses certificate'
+    'dissolution - administrative suppresses certificate',
+    'consentContinuationOut - application + letter of consent + receipt',
+    'continuationOut - receipt only'
 ])
 def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email, mock_auth_recipient,
                                         filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments):
@@ -563,6 +580,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
             'certificateOfRestoration': b'pdf_content_cor',
             'certificateOfDissolution': b'pdf_content_cod',
             'affidavit': b'pdf_content_affidavit',
+            'letterOfConsent': b'pdf_content_loc',
         }, receipt=b'pdf_content_receipt')
         output = process_filing(filing, filing_type, status)
 
@@ -669,6 +687,33 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'test business - Successful Dissolution',
         []
     ),
+    (
+        'consentContinuationOut',
+        None,
+        'COMPLETED',
+        'Your request for Consent to Continue Out of B.C. has been granted for 6 months',
+        'test business - Consent to Continue Out Granted',
+        [
+            '**Effective Until:** October 30, 2025',
+            '**New Jurisdiction:** Alberta, Canada',
+            'granted a 6 month consent to continue',
+            'This consent expires on October 30, 2025',
+            'Once you have completed your continuation into the jurisdiction of Alberta, Canada',
+        ],
+    ),
+    (
+        'continuationOut',
+        None,
+        'COMPLETED',
+        'You have successfully continued out of B.C.',
+        'test business - Successful Continuation Out',
+        [
+            '**New Jurisdiction:** Alberta, Canada',
+            '**Continue Out Effective Date:** April 29, 2025',
+            'made historical in British Columbia as of April 29, 2025',
+            'under the name NEW TEST BUSINESS',
+        ],
+    ),
 ])
 def test_maintenance_filing_renders_body_and_subject(app, session,
                                                      mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
@@ -686,7 +731,7 @@ def test_maintenance_filing_renders_body_and_subject(app, session,
     body = email['content']['body']
     assert expected_header in body
     for snippet in expected_body_snippets:
-        assert snippet in expected_body_snippets
+        assert snippet in body
     assert ".html]]" not in body
     assert ".md]]" not in body
 

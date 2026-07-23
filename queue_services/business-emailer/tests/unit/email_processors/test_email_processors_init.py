@@ -107,12 +107,16 @@ def test_substitute_template_parts_md_replaces_footer_marker(app):
 
 
 def test_substitute_template_parts_md_replaces_all_md_parts(app):
-    """Assert that substitute_template_parts with file_type='md' replaces all five markdown common parts."""
+    """Assert that substitute_template_parts with file_type='md' replaces all markdown common parts."""
     template = (
         "[[attachments.md]]\n"
         "[[business-number.md]]\n"
         "[[business-registry-footer.md]]\n"
         "[[business-tombstone.md]]\n"
+        "[[business-tombstone-out-filing.md]]\n"
+        "[[consent.md]]\n"
+        "[[consent-next-steps.md]]\n"
+        "[[out-details.md]]\n"
         "[[what-happens-next.md]]"
     )
     with app.app_context():
@@ -122,6 +126,10 @@ def test_substitute_template_parts_md_replaces_all_md_parts(app):
         '[[business-number.md]]',
         '[[business-registry-footer.md]]',
         '[[business-tombstone.md]]',
+        '[[business-tombstone-out-filing.md]]',
+        '[[consent.md]]',
+        '[[consent-next-steps.md]]',
+        '[[out-details.md]]',
         '[[what-happens-next.md]]',
     ]:
         assert marker not in result

@@ -139,9 +139,12 @@ def _get_datetime_str_display(date_str: str | None):
     """Return the formatted date string to display in the email."""
     if date_str:
         try:
-            date_time = datetime.fromisoformat(date_str)
-            date_time = LegislationDatetime.as_legislation_timezone(date_time)
-            return date_time.strftime(f"%B %-d, %Y")
+            if "T" in date_str:
+                date_time = LegislationDatetime.as_legislation_timezone(datetime.fromisoformat(date_str))
+            else:
+                # date-only strings are already in legislation timezone
+                date_time = LegislationDatetime.as_legislation_timezone_from_date_str(date_str)
+            return date_time.strftime("%B %-d, %Y")
         except Exception as err:
             current_app.logger.warning(err.with_traceback(None))
 
@@ -230,7 +233,7 @@ def process(email_info: dict, token: str) -> dict | None:
 
     legal_type = business.get("legalType")
     filing_name, filing_name_short = _get_filing_display_names(filing_type, filing.filing_sub_type)
-    what_happens_next_name = filing_name_short if filing_type in ["dissolution", "amalgamation"] else filing_name
+    what_happens_next_name = filing_name_short if filing_type in ["dissolution", "amalgamationApplication"] else filing_name
     business_identifier = business.get("identifier")
 
     if _skip_email_check(status, filing, legal_type, filing_name, business_identifier):
