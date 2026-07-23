@@ -19,6 +19,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 import copy
 from datetime import UTC
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 
@@ -27,6 +28,7 @@ from business_common.utils.datetime import datetime
 from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.services import flags
+from legal_api.services.bootstrap import RegistrationBootstrapService
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
@@ -79,6 +81,41 @@ def test_create_bootstrap_failure_filing(client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], None))
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
+
+
+@pytest.mark.parametrize('filing_name,legal_type', [
+    ('incorporationApplication', 'CP'),
+    ('incorporationApplication', 'BC'),
+    ('registration', 'SP'),
+    ('registration', 'GP'),
+    ('amalgamationApplication', 'BC'),
+    ('continuationIn', 'C'),
+])
+def test_create_bootstrap_minimal_draft_filing_mocked_affiliation(session, client, jwt, filing_name, legal_type):
+    """Assert that a minimal filing can be used to create a draft filing."""
+    filing = {
+        'filing': {
+            'header': {
+                'name': filing_name,
+                'accountId': 28
+            },
+            filing_name: {
+                'nameRequest': {
+                    'legalType': legal_type,
+                }
+            }
+        }
+    }
+    if filing_name == 'amalgamationApplication':
+        filing['filing'][filing_name]['type'] = 'regular'
+
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK):
+        rv = client.post('/api/v2/businesses?draft=true', json=filing, headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['business']['identifier']
+    assert rv.json['filing']['header']['accountId'] == 28
+    assert rv.json['filing']['header']['name'] == filing_name
 
 
 @integration_affiliation
