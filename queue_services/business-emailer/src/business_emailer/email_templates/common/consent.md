@@ -1,0 +1,2 @@
+## Consent
+You have been granted a 6 month consent to {{ out_action }} your business out of British Columbia, to the jurisdiction of {{ new_jurisdiction }}. {% if consent_expiry_date -%}This consent expires on {{ consent_expiry_date }}.{% endif %}

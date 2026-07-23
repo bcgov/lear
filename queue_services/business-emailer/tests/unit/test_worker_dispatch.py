@@ -30,8 +30,6 @@ from business_emailer.email_processors import (
     bn_notification,
     cease_receiver_notification,
     consent_amalgamation_out_notification,
-    consent_continuation_out_notification,
-    continuation_out_notification,
     filing_notification,
     intent_to_liquidate_notification,
     intent_to_liquidate_notification as _intent_to_liquidate,  # noqa: F401 (keep alias import-safe)
@@ -241,36 +239,6 @@ def test_amalgamation_out_dispatches(app, session, mocker, mock_send_email):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_consent_continuation_out_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(consent_continuation_out_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "consentContinuationOut", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_consent_continuation_out_non_completed_skipped(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(consent_continuation_out_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "consentContinuationOut", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_not_called()
-    mock_send_email.assert_not_called()
-
-
-def test_continuation_out_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(continuation_out_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "continuationOut", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_intent_to_liquidate_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(intent_to_liquidate_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "intentToLiquidate", "option": COMPLETED}
@@ -322,7 +290,9 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
     "changeOfAddress",
     "changeOfDirectors",
     "changeOfRegistration",
+    "consentContinuationOut",
     "continuationIn",
+    "continuationOut",
     "correction",
     "dissolution",
     "incorporationApplication",

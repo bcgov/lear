@@ -76,6 +76,8 @@ FILING_TYPE_MAPPER = {
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
     'changeOfRegistration': CHANGE_OF_REGISTRATION,
+    'consentContinuationOut': CONSENT_CONTINUATION_OUT,
+    'continuationOut': CONTINUATION_OUT,
     'dissolution': DISSOLUTION,
     'restoration': RESTORATION,
     'specialResolution': SPECIAL_RESOLUTION
@@ -312,66 +314,6 @@ def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, le
     return filing
 
 
-def prep_consent_continuation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
-    """Return a new consent continuation out filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'consentContinuationOut'
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
-    filing_template['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
-
-
-def prep_continuation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
-    """Return a new continuation out filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'continuationOut'
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
-    filing_template['filing']['continuationOut'] = copy.deepcopy(CONTINUATION_OUT)
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
-
-
 def prep_change_of_registration_filing(session, identifier, payment_id, legal_type,
                                        legal_name, submitter_role, parties=None):
     """Return a new change of registration filing prepped for email notification."""
@@ -472,7 +414,16 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
         **template_overrides
     }
 
-    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id)
+    meta_data = None
+    if filing_type == 'consentContinuationOut':
+        meta_data = {'consentContinuationOut': {
+            'expiry': '2025-10-31T06:59:00+00:00', 'region': 'AB', 'country': 'CA'}}
+    elif filing_type == 'continuationOut':
+        meta_data = {'continuationOut': {
+            'continuationOutDate': '2025-04-29', 'legalName': 'new test business',
+            'region': 'AB', 'country': 'CA'}}
+
+    filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id, meta_data=meta_data)
 
     user = create_user('test_user')
     filing.submitter_id = user.id

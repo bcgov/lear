@@ -1,0 +1,2 @@
+## Next Steps
+Once you have completed your {{ consent_filing_desc }} into the jurisdiction of {{ new_jurisdiction }}, you must forward any documents showing your status in your new jurisdiction so that we may complete your {{ consent_filing_desc }} out and make {{ business_name }} - {{ business_identifier }} historical in British Columbia.

@@ -1,10 +1,11 @@
-# Your {{ (dissolution_display_name or "Dissolution Application") | lower }} has been filed
+# Your {{ filing_name | lower }} has been filed
 
 --- 
 
 [[business-tombstone.md]]
 
 ---
+
 [[attachments.md]]
 
 ---
