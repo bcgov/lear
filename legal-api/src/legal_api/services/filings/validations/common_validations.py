@@ -760,32 +760,18 @@ def _validate_relationship_entity_person_colin_sync(relationship: dict, legal_ty
     stripped_given_name = given_name.strip()
     if (legal_type in Business.CORPS) and (not stripped_given_name):
         msg.append({"error": f"{party_roles_str} giveName is required", "path": f"{entity_path}/givenName"})
-    elif given_name != stripped_given_name:
-        msg.append({
-            "error": f"{party_roles_str} giveName cannot start or end with whitespace",
-            "path": f"{entity_path}/givenName"
-        })
     elif len(given_name) > custom_max_length:
         err_msg = f"{party_roles_str} given name cannot be longer than {custom_max_length} characters"
         msg.append({"error": err_msg, "path": f"{entity_path}/givenName"})
 
     stripped_middle_initial = middle_initial.strip()
-    if middle_initial is not None and stripped_middle_initial:
-        if middle_initial != stripped_middle_initial:
-            msg.append({"error": f"{party_roles_str} middleInitial cannot start or end with whitespace",
-                        "path": f"{entity_path}/middleInitial"})
-        elif len(middle_initial) > custom_max_length:
-            err_msg = f"{party_roles_str} middleInitial cannot be longer than {custom_max_length} characters"
-            msg.append({"error": err_msg, "path": f"{entity_path}/middleInitial"})
+    if middle_initial is not None and stripped_middle_initial and len(middle_initial) > custom_max_length:
+        err_msg = f"{party_roles_str} middleInitial cannot be longer than {custom_max_length} characters"
+        msg.append({"error": err_msg, "path": f"{entity_path}/middleInitial"})
 
     stripped_family_name = family_name.strip()
     if (legal_type in Business.CORPS) and (not stripped_family_name):
         msg.append({"error": f"{party_roles_str} familyName is required", "path": f"{entity_path}/familyName"})
-    elif family_name != stripped_family_name:
-        msg.append({
-            "error": f"{party_roles_str} familyName cannot start or end with whitespace",
-            "path": f"{entity_path}/familyName"
-        })
     elif len(family_name) > family_name_max_length:
         err_msg = f"{party_roles_str} family name cannot be longer than {family_name_max_length} characters"
         msg.append({"error": err_msg, "path": f"{entity_path}/familyName"})
