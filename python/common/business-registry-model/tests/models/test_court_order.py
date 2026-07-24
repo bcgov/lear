@@ -16,8 +16,9 @@
 
 Test-Suite to ensure that the CourtOrder Model is working as expected.
 """
-import pytest
 from datetime import UTC, datetime
+
+import pytest
 
 from business_model.models import CourtOrder
 from tests.models import factory_business, factory_filing
