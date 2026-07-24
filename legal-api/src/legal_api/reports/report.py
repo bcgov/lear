@@ -351,7 +351,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_restoration_data(filing)
         elif self._report_key == "restoration":
             self._format_restoration_data(filing)
-        elif self._report_key in {"letterOfConsent", "letterOfConsentAmalgamationOut", "continueOutApplication"}:
+        elif self._report_key in {"letterOfConsent", "letterOfConsentAmalgamationOut", "consentContinuationOut"}:
             self._format_consent_continuation_amalgamation_out_data(filing)
         elif self._report_key == "correction":
             self._format_correction_data(filing)
@@ -1964,12 +1964,10 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "fileName": "letterOfConsentAmalgamationOut",
             "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
-        "continueOutApplication": {
-            # FILING-2 is not used here: legacy consent filings stored the Letter of Consent
-            # in the DRS as FILING-2 before it moved to FILING-3.
+        "consentContinuationOut": {
             "filingDescription": "Continue Out Application",
             "fileName": "continueOutApplication",
-            "reportType": ReportTypes.FILING_4.value
+            "reportType": ReportTypes.FILING.value
         },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",

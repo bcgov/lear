@@ -1075,8 +1075,11 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
      None, None, Filing.Status.COMPLETED,
      {'documents': {
+         'legalFilings': [
+             {'consentContinuationOut':
+              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
+         ],
          'letterOfConsent': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfConsent',
-         'continueOutApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/continueOutApplication',
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }
      },

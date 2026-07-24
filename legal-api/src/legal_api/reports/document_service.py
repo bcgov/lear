@@ -276,7 +276,7 @@ class DocumentService:
                 doc_list = self._update_legal_filing(doc_list, query_params)
             elif report_type.startswith("FILING"):
                 # Additional filings
-                doc_list = self._update_additional_filing(doc_list, query_params)
+                doc_list = self._update_additional_filing(doc_list, query_params, report_type)
             elif report_type == "CERT":
                 doc_list = self._update_certificate(doc_list, query_params)
             elif doc.get("documentClass"):
@@ -320,7 +320,7 @@ class DocumentService:
                     doc_list = self._update_legal_filing(doc_list, query_params)
                 elif report_type.startswith("FILING"):
                     # Additional filings
-                    doc_list = self._update_additional_filing(doc_list, query_params)
+                    doc_list = self._update_additional_filing(doc_list, query_params, report_type)
                 elif report_type == "CERT":
                     doc_list = self._update_certificate(doc_list, query_params)
                 elif doc.get("documentClass"):
@@ -340,12 +340,7 @@ class DocumentService:
         headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID, APP_PDF)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
-        if report_type in [
-            ReportTypes.FILING.value,
-            ReportTypes.FILING_2.value,
-            ReportTypes.FILING_4.value,
-            ReportTypes.NOA.value
-        ]:
+        if report_type in [ReportTypes.FILING.value, ReportTypes.FILING_2.value, ReportTypes.NOA.value]:
             get_url = GET_REPORT_CERTIFIED_PATH
         get_url = get_url.format(url=url, product=self.product_code, drsId=drs_id)
         response = requests.get(url=get_url, headers=headers)
@@ -564,8 +559,11 @@ class DocumentService:
             legal_filing[filing_key] = legal_filing[filing_key] + drs_params
         return doc_list
 
-    def _update_additional_filing(self, doc_list: dict, drs_params: str) -> dict:
+    def _update_additional_filing(self, doc_list: dict, drs_params: str, report_type: str | None = None) -> dict:
         """Conditionally add the DRS params to the additional filing document url."""
+        # Local import: report.py imports this module.
+        from legal_api.reports.report import ReportMeta
+
         if doc_list.get("specialResolutionApplication"):  # Not in configuration
             doc_list["specialResolutionApplication"] = doc_list["specialResolutionApplication"] + drs_params
             return doc_list
@@ -587,6 +585,11 @@ class DocumentService:
                                 not str(output).startswith("certificate") and
                                 doc_list.get(output)
                             ):
+                                # A DRS record only maps to an output configured with the same
+                                # report type (e.g. skip legacy FILING-2 letters of consent).
+                                output_report_type = ReportMeta.reports.get(output, {}).get("reportType")
+                                if report_type and output_report_type and output_report_type != report_type:
+                                    continue
                                 doc_list[output] = doc_list[output] + drs_params
                                 break
         return doc_list

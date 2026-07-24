@@ -623,7 +623,6 @@ class Filing:  # pylint: disable=too-many-public-methods
             no_legal_filings = [
                 Filing.FilingTypes.AMALGAMATIONOUT.value,
                 Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
-                Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
                 Filing.FilingTypes.CONTINUATIONOUT.value,
                 Filing.FilingTypes.COURTORDER.value,
                 Filing.FilingTypes.AGMEXTENSION.value,
