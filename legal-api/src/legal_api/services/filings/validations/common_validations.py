@@ -765,10 +765,9 @@ def _validate_relationship_entity_person_colin_sync(relationship: dict, legal_ty
         msg.append({"error": err_msg, "path": f"{entity_path}/givenName"})
 
     stripped_middle_initial = middle_initial.strip()
-    if middle_initial is not None and stripped_middle_initial:
-        if len(middle_initial) > custom_max_length:
-            err_msg = f"{party_roles_str} middleInitial cannot be longer than {custom_max_length} characters"
-            msg.append({"error": err_msg, "path": f"{entity_path}/middleInitial"})
+    if middle_initial is not None and stripped_middle_initial and len(middle_initial) > custom_max_length:
+        err_msg = f"{party_roles_str} middleInitial cannot be longer than {custom_max_length} characters"
+        msg.append({"error": err_msg, "path": f"{entity_path}/middleInitial"})
 
     stripped_family_name = family_name.strip()
     if (legal_type in Business.CORPS) and (not stripped_family_name):
