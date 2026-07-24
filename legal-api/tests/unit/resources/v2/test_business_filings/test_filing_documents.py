@@ -2129,7 +2129,7 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     filing._status = Filing.Status.COMPLETED
     filing.save()
 
-    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
+    mocker.patch('legal_api.core.filing.has_any_roles', return_value=True)
     rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
 
