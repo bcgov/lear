@@ -29,7 +29,8 @@ from __future__ import annotations
 
 from sql_versioning import Versioned
 
-from business_model.models import db
+from .db import db
+from .filing import Filing
 
 
 class CourtOrder(db.Model, Versioned):
@@ -72,21 +73,38 @@ class CourtOrder(db.Model, Versioned):
 
     @classmethod
     def get_by_id(cls, id) -> CourtOrder | None:
-        """Get a court order by ID."""
+        """Get a court order."""
         if not id:
           return None
         return cls.query.filter_by(id=id).one_or_none()
 
     @classmethod
     def get_by_filing_id(cls, filing_id) -> CourtOrder | None:
-        """Get a court order by filing ID."""
+        """Get court order for a filing."""
         if not filing_id:
           return None
         return cls.query.filter_by(filing_id=filing_id).one_or_none()
 
     @classmethod
-    def get_by_business_id(cls, business_id) -> list[CourtOrder]:
-        """Get a court order by business ID."""
+    def get_by_business_id(cls, business_id, include_filing_type: bool = False) -> list[CourtOrder]:
+        """Get court orders for a business, optionally including filing type."""
         if not business_id:
           return []
-        return cls.query.filter_by(business_id=business_id).all()
+        if include_filing_type:
+            query = (db.session.query(CourtOrder, Filing._filing_type)
+                    .join(Filing, CourtOrder.filing_id == Filing.id))
+        else:
+            query = db.session.query(CourtOrder)
+
+        return query.filter(CourtOrder.business_id == business_id).order_by(CourtOrder.id.desc()).all()
+
+    @classmethod
+    def get_json_with_filing_type(cls, business_id) -> list[dict]:
+        """Get court orders for a business with filing type."""
+        return [
+            {
+                **order.json,
+                "filingType": filing_type
+            }
+            for (order, filing_type) in cls.get_by_business_id(business_id, True)
+        ]
