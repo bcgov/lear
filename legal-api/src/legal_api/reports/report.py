@@ -1966,7 +1966,7 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "consentContinuationOut": {
             "filingDescription": "Continue Out Application",
-            "fileName": "continueOutApplication",
+            "fileName": "consentContinuationOut",
             "reportType": ReportTypes.FILING.value
         },
         "letterOfAgmExtension": {

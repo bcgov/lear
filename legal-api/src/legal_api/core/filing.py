@@ -567,7 +567,6 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.AMALGAMATIONOUT.value,
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
-            Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.COURTORDER.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
