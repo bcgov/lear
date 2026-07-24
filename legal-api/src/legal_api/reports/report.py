@@ -1761,9 +1761,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         return {
             "officer": {
                 "id": relationship["entity"].get("identifier"),
-                "firstName": relationship["entity"].get("givenName"),
-                "middleName": relationship["entity"].get("middleInitial"),
-                "lastName": relationship["entity"].get("familyName"),
+                "firstName": (relationship["entity"].get("givenName") or "").strip(),
+                "middleName": (relationship["entity"].get("middleInitial")or "").strip(),
+                "lastName": (relationship["entity"].get("familyName") or "").strip(),
                 "organizationName": organization_name,
                 "partyType": "organization" if organization_name else "person"
             },
@@ -1786,12 +1786,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
             rel = {
                 "entity": {
-                    "givenName": o.get("firstName"),
-                    "familyName": o.get("lastName"),
+                    "givenName": (o.get("firstName") or "").strip(),
+                    "familyName": (o.get("lastName") or "").strip(),
                     "identifier": f"{role.party.id}",
                     "businessName": o.get("organizationName"),
                     "alternateName": o.get("alternateName"),
-                    "middleInitial": o.get("middleInitial"),
+                    "middleInitial": (o.get("middleInitial") or "").strip(),
                 },
                 "mailingAddress": mailing_address,
                 "deliveryAddress": delivery_address,

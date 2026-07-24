@@ -347,9 +347,9 @@ def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id
 
 def _map_entity_to_officer(entity: dict[str, str]):
     return {
-        "firstName": entity.get("givenName"),
-        "lastName": entity.get("familyName"),
-        "middleInitial": entity.get("middleInitial"),
+        "firstName": entity.get("givenName","").strip(),
+        "lastName": entity.get("familyName","").strip(),
+        "middleInitial": entity.get("middleInitial","").strip(),
         "organizationName": entity.get("businessName"),
         "id": entity.get("identifier")
     }
