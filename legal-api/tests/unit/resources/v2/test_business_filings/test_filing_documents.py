@@ -36,6 +36,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
+    CONSENT_CONTINUATION_OUT,
     CONTINUATION_IN,
     CONTINUATION_OUT,
     CORRECTION_AR,
@@ -1065,6 +1066,33 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE,
      None, None, Filing.Status.PAID,
      {'documents': {
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_consentContinuationOut_completed', 'BC7654321',
+     Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
+     None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'legalFilings': [
+             {'consentContinuationOut':
+              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
+         ],
+         'letterOfConsent': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfConsent',
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_consentContinuationOut_paid', 'BC7654321',
+     Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
+     None, None, Filing.Status.PAID,
+     {'documents': {
+         'legalFilings': [
+             {'consentContinuationOut':
+              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
+         ],
          'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
      }
      },
