@@ -28,7 +28,7 @@ from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
-from legal_api.services.authz import has_roles, is_competent_authority
+from legal_api.services.authz import has_any_roles, is_competent_authority
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
@@ -368,7 +368,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         with suppress(KeyError, TypeError):
             if (UserRoles.staff in submitter_roles
                 or UserRoles.system in submitter_roles) \
-                    and not has_roles(jwt, [UserRoles.staff, ]):
+                    and not has_any_roles(jwt, [UserRoles.staff, ]):
                 return True
         return False
 
@@ -646,7 +646,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
 
             # continuationIn affidavit/authorization files are staff/system only
-            is_staff_or_system = has_roles(jwt, [UserRoles.staff, UserRoles.system])
+            is_staff_or_system = has_any_roles(jwt, [UserRoles.staff, UserRoles.system])
             static_invisible = (
                 filing.storage.filing_type == Filing.FilingTypes.CONTINUATIONIN.value and
                 not is_staff_or_system

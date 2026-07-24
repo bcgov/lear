@@ -18,7 +18,6 @@ from flask import jsonify
 from flask_cors import cross_origin
 
 from business_model.models import Business, CourtOrder, Filing
-from legal_api.core import Filing as CoreFiling
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -49,7 +48,7 @@ def get_court_orders(identifier, court_order_id=None):
 
     court_orders_list = CourtOrder.get_json_with_filing_type(business.id)
     return jsonify({
-        'courtOrders': court_orders_list
+        "courtOrders": court_orders_list
     })
 
 
@@ -58,16 +57,16 @@ def _get_court_order(business, court_order_id=None):
     if court_order_id:
         court_order = CourtOrder.get_by_id(court_order_id)
         if court_order:
-            return _include_court_order_files(court_order, business, jwt), HTTPStatus.OK
+            return _include_court_order_files(court_order), HTTPStatus.OK
 
     return {"message": f"{business.identifier} court order not found"}, HTTPStatus.NOT_FOUND
 
 
-def _include_court_order_files(court_order, business, jwt):
+def _include_court_order_files(court_order):
     """Return a JSON of the court orders."""
     court_order_json = court_order.json
     filing = Filing.find_by_id(court_order.filing_id)
-    if filing.filing_type == 'courtOrder':
-        court_order_json['files'] = []  # TODO: implement
+    if filing.filing_type == "courtOrder":
+        court_order_json["files"] = []  # TODO: implement
 
-    return court_order_json
+    return {"courtOrder": court_order_json}
