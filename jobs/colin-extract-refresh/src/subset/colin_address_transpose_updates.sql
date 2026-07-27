@@ -1,38 +1,3 @@
-/*
-This file contains all functions and stored procedures for approved address record transpose updates. The changes
-only apply to active parties and offices belonging to active businesses. See the comment for the procedure
-"colin_address_transpose" for a summary of the specific changes.
-
-The transpose changes are intended to be run as part of a colin data migration before the extract is loaed into
-the target, modernized business database.
-
-Usage:
-1. Compile all the functions and stored procedures in this file.
-2. Run the procedure to transpose the addresses (takes approximately 7 minutes):
-   call colin_address_transpose(NULL);
-
-Example address ID's and these instructions are in this spreadsheet:
-https://docs.google.com/spreadsheets/d/1-BLTklhdiW0401sN6I68inF1-retATANyTZDswBwGcQ/edit?gid=642728421#gid=642728421
-
-
--- Uncomment and execute to drop all address transpose routines.
-drop procedure colin_address_transpose;
-drop procedure colin_address_transpose_cleanup;
-drop procedure colin_address_transpose_city;
-drop procedure colin_address_duplicate_region;
-drop procedure colin_address_transpose_region;
-drop procedure colin_address_duplicate_pcode;
-drop procedure colin_address_transpose_pcode;
-drop procedure colin_address_duplicate_country;
-drop procedure colin_address_transpose_country;
-drop function colin_update_address_us_state;
-drop function colin_update_address_ca_province;
-drop function colin_update_address_pcode;
-drop function colin_update_address_country;
-*/
-
--- OUT parameters cannot replace zero-OUT procedure contracts in place.
--- Recreate the procedure signatures atomically.
 BEGIN;
 DROP PROCEDURE IF EXISTS TARGET_SCHEMA.colin_address_transpose();
 DROP PROCEDURE IF EXISTS TARGET_SCHEMA.colin_address_transpose_cleanup();

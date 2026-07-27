@@ -110,6 +110,8 @@ class tmpl_TemplateSpec:
 
 @dataclass(frozen=True)
 class tmpl_TemplateBundle:
+    colin_fk_constraint_updates: tmpl_TemplateSpec
+    colin_address_transpose_updates: tmpl_TemplateSpec
     pg_acquire_advisory_lock: tmpl_TemplateSpec
     pg_release_advisory_lock: tmpl_TemplateSpec
     pg_call_address_transpose: tmpl_TemplateSpec
@@ -300,7 +302,16 @@ def sql_running(word: str) -> str:
 
 def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
     subset_dir = repo_root / "colin-extract-refresh" / "src" / "subset"
-    
+    colin_fk_constraint_updates = tmpl_TemplateSpec(
+        name="colin_fk_constraint_updates",
+        path=subset_dir / "colin_fk_constraint_updates.sql",
+        schema=schema,
+    )
+    colin_address_transpose_updates = tmpl_TemplateSpec(
+        name="colin_address_transpose_updates",
+        path=subset_dir / "colin_address_transpose_updates.sql",
+        schema=schema,
+    )
     pg_acquire_advisory_lock = tmpl_TemplateSpec(
         name="subset_pg_acquire_advisory_lock",
         path=subset_dir / "subset_pg_acquire_advisory_lock.sql",
@@ -395,6 +406,8 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
     )
 
     return tmpl_TemplateBundle(
+        colin_fk_constraint_updates=colin_fk_constraint_updates,
+        colin_address_transpose_updates=colin_address_transpose_updates,
         pg_acquire_advisory_lock=pg_acquire_advisory_lock,
         pg_release_advisory_lock=pg_release_advisory_lock,
         pg_call_address_transpose=pg_call_address_transpose,
@@ -692,6 +705,12 @@ def gen_build_master_script_inline(
     lines.append("vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'")
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
+    lines.append("-- Creates Procedure for dynamic FK on target DB.")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.colin_fk_constraint_updates, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
+    lines.append("-- Creates Procedure for Address Transpose on target DB.")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.colin_address_transpose_updates, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
     lines.append("-- Serialize subset runs on this target DB.")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_acquire_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
@@ -816,6 +835,12 @@ def gen_build_master_script_vset(
     lines.append("vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'")
     lines.append("")
     lines.append(f"connect {cfg.target_connection};")
+    lines.append("-- Creates Procedure for dynamic FK on target DB.")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.colin_fk_constraint_updates, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
+    lines.append("-- Creates Procedure for Address Transpose on target DB.")
+    lines.append(f"execute {tmpl_resolve_execute_path(templates.colin_address_transpose_updates, out_dir=cfg.out_chunks_dir).as_posix()}")
+    lines.append("")
     lines.append("-- Serialize subset runs on this target DB.")
     lines.append(f"execute {tmpl_resolve_execute_path(templates.pg_acquire_advisory_lock, out_dir=cfg.out_chunks_dir).as_posix()}")
     lines.append("")
@@ -1131,6 +1156,8 @@ def run(cfg: cfg_GenerationConfig) -> int:
     transfer_template_text = tmpl_load_text(templates.transfer_chunk)
     # Ensure the execute-only templates exist too (even though we don't render them).
     for spec in (
+        templates.colin_fk_constraint_updates,
+        templates.colin_address_transpose_updates,
         templates.pg_acquire_advisory_lock,
         templates.pg_release_advisory_lock,
         templates.pg_call_address_transpose,
