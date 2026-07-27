@@ -450,7 +450,7 @@ SET province = EXCLUDED.province,
 	addr_line_3 = EXCLUDED.addr_line_3,
 	city = EXCLUDED.city;
 
-TRUNCATE TABLE subset_address_stage;
+TRUNCATE TABLE TARGET_SCHEMA.subset_address_stage;
 
 
 -- office
