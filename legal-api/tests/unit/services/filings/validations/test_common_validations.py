@@ -2334,7 +2334,7 @@ def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, 
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag, default=None:
-            ["enable-drs"]
+            ["drs-upload"]
             if flag == "enable-new-feature" else default
     )
 
@@ -2368,7 +2368,7 @@ def test_get_file_data_drs_failure(session, monkeypatch):
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag, default=None:
-            ["enable-drs"]
+            ["drs-upload"]
             if flag == "enable-new-feature" else default
     )
 
