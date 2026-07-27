@@ -40,27 +40,8 @@ from business_model.models import Business, Document, Filing
 from business_filer.filing_processors.filing_components import document_records
 
 
-@patch("business_filer.filing_processors.filing_components.document_records.Flags")
-def test_skip_when_feature_flag_disabled(mock_flags):
-    """Assert nothing happens when the feature flag is disabled."""
-    mock_flags.value.return_value = []
-
-    business = Business(identifier="BC1234567")
-    filing = Filing(id=1)
-
-    with patch.object(Document, "query") as mock_query, \
-         patch.object(document_records.document_service, "update_document_record") as mock_update:
-
-        document_records.update_document_records(business, filing)
-
-        mock_query.filter_by.assert_not_called()
-        mock_update.assert_not_called()
-
-
-@patch("business_filer.filing_processors.filing_components.document_records.Flags")
-def test_skip_when_no_documents(mock_flags):
+def test_skip_when_no_documents():
     """Assert nothing happens when no documents exist."""
-    mock_flags.value.return_value = ["drs-upload"]
 
     business = Business(identifier="BC1234567")
     filing = Filing(id=1)
@@ -76,10 +57,8 @@ def test_skip_when_no_documents(mock_flags):
         mock_update.assert_not_called()
 
 
-@patch("business_filer.filing_processors.filing_components.document_records.Flags")
-def test_updates_drs_document(mock_flags):
+def test_updates_drs_document():
     """Assert DRS documents are updated."""
-    mock_flags.value.return_value = ["drs-upload"]
 
     business = Business(identifier="BC1234567")
 
@@ -114,10 +93,8 @@ def test_updates_drs_document(mock_flags):
         assert args[1]["businessIdentifier"] == "BC1234567"
 
 
-@patch("business_filer.filing_processors.filing_components.document_records.Flags")
-def test_skip_legacy_document(mock_flags):
+def test_skip_legacy_document():
     """Assert legacy Minio documents are ignored."""
-    mock_flags.value.return_value = ["drs-upload"]
 
     business = Business(identifier="BC1234567")
     filing = Filing(id=1)

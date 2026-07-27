@@ -19,21 +19,9 @@ import re
 from business_model.models import Business, Document, Filing
 from flask import current_app
 
-from business_filer.services import Flags, document_service
+from business_filer.services import document_service
 
-DRS_FEATURE_FLAG = "enable-new-feature"
-DRS_FEATURE_VARIATION = "drs-upload"
 _DRS_KEY_PATTERN = re.compile(r"^[A-Z]+-DS\d+$")
-
-
-def _is_drs_upload_enabled() -> bool:
-    """Return True if the drs-upload feature is enabled."""
-    try:
-        flag_values = Flags.value(DRS_FEATURE_FLAG) or []
-        return DRS_FEATURE_VARIATION in flag_values
-    except Exception as err:  # pylint: disable=broad-except
-        current_app.logger.warning(f"Unable to check {DRS_FEATURE_FLAG} flag: {err}")
-        return False
 
 
 def update_document_records(business: Business, filing: Filing):
@@ -42,8 +30,6 @@ def update_document_records(business: Business, filing: Filing):
     business: The business record associated with the filing.
     filing: The completed filing record.
     """
-    if not _is_drs_upload_enabled():
-        return
 
     documents = _find_documents_for_filing(filing.id)
 
