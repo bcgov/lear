@@ -53,7 +53,6 @@ def update_document_records(business: Business, filing: Filing):
 
     for document in documents:
         if not _is_drs_document(document.file_key):
-            # Skip legacy Minio-stored documents.
             continue
         try:
             response = document_service.update_document_record(document.file_key, dict(update_info))
@@ -63,7 +62,7 @@ def update_document_records(business: Business, filing: Filing):
                     f"file_key={document.file_key}, filing={filing.id}: "
                     f"status={response.status_code}, body={document_service.get_content(response)}"
                 )
-        except Exception as err:  # pylint: disable=broad-except;
+        except Exception as err:  # pylint: disable=broad-except
             current_app.logger.warning(
                 f"Error updating document record for document id={document.id}, "
                 f"file_key={document.file_key}, filing={filing.id}: {err}"
