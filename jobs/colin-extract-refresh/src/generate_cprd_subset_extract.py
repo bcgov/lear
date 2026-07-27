@@ -300,6 +300,7 @@ def sql_running(word: str) -> str:
 
 def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
     subset_dir = repo_root / "colin-extract-refresh" / "src" / "subset"
+    
     pg_acquire_advisory_lock = tmpl_TemplateSpec(
         name="subset_pg_acquire_advisory_lock",
         path=subset_dir / "subset_pg_acquire_advisory_lock.sql",
