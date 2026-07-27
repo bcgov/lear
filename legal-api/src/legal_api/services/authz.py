@@ -155,6 +155,14 @@ def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
     return bool(jwt.validate_roles(request_ctx.current_user, roles))
 
 
+def has_any_roles(jwt: JwtManager, roles: list[str]) -> bool:
+    """Assert the users JWT has any of the required role(s).
+
+    Assumes the JWT is already validated.
+    """
+    return any(bool(jwt.validate_roles(request_ctx.current_user, [role])) for role in roles)
+
+
 def get_allowable_filings_dict(is_authorization: bool = False):
     """Return dictionary containing rules for when filings are allowed."""
     # importing here to avoid circular dependencies

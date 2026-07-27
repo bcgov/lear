@@ -33,7 +33,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.services import STAFF_ROLE, MinioService, colin, flags, namex
+from legal_api.services import STAFF_ROLE, MinioService, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
@@ -104,6 +104,8 @@ FILINGS_REQUIRING_AUTHORIZATION = {
     CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL,
     CoreFiling.FilingTypes.RESTORATION,
 }
+
+DRS_KEY_PATTERN = re.compile(r"^([A-Z]+)-(DS\d+)$")
 
 def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
     """Validate the resolution date of a share structure.
@@ -530,8 +532,8 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     """Validate the PDF file."""
     msg = []
     try:
-        file = MinioService.get_file(file_key)
-        open_pdf_file = io.BytesIO(file.data)
+        file_data, file_size = _get_file_data(file_key)
+        open_pdf_file = io.BytesIO(file_data)
         pdf_reader = PdfReader(open_pdf_file)
 
         # Check that all pages in the pdf are letter size and able to be processed.
@@ -544,9 +546,8 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
             msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
                         "path": file_key_path})
 
-        file_info = MinioService.get_file_info(file_key)
         max_file_size: Final = 30000000
-        if file_info.size > max_file_size:
+        if file_size > max_file_size:
             msg.append({"error": _("File exceeds maximum size."), "path": file_key_path})
 
         if pdf_reader.is_encrypted:
@@ -561,6 +562,20 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
 
     return None
 
+def _get_file_data(file_key: str) -> tuple[bytes, int]:
+    """Return (file_bytes, file_size) for a file_key, whether DRS-backed or legacy Minio."""
+    enabled_features: list[str] = flags.value("enable-new-feature", [])
+
+    if "drs-upload" in enabled_features and (match := DRS_KEY_PATTERN.match(file_key)):
+        doc_class, drs_id = match.group(1), match.group(2)
+        response = doc_service.get_document(drs_id, doc_class, doc_binary=True)
+        if not response.ok:
+            raise ValueError(f"DRS get_document failed: status={response.status_code}")
+        return response.content, len(response.content)
+
+    file = MinioService.get_file(file_key)
+    file_info = MinioService.get_file_info(file_key)
+    return file.data, file_info.size
 
 def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate the parties name for COLIN sync."""
