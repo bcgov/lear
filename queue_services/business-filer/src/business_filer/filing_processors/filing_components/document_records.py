@@ -23,6 +23,7 @@ from business_filer.services import Flags, document_service
 
 DRS_FEATURE_FLAG = "enable-new-feature"
 DRS_FEATURE_VARIATION = "drs-upload"
+_DRS_KEY_PATTERN = re.compile(r"^[A-Z]+-DS\d+$")
 
 
 def _is_drs_upload_enabled() -> bool:
@@ -83,9 +84,6 @@ def _build_update_info(business: Business, filing: Filing) -> dict:
     if business:
         update_info["businessIdentifier"] = business.identifier
     return {k: v for k, v in update_info.items() if v is not None}
-
-
-_DRS_KEY_PATTERN = re.compile(r"^[A-Z]+-DS\d+$")
 
 
 def _is_drs_document(file_key: str) -> bool:
