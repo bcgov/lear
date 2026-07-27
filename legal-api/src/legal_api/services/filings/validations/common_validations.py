@@ -566,7 +566,7 @@ def _get_file_data(file_key: str) -> tuple[bytes, int]:
     """Return (file_bytes, file_size) for a file_key, whether DRS-backed or legacy Minio."""
     enabled_features: list[str] = flags.value("enable-new-feature", [])
 
-    if "enable-drs" in enabled_features and (match := DRS_KEY_PATTERN.match(file_key)):
+    if "drs-upload" in enabled_features and (match := DRS_KEY_PATTERN.match(file_key)):
         doc_class, drs_id = match.group(1), match.group(2)
         response = doc_service.get_document(drs_id, doc_class, doc_binary=True)
         if not response.ok:
