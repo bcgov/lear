@@ -16,6 +16,7 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 import copy
+import re
 from contextlib import suppress
 from datetime import UTC
 from datetime import datetime as _datetime
@@ -39,6 +40,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,
     Business,
+    Document,
     Filing,
     OfficeType,
     RegistrationBootstrap,
@@ -62,6 +64,7 @@ from legal_api.services import (
     MinioService,
     RegistrationBootstrapService,
     authorized,
+    doc_service,
     flags,
     namex,
 )
@@ -1110,8 +1113,20 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return is_future_effective
 
     @staticmethod
+    def delete_uploaded_file(file_key: str):
+        """Delete an uploaded file from the DRS or Minio based on the file key shape.
+
+        DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
+        legacy Minio keys (UUIDs) do not match.
+        """
+        if re.match(r"^([A-Z]+)-(DS\d+)$", file_key):
+            doc_service.delete_document(Document(file_key=file_key))
+        else:
+            MinioService.delete_file(file_key)
+
+    @staticmethod
     def delete_from_minio(filing_type: str, filing_json: dict):
-        """Delete file from minio."""
+        """Delete the filing's uploaded files from the DRS or Minio."""
         if (filing_type == Filing.FILINGS["incorporationApplication"].get("name")
                 and (cooperative := filing_json
                      .get("filing", {})
@@ -1122,21 +1137,21 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                      .get("filing", {})
                      .get("alteration", {}))):
             if rules_file_key := cooperative.get("rulesFileKey", None):
-                MinioService.delete_file(rules_file_key)
+                ListFilingResource.delete_uploaded_file(rules_file_key)
             if memorandum_file_key := cooperative.get("memorandumFileKey", None):
-                MinioService.delete_file(memorandum_file_key)
+                ListFilingResource.delete_uploaded_file(memorandum_file_key)
         elif filing_type == Filing.FILINGS["dissolution"].get("name") \
                 and (affidavit_file_key := filing_json
                      .get("filing", {})
                      .get("dissolution", {})
                      .get("affidavitFileKey", None)):
-            MinioService.delete_file(affidavit_file_key)
+            ListFilingResource.delete_uploaded_file(affidavit_file_key)
         elif filing_type == Filing.FILINGS["courtOrder"].get("name") \
                 and (file_key := filing_json
                      .get("filing", {})
                      .get("courtOrder", {})
                      .get("fileKey", None)):
-            MinioService.delete_file(file_key)
+            ListFilingResource.delete_uploaded_file(file_key)
         elif filing_type == Filing.FILINGS["continuationIn"].get("name"):
             ListFilingResource.delete_continuation_in_files(filing_json)
 
@@ -1147,13 +1162,13 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
         # Delete affidavit file
         if affidavit_file_key := continuation_in.get("foreignJurisdiction", {}).get("affidavitFileKey", None):
-            MinioService.delete_file(affidavit_file_key)
+            ListFilingResource.delete_uploaded_file(affidavit_file_key)
 
         # Delete authorization file(s)
         authorization_files = continuation_in.get("authorization", {}).get("files", [])
         for file in authorization_files:
             if auth_file_key := file.get("fileKey", None):
-                MinioService.delete_file(auth_file_key)
+                ListFilingResource.delete_uploaded_file(auth_file_key)
 
     @staticmethod
     def details_for_invoice(business_identifier: str, corp_type: str):
