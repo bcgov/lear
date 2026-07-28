@@ -491,7 +491,7 @@ seed_table_config() {
 
   cat > "$RUN_DIR/seed_table_config_metadata.sql" <<'SQL'
 UPDATE delta_ctl.table_config SET pk_col = 'id' WHERE table_name IN (
-  'bad_emails', 'excluded_email_domain_patterns', 'mig_group', 'mig_batch',
+  'demigrated_filings', 'bad_emails', 'excluded_email_domain_patterns', 'mig_group', 'mig_batch',
   'mig_corp_batch', 'mig_corp_account', 'corp_processing', 'colin_tracking',
   'auth_processing', 'auth_component_operation'
 );
@@ -500,7 +500,7 @@ UPDATE delta_ctl.table_config SET has_last_modified = true WHERE table_name IN (
 );
 UPDATE delta_ctl.table_config SET match_mode = 'hash_parent' WHERE table_name = 'auth_component_operation';
 UPDATE delta_ctl.table_config SET nk_enforced = true WHERE table_name IN (
-  'bad_emails', 'excluded_emails', 'excluded_email_domains',
+  'demigrated_filings', 'bad_emails', 'excluded_emails', 'excluded_email_domains',
   'excluded_email_domain_patterns', 'corp_processing', 'colin_tracking',
   'auth_processing'
 );
@@ -828,6 +828,7 @@ create_stage_indexes() {
     add_stage_index "$table" "idx_delta_stage_${table}_drid" "_delta_row_id"
   done < "$RUN_DIR/present_tables.txt"
 
+  add_stage_index demigrated_filings idx_delta_stage_demigrated_filings_nk "filing_id"
   add_stage_index email_domain_groups idx_delta_stage_email_domain_groups_nk "email_domain"
   add_stage_index bad_emails idx_delta_stage_bad_emails_nk "lower(btrim(email))"
   add_stage_index excluded_emails idx_delta_stage_excluded_emails_nk "lower(btrim(email))"

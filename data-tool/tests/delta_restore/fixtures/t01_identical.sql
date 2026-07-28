@@ -56,3 +56,6 @@ VALUES (60, :corp_num1, 'auth-flow', :env, 'CREATE', 'BUSINESS', 'attempt-1', 10
 
 INSERT INTO auth_component_operation(id, auth_processing_id, component_name, operation, status, payload)
 VALUES (70, 60, 'accounts', 'CREATE', :completed, '{"ok":true}');
+
+INSERT INTO demigrated_filings(id, filing_id, notes)
+VALUES (1, 90001, 'seed');
