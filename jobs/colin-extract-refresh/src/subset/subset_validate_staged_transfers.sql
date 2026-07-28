@@ -109,7 +109,7 @@ pg_count AS (
     SELECT t.corp_num, 'event', COUNT(*)
     FROM TARGET_SCHEMA.event x
     JOIN corps t ON t.corp_num = x.corp_num
-    WHERE x.event_typ_cd NOT IN ('BNUPD', 'ADDLEDGR')
+    WHERE x.event_type_cd NOT IN ('BNUPD', 'ADDLEDGR')
     GROUP BY t.corp_num
 
     UNION ALL
@@ -121,7 +121,7 @@ pg_count AS (
 
     UNION ALL
     SELECT t.corp_num, 'conv_event', COUNT(*)
-    FROM TARGET_SCHEMA.event x
+    FROM TARGET_SCHEMA.conv_event x
     JOIN TARGET_SCHEMA.event e ON e.event_id = x.event_id
     JOIN corps t ON t.corp_num = e.corp_num
     GROUP BY t.corp_num
@@ -129,19 +129,19 @@ pg_count AS (
     UNION ALL
     SELECT t.corp_num, 'corp_restriction', COUNT(*)
     FROM TARGET_SCHEMA.corp_restriction x
-    JOIN corps t ON t.corp_num = e.corp_num
+    JOIN corps t ON t.corp_num = x.corp_num
     GROUP BY t.corp_num
 
     UNION ALL
     SELECT t.corp_num, 'share_struct_cls', COUNT(*)
     FROM TARGET_SCHEMA.share_struct_cls x
-    JOIN corps t ON t.corp_num = e.corp_num
+    JOIN corps t ON t.corp_num = x.corp_num
     GROUP BY t.corp_num
 
     UNION ALL
     SELECT t.corp_num, 'share_series', COUNT(*)
     FROM TARGET_SCHEMA.share_series x
-    JOIN corps t ON t.corp_num = e.corp_num
+    JOIN corps t ON t.corp_num = x.corp_num
     GROUP BY t.corp_num
 ),
 compared AS (
@@ -150,14 +150,14 @@ compared AS (
         t.table_name,
         COALESCE(o.n, 0)::bigint AS oracle_count,
         COALESCE(p.n, 0)::bigint AS pg_count,
-        (COALESCE(o.n, 0) - COALESCE(o.n, 0))::bigint AS delta,
+        (COALESCE(o.n, 0) - COALESCE(p.n, 0))::bigint AS delta,
         CASE    
             WHEN COALESCE(o.n, 0) = COALESCE(p.n, 0) THEN 'OK'
             ELSE 'MISMATCH'
         END AS status
     FROM corps c 
     CROSS JOIN tables t 
-    LEFT JOIN TARGET_SCHEMA.subset_validate_oracle_counts oracle
+    LEFT JOIN TARGET_SCHEMA.subset_validate_oracle_counts o 
         ON o.corp_num = c.corp_num AND o.table_name = t.table_name
     LEFT JOIN pg_count p
         ON p.corp_num = c.corp_num AND p.table_name = t.table_name
