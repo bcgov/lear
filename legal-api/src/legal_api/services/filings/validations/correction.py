@@ -25,6 +25,7 @@ from legal_api.core.filing_helper import is_special_resolution_correction_by_fil
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.common_validations import (
+    validate_contact_point_email,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
@@ -107,6 +108,8 @@ def validate(business: Business, filing: dict) -> Error:
             _validate_corps_correction(business, filing, business.legal_type, msg)
         elif business.legal_type == Business.LegalTypes.COOP.value:
             _validate_special_resolution_correction(filing, business.legal_type, msg)
+
+    msg.extend(validate_contact_point_email(filing, filing_type))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
