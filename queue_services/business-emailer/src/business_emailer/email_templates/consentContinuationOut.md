@@ -1,4 +1,4 @@
-# Your request for Consent to Continue Out of B.C. has been granted for 6 months
+# Your request for consent to continue out of B.C. has been granted for 6 months
 
 --- 
 

@@ -691,7 +691,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'consentContinuationOut',
         None,
         'COMPLETED',
-        'Your request for Consent to Continue Out of B.C. has been granted for 6 months',
+        'Your request for consent to continue out of B.C. has been granted for 6 months',
         'test business - Consent to Continue Out Granted',
         [
             '**Effective Until:** October 30, 2025',
