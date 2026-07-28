@@ -1189,3 +1189,102 @@ def test_special_resolution_drs_report_type(session, filing_type, expected_repor
     report._document_service.get_filing_report_by_filing_id.assert_called_once_with(
         identifier, filing.id, expected_report_type)
     assert response.status_code == HTTPStatus.OK
+
+
+def _make_static_report_filing(identifier, document_type, file_key):
+    """Create a completed coop dissolution filing with an uploaded document row."""
+    from business_model.models import Document
+
+    business = factory_business(identifier=identifier, entity_type='CP')
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing = factory_completed_filing(business, filing_json, filing_date=LegislationDatetime.now())
+
+    document = Document(type=document_type, file_key=file_key, filing_id=filing.id, business_id=business.id)
+    db.session.add(document)
+    db.session.commit()
+    return filing
+
+
+def _make_pdf_bytes(text, pages=1):
+    """Build a minimal pdf with the given number of pages."""
+    import io as _io
+
+    from reportlab.lib.pagesizes import letter as _letter
+    from reportlab.pdfgen import canvas as _canvas
+
+    buffer = _io.BytesIO()
+    can = _canvas.Canvas(buffer, pagesize=_letter)
+    for page_num in range(pages):
+        can.drawString(100, 700, f'{text} page {page_num + 1}')
+        can.showPage()
+    can.save()
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize('test_name,file_key,expect_drs', [
+    ('drs_key', 'COOP-DS0000101951', True),
+    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
+    ('legacy_bare_drs_id', 'DS0000100800', False),
+])
+def test_get_static_report_drs_dispatch(session, test_name, file_key, expect_drs):
+    """Assert static report documents are served from the DRS or Minio based on the file key shape (#34300)."""
+    from legal_api.services import MinioService, doc_service
+
+    filing = _make_static_report_filing('CP1234567', 'court_order', file_key)
+
+    report = Report(filing)
+    drs_response = MagicMock(content=b'drs-pdf', status_code=HTTPStatus.OK)
+    minio_response = MagicMock(data=b'minio-pdf', status=HTTPStatus.OK)
+    with patch.object(doc_service, 'get_document', return_value=drs_response) as mock_drs, \
+            patch.object(MinioService, 'get_file', return_value=minio_response) as mock_minio:
+        response = report.get_pdf(report_type='uploadedCourtOrder')
+
+    if expect_drs:
+        mock_drs.assert_called_once_with('DS0000101951', 'COOP', doc_binary=True)
+        mock_minio.assert_not_called()
+        assert response.data == b'drs-pdf'
+    else:
+        mock_drs.assert_not_called()
+        mock_minio.assert_called_once_with(file_key)
+        assert response.data == b'minio-pdf'
+
+
+@pytest.mark.parametrize('test_name,file_key', [
+    ('drs_backed', 'COOP-DS0000101951'),
+    ('minio_backed', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf'),
+])
+def test_affidavit_static_report_is_certified(session, test_name, file_key):
+    """Assert the uploaded coop dissolution affidavit is served with the registrar's certification stamp (#34300)."""
+    import io as _io
+
+    from pypdf import PdfReader
+
+    from legal_api.services import MinioService, doc_service
+
+    identifier = 'CP1234567'
+    filing = _make_static_report_filing(identifier, 'affidavit', file_key)
+    # two pages so the stamp can be shown to land on the first page only
+    pdf_bytes = _make_pdf_bytes('Affidavit body', pages=2)
+
+    drs_response = MagicMock(content=pdf_bytes, status_code=HTTPStatus.OK)
+    minio_response = MagicMock(data=pdf_bytes, status=HTTPStatus.OK)
+    with patch.object(doc_service, 'get_document', return_value=drs_response), \
+            patch.object(MinioService, 'get_file', return_value=minio_response):
+        response = Report(filing).get_pdf(report_type='affidavit')
+
+    stamped = PdfReader(_io.BytesIO(response.get_data()))
+    text = stamped.get_page(0).extract_text()
+    assert 'Affidavit body page 1' in text
+    # The stamp's text half, drawn by create_registrars_stamp.
+    assert 'Filed on' in text
+    assert identifier in text
+    # The "CERTIFIED COPY ... Registrar of Companies" box and the registrar's name are pixels
+    # inside the registrar_signature_and_text image, not pdf text, so they cannot be asserted
+    # via text extraction; assert the image itself instead. The source pdf has no images, so
+    # the single image on page 1 is the stamp, and none on page 2 proves first-page-only.
+    assert len(stamped.pages[0].images) == 1
+    assert len(stamped.pages[1].images) == 0
