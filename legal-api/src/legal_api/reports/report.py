@@ -97,7 +97,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
     def _certify_uploaded_document(self, document_bytes: bytes) -> bytes:
-        """Apply the registrar's certification stamp to an uploaded document."""
+        """Apply the registrar's certification stamp when the document is downloaded.
+
+        Documents are never stamped on upload; the stamp is applied to each
+        served copy and the stored original is left unchanged.
+        """
         from legal_api.services import PdfService
         from legal_api.services.pdf_service import RegistrarStampData
         business = self._business
