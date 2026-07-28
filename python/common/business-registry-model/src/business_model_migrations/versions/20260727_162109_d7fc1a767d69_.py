@@ -5,9 +5,8 @@ Revises: 1cdc6fdbf4cf
 Create Date: 2026-07-27 16:21:09.583470
 
 """
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = 'd7fc1a767d69'
@@ -56,4 +55,13 @@ def upgrade():
 
 
 def downgrade():
-    pass
+    # Remove court order data from metadata of filings
+    op.execute(
+        """
+        UPDATE filings f
+        SET meta_data = JSONB_SET(meta_data, '{courtOrder}', 'jsonb_build_object()')
+        FROM court_orders co
+        WHERE 
+            co.filing_id = f.id
+        """
+    )
