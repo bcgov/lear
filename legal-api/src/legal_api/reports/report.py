@@ -13,6 +13,7 @@ import base64
 import copy
 import json
 import os
+import re
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
@@ -76,13 +77,35 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_static_report(self):
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
-        from legal_api.services import MinioService
-        response = MinioService.get_file(document.file_key)
+        # DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
+        # legacy Minio keys (UUIDs) and bare DRS ids ("DS...") do not match.
+        if match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key or ""):
+            from legal_api.services import doc_service
+            drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
+            document_data, status = drs_response.content, drs_response.status_code
+        else:
+            from legal_api.services import MinioService
+            minio_response = MinioService.get_file(document.file_key)
+            document_data, status = minio_response.data, minio_response.status
+        if self._report_key == "affidavit" and status == HTTPStatus.OK:
+            # the affidavit is an uploaded document, so the registrar's certification stamp is applied here
+            document_data = self._certify_uploaded_document(document_data)
         return current_app.response_class(
-            response=response.data,
-            status=response.status,
+            response=document_data,
+            status=status,
             mimetype="application/pdf"
         )
+
+    def _certify_uploaded_document(self, document_bytes: bytes) -> bytes:
+        """Apply the registrar's certification stamp to an uploaded document."""
+        from legal_api.services import PdfService
+        from legal_api.services.pdf_service import RegistrarStampData
+        business = self._business
+        if not business and self._filing.business_id:
+            business = Business.find_by_internal_id(self._filing.business_id)
+        identifier = business.identifier if business else self._filing.temp_reg
+        stamp_data = RegistrarStampData(self._filing.filing_date, identifier)
+        return PdfService().create_certified_copy(document_bytes, stamp_data).read()
 
     def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
