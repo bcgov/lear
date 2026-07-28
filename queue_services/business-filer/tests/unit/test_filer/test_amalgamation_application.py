@@ -89,6 +89,8 @@ def test_regular_amalgamation_application_process(app, session, set_publish_mock
     assert court_order['orderDetails'] == court_order_obj.order_details
     assert court_order['fileNumber'] == court_order_obj.file_number
     assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+    assert filing_rec.meta_data.get('courtOrder')['fileNumber'] == court_order_obj.file_number
+    assert filing_rec.meta_data.get('courtOrder')['effectOfOrder'] == court_order_obj.effect_of_order
 
     assert filing_rec.business_id == business.id
     assert filing_rec.status == Filing.Status.COMPLETED.value

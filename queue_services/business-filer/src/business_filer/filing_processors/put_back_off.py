@@ -38,7 +38,7 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(put_back_off_filing, "/courtOrder")
-        filings.create_court_order(filing_rec, court_order_json)
+        filings.create_court_order(filing_rec, court_order_json, filing_meta)
 
     filing_rec.details = put_back_off_filing.get("details")
 

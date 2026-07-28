@@ -75,6 +75,8 @@ def tests_filer_consent_amalgamation_out(app, session, mocker, test_name, effect
     court_order = filing_json['filing']['consentAmalgamationOut']['courtOrder']
     assert court_order['fileNumber'] == court_order_obj.file_number
     assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+    assert final_filing.meta_data.get('courtOrder')['fileNumber'] == court_order['fileNumber']
+    assert final_filing.meta_data.get('courtOrder')['effectOfOrder'] == court_order['effectOfOrder']
 
     expiry_date_utc = LegislationDatetime.as_utc_timezone(expiry_date)
 

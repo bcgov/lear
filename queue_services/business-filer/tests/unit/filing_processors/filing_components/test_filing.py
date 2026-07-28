@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Name Request filing component."""
+from business_filer.filing_meta import FilingMeta
 import copy
 import random
 from datetime import datetime, timezone
@@ -65,11 +66,14 @@ def test_create_court_order(app, session):
     }
 
     # test
-    filings.create_court_order(alteration_filing, court_order_json['courtOrder'])
+    effective_date = datetime.now(timezone.utc)
+    filing_meta = FilingMeta(application_date=effective_date)
+    filings.create_court_order(alteration_filing, court_order_json['courtOrder'], filing_meta)
 
     # validate
     court_order = alteration_filing.court_orders[0]
     assert file_number == court_order.file_number
     assert datetime.fromisoformat(order_date) == court_order.order_date
     assert effect_of_order == court_order.effect_of_order
-    assert order_details == court_order.order_details
+    assert filing_meta.court_order['fileNumber'] == file_number
+    assert filing_meta.court_order['effectOfOrder'] == effect_of_order
