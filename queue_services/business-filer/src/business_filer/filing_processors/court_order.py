@@ -32,7 +32,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the court order filing."""
-from _pytest import config
 from business_model.models import Business, Document, DocumentType, Filing
 
 from business_filer.filing_meta import FilingMeta
