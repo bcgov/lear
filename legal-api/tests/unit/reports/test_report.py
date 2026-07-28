@@ -1209,8 +1209,8 @@ def _make_static_report_filing(identifier, document_type, file_key):
     return filing
 
 
-def _make_pdf_bytes(text):
-    """Build a minimal one-page pdf."""
+def _make_pdf_bytes(text, pages=1):
+    """Build a minimal pdf with the given number of pages."""
     import io as _io
 
     from reportlab.lib.pagesizes import letter as _letter
@@ -1218,8 +1218,9 @@ def _make_pdf_bytes(text):
 
     buffer = _io.BytesIO()
     can = _canvas.Canvas(buffer, pagesize=_letter)
-    can.drawString(100, 700, text)
-    can.showPage()
+    for page_num in range(pages):
+        can.drawString(100, 700, f'{text} page {page_num + 1}')
+        can.showPage()
     can.save()
     return buffer.getvalue()
 
@@ -1266,7 +1267,8 @@ def test_affidavit_static_report_is_certified(session, test_name, file_key):
 
     identifier = 'CP1234567'
     filing = _make_static_report_filing(identifier, 'affidavit', file_key)
-    pdf_bytes = _make_pdf_bytes('Affidavit body')
+    # two pages so the stamp can be shown to land on the first page only
+    pdf_bytes = _make_pdf_bytes('Affidavit body', pages=2)
 
     drs_response = MagicMock(content=pdf_bytes, status_code=HTTPStatus.OK)
     minio_response = MagicMock(data=pdf_bytes, status=HTTPStatus.OK)
@@ -1276,6 +1278,13 @@ def test_affidavit_static_report_is_certified(session, test_name, file_key):
 
     stamped = PdfReader(_io.BytesIO(response.get_data()))
     text = stamped.get_page(0).extract_text()
-    assert 'Affidavit body' in text
+    assert 'Affidavit body page 1' in text
+    # The stamp's text half, drawn by create_registrars_stamp.
     assert 'Filed on' in text
     assert identifier in text
+    # The "CERTIFIED COPY ... Registrar of Companies" box and the registrar's name are pixels
+    # inside the registrar_signature_and_text image, not pdf text, so they cannot be asserted
+    # via text extraction; assert the image itself instead. The source pdf has no images, so
+    # the single image on page 1 is the stamp, and none on page 2 proves first-page-only.
+    assert len(stamped.pages[0].images) == 1
+    assert len(stamped.pages[1].images) == 0
