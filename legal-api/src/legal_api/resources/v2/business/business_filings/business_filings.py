@@ -1171,6 +1171,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def modify_filing_json(filing_json, filing: Filing = None):
         """Modify filing json values if needed."""
+        # Trim leading/trailing whitespace from all string fields
+        ListFilingResource._trim_strings(filing_json)
+
         filing_type = filing_json["filing"]["header"]["name"]
         if (filing_type == Filing.FILINGS["continuationIn"].get("name") and
             filing and filing.status == Filing.Status.APPROVED.value
@@ -1186,6 +1189,23 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 filing.filing_json["filing"][filing_type]["nameRequest"]
             filing_json["filing"][filing_type]["foreignJurisdiction"] = \
                 filing.filing_json["filing"][filing_type]["foreignJurisdiction"]
+
+    @staticmethod
+    def _trim_strings(node):
+        """Recursively trim leading/trailing whitespace from all string values in place."""
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if isinstance(value, str):
+                    node[key] = value.strip()
+                elif isinstance(value, dict | list):
+                    ListFilingResource._trim_strings(value)
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                if isinstance(value, str):
+                    node[i] = value.strip()
+                elif isinstance(value, dict | list):
+                    ListFilingResource._trim_strings(value)
+        return node
 
     @staticmethod
     def submit_filing_for_review(business: Business | RegistrationBootstrap, filing: Filing):
