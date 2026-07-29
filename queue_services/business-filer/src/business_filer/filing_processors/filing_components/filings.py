@@ -38,10 +38,13 @@ from business_model.models import Business, CourtOrder, Filing
 from flask_babel import _ as babel
 
 from business_filer.common.datetime import datetime
+from business_filer.common.filing import FilingTypes
+from business_filer.filing_meta import FilingMeta
 
 
 def create_court_order(filing_submission: Filing,
                        court_order: dict,
+                       filing_meta: FilingMeta,
                        new_business: Business = None) -> dict | None:
     """Create a court order."""
     if not filing_submission:
@@ -57,6 +60,15 @@ def create_court_order(filing_submission: Filing,
     )
     with suppress(IndexError, KeyError, TypeError, ValueError):
         court_order_obj.order_date = datetime.fromisoformat(court_order.get("orderDate"))
+
+    filing_meta.court_order = {"fileNumber": file_number}
+    if court_order_obj.effect_of_order:
+        filing_meta.court_order["effectOfOrder"] = court_order_obj.effect_of_order
+    if court_order.get("orderDate"):
+        filing_meta.court_order["orderDate"] = court_order.get("orderDate")
+    if filing_submission.filing_type == FilingTypes.COURTORDER.value:
+        # Only add order details for court orders
+        filing_meta.court_order["orderDetails"] = court_order_obj.order_details
 
     if new_business:
         court_order_obj.filing_id = filing_submission.id

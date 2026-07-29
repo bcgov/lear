@@ -96,4 +96,4 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfLiquidators"].get("courtOrder"):
-        create_court_order(filing_rec, court_order)
+        create_court_order(filing_rec, court_order, filing_meta)
