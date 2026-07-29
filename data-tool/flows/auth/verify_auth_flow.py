@@ -17,8 +17,11 @@ import csv
 import inspect
 import logging
 import math
-from collections import defaultdict
-from dataclasses import dataclass
+import re
+from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
+from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Iterable, Protocol
 
@@ -90,6 +93,7 @@ INSPECT_FILTER_HAS_AFFILIATION = "HAS_AFFILIATION"
 INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION = "ENTITY_WITHOUT_AFFILIATION"
 INSPECT_FILTER_HAS_INVITE = "HAS_INVITE"
 INSPECT_FILTER_ENTITY_WITHOUT_INVITE = "ENTITY_WITHOUT_INVITE"
+INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA = "NO_AFFILIATION_INVITE_CRITERIA"
 INSPECT_FILTERS = (
     INSPECT_FILTER_ALL,
     INSPECT_FILTER_HAS_ANY_AUTH,
@@ -101,6 +105,7 @@ INSPECT_FILTERS = (
     INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION,
     INSPECT_FILTER_HAS_INVITE,
     INSPECT_FILTER_ENTITY_WITHOUT_INVITE,
+    INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA,
 )
 INSPECT_IDENTIFIER_FILTERS = tuple(
     inspect_filter for inspect_filter in INSPECT_FILTERS if inspect_filter != INSPECT_FILTER_ALL
@@ -129,6 +134,7 @@ DEFAULT_VERIFY_AUTH_CONSOLE_LIMIT = 25
 ANSI_BOLD_RED = "\033[1;31m"
 ANSI_RESET = "\033[0m"
 IDENTIFIER_GROUP_SEPARATOR = "─" * 88
+_BLANK_DIAGNOSTIC_BUCKET = "(blank)"
 
 _DEPENDENT_CHECKS = (CHECK_CONTACT, CHECK_AFFILIATION, CHECK_INVITE)
 _ALL_CHECKS = (CHECK_ENTITY, CHECK_CONTACT, CHECK_AFFILIATION, CHECK_INVITE)
@@ -197,6 +203,22 @@ INSPECTION_FIELDNAMES = [
     "invite_state",
     "invite_count",
     "blocked_by_missing_entity",
+    "invite_claimed_count",
+    "invite_unclaimed_count",
+    "invite_deleted_count",
+    "invite_type_counts",
+    "invite_status_counts",
+    "unaffiliated_unclaimed_invite_count",
+    "unaffiliated_unclaimed_expired_count",
+    "unaffiliated_unclaimed_current_count",
+    "unaffiliated_unclaimed_unknown_age_count",
+    "oldest_unclaimed_sent_date",
+    "newest_unclaimed_sent_date",
+    "latest_accepted_date",
+    "unaffiliated_unclaimed_sent_dates",
+    "unaffiliated_unclaimed_ages_days",
+    "invite_criteria_pass",
+    "invite_criteria_failed_clauses",
 ]
 
 _ENTITY_READ_SQL = """
@@ -223,10 +245,11 @@ _AFFILIATION_READ_SQL = """
 """.strip()
 
 _INVITE_READ_SQL = """
-    SELECT entity_id, COUNT(*) AS invite_count
+    SELECT id, entity_id, type, invitation_status_code,
+           sent_date, accepted_date, is_deleted, affiliation_id
     FROM affiliation_invitations
     WHERE entity_id IN :entity_ids
-    GROUP BY entity_id
+    ORDER BY entity_id, id
 """.strip()
 
 
@@ -244,6 +267,11 @@ class AuthBatchSettings(Protocol):
     @property
     def auth_read_checks(self) -> tuple[str, ...]:
         """Return Auth DB table read scope for this batch."""
+        ...
+
+    @property
+    def invite_cutoff(self) -> datetime | None:
+        """Return the optional UTC cutoff used for invitation age diagnostics."""
         ...
 
 
@@ -309,6 +337,11 @@ class VerifyAuthSettings:
         """Return Auth DB table read scope for verification."""
         return self.selected_checks
 
+    @property
+    def invite_cutoff(self) -> datetime | None:
+        """Disable age-bucket diagnostics for verify-auth."""
+        return None
+
 
 @dataclass(frozen=True)
 class AuthBatchResult:
@@ -364,6 +397,649 @@ class AuthReadStatement:
         return _build_text_statement(self.sql, self.expanding_bind_names)
 
 
+class InviteClauseKind(Enum):
+    """Supported AND-composed invitation criteria clause kinds."""
+
+    COUNT = "count"
+    ALL_EXPIRED = "all_expired"
+    AGE = "age"
+
+
+@dataclass(frozen=True)
+class InviteClause:
+    """One normalized invitation criteria clause."""
+
+    kind: InviteClauseKind
+    raw: str
+    op: str | None = None
+    value: int | None = None
+    position: int | None = None
+
+
+@dataclass(frozen=True)
+class InviteCriteria:
+    """Parsed invitation criteria sharing one reference clock."""
+
+    clauses: tuple[InviteClause, ...]
+    raw: str
+    now: datetime
+    expiry_days: int | None = None
+    cutoff: datetime | None = None
+
+    def requires_expiry(self) -> bool:
+        """Return whether the expression contains an ``all_expired`` clause."""
+        return any(clause.kind is InviteClauseKind.ALL_EXPIRED for clause in self.clauses)
+
+    def has_age_clauses(self) -> bool:
+        """Return whether the expression contains an elapsed-age clause."""
+        return any(clause.kind is InviteClauseKind.AGE for clause in self.clauses)
+
+
+@dataclass(frozen=True)
+class AuthInviteDiagnostics:
+    """Aggregated, non-sensitive diagnostics using exclusive accepted > deleted > unclaimed buckets."""
+
+    total_count: int = 0
+    deleted_count: int = 0
+    claimed_count: int = 0
+    unclaimed_count: int = 0
+    type_counts: tuple[tuple[str, int], ...] = ()
+    status_counts: tuple[tuple[str, int], ...] = ()
+    unaffiliated_unclaimed_count: int = 0
+    expired_unclaimed_unaffiliated_count: int | None = None
+    current_unclaimed_unaffiliated_count: int | None = None
+    unknown_age_unclaimed_unaffiliated_count: int = 0
+    oldest_unclaimed_sent_date: datetime | None = None
+    newest_unclaimed_sent_date: datetime | None = None
+    latest_accepted_date: datetime | None = None
+    unaffiliated_unclaimed_sent_dates: tuple[datetime, ...] = ()
+
+
+def _as_utc_naive(value: datetime | None) -> datetime | None:
+    """Normalize Auth timestamps to naive UTC for stable comparisons and output."""
+    if value is None:
+        return None
+    if value.tzinfo is not None and value.utcoffset() is not None:
+        return value.astimezone(timezone.utc).replace(tzinfo=None)
+    return value
+
+
+def format_clock_z(value: datetime | None) -> str:
+    """Render an operator-facing clock as second-precision UTC-naive ISO-8601 plus Z."""
+    normalized = _as_utc_naive(value)
+    return f"{normalized.isoformat(timespec='seconds')}Z" if normalized is not None else ""
+
+
+def format_clock_minutes_z(value: datetime | None) -> str:
+    """Render an operator-facing clock as minute-precision UTC-naive ISO-8601 plus Z."""
+    normalized = _as_utc_naive(value)
+    return f"{normalized.isoformat(timespec='minutes')}Z" if normalized is not None else ""
+
+
+_CRITERIA_OPERATOR_NAMES = {
+    "==": "EQ",
+    ">=": "GTE",
+    "<=": "LTE",
+    ">": "GT",
+    "<": "LT",
+}
+_CRITERIA_OPERATORS = "== >= <= > <"
+_AGE_OPERATORS = ">= > <= <"
+_COUNT_CLAUSE_RE = re.compile(r"^count\s*(==|>=|<=|>|<)\s*([+-]?\d+)\s*$", re.IGNORECASE)
+_AGE_CLAUSE_RE = re.compile(
+    r"^(age\s*\[\s*([+-]?\d+)\s*\]|oldest_age|newest_age|all_ages|any_age)"
+    r"\s*(==|>=|<=|>|<)\s*([+-]?\d+)\s*$",
+    re.IGNORECASE,
+)
+
+
+def _criteria_clause_error(config_key: str, index: int, raw_clause: str, message: str) -> ValueError:
+    """Build a consistently contextual criteria parser error."""
+    return ValueError(f"{config_key} clause {index} {raw_clause!r}: {message}")
+
+
+def _positive_clause_value(
+    value_text: str,
+    *,
+    config_key: str,
+    index: int,
+    raw_clause: str,
+) -> int:
+    """Parse the shared strictly-positive criteria value domain."""
+    value = int(value_text)
+    if value <= 0:
+        raise _criteria_clause_error(
+            config_key,
+            index,
+            raw_clause,
+            "value must be a positive integer; use ENTITY_WITHOUT_INVITE for zero invites",
+        )
+    return value
+
+
+def _parse_count_invite_clause(
+    raw_clause: str,
+    *,
+    config_key: str,
+    index: int,
+) -> InviteClause | None:
+    """Parse a count clause, returning None when the clause has another selector."""
+    count_match = _COUNT_CLAUSE_RE.fullmatch(raw_clause)
+    if count_match:
+        operator, value_text = count_match.groups()
+        value = _positive_clause_value(
+            value_text,
+            config_key=config_key,
+            index=index,
+            raw_clause=raw_clause,
+        )
+        return InviteClause(
+            InviteClauseKind.COUNT,
+            f"count{operator}{value}",
+            op=_CRITERIA_OPERATOR_NAMES[operator],
+            value=value,
+        )
+
+    lowered = raw_clause.lower()
+    if not lowered.startswith("count"):
+        return None
+    operator_match = re.match(r"^count\s*([^\d\s+-]+)", lowered)
+    if operator_match:
+        operator = operator_match.group(1)
+        raise _criteria_clause_error(
+            config_key,
+            index,
+            raw_clause,
+            f"unknown operator {operator!r}; expected one of {_CRITERIA_OPERATORS}",
+        )
+    raise _criteria_clause_error(
+        config_key,
+        index,
+        raw_clause,
+        f"expected count followed by one of {_CRITERIA_OPERATORS} and a positive integer",
+    )
+
+
+def _age_clause_position(
+    selector: str,
+    position_text: str | None,
+    operator: str,
+    *,
+    config_key: str,
+    index: int,
+    raw_clause: str,
+) -> int | None:
+    """Normalize an age selector to its oldest-first tuple position."""
+    normalized_selector = selector.lower()
+    if normalized_selector.startswith("age"):
+        position = int(position_text or 0)
+        if position < 1:
+            raise _criteria_clause_error(
+                config_key,
+                index,
+                raw_clause,
+                "position must be >= 1 (1 = oldest)",
+            )
+        return position
+    if normalized_selector == "oldest_age":
+        return 1
+    if normalized_selector == "newest_age":
+        return None
+    if normalized_selector == "all_ages":
+        return None if operator in (">=", ">") else 1
+    return 1 if operator in (">=", ">") else None
+
+
+def _parse_age_invite_clause(
+    raw_clause: str,
+    *,
+    config_key: str,
+    index: int,
+) -> InviteClause | None:
+    """Parse an age clause, returning None when the clause has another selector."""
+    age_match = _AGE_CLAUSE_RE.fullmatch(raw_clause)
+    if age_match:
+        selector, position_text, operator, value_text = age_match.groups()
+        if operator == "==":
+            raise _criteria_clause_error(
+                config_key,
+                index,
+                raw_clause,
+                f"age clauses accept {_AGE_OPERATORS} only",
+            )
+        value = _positive_clause_value(
+            value_text,
+            config_key=config_key,
+            index=index,
+            raw_clause=raw_clause,
+        )
+        position = _age_clause_position(
+            selector,
+            position_text,
+            operator,
+            config_key=config_key,
+            index=index,
+            raw_clause=raw_clause,
+        )
+        selector_text = "newest_age" if position is None else f"age[{position}]"
+        return InviteClause(
+            InviteClauseKind.AGE,
+            f"{selector_text}{operator}{value}",
+            op=_CRITERIA_OPERATOR_NAMES[operator],
+            value=value,
+            position=position,
+        )
+
+    if re.match(
+        r"^(age\s*\[|oldest_age|newest_age|all_ages(?:\s|[<>=]|$)|any_age(?:\s|[<>=]|$))",
+        raw_clause.lower(),
+    ):
+        raise _criteria_clause_error(
+            config_key,
+            index,
+            raw_clause,
+            f"expected an age selector followed by one of {_AGE_OPERATORS} and a positive integer",
+        )
+    return None
+
+
+def _parse_invite_clause(raw_part: str, *, config_key: str, index: int) -> InviteClause:
+    """Parse one criteria clause while preserving specialized validation precedence."""
+    raw_clause = raw_part.strip()
+    if not raw_clause:
+        raise _criteria_clause_error(
+            config_key,
+            index,
+            raw_clause,
+            "must contain a clause between commas",
+        )
+
+    lowered = raw_clause.lower()
+    if lowered == "all_expired":
+        return InviteClause(InviteClauseKind.ALL_EXPIRED, "all_expired")
+    if re.match(r"^all_expired\s*[<>=]", lowered):
+        raise _criteria_clause_error(
+            config_key,
+            index,
+            raw_clause,
+            "all_expired takes no operator or value",
+        )
+
+    count_clause = _parse_count_invite_clause(raw_clause, config_key=config_key, index=index)
+    if count_clause is not None:
+        return count_clause
+    age_clause = _parse_age_invite_clause(raw_clause, config_key=config_key, index=index)
+    if age_clause is not None:
+        return age_clause
+    raise _criteria_clause_error(
+        config_key,
+        index,
+        raw_clause,
+        "unknown clause; expected count, all_expired, age[n], oldest_age, newest_age, all_ages, any_age",
+    )
+
+
+def _require_all_expired_config(
+    clauses: list[InviteClause],
+    raw_clauses: list[str],
+    *,
+    expiry_days: int | None,
+    config_key: str,
+) -> None:
+    """Require an expiry window for the first all-expired clause."""
+    if expiry_days is not None:
+        return
+    for index, clause in enumerate(clauses, start=1):
+        if clause.kind is InviteClauseKind.ALL_EXPIRED:
+            raise _criteria_clause_error(
+                config_key,
+                index,
+                raw_clauses[index - 1].strip(),
+                "all_expired requires INSPECT_AUTH_INVITE_EXPIRY_DAYS",
+            )
+
+
+def _validated_criteria_clock(
+    now: datetime,
+    clauses: list[InviteClause],
+    *,
+    config_key: str,
+) -> datetime:
+    """Normalize the criteria clock and validate every elapsed-age threshold."""
+    normalized_now = _as_utc_naive(now)
+    if normalized_now is None:  # Defensive: the public signature requires a datetime.
+        raise ValueError(f"{config_key} requires a reference clock")
+    for index, clause in enumerate(clauses, start=1):
+        if clause.kind is not InviteClauseKind.AGE:
+            continue
+        try:
+            normalized_now - timedelta(days=clause.value or 0)
+        except OverflowError as exc:
+            raise _criteria_clause_error(
+                config_key,
+                index,
+                clause.raw,
+                "day value is outside the supported range for the reference clock",
+            ) from exc
+    return normalized_now
+
+
+def _criteria_cutoff(normalized_now: datetime, expiry_days: int | None) -> datetime | None:
+    """Build the optional expiry cutoff with the established config error."""
+    try:
+        return normalized_now - timedelta(days=expiry_days) if expiry_days is not None else None
+    except OverflowError as exc:
+        raise ValueError(
+            "INSPECT_AUTH_INVITE_EXPIRY_DAYS is outside the supported range for the criteria reference clock"
+        ) from exc
+
+
+def parse_invite_criteria(
+    raw_value: str | None,
+    *,
+    now: datetime,
+    expiry_days: int | None,
+    config_key: str = "INSPECT_AUTH_INVITE_CRITERIA",
+) -> InviteCriteria | None:
+    """Parse a comma-separated, AND-composed invitation criteria expression."""
+    if raw_value is None or not str(raw_value).strip():
+        return None
+
+    raw_clauses = str(raw_value).split(",")
+    clauses = [
+        _parse_invite_clause(raw_part, config_key=config_key, index=index)
+        for index, raw_part in enumerate(raw_clauses, start=1)
+    ]
+    _require_all_expired_config(
+        clauses,
+        raw_clauses,
+        expiry_days=expiry_days,
+        config_key=config_key,
+    )
+    normalized_now = _validated_criteria_clock(now, clauses, config_key=config_key)
+    return InviteCriteria(
+        clauses=tuple(clauses),
+        raw=", ".join(clause.raw for clause in clauses),
+        now=normalized_now,
+        expiry_days=expiry_days,
+        cutoff=_criteria_cutoff(normalized_now, expiry_days),
+    )
+
+
+def _compare_invite_count(actual: int, op: str, expected: int) -> bool:
+    """Apply a normalized count-clause comparison."""
+    comparisons = {
+        "EQ": actual == expected,
+        "GTE": actual >= expected,
+        "LTE": actual <= expected,
+        "GT": actual > expected,
+        "LT": actual < expected,
+    }
+    return comparisons[op]
+
+
+def _compare_invite_age(sent_date: datetime, op: str, threshold: datetime) -> bool:
+    """Compare a sent timestamp against an elapsed-age threshold."""
+    comparisons = {
+        "GTE": sent_date <= threshold,
+        "GT": sent_date < threshold,
+        "LTE": sent_date >= threshold,
+        "LT": sent_date > threshold,
+    }
+    return comparisons[op]
+
+
+def _age_clause_sent_date(
+    dated_invites: tuple[datetime, ...],
+    position: int | None,
+) -> datetime | None:
+    """Select an oldest-first positional date or the newest endpoint."""
+    if position is None:
+        return dated_invites[-1]
+    if len(dated_invites) >= position:
+        return dated_invites[position - 1]
+    return None
+
+
+def _evaluate_invite_clause(
+    clause: InviteClause,
+    diagnostics: AuthInviteDiagnostics,
+    criteria: InviteCriteria,
+    dated_invites: tuple[datetime, ...],
+) -> bool:
+    """Evaluate one normalized invitation clause."""
+    if clause.kind is InviteClauseKind.COUNT:
+        return _compare_invite_count(
+            diagnostics.unaffiliated_unclaimed_count,
+            clause.op or "",
+            clause.value or 0,
+        )
+    if clause.kind is InviteClauseKind.ALL_EXPIRED:
+        return (
+            diagnostics.unaffiliated_unclaimed_count > 0
+            and diagnostics.unknown_age_unclaimed_unaffiliated_count == 0
+            and criteria.cutoff is not None
+            and diagnostics.expired_unclaimed_unaffiliated_count
+            == diagnostics.unaffiliated_unclaimed_count
+        )
+    if diagnostics.unknown_age_unclaimed_unaffiliated_count != 0 or not dated_invites:
+        return False
+    sent_date = _age_clause_sent_date(dated_invites, clause.position)
+    if sent_date is None:
+        return False
+    threshold = criteria.now - timedelta(days=clause.value or 0)
+    return _compare_invite_age(sent_date, clause.op or "", threshold)
+
+
+def evaluate_invite_clauses(
+    diagnostics: AuthInviteDiagnostics,
+    criteria: InviteCriteria,
+) -> tuple[tuple[InviteClause, bool], ...]:
+    """Evaluate every clause, preserving order for predicates and diagnostics."""
+    dated_invites = tuple(
+        normalized
+        for sent_date in diagnostics.unaffiliated_unclaimed_sent_dates
+        if (normalized := _as_utc_naive(sent_date)) is not None
+    )
+    return tuple(
+        (clause, _evaluate_invite_clause(clause, diagnostics, criteria, dated_invites))
+        for clause in criteria.clauses
+    )
+
+
+def format_invite_criteria(criteria: InviteCriteria) -> str:
+    """Render criteria as a stable, self-describing report/log fragment."""
+    rendered = f'Criteria="{criteria.raw}", Now={format_clock_z(criteria.now)}'
+    if criteria.expiry_days is not None:
+        rendered += (
+            f", ExpiryDays={criteria.expiry_days}, Cutoff={format_clock_z(criteria.cutoff)}"
+        )
+    return rendered
+
+
+def _diagnostic_bucket(value: Any) -> str:
+    """Return a deterministic display bucket for invitation type/status values."""
+    if value is None or not str(value).strip():
+        return _BLANK_DIAGNOSTIC_BUCKET
+    return str(value).strip()
+
+
+@dataclass
+class _AuthInviteAccumulator:
+    """Mutable per-entity invitation fold discarded after state construction."""
+
+    total_count: int = 0
+    deleted_count: int = 0
+    claimed_count: int = 0
+    unclaimed_count: int = 0
+    type_counts: Counter[str] = field(default_factory=Counter)
+    status_counts: Counter[str] = field(default_factory=Counter)
+    unaffiliated_unclaimed_count: int = 0
+    expired_unclaimed_unaffiliated_count: int = 0
+    current_unclaimed_unaffiliated_count: int = 0
+    unknown_age_unclaimed_unaffiliated_count: int = 0
+    unaffiliated_unclaimed_dated: list[tuple[datetime, str, Any]] = field(default_factory=list)
+    oldest_unclaimed_sent_date: datetime | None = None
+    newest_unclaimed_sent_date: datetime | None = None
+    latest_accepted_date: datetime | None = None
+
+    def _record_bucket_counts(self, invite_type: Any, invitation_status_code: Any) -> str:
+        """Record the non-deleted type/status mix and return the normalized type."""
+        type_bucket = _diagnostic_bucket(invite_type)
+        self.type_counts[type_bucket] += 1
+        self.status_counts[_diagnostic_bucket(invitation_status_code)] += 1
+        return type_bucket
+
+    def _record_accepted(
+        self,
+        invite_type: Any,
+        invitation_status_code: Any,
+        accepted_date: datetime,
+    ) -> None:
+        """Record an accepted invitation, which takes precedence over deletion."""
+        self._record_bucket_counts(invite_type, invitation_status_code)
+        self.claimed_count += 1
+        if self.latest_accepted_date is None or accepted_date > self.latest_accepted_date:
+            self.latest_accepted_date = accepted_date
+
+    def _record_unclaimed_sent_date(self, sent_date: datetime) -> None:
+        """Update the all-type unclaimed invitation date range."""
+        if self.oldest_unclaimed_sent_date is None or sent_date < self.oldest_unclaimed_sent_date:
+            self.oldest_unclaimed_sent_date = sent_date
+        if self.newest_unclaimed_sent_date is None or sent_date > self.newest_unclaimed_sent_date:
+            self.newest_unclaimed_sent_date = sent_date
+
+    def _record_unaffiliated_unclaimed(
+        self,
+        sent_date: datetime | None,
+        invite_cutoff: datetime | None,
+        entity_id: Any,
+        invitation_id: Any,
+    ) -> None:
+        """Record qualifying unaffiliated-unclaimed age diagnostics."""
+        self.unaffiliated_unclaimed_count += 1
+        if sent_date is None:
+            self.unknown_age_unclaimed_unaffiliated_count += 1
+            return
+
+        self.unaffiliated_unclaimed_dated.append(
+            (sent_date, str(entity_id) if entity_id is not None else "", invitation_id)
+        )
+        if invite_cutoff is None:
+            return
+        if sent_date < invite_cutoff:
+            self.expired_unclaimed_unaffiliated_count += 1
+        else:
+            self.current_unclaimed_unaffiliated_count += 1
+
+    def _record_unclaimed(
+        self,
+        invite_type: Any,
+        invitation_status_code: Any,
+        sent_date: datetime | None,
+        invite_cutoff: datetime | None,
+        entity_id: Any,
+        invitation_id: Any,
+    ) -> None:
+        """Record one non-deleted, unaccepted invitation."""
+        type_bucket = self._record_bucket_counts(invite_type, invitation_status_code)
+        self.unclaimed_count += 1
+        normalized_sent_date = _as_utc_naive(sent_date)
+        if normalized_sent_date is not None:
+            self._record_unclaimed_sent_date(normalized_sent_date)
+        if type_bucket == "UNAFFILIATED_EMAIL":
+            self._record_unaffiliated_unclaimed(
+                normalized_sent_date,
+                invite_cutoff,
+                entity_id,
+                invitation_id,
+            )
+
+    def add_row(
+        self,
+        *,
+        invite_type: Any,
+        invitation_status_code: Any,
+        sent_date: datetime | None,
+        accepted_date: datetime | None,
+        is_deleted: Any,
+        invite_cutoff: datetime | None,
+        entity_id: Any = None,
+        invitation_id: Any = None,
+    ) -> None:
+        """Fold one row using accepted > deleted > unclaimed lifecycle precedence."""
+        self.total_count += 1
+        normalized_accepted_date = _as_utc_naive(accepted_date)
+        if normalized_accepted_date is not None:
+            self._record_accepted(invite_type, invitation_status_code, normalized_accepted_date)
+            return
+        if bool(is_deleted):
+            self.deleted_count += 1
+            return
+        self._record_unclaimed(
+            invite_type,
+            invitation_status_code,
+            sent_date,
+            invite_cutoff,
+            entity_id,
+            invitation_id,
+        )
+
+    def merge(self, other: _AuthInviteAccumulator) -> None:
+        """Merge one entity accumulator into a business-level accumulator."""
+        self.total_count += other.total_count
+        self.deleted_count += other.deleted_count
+        self.claimed_count += other.claimed_count
+        self.unclaimed_count += other.unclaimed_count
+        self.type_counts.update(other.type_counts)
+        self.status_counts.update(other.status_counts)
+        self.unaffiliated_unclaimed_count += other.unaffiliated_unclaimed_count
+        self.expired_unclaimed_unaffiliated_count += other.expired_unclaimed_unaffiliated_count
+        self.current_unclaimed_unaffiliated_count += other.current_unclaimed_unaffiliated_count
+        self.unknown_age_unclaimed_unaffiliated_count += other.unknown_age_unclaimed_unaffiliated_count
+        self.unaffiliated_unclaimed_dated.extend(other.unaffiliated_unclaimed_dated)
+        for sent_date in (other.oldest_unclaimed_sent_date, other.newest_unclaimed_sent_date):
+            if sent_date is not None:
+                if self.oldest_unclaimed_sent_date is None or sent_date < self.oldest_unclaimed_sent_date:
+                    self.oldest_unclaimed_sent_date = sent_date
+                if self.newest_unclaimed_sent_date is None or sent_date > self.newest_unclaimed_sent_date:
+                    self.newest_unclaimed_sent_date = sent_date
+        if other.latest_accepted_date is not None and (
+            self.latest_accepted_date is None or other.latest_accepted_date > self.latest_accepted_date
+        ):
+            self.latest_accepted_date = other.latest_accepted_date
+
+    def freeze(self, *, cutoff_configured: bool) -> AuthInviteDiagnostics:
+        """Return the immutable public diagnostics representation."""
+        ordered_sent_dates = tuple(
+            sent_date
+            for sent_date, _entity_id, _invitation_id in sorted(
+                self.unaffiliated_unclaimed_dated,
+                key=_dated_invite_sort_key,
+            )
+        )
+        return AuthInviteDiagnostics(
+            total_count=self.total_count,
+            deleted_count=self.deleted_count,
+            claimed_count=self.claimed_count,
+            unclaimed_count=self.unclaimed_count,
+            type_counts=tuple(sorted(self.type_counts.items())),
+            status_counts=tuple(sorted(self.status_counts.items())),
+            unaffiliated_unclaimed_count=self.unaffiliated_unclaimed_count,
+            expired_unclaimed_unaffiliated_count=(
+                self.expired_unclaimed_unaffiliated_count if cutoff_configured else None
+            ),
+            current_unclaimed_unaffiliated_count=(
+                self.current_unclaimed_unaffiliated_count if cutoff_configured else None
+            ),
+            unknown_age_unclaimed_unaffiliated_count=self.unknown_age_unclaimed_unaffiliated_count,
+            unaffiliated_unclaimed_sent_dates=ordered_sent_dates,
+            oldest_unclaimed_sent_date=self.oldest_unclaimed_sent_date,
+            newest_unclaimed_sent_date=self.newest_unclaimed_sent_date,
+            latest_accepted_date=self.latest_accepted_date,
+        )
+
+
 @dataclass(frozen=True)
 class AuthBusinessState:
     """Aggregated Auth DB state for one selected business identifier."""
@@ -378,6 +1054,7 @@ class AuthBusinessState:
     missing_account_ids: tuple[str, ...] = ()
     invite_count: int = 0
     business_names: tuple[str, ...] = ()
+    invite_diagnostics: AuthInviteDiagnostics = field(default_factory=AuthInviteDiagnostics)
 
     @property
     def entity_exists(self) -> bool:
@@ -399,39 +1076,85 @@ def auth_state_has_any_auth(state: AuthBusinessState) -> bool:
     )
 
 
-def auth_state_matches_inspect_filter(state: AuthBusinessState, inspect_filter: str) -> bool:
+def _require_invite_filter_criteria(
+    inspect_filter: str,
+    invite_criteria: InviteCriteria | None,
+) -> None:
+    """Fail fast when the criteria-dependent token is evaluated without criteria."""
+    if inspect_filter == INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA and invite_criteria is None:
+        raise ValueError(
+            f"{INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA} requires "
+            "INSPECT_AUTH_INVITE_CRITERIA"
+        )
+
+
+def _auth_state_matches_invite_criteria(
+    state: AuthBusinessState,
+    clause_results: tuple[tuple[InviteClause, bool], ...],
+) -> bool:
+    """Apply the composite filter floor and base predicates to evaluated clauses."""
+    return (
+        state.entity_exists
+        and not state.found_account_ids
+        and state.invite_diagnostics.unaffiliated_unclaimed_count >= 1
+        and all(passed for _clause, passed in clause_results)
+    )
+
+
+_STANDARD_INSPECT_FILTER_MATCHERS: dict[str, Callable[[AuthBusinessState], bool]] = {
+    INSPECT_FILTER_ALL: lambda _state: True,
+    INSPECT_FILTER_HAS_ANY_AUTH: auth_state_has_any_auth,
+    INSPECT_FILTER_HAS_ENTITY: lambda state: state.entity_exists,
+    INSPECT_FILTER_MISSING_ENTITY: lambda state: not state.entity_exists,
+    INSPECT_FILTER_HAS_CONTACT: lambda state: state.entity_exists and state.usable_contact_count > 0,
+    INSPECT_FILTER_ENTITY_WITHOUT_CONTACT: (
+        lambda state: state.entity_exists and state.usable_contact_count == 0
+    ),
+    INSPECT_FILTER_HAS_AFFILIATION: lambda state: state.entity_exists and bool(state.found_account_ids),
+    INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION: (
+        lambda state: state.entity_exists and not state.found_account_ids
+    ),
+    INSPECT_FILTER_HAS_INVITE: lambda state: state.entity_exists and state.invite_count > 0,
+    INSPECT_FILTER_ENTITY_WITHOUT_INVITE: lambda state: state.entity_exists and state.invite_count == 0,
+}
+
+
+def auth_state_matches_inspect_filter(
+    state: AuthBusinessState,
+    inspect_filter: str,
+    invite_criteria: InviteCriteria | None = None,
+) -> bool:
     """Evaluate one AuthBusinessState against a validated inspect filter.
 
     ``HAS_CONTACT`` and ``ENTITY_WITHOUT_CONTACT`` intentionally use
     ``usable_contact_count`` (non-blank email), not raw ``contact_count``.
     """
-    if inspect_filter == INSPECT_FILTER_ALL:
-        return True
-    if inspect_filter == INSPECT_FILTER_HAS_ANY_AUTH:
-        return auth_state_has_any_auth(state)
-    if inspect_filter == INSPECT_FILTER_HAS_ENTITY:
-        return state.entity_exists
-    if inspect_filter == INSPECT_FILTER_MISSING_ENTITY:
-        return not state.entity_exists
-    if inspect_filter == INSPECT_FILTER_HAS_CONTACT:
-        return state.entity_exists and state.usable_contact_count > 0
-    if inspect_filter == INSPECT_FILTER_ENTITY_WITHOUT_CONTACT:
-        return state.entity_exists and state.usable_contact_count == 0
-    if inspect_filter == INSPECT_FILTER_HAS_AFFILIATION:
-        return state.entity_exists and bool(state.found_account_ids)
-    if inspect_filter == INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION:
-        return state.entity_exists and not state.found_account_ids
-    if inspect_filter == INSPECT_FILTER_HAS_INVITE:
-        return state.entity_exists and state.invite_count > 0
-    if inspect_filter == INSPECT_FILTER_ENTITY_WITHOUT_INVITE:
-        return state.entity_exists and state.invite_count == 0
+    _require_invite_filter_criteria(inspect_filter, invite_criteria)
+    matcher = _STANDARD_INSPECT_FILTER_MATCHERS.get(inspect_filter)
+    if matcher is not None:
+        return matcher(state)
+    if inspect_filter == INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA:
+        assert invite_criteria is not None
+        return _auth_state_matches_invite_criteria(
+            state,
+            evaluate_invite_clauses(state.invite_diagnostics, invite_criteria),
+        )
     allowed = ", ".join(INSPECT_FILTERS)
     raise ValueError(f"Unknown inspect filter: {inspect_filter}; expected one of {allowed}")
 
 
-def filter_inspection_states(states: list[AuthBusinessState], inspect_filter: str) -> list[AuthBusinessState]:
+def filter_inspection_states(
+    states: list[AuthBusinessState],
+    inspect_filter: str,
+    invite_criteria: InviteCriteria | None = None,
+) -> list[AuthBusinessState]:
     """Return inspected states matching the active post-read inspection filter."""
-    return [state for state in states if auth_state_matches_inspect_filter(state, inspect_filter)]
+    _require_invite_filter_criteria(inspect_filter, invite_criteria)
+    return [
+        state
+        for state in states
+        if auth_state_matches_inspect_filter(state, inspect_filter, invite_criteria)
+    ]
 
 
 @dataclass(frozen=True)
@@ -543,6 +1266,39 @@ def parse_console_limit(raw_value: Any, config_key: str, default: int = DEFAULT_
     if parsed == 0:
         return ConsoleLimit(disabled=True, max_rows=0)
     return ConsoleLimit(disabled=False, max_rows=parsed)
+
+
+DEFAULT_INSPECT_AUTH_INVITE_EXPIRY_DAYS = 7
+
+
+def parse_invite_expiry_days(
+    raw_value: Any,
+    config_key: str = "INSPECT_AUTH_INVITE_EXPIRY_DAYS",
+) -> int:
+    """Parse invitation expiry days, defaulting missing values and rejecting blanks."""
+    if raw_value is None:
+        return DEFAULT_INSPECT_AUTH_INVITE_EXPIRY_DAYS
+    if isinstance(raw_value, str) and not raw_value.strip():
+        raise ValueError(
+            f"{config_key} must not be blank; omit it to use the default of "
+            f"{DEFAULT_INSPECT_AUTH_INVITE_EXPIRY_DAYS} days"
+        )
+    raw = str(raw_value).strip() if isinstance(raw_value, str) else raw_value
+    try:
+        parsed = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(
+            f"{config_key} must be a positive integer; use 1 for older than one day"
+        ) from exc
+    if parsed <= 0:
+        raise ValueError(
+            f"{config_key} must be a positive integer; use 1 for older than one day"
+        )
+    try:
+        timedelta(days=parsed)
+    except OverflowError as exc:
+        raise ValueError(f"{config_key} is outside the supported day range") from exc
+    return parsed
 
 
 def parse_inspect_filter(raw_value: Any, config_key: str = "INSPECT_AUTH_FILTER") -> str:
@@ -820,6 +1576,18 @@ def _numeric_sort_key(value: str) -> tuple[int, str]:
     return (int(value), value) if value.isdigit() else (0, value)
 
 
+def _dated_invite_sort_key(
+    item: tuple[datetime, str, Any],
+) -> tuple[datetime, tuple[int, str], tuple[int, str]]:
+    """Return the deterministic business-wide qualifying-invite order key."""
+    sent_date, entity_id, invitation_id = item
+    return (
+        sent_date,
+        _numeric_sort_key(entity_id),
+        _numeric_sort_key(str(invitation_id) if invitation_id is not None else ""),
+    )
+
+
 def _build_text_statement(sql: str, expanding_bind_names: tuple[str, ...]) -> TextClause:
     """Return a SQLAlchemy text statement with expanding bind parameters attached."""
     stmt = text(sql)
@@ -858,6 +1626,7 @@ def read_auth_states_for_candidates(
     business_identifiers: Iterable[str],
     expected_accounts_by_identifier: dict[str, Iterable[str]] | None = None,
     selected_checks: tuple[str, ...] = _ALL_CHECKS,
+    invite_cutoff: datetime | None = None,
 ) -> list[AuthBusinessState]:
     """Read and aggregate Auth DB state for selected candidates.
 
@@ -871,6 +1640,7 @@ def read_auth_states_for_candidates(
         return []
 
     expected_accounts_by_identifier = expected_accounts_by_identifier or {}
+    normalized_invite_cutoff = _as_utc_naive(invite_cutoff)
     entity_ids_by_identifier: dict[str, set[Any]] = {identifier: set() for identifier in candidates}
     business_names_by_identifier: dict[str, set[str]] = {identifier: set() for identifier in candidates}
     identifier_by_entity_id: dict[str, str] = {}
@@ -878,7 +1648,7 @@ def read_auth_states_for_candidates(
     usable_contact_count_by_entity_id: dict[str, int] = defaultdict(int)
     found_accounts_by_identifier: dict[str, set[str]] = {identifier: set() for identifier in candidates}
     found_account_names_by_identifier: dict[str, set[str]] = {identifier: set() for identifier in candidates}
-    invite_count_by_entity_id: dict[str, int] = defaultdict(int)
+    invite_diagnostics_by_entity_id: dict[str, _AuthInviteAccumulator] = defaultdict(_AuthInviteAccumulator)
 
     with auth_engine.connect() as conn:
         entity_rows = _execute_fetchall(conn, build_auth_entity_read_statement(candidates))
@@ -916,11 +1686,20 @@ def read_auth_states_for_candidates(
                         found_account_names_by_identifier[identifier].add(str(org_name).strip())
 
         if entity_ids and CHECK_INVITE in selected_checks:
-            invite_rows = _execute_fetchall(conn, _build_entity_id_statement(_INVITE_READ_SQL, entity_ids))
+            invite_statement = _build_entity_id_statement(_INVITE_READ_SQL, entity_ids)
+            invite_rows = conn.execute(invite_statement.statement(), invite_statement.params)
             for row in invite_rows:
-                entity_id = str(_row_value(row, 0, "entity_id"))
-                invite_count = _row_value(row, 1, "invite_count")
-                invite_count_by_entity_id[entity_id] += int(invite_count or 0)
+                entity_id = str(_row_value(row, 1, "entity_id"))
+                invite_diagnostics_by_entity_id[entity_id].add_row(
+                    entity_id=entity_id,
+                    invitation_id=_row_value(row, 0, "id"),
+                    invite_type=_row_value_or_none(row, 2, "type"),
+                    invitation_status_code=_row_value_or_none(row, 3, "invitation_status_code"),
+                    sent_date=_row_value_or_none(row, 4, "sent_date"),
+                    accepted_date=_row_value_or_none(row, 5, "accepted_date"),
+                    is_deleted=_row_value_or_none(row, 6, "is_deleted"),
+                    invite_cutoff=normalized_invite_cutoff,
+                )
 
     states: list[AuthBusinessState] = []
     for identifier in candidates:
@@ -934,7 +1713,12 @@ def read_auth_states_for_candidates(
         )
         contact_count = sum(contact_count_by_entity_id.get(entity_id, 0) for entity_id in entity_ids)
         usable_contact_count = sum(usable_contact_count_by_entity_id.get(entity_id, 0) for entity_id in entity_ids)
-        invite_count = sum(invite_count_by_entity_id.get(entity_id, 0) for entity_id in entity_ids)
+        invite_accumulator = _AuthInviteAccumulator()
+        for entity_id in entity_ids:
+            invite_accumulator.merge(invite_diagnostics_by_entity_id.get(entity_id, _AuthInviteAccumulator()))
+        invite_diagnostics = invite_accumulator.freeze(
+            cutoff_configured=CHECK_INVITE in selected_checks and normalized_invite_cutoff is not None
+        )
         states.append(
             AuthBusinessState(
                 business_identifier=identifier,
@@ -946,7 +1730,8 @@ def read_auth_states_for_candidates(
                 found_account_ids=found_account_ids,
                 found_account_names=found_account_names,
                 missing_account_ids=missing_account_ids,
-                invite_count=invite_count,
+                invite_count=invite_diagnostics.total_count,
+                invite_diagnostics=invite_diagnostics,
             )
         )
     return states
@@ -1071,6 +1856,7 @@ def run_auth_batch(
         candidates,
         expected_accounts_by_identifier=expected_accounts_by_identifier,
         selected_checks=settings.auth_read_checks,
+        invite_cutoff=getattr(settings, "invite_cutoff", None),
     )
     verification_results = build_verification_results(states, settings.selected_checks) if settings.run_verify else []
     return AuthBatchResult(states=states, verification_results=verification_results)
@@ -1247,47 +2033,298 @@ def _dependent_state(entity_exists: bool, present: bool) -> str:
     return "present" if present else "missing"
 
 
-def build_inspection_rows(states: list[AuthBusinessState]) -> list[dict[str, str | int]]:
+def _format_count_pairs(counts: tuple[tuple[str, int], ...]) -> str:
+    """Render deterministic invitation count buckets without CSV-ambiguous commas."""
+    return ";".join(f"{name}={count}" for name, count in counts)
+
+
+def _format_diagnostic_datetime(value: datetime | None) -> str:
+    """Render an Auth timestamp as second-precision UTC-naive ISO-8601."""
+    normalized_value = _as_utc_naive(value)
+    return normalized_value.isoformat(timespec="seconds") if normalized_value is not None else ""
+
+
+_CONSOLE_STATE_ALIASES = {
+    "not_applicable_entity_missing": "na_entity_missing",
+}
+_CONSOLE_HEADER_ALIASES = {"business_identifier": "identifier"}
+_INVITE_TYPE_ABBREVIATIONS = {
+    "EMAIL": "EM",
+    "UNAFFILIATED_EMAIL": "UE",
+    _BLANK_DIAGNOSTIC_BUCKET: "(b)",
+}
+_INVITE_STATUS_ABBREVIATIONS = {
+    "PENDING": "PEND",
+    "ACCEPTED": "ACC",
+    "EXPIRED": "EXPD",
+    "FAILED": "FAIL",
+    _BLANK_DIAGNOSTIC_BUCKET: "(b)",
+}
+_FOUND_ACCOUNT_NAMES_CONSOLE_MAX = 28
+INSPECTION_LEGEND_LINES: tuple[str, ...] = (
+    "Legend invite_summary: q=qualifying UNAFFILIATED_EMAIL unclaimed; exp=sent<Cutoff cur=sent>=Cutoff unk=NULL sent_date",
+    "Legend invite_summary: clm=accepted (Auth soft-deletes); del=without acceptance; ages=days since sent, qualifying only",
+    "Legend invite_dates: s:=unclaimed sent range (all types); a:=latest accepted date; CSV: inspect-auth-inspection.csv",
+    "Legend invite_mix: T:=types EM=EMAIL UE=UNAFFILIATED_EMAIL; S:=raw Auth status(es); deleted-w/o-acceptance excluded→del=",
+)
+
+
+def _format_console_state(value: str | int) -> str:
+    """Return a compact console-only alias for a persisted report state value."""
+    rendered = str(value)
+    return _CONSOLE_STATE_ALIASES.get(rendered, rendered)
+
+
+def _format_invite_mix_segment(
+    raw_counts: str | int,
+    abbreviations: dict[str, str],
+) -> str:
+    """Render one deterministic type/status count segment with compact bucket names."""
+    if not raw_counts:
+        return ""
+    pairs: list[str] = []
+    for raw_pair in str(raw_counts).split(";"):
+        if not raw_pair:
+            continue
+        name, count = raw_pair.split("=", maxsplit=1)
+        abbreviated = abbreviations.get(name, name.upper()[:5])
+        pairs.append(f"{abbreviated}={count}")
+    return ",".join(pairs)
+
+
+def _format_invite_mix(row: dict[str, str | int]) -> str:
+    """Return compact persisted type/status counts for the console table."""
+    type_counts = _format_invite_mix_segment(
+        row.get("invite_type_counts", ""),
+        _INVITE_TYPE_ABBREVIATIONS,
+    )
+    status_counts = _format_invite_mix_segment(
+        row.get("invite_status_counts", ""),
+        _INVITE_STATUS_ABBREVIATIONS,
+    )
+    segments = []
+    if type_counts:
+        segments.append(f"T:{type_counts}")
+    if status_counts:
+        segments.append(f"S:{status_counts}")
+    return " ".join(segments)
+
+
+def _format_invite_summary(row: dict[str, str | int]) -> str:
+    """Return the compact invitation diagnostics used by the console table."""
+    unclaimed = row.get("invite_unclaimed_count", 0)
+    qualifying = row.get("unaffiliated_unclaimed_invite_count", 0)
+    expired = row.get("unaffiliated_unclaimed_expired_count", "")
+    current = row.get("unaffiliated_unclaimed_current_count", "")
+    unknown = row.get("unaffiliated_unclaimed_unknown_age_count", 0)
+    expiry_summary = ""
+    if expired != "" and current != "":
+        age_parts = [f"exp={expired}", f"cur={current}"]
+        if unknown:
+            age_parts.append(f"unk={unknown}")
+        expiry_summary = f"({','.join(age_parts)})"
+    summary = (
+        f"uncl={unclaimed} q={qualifying}{expiry_summary} "
+        f"clm={row.get('invite_claimed_count', 0)} "
+        f"del={row.get('invite_deleted_count', 0)}"
+    )
+    ages = [age for age in str(row.get("unaffiliated_unclaimed_ages_days", "")).split(";") if age]
+    if ages:
+        preview = ages[:6]
+        ages_summary = f" ages={','.join(preview)}d"
+        if len(ages) > len(preview):
+            ages_summary += f",+{len(ages) - len(preview)}"
+        summary += ages_summary
+    return summary
+
+
+def _format_invite_dates(row: dict[str, str | int]) -> str:
+    """Return all-unclaimed sent dates and the latest acceptance date across all invite types."""
+    oldest = str(row.get("oldest_unclaimed_sent_date", ""))
+    newest = str(row.get("newest_unclaimed_sent_date", ""))
+    accepted = str(row.get("latest_accepted_date", ""))
+    populated = [value for value in (oldest, newest, accepted) if value]
+    if not populated:
+        return ""
+
+    dates = [datetime.fromisoformat(value).date() for value in populated]
+    compact = len({value.year for value in dates}) == 1
+
+    def render(value: str) -> str:
+        parsed = datetime.fromisoformat(value).date()
+        return parsed.strftime("%m-%d" if compact else "%Y-%m-%d")
+
+    parts: list[str] = []
+    sent_start = oldest or newest
+    sent_end = newest or oldest
+    if sent_start:
+        sent_range = render(sent_start)
+        if sent_end and sent_end != sent_start:
+            sent_range += f"→{render(sent_end)}"
+        parts.append(f"s:{sent_range}")
+    if accepted:
+        parts.append(f"a:{render(accepted)}")
+    return " ".join(parts)
+
+
+def _truncate_console_cell(value: str, max_len: int) -> str:
+    """Truncate a console-only cell to ``max_len`` characters with an ellipsis."""
+    if len(value) <= max_len:
+        return value
+    if max_len <= 0:
+        return ""
+    return f"{value[: max_len - 1]}…"
+
+
+def _format_ordered_invite_dates(sent_dates: tuple[datetime, ...]) -> str:
+    """Render ordered qualifying sent dates as a semicolon-delimited audit cell."""
+    return ";".join(_format_diagnostic_datetime(sent_date) for sent_date in sent_dates)
+
+
+def _invite_ages_days(sent_dates: tuple[datetime, ...], now: datetime) -> tuple[int, ...]:
+    """Return floor elapsed days at the reference clock, preserving date order."""
+    normalized_now = _as_utc_naive(now)
+    assert normalized_now is not None
+    return tuple(
+        math.floor((normalized_now - normalized_date).total_seconds() / 86400)
+        for sent_date in sent_dates
+        if (normalized_date := _as_utc_naive(sent_date)) is not None
+    )
+
+
+def _inspection_invite_context(
+    invite_diagnostics: AuthInviteDiagnostics,
+    invite_criteria: InviteCriteria | None,
+    reference_now: datetime | None,
+) -> tuple[tuple[tuple[InviteClause, bool], ...], tuple[int, ...]]:
+    """Evaluate optional criteria and age diagnostics using the established clock precedence."""
+    criteria_results = (
+        evaluate_invite_clauses(invite_diagnostics, invite_criteria)
+        if invite_criteria is not None
+        else ()
+    )
+    age_reference = invite_criteria.now if invite_criteria is not None else reference_now
+    if age_reference is None:
+        return criteria_results, ()
+    invite_ages = _invite_ages_days(
+        invite_diagnostics.unaffiliated_unclaimed_sent_dates,
+        age_reference,
+    )
+    return criteria_results, invite_ages
+
+
+def _inspection_criteria_cells(
+    criteria_results: tuple[tuple[InviteClause, bool], ...],
+    invite_criteria: InviteCriteria | None,
+) -> tuple[str, str]:
+    """Render criteria outcome cells while keeping unset criteria cells blank."""
+    if invite_criteria is None:
+        return "", ""
+    return (
+        _format_bool(all(passed for _clause, passed in criteria_results)),
+        ";".join(clause.raw for clause, passed in criteria_results if not passed),
+    )
+
+
+def _optional_diagnostic_count(value: int | None) -> str | int:
+    """Render an unavailable diagnostic count as the persisted blank cell."""
+    return "" if value is None else value
+
+
+def _build_inspection_row(
+    state: AuthBusinessState,
+    invite_criteria: InviteCriteria | None,
+    reference_now: datetime | None,
+) -> dict[str, str | int]:
+    """Build one inspection row without changing persisted field order or formatting."""
+    entity_exists = state.entity_exists
+    invite_diagnostics = state.invite_diagnostics
+    criteria_results, invite_ages = _inspection_invite_context(
+        invite_diagnostics,
+        invite_criteria,
+        reference_now,
+    )
+    criteria_pass, failed_clauses = _inspection_criteria_cells(
+        criteria_results,
+        invite_criteria,
+    )
+    return {
+        "business_identifier": state.business_identifier,
+        "business_names": _format_tuple(state.business_names),
+        "entity_state": "present" if entity_exists else "missing",
+        "entity_exists": _format_bool(entity_exists),
+        "entity_count": len(state.entity_ids),
+        "entity_ids": _format_tuple(state.entity_ids),
+        "contact_state": _dependent_state(entity_exists, state.usable_contact_count > 0),
+        "contact_count": state.contact_count,
+        "usable_contact_count": state.usable_contact_count,
+        "affiliation_state": _dependent_state(entity_exists, bool(state.found_account_ids)),
+        "affiliation_count": len(state.found_account_ids),
+        "found_account_ids": _format_tuple(state.found_account_ids),
+        "found_account_names": _format_tuple(state.found_account_names),
+        "expected_account_ids": _format_tuple(state.expected_account_ids),
+        "missing_account_ids": _format_tuple(state.missing_account_ids),
+        "invite_state": _dependent_state(entity_exists, state.invite_count > 0),
+        "invite_count": state.invite_count,
+        "blocked_by_missing_entity": _format_bool(not entity_exists),
+        "invite_claimed_count": invite_diagnostics.claimed_count,
+        "invite_unclaimed_count": invite_diagnostics.unclaimed_count,
+        "invite_deleted_count": invite_diagnostics.deleted_count,
+        "invite_type_counts": _format_count_pairs(invite_diagnostics.type_counts),
+        "invite_status_counts": _format_count_pairs(invite_diagnostics.status_counts),
+        "unaffiliated_unclaimed_invite_count": invite_diagnostics.unaffiliated_unclaimed_count,
+        "unaffiliated_unclaimed_expired_count": _optional_diagnostic_count(
+            invite_diagnostics.expired_unclaimed_unaffiliated_count
+        ),
+        "unaffiliated_unclaimed_current_count": _optional_diagnostic_count(
+            invite_diagnostics.current_unclaimed_unaffiliated_count
+        ),
+        "unaffiliated_unclaimed_unknown_age_count": (
+            invite_diagnostics.unknown_age_unclaimed_unaffiliated_count
+        ),
+        "oldest_unclaimed_sent_date": _format_diagnostic_datetime(
+            invite_diagnostics.oldest_unclaimed_sent_date
+        ),
+        "newest_unclaimed_sent_date": _format_diagnostic_datetime(
+            invite_diagnostics.newest_unclaimed_sent_date
+        ),
+        "latest_accepted_date": _format_diagnostic_datetime(invite_diagnostics.latest_accepted_date),
+        "unaffiliated_unclaimed_sent_dates": _format_ordered_invite_dates(
+            invite_diagnostics.unaffiliated_unclaimed_sent_dates
+        ),
+        "unaffiliated_unclaimed_ages_days": ";".join(str(age) for age in invite_ages),
+        "invite_criteria_pass": criteria_pass,
+        "invite_criteria_failed_clauses": failed_clauses,
+    }
+
+
+def build_inspection_rows(
+    states: list[AuthBusinessState],
+    invite_criteria: InviteCriteria | None = None,
+    *,
+    reference_now: datetime | None = None,
+) -> list[dict[str, str | int]]:
     """Build factual inspection rows from the provided Auth DB states.
 
     ``contact_state`` is based on usable contacts with non-blank email; raw
-    contact row totals remain available in ``contact_count``.
+    contact row totals remain available in ``contact_count``. Invite criteria
+    clocks take precedence over ``reference_now`` when computing invite ages.
     """
-    rows: list[dict[str, str | int]] = []
-    for state in states:
-        entity_exists = state.entity_exists
-        rows.append(
-            {
-                "business_identifier": state.business_identifier,
-                "business_names": _format_tuple(state.business_names),
-                "entity_state": "present" if entity_exists else "missing",
-                "entity_exists": _format_bool(entity_exists),
-                "entity_count": len(state.entity_ids),
-                "entity_ids": _format_tuple(state.entity_ids),
-                "contact_state": _dependent_state(entity_exists, state.usable_contact_count > 0),
-                "contact_count": state.contact_count,
-                "usable_contact_count": state.usable_contact_count,
-                "affiliation_state": _dependent_state(entity_exists, bool(state.found_account_ids)),
-                "affiliation_count": len(state.found_account_ids),
-                "found_account_ids": _format_tuple(state.found_account_ids),
-                "found_account_names": _format_tuple(state.found_account_names),
-                "expected_account_ids": _format_tuple(state.expected_account_ids),
-                "missing_account_ids": _format_tuple(state.missing_account_ids),
-                "invite_state": _dependent_state(entity_exists, state.invite_count > 0),
-                "invite_count": state.invite_count,
-                "blocked_by_missing_entity": _format_bool(not entity_exists),
-            }
-        )
-    return rows
+    return [
+        _build_inspection_row(state, invite_criteria, reference_now)
+        for state in states
+    ]
 
 
 def build_inspection_identifier_rows(
     states: list[AuthBusinessState],
     matched_states: list[AuthBusinessState],
     inspect_filter: str,
+    invite_criteria: InviteCriteria | None = None,
 ) -> list[dict[str, str | int]]:
     """Build copy-friendly AUTH_CORP_NUMS rows from raw inspection state."""
     if inspect_filter != INSPECT_FILTER_ALL:
+        _require_invite_filter_criteria(inspect_filter, invite_criteria)
         return [
             {
                 "inspect_filter": inspect_filter,
@@ -1298,10 +2335,15 @@ def build_inspection_identifier_rows(
 
     rows: list[dict[str, str | int]] = []
     for filter_token in INSPECT_IDENTIFIER_FILTERS:
+        if (
+            filter_token == INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA
+            and invite_criteria is None
+        ):
+            continue
         identifiers = [
             state.business_identifier
             for state in states
-            if auth_state_matches_inspect_filter(state, filter_token)
+            if auth_state_matches_inspect_filter(state, filter_token, invite_criteria)
         ]
         if identifiers:
             rows.append(
@@ -1373,6 +2415,32 @@ def _write_identifier_copy_list_section(
         txt_file.write(f"SQL_IN_IDENTIFIERS={_format_sql_quoted_identifier_list(identifiers_csv)}\n")
 
 
+def _write_invite_reminder_handoff_section(
+    txt_file: Any,
+    identifiers_csv: str,
+    count: int,
+) -> None:
+    """Write the paste-ready environment block for a non-empty reminder cohort."""
+    if count <= 0:
+        return
+    txt_file.write("\n")
+    txt_file.write("# ── Next step: send reminder invites to this cohort ─────────\n")
+    txt_file.write(
+        "# Review the list, then copy this block into your .env and run: make run-auth-invite\n"
+    )
+    txt_file.write("AUTH_SELECTION_MODE=MIGRATION_FILTER\n")
+    txt_file.write(f"AUTH_CORP_NUMS={identifiers_csv}\n")
+    txt_file.write(
+        "# REQUIRED: set a new key per reminder round, "
+        "e.g. AUTH_REPEATABLE_CYCLE_KEY=saf_reminder_2\n"
+    )
+    txt_file.write("AUTH_REPEATABLE_CYCLE_KEY=\n")
+    txt_file.write("AUTH_INVITE_IS_REMINDER=True\n")
+    txt_file.write(
+        "# Reminder rounds are inferred from invite count/age only; Auth stores no reminder ordinal.\n"
+    )
+
+
 def _write_identifier_copy_list_txt(
     path: str,
     rows: list[dict[str, str | int]],
@@ -1416,13 +2484,19 @@ def write_scenario_txt(path: str, results: list[VerificationResult]) -> None:
         )
 
 
-def write_inspection_csv(path: str, states: list[AuthBusinessState]) -> None:
+def write_inspection_csv(
+    path: str,
+    states: list[AuthBusinessState],
+    invite_criteria: InviteCriteria | None = None,
+    *,
+    reference_now: datetime | None = None,
+) -> None:
     """Write factual Auth DB inspection detail CSV rows for the provided states."""
     expanded_path = _ensure_parent_dir(path)
     with open(expanded_path, "w", newline="", encoding="utf-8") as csv_file:
         writer = csv.DictWriter(csv_file, fieldnames=INSPECTION_FIELDNAMES)
         writer.writeheader()
-        writer.writerows(build_inspection_rows(states))
+        writer.writerows(build_inspection_rows(states, invite_criteria, reference_now=reference_now))
 
 
 _INSPECTION_FILTER_SUMMARY_METRICS = {
@@ -1441,12 +2515,16 @@ _INSPECTION_FILTER_SUMMARY_METRICS = {
     },
     INSPECT_FILTER_HAS_INVITE: {"label": "HasInvite", "summary_key": "has_invite_count"},
     INSPECT_FILTER_ENTITY_WITHOUT_INVITE: {"label": "EntityWithoutInvite", "summary_key": "entity_without_invite_count"},
+    INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA: {
+        "label": "NoAffiliationInviteCriteria",
+        "summary_key": "no_affiliation_invite_criteria_count",
+    },
 }
 
 
-def _all_inspection_summary_metric_rows(summary: dict[str, int | str]) -> list[tuple[str, int | str]]:
+def _all_inspection_summary_metric_rows(summary: dict[str, Any]) -> list[tuple[str, int | str]]:
     """Return display-ordered full inspect summary metric rows."""
-    return [
+    rows = [
         ("Inspected", summary.get("inspected_count", 0)),
         ("MatchedByFilter", summary.get("matched_count", 0)),
         ("HasAnyAuth", summary.get("has_any_auth_count", 0)),
@@ -1457,11 +2535,30 @@ def _all_inspection_summary_metric_rows(summary: dict[str, int | str]) -> list[t
         ("HasAffiliation", summary.get("has_affiliation_count", 0)),
         ("EntityWithoutAffiliation", summary.get("entity_without_affiliation_count", 0)),
         ("HasInvite", summary.get("has_invite_count", 0)),
-        ("EntityWithoutInvite", summary.get("entity_without_invite_count", 0)),
+        ("HasUnclaimedInvite", summary.get("has_unclaimed_invite_count", 0)),
+        ("HasClaimedInvite", summary.get("has_claimed_invite_count", 0)),
+        (
+            "HasUnaffiliatedUnclaimedInvite",
+            summary.get("has_unaffiliated_unclaimed_invite_count", 0),
+        ),
     ]
+    if summary.get("invite_criteria", ""):
+        rows.append(
+            (
+                "NoAffiliationInviteCriteria",
+                summary.get("no_affiliation_invite_criteria_count", 0),
+            )
+        )
+    rows.extend(
+        [
+            ("UnclaimedInviteRows(invites)", summary.get("unclaimed_invite_rows_total", 0)),
+            ("EntityWithoutInvite", summary.get("entity_without_invite_count", 0)),
+        ]
+    )
+    return rows
 
 
-def _inspection_summary_metric_rows(summary: dict[str, int | str]) -> list[tuple[str, int | str]]:
+def _inspection_summary_metric_rows(summary: dict[str, Any]) -> list[tuple[str, int | str]]:
     """Return filter-aware inspect summary metric rows."""
     inspect_filter = str(summary.get("inspect_filter", INSPECT_FILTER_ALL))
     if inspect_filter == INSPECT_FILTER_ALL:
@@ -1480,7 +2577,9 @@ def _inspection_summary_metric_rows(summary: dict[str, int | str]) -> list[tuple
 def write_inspection_summary_txt(
     path: str,
     identifier_rows: list[dict[str, str | int]],
-    summary: dict[str, int | str] | None = None,
+    summary: dict[str, Any] | None = None,
+    *,
+    handoff_filter: str | None = None,
 ) -> None:
     """Write inspect summary and copy-friendly identifier groups as plain text."""
     expanded_path = _ensure_parent_dir(path)
@@ -1488,6 +2587,13 @@ def write_inspection_summary_txt(
         if summary is not None:
             txt_file.write("# Inspect Auth summary\n")
             txt_file.write(f"Filter={summary.get('inspect_filter', '')}\n")
+            if summary.get("invite_criteria", ""):
+                txt_file.write(f"{summary.get('invite_criteria', '')}\n")
+            elif "expiry_days" in summary and "expiry_cutoff" in summary:
+                cutoff_text = format_clock_z(summary.get("expiry_cutoff"))
+                txt_file.write(
+                    f"ExpiryDays={summary.get('expiry_days')}, Cutoff={cutoff_text} (diagnostics-only)\n"
+                )
             table_rows = [
                 {"metric": label, "count": str(value)}
                 for label, value in _inspection_summary_metric_rows(summary)
@@ -1495,6 +2601,23 @@ def write_inspection_summary_txt(
             for line in _render_table_lines(table_rows, ("metric", "count"), right_aligned_columns=("count",)):
                 txt_file.write(f"{line}\n")
             txt_file.write("\n")
+            clause_audit = summary.get("clause_audit", ())
+            if clause_audit:
+                txt_file.write(
+                    "# Invite criteria clause audit "
+                    f"(businesses passing each clause, of {summary.get('inspected_count', 0)} inspected)\n"
+                )
+                audit_rows = [
+                    {"clause": str(clause), "passing": str(passing)}
+                    for clause, passing in clause_audit
+                ]
+                for line in _render_table_lines(
+                    audit_rows,
+                    ("clause", "passing"),
+                    right_aligned_columns=("passing",),
+                ):
+                    txt_file.write(f"{line}\n")
+                txt_file.write("\n")
 
         _write_identifier_copy_list_section(
             txt_file,
@@ -1502,6 +2625,16 @@ def write_inspection_summary_txt(
             label_key="inspect_filter",
             title="Inspect Auth identifier copy lists",
         )
+        if (
+            handoff_filter == INSPECT_FILTER_NO_AFFILIATION_INVITE_CRITERIA
+            and len(identifier_rows) == 1
+        ):
+            handoff_row = identifier_rows[0]
+            _write_invite_reminder_handoff_section(
+                txt_file,
+                str(handoff_row.get("identifiers_csv", "")),
+                int(handoff_row.get("count", 0) or 0),
+            )
 
 
 def _table_header_border(widths: dict[str, int], columns: tuple[str, ...]) -> str:
@@ -1731,38 +2864,101 @@ def print_scenario_rows(
             )
 
 
-def build_inspection_summary(states: list[AuthBusinessState], matched_states: list[AuthBusinessState], inspect_filter: str) -> dict[str, int | str]:
+def build_inspection_summary(
+    states: list[AuthBusinessState],
+    matched_states: list[AuthBusinessState],
+    inspect_filter: str,
+    invite_criteria: InviteCriteria | None = None,
+) -> dict[str, Any]:
     """Build full-population inspection summary counts.
 
     ``has_contact_count`` and ``entity_without_contact_count`` use usable contact
     email, not merely raw contact row presence.
     """
-    return {
+    _require_invite_filter_criteria(inspect_filter, invite_criteria)
+    summary: dict[str, Any] = {
         "inspect_filter": inspect_filter,
         "inspected_count": len(states),
         "matched_count": len(matched_states),
         "emitted_count": len(matched_states),
         "has_any_auth_count": sum(1 for state in states if auth_state_has_any_auth(state)),
-        "missing_entity_count": sum(1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_MISSING_ENTITY)),
-        "has_entity_count": sum(1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_ENTITY)),
-        "has_contact_count": sum(1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_CONTACT)),
+        "missing_entity_count": sum(
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_MISSING_ENTITY)
+        ),
+        "has_entity_count": sum(
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_ENTITY)
+        ),
+        "has_contact_count": sum(
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_CONTACT)
+        ),
         "entity_without_contact_count": sum(
-            1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_ENTITY_WITHOUT_CONTACT)
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_ENTITY_WITHOUT_CONTACT)
         ),
-        "has_affiliation_count": sum(1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_AFFILIATION)),
+        "has_affiliation_count": sum(
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_AFFILIATION)
+        ),
         "entity_without_affiliation_count": sum(
-            1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION)
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_ENTITY_WITHOUT_AFFILIATION)
         ),
-        "has_invite_count": sum(1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_INVITE)),
+        "has_invite_count": sum(
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_HAS_INVITE)
+        ),
+        "has_unclaimed_invite_count": sum(
+            1 for state in states if state.invite_diagnostics.unclaimed_count > 0
+        ),
+        "has_claimed_invite_count": sum(
+            1 for state in states if state.invite_diagnostics.claimed_count > 0
+        ),
+        "has_unaffiliated_unclaimed_invite_count": sum(
+            1 for state in states if state.invite_diagnostics.unaffiliated_unclaimed_count > 0
+        ),
+        "unclaimed_invite_rows_total": sum(
+            state.invite_diagnostics.unclaimed_count for state in states
+        ),
         "entity_without_invite_count": sum(
-            1 for state in states if auth_state_matches_inspect_filter(state, INSPECT_FILTER_ENTITY_WITHOUT_INVITE)
+            1 for state in states
+            if auth_state_matches_inspect_filter(state, INSPECT_FILTER_ENTITY_WITHOUT_INVITE)
         ),
     }
+    if invite_criteria is not None:
+        summary["invite_criteria"] = format_invite_criteria(invite_criteria)
+        state_clause_results = [
+            (
+                state,
+                evaluate_invite_clauses(state.invite_diagnostics, invite_criteria),
+            )
+            for state in states
+        ]
+        summary["no_affiliation_invite_criteria_count"] = sum(
+            1
+            for state, results in state_clause_results
+            if _auth_state_matches_invite_criteria(state, results)
+        )
+        summary["clause_audit"] = tuple(
+            (
+                clause.raw,
+                sum(1 for _state, results in state_clause_results if results[index][1]),
+            )
+            for index, clause in enumerate(invite_criteria.clauses)
+        )
+    return summary
 
 
-def print_inspection_summary(states: list[AuthBusinessState], matched_states: list[AuthBusinessState], inspect_filter: str) -> None:
+def print_inspection_summary(
+    states: list[AuthBusinessState],
+    matched_states: list[AuthBusinessState],
+    inspect_filter: str,
+    invite_criteria: InviteCriteria | None = None,
+) -> None:
     """Print readable summary-first inspection output."""
-    summary = build_inspection_summary(states, matched_states, inspect_filter)
+    summary = build_inspection_summary(states, matched_states, inspect_filter, invite_criteria)
     metric_rows = [(label, str(value)) for label, value in _inspection_summary_metric_rows(summary)]
     metric_width = max(len("metric"), *(len(label) for label, _ in metric_rows))
     count_width = max(len("count"), *(len(value) for _, value in metric_rows))
@@ -1775,6 +2971,23 @@ def print_inspection_summary(states: list[AuthBusinessState], matched_states: li
     for label, value in metric_rows:
         print(f"{label.ljust(metric_width)} | {value.rjust(count_width)}")
     print()
+    clause_audit = summary.get("clause_audit", ())
+    if clause_audit:
+        audit_rows = [
+            {"clause": str(clause), "passing": str(passing)}
+            for clause, passing in clause_audit
+        ]
+        print(
+            "🧮 Invite criteria clause audit "
+            f"(businesses passing each clause, of {summary['inspected_count']} inspected):"
+        )
+        for line in _render_table_lines(
+            audit_rows,
+            ("clause", "passing"),
+            right_aligned_columns=("passing",),
+        ):
+            print(line)
+        print()
     if not states:
         print("🔎 Inspect Auth: no selected businesses to inspect.")
     elif not matched_states:
@@ -1807,11 +3020,169 @@ def _print_preview_truncated_message(
     )
 
 
+def _inspection_console_columns_and_headers() -> tuple[tuple[str, ...], dict[str, str]]:
+    """Return ordered inspect console columns and their display headers."""
+    columns = (
+        "row",
+        "business_identifier",
+        "business_names",
+        "entity_state",
+        "contact_state",
+        "affiliation_state",
+        "invite_state",
+        "invite_mix",
+        "invite_summary",
+        "invite_dates",
+        "found_account_ids",
+        "found_account_names",
+    )
+    headers = {
+        column: _CONSOLE_HEADER_ALIASES.get(
+            column,
+            column[: -len("_state")] if column.endswith("_state") else column,
+        )
+        for column in columns
+    }
+    return columns, headers
+
+
+def _inspection_console_cell(
+    row: dict[str, str | int],
+    row_number: int,
+    column: str,
+    business_names_max_length: int | None,
+) -> str:
+    """Format one inspection value for console display."""
+    if column == "row":
+        return str(row_number)
+    if column == "invite_mix":
+        return _format_invite_mix(row)
+    if column == "invite_summary":
+        return _format_invite_summary(row)
+    if column == "invite_dates":
+        return _format_invite_dates(row)
+    if column == "business_names" and business_names_max_length is not None:
+        return _truncate_console_cell(str(row.get(column, "")), business_names_max_length)
+    if column == "found_account_names":
+        return _truncate_console_cell(
+            str(row.get(column, "")),
+            _FOUND_ACCOUNT_NAMES_CONSOLE_MAX,
+        )
+    if column in {"contact_state", "affiliation_state", "invite_state"}:
+        return _format_console_state(row.get(column, ""))
+    return str(row.get(column, ""))
+
+
+def _inspection_console_table_row(
+    row: dict[str, str | int],
+    row_number: int,
+    columns: tuple[str, ...],
+    business_names_max_length: int | None,
+) -> dict[str, str]:
+    """Build one numbered inspection console table row."""
+    return {
+        column: _inspection_console_cell(
+            row,
+            row_number,
+            column,
+            business_names_max_length,
+        )
+        for column in columns
+    }
+
+
+def _inspection_console_marker_row(remaining_rows: int, limit_config_key: str) -> dict[str, str]:
+    """Build the marker row shown when the console preview is capped."""
+    return {
+        "row": "",
+        "business_identifier": f"⚠️ {remaining_rows} MORE ROWS NOT SHOWN",
+        "business_names": f"console capped by {limit_config_key}",
+        "entity_state": "CSV complete",
+        "contact_state": "set ALL",
+        "affiliation_state": "for full console",
+        "invite_state": "",
+        "invite_mix": "",
+        "invite_summary": "",
+        "invite_dates": "",
+        "found_account_ids": "",
+        "found_account_names": "",
+    }
+
+
+def _build_inspection_console_table_rows(
+    inspection_rows: list[dict[str, str | int]],
+    preview_rows: list[dict[str, str | int]],
+    columns: tuple[str, ...],
+    limit_config_key: str,
+    business_names_max_length: int | None,
+) -> tuple[list[dict[str, str]], bool]:
+    """Build formatted preview rows and append a truncation marker when needed."""
+    table_rows = [
+        _inspection_console_table_row(
+            row,
+            row_number,
+            columns,
+            business_names_max_length,
+        )
+        for row_number, row in enumerate(preview_rows, start=1)
+    ]
+    truncated = len(preview_rows) < len(inspection_rows)
+    if truncated:
+        remaining_rows = len(inspection_rows) - len(preview_rows)
+        table_rows.append(_inspection_console_marker_row(remaining_rows, limit_config_key))
+    return table_rows, truncated
+
+
+def _inspection_console_widths(
+    headers: dict[str, str],
+    table_rows: list[dict[str, str]],
+    columns: tuple[str, ...],
+) -> dict[str, int]:
+    """Measure inspect console columns from headers and rendered cells."""
+    return {
+        column: max(len(headers[column]), *(len(row[column]) for row in table_rows))
+        for column in columns
+    }
+
+
+def _print_inspection_console_table(
+    table_rows: list[dict[str, str]],
+    columns: tuple[str, ...],
+    headers: dict[str, str],
+    widths: dict[str, int],
+    shown_rows: int,
+    total_rows: int,
+    cap_label: str,
+) -> None:
+    """Render the inspection console title, legends, borders, and table rows."""
+    header_border = _table_header_border(widths, columns)
+    marker_separator = "-+-".join("-" * widths[column] for column in columns)
+    print(
+        "🔎 Inspect Auth state — "
+        f"showing {shown_rows} of {total_rows} matched "
+        f"({cap_label}; contact_state uses usable contact email):"
+    )
+    for legend_line in INSPECTION_LEGEND_LINES:
+        print(legend_line)
+    print(header_border)
+    print(" | ".join(headers[column].ljust(widths[column]) for column in columns))
+    print(header_border)
+    for row in table_rows:
+        rendered_row = " | ".join(row[column].ljust(widths[column]) for column in columns)
+        if row["business_identifier"].startswith("⚠️ "):
+            print(marker_separator)
+            print(rendered_row)
+            print(marker_separator)
+        else:
+            print(rendered_row)
+
+
 def print_inspection_rows(
     inspection_rows: list[dict[str, str | int]],
     console_limit: ConsoleLimit | None = None,
     report_path: str | None = None,
     limit_config_key: str = "INSPECT_AUTH_CONSOLE_LIMIT",
+    business_names_max_length: int | None = None,
 ) -> None:
     """Print a compact factual inspection table for matched inspection rows."""
     if console_limit is not None and console_limit.disabled:
@@ -1824,52 +3195,25 @@ def print_inspection_rows(
     if not preview_rows:
         return
 
-    columns = (
-        "business_identifier",
-        "business_names",
-        "entity_state",
-        "contact_state",
-        "affiliation_state",
-        "invite_state",
-        "found_account_ids",
-        "found_account_names",
+    columns, headers = _inspection_console_columns_and_headers()
+    table_rows, truncated = _build_inspection_console_table_rows(
+        inspection_rows,
+        preview_rows,
+        columns,
+        limit_config_key,
+        business_names_max_length,
     )
-    table_rows = [{column: str(row.get(column, "")) for column in columns} for row in preview_rows]
-    truncated = len(preview_rows) < len(inspection_rows)
-    if truncated:
-        remaining_rows = len(inspection_rows) - len(preview_rows)
-        table_rows.append(
-            {
-                "business_identifier": f"⚠️ {remaining_rows} MORE ROWS NOT SHOWN",
-                "business_names": f"console capped by {limit_config_key}",
-                "entity_state": "CSV complete",
-                "contact_state": "set ALL",
-                "affiliation_state": "for full console",
-                "invite_state": "",
-                "found_account_ids": "",
-                "found_account_names": "",
-            }
-        )
-    widths = {
-        column: max(len(column), *(len(row[column]) for row in table_rows))
-        for column in columns
-    }
-
+    widths = _inspection_console_widths(headers, table_rows, columns)
     cap_label = _console_cap_label(console_limit, limit_config_key, unit="rows")
-    header_border = _table_header_border(widths, columns)
-    marker_separator = "-+-".join("-" * widths[column] for column in columns)
-    print(f"🔎 Inspect Auth state (contact_state uses usable contact email; {cap_label}):")
-    print(header_border)
-    print(" | ".join(column.ljust(widths[column]) for column in columns))
-    print(header_border)
-    for row in table_rows:
-        rendered_row = " | ".join(row[column].ljust(widths[column]) for column in columns)
-        if row["business_identifier"].startswith("⚠️ "):
-            print(marker_separator)
-            print(rendered_row)
-            print(marker_separator)
-        else:
-            print(rendered_row)
+    _print_inspection_console_table(
+        table_rows,
+        columns,
+        headers,
+        widths,
+        len(preview_rows),
+        len(inspection_rows),
+        cap_label,
+    )
 
     if truncated:
         _print_preview_truncated_message(
@@ -1963,11 +3307,17 @@ def write_verification_reports(settings: VerifyAuthSettings, results: list[Verif
     write_scenario_txt(settings.scenario_path, results)
 
 
-def write_inspection_report(path: str, states: list[AuthBusinessState]) -> None:
+def write_inspection_report(
+    path: str,
+    states: list[AuthBusinessState],
+    invite_criteria: InviteCriteria | None = None,
+    *,
+    reference_now: datetime | None = None,
+) -> None:
     """Write an inspection CSV report to the provided path."""
     if not path:
         raise ValueError("Inspection output path must be set before writing inspection reports")
-    write_inspection_csv(path, states)
+    write_inspection_csv(path, states, invite_criteria, reference_now=reference_now)
 
 
 def calculate_batch_count(total_candidates: int, batch_size: int, configured_batches: int) -> int:

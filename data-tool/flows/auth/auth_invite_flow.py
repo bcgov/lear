@@ -32,6 +32,18 @@ from .auth_orchestration import (
 from .auth_tasks import perform_auth_create_for_corp
 
 
+def _build_auth_invite_plan(config) -> AuthCreatePlan:
+    return AuthCreatePlan(
+        create_entity=False,
+        upsert_contact=False,
+        create_affiliations=False,
+        send_unaffiliated_invite=True,
+        invite_is_reminder=bool(getattr(config, 'AUTH_INVITE_IS_REMINDER', False)),
+        fail_if_missing_email=bool(getattr(config, 'AUTH_FAIL_IF_MISSING_EMAIL', False)),
+        dry_run=bool(getattr(config, 'AUTH_DRY_RUN', False)),
+    )
+
+
 @flow(
     name='Auth-Invite-Flow',
     log_prints=True,
@@ -50,14 +62,7 @@ def auth_invite_flow():
     config = get_config()
     selection_mode = parse_auth_selection_mode(config)
 
-    plan = AuthCreatePlan(
-        create_entity=False,
-        upsert_contact=False,
-        create_affiliations=False,
-        send_unaffiliated_invite=True,
-        fail_if_missing_email=bool(getattr(config, 'AUTH_FAIL_IF_MISSING_EMAIL', False)),
-        dry_run=bool(getattr(config, 'AUTH_DRY_RUN', False)),
-    )
+    plan = _build_auth_invite_plan(config)
 
     log_auth_config_preflight(
         config,
