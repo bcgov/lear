@@ -1095,6 +1095,18 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                         "name": file.get("fileName"),
                         "url": f"{url_prefix}/{file_key}"
                     })
+        elif filing.filing_type == "courtOrder":
+            court_order = filing.meta_data.get("courtOrder", {})
+            if files := court_order.get("files"):
+                for file in files:
+                    file_key = file.get("fileKey")
+                    file_name = file.get("fileName")
+                    if file_name.lower().endswith('.pdf'):
+                        file_name = file_name[:-4]
+                    outputs.append({
+                        "name": file_name,
+                        "url": f"{url_prefix}/{file_key}"
+                    })
         return outputs
 
     @staticmethod

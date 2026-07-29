@@ -202,20 +202,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      },
      HTTPStatus.OK, '2017-10-01'
      ),
-    ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
-     {'documents': {
-         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-         'legalFilings': [
-             {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
-             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
     ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value,
      'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
      {'documents': {
@@ -1581,7 +1567,13 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
                     }
       },
      HTTPStatus.OK, '2024-09-26'
-     )
+     ),
+     ('ben_court_order_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'courtOrder', COURT_ORDER, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'}
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
 ])
 def test_document_list_for_various_filing_states(app, session, mocker, client, jwt, monkeypatch, mock_drs_service,
                                                  test_name,
@@ -1634,6 +1626,14 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
                     'name': file.get('fileName'),
                     'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
                 })
+        elif filing_name_1 == 'courtOrder':
+            for file in meta_data['courtOrder']['files']:
+                file_key = file.get('fileKey')
+                expected_msg['documents']['staticDocuments'] = [{
+                    'name': file.get('fileName'),
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
+                }]
+
 
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
@@ -1672,6 +1672,32 @@ def filer_action(filing_name, filing_json, meta_data, business):
         meta_data['continuationIn'] = {}
         meta_data['continuationIn']['affidavitFileKey'] = continuation_in['foreignJurisdiction']['affidavitFileKey']
         meta_data['continuationIn']['authorizationFiles'] = continuation_in['authorization']['files']
+    
+    court_order = (
+        filing_json['filing'][filing_name] if filing_name == 'courtOrder'
+        else filing_json['filing'][filing_name].get('courtOrder')
+    )
+    if court_order:
+        file_number = court_order['fileNumber']
+        effect_of_order = court_order.get('effectOfOrder')
+        order_date = court_order.get('orderDate')
+
+        court_order_meta = {"fileNumber": file_number}
+        if effect_of_order:
+            court_order_meta["effectOfOrder"] = effect_of_order
+        if order_date:
+            court_order_meta["orderDate"] = order_date
+        
+        meta_data["courtOrder"] = court_order_meta
+
+    if filing_name == 'courtOrder':
+        meta_data["courtOrder"]["orderDetails"] = court_order.get('orderDetails')
+        meta_data["courtOrder"]["files"] = [
+            {
+                "fileKey": court_order.get('fileKey'),
+                "fileName": f"Court Order {court_order['fileNumber']}"
+            }
+        ]
 
     if filing_name == 'correction' and business.legal_type == 'CP':
         meta_data['correction'] = {}
