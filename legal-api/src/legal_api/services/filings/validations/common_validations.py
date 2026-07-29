@@ -1052,13 +1052,18 @@ def _validate_postal_code(
     return None
 
 
-_EMAIL_PATTERN = re.compile(r"^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$")
+_EMAIL_PATTERN = re.compile(
+    r'^(([^<>()\[\]\\.,;:\s@"]+'
+    r'(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))'
+    r'@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])'
+    r'|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
+)
 
 
 def validate_contact_point_email(filing_json: dict, filing_type: str) -> list:
     """Validate contactPoint email format."""
     email = filing_json["filing"][filing_type].get("contactPoint", {}).get("email")
-    if email and not _EMAIL_PATTERN.fullmatch(email.strip()):
+    if email and not _EMAIL_PATTERN.fullmatch(email):
         return [{"error": "Invalid email address.", "path": f"/filing/{filing_type}/contactPoint/email"}]
     return []
 
