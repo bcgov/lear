@@ -40,8 +40,12 @@ from business_filer.filing_processors.filing_components import filings
 
 def process(registrars_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the registrars order filing into the business model objects."""
-    filings.create_court_order(registrars_order_filing, {
-        "fileNumber": filing["registrarsOrder"].get("fileNumber"),
-        "effectOfOrder": filing["registrarsOrder"].get("effectOfOrder")
-    })
+    filings.create_court_order(
+        registrars_order_filing,
+        {
+            "fileNumber": filing["registrarsOrder"].get("fileNumber"),
+            "effectOfOrder": filing["registrarsOrder"].get("effectOfOrder")
+        },
+        filing_meta
+    )
     registrars_order_filing.details = filing["registrarsOrder"]["orderDetails"]

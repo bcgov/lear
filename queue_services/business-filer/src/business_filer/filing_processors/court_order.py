@@ -41,12 +41,36 @@ from business_filer.filing_processors.filing_components import filings
 def process(business: Business, court_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
     court_order_data = filing["courtOrder"]
-    filings.create_court_order(court_order_filing, court_order_data)
+    filings.create_court_order(court_order_filing, court_order_data, filing_meta)
 
+    file_list = []
     if file_key := court_order_data.get("fileKey"):
+        # This if can be removed once court order filings start using files
         document = Document()
         document.type = DocumentType.COURT_ORDER.value
         document.file_key = file_key
         document.business_id = business.id
         document.filing_id = court_order_filing.id
         business.documents.append(document)
+        file_list.append({
+            "fileKey": document.file_key,
+            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf'
+        })
+    elif files := court_order_data.get("files", []):
+        for file in files:
+            document = Document()
+            document.type = DocumentType.COURT_ORDER.value
+            document.file_key = file.get("fileKey")
+            document.file_name = file.get("fileName")
+            file_list.append({
+                "fileKey": document.file_key,
+                "fileName": document.file_name
+            })
+            document.filing_id = court_order_filing.id
+            business.documents.append(document)
+
+    if file_list:
+        filing_meta.court_order = {
+            **filing_meta.court_order,
+            "files": file_list
+        }

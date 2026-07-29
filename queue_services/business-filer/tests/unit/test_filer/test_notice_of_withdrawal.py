@@ -77,6 +77,8 @@ def tests_filer_notice_of_withdrawal(session, test_name, filing_type, filing_tem
     assert court_order['orderDetails'] == court_order_obj.order_details
     assert court_order['fileNumber'] == court_order_obj.file_number
     assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+    assert filing_meta.court_order['fileNumber'] == court_order['fileNumber']
+    assert filing_meta.court_order['effectOfOrder'] == court_order['effectOfOrder']
 
     assert final_withdrawn_filing.status == Filing.Status.WITHDRAWN.value
     assert final_withdrawn_filing.withdrawal_pending == False
