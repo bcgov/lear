@@ -20,6 +20,7 @@ CREATE TABLE TARGET_SCHEMA.subset_validate_transfer_counts (
 );
 
 -- pull per corp oracle count for refreshed candidate
+learn schema TARGET_SCHEMA;
 
 transfer TARGET_SCHEMA.subset_validate_oracle_counts from cprd using
 WITH corp_list AS (
@@ -27,15 +28,15 @@ WITH corp_list AS (
     FROM corporation c 
     WHERE &oracle_corp_num_predicate
     AND &oracle_corp_type_predicate
-    AND c.corp_num NOT IN ('0460007', '1255957', '1186381')
+    AND c.CORP_NUM NOT IN ('0460007', '1255957', '1186381')
 ),
 corps AS (
-    SELECT c.corp_num AS. oracle_corp_num,
+    SELECT c.corp_num AS oracle_corp_num,
         CASE
-            WHEN c.CORP_TYPE_CD IN ('BC', 'ULC', 'CC') THEN 'BC' || c.CORP_NUM 
+            WHEN c.CORP_TYP_CD IN ('BC', 'ULC', 'CC') THEN 'BC' || c.CORP_NUM 
             ELSE c.CORP_NUM
         END AS corp_num
-    FROM corporation candidate
+    FROM corporation c 
     JOIN corp_list cl ON cl.corp_num = c.corp_num
 )
 SELECT corp_num, table_name, n FROM (
@@ -67,8 +68,7 @@ SELECT corp_num, table_name, n FROM (
     UNION ALL
     SELECT c.corp_num, 'corp_restriction', COUNT(*)
     FROM corps c
-    JOIN event e ON e.corp_num = c.oracle_corp_num
-    JOIN CORP_RESTRICTION cr ON cr.event_id = e.event_id
+    JOIN CORP_RESTRICTION cr ON cr.corp_num = c.oracle_corp_num
     GROUP BY c.corp_num
 
     UNION ALL
