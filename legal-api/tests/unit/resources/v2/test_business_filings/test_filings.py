@@ -94,6 +94,117 @@ from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
 
 
+def test_trim_strings_whitespace_only_becomes_empty():
+    """Assert that a whitespace-only string is trimmed down to an empty string."""
+    data = {'field': '     '}
+    ListFilingResource._trim_strings(data)
+    assert data['field'] == ''
+
+
+def test_trim_strings_various_whitespace_characters():
+    """Assert tabs, newlines, and mixed whitespace are all stripped, not just spaces."""
+    data = {'field': '\t\n  value with internal space  \n\t'}
+    ListFilingResource._trim_strings(data)
+    assert data['field'] == 'value with internal space'
+
+
+def test_trim_strings_empty_dict_and_list_untouched():
+    """Assert empty containers don't error and are left as empty containers."""
+    data = {'a': {}, 'b': [], 'c': '  x  '}
+    ListFilingResource._trim_strings(data)
+    assert data == {'a': {}, 'b': [], 'c': 'x'}
+
+
+def test_trim_strings_is_idempotent():
+    """Assert running trim twice on the same data produces the same result."""
+    data = {'a': '  x  ', 'b': {'c': [' y ', ' z ']}}
+    ListFilingResource._trim_strings(data)
+    first_pass = copy.deepcopy(data)
+    ListFilingResource._trim_strings(data)
+    assert data == first_pass
+
+
+def test_trim_strings_returns_same_object_reference():
+    """Assert the function mutates in place and returns the same object (not a copy)."""
+    data = {'a': '  x  '}
+    result = ListFilingResource._trim_strings(data)
+    assert result is data
+
+
+def test_post_ar_trims_padded_routing_slip_number(session, client, jwt):
+    """Assert that a routingSlipNumber padded with whitespace is trimmed before validation,
+    so it passes even though the padded (untrimmed) length would exceed the schema limit."""
+    identifier = 'CP7654321'
+    factory_business(identifier,
+                     founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                     last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date())
+
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
+    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['header']['routingSlipNumber'] = '    123131332    '
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not rv.json.get('errors')
+
+
+def test_post_change_of_directors_with_whitespace_trimmed(session, client, jwt):
+    """Assert that whitespace padding in nested officer/address fields is trimmed
+    before the changeOfDirectors filing is validated and saved."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    cod = get_filing_template('changeOfDirectors', identifier)
+    cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    cod['filing']['changeOfDirectors']['directors'][0]['officer']['firstName'] = '  Peter  '
+    cod['filing']['changeOfDirectors']['directors'][0]['officer']['lastName'] = '  Griffin  '
+    cod['filing']['changeOfDirectors']['directors'][0]['deliveryAddress']['postalCode'] = '  H0H0H0  '
+    cod['filing']['changeOfDirectors']['directors'][1]['title'] = '  Treasurer  '
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=cod,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    directors = rv.json['filing']['changeOfDirectors']['directors']
+    assert directors[0]['officer']['firstName'] == 'Peter'
+    assert directors[0]['officer']['lastName'] == 'Griffin'
+    assert directors[0]['deliveryAddress']['postalCode'] == 'H0H0H0'
+    assert directors[1]['title'] == 'Treasurer'
+    assert directors[0]['cessationDate'] is None
+    assert directors[1]['cessationDate'] is None
+
+
+def test_post_ar_preserves_numeric_and_boolean_types(session, client, jwt):
+    """Assert numbers/booleans in the filing json aren't coerced to strings or otherwise altered."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
+    ar['filing']['header']['priority'] = True
+    ar['filing']['header']['waiveFees'] = False
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['header']['priority'] is True
+    assert rv.json['filing']['header']['waiveFees'] is False
+
+
 @pytest.mark.parametrize(
     'legal_type, filing_type, filing_json',
     [
@@ -472,7 +583,7 @@ def test_special_resolution_sanitation(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], 'user')
                      )
     assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
+    assert rv.json['filing']['specialResolution']['resolution'] == '<p>Hello this is great</p> '
 
 
 def test_post_draft_ar(session, client, jwt):
