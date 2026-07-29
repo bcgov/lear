@@ -14,10 +14,10 @@
 """Retrieve the court orders for the entity."""
 from http import HTTPStatus
 
-from flask import jsonify
+from flask import current_app, jsonify, url_for
 from flask_cors import cross_origin
 
-from business_model.models import Business, CourtOrder, Filing
+from business_model.models import Business, CourtOrder, Document, DocumentType, Filing
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -57,16 +57,42 @@ def _get_court_order(business, court_order_id=None):
     if court_order_id:
         court_order = CourtOrder.get_by_id(court_order_id)
         if court_order:
-            return _include_court_order_files(court_order), HTTPStatus.OK
+            return _include_court_order_files(court_order, business), HTTPStatus.OK
 
     return {"message": f"{business.identifier} court order not found"}, HTTPStatus.NOT_FOUND
 
 
-def _include_court_order_files(court_order):
+def _include_court_order_files(court_order, business):
     """Return a JSON of the court orders."""
     court_order_json = court_order.json
     filing = Filing.find_by_id(court_order.filing_id)
     if filing.filing_type == "courtOrder":
-        court_order_json["files"] = []  # TODO: implement
+        documents = Document.find_all_by(
+            filing.id,
+            DocumentType.COURT_ORDER.value
+        )
+        if documents:
+            base_url = current_app.config.get("BUSINESS_API_GW_URL")
+            doc_url = url_for(
+                "API2.get_documents",
+                identifier=business.identifier,
+                filing_id=filing.id,
+                legal_filing_name=None
+            )
+            files = []
+            for doc in documents:
+                file_name = doc.file_name
+                if file_name:
+                    if file_name.lower().endswith(".pdf"):
+                        # This may not be required. Doing this to align with the current behavior
+                        file_name = file_name[:-4]
+                else:
+                    file_name = f"Court Order {court_order.file_number}"
+                files.append({
+                    "name": file_name,
+                    "file_key": f"{base_url}{doc_url}/static/{doc.file_key}",
+                })
+            if files:
+                court_order_json["files"] = files
 
     return {"courtOrder": court_order_json}

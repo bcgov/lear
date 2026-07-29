@@ -20,7 +20,7 @@ import copy
 from http import HTTPStatus
 import pytest
 
-from business_model.models import CourtOrder
+from business_model.models import CourtOrder, Document, DocumentType
 from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
 from registry_schemas.example_data import FILING_TEMPLATE
 from tests.unit.models import factory_business, factory_completed_filing
@@ -73,6 +73,15 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     )
     court_order.save()
 
+    document = Document(
+        filing_id=filing.id,
+        business_id=business.id,
+        type=DocumentType.COURT_ORDER.value,
+        file_key='test_file_key',
+        file_name='test_file.pdf'
+    )
+    document.save()
+
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
     rv = client.get(f'/api/v2/businesses/{identifier}/court-orders/{court_order.id}',
@@ -82,6 +91,9 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     assert rv.status_code == HTTPStatus.OK
     assert 'courtOrder' in rv.json
     assert rv.json['courtOrder']['fileNumber'] == '123456'
+    assert 'files' in rv.json['courtOrder']
+    assert len(rv.json['courtOrder']['files']) == 1
+    assert rv.json['courtOrder']['files'][0]['name'] == 'test_file'
 
 
 def test_get_business_court_orders_not_found(app, session, client, jwt, requests_mock):

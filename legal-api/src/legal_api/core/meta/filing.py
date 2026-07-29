@@ -1101,7 +1101,8 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 for file in files:
                     file_key = file.get("fileKey")
                     file_name = file.get("fileName")
-                    if file_name.lower().endswith('.pdf'):
+                    if file_name.lower().endswith(".pdf"):
+                        # This may not be required. Doing this to align with the current behavior
                         file_name = file_name[:-4]
                     outputs.append({
                         "name": file_name,

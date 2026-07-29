@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Final
 from flask import current_app, url_for
 from sqlalchemy import desc
 
-from business_model.models import Business, Document, DocumentType, UserRoles
+from business_model.models import Business, UserRoles
 from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.reports.document_service import DocumentService
@@ -556,7 +556,15 @@ class Filing:  # pylint: disable=too-many-public-methods
         )
 
     @staticmethod
-    def _populate_completed_filing_documents(documents, filing, business, jwt, base_url, doc_url, legal_filings):
+    def _populate_completed_filing_documents(  # noqa: PLR0913
+        documents,
+        filing,
+        business,
+        jwt,
+        base_url,
+        doc_url,
+        legal_filings
+    ):
         legal_filings_copy = copy.deepcopy(legal_filings)
         if (
             filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
