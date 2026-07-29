@@ -89,9 +89,7 @@ SELECT corp_num, table_name, n FROM (
 INSERT INTO TARGET_SCHEMA.subset_validate_transfer_counts
     (corp_num, table_name, oracle_count, pg_count, delta, status)
 WITH corps AS (
-    SELECT * FROM (
-        VALUES &corp_ids_in
-    ) AS t(corp_num)
+    SELECT * FROM unnest(ARRAY[&corp_ids_in]) AS t(corp_num)
 ),
 tables AS (
     SELECT * FROM (
