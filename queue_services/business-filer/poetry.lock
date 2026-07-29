@@ -294,7 +294,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.4.1"
+version = "3.4.6"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -314,14 +314,14 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2025.1,<2026.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.74"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.77"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "deecf506fc9e76fb9e52e91a69db0db10d93f068"
+resolved_reference = "095adf04125d51df16c614cafc08ac2aae83861e"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -2809,8 +2809,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.74"
-resolved_reference = "5abdc89a0f6eb06cbbac9ad66b580d7c76190ebc"
+reference = "2.18.77"
+resolved_reference = "d63ceaca445890a93f62540d9b14496d1715f3d1"
 
 [[package]]
 name = "requests"

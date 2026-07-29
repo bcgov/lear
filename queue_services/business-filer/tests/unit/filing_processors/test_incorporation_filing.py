@@ -116,6 +116,8 @@ def test_incorporation_filing_process_with_nr(app, session, legal_type, filing, 
             court_order = filing['filing']['incorporationApplication']['courtOrder']
             assert court_order['fileNumber'] == court_order_obj.file_number
             assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+            assert filing_meta.court_order['fileNumber'] == court_order['fileNumber']
+            assert filing_meta.court_order['effectOfOrder'] == court_order['effectOfOrder']
 
         if legal_type == 'CP':
             assert len(filing_rec.filing_party_roles.all()) == 1

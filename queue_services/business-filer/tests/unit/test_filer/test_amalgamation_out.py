@@ -54,6 +54,8 @@ def tests_filer_amalgamation_out(app, session):
     court_order = filing_json['filing']['amalgamationOut']['courtOrder']
     assert court_order['fileNumber'] == court_order_obj.file_number
     assert court_order['effectOfOrder'] == court_order_obj.effect_of_order
+    assert filing_meta.court_order['fileNumber'] == court_order['fileNumber']
+    assert filing_meta.court_order['effectOfOrder'] == court_order['effectOfOrder']
 
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == final_filing.id

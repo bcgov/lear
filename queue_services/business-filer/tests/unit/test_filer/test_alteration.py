@@ -232,6 +232,8 @@ def tests_filer_alteration_court_order(app, session, mocker):
     assert file_number == court_order_obj.file_number
     assert datetime.fromisoformat(order_date) == court_order_obj.order_date
     assert effect_of_order == court_order_obj.effect_of_order
+    assert final_filing.meta_data.get('courtOrder')['fileNumber'] == file_number
+    assert final_filing.meta_data.get('courtOrder')['effectOfOrder'] == effect_of_order
 
 
 @pytest.mark.parametrize('new_association_type', [

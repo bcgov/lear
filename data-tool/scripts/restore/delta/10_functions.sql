@@ -452,6 +452,14 @@ BEGIN
   WHERE table_name IS NOT NULL;
 
   UPDATE delta_ctl.table_config SET
+    pk_col = 'id',
+    nk_stage_exprs = ARRAY['s.filing_id'],
+    nk_local_exprs = ARRAY['l.filing_id'],
+    nk_cols = ARRAY['filing_id'],
+    nk_enforced = true
+  WHERE table_name = 'demigrated_filings';
+
+  UPDATE delta_ctl.table_config SET
     nk_stage_exprs = ARRAY['s.email_domain'],
     nk_local_exprs = ARRAY['l.email_domain'],
     nk_cols = ARRAY['email_domain'],
