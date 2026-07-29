@@ -173,10 +173,10 @@ FROM TARGET_SCHEMA.subset_validate_transfer_counts
 GROUP BY table_name
 ORDER BY bad_corps DESC, table_name;
 
--- discrepency
-SELECT corp_num, table_name, oracle_count, pg_count, delta, status
-FROM TARGET_SCHEMA.subset_validate_transfer_counts
-WHERE status = 'MISMATCH'
-ORDER BY table_name, corp_num;
+-- -- discrepency
+-- SELECT corp_num, table_name, oracle_count, pg_count, delta, status
+-- FROM TARGET_SCHEMA.subset_validate_transfer_counts
+-- WHERE status = 'MISMATCH'
+-- ORDER BY table_name, corp_num;
 
 DROP TABLE IF EXISTS TARGET_SCHEMA.subset_validate_oracle_counts;
