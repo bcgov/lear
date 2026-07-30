@@ -95,7 +95,7 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     assert rv.json['courtOrder']['fileNumber'] == '123456'
     assert 'files' in rv.json['courtOrder']
     assert len(rv.json['courtOrder']['files']) == 1
-    assert rv.json['courtOrder']['files'][0]['fileName'] == file_name[:-4]
+    assert rv.json['courtOrder']['files'][0]['fileName'] == file_name
     assert rv.json['courtOrder']['files'][0]['fileKey'] == file_key
     assert rv.json['courtOrder']['files'][0]['url'].endswith(
         f'api/v2/businesses/{identifier}/filings/{filing.id}/documents/static/{file_key}')

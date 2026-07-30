@@ -78,11 +78,7 @@ def _include_court_order_files(court_order_json, filing, business):
         files = []
         for doc in documents:
             file_name = doc.file_name
-            if file_name:
-                if file_name.lower().endswith(".pdf"):
-                    # This may not be required. Doing this to align with the current behavior
-                    file_name = file_name[:-4]
-            else:
+            if not file_name:
                 file_name = f"Court Order {court_order_json.get('fileNumber')}"
             files.append({
                 "fileName": file_name,
