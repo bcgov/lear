@@ -128,6 +128,7 @@ class tmpl_TemplateBundle:
     transfer_chunk: tmpl_TemplateSpec
     delete_cars: tmpl_TemplateSpec
     transfer_cars: tmpl_TemplateSpec
+    validate_staged_transfers: tmpl_TemplateSpec
 
 
 # =========================
@@ -393,6 +394,12 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
         path=subset_dir / "subset_transfer_cars.sql",
         schema=schema,
     )
+    validate_staged_transfers = tmpl_TemplateSpec(
+            name="subset_validate_staged_transfers",
+            path=subset_dir / "subset_validate_staged_transfers.sql",
+            schema=schema,
+            required_tokens=(TMPL_TOKEN_CORP_IDS, TMPL_TOKEN_ORACLE_PRED, TMPL_TOKEN_ORACLE_CORP_TYPE_PRED),
+        )
 
     return tmpl_TemplateBundle(
         pg_acquire_advisory_lock=pg_acquire_advisory_lock,
@@ -413,6 +420,7 @@ def tmpl_default_bundle(repo_root: Path, schema: str) -> tmpl_TemplateBundle:
         transfer_chunk=transfer_chunk,
         delete_cars=delete_cars,
         transfer_cars=transfer_cars,
+        validate_staged_transfers=validate_staged_transfers
     )
 
 
@@ -683,6 +691,7 @@ def gen_build_master_script_inline(
     delete_chunk_files: Sequence[Path],
     transfer_chunk_files: Sequence[Path],
     pg_purge_script_path: Path,
+    validate_script_path: Path,
 ) -> str:
     lines: List[str] = []
     lines.append("vset cli.settings.ignore_errors=false")
@@ -780,6 +789,11 @@ def gen_build_master_script_inline(
     lines.append("-- Execute the provisioned address transpose while the advisory lock is held.")
     lines.append(
         f"execute {tmpl_resolve_execute_path(templates.pg_call_address_transpose, out_dir=cfg.out_chunks_dir).as_posix()}"
+    )
+    lines.append("")
+    lines.append("-- Validate Staged table rows and events")
+    lines.append(
+        f"execute {validate_script_path.as_posix()}"
     )
     lines.append("")
     lines.append("-- Release subset-run advisory lock")
@@ -1147,6 +1161,7 @@ def run(cfg: cfg_GenerationConfig) -> int:
         templates.pg_purge_bcomps_excluded,
         templates.delete_cars,
         templates.transfer_cars,
+        templates.validate_staged_transfers,
     ):
         if not spec.path.exists():
             raise SystemExit(f"Missing required template: {spec.name}\nPath: {spec.path}")
@@ -1227,12 +1242,33 @@ def run(cfg: cfg_GenerationConfig) -> int:
                 probe_label="execute:pg_purge_bcomps_excluded",
             )
 
+        validate_script_path = cfg.out_chunks_dir / "validate_staged_transfers.sql"
+        gen_write_text(
+            validate_script_path,
+            tmpl_render(
+                tmpl_load_text(templates.validate_staged_transfers),
+                replacements={
+                    TMPL_TOKEN_CORP_IDS: sql_render_in_list(target_ids, multiline=True, indent="    "),
+                    TMPL_TOKEN_ORACLE_PRED: sql_render_in_predicate(
+                        "c.CORP_NUM",
+                        corp_to_oracle_ids(target_ids),
+                        max_in_list=cfg.chunk_size,
+                        multiline=True,
+                        indent="    ",
+                    ),
+                    TMPL_TOKEN_ORACLE_CORP_TYPE_PRED: sql_render_oracle_corp_type_predicate(include_cp=cfg.include_cp),
+                    TMPL_TOKEN_SCHEMA: cfg.target_schema,
+                },
+            ),
+        )
+
         master_text = gen_build_master_script_inline(
             cfg=cfg,
             templates=templates,
             delete_chunk_files=delete_files,
             transfer_chunk_files=transfer_files,
             pg_purge_script_path=pg_purge_script_path,
+            validate_script_path=validate_script_path,
         )
         gen_write_text(cfg.out_master, master_text)
 
