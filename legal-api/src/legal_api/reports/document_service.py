@@ -34,19 +34,23 @@ DRS_REPORT_PARAMS: str = "?reportType={report_type}&drsId={drs_id}"
 DRS_DOCUMENT_PARAMS: str = "?documentClass={document_class}&drsId={drs_id}"
 # Used for audit trail and db queries.
 BUSINESS_API_ACCOUNT_ID: str = "business-api"
+# Each output key may map to more than one DRS documentClass-documentType combination.
 FILING_DOCUMENTS = {
-    "certifiedRules": {
+    "certifiedRules": [{
         "documentType": "COOP_RULES",
         "documentClass": "COOP"
-    },
-    "certifiedMemorandum": {
+    }],
+    "certifiedMemorandum": [{
         "documentType": "COOP_MEMORANDUM",
         "documentClass": "COOP"
-    },
-    "affidavit": {
-        "documentType": "CORP_AFFIDAVIT",  # "COSD",
+    }],
+    "affidavit": [{
+        "documentType": "COSD",
+        "documentClass": "COOP"
+    }, {
+        "documentType": "CORP_AFFIDAVIT",
         "documentClass": "CORP"
-    }
+    }]
 }
 STATIC_DOCUMENTS = {
     "Unlimited Liability Corporation Information": {
@@ -520,10 +524,10 @@ class DocumentService:
                         ):
                         static_doc["url"] = static_doc["url"] + query_params
                         break
-            elif (
-                FILING_DOCUMENTS.get(key) and
-                doc.get("documentClass") == FILING_DOCUMENTS[key].get("documentClass") and
-                doc.get("documentType") == FILING_DOCUMENTS[key].get("documentType")
+            elif any(
+                doc.get("documentClass") == combo.get("documentClass") and
+                doc.get("documentType") == combo.get("documentType")
+                for combo in FILING_DOCUMENTS.get(key, [])
             ):
                 doc_list[key] = doc_list[key] + query_params
                 break

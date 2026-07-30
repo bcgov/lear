@@ -197,6 +197,31 @@ DRS_STATIC1 = [
     "url": ""
   }
 ]
+DOCS_STATIC3 = {
+  "documents": {
+    "affidavit": "https://test.com/CP1044808/filings/233801/documents/affidavit",
+    "certificateOfDissolution": "https://test.com/CP1044808/filings/233801/documents/certificateOfDissolution",
+    "legalFilings": [
+      {"dissolution": "https://test.com/CP1044808/filings/233801/documents/dissolution"}
+    ],
+    "receipt": "https://test.com/CP1044808/filings/233801/documents/receipt"
+  }
+}
+DRS_STATIC3 = [
+  {
+    "consumerDocumentId": "0100000527",
+    "dateCreated": "2026-06-29T19:19:32+00:00",
+    "datePublished": "2026-06-29T00:00:00+00:00",
+    "documentClass": "COOP",
+    "documentType": "COSD",
+    "documentTypeDescription": "Statement of Dissolution",
+    "entityIdentifier": "CP1044808",
+    "eventIdentifier": 233801,
+    "identifier": "DS0000101951",
+    "name": "",
+    "url": ""
+  }
+]
 DRS_STATIC2 = [
   {
     "consumerDocumentId": "0100000193",
@@ -233,6 +258,7 @@ TEST_FILING_UPDATE_DATA = [
     ("Colin docs", DOCS_COLIN, DRS_COLIN, "reportType=RECEIPT&drsId=DSR0000100896", "reportType=FILING&drsId=DSR0000100897", "reportType=NOA&drsId=DSR0000100898", "reportType=CERT&drsId=DSR0000100899", None),
     ("Static 1", DOCS_STATIC1, DRS_STATIC1, None, None, None, None, "documentClass=COOP&drsId=DS0000101630"),
     ("Static 2", DOCS_STATIC2, DRS_STATIC2, None, None, None, None, "documentClass=CORP&drsId=DS0000100741"),
+    ("Static 3", DOCS_STATIC3, DRS_STATIC3, None, None, None, None, "documentClass=COOP&drsId=DS0000101951"),
 ]
 # testdata pattern is ({description}, {doc_data}, {drs_data}, {receipt}, {filing}, {noa}, {cert}, {static}, {meta}, {filing_id})
 TEST_BUSINESS_UPDATE_DATA = [
@@ -241,6 +267,7 @@ TEST_BUSINESS_UPDATE_DATA = [
     ("Colin docs", DOCS_COLIN, DRS_COLIN, "reportType=RECEIPT&drsId=DSR0000100896", "reportType=FILING&drsId=DSR0000100897", "reportType=NOA&drsId=DSR0000100898", "reportType=CERT&drsId=DSR0000100899", None,  META_COLIN, 0),
     ("Static 1", DOCS_STATIC1, DRS_STATIC1, None, None, None, None, "documentClass=COOP&drsId=DS0000101630", META_MODERN, 233791),
     ("Static 2", DOCS_STATIC2, DRS_STATIC2, None, None, None, None, "documentClass=CORP&drsId=DS0000100741", META_MODERN, 155753),
+    ("Static 3", DOCS_STATIC3, DRS_STATIC3, None, None, None, None, "documentClass=COOP&drsId=DS0000101951", META_MODERN, 233801),
 ]
 # testdata pattern is ({has_data}, {report_key}, {report_type})
 TEST_REPORT_META_DATA = [

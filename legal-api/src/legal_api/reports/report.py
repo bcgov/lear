@@ -80,6 +80,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         # DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
         # legacy Minio keys (UUIDs) and bare DRS ids ("DS...") do not match.
         if match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key or ""):
+            # the DRS applies the certified copy stamp itself for configured combinations
+            # (e.g. COOP-COSD), so DRS-served documents must not be stamped again here
             from legal_api.services import doc_service
             drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
             document_data, status = drs_response.content, drs_response.status_code
@@ -87,9 +89,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             from legal_api.services import MinioService
             minio_response = MinioService.get_file(document.file_key)
             document_data, status = minio_response.data, minio_response.status
-        if self._report_key == "affidavit" and status == HTTPStatus.OK:
-            # the affidavit is an uploaded document, so the registrar's certification stamp is applied here
-            document_data = self._certify_uploaded_document(document_data)
+            if self._report_key == "affidavit" and status == HTTPStatus.OK:
+                # legacy storage never stamps, so the registrar's certification stamp is applied here
+                document_data = self._certify_uploaded_document(document_data)
         return current_app.response_class(
             response=document_data,
             status=status,

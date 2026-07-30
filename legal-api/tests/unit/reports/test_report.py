@@ -1253,12 +1253,14 @@ def test_get_static_report_drs_dispatch(session, test_name, file_key, expect_drs
         assert response.data == b'minio-pdf'
 
 
-@pytest.mark.parametrize('test_name,file_key', [
-    ('drs_backed', 'COOP-DS0000101951'),
-    ('minio_backed', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf'),
+@pytest.mark.parametrize('test_name,file_key,expect_stamp', [
+    # the DRS applies its own certified copy stamp for configured combinations (e.g. COOP-COSD),
+    # so the api must serve DRS bytes unmodified to avoid double stamping (#34424)
+    ('drs_backed', 'COOP-DS0000101951', False),
+    ('minio_backed', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', True),
 ])
-def test_affidavit_static_report_is_certified(session, test_name, file_key):
-    """Assert the uploaded coop dissolution affidavit is served with the registrar's certification stamp (#34300)."""
+def test_affidavit_static_report_certification(session, test_name, file_key, expect_stamp):
+    """Assert the registrar's certification stamp is applied only to legacy storage-backed affidavits."""
     import io as _io
 
     from pypdf import PdfReader
@@ -1276,6 +1278,10 @@ def test_affidavit_static_report_is_certified(session, test_name, file_key):
             patch.object(MinioService, 'get_file', return_value=minio_response):
         response = Report(filing).get_pdf(report_type='affidavit')
 
+    if not expect_stamp:
+        # DRS-served bytes pass through untouched (the DRS stamp, when configured, is already in them)
+        assert response.get_data() == pdf_bytes
+        return
     stamped = PdfReader(_io.BytesIO(response.get_data()))
     text = stamped.get_page(0).extract_text()
     assert 'Affidavit body page 1' in text
