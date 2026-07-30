@@ -340,7 +340,6 @@ def _regenerate_documents(business: Business, filing: Filing, query: RegenerateQ
 
     docs.pop("receipt", None)
     docs.pop("staticDocuments", None)
-    docs.pop("uploadedCourtOrder", None)
     doc_keys.extend(docs.keys())
 
     for doc_name in doc_keys:
