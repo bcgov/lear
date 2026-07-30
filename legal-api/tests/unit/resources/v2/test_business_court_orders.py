@@ -73,12 +73,14 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     )
     court_order.save()
 
+    file_key='test_file_key.pdf'
+    file_name='test_file.pdf'
     document = Document(
         filing_id=filing.id,
         business_id=business.id,
         type=DocumentType.COURT_ORDER.value,
-        file_key='test_file_key',
-        file_name='test_file.pdf'
+        file_key=file_key,
+        file_name=file_name
     )
     document.save()
 
@@ -93,7 +95,10 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     assert rv.json['courtOrder']['fileNumber'] == '123456'
     assert 'files' in rv.json['courtOrder']
     assert len(rv.json['courtOrder']['files']) == 1
-    assert rv.json['courtOrder']['files'][0]['name'] == 'test_file'
+    assert rv.json['courtOrder']['files'][0]['fileName'] == file_name[:-4]
+    assert rv.json['courtOrder']['files'][0]['fileKey'] == file_key
+    assert rv.json['courtOrder']['files'][0]['url'].endswith(
+        f'api/v2/businesses/{identifier}/filings/{filing.id}/documents/static/{file_key}')
 
 
 def test_get_business_court_orders_not_found(app, session, client, jwt, requests_mock):

@@ -85,8 +85,9 @@ def _include_court_order_files(court_order_json, filing, business):
             else:
                 file_name = f"Court Order {court_order_json.get('fileNumber')}"
             files.append({
-                "name": file_name,
-                "file_key": f"{base_url}{doc_url}/static/{doc.file_key}",
+                "fileName": file_name,
+                "fileKey": doc.file_key,
+                "url": f"{base_url}{doc_url}/static/{doc.file_key}",
             })
         if files:
             court_order_json["files"] = files
