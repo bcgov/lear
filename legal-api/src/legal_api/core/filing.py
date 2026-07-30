@@ -616,7 +616,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             documents["documents"]["staticDocuments"] = static_docs
 
     @staticmethod
-    def get_document_list(business, filing, jwt: JwtManager) -> dict | None:
+    def get_document_list(business, filing, jwt: JwtManager) -> dict | None:  # NOSONAR(S3776)
         """Return a list of documents for a particular filing."""
         if Filing._is_invalid_status_for_document_list(filing):
             return None

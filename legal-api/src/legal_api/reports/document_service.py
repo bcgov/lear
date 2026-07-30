@@ -46,10 +46,6 @@ FILING_DOCUMENTS = {
     "affidavit": {
         "documentType": "CORP_AFFIDAVIT",  # "COSD",
         "documentClass": "CORP"
-    },
-    "uploadedCourtOrder": {
-        "documentType": "CRT",
-        "documentClass": "CORP"
     }
 }
 STATIC_DOCUMENTS = {

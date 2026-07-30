@@ -1234,14 +1234,14 @@ def test_get_static_report_drs_dispatch(session, test_name, file_key, expect_drs
     """Assert static report documents are served from the DRS or Minio based on the file key shape (#34300)."""
     from legal_api.services import MinioService, doc_service
 
-    filing = _make_static_report_filing('CP1234567', 'court_order', file_key)
+    filing = _make_static_report_filing('CP1234567', 'coop_rules', file_key)
 
     report = Report(filing)
     drs_response = MagicMock(content=b'drs-pdf', status_code=HTTPStatus.OK)
     minio_response = MagicMock(data=b'minio-pdf', status=HTTPStatus.OK)
     with patch.object(doc_service, 'get_document', return_value=drs_response) as mock_drs, \
             patch.object(MinioService, 'get_file', return_value=minio_response) as mock_minio:
-        response = report.get_pdf(report_type='uploadedCourtOrder')
+        response = report.get_pdf(report_type='certifiedRules')
 
     if expect_drs:
         mock_drs.assert_called_once_with('DS0000101951', 'COOP', doc_binary=True)
