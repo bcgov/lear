@@ -245,10 +245,25 @@ class _Config():  # pylint: disable=too-few-public-methods
     # inspect Auth flow. HAS_CONTACT / ENTITY_WITHOUT_CONTACT mean usable contact email,
     # not merely any raw contact row.
     INSPECT_AUTH_FILTER = (os.getenv('INSPECT_AUTH_FILTER') or 'ALL').strip() or 'ALL'
+    # Invitation settings stay raw here and are validated only by inspect-auth.
+    # INSPECT_AUTH_INVITE_CRITERIA is an AND-composed clause list such as
+    # count>=3, all_expired, age[1]>=90, newest_age>30. Positions are chronological
+    # (1=oldest); newest_age is the smallest elapsed age. all_ages/any_age are parse-time
+    # aliases: for >=/> they normalize to newest_age/age[1], respectively; for <=/< they
+    # normalize to age[1]/newest_age. Logs and reports show those canonical endpoints.
+    # Bare age[*], OR/NOT/parentheses are unsupported. NULL sent_date counts toward count
+    # but makes every age/all_expired clause false.
+    INSPECT_AUTH_INVITE_CRITERIA = os.getenv('INSPECT_AUTH_INVITE_CRITERIA')
+    # Expiry defaults to 7 days when omitted; a positive value overrides it and an explicit
+    # blank is invalid. The cutoff is captured once per run; expired means sent_date < cutoff.
+    INSPECT_AUTH_INVITE_EXPIRY_DAYS = os.getenv('INSPECT_AUTH_INVITE_EXPIRY_DAYS', '7')
     # Console-only inspect preview/identifier limit: 0 suppresses optional sections,
     # a positive integer caps console rows/identifiers, and ALL prints all.
     # File outputs remain complete, including inspect-auth-inspection.csv and inspect-auth-summary.txt.
     INSPECT_AUTH_CONSOLE_LIMIT = os.getenv('INSPECT_AUTH_CONSOLE_LIMIT', '25')
+    # Console-only business_names cell cap. Unset/blank/ALL is uncapped; a positive
+    # integer caps the total rendered cell length. Persisted report values stay complete.
+    INSPECT_AUTH_BUSINESS_NAMES_MAX_LENGTH = os.getenv('INSPECT_AUTH_BUSINESS_NAMES_MAX_LENGTH', 'ALL')
 
     # freeze flow
     FREEZE_BATCHES = _get_int('FREEZE_BATCHES', 0)
@@ -296,6 +311,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     AUTH_UPSERT_CONTACT = _get_bool('AUTH_UPSERT_CONTACT', False)
     AUTH_CREATE_AFFILIATIONS = _get_bool('AUTH_CREATE_AFFILIATIONS', False)
     AUTH_SEND_UNAFFILIATED_EMAIL = _get_bool('AUTH_SEND_UNAFFILIATED_EMAIL', False)
+    # Auth create/invite plans add isReminder: true to the unaffiliated invitation JSON body
+    # when enabled; False preserves the serialized empty object.
+    AUTH_INVITE_IS_REMINDER = _get_bool('AUTH_INVITE_IS_REMINDER', False)
     AUTH_FAIL_IF_MISSING_EMAIL = _get_bool('AUTH_FAIL_IF_MISSING_EMAIL', False)
     AUTH_DRY_RUN = _get_bool('AUTH_DRY_RUN', False)
 

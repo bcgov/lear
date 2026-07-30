@@ -379,7 +379,15 @@ class AuthService:
             return HTTPStatus.BAD_REQUEST
 
     @classmethod
-    def send_unaffiliated_email(cls, config, identifier: str, email: str, *, token: str | None = None) -> HTTPStatus:
+    def send_unaffiliated_email(
+        cls,
+        config,
+        identifier: str,
+        email: str,
+        *,
+        token: str | None = None,
+        is_reminder: bool = False,
+    ) -> HTTPStatus:
         """Send unaffiliated email/invite to the business (if supported by API)."""
         token = cls._resolve_token(config, token)
         if not token:
@@ -389,16 +397,17 @@ class AuthService:
         account_svc_affiliation_invitation_url = f'{auth_url}/affiliationInvitations'
         print(f'👷 Sending unaffiliated email to {email} for {identifier}...')
 
-        data = {}
-        rv = requests.post(
-            url=f'{account_svc_affiliation_invitation_url}/unaffiliated/{identifier}',
-            headers={
+        data = {'isReminder': True} if is_reminder else {}
+        request_kwargs = {
+            'url': f'{account_svc_affiliation_invitation_url}/unaffiliated/{identifier}',
+            'headers': {
                 **cls.CONTENT_TYPE_JSON,
                 'Authorization': cls.BEARER + token
             },
-            data=json.dumps(data),
-            timeout=cls.get_time_out(config)
-        )
+            'data': json.dumps(data),
+            'timeout': cls.get_time_out(config),
+        }
+        rv = requests.post(**request_kwargs)
 
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.CREATED):
             return HTTPStatus.OK

@@ -33,6 +33,18 @@ from .auth_orchestration import (
 from .auth_tasks import parse_accounts_csv, perform_auth_create_for_corp
 
 
+def _build_auth_create_plan(config) -> AuthCreatePlan:
+    return AuthCreatePlan(
+        create_entity=bool(getattr(config, 'AUTH_CREATE_ENTITY', True)),
+        upsert_contact=bool(getattr(config, 'AUTH_UPSERT_CONTACT', False)),
+        create_affiliations=bool(getattr(config, 'AUTH_CREATE_AFFILIATIONS', False)),
+        send_unaffiliated_invite=bool(getattr(config, 'AUTH_SEND_UNAFFILIATED_EMAIL', False)),
+        invite_is_reminder=bool(getattr(config, 'AUTH_INVITE_IS_REMINDER', False)),
+        fail_if_missing_email=bool(getattr(config, 'AUTH_FAIL_IF_MISSING_EMAIL', False)),
+        dry_run=bool(getattr(config, 'AUTH_DRY_RUN', False)),
+    )
+
+
 @flow(
     name='Auth-Create-Flow',
     log_prints=True,
@@ -48,14 +60,7 @@ def auth_create_flow():
     """
     config = get_config()
 
-    plan = AuthCreatePlan(
-        create_entity=bool(getattr(config, 'AUTH_CREATE_ENTITY', True)),
-        upsert_contact=bool(getattr(config, 'AUTH_UPSERT_CONTACT', False)),
-        create_affiliations=bool(getattr(config, 'AUTH_CREATE_AFFILIATIONS', False)),
-        send_unaffiliated_invite=bool(getattr(config, 'AUTH_SEND_UNAFFILIATED_EMAIL', False)),
-        fail_if_missing_email=bool(getattr(config, 'AUTH_FAIL_IF_MISSING_EMAIL', False)),
-        dry_run=bool(getattr(config, 'AUTH_DRY_RUN', False)),
-    )
+    plan = _build_auth_create_plan(config)
 
     validate_auth_create_flow_plan(plan)
 
