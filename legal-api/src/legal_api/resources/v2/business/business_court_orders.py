@@ -65,7 +65,6 @@ def _get_court_order(business, court_order_id=None):
 
 
 def _include_court_order_files(court_order_json, filing, business):
-    """Return a JSON of the court orders."""
     documents = Document.find_all_by(filing.id, DocumentType.COURT_ORDER.value)
     if documents:
         base_url = current_app.config.get("BUSINESS_API_GW_URL")
@@ -85,5 +84,4 @@ def _include_court_order_files(court_order_json, filing, business):
                 "fileKey": doc.file_key,
                 "url": f"{base_url}{doc_url}/static/{doc.file_key}",
             })
-        if files:
-            court_order_json["files"] = files
+        court_order_json["files"] = files
