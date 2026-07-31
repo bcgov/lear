@@ -195,7 +195,6 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
             "business-info",
             "business-information",
             "consent-letter-information",
-            "continuation-application-details",
             "reg-business-info",
             "cra-notice",
             "nr-footer",
