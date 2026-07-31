@@ -10,7 +10,7 @@ Your Continuation Authorization was **rejected**.
 
 1. Review the reasons your authorization was rejected below:
 
-**{{ latest_review_comment }}**
+***{{ latest_review_comment }}***
 
 2. Visit [My Business Registry]({{ entity_dashboard_url }}) to submit a new Continuation Application.
 
