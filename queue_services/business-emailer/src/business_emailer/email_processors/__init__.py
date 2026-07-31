@@ -183,6 +183,7 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
             "business-tombstone-out-filing",
             "consent",
             "consent-next-steps",
+            "continuation-application-details",
             "out-details",
             "what-happens-next"
         ]

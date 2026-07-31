@@ -29,6 +29,13 @@ from business_emailer.email_processors import (
 )
 from business_model.models import Business, Filing, ReviewResult
 
+CONTINUATION_IN_AUTHORIZATION_TEMPLATE_SUFFIXES = {
+    Filing.Status.APPROVED.value: "approved",
+    Filing.Status.AWAITING_REVIEW.value: "awaitingReview",
+    Filing.Status.CHANGE_REQUESTED.value: "changeRequested",
+    Filing.Status.REJECTED.value: "rejected",
+    "RESUBMITTED": "resubmitted",
+}
 
 def _get_pdfs(
     status: str,
@@ -78,7 +85,7 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     numbered_description = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
     review_result = ReviewResult.get_last_review_result(filing.id)
     # encode newlines in review comment only
-    latest_review_comment = review_result.comments.replace("\n", "\\n") if review_result else None
+    latest_review_comment = review_result.comments if review_result else None
 
     # compute Foreign Jurisdiction string as in report.py and business_document.py
     country_code = filing_data["foreignJurisdiction"]["country"]
@@ -87,12 +94,13 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     region = None
     if region_code and region_code.upper() != "FEDERAL":
         region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-    foreign_jurisdiction = f"{region.name}, {country.name}" if region else country.name
+    foreign_jurisdiction = region.name if region else country.name
 
     # get template and fill in parts
-    template = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/CONT-IN-{status}.html')
+    template_suffix = CONTINUATION_IN_AUTHORIZATION_TEMPLATE_SUFFIXES[status]
+    template = (Path(f'{current_app.config.get("TEMPLATE_PATH")}/{filing_type}-{template_suffix}.md')
                 .read_text(encoding="utf-8"))
-    filled_template = substitute_template_parts(template)
+    filled_template = substitute_template_parts(template, "md")
     jnja_template = Template(filled_template, autoescape=True)
 
     # render template with vars
@@ -125,15 +133,15 @@ def process(email_info: dict, token: str) -> dict:  # pylint: disable=too-many-l
     # assign subject
     legal_name = business.get("legalName", None)
     if status == Filing.Status.APPROVED.value:
-        subject = "Authorization Approved"
+        subject = "Continuation Authorization Results"
     if status == Filing.Status.REJECTED.value:
-        subject = "Authorization Rejected"
+        subject = "Continuation Authorization Results"
     elif status == Filing.Status.AWAITING_REVIEW.value:
-        subject = "Authorization Documents Received"
+        subject = "Continuation Authorization Documents Received"
     elif status == Filing.Status.CHANGE_REQUESTED.value:
-        subject = "Changes Needed to Authorization"
+        subject = "Change Requested for your Continuation Authorization"
     elif status == "RESUBMITTED":
-        subject = "Authorization Updates Received"
+        subject = "Updated Continuation Authorization Documents Received"
 
     subject = f"{legal_name} - {subject}" if legal_name else subject
 
