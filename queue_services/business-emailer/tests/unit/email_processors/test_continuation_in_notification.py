@@ -19,7 +19,7 @@ import pytest
 import requests_mock
 from business_model.models import Filing
 
-from business_emailer.email_processors import continuation_in_notification
+from business_emailer.email_processors import continuation_authorization_notification
 from tests.unit import CONTACT_POINT, prep_bootstrap_filing
 
 
@@ -37,8 +37,8 @@ def test_continuation_in_notification(app, session, mocker, status, subject, con
     token = 'token'
 
     # test processor
-    with patch.object(continuation_in_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        email = continuation_in_notification.process(
+    with patch.object(continuation_authorization_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        email = continuation_authorization_notification.process(
             {'filingId': filing.id, 'type': 'continuationIn', 'option': status}, token)
 
         assert CONTACT_POINT in email['recipients']
@@ -65,7 +65,7 @@ def test_continuation_in_attachments_resubmitted(session, mocker, config):
             content=b'pdf_content_1',
             status_code=200,
         )
-        output = continuation_in_notification.process(
+        output = continuation_authorization_notification.process(
             {'filingId': filing.id, 'type': 'continuationIn', 'option': 'RESUBMITTED'}, token)
 
     attachments = output['content']['attachments']
