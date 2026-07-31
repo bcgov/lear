@@ -78,7 +78,7 @@ from business_filer.filing_processors import (
     transition,
     transparency_register,
 )
-from business_filer.filing_processors.filing_components import business_profile, document_records, name_request
+from business_filer.filing_processors.filing_components import business_profile, name_request
 from business_filer.services import Flags
 from business_filer.services.publish_event import PublishEvent
 
@@ -326,9 +326,14 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         if not Flags.is_on("enable-sandbox"):
             PublishEvent.publish_email_message(current_app, business, filing_submission, filing_submission.status)
 
-        # Update the document record(s) for any client-submitted documents on this filing with
-        # the filing id, filing date, and business identifier
-        document_records.update_document_records(business, filing_submission)
+        try:
+            # Update the DRS record(s) for any client-submitted documents on this filing with
+            # the filing id, filing date, and business identifier
+            PublishEvent.publish_drs_update_message(current_app, business, filing_submission)
+        except Exception as err:
+            # log error for ops, but don't prevent filing from completing
+            current_app.logger.warning(err.with_traceback(None))
+            current_app.logger.warning(f"Failed to publish DRS update for {filing_submission.id}.")
 
         if filing_type in [
             FilingTypes.CHANGEOFLIQUIDATORS,
