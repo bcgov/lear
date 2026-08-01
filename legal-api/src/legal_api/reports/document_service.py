@@ -50,18 +50,34 @@ FILING_DOCUMENTS = {
     }, {
         "documentType": "CORP_AFFIDAVIT",
         "documentClass": "CORP"
+    }],
+    "continuationIn": [{
+        "documentType": "CNTA",
+        "documentClass": "CORP"
+    }],
+    "continuationOut": [{
+        "documentType": "CNTO",
+        "documentClass": "CORP"
     }]
 }
+# Map to DRS document based on the default static document name set when the client does not submit a filename.
+# Included for migrated minio docs where submissions with no filename were allowed.
 STATIC_DOCUMENTS = {
     "Unlimited Liability Corporation Information": {
         "documentType": "DIRECTOR_AFFIDAVIT",
         "documentClass": "CORP"
+    },
+    "Court Order": {
+        "documentType": "CRTO",
+        "documentClass": "*"
     }
 }
 APP_JSON = "application/json"
 APP_PDF = "application/pdf"
 DOC_PATH = "/documents"
 BEARER = "Bearer "
+DS_ID_PREFIX = "DS"
+DS_KEY_TOKENS = 2
 
 
 class ReportTypes(BaseEnum):
@@ -500,10 +516,10 @@ class DocumentService:
                 return response2
         return report_response
 
-
     def _update_static_document(self, doc: dict, doc_list: list) -> list:
         """
         Update static document urls in the document_list if a DRS match is found.
+        For static documents try obtaining download URL params from the file key first (DRS key).
 
         docs: The DRS document information to match on.
         doc_list: The business list of reports/documents for the filing.
@@ -516,12 +532,7 @@ class DocumentService:
         for key in doc_list:
             if key == "staticDocuments":
                 for static_doc in doc_list.get("staticDocuments"):
-                    name: str = static_doc.get("name")
-                    if (name and name == doc.get("name")) or (
-                            name and STATIC_DOCUMENTS.get(name) and
-                            doc.get("documentClass") == STATIC_DOCUMENTS[name].get("documentClass") and
-                            doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
-                        ):
+                    if self.is_static_doc_match(doc, static_doc):
                         static_doc["url"] = static_doc["url"] + query_params
                         break
             elif any(
@@ -532,6 +543,60 @@ class DocumentService:
                 doc_list[key] = doc_list[key] + query_params
                 break
         return doc_list
+
+    def get_url_drs_id(self, url: str) -> str:
+        """
+        Try to extract a DRS ID from the static document url (either minio or DRS).
+
+        url: URL to use.
+        return: DRS ID if url ends with DRS file key.
+        """
+        file_key: str = str(url).split("/")[-1]
+        if file_key:
+            tokens = file_key.split("-")
+            if (
+                len(tokens) == DS_KEY_TOKENS and
+                tokens[0] in ("COOP", "FIRM", "CORP") and
+                str(tokens[1]).startswith(DS_ID_PREFIX)
+            ):
+                return tokens[1]
+        return ""
+
+
+    def is_static_doc_match(self, doc: dict, static_doc: dict) -> bool:
+        """
+        Match the current DRS document with a ledger filing static document entry.
+        Try obtaining download URL params from the file key first (DRS key).
+
+        doc: Current DRS document to match with static document.
+        doc_list: The business list of reports/documents for the filing.
+        return: True if the DRS doc matches the static document information.
+        """
+        if str(static_doc.get("url")).find("documentClass=") > 0:
+            return False
+        drs_id = self.get_url_drs_id(static_doc.get("url", ""))
+        if drs_id:
+            return drs_id == doc.get("identifier")
+        name: str = static_doc.get("name")
+        doc_name: str = doc.get("name", "")
+        if (doc_name):
+            if name.removesuffix(".pdf") == doc_name.removesuffix(".pdf"):
+                return True
+            if (
+                STATIC_DOCUMENTS.get(name) == name and
+                doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
+            ):
+                return True
+        # Try partial matching static doc name with default name.
+        for key, value in STATIC_DOCUMENTS.items():
+            if (
+                name.startswith(str(key)) and
+                (doc_name.startswith(str(key)) or doc_name == "") and
+                value.get("documentType") == doc.get("documentType")
+            ):
+                return True
+        return False
+
 
     def _get_request_headers(self, account_id: str, accept_mime_type = None) -> dict:
         """

@@ -78,11 +78,11 @@ DOCS_STATIC2 = {
     "staticDocuments": [
       {
         "name": "Unlimited Liability Corporation Information",
-        "url": "https://test.com/C9900863/filings/155753/documents/static/DS0000100741"
+        "url": "https://test.com/C9900863/filings/155753/documents/static/CORP-DS0000100741"
       },
       {
         "name": "20250107-Authorization1.pdf",
-        "url": "https://test.com/C9900863/filings/155753/documents/static/DS0000100740"
+        "url": "https://test.com/C9900863/filings/155753/documents/static/CORP-DS0000100740"
       }
     ]
   }
@@ -250,6 +250,22 @@ DRS_STATIC2 = [
     "url": ""
   }
 ]
+DRS_TEST_DOC = {
+    "consumerDocumentId": "0100000527",
+    "dateCreated": "2026-06-29T19:19:32+00:00",
+    "datePublished": "2026-06-29T00:00:00+00:00",
+    "documentClass": "COOP",
+    "documentType": "COSD",
+    "documentTypeDescription": "Statement of Dissolution",
+    "entityIdentifier": "CP1044808",
+    "eventIdentifier": 233801,
+    "identifier": "DS0000101951",
+    "name": "",
+    "url": ""
+}
+STATIC_URL1 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/798da472-4f2d-4299-a3ee-84388d89f9ce.pdf"
+STATIC_URL2 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/CORP-DS0000101951"
+STATIC_URL3 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/CORP-DS0000101952"
 
 # testdata pattern is ({description}, {doc_data}, {drs_data}, {receipt}, {filing}, {noa}, {cert}, {static})
 TEST_FILING_UPDATE_DATA = [
@@ -309,7 +325,25 @@ TEST_REPORT_META_DATA = [
     (True, "ceaseReceiver", "FILING"),
     (True, "default", "FILING"),
 ]
-
+# testdata pattern is ({match}, {url}, {name}, {drs_doc}, {drs_class}, {drs_type}, {drs_id}, {drs_filename})
+TEST_STATIC_DOC_MATCH_DATA = [
+   (True, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
+   (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "FIRM", "CRTO", "DS0000101951", "Test court order"),
+   (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "COOP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Court Order 1234"),
+   (True, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
+   (False, STATIC_URL3, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (False, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101952", ""),
+   (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", ""),
+   (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+ ]
+# testdata pattern is ({url}, {drs_id})
+TEST_STATIC_URL_DRS_ID_DATA = [
+   (STATIC_URL1, ""),
+   (STATIC_URL2, "DS0000101951"),
+]
 
 @pytest.mark.parametrize("has_data,report_key,report_type", TEST_REPORT_META_DATA)
 def test_report_meta_type(session, has_data, report_key, report_type):
@@ -388,6 +422,30 @@ def test_update_ledger_docs(session, desc, doc_data, drs_data, receipt, filing, 
         assert text_results.find("documentClass=") < 1
     else:
         assert text_results.find(static) > 0
+
+
+@pytest.mark.parametrize("match,url,name,drs_doc,drs_class,drs_type,drs_id,drs_filename", TEST_STATIC_DOC_MATCH_DATA)
+def test_match_static_doc(session, match, url, name, drs_doc, drs_class, drs_type, drs_id, drs_filename):
+    """Assert that DRS matching on static documents when building download URLs works as expected."""
+    doc = copy.deepcopy(drs_doc)
+    doc["documentClass"] = drs_class
+    doc["documentType"] = drs_type
+    doc["name"] = drs_filename if drs_filename else ""
+    if drs_id:
+        doc["identifier"] = drs_id
+    static_doc = {
+        "name": name,
+        "url": url
+    }
+    result = DocumentService().is_static_doc_match(doc, static_doc)
+    assert result == match
+
+
+@pytest.mark.parametrize("url,drs_id", TEST_STATIC_URL_DRS_ID_DATA)
+def test_url_drs_id_doc(session, url, drs_id):
+    """Assert that extracting a DRS ID from a url file key when building download URLs works as expected."""
+    result = DocumentService().get_url_drs_id(url)
+    assert result == drs_id
 
 
 def test_create_document(app, session, mock_bearer_token, mock_doc_service):
