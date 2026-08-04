@@ -78,6 +78,7 @@ def validate(registration_json: dict) -> Error | None:
     msg.extend(validate_offices(registration_json))
     msg.extend(validate_offices_addresses(registration_json, filing_type))
     msg.extend(validate_registration_court_order(registration_json))
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

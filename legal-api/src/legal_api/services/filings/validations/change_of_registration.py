@@ -85,6 +85,7 @@ def validate(business: Business, filing: dict) -> Error | None:
 
     msg.extend(validate_naics(filing, filing_type))
     msg.extend(validate_registration_court_order(filing, filing_type))
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

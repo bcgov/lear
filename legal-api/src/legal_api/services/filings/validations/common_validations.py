@@ -1052,7 +1052,6 @@ def _validate_postal_code(
     return None
 
 
-
 def validate_phone_number(filing_json: dict, legal_type: str, filing_type: str) -> list:
     """Validate phone number."""
     if legal_type not in Business.CORPS:
