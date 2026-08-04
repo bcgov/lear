@@ -332,6 +332,7 @@ TEST_STATIC_DOC_MATCH_DATA = [
    (True, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
    (True, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
    (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL1, "Unlimited Liability Corporation Information", DRS_TEST_DOC, "CORP", "DIRECTOR_AFFIDAVIT", "DS0000101951", ""),
    (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "FIRM", "CRTO", "DS0000101951", "Test court order"),
    (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "COOP", "CRTO", "DS0000101951", "Test court order.pdf"),
    (True, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Court Order 1234"),
@@ -343,6 +344,7 @@ TEST_STATIC_DOC_MATCH_DATA = [
    (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
    (False, STATIC_URL1, None, DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
    (False, STATIC_URL1, "", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+   (False, STATIC_URL1, "Unlimited Liability Corporation Information", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
  ]
 # testdata pattern is ({url}, {drs_id})
 TEST_STATIC_URL_DRS_ID_DATA = [

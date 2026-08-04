@@ -582,7 +582,7 @@ class DocumentService:
             if name.removesuffix(".pdf") == doc_name.removesuffix(".pdf"):
                 return True
             if (
-                STATIC_DOCUMENTS.get(name) == name and
+                STATIC_DOCUMENTS.get(name) and
                 doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
             ):
                 return True
