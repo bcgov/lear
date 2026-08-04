@@ -1146,10 +1146,17 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test@example.co.uk', True),
     ('user@[192.168.1.1]', True),
     ('no_one@never.get', True),
-    ('"quoted"@example.com', True),
+    ('"quoted"@example.com', False),
     ('user_name@domain.org', True),
     ('test123@test123.com', True),
     ('john.o\'smith@gov.bc.ca', True),
+    # Previously-accepted weaknesses — now rejected
+    ('test@-example.com', False),
+    ('test@example-.com', False),
+    ('test@[999.999.999.999]', False),
+    ('"hello world"@example.com', False),
+    ('tëst@example.com', False),
+    ('a' * 65 + '@example.com', False),
     # Invalid email formats
     ('no_one@never.', False),
     ('invalid', False),
