@@ -27,7 +27,6 @@ from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
-    validate_contact_point_email,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
@@ -79,8 +78,6 @@ def validate(registration_json: dict) -> Error | None:
     msg.extend(validate_offices(registration_json))
     msg.extend(validate_offices_addresses(registration_json, filing_type))
     msg.extend(validate_registration_court_order(registration_json))
-    msg.extend(validate_contact_point_email(registration_json, filing_type))
-
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None

@@ -22,7 +22,6 @@ from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     find_updated_keys_for_firms,
     is_officer_proprietor_replace_valid,
-    validate_contact_point_email,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -86,8 +85,6 @@ def validate(business: Business, filing: dict) -> Error | None:
 
     msg.extend(validate_naics(filing, filing_type))
     msg.extend(validate_registration_court_order(filing, filing_type))
-    msg.extend(validate_contact_point_email(filing, filing_type))
-
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
