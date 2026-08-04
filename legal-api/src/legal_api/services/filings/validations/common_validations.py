@@ -703,7 +703,7 @@ def validate_relationships( # noqa: PLR0913
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
         msg.extend(validate_relationship_entity_name(relationship, path))
-        msg.extend(validate_relationship_roles(relationship, role_types, path, business, party_roles))
+        msg.extend(validate_relationship_roles(relationship, role_types, path, business))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -844,8 +844,7 @@ def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str,
 def validate_relationship_roles(relationship: dict,
                                 allowed_roles: list[PartyRole.RoleTypes],
                                 path: str,
-                                business: Business,
-                                party_roles: list[PartyRole]) -> list:
+                                business: Business) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
@@ -870,30 +869,31 @@ def validate_relationship_roles(relationship: dict,
                                               "Cessation",
                                               earliest_allowed_date))
 
-        if (
-            (
-                (appointment_date and not cessation_date) or
-                (not appointment_date and cessation_date)
-            ) and
-            role.get("roleType") == PartyRole.RoleTypes.DIRECTOR.value and
-            (party_id := relationship.get("entity", {}).get("identifier"))
-        ):
-            for party_role in party_roles:
-                if party_role.party_id == party_id:
-                    if not appointment_date:
-                        appointment_date = party_role.appointment_date
-                    elif not cessation_date:
-                        cessation_date = party_role.cessation_date
-                    break
-            msg.extend(_validate_director_dates(appointment_date, cessation_date, f"{path}/{index}/appointmentDate"))
-        else:
-            msg.extend(_validate_director_dates(appointment_date, cessation_date, f"{path}/{index}/appointmentDate"))
+        msg.extend(_validate_director_dates(appointment_date,
+                                              cessation_date,
+                                              f"{path}/{index}",
+                                              role))
+    return msg
+
+def _validate_director_dates(appointment_date: date, cessation_date: date, path: str, role: dict) -> list:
+    """Validate director dates."""
+    msg = []
+    if role.get("roleType").lower() != PartyRole.RoleTypes.DIRECTOR.value:
+        return msg
+
+    date_path = f"{path}/appointmentDate"
+    if not appointment_date and cessation_date:
+        msg.append({
+            "error": _("Appointment date is required when cessation date is present."),
+            "path": date_path
+        })
+    else:
+        msg.extend(_compare_director_dates(appointment_date, cessation_date, date_path))
 
     return msg
 
-def _validate_director_dates(appointment_date: date,
-                             cessation_date: date,
-                             path: str) -> list:
+
+def _compare_director_dates(appointment_date: date, cessation_date: date, path: str) -> list:
     """Validate director dates."""
     msg = []
     if appointment_date and cessation_date and appointment_date > cessation_date:

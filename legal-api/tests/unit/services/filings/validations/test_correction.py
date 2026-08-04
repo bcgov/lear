@@ -179,8 +179,8 @@ def test_correction__invalid_director_dates(session, app, jwt):
 
     # check that validation failed as expected
     assert err is not None
-    assert HTTPStatus.BAD_REQUEST == err.code
-    assert 'Appointment date cannot be after cessation date.' == err.msg[0]['error']
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg[0]['error'] == 'Appointment date cannot be after cessation date.'
 
 
 @pytest.mark.parametrize("date_label", ["Appointment", "Cessation"])
