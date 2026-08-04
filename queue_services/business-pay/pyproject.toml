@@ -29,7 +29,7 @@ packages = [{include = "business_pay", from = "src"}]
 pytest = "^8.2.0"
 pytest-asyncio = "^0.23.6"
 pytest-mock = "^3.14.0"
-black = "^24.4.2"
+black = "^26.3.1"
 zimports = "^0.6.1"
 lovely-pytest-docker = "^0.3.1"
 pytest-cov = "^6.1.1"
