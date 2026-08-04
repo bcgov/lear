@@ -64,12 +64,10 @@ FILING_DOCUMENTS = {
 # Included for migrated minio docs where submissions with no filename were allowed.
 STATIC_DOCUMENTS = {
     "Unlimited Liability Corporation Information": {
-        "documentType": "DIRECTOR_AFFIDAVIT",
-        "documentClass": "CORP"
+        "documentType": "DIRECTOR_AFFIDAVIT"
     },
     "Court Order": {
-        "documentType": "CRTO",
-        "documentClass": "*"
+        "documentType": "CRTO"
     }
 }
 APP_JSON = "application/json"
@@ -572,12 +570,13 @@ class DocumentService:
         doc_list: The business list of reports/documents for the filing.
         return: True if the DRS doc matches the static document information.
         """
-        if str(static_doc.get("url")).find("documentClass=") > 0:
+        # Name is the ledger link name and should always exist, otherwise there is a defect somewhere else.
+        name: str = static_doc.get("name", "")
+        if not name or str(static_doc.get("url")).find("documentClass=") > 0:
             return False
         drs_id = self.get_url_drs_id(static_doc.get("url", ""))
         if drs_id:
             return drs_id == doc.get("identifier")
-        name: str = static_doc.get("name")
         doc_name: str = doc.get("name", "")
         if (doc_name):
             if name.removesuffix(".pdf") == doc_name.removesuffix(".pdf"):

@@ -266,6 +266,8 @@ DRS_TEST_DOC = {
 STATIC_URL1 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/798da472-4f2d-4299-a3ee-84388d89f9ce.pdf"
 STATIC_URL2 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/CORP-DS0000101951"
 STATIC_URL3 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/CORP-DS0000101952"
+STATIC_URL4 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/COOP-DS0000101953"
+STATIC_URL5 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/FIRM-DS0000101954"
 
 # testdata pattern is ({description}, {doc_data}, {drs_data}, {receipt}, {filing}, {noa}, {cert}, {static})
 TEST_FILING_UPDATE_DATA = [
@@ -336,13 +338,18 @@ TEST_STATIC_DOC_MATCH_DATA = [
    (True, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
    (False, STATIC_URL3, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
    (False, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101952", ""),
+   (False, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101952", None),
    (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", ""),
    (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+   (False, STATIC_URL1, None, DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+   (False, STATIC_URL1, "", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
  ]
 # testdata pattern is ({url}, {drs_id})
 TEST_STATIC_URL_DRS_ID_DATA = [
    (STATIC_URL1, ""),
    (STATIC_URL2, "DS0000101951"),
+   (STATIC_URL4, "DS0000101953"),
+   (STATIC_URL5, "DS0000101954"),
 ]
 
 @pytest.mark.parametrize("has_data,report_key,report_type", TEST_REPORT_META_DATA)
@@ -430,7 +437,7 @@ def test_match_static_doc(session, match, url, name, drs_doc, drs_class, drs_typ
     doc = copy.deepcopy(drs_doc)
     doc["documentClass"] = drs_class
     doc["documentType"] = drs_type
-    doc["name"] = drs_filename if drs_filename else ""
+    doc["name"] = drs_filename
     if drs_id:
         doc["identifier"] = drs_id
     static_doc = {
