@@ -15,14 +15,16 @@ from sqlalchemy.engine import Engine
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
-WHERE 1 = 1 
+WHERE 1 = 1
+AND identifier in ('BC1354075', 'BC1177462')
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN', 'CP')
 AND legal_name LIKE '%' || :corp_name_suffix
 """
 
 identifiers_query = """
 SELECT id, identifier FROM businesses
-WHERE 1 = 1 
+WHERE 1 = 1
+AND identifier in ('BC1354075', 'BC1177462')
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN', 'CP')
 AND legal_name LIKE '%' || :corp_name_suffix
 LIMIT :batch_size
@@ -731,6 +733,76 @@ def get_selected_corps_mig(db_engine: Engine, config, candidates: List[str], off
     # nothing found in remaining pages
     return None, None, curr
 
+
+@task(cache_policy=NO_CACHE)
+def get_lear_business_filings(db_engine: Engine, business_ids: List[int]):
+    """Return all filings for the provided business IDs where source = 'LEAR'."""
+    if not business_ids:
+        return []
+
+    sql = text("""
+        SELECT *
+        FROM filings
+        WHERE business_id IN :business_ids
+          AND source = :source
+    """).bindparams(
+        bindparam('business_ids', expanding=True),
+        bindparam('source'),
+    )
+
+    with db_engine.connect() as conn:
+        rows = conn.execute(sql, {
+            'business_ids': business_ids,
+            'source': 'LEAR',
+        }).fetchall()
+
+    return [dict(row._mapping) for row in rows]
+
+
+@task(cache_policy=NO_CACHE)
+def insert_demigrated_filings(db_engine: Engine, business_ids: List[int], identifiers: List[str]):
+    """Fetch any LEAR filings for the provided businesses and persist them for demigration tracking."""
+    if not business_ids:
+        return
+
+    filings = get_lear_business_filings(db_engine, business_ids)
+    if not filings:
+        return
+
+    id_to_identifier = dict(zip(business_ids, identifiers)) if business_ids and identifiers else {}
+    normalized_filings = []
+    for filing in filings:
+        if not filing:
+            continue
+
+        filing_dict = dict(filing) if hasattr(filing, 'keys') else filing
+        filing_id = filing_dict.get('id')
+        if filing_id is None:
+            continue
+
+        business_id = filing_dict.get('business_id')
+        normalized_filings.append({
+            'identifier': id_to_identifier.get(business_id),
+            'filing_id': filing_id,
+            'business_id': business_id,
+            'transaction_id': filing_dict.get('transaction_id'),
+            'source': filing_dict.get('source') or 'LEAR',
+        })
+
+    if not normalized_filings:
+        return
+
+    sql = text("""
+        INSERT INTO demigrated_filings (corp_num, business_id, transaction_id, source)
+        VALUES (:identifier, :business_id, :transaction_id, :source)
+        ON CONFLICT (id) DO NOTHING
+    """)
+
+    with db_engine.connect() as conn:
+        conn.execute(sql, normalized_filings)
+        conn.commit()
+
+
 @flow(log_prints=True)
 def batch_delete_flow():
     try:
@@ -772,6 +844,9 @@ def batch_delete_flow():
             if not business_ids:
                 break
             print(f'🚀 Running round {cnt} to delete {len(business_ids)} busiesses...')
+
+            
+            insert_demigrated_filings(lear_engine, business_ids, identifiers)
 
             futures = []
             futures.append(lear_delete.submit(lear_engine, business_ids))
