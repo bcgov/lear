@@ -212,7 +212,7 @@ def sql_quote_literal(val: str) -> str:
 
 
 def sql_render_oracle_corp_type_predicate(*, include_cp: bool) -> str:
-    supported_types = ['BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE']
+    supported_types = ['BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE','RLY']
     if include_cp:
         supported_types.append('CP')
     return f"c.CORP_TYP_CD in ({sql_render_in_list(supported_types, multiline=False)})"

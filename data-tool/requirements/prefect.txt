@@ -1,2 +1,4 @@
 prefect==3.4.6
 prefect[dask]
+fastapi==0.115.6
+starlette==0.41.3

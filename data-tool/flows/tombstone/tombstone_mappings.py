@@ -130,9 +130,13 @@ class EventFilings(str, Enum):
     FILE_ADVD2 = 'FILE_ADVD2'
     FILE_ADVDS = 'FILE_ADVDS'
     FILE_OTVDS = 'FILE_OTVDS'
+    FILE_OTDIS = 'FILE_OTDIS'
 
     # CONVOTHER Dissolution
     CONVOTHER_OTVDS = 'CONVOTHER_OTVDS'
+    # CONVOTHER Dissolution (OTDIS - historical dissolution type)
+    CONVOTHER_OTDIS = 'CONVOTHER_OTDIS'
+
     ## admin
     SYSDA_NULL = 'SYSDA_NULL'
     SYSDS_NULL = 'SYSDS_NULL'
@@ -329,9 +333,12 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_ADVD2: ['dissolution', 'voluntary'],
     EventFilings.FILE_ADVDS: ['dissolution', 'voluntary'],
     EventFilings.FILE_OTVDS: ['dissolution', 'voluntary'],
+    EventFilings.FILE_OTDIS: ['dissolution', 'voluntary'],
+    
 
     # CONVOTHER Dissolution
     EventFilings.CONVOTHER_OTVDS: ['dissolution', 'voluntary'],
+    EventFilings.CONVOTHER_OTDIS: ['dissolution', 'voluntary'],
 
     EventFilings.SYSDA_NULL: ['dissolution', 'administrative'],
     EventFilings.SYSDS_NULL: ['dissolution', 'administrative'],
@@ -488,9 +495,12 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_ADVD2: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_ADVDS: 'Application for Dissolution (Voluntary Dissolution)',
     EventFilings.FILE_OTVDS: 'Voluntary Dissolution',
+    EventFilings.FILE_OTDIS: 'Dissolution',
+    
 
     # CONVOTHER Dissolution
     EventFilings.CONVOTHER_OTVDS: 'Voluntary Dissolution',
+    EventFilings.CONVOTHER_OTDIS: 'Dissolution',
 
     EventFilings.SYSDA_NULL: None,  # admin - status Administrative Dissolution
     EventFilings.SYSDS_NULL: None,  # admin - status Administrative Dissolution

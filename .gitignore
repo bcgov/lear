@@ -80,6 +80,7 @@ celerybeat-schedule
 
 # Environments
 .env
+.env.*
 .venv
 env/
 venv/
@@ -137,3 +138,5 @@ jobs/sftp-*/archive
 # ruff
 **/.ruff_cache
 
+#csv files
+dump/*
