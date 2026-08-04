@@ -24,7 +24,7 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.email_processors import (
     ar_reminder_notification,
-    continuation_in_notification,
+    continuation_authorization_notification,
     filing_notification,
     name_request,
     nr_notification,
@@ -573,11 +573,11 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
 @pytest.mark.parametrize(['option', 'expected_processor'], [
     (Filing.Status.PAID.value, filing_notification),
     (Filing.Status.COMPLETED.value, filing_notification),
-    (ReviewStatus.APPROVED.name, continuation_in_notification),
-    (ReviewStatus.AWAITING_REVIEW.name, continuation_in_notification),
-    (ReviewStatus.CHANGE_REQUESTED.name, continuation_in_notification),
-    (ReviewStatus.REJECTED.name, continuation_in_notification),
-    (ReviewStatus.RESUBMITTED.name, continuation_in_notification),
+    (ReviewStatus.APPROVED.name, continuation_authorization_notification),
+    (ReviewStatus.AWAITING_REVIEW.name, continuation_authorization_notification),
+    (ReviewStatus.CHANGE_REQUESTED.name, continuation_authorization_notification),
+    (ReviewStatus.REJECTED.name, continuation_authorization_notification),
+    (ReviewStatus.RESUBMITTED.name, continuation_authorization_notification),
 ])
 def test_continuation_in_notification(app, db, session, mocker, option, expected_processor):
     """Assert that the worker uses the correct continuation in processor for each option."""
