@@ -703,8 +703,7 @@ def validate_relationships( # noqa: PLR0913
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
         msg.extend(validate_relationship_entity_name(relationship, path))
-        msg.extend(validate_relationship_roles(relationship["roles"], role_types, path))
-        
+        msg.extend(validate_relationship_roles(relationship, role_types, path, business, party_roles))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -842,17 +841,89 @@ def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str,
     return msg
 
 
-def validate_relationship_roles(roles: list[dict[str, str]],
+def validate_relationship_roles(relationship: dict,
                                 allowed_roles: list[PartyRole.RoleTypes],
-                                path: str) -> list:
+                                path: str,
+                                business: Business,
+                                party_roles: list[PartyRole]) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
+    earliest_allowed_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+
+    roles = relationship["roles"]
     for index, role in enumerate(roles):
         if role.get("roleType").lower().replace(" ", "_") not in converted_allowed_roles:
             err_msg = "Invalid role type for this filing."
             msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
         # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
+
+        appointment_date = date.fromisoformat(role.get("appointmentDate")) if role.get("appointmentDate") else None
+        cessation_date = date.fromisoformat(role.get("cessationDate")) if role.get("cessationDate") else None
+
+        msg.extend(_validate_relationship_date(appointment_date,
+                                              f"{path}/{index}/appointmentDate",
+                                              "Appointment",
+                                              earliest_allowed_date))
+        msg.extend(_validate_relationship_date(cessation_date,
+                                              f"{path}/{index}/cessationDate",
+                                              "Cessation",
+                                              earliest_allowed_date))
+
+        if (
+            (
+                (appointment_date and not cessation_date) or
+                (not appointment_date and cessation_date)
+            ) and
+            role.get("roleType") == PartyRole.RoleTypes.DIRECTOR.value and
+            (party_id := relationship.get("entity", {}).get("identifier"))
+        ):
+            for party_role in party_roles:
+                if party_role.party_id == party_id:
+                    if not appointment_date:
+                        appointment_date = party_role.appointment_date
+                    elif not cessation_date:
+                        cessation_date = party_role.cessation_date
+                    break
+            msg.extend(_validate_director_dates(appointment_date, cessation_date, f"{path}/{index}/appointmentDate"))
+        else:
+            msg.extend(_validate_director_dates(appointment_date, cessation_date, f"{path}/{index}/appointmentDate"))
+
+    return msg
+
+def _validate_director_dates(appointment_date: date,
+                             cessation_date: date,
+                             path: str) -> list:
+    """Validate director dates."""
+    msg = []
+    if appointment_date and cessation_date and appointment_date > cessation_date:
+        msg.append({
+            "error": _("Appointment date cannot be after cessation date."),
+            "path": path
+        })
+    return msg
+
+
+def _validate_relationship_date(date_value: date,
+                                path: str,
+                                error_name: str,
+                                earliest_allowed_date: date) -> list:
+    msg = []
+    if date_value is None:
+        return msg
+
+    today = LegislationDatetime.datenow()
+    if date_value > today:
+        msg.append({
+            "error": _(f"{error_name} date cannot be in the future."),
+            "path": path
+        })
+
+    if date_value < earliest_allowed_date:
+        msg.append({
+            "error": _(f"{error_name} date cannot be before the business founding date."),
+            "path": path
+        })
 
     return msg
 
