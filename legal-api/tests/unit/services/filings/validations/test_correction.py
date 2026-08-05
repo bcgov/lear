@@ -219,11 +219,13 @@ def test_validate_relationship_date(session, app, jwt, date_label, test_name, of
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     f['filing']['correction']['type'] = "CLIENT"
 
+
     # Set appointment date after cessation date
     if date_value:
         if date_label == "Appointment":
             f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = date_value.isoformat()
         else:
+            f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = earliest_allowed_date.isoformat()
             f['filing']['correction']['relationships'][0]['roles'][0]['cessationDate'] = date_value.isoformat()
 
     with jwt_request_context(app, jwt, [STAFF_ROLE]):
@@ -232,7 +234,10 @@ def test_validate_relationship_date(session, app, jwt, date_label, test_name, of
     # check that validation failed as expected
     if expected_error:
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert len(err.msg) == 1
+        if date_label == "Cessation" and earliest_allowed_date > date_value:
+            assert len(err.msg) == 2
+        else:
+            assert len(err.msg) == 1
         assert err.msg[0]["error"] == expected_error.format(date_label=date_label)
     else:
         assert not err
