@@ -320,7 +320,10 @@ def get_pdfs(  # noqa: PLR0913
     pdfs = []
     attach_order = 1
     filings_with_unimplemented_outputs = ["amalgamationOut", "consentAmalgamationOut", "continuationOut"]
-    if filing.filing_type not in filings_with_unimplemented_outputs:
+    receipt_only_sub_filings = [("changeOfLiquidators", "liquidationReport")]
+
+    filing_key = (filing.filing_type, filing.filing_sub_type)
+    if filing.filing_type not in filings_with_unimplemented_outputs and filing_key not in receipt_only_sub_filings:
         # add filing application document
         attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, filing_attachment_name, regenerate=regenerate)
     # add extra documents

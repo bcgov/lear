@@ -362,6 +362,11 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('COMPLETED', 'consentContinuationOut', None, 'staff', None, 'BC1234567'),
     ('COMPLETED', 'continuationOut', None, None, None, 'BC1234567'),
     ('COMPLETED', 'continuationOut', None, 'staff', None, 'BC1234567'),
+    ('COMPLETED', 'changeOfLiquidators', 'intentToLiquidate', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfLiquidators', 'appointLiquidator', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfLiquidators', 'ceaseLiquidator', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfLiquidators', 'changeAddressLiquidator', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfLiquidators', 'liquidationReport', None, None, 'BC1234567'),
 ])
 def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
                                   status, filing_type, filing_sub_type, submitter_role, legal_type, identifier):
@@ -376,7 +381,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     # test processor
     email = process_filing(filing, filing_type, status)
 
-    if filing_type in ['alteration', 'consentContinuationOut', 'continuationOut', 'dissolution']:
+    if filing_type in ['alteration', 'changeOfLiquidators', 'consentContinuationOut', 'continuationOut', 'dissolution']:
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
         else:
@@ -522,6 +527,25 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     ('continuationOut', None, None, 'COMPLETED', False, False, [
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
     ]),
+    ('changeOfLiquidators', 'intentToLiquidate', None, 'COMPLETED', False, False, [
+        {'fileName': 'Statement of Intent to Liquidate.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfLiquidators', 'appointLiquidator', None, 'COMPLETED', False, False, [
+        {'fileName': 'Notice to Appoint Liquidators.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfLiquidators', 'ceaseLiquidator', None, 'COMPLETED', False, False, [
+        {'fileName': 'Notice to Cease Liquidators.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfLiquidators', 'changeAddressLiquidator', None, 'COMPLETED', False, False, [
+        {'fileName': 'Liquidators (or Records) Change of Address.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfLiquidators', 'liquidationReport', None, 'COMPLETED', False, False, [
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
+    ]),
 ], ids=[
     'alteration - PAID no name change',
     'alteration - PAID name change included',
@@ -544,7 +568,12 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'dissolution - voluntary firm',
     'dissolution - administrative suppresses certificate',
     'consentContinuationOut - application + letter of consent + receipt',
-    'continuationOut - receipt only'
+    'continuationOut - receipt only',
+    'changeOfLiquidators - intentToLiquidate',
+    'changeOfLiquidators - appointLiquidator',
+    'changeOfLiquidators - ceaseLiquidator',
+    'changeOfLiquidators - changeAddressLiquidator',
+    'changeOfLiquidators - liquidationReport (receipt only)'
 ])
 def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email, mock_auth_recipient,
                                         filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments):
@@ -713,6 +742,46 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
             'made historical in British Columbia as of April 29, 2025',
             'under the name NEW TEST BUSINESS',
         ],
+    ),
+    (
+        'changeOfLiquidators',
+        'intentToLiquidate',
+        'COMPLETED',
+        'You have successfully filed your statement of intent to liquidate with the BC Business Registry',
+        'test business - Successful Intent to Liquidate',
+        []
+    ),
+    (
+        'changeOfLiquidators',
+        'appointLiquidator',
+        'COMPLETED',
+        'You have successfully filed your notice of liquidator appointment with the BC Business Registry',
+        'test business - Successful Liquidator Appointment',
+        []
+    ),
+    (
+        'changeOfLiquidators',
+        'ceaseLiquidator',
+        'COMPLETED',
+        'You have successfully filed your notice of liquidator cessation with the BC Business Registry',
+        'test business - Successful Liquidator Cessation',
+        []
+    ),
+    (
+        'changeOfLiquidators',
+        'changeAddressLiquidator',
+        'COMPLETED',
+        'You have successfully filed your liquidator (or records) address change with the BC Business Registry',
+        'test business - Successful Liquidator (or Records) Address Change',
+        []
+    ),
+    (
+        'changeOfLiquidators',
+        'liquidationReport',
+        'COMPLETED',
+        'You have successfully filed your liquidation report with the BC Business Registry',
+        'test business - Successful Liquidation Report',
+        []
     ),
 ])
 def test_maintenance_filing_renders_body_and_subject(app, session,
