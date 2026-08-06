@@ -24,12 +24,10 @@ from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.email_processors import (
     ar_reminder_notification,
-    continuation_in_notification,
-    correction_notification,
+    continuation_authorization_notification,
     filing_notification,
     name_request,
     nr_notification,
-    special_resolution_notification,
 )
 from business_emailer.exceptions import EmailException, QueueException
 from business_emailer.resources import business_emailer as worker
@@ -37,13 +35,14 @@ from business_emailer.resources import business_emailer as worker
 from tests import MockResponse
 from tests.unit import (
     CONTACT_POINT,
+    LEGAL_NAME,
     create_business,
     create_furnishing,
     prep_bootstrap_filing,
-    prep_cp_special_resolution_correction_filing,
-    prep_cp_special_resolution_filing,
+    prep_correction_filing,
     prep_incorp_filing,
     prep_maintenance_filing,
+    prep_special_resolution_filing
 )
 from tests.unit.helpers import make_future_effective, make_non_future_effective
 
@@ -126,19 +125,13 @@ def test_process_incorp_email_paid_non_future_no_email_sent(app, session, mocker
                 assert not mock_send_email.call_args
 
 
-@pytest.mark.parametrize(['status', 'filing_type'], [
-    ('PAID', 'changeOfAddress'),
-    ('COMPLETED', 'alteration'),
-    ('COMPLETED', 'annualReport'),
-    ('COMPLETED', 'changeOfAddress'),
-    ('COMPLETED', 'changeOfDirectors')
-])
-def test_maintenance_notification(app, session, status, filing_type):
-    """Assert that the legal name is changed."""
+def test_correction_notification(app, session):
+    """Assert that valid correction filing cases send an email."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
-    if status == 'PAID':
-        make_future_effective(filing)
+    identifier = 'BC1234567'
+    original_filing = prep_bootstrap_filing(session, 'incorporationApplication', identifier, 'BC', 'COMPLETED', LEGAL_NAME)
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(session, business, original_filing.id, 'incorporationApplication', 'COMPLETED')
     token = 'token'
     # test worker
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -149,19 +142,19 @@ def test_maintenance_notification(app, session, status, filing_type):
                     with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                         worker.process_email(
                             SimpleCloudEvent(
-                                data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                                data={'email': {'filingId': corrected_filing.id, 'type': 'correction', 'option': 'COMPLETED'}}
                             )
                         )
 
                         assert mock_get_pdfs.call_args[0][0] == token
-
-                        assert mock_get_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
-                        assert mock_get_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.BCOMP.value
+                        assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
+                        business: Business = Business.find_by_identifier(identifier)
+                        assert mock_get_pdfs.call_args[0][1]['legalType'] == business.legal_type
                         assert mock_get_pdfs.call_args[0][1]['legalName'] == 'test business'
 
-                        assert mock_get_pdfs.call_args[0][2] == filing
-                        assert mock_get_recipients.call_args[0][0] == status
-                        assert mock_get_recipients.call_args[0][1] == filing.filing_json
+                        assert mock_get_pdfs.call_args[0][2] == corrected_filing
+                        assert mock_get_recipients.call_args[0][0] == 'COMPLETED'
+                        assert mock_get_recipients.call_args[0][1] == corrected_filing.filing_json
                         assert mock_get_recipients.call_args[0][2] == token
 
                         assert mock_send_email.call_args[0][0]['content']['subject']
@@ -171,17 +164,72 @@ def test_maintenance_notification(app, session, status, filing_type):
                         assert mock_send_email.call_args[0][1] == token
 
 
-@pytest.mark.parametrize(['status', 'filing_type', 'identifier'], [
-    ('PAID', 'annualReport', 'BC1234567'),
-    ('PAID', 'changeOfAddress', 'CP1234567'),
-    ('PAID', 'changeOfDirectors', 'CP1234567'),
-    ('COMPLETED', 'changeOfAddress', 'CP1234567'),
-    ('COMPLETED', 'changeOfDirectors', 'CP1234567')
+@pytest.mark.parametrize(['status', 'filing_type', 'filing_sub_type', 'identifier', 'submitter_role'], [
+    ('PAID', 'changeOfAddress', None, 'BC1234567', None),
+    ('COMPLETED', 'alteration', None, 'BC1234567', None),
+    ('COMPLETED', 'annualReport', None, 'BC1234567', None),
+    ('COMPLETED', 'changeOfAddress', None, 'BC1234567', None),
+    ('COMPLETED', 'dissolution', 'voluntary', 'BC1234567', None),
+    ('COMPLETED', 'dissolution', 'voluntary', 'CP1234567', None),
+    ('COMPLETED', 'specialResolution', None, 'CP1234567', None),
+    ('COMPLETED', 'specialResolution', None, 'CP1234567', 'staff'),
 ])
-def test_skips_notification(app, session, status, filing_type, identifier):
-    """Assert that the legal name is changed."""
+def test_maintenance_notification(app, session, status, filing_type, filing_sub_type, identifier, submitter_role):
+    """Assert that valid maintenance filing cases send an email."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type)
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, filing_sub_type, submitter_role)
+    if status == 'PAID':
+        make_future_effective(filing)
+    token = 'token'
+    # test worker
+    with patch.object(AccountService, 'get_bearer_token', return_value=token):
+        with patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com'):
+            with patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com'):
+                with patch.object(filing_notification, 'get_pdfs', return_value=[]) as mock_get_pdfs:
+                    with patch.object(filing_notification, 'get_recipients', return_value='test@test.com') \
+                        as mock_get_recipients:
+                        with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
+                            worker.process_email(
+                                SimpleCloudEvent(
+                                    data={'email': {'filingId': filing.id, 'type': f'{filing_type}', 'option': status}}
+                                )
+                            )
+
+                        assert mock_get_pdfs.call_args[0][0] == token
+                        assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
+                        business: Business = Business.find_by_identifier(identifier)
+                        assert mock_get_pdfs.call_args[0][1]['legalType'] == business.legal_type
+                        assert mock_get_pdfs.call_args[0][1]['legalName'] == 'test business'
+
+                        assert mock_get_pdfs.call_args[0][2] == filing
+                        assert mock_get_recipients.call_args[0][0] == status
+                        assert mock_get_recipients.call_args[0][1] == filing.filing_json
+                        assert mock_get_recipients.call_args[0][2] == token
+
+                        assert mock_send_email.call_args[0][0]['content']['subject']
+                        assert 'test@test.com' in mock_send_email.call_args[0][0]['recipients']
+                        if submitter_role:
+                            assert 'staff@email.com' in mock_send_email.call_args[0][0]['recipients']
+                        assert mock_send_email.call_args[0][0]['content']['body']
+                        assert mock_send_email.call_args[0][0]['content']['attachments'] == []
+                        assert mock_send_email.call_args[0][1] == token
+
+
+@pytest.mark.parametrize(['status', 'filing_type', 'filing_sub_type', 'identifier'], [
+    ('PAID', 'annualReport', None, 'BC1234567'),
+    ('PAID', 'changeOfAddress', None, 'CP1234567'),
+    ('PAID', 'changeOfDirectors', None, 'CP1234567'),
+    ('PAID', 'specialResolution', None, 'BC1234567'),
+    ('PAID', 'consentContinuationOut', None, 'BC1234567'),
+    ('COMPLETED', 'annualReport', None, 'CP1234567'),
+    ('COMPLETED', 'changeOfAddress', None, 'CP1234567'),
+    ('COMPLETED', 'changeOfDirectors', None, 'CP1234567'),
+    ('COMPLETED', 'dissolution', 'delay', 'BC1234567')
+])
+def test_skips_notification(app, session, status, filing_type, filing_sub_type, identifier):
+    """Assert that the emailer skips sending an email for invalid cases."""
+    # setup filing + business for email
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, filing_sub_type)
     token = 'token'
     # test processor
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
@@ -217,83 +265,6 @@ def test_process_mras_email(app, session):
             assert mock_send_email.call_args[0][0]['content']['body']
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
             assert mock_send_email.call_args[0][1] == token
-
-
-@pytest.mark.parametrize(['option', 'submitter_role'], [
-    ('PAID', 'staff'),
-    ('COMPLETED', None),
-])
-def test_process_special_resolution_email(app, session, option, submitter_role):
-    """Assert that an special resolution email msg is processed correctly."""
-    filing = prep_cp_special_resolution_filing('CP1234567', '1', 'CP', 'TEST', submitter_role=submitter_role)
-    token = '1'
-    get_pdf_function = 'get_paid_pdfs' if option == 'PAID' else 'get_completed_pdfs'
-    # test worker
-    with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(special_resolution_notification, get_pdf_function, return_value=[]) as mock_get_pdfs:
-            with patch.object(special_resolution_notification, 'get_recipient_from_auth',
-                              return_value='recipient@email.com'):
-                with patch.object(special_resolution_notification, 'get_user_email_from_auth',
-                                  return_value='user@email.com'):
-                    with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                        worker.process_email(
-                            SimpleCloudEvent(
-                                data={'email': {'filingId': filing.id, 'type': 'specialResolution', 'option': option}}
-                            )
-                        )
-
-                        assert mock_get_pdfs.call_args[0][0] == token
-                        assert mock_get_pdfs.call_args[0][1]['identifier'] == 'CP1234567'
-                        assert mock_get_pdfs.call_args[0][2] == filing
-
-                        if option == 'PAID':
-                            assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                                   'TEST - Confirmation of Special Resolution from the Business Registry'
-                        else:
-                            assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                                   'TEST - Special Resolution Documents from the Business Registry'
-                        assert 'recipient@email.com' in mock_send_email.call_args[0][0]['recipients']
-                        if submitter_role:
-                            assert f'{submitter_role}@email.com' in mock_send_email.call_args[0][0]['recipients']
-                        else:
-                            assert 'user@email.com' in mock_send_email.call_args[0][0]['recipients']
-                        assert mock_send_email.call_args[0][0]['content']['body']
-                        assert mock_send_email.call_args[0][0]['content']['attachments'] == []
-                        assert mock_send_email.call_args[0][1] == token
-
-
-@pytest.mark.parametrize('option', [
-    ('PAID'),
-    ('COMPLETED'),
-])
-def test_process_correction_cp_sr_email(app, session, option):
-    """Assert that a correction email msg is processed correctly."""
-    identifier = 'CP1234567'
-    original_filing = prep_cp_special_resolution_filing(identifier, '1', 'CP', 'TEST', submitter_role=None)
-    token = '1'
-    business = Business.find_by_identifier(identifier)
-    filing = prep_cp_special_resolution_correction_filing(session, business, original_filing.id,
-                                                          '1', option, 'specialResolution')
-    # test worker
-    with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(correction_notification, '_get_pdfs', return_value=[]):
-            with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
-                worker.process_email(
-                    SimpleCloudEvent(
-                        data={'email': {'filingId': filing.id, 'type': 'correction', 'option': option}}
-                    )
-                )
-
-                if option == 'PAID':
-                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                           'TEST - Confirmation of correction'
-                else:
-                    assert mock_send_email.call_args[0][0]['content']['subject'] == \
-                           'TEST - Correction Documents from the Business Registry'
-                assert 'cp_sr@test.com' in mock_send_email.call_args[0][0]['recipients']
-                assert mock_send_email.call_args[0][0]['content']['body']
-                assert mock_send_email.call_args[0][0]['content']['attachments'] == []
-                assert mock_send_email.call_args[0][1] == token
 
 
 def test_process_ar_reminder_email(app, session):
@@ -602,11 +573,11 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
 @pytest.mark.parametrize(['option', 'expected_processor'], [
     (Filing.Status.PAID.value, filing_notification),
     (Filing.Status.COMPLETED.value, filing_notification),
-    (ReviewStatus.APPROVED.name, continuation_in_notification),
-    (ReviewStatus.AWAITING_REVIEW.name, continuation_in_notification),
-    (ReviewStatus.CHANGE_REQUESTED.name, continuation_in_notification),
-    (ReviewStatus.REJECTED.name, continuation_in_notification),
-    (ReviewStatus.RESUBMITTED.name, continuation_in_notification),
+    (ReviewStatus.APPROVED.name, continuation_authorization_notification),
+    (ReviewStatus.AWAITING_REVIEW.name, continuation_authorization_notification),
+    (ReviewStatus.CHANGE_REQUESTED.name, continuation_authorization_notification),
+    (ReviewStatus.REJECTED.name, continuation_authorization_notification),
+    (ReviewStatus.RESUBMITTED.name, continuation_authorization_notification),
 ])
 def test_continuation_in_notification(app, db, session, mocker, option, expected_processor):
     """Assert that the worker uses the correct continuation in processor for each option."""

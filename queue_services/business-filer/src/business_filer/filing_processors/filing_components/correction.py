@@ -58,6 +58,7 @@ from business_filer.filing_processors.filing_components.relationships import (
     create_relationships,
     update_relationship_addresses,
     update_relationship_entity_info,
+    update_relationships_appointment_date,
 )
 
 CEASE_ROLE_MAPPING = {
@@ -132,6 +133,8 @@ def correct_business_data(business: Business,  # noqa: PLR0915
                                 PartyRole.RoleTypes.RECEIVER.value
                             ],
                             filing_meta.application_date)
+
+        update_relationships_appointment_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
@@ -139,7 +142,7 @@ def correct_business_data(business: Business,  # noqa: PLR0915
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(correction_filing, "/correction/courtOrder")
-        filings.update_filing_court_order(correction_filing_rec, court_order_json)
+        filings.create_court_order(correction_filing_rec, court_order_json, filing_meta)
 
     # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):

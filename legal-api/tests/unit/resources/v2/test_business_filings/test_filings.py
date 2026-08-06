@@ -74,7 +74,8 @@ from registry_schemas.example_data import (
     REGISTRATION,
     RESTORATION,
     SPECIAL_RESOLUTION,
-    TRANSITION_FILING_TEMPLATE
+    TRANSITION_FILING_TEMPLATE,
+    get_filing_template,
 )
 from registry_schemas.example_data.schema_data import COURT_ORDER_FILING_TEMPLATE, RESTORATION
 from tests import integration_payment
@@ -91,6 +92,117 @@ from tests.unit.models import (  # noqa:E501,I001
 )
 from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
+
+
+def test_trim_strings_whitespace_only_becomes_empty():
+    """Assert that a whitespace-only string is trimmed down to an empty string."""
+    data = {'field': '     '}
+    ListFilingResource._trim_strings(data)
+    assert data['field'] == ''
+
+
+def test_trim_strings_various_whitespace_characters():
+    """Assert tabs, newlines, and mixed whitespace are all stripped, not just spaces."""
+    data = {'field': '\t\n  value with internal space  \n\t'}
+    ListFilingResource._trim_strings(data)
+    assert data['field'] == 'value with internal space'
+
+
+def test_trim_strings_empty_dict_and_list_untouched():
+    """Assert empty containers don't error and are left as empty containers."""
+    data = {'a': {}, 'b': [], 'c': '  x  '}
+    ListFilingResource._trim_strings(data)
+    assert data == {'a': {}, 'b': [], 'c': 'x'}
+
+
+def test_trim_strings_is_idempotent():
+    """Assert running trim twice on the same data produces the same result."""
+    data = {'a': '  x  ', 'b': {'c': [' y ', ' z ']}}
+    ListFilingResource._trim_strings(data)
+    first_pass = copy.deepcopy(data)
+    ListFilingResource._trim_strings(data)
+    assert data == first_pass
+
+
+def test_trim_strings_returns_same_object_reference():
+    """Assert the function mutates in place and returns the same object (not a copy)."""
+    data = {'a': '  x  '}
+    result = ListFilingResource._trim_strings(data)
+    assert result is data
+
+
+def test_post_ar_trims_padded_routing_slip_number(session, client, jwt):
+    """Assert that a routingSlipNumber padded with whitespace is trimmed before validation,
+    so it passes even though the padded (untrimmed) length would exceed the schema limit."""
+    identifier = 'CP7654321'
+    factory_business(identifier,
+                     founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2)),
+                     last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date())
+
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
+    annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
+    if annual_report_date > LegislationDatetime.now().date():
+        annual_report_date = LegislationDatetime.now().date()
+    ar['filing']['annualReport']['annualReportDate'] = annual_report_date.isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['header']['routingSlipNumber'] = '    123131332    '
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not rv.json.get('errors')
+
+
+def test_post_change_of_directors_with_whitespace_trimmed(session, client, jwt):
+    """Assert that whitespace padding in nested officer/address fields is trimmed
+    before the changeOfDirectors filing is validated and saved."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    cod = get_filing_template('changeOfDirectors', identifier)
+    cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    cod['filing']['changeOfDirectors']['directors'][0]['officer']['firstName'] = '  Peter  '
+    cod['filing']['changeOfDirectors']['directors'][0]['officer']['lastName'] = '  Griffin  '
+    cod['filing']['changeOfDirectors']['directors'][0]['deliveryAddress']['postalCode'] = '  H0H0H0  '
+    cod['filing']['changeOfDirectors']['directors'][1]['title'] = '  Treasurer  '
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=cod,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    directors = rv.json['filing']['changeOfDirectors']['directors']
+    assert directors[0]['officer']['firstName'] == 'Peter'
+    assert directors[0]['officer']['lastName'] == 'Griffin'
+    assert directors[0]['deliveryAddress']['postalCode'] == 'H0H0H0'
+    assert directors[1]['title'] == 'Treasurer'
+    assert directors[0]['cessationDate'] is None
+    assert directors[1]['cessationDate'] is None
+
+
+def test_post_ar_preserves_numeric_and_boolean_types(session, client, jwt):
+    """Assert numbers/booleans in the filing json aren't coerced to strings or otherwise altered."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
+    ar['filing']['header']['priority'] = True
+    ar['filing']['header']['waiveFees'] = False
+
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=ar,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier)
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert rv.json['filing']['header']['priority'] is True
+    assert rv.json['filing']['header']['waiveFees'] is False
 
 
 @pytest.mark.parametrize(
@@ -112,7 +224,7 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     temp_reg.save()
     json_data = copy.deepcopy(FILING_HEADER)
     json_data['filing']['header']['name'] = filing_type
-    del json_data['filing']['business']
+    json_data['filing']['business'] = {'identifier': identifier}
     filing_json = copy.deepcopy(filing_json)
     filing_json['nameRequest']['legalType'] = legal_type
     json_data['filing'][filing_type] = filing_json
@@ -366,17 +478,18 @@ def test_post_fail_if_given_filing_id(session, client, jwt):
                                     f'Illegal to attempt to create a duplicate filing for {identifier}.'}
 
 
-def test_post_filing_no_business(session, client, jwt):
-    """Assert that a filing cannot be created against non-existent business."""
+def test_post_filing_business_identifier(session, client, jwt):
+    """Assert that a filing requires a matching business identifier specified."""
     identifier = 'CP7654321'
-
+    filing = copy.deepcopy(ANNUAL_REPORT)
+    filing['filing']['business']['identifier'] = 'BC1234567'
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ANNUAL_REPORT,
+                     json=filing,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
+    assert rv.json['errors'][0] == {'message': 'filing/business/identifier does not equal the identifier in the request path.'}
 
 
 def test_post_empty_annual_report_to_a_business(session, client, jwt):
@@ -402,9 +515,9 @@ def test_post_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier)
-
+    data = get_filing_template('annualReport', identifier)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=ANNUAL_REPORT,
+                     json=data,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -415,9 +528,9 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier)
-
+    data = get_filing_template('annualReport', identifier)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=ANNUAL_REPORT,
+                     json=data,
                      headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
                      )
 
@@ -428,9 +541,9 @@ def test_post_not_allowed_historical(session, client, jwt):
     """Assert that a filing is not allowed for historical business."""
     identifier = 'CP7654321'
     factory_business(identifier, state=Business.State.HISTORICAL)
-
+    data = get_filing_template('annualReport', identifier)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
-                     json=ANNUAL_REPORT,
+                     json=data,
                      headers=create_header(jwt, [BASIC_USER], 'WRONGUSER')
                      )
 
@@ -441,9 +554,9 @@ def test_post_allowed_historical(session, client, jwt):
     """Assert that a filing is allowed for historical business."""
     identifier = 'BC7654321'
     factory_business(identifier, state=Business.State.HISTORICAL)
-
+    co = get_filing_template('courtOrder', identifier)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=COURT_ORDER_FILING_TEMPLATE,
+                     json=co,
                      headers=create_header(jwt, [STAFF_ROLE], 'user')
                      )
 
@@ -452,11 +565,10 @@ def test_post_allowed_historical(session, client, jwt):
 
 def test_special_resolution_sanitation(session, client, jwt):
     """Assert that script tags can't be passed into special resolution resolution field."""
-    identifier = 'BC7654399'
+    identifier = 'CP7654399'
     factory_business(identifier, state=Business.State.ACTIVE)
 
-    data = copy.deepcopy(FILING_HEADER)
-    data['filing']['header']['name'] = 'specialResolution'
+    data = get_filing_template('specialResolution', identifier)
     data['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
     data['filing']['specialResolution']['resolution'] = """
         <p>Hello this is great</p><script>alert("hello")</script>
@@ -471,7 +583,7 @@ def test_special_resolution_sanitation(session, client, jwt):
                      headers=create_header(jwt, [STAFF_ROLE], 'user')
                      )
     assert rv.status_code == HTTPStatus.CREATED
-    assert rv.json['filing']['specialResolution']['resolution'] == ' <p>Hello this is great</p> '
+    assert rv.json['filing']['specialResolution']['resolution'] == '<p>Hello this is great</p> '
 
 
 def test_post_draft_ar(session, client, jwt):
@@ -479,8 +591,10 @@ def test_post_draft_ar(session, client, jwt):
     identifier = 'CP7654321'
     factory_business(identifier)
 
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
-                     json=ANNUAL_REPORT,
+                     json=ar,
                      headers=create_header(jwt, [STAFF_ROLE], identifier)
                      )
 
@@ -497,6 +611,7 @@ def test_post_only_validate_ar(session, client, jwt):
                      last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business']['identifier'] = identifier
     annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
@@ -520,6 +635,7 @@ def test_post_validate_ar_using_last_ar_date(session, client, jwt):
                      founding_date=(datetime.now(UTC) - datedelta.datedelta(years=2))  # founding date = 2 years ago
                      )
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business']['identifier'] = identifier
     annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
@@ -561,6 +677,7 @@ def test_post_only_validate_ar_invalid_routing_slip(session, client, jwt):
     factory_business(identifier)
 
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business']['identifier'] = identifier
     ar['filing']['header']['routingSlipNumber'] = '1231313329988888'
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?only_validate=true',
@@ -591,6 +708,7 @@ def test_post_validate_ar_valid_routing_slip(session, client, jwt):
                      last_ar_date=datetime(datetime.now(UTC).year - 1, 4, 20).date())
 
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
     annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
@@ -613,8 +731,7 @@ def test_post_cod_with_empty_directors_array(session, client, jwt, only_validate
     identifier = 'CP7654321'
     factory_business(identifier)
 
-    cod = copy.deepcopy(FILING_HEADER)
-    cod['filing']['header']['name'] = 'changeOfDirectors'
+    cod = get_filing_template('changeOfDirectors', identifier)
     cod['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
     # Set empty directors array - this should fail validation due to minItems: 1 in schema
     cod['filing']['changeOfDirectors']['directors'] = []
@@ -890,11 +1007,11 @@ def test_payment_failed(session, client, jwt):
 
 def test_update_draft_ar(session, client, jwt):
     """Assert that a valid filing can be updated to a paid filing."""
-    import copy
     identifier = 'CP7654321'
     b = factory_business(identifier)
     filings = factory_filing(b, ANNUAL_REPORT)
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business']['identifier'] = identifier
 
     rv = client.put(f'/api/v2/businesses/{identifier}/filings/{filings.id}?draft=true',
                     json=ar,
@@ -1214,6 +1331,7 @@ def test_update_ar_with_a_missing_filing_id_fails(session, client, jwt):
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
     annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > datetime.now(UTC).date():
         annual_report_date = datetime.now(UTC).date()
@@ -1234,11 +1352,37 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
     """Assert that updating to a non-existant business fails."""
     import copy
     identifier = 'CP7654321'
+    invalid_business_identifier = 'CP0000001'
     business = factory_business(identifier,
                                 founding_date=(datetime.now(UTC) - datedelta.YEAR)
                                 )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': invalid_business_identifier}
+    ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
+    ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
+
+    filings = factory_completed_filing(business, ar)
+
+    rv = client.put(f'/api/v2/businesses/{invalid_business_identifier}/filings/{filings.id+1}',
+                    json=ar,
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
+
+
+def test_update_ar_with_a_different_business_id_fails(session, client, jwt):
+    """Assert that updating to a non-existant business fails."""
+    import copy
+    identifier = 'CP7654321'
+    business = factory_business(identifier,
+                                founding_date=(datetime.now(UTC) - datedelta.YEAR)
+                                )
+    factory_business_mailing_address(business)
+    ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
     ar['filing']['annualReport']['annualReportDate'] = datetime.now(UTC).date().isoformat()
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
@@ -1251,7 +1395,7 @@ def test_update_ar_with_a_missing_business_id_fails(session, client, jwt):
                     )
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0] == {'message': 'A valid business is required.'}
+    assert rv.json['errors'][0] == {'message': 'filing/business/identifier does not equal the identifier in the request path.'}
 
 
 def test_update_ar_with_missing_json_body_fails(session, client, jwt):
@@ -1283,6 +1427,7 @@ def test_file_ar_no_agm_coop(session, client, jwt):
                                     )
     factory_business_mailing_address(business)
     ar = copy.deepcopy(ANNUAL_REPORT)
+    ar['filing']['business'] = {'identifier': identifier}
     annual_report_date = datetime(datetime.now(UTC).year, 2, 20).date()
     if annual_report_date > LegislationDatetime.now().date():
         annual_report_date = LegislationDatetime.now().date()
@@ -1728,6 +1873,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
     temp_reg._identifier = identifier
     temp_reg.save()
     json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    json_data['filing']['business'] = {'identifier': identifier}
     del json_data['filing']['continuationIn']['parties'][1]
     filing = factory_filing(None, json_data)
     filing.temp_reg = identifier
@@ -1833,6 +1979,7 @@ def test_resubmit_filing_failed(session, client, jwt, filing_status, review_stat
     temp_reg._identifier = identifier
     temp_reg.save()
     json_data = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    json_data['filing']['business'] = {'identifier': identifier}
     filing = factory_filing(None, json_data)
     filing.temp_reg = identifier
     filing._status = filing_status
@@ -1878,7 +2025,7 @@ def test_notice_of_withdrawal_filing(session, client, jwt, test_name, legal_type
         temp_reg.save()
         json_data = copy.deepcopy(FILING_HEADER)
         json_data['filing']['header']['name'] = filing_type
-        del json_data['filing']['business']
+        json_data['filing']['business'] = {'identifier': identifier}
         new_bus_filing_json = copy.deepcopy(filing_json)
         new_bus_filing_json['nameRequest']['legalType'] = legal_type
         json_data['filing'][filing_type] = new_bus_filing_json
@@ -2317,3 +2464,49 @@ def test_ta(session, requests_mock, client, jwt, monkeypatch, test_name, legal_t
         assert rv.status_code == HTTPStatus.FORBIDDEN
         assert rv.json[0]['message'] == 'Permission Denied - transition filing is currently not available for this user and/or account.'
     
+
+@pytest.mark.parametrize('test_name,file_key,expect_drs', [
+    ('drs_key', 'COOP-DS0000101951', True),
+    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
+    ('legacy_bare_drs_id', 'DS0000100800', False),
+])
+def test_delete_uploaded_file_dispatch(session, test_name, file_key, expect_drs):
+    """Assert uploaded files are deleted from the DRS or Minio based on the file key shape."""
+    from legal_api.resources.v2.business.business_filings import business_filings
+
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs, \
+            patch.object(MinioService, 'delete_file') as mock_minio:
+        ListFilingResource.delete_uploaded_file(file_key)
+
+    if expect_drs:
+        mock_drs.assert_called_once()
+        assert mock_drs.call_args[0][0].file_key == file_key
+        mock_minio.assert_not_called()
+    else:
+        mock_drs.assert_not_called()
+        mock_minio.assert_called_once_with(file_key)
+
+
+def test_delete_dissolution_filing_in_draft_with_drs_file(session, client, jwt):
+    """Assert that deleting a draft dissolution removes its DRS-backed affidavit from the DRS."""
+    from legal_api.resources.v2.business.business_filings import business_filings
+
+    identifier = 'CP7654321'
+    file_key = 'COOP-DS0000101951'
+    b = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing_json['filing']['dissolution']['affidavitFileKey'] = file_key
+    filing = factory_filing(b, filing_json, filing_type='dissolution')
+    headers = create_header(jwt, [STAFF_ROLE], identifier)
+
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs, \
+            patch.object(MinioService, 'delete_file') as mock_minio:
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    assert rv.status_code == HTTPStatus.OK
+    mock_drs.assert_called_once()
+    assert mock_drs.call_args[0][0].file_key == file_key
+    mock_minio.assert_not_called()

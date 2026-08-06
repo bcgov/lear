@@ -16,6 +16,7 @@
 Provides all the search and retrieval from the business entity datastore.
 """
 import copy
+import re
 from contextlib import suppress
 from datetime import UTC
 from datetime import datetime as _datetime
@@ -39,6 +40,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,
     Business,
+    Document,
     Filing,
     OfficeType,
     RegistrationBootstrap,
@@ -62,6 +64,7 @@ from legal_api.services import (
     MinioService,
     RegistrationBootstrapService,
     authorized,
+    doc_service,
     flags,
     namex,
 )
@@ -129,7 +132,7 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
     business, filing = ListFilingResource.get_business_and_filing(identifier, filing_id)
 
     # basic checks
-    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing, request, business)
+    err_msg, err_code = ListFilingResource.put_basic_checks(identifier, filing, request, business, query)
     if err_msg:
         return jsonify({"errors": [err_msg, ]}), err_code
 
@@ -533,7 +536,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return filing
 
     @staticmethod
-    def put_basic_checks(identifier, filing, client_request, business) -> tuple[dict, int]:
+    def put_basic_checks(identifier, filing, client_request, business, query) -> tuple[dict, int]:  # noqa: PLR0911
         """Perform basic checks to ensure put can do something."""
         json_input = client_request.get_json(silent=True)
         if not json_input:
@@ -549,6 +552,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         filing_type = json_input.get("filing", {}).get("header", {}).get("name")
         if not filing_type:
             return ({"message": "filing/header/name is a required property"}, HTTPStatus.BAD_REQUEST)
+
+        filing_business_identifier = json_input.get("filing", {}).get("business", {}).get("identifier")
+        if not query.draft and filing_business_identifier != identifier:
+            return ({"message": "filing/business/identifier does not equal the identifier in the request path."}, HTTPStatus.BAD_REQUEST)
 
         if filing_type not in [*CoreFiling.NEW_BUSINESS_FILING_TYPES, CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL] \
            and business is None:
@@ -1106,8 +1113,20 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return is_future_effective
 
     @staticmethod
+    def delete_uploaded_file(file_key: str):
+        """Delete an uploaded file from the DRS or Minio based on the file key shape.
+
+        DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
+        legacy Minio keys (UUIDs) do not match.
+        """
+        if re.match(r"^([A-Z]+)-(DS\d+)$", file_key):
+            doc_service.delete_document(Document(file_key=file_key))
+        else:
+            MinioService.delete_file(file_key)
+
+    @staticmethod
     def delete_from_minio(filing_type: str, filing_json: dict):
-        """Delete file from minio."""
+        """Delete the filing's uploaded files from the DRS or Minio."""
         if (filing_type == Filing.FILINGS["incorporationApplication"].get("name")
                 and (cooperative := filing_json
                      .get("filing", {})
@@ -1118,21 +1137,21 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                      .get("filing", {})
                      .get("alteration", {}))):
             if rules_file_key := cooperative.get("rulesFileKey", None):
-                MinioService.delete_file(rules_file_key)
+                ListFilingResource.delete_uploaded_file(rules_file_key)
             if memorandum_file_key := cooperative.get("memorandumFileKey", None):
-                MinioService.delete_file(memorandum_file_key)
+                ListFilingResource.delete_uploaded_file(memorandum_file_key)
         elif filing_type == Filing.FILINGS["dissolution"].get("name") \
                 and (affidavit_file_key := filing_json
                      .get("filing", {})
                      .get("dissolution", {})
                      .get("affidavitFileKey", None)):
-            MinioService.delete_file(affidavit_file_key)
+            ListFilingResource.delete_uploaded_file(affidavit_file_key)
         elif filing_type == Filing.FILINGS["courtOrder"].get("name") \
                 and (file_key := filing_json
                      .get("filing", {})
                      .get("courtOrder", {})
                      .get("fileKey", None)):
-            MinioService.delete_file(file_key)
+            ListFilingResource.delete_uploaded_file(file_key)
         elif filing_type == Filing.FILINGS["continuationIn"].get("name"):
             ListFilingResource.delete_continuation_in_files(filing_json)
 
@@ -1143,13 +1162,13 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
         # Delete affidavit file
         if affidavit_file_key := continuation_in.get("foreignJurisdiction", {}).get("affidavitFileKey", None):
-            MinioService.delete_file(affidavit_file_key)
+            ListFilingResource.delete_uploaded_file(affidavit_file_key)
 
         # Delete authorization file(s)
         authorization_files = continuation_in.get("authorization", {}).get("files", [])
         for file in authorization_files:
             if auth_file_key := file.get("fileKey", None):
-                MinioService.delete_file(auth_file_key)
+                ListFilingResource.delete_uploaded_file(auth_file_key)
 
     @staticmethod
     def details_for_invoice(business_identifier: str, corp_type: str):
@@ -1167,6 +1186,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def modify_filing_json(filing_json, filing: Filing = None):
         """Modify filing json values if needed."""
+        # Trim leading/trailing whitespace from all string fields
+        ListFilingResource._trim_strings(filing_json)
+
         filing_type = filing_json["filing"]["header"]["name"]
         if (filing_type == Filing.FILINGS["continuationIn"].get("name") and
             filing and filing.status == Filing.Status.APPROVED.value
@@ -1182,6 +1204,23 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 filing.filing_json["filing"][filing_type]["nameRequest"]
             filing_json["filing"][filing_type]["foreignJurisdiction"] = \
                 filing.filing_json["filing"][filing_type]["foreignJurisdiction"]
+
+    @staticmethod
+    def _trim_strings(node):
+        """Recursively trim leading/trailing whitespace from all string values in place."""
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if isinstance(value, str):
+                    node[key] = value.strip()
+                elif isinstance(value, dict | list):
+                    ListFilingResource._trim_strings(value)
+        elif isinstance(node, list):
+            for i, value in enumerate(node):
+                if isinstance(value, str):
+                    node[i] = value.strip()
+                elif isinstance(value, dict | list):
+                    ListFilingResource._trim_strings(value)
+        return node
 
     @staticmethod
     def submit_filing_for_review(business: Business | RegistrationBootstrap, filing: Filing):

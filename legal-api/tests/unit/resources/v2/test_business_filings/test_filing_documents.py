@@ -36,6 +36,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
+    CONSENT_CONTINUATION_OUT,
     CONTINUATION_IN,
     CONTINUATION_OUT,
     CORRECTION_AR,
@@ -194,20 +195,6 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
          'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
          'legalFilings': [
              {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('specres_court_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED,
-     {'documents': {
-         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-         'legalFilings': [
-             {'courtOrder': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/courtOrder'},
-             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
          ],
          'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
                     'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
@@ -1070,6 +1057,33 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
      },
      HTTPStatus.OK, '2017-10-01'
      ),
+    ('ben_consentContinuationOut_completed', 'BC7654321',
+     Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
+     None, None, Filing.Status.COMPLETED,
+     {'documents': {
+         'legalFilings': [
+             {'consentContinuationOut':
+              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
+         ],
+         'letterOfConsent': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfConsent',
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
+    ('ben_consentContinuationOut_paid', 'BC7654321',
+     Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
+     None, None, Filing.Status.PAID,
+     {'documents': {
+         'legalFilings': [
+             {'consentContinuationOut':
+              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
+         ],
+         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
+     }
+     },
+     HTTPStatus.OK, '2017-10-01'
+     ),
     ('ben_amalgamation_completed', 'BC7654321',
      Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION,
      None, None, Filing.Status.COMPLETED,
@@ -1553,7 +1567,13 @@ MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
                     }
       },
      HTTPStatus.OK, '2024-09-26'
-     )
+     ),
+     ('ben_court_order_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
+     'courtOrder', COURT_ORDER, None, None, Filing.Status.COMPLETED,
+     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'}
+      },
+     HTTPStatus.OK, '2017-10-01'
+     ),
 ])
 def test_document_list_for_various_filing_states(app, session, mocker, client, jwt, monkeypatch, mock_drs_service,
                                                  test_name,
@@ -1606,6 +1626,14 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
                     'name': file.get('fileName'),
                     'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
                 })
+        elif filing_name_1 == 'courtOrder':
+            for file in meta_data['courtOrder']['files']:
+                file_key = file.get('fileKey')
+                expected_msg['documents']['staticDocuments'] = [{
+                    'name': file.get('fileName'),
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
+                }]
+
 
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
@@ -1644,6 +1672,32 @@ def filer_action(filing_name, filing_json, meta_data, business):
         meta_data['continuationIn'] = {}
         meta_data['continuationIn']['affidavitFileKey'] = continuation_in['foreignJurisdiction']['affidavitFileKey']
         meta_data['continuationIn']['authorizationFiles'] = continuation_in['authorization']['files']
+    
+    court_order = (
+        filing_json['filing'][filing_name] if filing_name == 'courtOrder'
+        else filing_json['filing'][filing_name].get('courtOrder')
+    )
+    if court_order:
+        file_number = court_order['fileNumber']
+        effect_of_order = court_order.get('effectOfOrder')
+        order_date = court_order.get('orderDate')
+
+        court_order_meta = {"fileNumber": file_number}
+        if effect_of_order:
+            court_order_meta["effectOfOrder"] = effect_of_order
+        if order_date:
+            court_order_meta["orderDate"] = order_date
+        
+        meta_data["courtOrder"] = court_order_meta
+
+    if filing_name == 'courtOrder':
+        meta_data["courtOrder"]["orderDetails"] = court_order.get('orderDetails')
+        meta_data["courtOrder"]["files"] = [
+            {
+                "fileKey": court_order.get('fileKey'),
+                "fileName": f"Court Order {court_order['fileNumber']}"
+            }
+        ]
 
     if filing_name == 'correction' and business.legal_type == 'CP':
         meta_data['correction'] = {}
@@ -2101,7 +2155,7 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     filing._status = Filing.Status.COMPLETED
     filing.save()
 
-    mocker.patch('legal_api.core.filing.has_roles', return_value=True)
+    mocker.patch('legal_api.core.filing.has_any_roles', return_value=True)
     rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings/{filing.id}/documents',
                     headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
 
@@ -2111,3 +2165,43 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
+
+
+@pytest.mark.parametrize('test_name,file_key,expect_drs', [
+    ('drs_key', 'CORP-DS0000101951', True),
+    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
+])
+def test_get_static_document_by_file_key_shape(session, client, jwt, mocker, test_name, file_key, expect_drs):
+    """Assert static documents are served from the DRS or Minio based on the file key shape."""
+    from unittest.mock import MagicMock, patch
+
+    from business_model.models import Document
+    from legal_api.resources.v2.business.business_filings import business_documents
+
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'continuationIn'
+    filing = factory_filing(business, filing_json)
+
+    document = Document(type='authorization_file', file_key=file_key, filing_id=filing.id, business_id=business.id)
+    document.save()
+
+    mocker.patch.object(business_documents, '_is_document_available', return_value=True)
+    drs_response = MagicMock(content=b'drs-pdf', status_code=HTTPStatus.OK)
+    minio_response = MagicMock(data=b'minio-pdf', status=HTTPStatus.OK)
+
+    with patch.object(business_documents.client_doc_service, 'get_document', return_value=drs_response) as mock_drs, \
+            patch.object(business_documents.MinioService, 'get_file', return_value=minio_response) as mock_minio:
+        rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/static/{file_key}',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier, **{'accept': 'application/pdf'}))
+
+    assert rv.status_code == HTTPStatus.OK
+    if expect_drs:
+        mock_drs.assert_called_once_with('DS0000101951', 'CORP', doc_binary=True)
+        mock_minio.assert_not_called()
+        assert rv.data == b'drs-pdf'
+    else:
+        mock_drs.assert_not_called()
+        mock_minio.assert_called_once_with(file_key)
+        assert rv.data == b'minio-pdf'

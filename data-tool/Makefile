@@ -1,6 +1,7 @@
 .PHONY: license
 .PHONY: setup
 .PHONY: run
+.PHONY: test-delta-restore
 
 # Get the absolute path of the Makefile's directory
 MKFILE_PATH:=$(abspath $(lastword $(MAKEFILE_LIST)))
@@ -89,15 +90,6 @@ run-prefect-server: ## Start Prefect server
 run-prefect-reset-db: ## clears all data and reapplies the schema.  Handy for clearing flow run history.
 	. $(PREFECT_VENV_DIR)/bin/activate && prefect server database reset -y
 
-run-corps-migration: ## Run migration flow
-	@echo "Current directory: $(CURRENT_ABS_DIR)"
-	@echo "SQLAlchemy path: $(CURRENT_ABS_DIR)/$(SQLALCHEMY_VENV_DIR)/lib/$(PYTHON_VERSION)/site-packages"
-	. $(VENV_DIR)/bin/activate && \
-	export PYTHONPATH="$(CURRENT_ABS_DIR):$$PYTHONPATH" && \
-	export SQLALCHEMY_PATH="$(CURRENT_ABS_DIR)/$(SQLALCHEMY_VENV_DIR)/lib/$(PYTHON_VERSION)/site-packages" && \
-	FLASK_ENV=development && \
-	python flows/migrate_corps_flow.py
-
 run-corps-delete: ## Run delete flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/batch_delete_flow.py
@@ -163,6 +155,9 @@ run-auth-invite: ## Run auth invitation flow
 run-auth-delete: ## Run auth delete flow
 	. $(VENV_DIR)/bin/activate && \
 	$(AUTH_MODULE_RUNNER) auth.auth_delete_flow
+
+test-delta-restore: ## Run delta restore static/sql smoke harness
+	./tests/delta_restore/run_tests.sh
 
 
 #################################################################################

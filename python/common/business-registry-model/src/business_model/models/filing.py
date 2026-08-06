@@ -769,14 +769,11 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_status',
             'business_id',
             'colin_only',
-            'court_order_date',
-            'court_order_effect_of_order',
-            'court_order_file_number',
             'deletion_locked',
             'hide_in_ledger',
             'lear_only',
             'effective_date',
-            'order_details',
+            'details',
             'paper_only',
             'parent_filing_id',
             'payment_account',
@@ -812,10 +809,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     effective_date = db.Column('effective_date', db.DateTime(timezone=True), default=func.now())
     submitter_roles = db.Column('submitter_roles', db.String(200))
     tech_correction_json = db.Column('tech_correction_json', JSONB)
-    court_order_file_number = db.Column('court_order_file_number', db.String(20))
-    court_order_date = db.Column('court_order_date', db.DateTime(timezone=True), default=None)
-    court_order_effect_of_order = db.Column('court_order_effect_of_order', db.String(500))
-    order_details = db.Column(db.String(2000))
+    details = db.Column(db.String(2000))
     deletion_locked = db.Column('deletion_locked', db.Boolean, unique=False, default=False)
     approval_type = db.Column('approval_type', db.String(15))
     application_date = db.Column('application_date', db.DateTime(timezone=True))
@@ -840,6 +834,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
 
     colin_event_ids = db.relationship('ColinEventId', lazy='select')
 
+    court_orders = db.relationship('CourtOrder', lazy='dynamic')
     comments = db.relationship('Comment', lazy='dynamic')
     documents = db.relationship('Document', lazy='dynamic')
     filing_party_roles = db.relationship('PartyRole', lazy='dynamic')

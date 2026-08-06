@@ -13,6 +13,7 @@ import base64
 import copy
 import json
 import os
+import re
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
@@ -76,13 +77,41 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_static_report(self):
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
-        from legal_api.services import MinioService
-        response = MinioService.get_file(document.file_key)
+        # DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
+        # legacy Minio keys (UUIDs) and bare DRS ids ("DS...") do not match.
+        if match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key or ""):
+            # the DRS applies the certified copy stamp itself for configured combinations
+            # (e.g. COOP-COSD), so DRS-served documents must not be stamped again here
+            from legal_api.services import doc_service
+            drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
+            document_data, status = drs_response.content, drs_response.status_code
+        else:
+            from legal_api.services import MinioService
+            minio_response = MinioService.get_file(document.file_key)
+            document_data, status = minio_response.data, minio_response.status
+            if self._report_key == "affidavit" and status == HTTPStatus.OK:
+                # legacy storage never stamps, so the registrar's certification stamp is applied here
+                document_data = self._certify_uploaded_document(document_data)
         return current_app.response_class(
-            response=response.data,
-            status=response.status,
+            response=document_data,
+            status=status,
             mimetype="application/pdf"
         )
+
+    def _certify_uploaded_document(self, document_bytes: bytes) -> bytes:
+        """Apply the registrar's certification stamp when the document is downloaded.
+
+        Documents are never stamped on upload; the stamp is applied to each
+        served copy and the stored original is left unchanged.
+        """
+        from legal_api.services import PdfService
+        from legal_api.services.pdf_service import RegistrarStampData
+        business = self._business
+        if not business and self._filing.business_id:
+            business = Business.find_by_internal_id(self._filing.business_id)
+        identifier = business.identifier if business else self._filing.temp_reg
+        stamp_data = RegistrarStampData(self._filing.filing_date, identifier)
+        return PdfService().create_certified_copy(document_bytes, stamp_data).read()
 
     def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
@@ -93,6 +122,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         report_meta: dict = ReportMeta.reports.get(self._report_key)
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
+        if self._report_key == "specialResolution" and self._filing.filing_type != "specialResolution":
+            # A special resolution accompanying another filing (e.g. a coop dissolution) must not share
+            # the FILING report type with that filing's own report, or the DRS lookup below serves
+            # whichever of the two documents was stored first (#34299).
+            report_meta = {**report_meta, "reportType": ReportTypes.FILING_2.value}
         report_type = report_meta.get("reportType")
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
@@ -346,7 +380,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_restoration_data(filing)
         elif self._report_key == "restoration":
             self._format_restoration_data(filing)
-        elif self._report_key in {"letterOfConsent", "letterOfConsentAmalgamationOut"}:
+        elif self._report_key in {"letterOfConsent", "letterOfConsentAmalgamationOut", "consentContinuationOut"}:
             self._format_consent_continuation_amalgamation_out_data(filing)
         elif self._report_key == "correction":
             self._format_correction_data(filing)
@@ -411,10 +445,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
         if is_corp_incorp and incorp_compparty_stmnt_enabled:
-            if self._filing.submitter_roles in [UserRoles.staff]:
+            # staff and API gateway users supply the completing party name via header certifiedBy;
+            # for API users the token resolves to the account name, not a user name, so it can't be
+            # sourced from the submitter (API users are identified by the jwt loginSource, not a role).
+            api_login_source = "API_GW"  # jwt loginSource of an API gateway user
+            submitter = self._filing.filing_submitter
+            if (self._filing.submitter_roles == UserRoles.staff
+                    or (submitter and submitter.login_source == api_login_source)):
                 filing["header"]["certifiedBy"] = self._filing.filing_json["filing"]["header"].get("certifiedBy")
             else:
-                filing["header"]["certifiedBy"] = self._filing.filing_submitter.display_name
+                filing["header"]["certifiedBy"] = submitter.display_name
 
             if not filing["header"]["certifiedBy"]:
                 raise BusinessException(
@@ -1496,7 +1536,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
-        filing_source = "specialResolution" if self._filing.filing_type == "specialResolution" else "correction"
+        # coop dissolutions carry a specialResolution section alongside the dissolution filing, so
+        # source the resolution from it rather than defaulting to the (empty) correction section
+        filing_source = "specialResolution" \
+            if self._filing.filing_type == "specialResolution" or filing.get("specialResolution") \
+            else "correction"
         filing["header"]["displayName"] = display_name
         resolution_date_str = filing.get(filing_source, {}).get("resolutionDate", None)
         signing_date_str = filing.get(filing_source, {}).get("signingDate", None)
@@ -1949,6 +1993,11 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "fileName": "letterOfConsentAmalgamationOut",
             "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
+        "consentContinuationOut": {
+            "filingDescription": "Continue Out Application",
+            "fileName": "consentContinuationOut",
+            "reportType": ReportTypes.FILING.value
+        },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",
             "fileName": "letterOfAgmExtension",
@@ -2004,8 +2053,5 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "affidavit": {
             "documentType": "affidavit"
-        },
-        "uploadedCourtOrder": {
-            "documentType": "court_order"
         }
     }

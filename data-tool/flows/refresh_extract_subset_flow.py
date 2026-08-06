@@ -294,6 +294,8 @@ def extract_pull_flow(
         corp_file = str(feed_path)
     result: subprocess.CompletedProcess | None = None
     print(f'Running CPRD subset extract generator {corp_file}')
+    # The generated master owns the terminal address-transpose invocation.
+    # Do not add a second flow-level invocation here.
     try:
         result = run_cprd_subset_extract_generator(
             corp_file=corp_file,

@@ -58,6 +58,7 @@ COD['directors'][1]['actions'] = ['appointed']
 CORRECTION_COD = copy.deepcopy(CORRECTION_COL)
 CORRECTION_COD['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
 CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
+CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2026-07-30'
 
 
 def _assert_common_data(business: Business, filing: Filing):
@@ -155,3 +156,5 @@ def test_process_correction_filing_with_relationships(app, session, mocker, fili
             assert role.party.first_name == expected_given_name.upper()
             assert role.party.mailing_address.street == expected_mailing_street
             assert role.party.delivery_address.street == expected_delivery_street
+            if filing_name == 'changeOfDirectors':
+                assert role.appointment_date.date().isoformat() == correction_data['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate']

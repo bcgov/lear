@@ -255,7 +255,7 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
     assert filing_meta.dissolution['dissolutionDate'] == dissolution_date_str
 
     final_filing = Filing.find_by_id(filing_id)
-    assert filing_json['filing']['dissolution']['details'] == final_filing.order_details
+    assert filing_json['filing']['dissolution']['details'] == final_filing.details
 
 
 @pytest.mark.parametrize('dissolution_type', [

@@ -19,7 +19,7 @@ install:  ## Install python virtual environment
 	pip install -Ur requirements.txt
 
 run: ## Run the project in local
-	. .venv/bin/activate && python src/test_connectivity.py
+	. .venv/bin/activate && python src/test_connectivity.py && python src/refresh_extract_subset_flow.py
 
 build:
 	docker build ${DOCKER_PLATFORM} -t $(DOCKER_NAME):$(TAG_NAME) $(CURRENT_ABS_DIR) \

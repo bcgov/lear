@@ -56,17 +56,24 @@ def _mock_nr_response(legal_type):
     })
 
 
+def _get_continuation_in_template():
+    """Return the Amalgamation Application filing template."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['business'] = {'identifier': 'T1234567'}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    return filing
+
+
 def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
     """Assert that nr is invalid."""
     monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         )
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     invalid_nr_response = {
@@ -110,11 +117,7 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
         Business.LegalTypes.ULC_CONTINUE_IN.value: 1,
         Business.LegalTypes.CCC_CONTINUE_IN.value: 3
     }
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
@@ -150,16 +153,7 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
 )
 def test_continuation_in_parties_invalid_role(mocker, app, session, parties, expected_msg):
     """Assert that continuation in party roles can be validated for invalid roles."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {
-        'name': 'continuationIn',
-        'date': '2019-04-08',
-        'certifiedBy': 'full name',
-        'authorizationReceived': True,
-        'email': 'no_one@never.get',
-        'filingId': 1
-    }
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
     filing['filing']['continuationIn']['nameRequest']['legalType'] = Business.LegalTypes.CONTINUE_IN.value
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -359,11 +353,7 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -652,11 +642,7 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -726,11 +712,7 @@ def test_continuation_in_court_orders(mocker, app, session,
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -772,11 +754,7 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
 
@@ -805,11 +783,7 @@ def test_validate_business_in_colin(mocker, app, session, monkeypatch):
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
@@ -825,11 +799,7 @@ def test_validate_business_in_colin(mocker, app, session, monkeypatch):
 
 def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session):
     """Assert continuation EXPRO business with founding date mismatch."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     
     # Add the EXPRO business data to simulate a mismatch in founding date
     filing['filing']['continuationIn']['business'] = {
@@ -857,11 +827,7 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
 
 def test_validate_business_in_colin_founding_date_match(mocker, app, session):
     """Assert continuation EXPRO business with matching founding date."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     
     # Add the EXPRO business data with a matching founding date
     filing['filing']['continuationIn']['business'] = {
@@ -936,11 +902,7 @@ def test_validate_before_and_after_approval(mocker, app, session, test_status, i
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     )
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = is_approved
     del filing['filing']['continuationIn']['offices']
     del filing['filing']['continuationIn']['parties']
@@ -991,11 +953,7 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -1040,11 +998,7 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
             'legal_api.services.flags.value',
             lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -1078,11 +1032,18 @@ now = date(2020, 9, 17)
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
         ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
-            HTTPStatus.UNPROCESSABLE_CONTENT, [{
-                'path': 'filing/header/effectiveDate',
-                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
-                'context': []
-            }]),
+            HTTPStatus.UNPROCESSABLE_CONTENT, [
+                {
+                    'path': 'filing/header/effectiveDate',
+                    'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                    'context': []
+                },
+                {
+                    'path': 'filing/header/effectiveDate',
+                    'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                    'context': []
+                }
+            ]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
                 'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
@@ -1101,15 +1062,11 @@ def test_validate_continuation_in_effective_date(mocker, app, session, jwt, test
             'legal_api.services.flags.value',
             lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         )
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
+    filing = _get_continuation_in_template()
 
     if effective_date is not None:
         filing['filing']['header']['effectiveDate'] = effective_date
 
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}

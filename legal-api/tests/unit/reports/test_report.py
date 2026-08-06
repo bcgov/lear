@@ -71,7 +71,8 @@ def create_report(identifier, entity_type, report_type, filing_type, template):
         original_filing = factory_completed_filing(business, original_filing_json)
         filing_json['filing']['correction']['correctedFilingId'] = original_filing.id
     if report_type == 'specialResolution' and filing_type != 'specialResolution':
-        filing_json['specialResolution'] = SPECIAL_RESOLUTION
+        # coop dissolutions carry the resolution in a specialResolution section under the filing
+        filing_json['filing']['specialResolution'] = SPECIAL_RESOLUTION
     filing = factory_completed_filing(business, filing_json)
 
     report = Report(filing)
@@ -253,6 +254,37 @@ def test_get_pdf(session, mocker, test_name, identifier, entity_type, report_typ
     assert filename
     template = report._get_template()
     assert template
+
+
+def test_special_resolution_sourced_from_dissolution_filing(session):
+    """Assert the special resolution report for a coop dissolution sources the resolution from the specialResolution section (#32963).
+
+    Before the fix the resolution was read from the (empty) correction section, leaving the resolution/signing
+    dates unformatted and the resolution content missing.
+    """
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type='CP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing_json['filing']['dissolution']['dissolutionType'] = 'voluntary'
+    filing_json['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'specialResolution'
+
+    filing_data = copy.deepcopy(filing.filing_json['filing'])
+    filing_data['header']['filingId'] = filing.id
+    report._format_special_resolution(filing_data)
+
+    # dates come from the specialResolution section and are formatted (not left as raw ISO strings)
+    assert filing_data['specialResolution']['resolutionDate'] == 'January 10, 2021'
+    assert filing_data['specialResolution']['signingDate'] == 'January 10, 2021'
 
 
 def test_set_directors_flags_address_changed_without_officer_id(session, mocker):
@@ -574,6 +606,44 @@ def test_set_corp_flag(session, test_name, identifier, entity_type, expected_is_
 
     assert filing['business']['isCorp'] == expected_is_corp, \
         f'{test_name}: expected isCorp={expected_is_corp} for legalType={entity_type}'
+
+
+@pytest.mark.parametrize('test_name, submitter_role, login_source, expected_certified_by', [
+    ('staff_uses_header', 'staff', 'IDIR', 'Header Name'),
+    ('api_user_uses_header', None, 'API_GW', 'Header Name'),
+    ('public_user_uses_submitter', None, 'BCSC', 'Submitter Name'),
+])
+def test_set_completing_party_header_certified_by(session, test_name, submitter_role,
+                                                  login_source, expected_certified_by):
+    """Staff and API users use the header certifiedBy; API users are identified by the jwt loginSource."""
+    from business_model.models import User
+    from legal_api.services import flags
+    from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
+
+    template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    template['filing']['header']['certifiedBy'] = 'Header Name'
+    report = create_report(
+        identifier='BC1234567',
+        entity_type='BEN',
+        report_type='incorporationApplication',
+        filing_type='incorporationApplication',
+        template=template
+    )
+    submitter = User()
+    submitter.firstname = 'Submitter'
+    submitter.lastname = 'Name'
+    submitter.login_source = login_source
+    report._filing.submitter_roles = submitter_role
+    report._filing.filing_submitter = submitter
+
+    filing = report._filing.filing_json['filing']
+    filing['flags'] = {}
+
+    with patch.object(flags, 'value', return_value=['incorporationApplication-completingParty']):
+        report._set_completing_party(filing)
+
+    assert filing['flags']['incorporationApplication_completingParty'] is True
+    assert filing['header']['certifiedBy'] == expected_certified_by
 
 
 def _create_previous_liquidation_report(business):
@@ -1084,3 +1154,143 @@ def test_set_amalgamating_businesses_foreign_non_a_prefix(session, monkeypatch):
     assert entry['legalName'] == foreign_name
     assert entry['jurisdiction'] == 'United Kingdom'
     assert colin_call_count['count'] == 0
+
+
+@pytest.mark.parametrize('filing_type,expected_report_type', [
+    ('dissolution', 'FILING-2'),
+    ('specialResolution', 'FILING'),
+])
+def test_special_resolution_drs_report_type(session, filing_type, expected_report_type):
+    """Assert a special resolution accompanying another filing uses a distinct DRS report type (#34299).
+
+    When stored with the same FILING report type as the filing's own report, the DRS-first lookup
+    serves whichever of the two documents was stored first.
+    """
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type='CP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_type
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    if filing_type == 'dissolution':
+        filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+        filing_json['filing']['dissolution']['dissolutionType'] = 'voluntary'
+    filing_json['filing']['specialResolution'] = copy.deepcopy(SPECIAL_RESOLUTION)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._report_key = 'specialResolution'
+    report._document_service = MagicMock()
+    report._document_service.get_filing_report_by_filing_id.return_value = (b'pdf', HTTPStatus.OK)
+
+    response = report._get_report()
+
+    report._document_service.get_filing_report_by_filing_id.assert_called_once_with(
+        identifier, filing.id, expected_report_type)
+    assert response.status_code == HTTPStatus.OK
+
+
+def _make_static_report_filing(identifier, document_type, file_key):
+    """Create a completed coop dissolution filing with an uploaded document row."""
+    from business_model.models import Document
+
+    business = factory_business(identifier=identifier, entity_type='CP')
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing = factory_completed_filing(business, filing_json, filing_date=LegislationDatetime.now())
+
+    document = Document(type=document_type, file_key=file_key, filing_id=filing.id, business_id=business.id)
+    db.session.add(document)
+    db.session.commit()
+    return filing
+
+
+def _make_pdf_bytes(text, pages=1):
+    """Build a minimal pdf with the given number of pages."""
+    import io as _io
+
+    from reportlab.lib.pagesizes import letter as _letter
+    from reportlab.pdfgen import canvas as _canvas
+
+    buffer = _io.BytesIO()
+    can = _canvas.Canvas(buffer, pagesize=_letter)
+    for page_num in range(pages):
+        can.drawString(100, 700, f'{text} page {page_num + 1}')
+        can.showPage()
+    can.save()
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize('test_name,file_key,expect_drs', [
+    ('drs_key', 'COOP-DS0000101951', True),
+    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
+    ('legacy_bare_drs_id', 'DS0000100800', False),
+])
+def test_get_static_report_drs_dispatch(session, test_name, file_key, expect_drs):
+    """Assert static report documents are served from the DRS or Minio based on the file key shape (#34300)."""
+    from legal_api.services import MinioService, doc_service
+
+    filing = _make_static_report_filing('CP1234567', 'coop_rules', file_key)
+
+    report = Report(filing)
+    drs_response = MagicMock(content=b'drs-pdf', status_code=HTTPStatus.OK)
+    minio_response = MagicMock(data=b'minio-pdf', status=HTTPStatus.OK)
+    with patch.object(doc_service, 'get_document', return_value=drs_response) as mock_drs, \
+            patch.object(MinioService, 'get_file', return_value=minio_response) as mock_minio:
+        response = report.get_pdf(report_type='certifiedRules')
+
+    if expect_drs:
+        mock_drs.assert_called_once_with('DS0000101951', 'COOP', doc_binary=True)
+        mock_minio.assert_not_called()
+        assert response.data == b'drs-pdf'
+    else:
+        mock_drs.assert_not_called()
+        mock_minio.assert_called_once_with(file_key)
+        assert response.data == b'minio-pdf'
+
+
+@pytest.mark.parametrize('test_name,file_key,expect_stamp', [
+    # the DRS applies its own certified copy stamp for configured combinations (e.g. COOP-COSD),
+    # so the api must serve DRS bytes unmodified to avoid double stamping (#34424)
+    ('drs_backed', 'COOP-DS0000101951', False),
+    ('minio_backed', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', True),
+])
+def test_affidavit_static_report_certification(session, test_name, file_key, expect_stamp):
+    """Assert the registrar's certification stamp is applied only to legacy storage-backed affidavits."""
+    import io as _io
+
+    from pypdf import PdfReader
+
+    from legal_api.services import MinioService, doc_service
+
+    identifier = 'CP1234567'
+    filing = _make_static_report_filing(identifier, 'affidavit', file_key)
+    # two pages so the stamp can be shown to land on the first page only
+    pdf_bytes = _make_pdf_bytes('Affidavit body', pages=2)
+
+    drs_response = MagicMock(content=pdf_bytes, status_code=HTTPStatus.OK)
+    minio_response = MagicMock(data=pdf_bytes, status=HTTPStatus.OK)
+    with patch.object(doc_service, 'get_document', return_value=drs_response), \
+            patch.object(MinioService, 'get_file', return_value=minio_response):
+        response = Report(filing).get_pdf(report_type='affidavit')
+
+    if not expect_stamp:
+        # DRS-served bytes pass through untouched (the DRS stamp, when configured, is already in them)
+        assert response.get_data() == pdf_bytes
+        return
+    stamped = PdfReader(_io.BytesIO(response.get_data()))
+    text = stamped.get_page(0).extract_text()
+    assert 'Affidavit body page 1' in text
+    # The stamp's text half, drawn by create_registrars_stamp.
+    assert 'Filed on' in text
+    assert identifier in text
+    # The "CERTIFIED COPY ... Registrar of Companies" box and the registrar's name are pixels
+    # inside the registrar_signature_and_text image, not pdf text, so they cannot be asserted
+    # via text extraction; assert the image itself instead. The source pdf has no images, so
+    # the single image on page 1 is the stamp, and none on page 2 proves first-page-only.
+    assert len(stamped.pages[0].images) == 1
+    assert len(stamped.pages[1].images) == 0

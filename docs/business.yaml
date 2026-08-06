@@ -3825,6 +3825,267 @@ paths:
         - $ref: '#/components/parameters/accountId'
       x-internal: false
     parameters: []
+  '/documents/client/{filingType}/{entityType}/{documentType}':
+    post:
+      tags:
+        - document
+      summary: Save a new document.
+      description: <p>Upload a document for the first time. Information associated with the document may be submitted as any of the following request parameters<ul><li>businessIdentifier</li><li>filingDate</li><li>filename</li><li>filingId</li></ul>The response JSON key value is the unique identifier for the document.</p>
+      operationId: post-document
+      parameters:
+        - schema:
+            type: string
+          description: API filing type that the client submitted document belongs to.
+          name: filingType
+          in: path
+          required: true
+        - schema:
+            type: string
+          description: API business entity type that the client submitted document belongs to.
+          name: entityType
+          in: path
+          required: true
+        - schema:
+            type: string
+          description: API document type for the client submitted document.
+          name: documentType
+          in: path
+          required: true
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/contentType'
+        - schema:
+            type: string
+          description: The identifier of an entity such as a BC Company. Optionally submitted if available.
+          name: businessIdentifer
+          in: query
+          required: false
+          example: BC0799342
+        - schema:
+            type: string
+          description: The document file name. Optionally submitted if available.
+          name: filename
+          in: query
+          required: false
+        - schema:
+            type: integer
+          description: The unique API filing id. Optionally submitted if available.
+          name: filingId
+          in: query
+          required: false
+      requestBody:
+        content:
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Created
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document_summary'
+              examples:
+                /documents/client/specialResolution/CP/coop_rules/post:
+                  summary: Save a new document response.
+                  value:
+                    key: 'COOP-DS0000101951'
+                    documentServiceId: 'DS0000101951'
+                    consumerFilename: ''
+                    consumerDocumentId: '0100000683'
+                    consumerIdentifer: 'CP02345678'
+                    consumerReferenceId: ''
+                    documentType: COOP
+                    documentTypeDescription: Cooperative Rules
+                    documentClass: COOP
+                    createDateTime: '2024-08-01T22:58:45+00:00'
+                    documentURL: 'https://storage.googleapis.com/business_documents/2024/08/03/corr-0100001000.pdf?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=ppr-dev-sa%40eogruh-dev.iam.gserviceaccount.com%2F20240717%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240717T222117Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=382451ed1016bdc123083a58aa2358a713628e86d3730d43301e3b7d0e088dc1762ac6be3d56fe07193c02be82aab0c9b05fef52f4919292df470ffc3298442d4e6eda90a94b7fa564d2661f43eeec33a65f72314e9a1376e89adf1fc0b5f932cd72b30c921a44eac68cac82fdd5583474de5076715ac6738918f758f2c4abb71413efeb348604baf811cd14ecb005f6977270726094a1ee0d1060f786450f6b1ef7f1251c39376b4d80f438056b6b1bed57cd0b44d4616300ae031cbfc7703b61592b2519a2d01688bafd4d24ee83fecd0a425daf50c8319d94c4a8862fde89eca86a2dd974d01e5a7b7f7343cddefb70a1d1d61d27e1bb53b400d039e08cb2'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+  '/documents/client/{documentKey}':
+    patch:
+      tags:
+        - document
+      summary: Update information associated with an existing client document.
+      description: '<p>Update document record properties for an existing document identified by a document key.</p>'
+      operationId: patch-document
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/documentKey'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Document_update'
+            examples:
+              business-example:
+                summary: Update a business document request.
+                value:
+                  businessIdentifer: BC1500943
+                  filingId: 19140001
+                  filingDate: '2024-08-04T23:02:02+00:00'
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document_response'
+              examples:
+                /documents/client/CORP-DS0100001003/patch:
+                  summary: Update a business document response.
+                  value:
+                    message: 'Document record CORP-DS0100001003 updated successfully.'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    put:
+      tags:
+        - document
+      summary: Add or replace an existing document.
+      description: <p>Add or replace the existing document record specified by the document key with the payload document.</p>
+      operationId: put-document
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/contentType'
+        - $ref: '#/components/parameters/documentKey'
+      requestBody:
+        content:
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '201':
+          description: Created
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document_response'
+              examples:
+                /documents/client/CORP-DS0100001003/patch:
+                  summary: Replace a business document response.
+                  value:
+                    message: 'Document CORP-DS0100001003 replaced successfully.'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags:
+        - document
+      summary: Permanently delete an existing document.
+      description: '<p>Permanently delete from document storage the existing document associated record specified by the document key. If no document exists (previously deleted or never uploaded), a 400 status code is returned.</p>'
+      operationId: delete-document
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/documentKey'
+      responses:
+        '200':
+          description: Ok
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document_response'
+              examples:
+                /documents/client/CORP-DS0100001003/patch:
+                  summary: Delete a business document response.
+                  value:
+                    message: 'Document CORP-DS0100001003 deleted successfully.'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    get:
+      tags:
+        - document
+      summary: Retrieve an existing document.
+      description: '<p>Retrieve from document storage the existing document specified by the document key. If no document exists (previously deleted or never uploaded), a 400 status code is returned.</p>'
+      operationId: get-document
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+        - $ref: '#/components/parameters/contentType'
+        - $ref: '#/components/parameters/documentKey'
+      responses:
+        '200':
+          description: Ok
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 components:
   schemas:
     Address:
@@ -4102,9 +4363,9 @@ components:
               type: string
               title: The type of Amalgamation
               enum:
-              - regular
-              - vertical
-              - horizontal
+                - regular
+                - vertical
+                - horizontal
             amalgamatingBusinesses:
               type: array
               items:
@@ -4115,9 +4376,9 @@ components:
                   role:
                     type: string
                     enum:
-                    - amalgamating
-                    - holding
-                    - primary
+                      - amalgamating
+                      - holding
+                      - primary
                   identifier:
                     type: string
                   foreignJurisdiction:
@@ -5531,6 +5792,156 @@ components:
               example: '***Item not used***'
       required:
         - dissolution
+    Document_update:
+      title: Document_update
+      type: object
+      description: '<p>For PATCH requests, holds information to update for a document identified by documentKey.</p>'
+      properties:
+        businessIdentifer:
+          type: string
+          description: The identifier of an entity such as a BC Company to be associated with the stored document.
+          example: BC1500943
+        filingDate:
+          type: string
+          format: date-time
+          description: 'The fiing date or date and time associated with the document. If a date is submitted, the time value is set to 12 PM in the local time zone.'
+          example: '2024-07-30T19:00:00+00:00'
+        filename:
+          type: string
+          description: The file name associated with the stored document.
+          example: coop_rules_2026.pdf
+        filingId:
+          type: integer
+          description: The unique identifier for the API filing to be associated with the stored document.
+          example: 19140001
+      x-examples:
+        filer-example:
+          businessIdentifer: BC1500943
+          filename: coop_rules_2026.pdf
+          filingId: 19140001
+          filingDate: '2024-08-04'
+    Document_response:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message indicating the status of the request.
+      description: Object to hold an API document request response.
+      required:
+        - message
+      x-examples:
+        example-1:
+          message: 'Document {document_key} deleted successfully.'
+    Document_summary:
+      title: Document_summary
+      type: object
+      description: <p>Holds information about a single document. For all documents the unique identifier is the key.</p>
+      properties:
+        key:
+          type: string
+          description: 'Generated by the API, the business API unique identifier of the document.'
+        documentServiceId:
+          type: string
+          description: 'Generated by the DRS, the DRS unique identifier of the document.'
+        consumerDocumentId:
+          type: string
+          description: >-
+            The identifier of one or more documents associated with the consumer
+            application entity. Optionally submitted with either a POST or a PATCH
+            request, if not available the response returns the documentServiceId as
+            this value.
+          example: '80164321'
+        consumerIdentifer:
+          type: string
+          description: >-
+            The identifier of an entity such as a BC Company or a manufactured home
+            in the consumer application. Optionally submitted with POST or PATCH
+            requests.
+          example: 'BC1094361'
+        consumerFilename:
+          type: string
+          description: >-
+            The consumer application full filename of the document for display and
+            downloading. Not included if consumerFilenames is present.
+          example: coop_rules_2026.pdf
+        documentType:
+          type: string
+          description: The DRS document type.
+        documentTypeDescription:
+          type: string
+          description: >-
+            A description of the document type, generated by the system and returned
+            in the response.
+        documentClass:
+          type: string
+          description: The DRS document class.
+        createDateTime:
+          type: string
+          format: date-time
+          description: >-
+            Generated by the system, the date and time the document is
+            saved/uploaded.
+          example: '2024-08-30T00:28:24+00:00'
+        consumerFilingDateTime:
+          type: string
+          format: date-time
+          description: >-
+            Provided by the consumer as a request parameter, the date and time the
+            of the consumer application registration/filing associated with the
+            document. If only a date is submitted, the time value is set to 12 PM in
+            the local time zone.
+          example: '2024-07-30T16:28:24+00:00'
+        documentURL:
+          type: string
+          description: A time limited link to download the document from storage.
+        description:
+          type: string
+          description: A free text description of the document or set of documents.
+          example: A description of the document.
+        consumerReferenceId:
+          type: string
+          description: >-
+            The business filing ID as the DRS unique identifier for the consumer application
+            transaction/filing/registration that is associated with a document
+            record.
+          example: '19140001'
+      required:
+        - key
+        - documentServiceId
+        - documentType
+        - documentClass
+        - createDateTime
+      x-examples:
+        mhr-example:
+          documentServiceId: '0100001003'
+          consumerFilename: Transport Permit.pdf
+          consumerDocumentId: '20164321'
+          consumerIdentifer: '094361'
+          documentType: TRAN
+          documentTypeDescription: MHR miscellaneous documents
+          documentClass: MHR
+          createDateTime: '2024-08-03T22:58:45+00:00'
+          consumerFilingDateTime: '2024-08-03T19:00:00+00:00'
+          documentURL: >-
+            https://storage.googleapis.com/mhr_documents/2024/08/03/corr-0100001003.pdf?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=ppr-dev-sa%40eogruh-dev.iam.gserviceaccount.com%2F20240717%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20240717T222117Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=host&X-Goog-Signature=382451ed1016bdc123083a58aa2358a713628e86d3730d43301e3b7d0e088dc1762ac6be3d56fe07193c02be82aab0c9b05fef52f4919292df470ffc3298442d4e6eda90a94b7fa564d2661f43eeec33a65f72314e9a1376e89adf1fc0b5f932cd72b30c921a44eac68cac82fdd5583474de5076715ac6738918f758f2c4abb71413efeb348604baf811cd14ecb005f6977270726094a1ee0d1060f786450f6b1ef7f1251c39376b4d80f438056b6b1bed57cd0b44d4616300ae031cbfc7703b61592b2519a2d01688bafd4d24ee83fecd0a425daf50c8319d94c4a8862fde89eca86a2dd974d01e5a7b7f7343cddefb70a1d1d61d27e1bb53b400d039e08cb2
+          scanningInformation:
+            scanDateTime: '2024-05-08'
+            accessionNumber: 91-0584-1234
+            batchId: '1254'
+            pageCount: 3
+            author: John Smith
+    Error_response:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Message identifying the source of the error.
+      description: Object to hold an API request error.
+      required:
+        - message
+      x-examples:
+        error-example-1:
+          message: 'Error creating document record.'
     filing_header:
       type: object
       description: 'Information identifying the filing. '
@@ -7486,6 +7897,47 @@ components:
         x-examples:
           notify_1:
             value: 362880
+  responses:
+    BadRequest:
+      description: 'The server cannot or will not process the request due to an apparent client error (e.g., malformed request syntax, size too large, invalid request message framing, or deceptive request routing).'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error_response'
+          examples:
+            example-1:
+              value:
+                message: Bad request message.
+    Unauthorized:
+      description: 'Similar to 403 Forbidden, but specifically for use when authentication is required and has failed or has not yet been provided. The user does not have valid authentication credentials for the target resource.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error_response'
+          examples:
+            example-1:
+              value:
+                message: Unauthorized message.
+    NotFound:
+      description: The requested resource could not be found but may be available in the future. Subsequent requests by the client are permissible.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error_response'
+          examples:
+            example-1:
+              value:
+                message: Not found message.
+    InternalServerError:
+      description: 'A generic error message, given when an unexpected condition was encountered and no more specific message is suitable.'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error_response'
+          examples:
+            example-1:
+              value:
+                message: Default message.
   parameters:
     accountId:
       name: Account-Id
@@ -7516,9 +7968,26 @@ components:
       description: The name of the legalName of the document.
       schema:
         type: string
+    documentKey:
+      name: documentKey
+      in: path
+      description: 'The unique identifier of an existing client document, returned in a successful POST response when the document is first stored. If an invalid id is submitted with a GET/PATCH/PUT then the response is a [404] status code.'
+      required: true
+      schema:
+        type: string
+      example: CORP-DS0100001023
+    contentType:
+      name: Content-Type
+      in: header
+      description: Specifies the format of the submitted document/file data.
+      required: false
+      schema:
+        type: string
 tags:
   - name: business
     description: business services
+  - name: document
+    description: document services
   - name: search
     description: search services
 security:

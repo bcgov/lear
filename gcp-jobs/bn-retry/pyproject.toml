@@ -1,6 +1,6 @@
 [project]
 name = "bn-retry"
-version = "0.1.1"
+version = "0.1.2"
 description = "BN15 retry job for firms in LEAR"
 authors = [{name = "vysakh-menon"}]
 license = {text = "BSD-3-clause"}

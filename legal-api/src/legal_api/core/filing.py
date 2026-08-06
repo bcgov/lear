@@ -23,12 +23,12 @@ from typing import TYPE_CHECKING, Final
 from flask import current_app, url_for
 from sqlalchemy import desc
 
-from business_model.models import Business, Document, DocumentType, UserRoles
+from business_model.models import Business, UserRoles
 from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
-from legal_api.services.authz import has_roles, is_competent_authority
+from legal_api.services.authz import has_any_roles, is_competent_authority
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
@@ -368,7 +368,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         with suppress(KeyError, TypeError):
             if (UserRoles.staff in submitter_roles
                 or UserRoles.system in submitter_roles) \
-                    and not has_roles(jwt, [UserRoles.staff, ]):
+                    and not has_any_roles(jwt, [UserRoles.staff, ]):
                 return True
         return False
 
@@ -439,13 +439,7 @@ class Filing:  # pylint: disable=too-many-public-methods
                 ledger_filing["correctionLink"] = f"{base_url}/{business.identifier}/filings/{filing.parent_filing.id}"
                 ledger_filing["correctionFilingStatus"] = filing.parent_filing.status
 
-            # add the collected meta_data
-            if filing.meta_data:
-                ledger_filing["data"] = filing.meta_data
-
-            # orders
-            if filing.court_order_file_number or filing.order_details:
-                Filing._add_ledger_order(filing, ledger_filing)
+            Filing._add_meta_data(filing, ledger_filing)
 
             core_filing: Filing = Filing()  # Filing.get_document_list needs a core Filing.
             core_filing._storage = filing  # pylint: disable=protected-access
@@ -474,92 +468,74 @@ class Filing:  # pylint: disable=too-many-public-methods
         }
 
     @staticmethod
-    def _add_ledger_order(filing: FilingStorage, ledger_filing: dict) -> dict:
-        court_order_data = {"fileNumber": filing.court_order_file_number}
-        if filing.court_order_date:
-            court_order_data["orderDate"] = filing.court_order_date
-        if filing.court_order_effect_of_order:
-            court_order_data["effectOfOrder"] = filing.court_order_effect_of_order
-        if filing.order_details:
-            court_order_data["orderDetails"] = filing.order_details
+    def _add_meta_data(filing: FilingStorage, ledger_filing: dict):
+        if not (meta_data := copy.deepcopy(filing.meta_data)):
+            meta_data = {}
 
-        if not ledger_filing.get("data"):
-            ledger_filing["data"] = {}
-        ledger_filing["data"]["order"] = court_order_data
+        court_order_data = {}
+        if court_order := meta_data.get("courtOrder"):
+            court_order.pop("files", None) # remove files if exists from court order
+            court_order_data = court_order
+            meta_data.pop("courtOrder") # remove courtOrder as it will be in ledger_filing["data"]["order"]
+
+        # None of the filings have both court_order.order_details and filing.details and UI depends on the orderDetails
+        # Future: would be ideal to sepatate the two and have both in the ledger_filing if they exist
+        if filing.details:
+            court_order_data["orderDetails"] = filing.details
+
+        if court_order_data:
+            meta_data["order"] = court_order_data
+
+        if meta_data:
+            ledger_filing["data"] = meta_data
 
     @staticmethod
-    def get_document_list(business,  # noqa: PLR0912, PLR0915 NOSONAR(S3776)
-                          filing,
-                          jwt: JwtManager) -> dict | None:
-        """Return a list of documents for a particular filing."""
-        no_output_filings = [
-            Filing.FilingTypes.CONVERSION.value,
-            Filing.FilingTypes.PUTBACKOFF.value,
-            Filing.FilingTypes.PUTBACKON.value,
-            Filing.FilingTypes.REGISTRARSNOTATION.value,
-            Filing.FilingTypes.REGISTRARSORDER.value,
-        ]
+    def _is_invalid_status_for_document_list(filing) -> bool:
+        return not filing or filing.status in (
+            Filing.Status.PAPER_ONLY,
+            Filing.Status.DRAFT,
+            Filing.Status.PENDING,
+            Filing.Status.AWAITING_REVIEW,
+            Filing.Status.CHANGE_REQUESTED,
+            Filing.Status.APPROVED,
+            Filing.Status.REJECTED
+        )
 
-        if not filing \
-            or filing.status in (
-                Filing.Status.PAPER_ONLY,
-                Filing.Status.DRAFT,
-                Filing.Status.PENDING,
-                Filing.Status.AWAITING_REVIEW,
-                Filing.Status.CHANGE_REQUESTED,
-                Filing.Status.APPROVED,
-                Filing.Status.REJECTED,
-            ):
-            return None
-
-        base_url = current_app.config.get("BUSINESS_API_GW_URL")
+    @staticmethod
+    def _get_identifier_for_doc_list(business, filing) -> str:
         identifier = business.identifier if business else filing.storage.temp_reg
         if not identifier and filing.storage.withdrawn_filing_id:
             withdrawn_filing = Filing.find_by_id(filing.storage.withdrawn_filing_id)
             identifier = withdrawn_filing.storage.temp_reg
+        return identifier
 
-        doc_url = url_for("API2.get_documents", identifier=identifier, filing_id=filing.id, legal_filing_name=None)
-        documents = {"documents": {}}
-        # for paper_only filings return and empty documents list
-        if filing.storage and filing.storage.paper_only:
-            return documents
-
-        if filing.storage and filing.storage.filing_type in no_output_filings:
-            return documents
-
-        user_is_ca = is_competent_authority(jwt)
-
-        # return a receipt for filings completed in our system (but not for ca users
-        # see https://github.com/bcgov/entity/issues/21881
-        if filing.storage and filing.storage.payment_completion_date:
-            if filing.filing_type == "courtOrder" and \
-                    (filing.storage.documents.filter(
-                        Document.type == DocumentType.COURT_ORDER.value).one_or_none()):
-                documents["documents"]["uploadedCourtOrder"] = f"{base_url}{doc_url}/uploadedCourtOrder"
-            documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
-        elif filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
+    @staticmethod
+    def _add_receipt(documents, filing, base_url, doc_url):
+        if (
+            filing.storage.payment_completion_date or
+            filing.storage.source == filing.storage.Source.COLIN.value
+        ):
             documents["documents"]["receipt"] = f"{base_url}{doc_url}/receipt"
 
-        filing_sub_type = filing.storage.filing_sub_type
-
-        receipt_only_filings = [
-            Filing.FilingTypes.CHANGEOFRECEIVERS.value,
-        ]
-
+    @staticmethod
+    def _has_no_outputs_except_receipt(filing) -> bool:
+        receipt_only_filings = [Filing.FilingTypes.CHANGEOFRECEIVERS.value]
         receipt_only_sub_filings = [
             (Filing.FilingTypes.CHANGEOFLIQUIDATORS.value, "liquidationReport"),
+            (Filing.FilingTypes.DISSOLUTION.value, "delay")
         ]
 
-        no_outputs_except_receipt = (
-            filing.filing_type in receipt_only_filings
-            or (filing.filing_type, filing_sub_type) in receipt_only_sub_filings
+        return (
+            filing.filing_type in receipt_only_filings or
+            (filing.filing_type, filing.storage.filing_sub_type) in receipt_only_sub_filings
         )
 
-        no_legal_filings_in_paid_withdrawn_status = no_outputs_except_receipt or filing.filing_type in [
+    @staticmethod
+    def _has_no_legal_filings_in_paid_or_withdrawn_status(filing, business) -> bool:
+        no_legal_filings = [
             Filing.FilingTypes.AMALGAMATIONOUT.value,
             Filing.FilingTypes.REGISTRATION.value,
             Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
-            Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
             Filing.FilingTypes.COURTORDER.value,
             Filing.FilingTypes.CONTINUATIONOUT.value,
             Filing.FilingTypes.AGMEXTENSION.value,
@@ -568,89 +544,145 @@ class Filing:  # pylint: disable=too-many-public-methods
             Filing.FilingTypes.CHANGEOFLIQUIDATORS.value,
             Filing.FilingTypes.CHANGEOFOFFICERS.value
         ]
-        no_outputs_except_receipt_dissolution = filing.storage.filing_sub_type == "delay"
-        no_legal_filings_in_paid_withdrawn_status_dissolution = (
-            filing.filing_type == Filing.FilingTypes.DISSOLUTION.value
-            and (business.legal_type in [Business.LegalTypes.SOLE_PROP.value,
-                                         Business.LegalTypes.PARTNERSHIP.value]
-                 or no_outputs_except_receipt_dissolution
+        return (
+            filing.filing_type in no_legal_filings or
+            (
+                filing.filing_type == Filing.FilingTypes.DISSOLUTION.value and
+                business.legal_type in (
+                    Business.LegalTypes.SOLE_PROP.value,
+                    Business.LegalTypes.PARTNERSHIP.value
+                )
             )
         )
-        if ((filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN) or
-                (filing.status == Filing.Status.COMPLETED and
-                    filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value))
-            and not (no_legal_filings_in_paid_withdrawn_status
-                      or no_legal_filings_in_paid_withdrawn_status_dissolution)
+
+    @staticmethod
+    def _populate_completed_filing_documents(  # noqa: PLR0913
+        documents,
+        filing,
+        business,
+        jwt,
+        base_url,
+        doc_url,
+        legal_filings
+    ):
+        legal_filings_copy = copy.deepcopy(legal_filings)
+        if (
+            filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
+            business.legal_type == Business.LegalTypes.COOP.value
         ):
-            documents["documents"]["legalFilings"] = \
-                [{filing.filing_type: f"{base_url}{doc_url}/{filing.filing_type}"}, ]
+            documents["documents"]["specialResolutionApplication"] = f"{base_url}{doc_url}/specialResolutionApplication"
+            if Filing.FilingTypes.CHANGEOFNAME.value in legal_filings:
+                legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
+            if Filing.FilingTypes.ALTERATION.value in legal_filings:
+                legal_filings_copy.remove(Filing.FilingTypes.ALTERATION.value)
+
+        no_legal_filings = [
+            Filing.FilingTypes.AMALGAMATIONOUT.value,
+            Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
+            Filing.FilingTypes.CONTINUATIONOUT.value,
+            Filing.FilingTypes.COURTORDER.value,
+            Filing.FilingTypes.AGMEXTENSION.value,
+            Filing.FilingTypes.AGMLOCATIONCHANGE.value,
+            Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
+            Filing.FilingTypes.CHANGEOFOFFICERS.value
+        ]
+        if filing.filing_type not in no_legal_filings:
+            documents["documents"]["legalFilings"] = [
+                {doc: f"{base_url}{doc_url}/{doc}"}
+                for doc in legal_filings_copy
+            ]
+
+        if (
+            filing.storage.transaction_id and
+            (business_rev := VersionedBusinessDetailsService.get_business_revision_obj(filing.storage, business.id))
+        ):
+            business = business_rev
+
+        adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
+        additional = {item for sublist in adds for item in sublist}
+        FilingMeta.alter_outputs(filing.storage, business, additional)
+        for doc in additional:
+            documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
+
+        is_staff_or_system = has_any_roles(jwt, [UserRoles.staff, UserRoles.system])
+        static_invisible = (
+            filing.storage.filing_type == Filing.FilingTypes.CONTINUATIONIN.value and
+            not is_staff_or_system
+        )
+        if (
+            not static_invisible and
+            (static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"))
+        ):
+            documents["documents"]["staticDocuments"] = static_docs
+
+    @staticmethod
+    def get_document_list(business, filing, jwt: JwtManager) -> dict | None:  # NOSONAR(S3776)
+        """Return a list of documents for a particular filing."""
+        if Filing._is_invalid_status_for_document_list(filing):
+            return None
+
+        base_url = current_app.config.get("BUSINESS_API_GW_URL")
+        identifier = Filing._get_identifier_for_doc_list(business, filing)
+        doc_url = url_for("API2.get_documents", identifier=identifier, filing_id=filing.id, legal_filing_name=None)
+
+        documents = {"documents": {}}
+        if filing.storage and filing.storage.paper_only:
+            return documents
+
+        no_output_filings = [
+            Filing.FilingTypes.CONVERSION.value,
+            Filing.FilingTypes.PUTBACKOFF.value,
+            Filing.FilingTypes.PUTBACKON.value,
+            Filing.FilingTypes.REGISTRARSNOTATION.value,
+            Filing.FilingTypes.REGISTRARSORDER.value
+        ]
+        if filing.storage and filing.storage.filing_type in no_output_filings:
+            return documents
+
+        user_is_ca = is_competent_authority(jwt)
+        Filing._add_receipt(documents, filing, base_url, doc_url)
+
+        only_receipt = Filing._has_no_outputs_except_receipt(filing)
+        no_legal_filings_before_completion = Filing._has_no_legal_filings_in_paid_or_withdrawn_status(filing, business)
+
+        is_paid_or_withdrawn = filing.status in (Filing.Status.PAID, Filing.Status.WITHDRAWN)
+        is_completed_notice_of_withdrawal = (
+            filing.status == Filing.Status.COMPLETED and
+            filing.filing_type == Filing.FilingTypes.NOTICEOFWITHDRAWAL.value
+        )
+
+        if (
+            (
+                is_paid_or_withdrawn and
+                not (only_receipt or no_legal_filings_before_completion)
+            ) or
+            is_completed_notice_of_withdrawal
+        ):
+            documents["documents"]["legalFilings"] = [
+                {filing.filing_type: f"{base_url}{doc_url}/{filing.filing_type}"}
+            ]
             if user_is_ca:
                 del documents["documents"]["receipt"]
             return documents
 
         legal_filings = filing.storage.meta_data.get("legalFilings") if filing.storage.meta_data else None
-        if not legal_filings and filing.storage and filing.storage.source == filing.storage.Source.COLIN.value:
+        if not legal_filings and filing.storage.source == filing.storage.Source.COLIN.value:
             legal_filings = [filing.filing_type]
+
         if (
             filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED) and
-            filing.storage.meta_data and
-            legal_filings
-            and not (no_outputs_except_receipt or no_outputs_except_receipt_dissolution)
+            filing.storage.meta_data and legal_filings and
+            not only_receipt
         ):
-            legal_filings_copy = copy.deepcopy(legal_filings)
-            if (
-                filing.filing_type == Filing.FilingTypes.SPECIALRESOLUTION.value and
-                business.legal_type == Business.LegalTypes.COOP.value
-            ):
-                # add special resolution application output
-                documents["documents"]["specialResolutionApplication"] = \
-                    f"{base_url}{doc_url}/specialResolutionApplication"
-                if Filing.FilingTypes.CHANGEOFNAME.value in legal_filings:
-                    # suppress change of name output for MVP since the design is outdated.
-                    legal_filings_copy.remove(Filing.FilingTypes.CHANGEOFNAME.value)
-                if Filing.FilingTypes.ALTERATION.value in legal_filings:
-                    # suppress alteration output for MVP since the design is outdated.
-                    legal_filings_copy.remove(Filing.FilingTypes.ALTERATION.value)
-
-            no_legal_filings = [
-                Filing.FilingTypes.AMALGAMATIONOUT.value,
-                Filing.FilingTypes.CONSENTAMALGAMATIONOUT.value,
-                Filing.FilingTypes.CONSENTCONTINUATIONOUT.value,
-                Filing.FilingTypes.CONTINUATIONOUT.value,
-                Filing.FilingTypes.COURTORDER.value,
-                Filing.FilingTypes.AGMEXTENSION.value,
-                Filing.FilingTypes.AGMLOCATIONCHANGE.value,
-                Filing.FilingTypes.TRANSPARENCY_REGISTER.value,
-                Filing.FilingTypes.CHANGEOFOFFICERS.value
-            ]
-            if filing.filing_type not in no_legal_filings:
-                documents["documents"]["legalFilings"] = \
-                        [{doc: f"{base_url}{doc_url}/{doc}"} for doc in legal_filings_copy]
-
-            # get extra outputs
-            if filing.storage.transaction_id and \
-                        (bus_rev_temp := VersionedBusinessDetailsService.get_business_revision_obj(
-                    filing.storage, business.id)):
-                business = bus_rev_temp
-
-            adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
-            additional = {item for sublist in adds for item in sublist}
-            FilingMeta.alter_outputs(filing.storage, business, additional)
-            for doc in additional:
-                documents["documents"][doc] = f"{base_url}{doc_url}/{doc}"
-
-            # continuationOut uploaded documents are visible to clients as well as staff
-            # (see https://github.com/bcgov/entity/issues/33788); all other static
-            # documents (e.g. continuationIn affidavit/authorization files) remain staff-only.
-            static_documents_visible = (
-                has_roles(jwt, [UserRoles.staff]) or
-                filing.storage.filing_type == Filing.FilingTypes.CONTINUATIONOUT.value
+            Filing._populate_completed_filing_documents(
+                documents,
+                filing,
+                business,
+                jwt,
+                base_url,
+                doc_url,
+                legal_filings
             )
-            if (
-                static_documents_visible and
-                (static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"))
-            ):
-                documents["documents"]["staticDocuments"] = static_docs
 
         if user_is_ca:
             del documents["documents"]["receipt"]

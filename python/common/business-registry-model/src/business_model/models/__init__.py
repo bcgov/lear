@@ -31,6 +31,7 @@ from .comment import Comment
 from .configuration import Configuration
 from .consent_continuation_out import ConsentContinuationOut
 from .corp_type import CorpType
+from .court_order import CourtOrder
 from .dc_business_user import DCBusinessUser
 from .dc_connection import DCConnection
 from .dc_credential import DCCredential
@@ -76,6 +77,7 @@ __all__ = (
     'Configuration',
     'ConsentContinuationOut',
     'CorpType',
+    'CourtOrder',
     'DCBusinessUser',
     'DCConnection',
     'DCCredential',

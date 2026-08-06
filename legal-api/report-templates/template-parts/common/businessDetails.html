@@ -120,6 +120,17 @@
                <div class="pt-2">{{recognition_date_time}}</div>
                <div class="pt-2">{{filing_date_time}}</div>
             </td>
+         {% elif header.reportType == 'consentContinuationOut' %}
+            <td>
+               <div class="bold">Incorporation Number:</div>
+               <div class="bold pt-2">Recognition Date and Time:</div>
+               <div class="bold pt-2">Filed Date and Time:</div>
+            </td>
+            <td>
+               <div>{{business.identifier}}</div>
+               <div class="pt-2">{{recognition_date_time}}</div>
+               <div class="pt-2">{{filing_date_time}}</div>
+            </td>
          {% elif header.name in ['continuationIn', 'incorporationApplication', 'restoration'] %}
             <td class="col-33">
                <div class="bold">Incorporation Number:</div>

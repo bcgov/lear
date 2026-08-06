@@ -1551,11 +1551,17 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
         ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00Z',
-            HTTPStatus.UNPROCESSABLE_CONTENT, [{
-                'error': "'2020-09-44T00:00:00Z' is not a 'date-time'",
-                'path': 'filing/header/effectiveDate',
-                'context': []
-            }]),
+            HTTPStatus.UNPROCESSABLE_CONTENT, [
+                {
+                    'error': "'2020-09-44T00:00:00Z' is not a 'date-time'",
+                    'path': 'filing/header/effectiveDate',
+                    'context': []
+                },
+                {
+                    'error': "'2020-09-44T00:00:00Z' is not a 'date-time'",
+                    'path': 'filing/header/effectiveDate',
+                    'context': []
+                }]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
                 'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
@@ -1571,7 +1577,6 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
 def test_validate_incorporation_effective_date(session, mocker, test_name, effective_date, expected_code, expected_msg):
     """Assert that validator validates effective date correctly."""
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 
                                        'certifiedBy': 'full name', 'authorizationReceived': True,
                                        'email': 'no_one@never.get', 'filingId': 1}
@@ -1736,7 +1741,6 @@ def test_incorporation_application_share_class_series_validation(mocker, app, se
                                                        has_rights_or_restrictions, has_series, should_pass):
     """Test share class/series validation in incorporation application."""
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
                                        'certifiedBy': 'full name', 'authorizationReceived': True,
                                        'email': 'no_one@never.get', 'filingId': 1}
@@ -1770,7 +1774,6 @@ def test_validate_incorporation_application_parties_delivery_address(mocker, app
                                                                      has_delivery_address, expected_code, expected_msg):
     """Test parties delivery address validation in incorporation application."""
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing'].pop('business')
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08',
                                        'certifiedBy': 'full name', 'authorizationReceived': True,
                                        'email': 'no_one@never.get', 'filingId': 1}

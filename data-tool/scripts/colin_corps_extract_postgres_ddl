@@ -42,6 +42,10 @@ create sequence if not exists excluded_email_domain_patterns_id_seq;
 
 alter sequence excluded_email_domain_patterns_id_seq owner to postgres;
 
+create sequence if not exists demigrated_filings_id_seq;
+
+alter sequence demigrated_filings_id_seq owner to postgres;
+
 create table if not exists address
 (
     addr_id                numeric(10)
@@ -755,6 +759,9 @@ create table if not exists mig_group
 alter table mig_group
     owner to postgres;
 
+create index if not exists idx_mig_group_delta_nk
+    on mig_group (name, target_environment, source_db);
+
 
 create table if not exists mig_batch
 (
@@ -776,6 +783,9 @@ create table if not exists mig_batch
 alter table mig_batch
     owner to postgres;
 
+create index if not exists idx_mig_batch_delta_nk
+    on mig_batch (mig_group_id, name, target_environment);
+
 
 create table if not exists mig_corp_batch
 (
@@ -790,6 +800,9 @@ create table if not exists mig_corp_batch
 
 alter table mig_corp_batch
     owner to postgres;
+
+create index if not exists idx_mig_corp_batch_delta_nk
+    on mig_corp_batch (mig_batch_id, corp_num);
 
 
 create table if not exists mig_corp_account
@@ -806,6 +819,9 @@ create table if not exists mig_corp_account
 
 alter table mig_corp_account
     owner to postgres;
+
+create index if not exists idx_mig_corp_account_delta_nk
+    on mig_corp_account (corp_num, target_environment, account_id, mig_batch_id);
 
 create table if not exists corp_processing
 (
@@ -1140,6 +1156,9 @@ create table if not exists corps_with_third_party
 alter table corps_with_third_party
     owner to postgres;
 
+create index if not exists idx_corps_with_third_party_delta_nk
+    on corps_with_third_party (corp_num, vendor);
+
 create table if not exists bar_corps
 (
     identifier          varchar,
@@ -1153,6 +1172,9 @@ create table if not exists bar_corps
 
 alter table bar_corps
     owner to postgres;
+
+create index if not exists idx_bar_corps_delta_nk
+    on bar_corps (identifier);
 
 
 -- helper so that `is_blank(text)` returns TRUE for '' (but NULL stays NULL)
@@ -1265,6 +1287,53 @@ CREATE TABLE IF NOT EXISTS exclude_corps (
 
 alter table exclude_corps
     owner to postgres;
+
+
+create table if not exists demigrated_filings (
+    id        integer default nextval('demigrated_filings_id_seq'::regclass) not null
+        constraint pk_demigrated_filings primary key,
+	corp_num character varying(10) NOT NULL,
+    filing_id integer not null
+        constraint unq_demigrated_filings_filing_id unique,
+	filing_date timestamp with time zone,
+    filing_type character varying(30),
+    filing_json jsonb,
+    payment_id character varying(4096),
+    transaction_id bigint,
+    business_id integer,
+    submitter_id integer,
+    status character varying(20),
+    payment_completion_date timestamp with time zone,
+    paper_only boolean,
+    completion_date timestamp with time zone,
+    effective_date timestamp with time zone,
+    source character varying(15),
+    parent_filing_id integer,
+    payment_status_code character varying(50),
+    temp_reg character varying(10),
+    payment_account character varying(30),
+    court_order_file_number character varying(20),
+    court_order_date timestamp with time zone,
+    court_order_effect_of_order character varying(500),
+    tech_correction_json jsonb,
+    colin_only boolean,
+    deletion_locked boolean,
+    order_details character varying(2000),
+    submitter_roles character varying(200),
+    meta_data jsonb,
+    filing_sub_type character varying(30),
+    approval_type character varying(15),
+    application_date timestamp with time zone,
+    notice_date timestamp with time zone,
+    resubmission_date timestamp with time zone,
+    hide_in_ledger boolean NOT NULL DEFAULT false,
+    withdrawn_filing_id integer,
+    withdrawal_pending boolean NOT NULL DEFAULT false,
+    lear_only boolean,
+    notes     varchar(600)
+);
+
+alter table demigrated_filings owner to postgres;
 
 CREATE INDEX if not exists ix_conv_event_event_id ON conv_event (event_id);
 
@@ -1441,3 +1510,171 @@ CREATE INDEX IF NOT EXISTS ix_mig_batch_target_env_dates
 CREATE INDEX IF NOT EXISTS ix_event_corpnum_eventid_cover
 	ON event (corp_num, event_id)
 	INCLUDE (event_type_cd, event_timerstamp);
+
+-- Associate standalone ID sequences with their owning columns.
+-- This allows pg_get_serial_sequence() and delta ID reallocation to resolve them.
+ALTER SEQUENCE public.affiliation_processing_id_seq
+	OWNED BY public.affiliation_processing.id;
+ALTER SEQUENCE public.auth_processing_id_seq
+	OWNED BY public.auth_processing.id;
+ALTER SEQUENCE public.auth_component_operation_id_seq
+	OWNED BY public.auth_component_operation.id;
+ALTER SEQUENCE public.corp_processing_id_seq
+	OWNED BY public.corp_processing.id;
+ALTER SEQUENCE public.colin_tracking_id_seq
+	OWNED BY public.colin_tracking.id;
+ALTER SEQUENCE public.mig_group_id_seq
+	OWNED BY public.mig_group.id;
+ALTER SEQUENCE public.mig_batch_id_seq
+	OWNED BY public.mig_batch.id;
+ALTER SEQUENCE public.mig_corp_batch_id_seq
+	OWNED BY public.mig_corp_batch.id;
+ALTER SEQUENCE public.mig_corp_account_id_seq
+	OWNED BY public.mig_corp_account.id;
+ALTER SEQUENCE public.bad_emails_id_seq
+	OWNED BY public.bad_emails.id;
+ALTER SEQUENCE public.excluded_email_domain_patterns_id_seq
+	OWNED BY public.excluded_email_domain_patterns.id;
+ALTER SEQUENCE public.demigrated_filings_id_seq 
+    OWNED BY public.demigrated_filings.id;
+
+-- Address-transpose routine module (psql-only include; see header of the
+-- included file). DbSchemaCLI/SQLAlchemy must NOT be pointed at this DDL.
+\ir colin_address_transpose_updates.sql
+
+-- Procedures for Dynamic Generation of FKs
+
+CREATE TABLE IF NOT EXISTS public.colin_dropped_fks
+(
+    table_schema name        NOT NULL,
+    table_name   name        NOT NULL,
+    conname      name        NOT NULL,
+    condef       text        NOT NULL,
+    dropped_at   timestamptz NOT NULL DEFAULT current_timestamp,
+    CONSTRAINT pk_colin_dropped_fks
+        PRIMARY KEY (table_schema, table_name, conname)
+);
+
+CREATE OR REPLACE PROCEDURE public.colin_fk_drop_all(
+    OUT dropped_count bigint
+)
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+    fk record;
+    constraint_definition text;
+BEGIN
+    dropped_count := 0;
+
+    FOR fk IN
+        SELECT
+            constraint_row.oid AS constraint_oid,
+            namespace.nspname AS table_schema,
+            relation.relname AS table_name,
+            constraint_row.conname
+        FROM pg_catalog.pg_constraint AS constraint_row
+        JOIN pg_catalog.pg_class AS relation
+          ON relation.oid = constraint_row.conrelid
+        JOIN pg_catalog.pg_namespace AS namespace
+          ON namespace.oid = relation.relnamespace
+        LEFT JOIN public.colin_dropped_fks AS dropped
+          ON dropped.table_schema = namespace.nspname
+         AND dropped.table_name = relation.relname
+         AND dropped.conname = constraint_row.conname
+        WHERE constraint_row.contype = 'f'
+          AND relation.relkind = 'r'
+          AND namespace.nspname = 'public'
+          AND dropped.conname IS NULL
+        ORDER BY namespace.nspname, relation.relname, constraint_row.conname
+    LOOP
+        -- Force pg_get_constraintdef() to schema-qualify every non-catalog
+        -- relation, independent of the caller's search_path. SET LOCAL is
+        -- intentionally repeated because each loop iteration commits.
+        PERFORM pg_catalog.set_config('search_path', 'pg_catalog', true);
+        constraint_definition := pg_catalog.pg_get_constraintdef(fk.constraint_oid);
+
+        INSERT INTO public.colin_dropped_fks (
+            table_schema,
+            table_name,
+            conname,
+            condef
+        )
+        VALUES (
+            fk.table_schema,
+            fk.table_name,
+            fk.conname,
+            constraint_definition
+        );
+
+        EXECUTE pg_catalog.format(
+            'ALTER TABLE %I.%I DROP CONSTRAINT %I',
+            fk.table_schema,
+            fk.table_name,
+            fk.conname
+        );
+
+        dropped_count := dropped_count + 1;
+        COMMIT;
+    END LOOP;
+END;
+$$;
+
+CREATE OR REPLACE PROCEDURE public.colin_fk_restore_all(
+    OUT restored_count bigint
+)
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+    fk record;
+    constraint_definition text;
+BEGIN
+    restored_count := 0;
+
+    FOR fk IN
+        SELECT
+            table_schema,
+            table_name,
+            conname,
+            condef
+        FROM public.colin_dropped_fks
+        ORDER BY table_schema, table_name, conname
+    LOOP
+        -- New captures contain qualified relation names. Keep public on a
+        -- controlled path as backward-compatible recovery for helper rows
+        -- captured by an earlier module version with unqualified names.
+        PERFORM pg_catalog.set_config('search_path', 'pg_catalog, public', true);
+
+        constraint_definition := pg_catalog.rtrim(fk.condef);
+        IF constraint_definition !~* '[[:space:]]+NOT[[:space:]]+VALID[[:space:]]*$' THEN
+            constraint_definition := constraint_definition || ' NOT VALID';
+        END IF;
+
+        EXECUTE pg_catalog.format(
+            'ALTER TABLE %I.%I ADD CONSTRAINT %I %s',
+            fk.table_schema,
+            fk.table_name,
+            fk.conname,
+            constraint_definition
+        );
+
+        DELETE FROM public.colin_dropped_fks
+        WHERE table_schema = fk.table_schema
+          AND table_name = fk.table_name
+          AND conname = fk.conname;
+
+        restored_count := restored_count + 1;
+        COMMIT;
+    END LOOP;
+END;
+$$;
+
+COMMENT ON TABLE public.colin_dropped_fks IS
+'Foreign key definitions captured while a COLIN extract refresh is in progress.';
+
+COMMENT ON PROCEDURE public.colin_fk_drop_all() IS
+'Captures and drops every foreign key on ordinary tables in public, committing each drop for resumability.';
+
+COMMENT ON PROCEDURE public.colin_fk_restore_all() IS
+'Restores captured foreign keys as NOT VALID constraints, committing and removing each saved definition on success.';

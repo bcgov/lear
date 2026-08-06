@@ -32,27 +32,45 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """File processing rules and actions for the court order filing."""
-from contextlib import suppress
-from datetime import datetime
-
 from business_model.models import Business, Document, DocumentType, Filing
 
 from business_filer.filing_meta import FilingMeta
+from business_filer.filing_processors.filing_components import filings
 
 
 def process(business: Business, court_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
     """Render the court order filing into the business model objects."""
-    court_order_filing.court_order_file_number = filing["courtOrder"].get("fileNumber")
-    court_order_filing.court_order_effect_of_order = filing["courtOrder"].get("effectOfOrder")
-    court_order_filing.order_details = filing["courtOrder"].get("orderDetails")
+    court_order_data = filing["courtOrder"]
+    filings.create_court_order(court_order_filing, court_order_data, filing_meta)
 
-    with suppress(IndexError, KeyError, TypeError, ValueError):
-        court_order_filing.court_order_date = datetime.fromisoformat(filing["courtOrder"].get("orderDate"))
-
-    if file_key := filing["courtOrder"].get("fileKey"):
+    file_list = []
+    if file_key := court_order_data.get("fileKey"):
+        # This if can be removed once court order filings start using files
         document = Document()
         document.type = DocumentType.COURT_ORDER.value
         document.file_key = file_key
         document.business_id = business.id
         document.filing_id = court_order_filing.id
         business.documents.append(document)
+        file_list.append({
+            "fileKey": document.file_key,
+            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf'
+        })
+    elif files := court_order_data.get("files", []):
+        for file in files:
+            document = Document()
+            document.type = DocumentType.COURT_ORDER.value
+            document.file_key = file.get("fileKey")
+            document.file_name = file.get("fileName")
+            file_list.append({
+                "fileKey": document.file_key,
+                "fileName": document.file_name
+            })
+            document.filing_id = court_order_filing.id
+            business.documents.append(document)
+
+    if file_list:
+        filing_meta.court_order = {
+            **filing_meta.court_order,
+            "files": file_list
+        }

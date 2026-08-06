@@ -59,7 +59,7 @@ def test_valid_correction(session, app, jwt, test_name, legal_type, identifier, 
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     f['filing']['correction']['type'] = "CLIENT"
     if test_name == 'COD':
-        CORRECTION_COD['filing']['correction']['relationships'].append({
+        f['filing']['correction']['relationships'].append({
             'entity': {
                 'givenName': 'Phillip Tandy',
                 'familyName': 'Miller',
@@ -152,3 +152,92 @@ def test_correction__corrected_filing_is_not_complete(session, app, jwt):
     # check that validation failed as expected
     assert HTTPStatus.BAD_REQUEST == err.code
     assert 'Corrected filing is not a valid filing.' == err.msg[0]['error']
+
+
+def test_correction__invalid_director_dates(session, app, jwt):
+    """Check that a correction fails if the director appointment date is after cessation date."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    factory_business_mailing_address(business)
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'changeOfDirectors'
+    filing_template['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    f = copy.deepcopy(CORRECTION_COD)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = "CLIENT"
+    
+    # Set appointment date after cessation date
+    f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2025-02-01'
+    f['filing']['correction']['relationships'][0]['roles'][0]['cessationDate'] = '2025-01-01'
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    # check that validation failed as expected
+    assert err is not None
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg[0]['error'] == 'Appointment date cannot be after cessation date.'
+
+
+@pytest.mark.parametrize("date_label", ["Appointment", "Cessation"])
+@pytest.mark.parametrize(
+    "test_name, offset_days, earliest_allowed_offset, expected_error",
+    [
+        ("SUCCESS - Valid date", -5, -10, None),
+        ("SUCCESS - Date is today", 0, -10, None),
+        ("SUCCESS - Date is exactly earliest_allowed", -10, -10, None),
+        ("FAIL - Future date", 1, -10, "{date_label} date cannot be in the future."),
+        ("FAIL - Date before earliest allowed", -15, -10, "{date_label} date cannot be before the business founding date."),
+        ("SUCCESS - None date", None, -10, None)
+    ]
+)
+def test_validate_relationship_date(session, app, jwt, date_label, test_name, offset_days, earliest_allowed_offset, expected_error):
+    """Test validation of relationship dates."""
+    from business_common.utils import LegislationDatetime
+    from datetime import timedelta
+    
+    today = LegislationDatetime.datenow()
+    # If offset_days is None, we pass None. Otherwise compute date
+    date_value = today + timedelta(days=offset_days) if offset_days is not None else None
+    earliest_allowed_date = today + timedelta(days=earliest_allowed_offset)
+
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC', founding_date=earliest_allowed_date)
+    factory_business_mailing_address(business)
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'changeOfDirectors'
+    filing_template['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    f = copy.deepcopy(CORRECTION_COD)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = "CLIENT"
+
+
+    # Set appointment date after cessation date
+    if date_value:
+        if date_label == "Appointment":
+            f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = date_value.isoformat()
+        else:
+            f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = earliest_allowed_date.isoformat()
+            f['filing']['correction']['relationships'][0]['roles'][0]['cessationDate'] = date_value.isoformat()
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    # check that validation failed as expected
+    if expected_error:
+        assert HTTPStatus.BAD_REQUEST == err.code
+        if date_label == "Cessation" and earliest_allowed_date > date_value:
+            assert len(err.msg) == 2
+        else:
+            assert len(err.msg) == 1
+        assert err.msg[0]["error"] == expected_error.format(date_label=date_label)
+    else:
+        assert not err

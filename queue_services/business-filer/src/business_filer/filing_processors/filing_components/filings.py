@@ -34,22 +34,47 @@
 """Manages the  names of a Business."""
 from contextlib import suppress
 
-from business_model.models import Filing
+from business_model.models import Business, CourtOrder, Filing
 from flask_babel import _ as babel
 
 from business_filer.common.datetime import datetime
+from business_filer.common.filing import FilingTypes
+from business_filer.filing_meta import FilingMeta
 
 
-def update_filing_court_order(filing_submission: Filing, court_order: dict) -> dict | None:
-    """Update the court_order info for a Filing."""
-    if not Filing:
-        return {"error": babel("Filing required before alternate names can be set.")}
+def create_court_order(filing_submission: Filing,
+                       court_order: dict,
+                       filing_meta: FilingMeta,
+                       new_business: Business = None) -> dict | None:
+    """Create a court order."""
+    if not filing_submission:
+        return {"error": babel("Filing is required before a court order can be created.")}
 
-    filing_submission.court_order_file_number = court_order.get("fileNumber")
-    filing_submission.court_order_effect_of_order = court_order.get("effectOfOrder")
-    filing_submission.order_details = court_order.get("orderDetails")
+    if not (file_number := court_order.get("fileNumber")):
+        return
 
+    court_order_obj = CourtOrder(
+        file_number=file_number,
+        effect_of_order=court_order.get("effectOfOrder"),
+        order_details=court_order.get("orderDetails"),
+    )
     with suppress(IndexError, KeyError, TypeError, ValueError):
-        filing_submission.court_order_date = datetime.fromisoformat(court_order.get("orderDate"))
+        court_order_obj.order_date = datetime.fromisoformat(court_order.get("orderDate"))
+
+    filing_meta.court_order = {"fileNumber": file_number}
+    if court_order_obj.effect_of_order:
+        filing_meta.court_order["effectOfOrder"] = court_order_obj.effect_of_order
+    if court_order.get("orderDate"):
+        filing_meta.court_order["orderDate"] = court_order.get("orderDate")
+    if filing_submission.filing_type == FilingTypes.COURTORDER.value:
+        # Only add order details for court orders
+        filing_meta.court_order["orderDetails"] = court_order_obj.order_details
+
+    if new_business:
+        court_order_obj.filing_id = filing_submission.id
+        new_business.court_orders.append(court_order_obj)
+    else:
+        court_order_obj.business_id = filing_submission.business_id
+        filing_submission.court_orders.append(court_order_obj)
 
     return None

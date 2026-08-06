@@ -20,8 +20,9 @@ from business_model.models import Business
 
 from business_emailer.email_processors import filing_notification
 from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
-                        prep_bootstrap_filing, prep_change_of_registration_filing, prep_incorp_filing,
-                        prep_maintenance_filing, prep_registration_filing)
+                        prep_bootstrap_filing, prep_change_of_registration_filing, prep_correction_filing,
+                        prep_incorp_filing, prep_maintenance_filing,
+                        prep_registration_filing, prep_special_resolution_filing)
 from tests.unit.helpers import make_future_effective, make_non_future_effective
 
 
@@ -45,6 +46,12 @@ def mock_recipients(mocker):
 def mock_user_email(mocker):
     """Patch get_user_email_from_auth to return a fixed user email."""
     return mocker.patch.object(filing_notification, 'get_user_email_from_auth', return_value='user@email.com')
+
+
+@pytest.fixture
+def mock_auth_recipient(mocker):
+    """Patch get_recipient_from_auth to return the business contact email."""
+    return mocker.patch.object(filing_notification, 'get_recipient_from_auth', return_value='auth@email.com')
 
 
 def process_filing(filing, filing_type, option, token='token'):
@@ -75,8 +82,9 @@ def mock_filing_docs(m, config, identifier, filing, doc_contents, receipt=b'rece
             status_code=200,
         )
     if receipt is not None:
-        m.post(
-            f'{config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
+        m.get(
+            f'{config.get("LEGAL_API_URL")}/businesses/{identifier}'
+            f'/filings/{filing.id}/documents/receipt',
             content=receipt,
             status_code=201,
         )
@@ -238,18 +246,20 @@ def test_bootstrap_cp_filing_attachments(session, config):
 @pytest.mark.parametrize('filing_type', [
     'amalgamationApplication',
     'continuationIn',
+    'dissolution',
     'incorporationApplication',
     'registration'
 ])
 def test_paid_non_future_effective_returns_none(app, session, filing_type):
     """Assert that a PAID non-future-effective filing returns None (no email is sent)."""
-    if filing_type != 'registration':
-        filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', 'PAID', LEGAL_NAME)
-        make_non_future_effective(filing)
-    else:
+    if filing_type == 'registration':
         filing = prep_registration_filing(
-            session, 'FM1234567', '1', 'PAID', Business.LegalTypes.SOLE_PROP.value, 'test business')
-
+            session, 'FM1234567', 'PAID', Business.LegalTypes.SOLE_PROP.value, 'test business')
+    elif filing_type == 'dissolution':
+        filing = prep_maintenance_filing(session, 'BC1234567', '1', 'PAID', 'dissolution', 'voluntary')
+    else:
+        filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', 'PAID', LEGAL_NAME)
+    make_non_future_effective(filing)
     result = process_filing(filing, filing_type, 'PAID')
 
     assert result is None
@@ -281,6 +291,9 @@ def test_bootstrap_body_details(app, mock_pdfs, session, legal_type, status, fil
         assert '**Business Name:** Not Available' in body
         assert '**Incorporation Number:** Not Available' in body
         assert 'What happens next' in body
+        if filing_type == 'amalgamationApplication':
+            # what-happens-next uses the short name for amalgamations
+            assert 'Once the amalgamation is effective on' in body
     else:
         assert '**Business Name:** 1234567 B.C. Ltd.' in body
         assert '**Incorporation Number:** BC1234567' in body
@@ -323,157 +336,430 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
 
 
 # ---------------------------------------------------------------------------
-# tests for non firm maintenance filings (changeOfAddress, changeOfDirectors, alteration, annualReport)
+# tests for maintenance filings (changeOfAddress, changeOfDirectors, alteration, annualReport, dissolution, etc.)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.parametrize(['status', 'filing_type', 'submitter_role'], [
-    ('PAID', 'changeOfAddress', None),
-    ('PAID', 'alteration', None),
-    ('COMPLETED', 'annualReport', None),
-    ('COMPLETED', 'changeOfAddress', None),
-    ('COMPLETED', 'changeOfDirectors', None),
-    ('COMPLETED', 'alteration', None),
-    ('COMPLETED', 'alteration', 'staff')
+@pytest.mark.parametrize(['status', 'filing_type', 'filing_sub_type', 'submitter_role', 'legal_type', 'identifier'], [
+    ('PAID', 'changeOfAddress', None, None, None, 'BC1234567'),
+    ('PAID', 'alteration', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'annualReport', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfAddress', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfDirectors', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'alteration', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'alteration', None, 'staff', None, 'BC1234567'),
+    ('COMPLETED', 'dissolution', 'voluntary', None, Business.LegalTypes.COMP.value, 'BC1234567'),
+    ('COMPLETED', 'dissolution', 'voluntary', 'staff', None, 'BC1234567'),
+    ('COMPLETED', 'dissolution', 'voluntary', None, None, 'CP1234567'),
+    ('COMPLETED', 'dissolution', 'voluntary', None, Business.LegalTypes.SOLE_PROP.value, 'FM1234567'),
+    ('COMPLETED', 'dissolution', 'voluntary', None, Business.LegalTypes.PARTNERSHIP.value, 'FM1234567'),
+    ('COMPLETED', 'restoration', 'fullRestoration', None, None, 'BC1234567'),
+    ('COMPLETED', 'restoration', 'limitedRestoration', None, None, 'BC1234567'),
+    ('COMPLETED', 'restoration', 'limitedRestorationExtension', None, None, 'BC1234567'),
+    ('COMPLETED', 'restoration', 'limitedRestorationToFull', None, None, 'BC1234567'),
+    ('COMPLETED', 'specialResolution', None, None, None, 'CP1234567'),
+    ('COMPLETED', 'specialResolution', None, 'staff', None, 'CP1234567'),
+    ('COMPLETED', 'consentContinuationOut', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'consentContinuationOut', None, 'staff', None, 'BC1234567'),
+    ('COMPLETED', 'continuationOut', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'continuationOut', None, 'staff', None, 'BC1234567'),
 ])
-def test_maintenance_notification(app, session, status, filing_type, submitter_role,
-                                  mock_pdfs, mock_recipients, mock_user_email):
+def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
+                                  status, filing_type, filing_sub_type, submitter_role, legal_type, identifier):
     """Assert that maintenance filings produce an email with the correct recipients and attachments."""
     # setup filing + business for email
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, submitter_role=submitter_role)
+    parties = firm_parties() if identifier.startswith('FM') else None
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, filing_sub_type, submitter_role,
+                                     legal_type=legal_type, parties=parties)
     if status == 'PAID':
         make_future_effective(filing)
     token = 'token'
     # test processor
     email = process_filing(filing, filing_type, status)
 
-    if filing_type == 'alteration':
+    if filing_type in ['alteration', 'consentContinuationOut', 'continuationOut', 'dissolution']:
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
         else:
             assert 'user@email.com' in email['recipients']
 
+    expected_legal_type = legal_type or (
+        Business.LegalTypes.COOP.value if identifier.startswith('CP') else Business.LegalTypes.BCOMP.value)
+    expected_legal_name = 'JANE A DOE' if identifier.startswith('FM') else LEGAL_NAME
     assert 'test@test.com' in email['recipients']
     assert email['content']['body']
     assert email['content']['attachments'] == []
     assert mock_pdfs.call_args[0][0] == token
-    assert mock_pdfs.call_args[0][1]['identifier'] == 'BC1234567'
-    assert mock_pdfs.call_args[0][1]['legalType'] == Business.LegalTypes.BCOMP.value
-    assert mock_pdfs.call_args[0][1]['legalName'] == 'test business'
+    assert mock_pdfs.call_args[0][1]['identifier'] == identifier
+    assert mock_pdfs.call_args[0][1]['legalType'] == expected_legal_type
+    assert mock_pdfs.call_args[0][1]['legalName'] == expected_legal_name
     assert mock_pdfs.call_args[0][2] == filing
     assert mock_recipients.call_args[0][0] == status
     assert mock_recipients.call_args[0][1] == filing.filing_json
     assert mock_recipients.call_args[0][2] == token
 
+    if filing_type == 'dissolution':
+        # dissolution also notifies the business contact email from auth
+        assert 'auth@email.com' in email['recipients']
+        # party emails are pulled by get_recipients with the dissolution filing type
+        assert mock_recipients.call_args[0][3] == 'dissolution'
+        assert email['content']['subject'] == f'{LEGAL_NAME} - Successful Dissolution'
+    else:
+        assert mock_recipients.call_args[0][3] is None
+        assert not mock_auth_recipient.called
 
-def test_filing_attachments_change_of_address_paid(session, config, mock_recipients):
-    """changeOfAddress PAID: filing PDF + receipt."""
+
+@pytest.mark.parametrize('filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments', [
+    ('alteration', None, None, 'PAID', False, False, [
+        {'fileName': 'Alteration.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('alteration', None, None, 'PAID', True, False, [
+        {'fileName': 'Alteration.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('alteration', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Alteration.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('alteration', None, None, 'COMPLETED', True, False, [
+        {'fileName': 'Alteration.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Certificate of Name Change.pdf', 'content': 'pdf_content_con', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('annualReport', None, None, 'COMPLETED', False, False, [
+        {'fileName': '2018 Annual Report.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfAddress', None, None, 'PAID', False, False, [
+        {'fileName': 'Address Change.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfAddress', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Address Change.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('changeOfDirectors', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Director Change.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('restoration', 'fullRestoration', None, 'COMPLETED', False, False, [
+        {'fileName': 'Full Restoration Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Certificate of Restoration.pdf', 'content': 'pdf_content_cor', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('restoration', 'limitedRestoration', None, 'COMPLETED', False, False, [
+        {'fileName': 'Limited Restoration Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Certificate of Restoration.pdf', 'content': 'pdf_content_cor', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('restoration', 'limitedRestorationExtension', None, 'COMPLETED', False, False, [
+        {'fileName': 'Limited Restoration Extension Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Certificate of Restoration.pdf', 'content': 'pdf_content_cor', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('restoration', 'limitedRestorationToFull', None, 'COMPLETED', False, False, [
+        {'fileName': 'Conversion to Full Restoration Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Certificate of Restoration.pdf', 'content': 'pdf_content_cor', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('specialResolution', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_sra', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', None, None, 'COMPLETED', True, False, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_sra', 'order': '2'},
+        {'fileName': 'Certificate of Name Change.pdf', 'content': 'pdf_content_con', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('specialResolution', None, None, 'COMPLETED', False, True, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_sra', 'order': '2'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+    ('specialResolution', None, None, 'COMPLETED', True, True, [
+        {'fileName': 'Special Resolution.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Special Resolution Application.pdf', 'content': 'pdf_content_sra', 'order': '2'},
+        {'fileName': 'Certificate of Name Change.pdf', 'content': 'pdf_content_con', 'order': '3'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '4'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '5'},
+    ]),
+    ('dissolution', 'voluntary', Business.LegalTypes.COMP.value, 'COMPLETED', False, False, [
+        {'fileName': 'Voluntary Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Dissolution.pdf', 'content': 'pdf_content_cod', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('dissolution', 'voluntary', Business.LegalTypes.COOP.value, 'COMPLETED', False, False, [
+        {'fileName': 'Voluntary Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Dissolution.pdf', 'content': 'pdf_content_cod', 'order': '2'},
+        {'fileName': 'Certified Affidavit.pdf', 'content': 'pdf_content_affidavit', 'order': '3'},
+        {'fileName': 'Certified Special Resolution.pdf', 'content': 'pdf_content_sr', 'order': '4'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '5'},
+    ]),
+    ('dissolution', 'voluntary', Business.LegalTypes.SOLE_PROP.value, 'COMPLETED', False, False, [
+        {'fileName': 'Statement of Dissolution.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('dissolution', 'administrative', Business.LegalTypes.COMP.value, 'COMPLETED', False, False, [
+        {'fileName': 'Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('consentContinuationOut', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Continue Out Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Letter of Consent.pdf', 'content': 'pdf_content_loc', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('continuationOut', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
+    ]),
+], ids=[
+    'alteration - PAID no name change',
+    'alteration - PAID name change included',
+    'alteration - COMPLETED no name change',
+    'alteration - COMPLETED name change included',
+    'annualReport',
+    'changeOfAddress - PAID',
+    'changeOfAddress - COMPLETED',
+    'changeOfDirectors',
+    'restoration - fullRestoration',
+    'restoration - limitedRestoration',
+    'restoration - limitedRestorationExtension',
+    'restoration - limitedRestorationToFull',
+    'specialResolution - No name or rule changes',
+    'specialResolution - Name change included',
+    'specialResolution - Rule change included',
+    'specialResolution - Name and Rule change included',
+    'dissolution - voluntary corp',
+    'dissolution - voluntary coop',
+    'dissolution - voluntary firm',
+    'dissolution - administrative suppresses certificate',
+    'consentContinuationOut - application + letter of consent + receipt',
+    'continuationOut - receipt only'
+])
+def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email, mock_auth_recipient,
+                                        filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments):
+    """Assert maintenance filings add the correct attachments."""
+    # Setup
     identifier = 'BC1234567'
-    filing = prep_maintenance_filing(session, identifier, '1', 'PAID', 'changeOfAddress')
-    make_future_effective(filing)
-    with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, identifier, filing,
-                         {'changeOfAddress': b'pdf_content_1'}, receipt=b'pdf_content_2')
-        output = process_filing(filing, 'changeOfAddress', 'PAID')
+    if legal_type == Business.LegalTypes.COOP.value:
+        identifier = 'CP1234567'
+    elif legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        identifier = 'FM1234567'
+    filing = prep_maintenance_filing(session, identifier, '1', status, filing_type, filing_sub_type, legal_type=legal_type)
+    if filing_type == 'specialResolution':
+        # Only COOP
+        identifier = 'CP1234567'
+        filing = prep_special_resolution_filing(session, has_name_change=has_name_change, has_rule_change=has_rule_change)
+    elif filing_type == 'alteration' and has_name_change:
+        # force the name-change branch via meta_data
+        filing._meta_data = {'alteration': {'toLegalName': 'new name'}}
+        filing.save()
+    if status == 'PAID':
+        make_future_effective(filing)
 
-    attachments = output['content']['attachments']
-    assert len(attachments) == 2
-    assert_attachment(attachments[0], 'Address Change.pdf', 'pdf_content_1')
-    assert_attachment(attachments[1], 'Receipt.pdf', 'pdf_content_2')
-
-
-def test_filing_attachments_annual_report_completed(session, config, mock_recipients):
-    """annualReport COMPLETED: filing PDF (prefixed with the AR year) + receipt."""
-    identifier = 'BC1234567'
-    filing = prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'annualReport')
-    with requests_mock.Mocker() as m:
-        mock_filing_docs(m, config, identifier, filing,
-                         {'annualReport': b'pdf_content_1'}, receipt=b'pdf_content_2')
-        output = process_filing(filing, 'annualReport', 'COMPLETED')
-
-    attachments = output['content']['attachments']
-    # annualReport PAID: filing application PDF + receipt
-    assert len(attachments) == 2
-    # _add_filing_document_pdf prefixes the AR filing PDF with the annualReportDate year (2018-04-08 -> 2018)
-    assert_attachment(attachments[0], '2018 Annual Report.pdf', 'pdf_content_1')
-    assert_attachment(attachments[1], 'Receipt.pdf', 'pdf_content_2')
-
-
-def test_filing_attachments_alteration_completed_name_change(session, config, mock_recipients, mock_user_email):
-    """alteration COMPLETED (BC, with name change): NOA + Certificate of Name Change."""
-    identifier = 'BC1234567'
-    filing = prep_maintenance_filing(session, identifier, '1', 'COMPLETED', 'alteration')
-    # force the name-change branch via meta_data
-    filing._meta_data = {'alteration': {'toLegalName': 'new name'}}
-    filing.save()
+    # Test
     with requests_mock.Mocker() as m:
         mock_filing_docs(m, config, identifier, filing, {
-            'alteration': b'pdf_content_1',
-            'noticeOfArticles': b'pdf_content_2',
-            'certificateOfNameChange': b'pdf_content_3',
-        }, receipt=b'pdf_content_4')
-        output = process_filing(filing, 'alteration', 'COMPLETED')
+            # 'specialResolution' first so it is overridden by the filing pdf when it is the filing type
+            'specialResolution': b'pdf_content_sr',
+            filing_type: b'pdf_content_filing',
+            'specialResolutionApplication': b'pdf_content_sra',
+            'noticeOfArticles': b'pdf_content_noa',
+            'certificateOfNameChange': b'pdf_content_con',
+            'certifiedRules': b'pdf_content_cr',
+            'certificateOfRestoration': b'pdf_content_cor',
+            'certificateOfDissolution': b'pdf_content_cod',
+            'affidavit': b'pdf_content_affidavit',
+            'letterOfConsent': b'pdf_content_loc',
+        }, receipt=b'pdf_content_receipt')
+        output = process_filing(filing, filing_type, status)
 
     attachments = output['content']['attachments']
-    assert len(attachments) == 4
-    assert_attachment(attachments[0], 'Alteration.pdf', 'pdf_content_1')
-    assert_attachment(attachments[1], 'Notice of Articles.pdf', 'pdf_content_2')
-    assert_attachment(attachments[2], 'Certificate of Name Change.pdf', 'pdf_content_3')
-    assert_attachment(attachments[3], 'Receipt.pdf', 'pdf_content_4')
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
 
 
-@pytest.mark.parametrize(['filing_type', 'status', 'expected_header', 'expected_subject'], [
+@pytest.mark.parametrize(['filing_type', 'filing_sub_type', 'status', 'expected_header', 'expected_subject', 'expected_body_snippets'], [
     (
         'alteration',
+        None,
         'PAID',
         'Your alteration has been filed',
         'test business - Alteration Filed',
+        ['Effective Date and Time:', 'Once the alteration is effective on'],
     ),
     (
         'changeOfAddress',
+        None,
         'PAID',
         'Your address change has been filed',
         'test business - Address Change Filed',
+        ['Effective Date and Time:', 'Once the address change is effective on'],
+    ),
+    (
+        'dissolution',
+        'voluntary',
+        'PAID',
+        'Your voluntary dissolution application has been filed',
+        'test business - Voluntary Dissolution Application Filed',
+        ['Effective Date and Time:', 'Once the dissolution is effective on', 'Certificate of Dissolution'],
     ),
     (
         'alteration',
+        None,
         'COMPLETED',
         'You have successfully completed your alteration with the BC Business Registry',
         'test business - Successful Alteration',
+        []
     ),
     (
         'annualReport',
+        None,
         'COMPLETED',
         'You have successfully completed your 2018 annual report with the BC Business Registry',
         'test business - Successful Annual Report',
+        []
     ),
     (
         'changeOfAddress',
+        None,
         'COMPLETED',
         'You have successfully completed your address change with the BC Business Registry',
         'test business - Successful Address Change',
+        []
     ),
     (
         'changeOfDirectors',
+        None,
         'COMPLETED',
         'You have successfully completed your director change with the BC Business Registry',
         'test business - Successful Director Change',
+        []
+    ),
+    (
+        'restoration',
+        'fullRestoration',
+        'COMPLETED',
+        'You have successfully restored your business with the BC Business Registry',
+        'test business - Successful Restoration',
+        []
+    ),
+    (
+        'restoration',
+        'limitedRestoration',
+        'COMPLETED',
+        'You have successfully restored your business with the BC Business Registry',
+        'test business - Successful Restoration',
+        []
+    ),
+    (
+        'restoration',
+        'limitedRestorationExtension',
+        'COMPLETED',
+        'You have successfully extended your period of restoration with the BC Business Registry',
+        'test business - Successful Extension of Limited Restoration',
+        []
+    ),
+    (
+        'restoration',
+        'limitedRestorationToFull',
+        'COMPLETED',
+        'You have successfully restored your business with the BC Business Registry',
+        'test business - Successful Conversion to Full Restoration',
+        []
+    ),
+    (
+        'dissolution',
+        'voluntary',
+        'COMPLETED',
+        'You have successfully completed your dissolution with the BC Business Registry',
+        'test business - Successful Dissolution',
+        []
+    ),
+    (
+        'consentContinuationOut',
+        None,
+        'COMPLETED',
+        'Your request for consent to continue out of B.C. has been granted for 6 months',
+        'test business - Consent to Continue Out Granted',
+        [
+            '**Effective Until:** October 30, 2025',
+            '**New Jurisdiction:** Alberta, Canada',
+            'granted a 6 month consent to continue',
+            'This consent expires on October 30, 2025',
+            'Once you have completed your continuation into the jurisdiction of Alberta, Canada',
+        ],
+    ),
+    (
+        'continuationOut',
+        None,
+        'COMPLETED',
+        'You have successfully continued out of B.C.',
+        'test business - Successful Continuation Out',
+        [
+            '**New Jurisdiction:** Alberta, Canada',
+            '**Continue Out Effective Date:** April 29, 2025',
+            'made historical in British Columbia as of April 29, 2025',
+            'under the name NEW TEST BUSINESS',
+        ],
     ),
 ])
-def test_maintenance_filing_fe_renders_body_and_subject(app, session, filing_type, status, expected_header,
-                                                        expected_subject, mock_pdfs, mock_recipients, mock_user_email):
-    """Assert alteration and address change future effective emails render the expected body and subject."""
-    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type)
+def test_maintenance_filing_renders_body_and_subject(app, session,
+                                                     mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
+                                                     filing_type, filing_sub_type, status,
+                                                     expected_header, expected_subject, expected_body_snippets):
+    """Assert maintenance filing emails render the expected body and subject."""
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, filing_type, filing_sub_type)
     if status == 'PAID':
         make_future_effective(filing)
     filing.save()
     email = process_filing(filing, filing_type, status)
 
     assert email is not None
+    assert email['content']['subject'] == expected_subject
     body = email['content']['body']
     assert expected_header in body
-    assert not ".html]]" in body
-    assert not ".md]]" in body
-    assert email['content']['subject'] == expected_subject
+    for snippet in expected_body_snippets:
+        assert snippet in body
+    assert ".html]]" not in body
+    assert ".md]]" not in body
+
+
+@pytest.mark.parametrize(['status', 'tax_id', 'shows_bn'], [
+    ('COMPLETED', None, False),
+    ('COMPLETED', '123456789BC0001', True),
+    ('PAID', None, False),
+])
+def test_dissolution_business_number_line(app, session, mock_pdfs, mock_recipients, mock_user_email,
+                                          mock_auth_recipient, status, tax_id, shows_bn):
+    """Assert dissolution emails only show the business number line when a bn exists (#32963)."""
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', status, 'dissolution', 'voluntary')
+    if status == 'PAID':
+        make_future_effective(filing)
+    business = Business.find_by_identifier('BC1234567')
+    business.tax_id = tax_id
+    business.save()
+    filing.save()
+
+    email = process_filing(filing, 'dissolution', status)
+
+    assert email is not None
+    body = email['content']['body']
+    if shows_bn:
+        assert '**Business Number:** 123456789 BC0001' in body
+    else:
+        assert '**Business Number:**' not in body
 
 
 # ---------------------------------------------------------------------------
@@ -492,7 +778,7 @@ def test_firm_filing_via_filing_notification(app, session, status, filing_type, 
     """Assert that FIRM registration and changeOfRegistration produce correct emails via filing_notification."""
     legal_name = 'test business'
     if filing_type == 'registration':
-        filing = prep_registration_filing(session, 'FM1234567', '1', status, legal_type, legal_name, firm_parties())
+        filing = prep_registration_filing(session, 'FM1234567', status, legal_type, legal_name, firm_parties())
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, submitter_role, firm_parties())
@@ -534,7 +820,7 @@ def test_filing_attachments_registration_completed(session, config, mock_recipie
     """registration COMPLETED: Statement of Registration filing PDF + receipt."""
     identifier = 'FM1234567'
     filing = prep_registration_filing(
-        session, identifier, '1', 'COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'test business', firm_parties())
+        session, identifier, 'COMPLETED', Business.LegalTypes.SOLE_PROP.value, 'test business', firm_parties())
     with requests_mock.Mocker() as m:
         mock_filing_docs(m, config, identifier, filing,
                          {'registration': b'pdf_content_1'}, receipt=b'pdf_content_2')
@@ -578,12 +864,151 @@ def test_firm_filing_subject(app, session, filing_type, expected_subject_suffix,
     legal_name = 'test business'
     legal_type = Business.LegalTypes.SOLE_PROP.value
     if filing_type == 'registration':
-        filing = prep_registration_filing(session, 'FM1234567', '1', 'COMPLETED', legal_type, legal_name,
-                                           firm_parties())
+        filing = prep_registration_filing(session, 'FM1234567', 'COMPLETED', legal_type, legal_name, firm_parties())
     else:
         filing = prep_change_of_registration_filing(
             session, 'FM1234567', '1', legal_type, legal_name, None, firm_parties())
     email = process_filing(filing, filing_type, 'COMPLETED')
 
     assert email is not None
-    assert email['content']['subject'] == f'JANE A DOE - {expected_subject_suffix}'
+    assert email['content']['subject'] == f'test business - {expected_subject_suffix}'
+
+
+# ---------------------------------------------------------------------------
+# Corrections via filing_notification
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(['orig_filing_type', 'legal_type', 'identifier'], [
+    ('incorporationApplication', Business.LegalTypes.COMP.value, 'BC1234567'),
+    ('registration', Business.LegalTypes.PARTNERSHIP.value, 'FM1234567'),
+    ('registration', Business.LegalTypes.SOLE_PROP.value, 'FM1234567'),
+    ('specialResolution', Business.LegalTypes.COOP.value, 'CP1234567'),
+])
+def test_correction_filing_via_filing_notification(app, session, mock_pdfs,
+                                                   orig_filing_type, legal_type, identifier):
+    """Assert that Corrections send emails via filing_notification."""
+    if orig_filing_type == 'specialResolution':
+        original_filing = prep_special_resolution_filing(session, identifier)
+    else:
+        original_filing = prep_bootstrap_filing(session, orig_filing_type, identifier, legal_type, 'COMPLETED')
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(session, business, original_filing.id, orig_filing_type, 'COMPLETED')
+
+    email = process_filing(corrected_filing, 'correction', 'COMPLETED')
+
+    assert email is not None
+    body = email['content']['body']
+    assert body
+    assert email['content']['attachments'] == []
+    assert mock_pdfs.call_args[0][1]['identifier'] == identifier
+    assert mock_pdfs.call_args[0][2] == corrected_filing
+    assert CONTACT_POINT in email['recipients']
+    if orig_filing_type == 'registration':
+        assert PARTY_EMAIL_1 in email['recipients']
+
+
+@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments', [
+    ('incorporationApplication', 'BC', 'BC1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('registration', 'SP', 'FM1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('registration', 'GP', 'FM1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', True, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', False, True, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
+    ]),
+    ('specialResolution', 'CP', 'CP1234567', True, True, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '3'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
+    ]),
+])
+def test_correction_filing_attachments(session, config, mock_recipients, mock_user_email,
+                                       orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments):
+    """Assert correction filings add the correct attachments."""
+    # Setup
+    if orig_filing_type == 'specialResolution':
+        original_filing = prep_special_resolution_filing(session, identifier, has_name_change=has_name_change, has_rule_change=has_rule_change)
+    else:
+        original_filing = prep_bootstrap_filing(session, orig_filing_type, identifier, legal_type, 'COMPLETED')
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(
+        session, business, original_filing.id, orig_filing_type, 'COMPLETED',
+        has_name_change=has_name_change, has_rule_change=has_rule_change)
+
+    # Test
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, corrected_filing, {
+            'correction': b'pdf_content_filing',
+            'noticeOfArticles': b'pdf_content_noa',
+            'correctedRegistrationStatement': b'pdf_content_crs',
+            'certificateOfNameCorrection': b'pdf_content_con',
+            'certifiedRules': b'pdf_content_cr',
+        }, receipt=b'pdf_content_receipt')
+        output = process_filing(corrected_filing, 'correction', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
+
+
+@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, expected_header, expected_subject', [
+    ('incorporationApplication', 'BC', 'BC1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+    ('registration', 'SP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+    ('registration', 'GP', 'FM1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+    ('specialResolution', 'CP', 'CP1234567', 'You have successfully completed your correction with the BC Business Registry', 'test business - Successful Correction'),
+])
+def test_correction_filing_header_and_subject(session, config, mock_pdfs, mock_recipients, mock_user_email,
+                                       orig_filing_type, legal_type, identifier, expected_header, expected_subject):
+    """Assert correction filings add the correct header and subject."""
+    # Setup
+    if orig_filing_type == 'specialResolution':
+        original_filing = prep_special_resolution_filing(session, identifier)
+    else:
+        original_filing = prep_bootstrap_filing(session, orig_filing_type, identifier, legal_type, 'COMPLETED', LEGAL_NAME, parties=firm_parties())
+    business = Business.find_by_identifier(identifier)
+    corrected_filing = prep_correction_filing(session, business, original_filing.id, orig_filing_type, 'COMPLETED')
+
+    # Test
+    email = process_filing(corrected_filing, 'correction', 'COMPLETED')
+
+    assert email is not None
+    body = email['content']['body']
+    assert expected_header in body
+    assert not ".html]]" in body
+    assert not ".md]]" in body
+    assert email['content']['subject'] == expected_subject
+
+# ---------------------------------------------------------------------------
+# Dissolution-specific behaviour (skipped sub types)
+# ---------------------------------------------------------------------------
+
+def test_dissolution_delay_returns_none(app, session):
+    """Assert that a delay of dissolution filing does not send the dissolution email."""
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', 'COMPLETED', 'dissolution', 'delay')
+
+    result = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    assert result is None

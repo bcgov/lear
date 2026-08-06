@@ -30,10 +30,6 @@ from business_emailer.email_processors import (
     bn_notification,
     cease_receiver_notification,
     consent_amalgamation_out_notification,
-    consent_continuation_out_notification,
-    continuation_out_notification,
-    correction_notification,
-    dissolution_notification,
     filing_notification,
     intent_to_liquidate_notification,
     intent_to_liquidate_notification as _intent_to_liquidate,  # noqa: F401 (keep alias import-safe)
@@ -41,8 +37,6 @@ from business_emailer.email_processors import (
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
-    restoration_notification,
-    special_resolution_notification,
 )
 from business_emailer.resources import business_emailer as worker
 from business_emailer.services import flags
@@ -225,36 +219,6 @@ def test_agm_extension_completed_dispatches(app, session, mocker, mock_send_emai
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_dissolution_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(dissolution_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "dissolution", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_restoration_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(restoration_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "restoration", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_correction_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(correction_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "correction", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 def test_consent_amalgamation_out_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(consent_amalgamation_out_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "consentAmalgamationOut", "option": COMPLETED}
@@ -268,46 +232,6 @@ def test_consent_amalgamation_out_dispatches(app, session, mocker, mock_send_ema
 def test_amalgamation_out_dispatches(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(amalgamation_out_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "amalgamationOut", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_consent_continuation_out_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(consent_continuation_out_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "consentContinuationOut", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_consent_continuation_out_non_completed_skipped(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(consent_continuation_out_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "consentContinuationOut", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_not_called()
-    mock_send_email.assert_not_called()
-
-
-def test_continuation_out_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(continuation_out_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "continuationOut", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_special_resolution_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(special_resolution_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "specialResolution", "option": "PAID"}
 
     worker.process_email(_ce({"email": email}))
 
@@ -360,15 +284,21 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize('filing_type', [
-    "amalgamationApplication",
     "alteration",
+    "amalgamationApplication",
     "annualReport",
     "changeOfAddress",
     "changeOfDirectors",
     "changeOfRegistration",
+    "consentContinuationOut",
     "continuationIn",
+    "continuationOut",
+    "correction",
+    "dissolution",
     "incorporationApplication",
     "registration",
+    "restoration",
+    "specialResolution",
 ])
 def test_filing_notification_dispatches(app, session, mocker, mock_send_email, filing_type):
     """Assert that the filing_notification branch works as expected."""

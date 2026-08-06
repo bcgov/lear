@@ -50,6 +50,7 @@ from legal_api.services.filings.validations.common_validations import (
     EXCLUDED_WORDS_FOR_CLASS,
     EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
+    _get_file_data,
     is_officer_proprietor_replace_valid,
     validate_authorization_received,
     validate_certify_name,
@@ -602,6 +603,38 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
         else:
             assert errors[0]['error'] == 'Certified by field is required.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'
+
+@pytest.mark.parametrize('test_name, roles, login_source, certified_by, expected_error', [
+    ('api_user_missing', [], 'API_GW', '', 'Certified by field is required.'),
+    ('api_user_whitespace', [], 'API_GW', ' John Doe ', 'Certified by field cannot start or end with whitespace.'),
+    ('api_user_valid', [], 'API_GW', 'John Doe', None),
+    ('staff_missing', ['staff'], 'IDIR', '', 'Certified by field is required.'),
+    ('staff_valid', ['staff'], 'IDIR', 'John Doe', None),
+    ('public_user_not_required', [], 'BCSC', '', None),
+])
+def test_validate_certified_by_corps_completing_party(app, session, test_name, roles,
+                                                      login_source, certified_by, expected_error):
+    """Corps IA requires certifiedBy for staff and API users (API users identified by loginSource)."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['certifiedBy'] = certified_by
+    filing['filing']['incorporationApplication'] = INCORPORATION
+
+    with (
+        patch('legal_api.services.filings.validations.common_validations.jwt.validate_roles',
+              side_effect=lambda user, required: bool(set(required) & set(roles))),
+        app.test_request_context()
+    ):
+        from flask.globals import request_ctx
+        request_ctx.current_user = {'sub': 'test-user', 'loginSource': login_source}
+        errors = validate_certified_by(filing, 'incorporationApplication', 'BEN')
+
+    if expected_error:
+        assert errors
+        assert errors[0]['error'] == expected_error
+        assert errors[0]['path'] == '/filing/header/certifiedBy'
+    else:
+        assert errors == []
+
 
 @pytest.mark.parametrize(
     'legal_type',
@@ -2286,3 +2319,71 @@ def test_validate_foreign_jurisdiction(session, test_name, foreign_jurisdiction,
         is_region_for_us_required=is_region_for_us_required
     )
     assert errors == expected_errors
+
+@pytest.mark.parametrize(
+    'file_key, expected_class, expected_id',
+    [
+        ('CORP-DS0000101951', 'CORP', 'DS0000101951'),
+        ('COOP-DS0000101952', 'COOP', 'DS0000101952'),
+        ('FIRM-DS0000101953', 'FIRM', 'DS0000101953'),
+    ]
+)
+def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, expected_id):
+    """Test that DRS document keys retrieve content from DRS instead of MinIO."""
+
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None:
+            ["drs-upload"]
+            if flag == "enable-new-feature" else default
+    )
+
+    monkeypatch.setattr(
+        'legal_api.services.filings.validations.common_validations.doc_service.get_document',
+        lambda drs_id, doc_class, doc_binary=True:
+            type(
+                'Response',
+                (),
+                {
+                    'ok': True,
+                    'content': b'test pdf content'
+                }
+            )()
+    )
+
+    monkeypatch.setattr(
+        'legal_api.services.filings.validations.common_validations.MinioService.get_file',
+        lambda _: pytest.fail("MinIO should not be called for DRS documents")
+    )
+
+    data, size = _get_file_data(file_key)
+
+    assert data == b'test pdf content'
+    assert size == len(b'test pdf content')
+
+
+def test_get_file_data_drs_failure(session, monkeypatch):
+    """Test that DRS retrieval errors raise an exception."""
+
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None:
+            ["drs-upload"]
+            if flag == "enable-new-feature" else default
+    )
+
+    monkeypatch.setattr(
+        'legal_api.services.filings.validations.common_validations.doc_service.get_document',
+        lambda *args, **kwargs:
+            type(
+                'Response',
+                (),
+                {
+                    'ok': False,
+                    'status_code': 404
+                }
+            )()
+    )
+
+    with pytest.raises(ValueError, match="DRS get_document failed"):
+        _get_file_data("CORP-DS0000101951")
