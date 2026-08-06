@@ -1852,7 +1852,6 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     (True, 'test@example.co.uk'),
     (True, 'user@[192.168.1.1]'),
     (True, 'no_one@never.get'),
-    (True, '"quoted"@example.com'),
     # Invalid email
     (False, 'no_one@never.'),
     (False, '@invalid.com'),
@@ -1861,6 +1860,7 @@ def test_ia_phone_number_validation(session, should_pass, phone_number, extensio
     (False, 'test@domain'),
     (False, 'test @example.com'),
     (False, 'test@ example.com'),
+    (False, '"quoted"@example.com'),
 ])
 def test_ia_email_validation(session, should_pass, email):
     """Test validate email format if provided."""
