@@ -1149,7 +1149,7 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('user_name@domain.org', True),
     ('test123@test123.com', True),
     ('john.o\'smith@gov.bc.ca', True),
-    # Invalid email formats
+    # Invalid email formats.
     ('no_one@never.', False),
     ('invalid', False),
     ('@invalid.com', False),
