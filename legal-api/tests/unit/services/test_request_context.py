@@ -44,11 +44,11 @@ def test_build_from_flask_account_linking_key(app, headers, expected):
         assert rc.account_linking_key == expected
 
 
-def test_get_request_context_backwards_compatible(app, session):
+def test_get_request_context_backwards_compatible(app, session, monkeypatch):
     """Assert get_request_context() behaves as before when no Account-Linking-Key header is present."""
     token_info = helper_create_jwt_json_token_claims(username='test-user')
     with app.test_request_context(headers={'Account-Id': '1234'}):
-        g.jwt_oidc_token_info = token_info
+        monkeypatch.setattr(g, 'jwt_oidc_token_info', token_info, raising=False)
         rc = get_request_context()
         assert rc.account_id == '1234'
         assert rc.user is not None
