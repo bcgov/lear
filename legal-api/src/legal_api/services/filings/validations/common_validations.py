@@ -121,7 +121,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
     resolution_dates = share_structure.get("resolutionDates", [])
 
     err_path = f"/filing/{filing_type}/shareStructure/resolutionDates"
-        
+
     msg = []
     if (
         (
@@ -135,29 +135,51 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
             "path": err_path
         })
 
-    if len(resolution_dates) > 1:
+    if not resolution_dates:
+        return msg
+
+    if isinstance(resolution_dates[0], str):
+        # Kept for backward compatibility (existing alteration and correction filings)
+        if len(resolution_dates) > 1:
+            msg.append({
+                "error": "Only one resolution date is permitted.",
+                "path": err_path
+            })
+
+        elif len(resolution_dates) == 1:
+            msg.extend(_validate_resolution_date(resolution_dates[0], business, err_path))
+    else:
+        # Did not include "Only one resolution date is permitted.", not required for correction
+        # If its required for alteration add while updating alteration filing
+        existing_ids = {resolution.id for resolution in business.resolutions.all()}
+        for idx, resolution_date in enumerate(resolution_dates):
+            if (id := resolution_date.get("id")) and (id not in existing_ids):
+                msg.append({
+                    "error": "Not a valid Resolution Id for this business.",
+                    "path": f"{err_path}/{idx}"
+                })
+            else:
+                msg.extend(_validate_resolution_date(resolution_date["date"], business, f"{err_path}/{idx}"))
+
+    return msg
+
+def _validate_resolution_date(resolution_date_str: str, business, err_path: str) -> list[dict]:
+    resolution_date = date.fromisoformat(resolution_date_str)
+    founding_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+    today = LegislationDatetime.datenow()
+
+    msg = []
+    if resolution_date > today:
         msg.append({
-            "error": "Only one resolution date is permitted.",
+            "error": "Resolution date cannot be in the future.",
             "path": err_path
         })
 
-    elif len(resolution_dates) == 1:
-        resolution_date_leg = date.fromisoformat(resolution_dates[0])
-        founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
-        today_leg = LegislationDatetime.datenow()
-
-        if resolution_date_leg > today_leg:
-            msg.append({
-                "error": "Resolution date cannot be in the future.",
-                "path": err_path
-            })
-
-        if resolution_date_leg < founding_date_leg:
-            msg.append({
-                "error": "Resolution date cannot be before the business founding date.",
-                "path": err_path
-            })
-
+    if resolution_date < founding_date:
+        msg.append({
+            "error": "Resolution date cannot be before the business founding date.",
+            "path": err_path
+        })
     return msg
 
 

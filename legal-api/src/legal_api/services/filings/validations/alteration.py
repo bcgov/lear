@@ -46,7 +46,7 @@ def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-
         error = PermissionService.check_user_permission(required_permission, message=message)
         if error:
            return error
-    msg.extend(type_change_validation(filing, business))
+    msg.extend(validate_type_change(filing, business, "/filing/alteration/business/legalType"))
     msg.extend(company_name_validation(filing, business))
     msg.extend(share_structure_validation(filing, business))
     msg.extend(court_order_validation(filing))
@@ -126,10 +126,9 @@ def company_name_validation(filing, business: Business):
     return msg
 
 
-def type_change_validation(filing, business: Business):
+def validate_type_change(filing, business: Business, legal_type_path: str):
     """Validate type change."""
     msg = []
-    legal_type_path: Final = "/filing/alteration/business/legalType"
     new_legal_type = get_str(filing, legal_type_path)
 
     # Valid type changes
