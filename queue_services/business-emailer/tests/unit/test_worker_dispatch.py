@@ -31,6 +31,7 @@ from business_emailer.email_processors import (
     cease_receiver_notification,
     consent_amalgamation_out_notification,
     filing_notification,
+    mras_notification,
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
