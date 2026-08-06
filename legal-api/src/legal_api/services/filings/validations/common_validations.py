@@ -112,7 +112,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
 
     Rules:
     - If hasRightsOrRestrictions is true in any share class or series, resolution date is required.
-    - Only one resolution date is permitted.
+    - Only one resolution date is permitted (alteration and old correction).
     - Resolution date cannot be in the future.
     - Resolution date cannot be before the business founding date.
     """
@@ -140,14 +140,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
 
     if isinstance(resolution_dates[0], str):
         # Kept for backward compatibility (existing alteration and correction filings)
-        if len(resolution_dates) > 1:
-            msg.append({
-                "error": "Only one resolution date is permitted.",
-                "path": err_path
-            })
-
-        elif len(resolution_dates) == 1:
-            msg.extend(_validate_resolution_date(resolution_dates[0], business, err_path))
+        msg.extend(_validate_resolution_dates_old_format(resolution_dates, business, err_path))
     else:
         # Did not include "Only one resolution date is permitted.", not required for correction
         # If its required for alteration add while updating alteration filing
@@ -160,6 +153,19 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
                 })
             else:
                 msg.extend(_validate_resolution_date(resolution_date["date"], business, f"{err_path}/{idx}"))
+
+    return msg
+
+def _validate_resolution_dates_old_format(resolution_dates, business, err_path):
+    msg = []
+    if len(resolution_dates) > 1:
+        msg.append({
+            "error": "Only one resolution date is permitted.",
+            "path": err_path
+        })
+
+    elif len(resolution_dates) == 1:
+        msg.extend(_validate_resolution_date(resolution_dates[0], business, err_path))
 
     return msg
 

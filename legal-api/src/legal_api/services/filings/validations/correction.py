@@ -152,13 +152,8 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         if err:
             msg.extend(err)
 
-        err = validate_share_currency(filing_dict, filing_type, business)
-        if err:
-            msg.extend(err)
-
-        err = validate_resolution_date_in_share_structure(filing_dict, filing_type, business)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_share_currency(filing_dict, filing_type, business))
+        msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
 
 
 def _validate_special_resolution_correction(filing_dict, legal_type, msg):
