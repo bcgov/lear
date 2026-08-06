@@ -45,12 +45,26 @@ FILING_TITLE = {
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
-    "restoration": "Restoration"
+    "restoration": "Restoration",
+    "changeOfLiquidators": {
+        "intentToLiquidate": "Statement of Intent to Liquidate",
+        "appointLiquidator": "Notice of Liquidator Appointment",
+        "ceaseLiquidator": "Notice of Liquidator Cessation",
+        "changeAddressLiquidator": "Liquidator (or Records) Address Change",
+        "liquidationReport": "Liquidation Report",
+    },
 }
 
 FILING_TITLE_SHORT = {
     "amalgamationApplication": "Amalgamation",
     "continuationIn": "Continuation In",
+    "changeOfLiquidators": {
+        "intentToLiquidate": "Intent to Liquidate",
+        "appointLiquidator": "Liquidator Appointment",
+        "ceaseLiquidator": "Liquidator Cessation",
+        "changeAddressLiquidator": "Liquidator (or Records) Address Change",
+        "liquidationReport": "Liquidation Report",
+    },
     "dissolution": "Dissolution",
     "incorporationApplication": "Incorporation",
     "restoration": {
@@ -124,6 +138,26 @@ FILING_ATTACHMENTS = {
         "changeOfDirectors": {
             "attachments": ["Director Change","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"],
+        },
+         "changeOfLiquidators-intentToLiquidate": {
+            "attachments": ["Statement of Intent to Liquidate", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-appointLiquidator": {
+            "attachments": ["Notice to Appoint Liquidators", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-ceaseLiquidator": {
+            "attachments": ["Notice to Cease Liquidators", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-changeAddressLiquidator": {
+            "attachments": ["Liquidators (or Records) Change of Address", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-liquidationReport": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": [],
         },
         "consentContinuationOut": {
             "attachments": ["Continue Out Application", "Letter of Consent", "Receipt"],
