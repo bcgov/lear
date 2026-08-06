@@ -808,7 +808,6 @@ def insert_demigrated_filings(lear_engine: Engine, colin_engine: Engine, busines
             'tech_correction_json': _serialize_if_json(filing_dict.get('tech_correction_json')),
             'colin_only': filing_dict.get('colin_only'),
             'deletion_locked': filing_dict.get('deletion_locked'),
-            'order_details': _serialize_if_json(filing_dict.get('order_details')),
             'submitter_roles': _serialize_if_json(filing_dict.get('submitter_roles')),
             'meta_data': _serialize_if_json(filing_dict.get('meta_data')),
             'filing_sub_type': filing_dict.get('filing_sub_type'),
@@ -830,7 +829,7 @@ def insert_demigrated_filings(lear_engine: Engine, colin_engine: Engine, busines
                                         payment_id, transaction_id, business_id, submitter_id, status,
                                         payment_completion_date, paper_only, completion_date, effective_date,
                                         source, parent_filing_id, payment_status_code, temp_reg, payment_account,
-                                        tech_correction_json, colin_only, deletion_locked, order_details,
+                                        tech_correction_json, colin_only, deletion_locked,
                                         submitter_roles, meta_data, filing_sub_type, approval_type,
                                         application_date, notice_date, resubmission_date, hide_in_ledger,
                                         withdrawn_filing_id, withdrawal_pending, lear_only)
@@ -838,7 +837,7 @@ def insert_demigrated_filings(lear_engine: Engine, colin_engine: Engine, busines
                                         :payment_id, :transaction_id, :business_id, :submitter_id, :status,
                                         :payment_completion_date, :paper_only, :completion_date, :effective_date,
                                         :source, :parent_filing_id, :payment_status_code, :temp_reg, :payment_account,
-                                        :tech_correction_json, :colin_only, :deletion_locked, :order_details,
+                                        :tech_correction_json, :colin_only, :deletion_locked,
                                         :submitter_roles, :meta_data, :filing_sub_type, :approval_type,
                                         :application_date, :notice_date, :resubmission_date, :hide_in_ledger,
                                         :withdrawn_filing_id, :withdrawal_pending, :lear_only)
