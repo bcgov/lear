@@ -27,7 +27,7 @@ from unittest.mock import patch
 import datedelta
 import pytest
 from dateutil.parser import parse
-from flask import current_app
+from flask import current_app, g
 from minio.error import S3Error
 from reportlab.lib.pagesizes import letter
 
@@ -1807,6 +1807,35 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
         assert future_effective_date == valid_date
     else:
         assert 'futureEffectiveDate' not in rv.json['filing']['header']
+
+
+def test_create_invoice_forwards_account_linking_key(session, requests_mock, client, jwt):
+    """Assert that create_invoice forwards the Account-Linking-Key header when present on the request."""
+    identifier = 'CP1234567'
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['business']['identifier'] = identifier
+
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    factory_business_mailing_address(b)
+
+    pay_mock = requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
+                                  json={'id': 21322,
+                                        'statusCode': 'COMPLETED',
+                                        'isPaymentActionRequired': False},
+                                  status_code=HTTPStatus.CREATED)
+    g.pop('request_context', None)  # clear request context so it isn't cached before request
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=coa,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier,
+                                           **{'Account-Linking-Key': 'test-linking-key'})
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert pay_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
 
 
 def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
