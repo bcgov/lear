@@ -760,16 +760,22 @@ def get_lear_business_filings(db_engine: Engine, business_ids: List[int]):
 
 
 @task(cache_policy=NO_CACHE)
-def insert_demigrated_filings(db_engine: Engine, business_ids: List[int], identifiers: List[str]):
+def insert_demigrated_filings(lear_engine: Engine, colin_engine: Engine, business_ids: List[int], identifiers: List[str]):
     """Fetch any LEAR filings for the provided businesses and persist them for demigration tracking."""
     if not business_ids:
         return
 
-    filings = get_lear_business_filings(db_engine, business_ids)
+    filings = get_lear_business_filings(lear_engine, business_ids)
     if not filings:
         return
 
     id_to_identifier = dict(zip(business_ids, identifiers)) if business_ids and identifiers else {}
+
+    def _serialize_if_json(value):
+        if isinstance(value, (dict, list)):
+            return __import__('json').dumps(value)
+        return value
+
     normalized_filings = []
     for filing in filings:
         if not filing:
@@ -784,21 +790,64 @@ def insert_demigrated_filings(db_engine: Engine, business_ids: List[int], identi
         normalized_filings.append({
             'identifier': id_to_identifier.get(business_id),
             'filing_id': filing_id,
-            'business_id': business_id,
+            'filing_date': filing_dict.get('filing_date'),
+            'filing_type': filing_dict.get('filing_type'),
+            'filing_json': _serialize_if_json(filing_dict.get('filing_json')),
+            'payment_id': filing_dict.get('payment_id'),
             'transaction_id': filing_dict.get('transaction_id'),
+            'business_id': business_id,
+            'submitter_id': filing_dict.get('submitter_id'),
+            'status': filing_dict.get('status'),
+            'payment_completion_date': filing_dict.get('payment_completion_date'),
+            'paper_only': filing_dict.get('paper_only'),
+            'completion_date': filing_dict.get('completion_date'),
+            'effective_date': filing_dict.get('effective_date'),
             'source': filing_dict.get('source') or 'LEAR',
+            'parent_filing_id': filing_dict.get('parent_filing_id'),
+            'payment_status_code': filing_dict.get('payment_status_code'),
+            'temp_reg': filing_dict.get('temp_reg'),
+            'payment_account': filing_dict.get('payment_account'),
+            'tech_correction_json': _serialize_if_json(filing_dict.get('tech_correction_json')),
+            'colin_only': filing_dict.get('colin_only'),
+            'deletion_locked': filing_dict.get('deletion_locked'),
+            'order_details': _serialize_if_json(filing_dict.get('order_details')),
+            'submitter_roles': _serialize_if_json(filing_dict.get('submitter_roles')),
+            'meta_data': _serialize_if_json(filing_dict.get('meta_data')),
+            'filing_sub_type': filing_dict.get('filing_sub_type'),
+            'approval_type': filing_dict.get('approval_type'),
+            'application_date': filing_dict.get('application_date'),
+            'notice_date': filing_dict.get('notice_date'),
+            'resubmission_date': filing_dict.get('resubmission_date'),
+            'hide_in_ledger': filing_dict.get('hide_in_ledger'),
+            'withdrawn_filing_id': filing_dict.get('withdrawn_filing_id'),
+            'withdrawal_pending': filing_dict.get('withdrawal_pending'),
+            'lear_only': filing_dict.get('lear_only')
         })
 
     if not normalized_filings:
         return
 
     sql = text("""
-        INSERT INTO demigrated_filings (corp_num, business_id, transaction_id, source)
-        VALUES (:identifier, :business_id, :transaction_id, :source)
+        INSERT INTO demigrated_filings (corp_num, filing_id, filing_date, filing_type, filing_json,
+                                        payment_id, transaction_id, business_id, submitter_id, status,
+                                        payment_completion_date, paper_only, completion_date, effective_date,
+                                        source, parent_filing_id, payment_status_code, temp_reg, payment_account,
+                                        tech_correction_json, colin_only, deletion_locked, order_details,
+                                        submitter_roles, meta_data, filing_sub_type, approval_type,
+                                        application_date, notice_date, resubmission_date, hide_in_ledger,
+                                        withdrawn_filing_id, withdrawal_pending, lear_only)
+        VALUES (:identifier, :filing_id, :filing_date, :filing_type, :filing_json,
+                                        :payment_id, :transaction_id, :business_id, :submitter_id, :status,
+                                        :payment_completion_date, :paper_only, :completion_date, :effective_date,
+                                        :source, :parent_filing_id, :payment_status_code, :temp_reg, :payment_account,
+                                        :tech_correction_json, :colin_only, :deletion_locked, :order_details,
+                                        :submitter_roles, :meta_data, :filing_sub_type, :approval_type,
+                                        :application_date, :notice_date, :resubmission_date, :hide_in_ledger,
+                                        :withdrawn_filing_id, :withdrawal_pending, :lear_only)
         ON CONFLICT (id) DO NOTHING
     """)
 
-    with db_engine.connect() as conn:
+    with colin_engine.connect() as conn:
         conn.execute(sql, normalized_filings)
         conn.commit()
 
@@ -845,8 +894,9 @@ def batch_delete_flow():
                 break
             print(f'🚀 Running round {cnt} to delete {len(business_ids)} busiesses...')
 
-            
-            insert_demigrated_filings(lear_engine, business_ids, identifiers)
+            # If business has lear filings save them to demigrated filings table
+            if config.SAVE_DEMIGRATED_LEAR_FILINGS:
+                insert_demigrated_filings(lear_engine, colin_engine, business_ids, identifiers)
 
             futures = []
             futures.append(lear_delete.submit(lear_engine, business_ids))
