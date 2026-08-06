@@ -146,7 +146,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
         # If its required for alteration add while updating alteration filing
         existing_ids = {resolution.id for resolution in business.resolutions.all()}
         for idx, resolution_date in enumerate(resolution_dates):
-            if (id := resolution_date.get("id")) and (id not in existing_ids):
+            if (resolution_id := resolution_date.get("id")) and (resolution_id not in existing_ids):
                 msg.append({
                     "error": "Not a valid Resolution Id for this business.",
                     "path": f"{err_path}/{idx}"

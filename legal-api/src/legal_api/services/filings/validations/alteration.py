@@ -47,9 +47,10 @@ def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-
         if error:
            return error
     new_legal_type_path: Final = "/filing/alteration/business/legalType"
+    new_legal_type = get_str(filing, new_legal_type_path)
     msg.extend(validate_type_change(filing, business, new_legal_type_path))
-    msg.extend(company_name_validation(filing, business))
-    msg.extend(share_structure_validation(filing, business))
+    msg.extend(company_name_validation(filing, business, new_legal_type))
+    msg.extend(share_structure_validation(filing, business, new_legal_type))
     msg.extend(court_order_validation(filing))
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
@@ -81,10 +82,9 @@ def court_order_validation(filing):
     return []
 
 
-def share_structure_validation(filing, business: Business):
+def share_structure_validation(filing, business: Business, new_legal_type: str):
     """Validate share structure."""
     share_structure_path: Final = "/filing/alteration/shareStructure"
-    new_legal_type = get_str(filing, "/filing/alteration/business/legalType")
 
     if get_str(filing, share_structure_path):
         err = validate_share_structure(filing, "alteration", new_legal_type or business.legal_type)
@@ -96,13 +96,12 @@ def share_structure_validation(filing, business: Business):
     return []
 
 
-def company_name_validation(filing, business: Business):
+def company_name_validation(filing, business: Business, new_legal_type: str):
     """Validate company name."""
     msg = []
     if filing["filing"]["header"].get("source") == "COLIN":
         return msg
 
-    new_legal_type = get_str(filing, "/filing/alteration/business/legalType")
     if get_str(filing, "/filing/alteration/nameRequest/nrNumber"):
         accepted_request_types = [
             "BEC", "CCC", "CCP", "CCR", "CUL",  # name change types
