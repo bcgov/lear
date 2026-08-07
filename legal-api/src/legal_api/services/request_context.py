@@ -34,11 +34,7 @@ def build_from_flask() -> RequestContext:
     # Account header (configurable)
     account_id = request.headers.get("Account-Id", None)
 
-    # Avoid .get() here for backwards compatibility on existing test mocks that doesn't pass the default argument 
-    # through and raises KeyError instead of returning the default.
-    account_linking_key = None
-    if "Account-Linking-Key" in request.headers:
-        account_linking_key = request.headers["Account-Linking-Key"]
+    account_linking_key = request.headers.get("Account-Linking-Key", None)
 
     # Token info and user
     token_info = getattr(g, "jwt_oidc_token_info", None)

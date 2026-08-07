@@ -60,8 +60,8 @@ def test_get_all_business_filings_only_one_in_ledger(app, session, client, jwt, 
 
     print('test_get_all_business_filings - filing:', filings)
     headers=create_header(jwt, [STAFF_ROLE], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -90,8 +90,8 @@ def test_get_all_business_filings_multi_in_ledger(app, session, client, jwt, mon
             datetime.date(add_years(datetime(2001, 8, 5, 7, 7, 58, 272362), i)).isoformat()
         factory_filing(b, ar)
     headers=create_header(jwt, [STAFF_ROLE], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -111,8 +111,8 @@ def test_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service,
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -177,8 +177,8 @@ def test_ledger_comment_count(app, session, client, jwt, monkeypatch, mock_drs_s
         filing_storage.comments.append(comment)
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -222,8 +222,8 @@ def test_get_all_business_filings_permitted_statuses(app, session, client, jwt, 
     filing_storage.skip_status_listener = True
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -279,8 +279,8 @@ def test_ledger_court_order(app, session, client, jwt, test_name, file_number, o
     filing.save()
 
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -314,8 +314,8 @@ def test_ledger_display_name_annual_report(app, session, client, jwt, monkeypatc
     filing_storage._meta_data = meta_data
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -340,8 +340,8 @@ def test_ledger_display_unknown_name(app, session, client, jwt, monkeypatch, moc
     filing_storage._meta_data = meta_data
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -371,8 +371,8 @@ def test_ledger_display_alteration_report(app, session, client, jwt, monkeypatch
     filing_storage._meta_data = meta_data
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -415,8 +415,8 @@ def test_ledger_display_restoration(app, session, client, jwt, restoration_type,
 
     factory_completed_filing(business, filing, filing_date=filing_date)
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -468,8 +468,8 @@ def test_ledger_display_incorporation(app, session, client, jwt, test_name, enti
                }
     f._meta_data = {**{'applicationDate': today}, **ia_meta}
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -491,8 +491,8 @@ def test_ledger_display_corrected_incorporation(app, session, client, jwt, monke
     original.parent_filing_id = correction.id
     original.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -531,8 +531,8 @@ def test_ledger_display_corrected_annual_report(app, session, client, jwt, monke
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -597,8 +597,8 @@ def test_ledger_redaction(app, session, client, jwt, test_name, submitter_role, 
         setattr(new_filing, 'skip_status_listener', True)  # skip status listener
         new_filing.save()
         headers=create_header(jwt, [jwt_role], identifier)
-        def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-            return headers[one]
+        def mock_auth(one, two):
+            return headers.get(one, two)
 
         # test
         with app.test_request_context():
@@ -650,8 +650,8 @@ def test_ledger_display_special_resolution_correction(app, session, client, jwt,
     correction_2._meta_data = {**{'applicationDate': today}, **correction_2_meta}
     correction_2.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -692,8 +692,8 @@ def test_ledger_display_non_special_resolution_correction_name(app, session, cli
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():

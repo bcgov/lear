@@ -1637,8 +1637,8 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
 
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -1765,8 +1765,8 @@ def test_continuation_out_uploaded_documents(app, session, client, jwt, monkeypa
     account_id = '1'
     headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
@@ -1834,8 +1834,8 @@ def test_continuation_out_uploaded_documents_returned_for_non_staff(non_staff_ro
     account_id = '1'
     headers = create_header(jwt, [non_staff_role], identifier, account_id=account_id)
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth)
@@ -1947,8 +1947,8 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
     filing.save()
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], temp_identifier, account_id=account_id)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
@@ -2132,8 +2132,8 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     filing.save()
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], temp_identifier, account_id=account_id)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
+    def mock_auth(one, two):
+        return headers.get(one, two)
 
     # test
     with app.test_request_context():
