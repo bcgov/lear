@@ -1146,11 +1146,10 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test@example.co.uk', True),
     ('user@[192.168.1.1]', True),
     ('no_one@never.get', True),
-    ('"quoted"@example.com', True),
     ('user_name@domain.org', True),
     ('test123@test123.com', True),
     ('john.o\'smith@gov.bc.ca', True),
-    # Invalid email formats
+    # Invalid email formats.
     ('no_one@never.', False),
     ('invalid', False),
     ('@invalid.com', False),
@@ -1160,6 +1159,7 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test @example.com', False),
     ('test@ example.com', False),
     ('test@@example.com', False),
+    ('"quoted"@example.com', False),
 ])
 def test_contact_point_email_format_via_schema(session, email, is_valid):
     """The contactPoint email format is enforced by the schema (the same EMAIL_PATTERN the API used).
