@@ -548,7 +548,6 @@ def test_authorized_missing_args():
 def test_call_auth_api_forwards_account_linking_key(app, jwt, requests_mock):
     """Assert that _call_auth_api forwards the Account-Linking-Key header when present on the request."""
     identifier = 'CP1234567'
-    g.pop('request_context', None)
     with jwt_request_context(app, jwt, roles=[BASIC_USER], username='test-user',
                              **{'Account-Linking-Key': 'test-linking-key'}):
         auth_mock = requests_mock.get(

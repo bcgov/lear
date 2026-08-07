@@ -27,7 +27,7 @@ from unittest.mock import patch
 import datedelta
 import pytest
 from dateutil.parser import parse
-from flask import current_app, g
+from flask import current_app
 from minio.error import S3Error
 from reportlab.lib.pagesizes import letter
 
@@ -1827,7 +1827,6 @@ def test_create_invoice_forwards_account_linking_key(session, requests_mock, cli
                                         'statusCode': 'COMPLETED',
                                         'isPaymentActionRequired': False},
                                   status_code=HTTPStatus.CREATED)
-    g.pop('request_context', None)  # clear request context so it isn't cached before request
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=coa,
                      headers=create_header(jwt, [STAFF_ROLE], identifier,

@@ -33,7 +33,12 @@ def build_from_flask() -> RequestContext:
 
     # Account header (configurable)
     account_id = request.headers.get("Account-Id", None)
-    account_linking_key = request.headers.get("Account-Linking-Key", None)
+
+    # Avoid .get() here for backwards compatibility on existing test mocks that doesn't pass the default argument 
+    # through and raises KeyError instead of returning the default.
+    account_linking_key = None
+    if "Account-Linking-Key" in request.headers:
+        account_linking_key = request.headers["Account-Linking-Key"]
 
     # Token info and user
     token_info = getattr(g, "jwt_oidc_token_info", None)
@@ -59,5 +64,8 @@ def get_request_context() -> RequestContext:
 
 def add_account_linking_key_header(headers: dict) -> None:
     """Forward the incoming Account-Linking-Key header to an outgoing auth-api/pay-api call, if present."""
-    if account_linking_key := get_request_context().account_linking_key:
-        headers["Account-Linking-Key"] = account_linking_key
+    if not has_request_context():
+        return
+
+    if "Account-Linking-Key" in request.headers:
+        headers["Account-Linking-Key"] = request.headers["Account-Linking-Key"]

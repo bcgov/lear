@@ -24,13 +24,16 @@ from tests.unit.services.utils import helper_create_jwt_json_token_claims
 
 
 @pytest.fixture(autouse=True)
-def clear_request_context_cache():
-    """Clear flask.g state that would otherwise leak between tests sharing an app context."""
+def isolate_request_context(monkeypatch):
+    """Isolate flask.g for each test in this module.
+
+    The `app` fixture is session scoped and keeps a single app context open for the whole run,
+    Use monkeypatch so g is restored to its initial state after each test.
+    """
+    monkeypatch.setattr(g, 'jwt_oidc_token_info', None, raising=False)
     g.pop('request_context', None)
-    g.pop('jwt_oidc_token_info', None)
     yield
     g.pop('request_context', None)
-    g.pop('jwt_oidc_token_info', None)
 
 
 @pytest.mark.parametrize('headers,expected', [
