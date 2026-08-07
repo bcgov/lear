@@ -75,8 +75,8 @@ def test_simple_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_s
     token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='testuser')
     headers = {'Authorization': 'Bearer ' + token, 'Account-Id': 1}
 
-    def mock_auth(one, two):
-        return headers.get(one, two)
+    def mock_auth(key, default=None):
+        return headers.get(key, default)
 
    # test
     with app.test_request_context():
