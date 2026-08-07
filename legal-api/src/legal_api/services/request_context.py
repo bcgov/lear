@@ -63,5 +63,5 @@ def add_account_linking_key_header(headers: dict) -> None:
     if not has_request_context():
         return
 
-    if "Account-Linking-Key" in request.headers:
-        headers["Account-Linking-Key"] = request.headers["Account-Linking-Key"]
+    if account_linking_key := request.headers.get("Account-Linking-Key"):
+        headers["Account-Linking-Key"] = account_linking_key
