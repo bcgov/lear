@@ -71,6 +71,11 @@ DELAY_DISSOLUTION = {
 }
 
 
+def mock_auth(headers: dict):
+    """Return a stub for flask.request.headers.get."""
+    return lambda key, default=None: headers.get(key, default)
+
+
 def basic_test_helper():
     identifier = 'CP7654321'
     business = factory_business(identifier)
@@ -1637,12 +1642,9 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
 
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         account_products_mock = []
         with requests_mock.Mocker() as m:
             mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
@@ -1765,11 +1767,8 @@ def test_continuation_out_uploaded_documents(app, session, client, jwt, monkeypa
     account_id = '1'
     headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         with requests_mock.Mocker() as m:
             mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
             m.get(mock_url, json=[], status_code=HTTPStatus.OK)
@@ -1834,11 +1833,8 @@ def test_continuation_out_uploaded_documents_returned_for_non_staff(non_staff_ro
     account_id = '1'
     headers = create_header(jwt, [non_staff_role], identifier, account_id=account_id)
 
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         with requests_mock.Mocker() as m:
             m.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
                   json={'roles': ['view']}, status_code=HTTPStatus.OK)
@@ -1947,12 +1943,9 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
     filing.save()
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], temp_identifier, account_id=account_id)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         account_products_mock = []
         with requests_mock.Mocker() as m:
             mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"
@@ -2041,6 +2034,42 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
 
     assert rv.status_code == HTTPStatus.CREATED
     assert requests_mock.called_once
+
+
+def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests_mock):
+    """Assert that the receipt call forwards the Account-Linking-Key header when present on the request."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    filing_name = 'incorporationApplication'
+    payment_id = '12345'
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_name
+    filing_json['filing'][filing_name] = INCORPORATION
+    filing_json['filing'].pop('business')
+
+    filing_date = datetime.now(UTC)
+    filing = factory_filing(business, filing_json, filing_date=filing_date)
+    filing.skip_status_listener = True
+    filing._status = 'PAID'
+    filing._payment_token = payment_id
+    filing._payment_completion_date = filing_date
+    filing.save()
+
+    pay_mock = requests_mock.post(f"{current_app.config.get('PAYMENT_SVC_URL')}/{payment_id}/receipts",
+                                  json={'foo': 'bar'},
+                                  status_code=HTTPStatus.CREATED)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
+                    headers=create_header(jwt,
+                                          [STAFF_ROLE],
+                                          identifier,
+                                          **{'accept': 'application/pdf',
+                                             'Account-Linking-Key': 'test-linking-key'})
+                    )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert pay_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
 
 
 def test_get_receipt_no_receipt_ca(session, client, jwt, requests_mock):
@@ -2132,12 +2161,9 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     filing.save()
     account_id: str = '1'
     headers=create_header(jwt, [STAFF_ROLE], temp_identifier, account_id=account_id)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         account_products_mock = []
         with requests_mock.Mocker() as m:
             mock_url = f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true"

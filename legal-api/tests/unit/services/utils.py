@@ -73,14 +73,15 @@ def jwt_request_context(app,
                         jwt_manager: JwtManager,
                         roles: List[str] = [],
                         username: str = 'test-user',
-                        account_id: str = '1'):
+                        account_id: str = '1',
+                        **kwargs):
     """Push a Flask request context with a valid JWT and populate
     request_ctx.current_user the way the @jwt.has_one_of_roles decorator
     would in production. Used by tests that call authz functions directly
     instead of routing through a JWT-decorated view.
     """
     token = helper_create_jwt(jwt_manager, roles=roles, username=username)
-    headers = {'Authorization': f'Bearer {token}', 'Account-Id': account_id}
+    headers = {'Authorization': f'Bearer {token}', 'Account-Id': account_id, **kwargs}
     with app.test_request_context(headers=headers):
         jwt_manager._require_auth_validation()
         yield

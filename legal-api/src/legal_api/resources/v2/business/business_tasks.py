@@ -28,6 +28,7 @@ from requests import exceptions
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from legal_api.services import check_warnings, namex
+from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
 
@@ -130,6 +131,7 @@ def construct_task_list(business: Business):  # noqa: PLR0915
                     "Authorization": f"Bearer {jwt.get_token_auth_header()}",
                     "Content-Type": "application/json"
                 }
+                add_account_linking_key_header(headers)
                 pay_response = requests.get(
                     url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
                     headers=headers
