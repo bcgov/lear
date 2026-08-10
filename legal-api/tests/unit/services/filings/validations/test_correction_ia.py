@@ -22,6 +22,7 @@ from unittest.mock import patch
 
 import pytest
 
+from business_model.models import Business, Resolution
 from legal_api.services import NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
@@ -334,7 +335,7 @@ FOUNDING_DATE = NOW - datedelta.YEAR
         ]),
     ]
 )
-def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_restrictions,
+def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights_or_restrictions,
                                     has_series, resolution_dates, expected_code, expected_msg):
     """Test share class/series resolution date validation in correction filings."""
     identifier = 'BC1234567'
@@ -378,3 +379,255 @@ def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_
         assert any(expected_msg[0]['error'] in e['error'] for e in err.msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, has_rights_or_restrictions, has_series, resolution_dates, expected_code, expected_msg',
+    [
+        ('SUCCESS_class_has_rights', True, False, [{'date':'2024-01-01'}], None, None),
+        ('SUCCESS_class_no_rights', False, False, [], None, None),
+        ('SUCCESS_series_has_rights', True, True, [{'date':'2024-01-01'}], None, None),
+        ('SUCCESS_series_no_rights', False, False, [], None, None),
+        ('SUCCESS_existing_resolution', True, False, [{'date':'2024-01-01'}], None, None),
+
+        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_future_date', True, False, [{'date': (NOW + datedelta.DAY).date().isoformat()}], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date cannot be in the future.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+
+        ('FAILURE_before_founding', True, False, [{'date': (FOUNDING_DATE - datedelta.DAY).date().isoformat()}], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Resolution date cannot be before the business founding date.',
+             'path': '/filing/correction/shareStructure/resolutionDates'}
+        ]),
+        
+        ('FAILURE_invalid_resolution_id', True, False, [{'id': 9999999, 'date': '2024-01-01'}], HTTPStatus.BAD_REQUEST, [
+            {'error': 'Not a valid Resolution Id for this business.',
+             'path': '/filing/correction/shareStructure/resolutionDates/0'}
+        ]),
+    ]
+)
+def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_restrictions,
+                                    has_series, resolution_dates, expected_code, expected_msg):
+    """Test share class/series resolution date validation in correction filings."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.founding_date = FOUNDING_DATE
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    del filing['filing']['correction']['commentOnly']
+
+    # Share structure setup
+    filing['filing']['correction']['shareStructure'] = copy.deepcopy(
+        INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication'].get('shareStructure', {})
+    )
+    share_class = filing['filing']['correction']['shareStructure']['shareClasses'][0]
+    share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
+
+    # Series handling
+    if has_series:
+        share_class['series'] = share_class.get('series', [{}])
+        share_class['series'][0]['hasRightsOrRestrictions'] = True
+    else:
+        share_class.pop('series', None)
+
+    if test_name == "SUCCESS_existing_resolution":
+        res_obj = Resolution()
+        res_obj.resolution_date=datetime.fromisoformat(resolution_dates[0]["date"])
+        res_obj.business_id = business.id
+        res_obj.resolution_type = Resolution.ResolutionType.SPECIAL.value
+        res_obj.save()
+        resolution_dates[0]["id"] = res_obj.id
+
+    filing['filing']['correction']['shareStructure']['resolutionDates'] = resolution_dates
+
+    # Remove the second share class if it exists
+    share_classes = filing['filing']['correction']['shareStructure']['shareClasses']
+    if len(share_classes) > 1:
+        share_classes.pop(1)
+
+    with freeze_time(NOW):
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            err = validate(business, filing)
+
+    if expected_code:
+        assert err
+        assert any(expected_msg[0]['error'] in e['error'] for e in err.msg)
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors', [
+    (False, '', 'BEN', 'BEN', '', True, False, 1),
+    (False, '', 'BEN', 'BC', '', True, True, 0),
+    (False, '', 'BEN', 'ULC', '', True, False, 1),
+    (False, '', 'BEN', 'CC', '', True, True, 1),
+    (False, '', 'BEN', 'CP', '', True, False, 1),
+    (False, '', 'BEN', 'C', '', True, False, 1),
+    (False, '', 'BEN', 'CBEN', '', True, False, 1),
+    (False, '', 'BEN', 'CUL', '', True, False, 1),
+    (False, '', 'BEN', 'CCC', '', True, False, 1),
+
+    (False, '', 'BC', 'BC', '', True, False, 1),
+    (False, '', 'BC', 'BEN', '', True, True, 0),
+    (False, '', 'BC', 'ULC', '', True, True, 0),
+    (False, '', 'BC', 'CC', '', True, True, 0),
+    (False, '', 'BC', 'CP', '', True, False, 1),
+    (False, '', 'BC', 'C', '', True, False, 1),
+    (False, '', 'BC', 'CBEN', '', True, False, 1),
+    (False, '', 'BC', 'CUL', '', True, False, 1),
+    (False, '', 'BC', 'CCC', '', True, False, 1),
+
+    (False, '', 'ULC', 'ULC', '', True, False, 1),
+    (False, '', 'ULC', 'BC', '', True, True, 0),
+    (False, '', 'ULC', 'BEN', '', True, True, 0),
+    (False, '', 'ULC', 'CC', '', True, False, 1),
+    (False, '', 'ULC', 'CP', '', True, False, 1),
+    (False, '', 'ULC', 'C', '', True, False, 1),
+    (False, '', 'ULC', 'CBEN', '', True, False, 1),
+    (False, '', 'ULC', 'CUL', '', True, False, 1),
+    (False, '', 'ULC', 'CCC', '', True, False, 1),
+
+    (False, '', 'CC', 'CC', '', True, False, 1),
+    (False, '', 'CC', 'BEN', '', True, False, 1),
+    (False, '', 'CC', 'BC', '', True, False, 1),
+    (False, '', 'CC', 'ULC', '', True, False, 1),
+    (False, '', 'CC', 'CP', '', True, False, 1),
+    (False, '', 'CC', 'C', '', True, False, 1),
+    (False, '', 'CC', 'CBEN', '', True, False, 1),
+    (False, '', 'CC', 'CUL', '', True, False, 1),
+    (False, '', 'CC', 'CCC', '', True, False, 1),
+
+    (False, '', 'CBEN', 'CBEN', '', True, False, 1),
+    (False, '', 'CBEN', 'C', '', True, True, 0),
+    (False, '', 'CBEN', 'CUL', '', True, False, 1),
+    (False, '', 'CBEN', 'CCC', '', True, True, 1),
+    (False, '', 'CBEN', 'BEN', '', True, False, 1),
+    (False, '', 'CBEN', 'BC', '', True, False, 1),
+    (False, '', 'CBEN', 'ULC', '', True, False, 1),
+    (False, '', 'CBEN', 'CC', '', True, False, 1),
+    (False, '', 'CBEN', 'CP', '', True, False, 1),
+
+    (False, '', 'C', 'C', '', True, False, 1),
+    (False, '', 'C', 'CBEN', '', True, True, 0),
+    (False, '', 'C', 'CUL', '', True, True, 0),
+    (False, '', 'C', 'CCC', '', True, True, 0),
+    (False, '', 'C', 'BC', '', True, False, 1),
+    (False, '', 'C', 'BEN', '', True, False, 1),
+    (False, '', 'C', 'ULC', '', True, False, 1),
+    (False, '', 'C', 'CC', '', True, False, 1),
+    (False, '', 'C', 'CP', '', True, False, 1),
+
+    (False, '', 'CUL', 'CUL', '', True, False, 1),
+    (False, '', 'CUL', 'C', '', True, True, 0),
+    (False, '', 'CUL', 'CBEN', '', True, True, 0),
+    (False, '', 'CUL', 'CCC', '', True, False, 1),
+    (False, '', 'CUL', 'ULC', '', True, False, 1),
+    (False, '', 'CUL', 'BC', '', True, False, 1),
+    (False, '', 'CUL', 'BEN', '', True, False, 1),
+    (False, '', 'CUL', 'CC', '', True, False, 1),
+    (False, '', 'CUL', 'CP', '', True, False, 1),
+
+    (False, '', 'CCC', 'CCC', '', True, False, 1),
+    (False, '', 'CCC', 'CBEN', '', True, False, 1),
+    (False, '', 'CCC', 'C', '', True, False, 1),
+    (False, '', 'CCC', 'CUL', '', True, False, 1),
+    (False, '', 'CCC', 'CC', '', True, False, 1),
+    (False, '', 'CCC', 'BEN', '', True, False, 1),
+    (False, '', 'CCC', 'BC', '', True, False, 1),
+    (False, '', 'CCC', 'ULC', '', True, False, 1),
+    (False, '', 'CCC', 'CP', '', True, False, 1),
+
+    # check minimum directors validation
+    (False, '', 'BC', 'CC', '', False, False, 1),
+    (False, '', 'CBEN', 'CCC', '', False, False, 1)
+])
+@patch('business_model.models.PartyRole.get_parties_by_role')
+def test_new_legal_type(mock_get_parties, session, app, jwt, use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors):
+    """Test that a valid Alteration without NR correction passes validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    del filing['filing']['correction']['commentOnly']
+
+    filing['filing']['correction']['newLegalType'] = new_legal_type
+
+    class MockDirector:
+        def __init__(self, cessation_date=None):
+            self.cessation_date = cessation_date
+
+    def create_mock_directors(count=3):
+        """Return a list of mock directors for tests."""
+        return [MockDirector() for _ in range(count)]  
+
+    # mock directors
+    if mock_directors:
+        mock_get_parties.return_value = create_mock_directors(3)
+    else:
+        mock_get_parties.return_value = []
+
+    if use_nr:
+        filing['filing']['business']['identifier'] = identifier
+        filing['filing']['business']['legalName'] = 'legal_name-BC1234567'
+        filing['filing']['business']['legalType'] = legal_type
+
+        filing['filing']['correction']['nameRequest']['nrNumber'] = identifier
+        filing['filing']['correction']['nameRequest']['legalName'] = new_name
+        filing['filing']['correction']['nameRequest']['legalType'] = new_legal_type
+
+        nr_json = {
+            "state": "APPROVED",
+            "expirationDate": "",
+            "requestTypeCd": nr_type,
+            "names": [{
+                "name": new_name,
+                "state": "APPROVED",
+                "consumptionDate": ""
+            }],
+            "legalType": new_legal_type
+        }
+
+        nr_response = MockResponse(nr_json)
+        with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+            with jwt_request_context(app, jwt, [BASIC_USER]):
+                err = validate(business, filing)
+    else:
+        del filing['filing']['correction']['nameRequest']
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            err = validate(business, filing)
+
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert len(err.msg) == num_errors
+
+        # check for minimum directors error message
+        if (new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value,
+                               Business.LegalTypes.COOP.value] and not mock_directors):
+            assert 'Must have a minimum of three directors. File a change of director filing first.' in [e['error'] for e in err.msg]
