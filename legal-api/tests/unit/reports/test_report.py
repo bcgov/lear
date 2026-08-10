@@ -1191,6 +1191,46 @@ def test_special_resolution_drs_report_type(session, filing_type, expected_repor
     assert response.status_code == HTTPStatus.OK
 
 
+@pytest.mark.parametrize('filing_type,report_key,expected_report_type', [
+    ('annualReport', 'annualReport', 'FILING'),
+    ('annualReport', 'changeOfDirectors', 'FILING-2'),
+    ('annualReport', 'changeOfAddress', 'FILING-4'),
+    ('changeOfDirectors', 'changeOfDirectors', 'FILING'),
+    ('changeOfAddress', 'changeOfAddress', 'FILING'),
+])
+def test_coop_annual_report_drs_report_types(session, filing_type, report_key, expected_report_type):
+    """Assert each legal filing bundled in a coop annual report uses a distinct DRS report type (#34457).
+
+    When stored with the same FILING report type as the annual report's own output, the DRS-first
+    lookup serves whichever of the documents was stored first, so every output shows the same content.
+    """
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type='CP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_type
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    if filing_type == 'annualReport':
+        filing_json['filing']['annualReport'] = copy.deepcopy(ANNUAL_REPORT['filing']['annualReport'])
+    if report_key == 'changeOfDirectors':
+        filing_json['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    if report_key == 'changeOfAddress':
+        filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._report_key = report_key
+    report._document_service = MagicMock()
+    report._document_service.get_filing_report_by_filing_id.return_value = (b'pdf', HTTPStatus.OK)
+
+    response = report._get_report()
+
+    report._document_service.get_filing_report_by_filing_id.assert_called_once_with(
+        identifier, filing.id, expected_report_type)
+    assert response.status_code == HTTPStatus.OK
+
+
 def _make_static_report_filing(identifier, document_type, file_key):
     """Create a completed coop dissolution filing with an uploaded document row."""
     from business_model.models import Document

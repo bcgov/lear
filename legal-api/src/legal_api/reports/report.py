@@ -127,6 +127,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # the FILING report type with that filing's own report, or the DRS lookup below serves
             # whichever of the two documents was stored first (#34299).
             report_meta = {**report_meta, "reportType": ReportTypes.FILING_2.value}
+        if self._filing.filing_type == "annualReport" and \
+                (accompanying_type := {"changeOfDirectors": ReportTypes.FILING_2.value,
+                                       "changeOfAddress": ReportTypes.FILING_4.value}.get(self._report_key)):
+            # A coop annual report can bundle director and address changes as additional legal filings;
+            # each output must have its own report type or the DRS lookup below serves whichever of the
+            # documents was stored first (#34457).
+            report_meta = {**report_meta, "reportType": accompanying_type}
         report_type = report_meta.get("reportType")
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
