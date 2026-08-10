@@ -23,10 +23,15 @@ from unittest.mock import patch
 import pytest
 
 from business_model.models import Business, Resolution
+from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
-from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import (
+    CORRECTION_INCORPORATION, 
+    CONTINUATION_IN_FILING_TEMPLATE,
+    INCORPORATION_FILING_TEMPLATE
+)
 
 from tests.unit import MockResponse
 from tests.unit.models import factory_business, factory_completed_filing
@@ -631,3 +636,175 @@ def test_new_legal_type(mock_get_parties, session, app, jwt, use_nr, new_name, l
         if (new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value,
                                Business.LegalTypes.COOP.value] and not mock_directors):
             assert 'Must have a minimum of three directors. File a change of director filing first.' in [e['error'] for e in err.msg]
+
+
+def test_validate_correction_continuation_in_incorporation_date(mocker, app, session, jwt):
+    """Assert that an error is raised if the correction continuation_in incorporation date is set to a future date."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    future_date = (dt.now() + timedelta(days=1)).date().isoformat()  # Set date to tomorrow
+    filing['filing']['correction']['continuationIn'] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'identifier': 'AB1234567',
+        'incorporationDate': future_date
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # Assert that the error list contains the appropriate error for future incorporation date
+    assert len(err.msg) == 1
+    assert err.msg[0]['error'] == 'Incorporation date cannot be in the future.'
+    assert err.msg[0]['path'] == '/filing/correction/continuationIn/incorporationDate'
+
+
+@pytest.mark.parametrize(
+    'test_name, identifier, legal_name, expected_errors',
+    [
+        (
+            'SUCCESS',
+            'C1234567',
+            'Test',
+            []
+        ),
+        (
+            'SUCCESS_IDENTIFIER_AT_MAX_LENGTH',
+            'A' * 50,
+            'Test',
+            []
+        ),
+        (
+            'SUCCESS_LEGAL_NAME_AT_MAX_LENGTH',
+            'C1234567',
+            'A' * 1000,
+            []
+        ),
+        (
+            'FAIL_IDENTIFIER_EXCEEDS_MAX_LENGTH',
+            'A' * 51,
+            'Test',
+            [
+                {
+                    'error': 'Identifier must not exceed 50 characters.',
+                    'path': '/filing/correction/continuationIn/identifier'
+                }
+            ]
+        ),
+        (
+            'FAIL_LEGAL_NAME_EXCEEDS_MAX_LENGTH',
+            'C1234567',
+            'A' * 1001,
+            [
+                {
+                    'error': 'Legal name must not exceed 1000 characters.',
+                    'path': '/filing/correction/continuationIn/legalName'
+                }
+            ]
+        ),
+        (
+            'FAIL_BOTH_EXCEED_MAX_LENGTH',
+            'A' * 51,
+            'A' * 1001,
+            [
+                {
+                    'error': 'Identifier must not exceed 50 characters.',
+                    'path': '/filing/correction/continuationIn/identifier'
+                },
+                {
+                    'error': 'Legal name must not exceed 1000 characters.',
+                    'path': '/filing/correction/continuationIn/legalName'
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
+                                                     test_name, identifier, legal_name, expected_errors):
+    """Assert that identifier and legalName enforce max length for continuation in filings.
+
+    The required (non-empty / non-whitespace) rule for these fields now lives in the schema;
+    see test_continuation_in_foreign_jurisdiction_name_rejected_by_schema.
+    """
+    _identifier = 'BC1234567'
+    business = factory_business(_identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = _identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    continuation_in = {
+        'country': 'US',
+        'region': 'WA',
+        'legalName': 'HAULER SERVICES',
+        'incorporationDate': dt.now().date().isoformat()
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+
+    if identifier is not None:
+        continuation_in['identifier'] = identifier
+
+    if legal_name is not None:
+        continuation_in['legalName'] = legal_name
+
+    filing['filing']['correction']['continuationIn'] = continuation_in
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    if expected_errors:
+        assert err.msg == expected_errors
+    else:
+        assert err is None
+
+
+def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session, jwt):
+    """Assert continuation EXPRO business with matching founding date."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    filing['filing']['correction']['continuationIn'] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'identifier': 'AB1234567',
+        'incorporationDate': dt.now().date().isoformat(),
+        'xpro': {
+            'identifier': 'A0077779',
+            'legalName': 'Test Company Inc.'
+        }
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
+        status_code=HTTPStatus.OK,
+        json=lambda: {
+            'business': {
+                'identifier': 'A0077779',
+                'legalName': 'Test Company Inc.'
+            }
+        }
+    ))
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert not err
+
