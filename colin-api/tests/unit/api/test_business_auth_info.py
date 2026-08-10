@@ -91,7 +91,7 @@ def test_get_auth_info(client, mocker, authorized, mock_db):  # pylint: disable=
 
     rv = client.get(AUTH_INFO_URL)
 
-    assert rv.status_code ==200
+    assert rv.status_code == 200
     assert rv.json == {
         'identifier': '0870226',
         'legalName': 'COLIN TEST COMPANY LTD.',
