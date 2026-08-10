@@ -109,7 +109,7 @@ def test_get_auth_info_strips_bc_prefix(client, mocker, authorized, mock_db):  #
     """Assert the BC prefix is stripped, since COLIN stores the bare corp number."""
     find = mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
 
-    assert 200 == client.get(AUTH_INFO_URL).status_code
+    assert client.get(AUTH_INFO_URL).status_code == 200
 
     assert find.call_args.args[0] == '0870226'
     # the corp password lookup uses the bare corp num too
@@ -162,7 +162,7 @@ def test_get_auth_info_normalizes_admin_freeze(client, mocker, authorized,
 
     rv = client.get(AUTH_INFO_URL)
 
-    assert 200 == rv.status_code
+    assert rv.status_code == 200
     assert rv.json['adminFreeze'] is True
 
 
@@ -173,7 +173,7 @@ def test_get_auth_info_without_passcode(client, mocker, authorized, mock_db):  #
 
     rv = client.get(AUTH_INFO_URL)
 
-    assert 200 == rv.status_code
+    assert rv.status_code == 200
     assert rv.json['passCode'] is None
 
 
@@ -184,7 +184,7 @@ def test_get_auth_info_no_results(client, mocker, authorized, mock_db):  # pylin
 
     rv = client.get('/api/v1/businesses/BC0000000/auth-info')
 
-    assert 404 == rv.status_code
+    assert rv.status_code == 404
     assert None is not rv.json['message']
 
 
@@ -195,7 +195,7 @@ def test_get_auth_info_handles_unexpected_error(client, mocker, authorized,
 
     rv = client.get(AUTH_INFO_URL)
 
-    assert 500 == rv.status_code
+    assert rv.status_code == 500
     assert 'oracle exploded' not in str(rv.json)
 
 
@@ -205,4 +205,4 @@ def test_get_auth_info_requires_colin_service_role(client, mocker):
 
     rv = client.get(AUTH_INFO_URL)
 
-    assert 401 == rv.status_code
+    assert rv.status_code == 401
