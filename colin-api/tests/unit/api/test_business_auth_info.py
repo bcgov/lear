@@ -66,13 +66,13 @@ def _bypass_auth(mocker, roles_valid=True):
     mocker.patch.object(_jwt, 'validate_roles', return_value=roles_valid)
 
 
-@pytest.fixture()
+@pytest.fixture
 def authorized(mocker):
     """Bypass the colin service role check - the gate itself is asserted separately."""
     _bypass_auth(mocker)
 
 
-@pytest.fixture()
+@pytest.fixture
 def mock_db(mocker):
     """Mock the Oracle connection, exposing the connection and cursor for assertions."""
     cursor = MagicMock()
@@ -91,7 +91,7 @@ def test_get_auth_info(client, mocker, authorized, mock_db):  # pylint: disable=
 
     rv = client.get(AUTH_INFO_URL)
 
-    assert 200 == rv.status_code
+    assert rv.status_code ==200
     assert rv.json == {
         'identifier': '0870226',
         'legalName': 'COLIN TEST COMPANY LTD.',
