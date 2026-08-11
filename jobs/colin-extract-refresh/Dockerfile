@@ -86,4 +86,4 @@ EXPOSE 8080
 
 COPY src .
 
-CMD ["/bin/sh", "-c", "python /opt/app-root/colin-extract-refresh/src/test_connectivity.py && python /opt/app-root/colin-extract-refresh/src/refresh_extract_subset_flow.py --target-connection my_proxy_test --target-schema colin_extract_temp --mode refresh"]
+CMD ["/bin/sh", "-c", "python /opt/app-root/colin-extract-refresh/src/test_connectivity.py"]
