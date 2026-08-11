@@ -38,7 +38,6 @@ from .bootstrap import RegistrationBootstrapService
 from .business_details_version import VersionedBusinessDetailsService
 from .colin import ColinService
 from .furnishing_documents_service import FurnishingDocumentsService
-from .minio import MinioService
 from .mras_service import MrasService
 from .naics import NaicsService
 from .namex import NameXService
@@ -71,7 +70,6 @@ __all__ = [  # noqa: RUF022
     "DigitalCredentialsRulesService",
     "Flags",
     "FurnishingDocumentsService",
-    "MinioService",
     "MrasService",
     "NaicsService",
     "NameXService",
