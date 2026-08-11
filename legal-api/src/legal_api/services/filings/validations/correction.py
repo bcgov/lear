@@ -37,6 +37,10 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_currency,
     validate_share_structure,
 )
+from legal_api.services.filings.validations.continuation_in import (
+    validate_continuation_in_foreign_jurisdiction,
+    validate_continuation_in_xpro_business_in_colin,
+)
 from legal_api.services.filings.validations.incorporation_application import (
     validate_coop_parties_mailing_address,
     validate_roles,
@@ -154,6 +158,25 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
 
         msg.extend(validate_share_currency(filing_dict, filing_type, business))
         msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
+
+    msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
+
+
+def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
+    msg = []
+    if continuation_in := filing_dict["filing"][filing_type].get("continuationIn"):
+        msg.extend(validate_continuation_in_foreign_jurisdiction(
+            legal_type,
+            continuation_in,
+            f"/filing/{filing_type}/continuationIn",
+            skip_affidavit=True
+        ))
+        msg.extend(validate_continuation_in_xpro_business_in_colin(
+            continuation_in.get("xpro"),
+            f"/filing/{filing_type}/continuationIn/xpro",
+            skip_founding_date=True
+        ))
+    return msg
 
 
 def _validate_special_resolution_correction(filing_dict, legal_type, msg):
