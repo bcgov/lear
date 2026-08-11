@@ -25,9 +25,7 @@ from legal_api.core.filing_helper import is_special_resolution_correction_by_fil
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.alteration import validate_type_change
-from legal_api.services.filings.validations.amalgamation_out import (
-    validate_amalgamation_out_date
-)
+from legal_api.services.filings.validations.amalgamation_out import validate_amalgamation_out_date
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
@@ -45,9 +43,7 @@ from legal_api.services.filings.validations.continuation_in import (
     validate_continuation_in_foreign_jurisdiction,
     validate_continuation_in_xpro_business_in_colin,
 )
-from legal_api.services.filings.validations.continuation_out import (
-    validate_continuation_out_date
-)
+from legal_api.services.filings.validations.continuation_out import validate_continuation_out_date
 from legal_api.services.filings.validations.incorporation_application import (
     validate_coop_parties_mailing_address,
     validate_roles,
@@ -167,7 +163,7 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
 
     msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
-    msg.extend(_validate_out_correction(filing_dict, filing_type, legal_type))
+    msg.extend(_validate_out_correction(filing_dict, filing_type))
 
 
 def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
@@ -187,7 +183,7 @@ def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
     return msg
 
 
-def _validate_out_correction(filing_dict, filing_type, legal_type):
+def _validate_out_correction(filing_dict, filing_type):
     msg = []
     if continuation_out := filing_dict["filing"][filing_type].get("continuationOut"):
         msg.extend(validate_continuation_out_date(filing_dict, f"/filing/{filing_type}/continuationOut/date"))
