@@ -87,6 +87,11 @@ def validate(business: Business, filing: dict) -> Error:
         path = "/filing/correction/correctedFilingId"
         msg.append({"error": _("Corrected filing is not a valid filing for this business."), "path": path})
 
+    elif corrected_filing.filing_type != filing["filing"]["correction"]["correctedFilingType"]:
+        path = "/filing/correction/correctedFilingType"
+        msg.append({"error": _("The corrected filing type does not match filing type of corrected filing."),
+                    "path": path})
+
     # skip all the other validation checks if comment only correction
     if not is_comment_only_correction:
         if filing.get("filing", {}).get("correction", {}).get("parties", None):
