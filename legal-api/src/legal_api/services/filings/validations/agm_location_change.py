@@ -41,10 +41,16 @@ def validate(business: Business, filing: dict) -> Error | None:
     agm_year_path: Final = "/filing/agmLocationChange/year"
     year = get_int(filing, agm_year_path)
     if year:
-        expected_min = LegislationDatetime.now().year - 2
-        expected_max = LegislationDatetime.now().year + 1
+        current_year = LegislationDatetime.now().year
+        # AGM year can never be before the year the business was founded, even if that is
+        # more recent than the default 2-year lookback window.
+        founding_year = LegislationDatetime.as_legislation_timezone(business.founding_date).year \
+            if business.founding_date else current_year - 2
+        expected_min = max(current_year - 2, founding_year)
+        expected_max = current_year + 1
         if expected_min > year or year > expected_max:
-            msg.append({"error": "AGM year must be between -2 or +1 year from current year.", "path": agm_year_path})
+            msg.append({"error": f"AGM year must be between {expected_min} and {expected_max}.",
+                        "path": agm_year_path})
 
     # A non-empty reason (at least one non-whitespace character) is enforced by the schema
     # (business-schemas agm_location_change reason pattern).
