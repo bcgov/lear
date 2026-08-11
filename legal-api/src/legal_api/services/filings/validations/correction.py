@@ -113,18 +113,21 @@ def validate(business: Business, filing: dict) -> Error:
             ))
         if filing.get("filing", {}).get("correction", {}).get("offices", None):
             msg.extend(validate_offices_addresses(filing, filing_type))
-        # validations for firms
-        if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-            _validate_firms_correction(business, filing, business.legal_type, msg)
-        elif business.legal_type in Business.CORPS:
-            _validate_corps_correction(business, filing, business.legal_type, msg)
-        elif business.legal_type == Business.LegalTypes.COOP.value:
-            _validate_special_resolution_correction(filing, business.legal_type, msg)
+
+        _validate_type_specific_props(business, filing, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
     return None
+
+def _validate_type_specific_props(business: Business, filing: dict, msg: list):
+    if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        _validate_firms_correction(business, filing, business.legal_type, msg)
+    elif business.legal_type in Business.CORPS:
+        _validate_corps_correction(business, filing, business.legal_type, msg)
+    elif business.legal_type == Business.LegalTypes.COOP.value:
+        _validate_special_resolution_correction(filing, business.legal_type, msg)
 
 
 def _validate_firms_correction(business: Business, filing, legal_type, msg):
