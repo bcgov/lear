@@ -513,7 +513,7 @@ memorandum_file_key_path = '/filing/alteration/memorandumFileKey'
             }]),
     ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-def test_validate_cooperative_documents(session, mocker, minio_server, test_name, key, scenario, expected_code,
+def test_validate_cooperative_documents(session, mocker, test_name, key, scenario, expected_code,
                                         expected_msg):
     """Assert that validator validates cooperative documents correctly."""
     identifier = 'CP1234567'

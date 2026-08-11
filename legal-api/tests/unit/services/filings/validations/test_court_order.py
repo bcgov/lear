@@ -64,7 +64,7 @@ file_key_path = '/filing/courtOrder/fileKey'
             'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
             'path': file_key_path}])
     ])
-def test_court_order_file(session, minio_server, test_name, expected_code, expected_msg):
+def test_court_order_file(session, test_name, expected_code, expected_msg):
     """Assert valid court order."""
     business = factory_business('BC1234567')
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)

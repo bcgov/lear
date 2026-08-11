@@ -28,7 +28,6 @@ import datedelta
 import pytest
 from dateutil.parser import parse
 from flask import current_app
-from minio.error import S3Error
 from reportlab.lib.pagesizes import letter
 
 from business_common.utils.legislation_datetime import LegislationDatetime
@@ -48,7 +47,6 @@ from business_model.models import (
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
-from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     AMALGAMATION_APPLICATION,
@@ -1099,8 +1097,10 @@ def test_delete_draft_now_filing(session, client, jwt):
     assert 'noticeOfWithdrawal' not in rv.json['filing']
 
 
-def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
-    """Assert that a draft filing can be deleted."""
+def test_delete_coop_ia_filing_in_draft_with_file_in_drs(session, client, jwt):
+    """Assert that a draft filing can be deleted and DRS files are removed."""
+    from legal_api.resources.v2.business.business_filings import business_filings
+
     identifier = 'T1234567'
     temp_reg = RegistrationBootstrap()
     temp_reg._identifier = identifier
@@ -1116,8 +1116,8 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
         'cooperativeAssociationType': 'CP'
     }
 
-    rules_file_key = _upload_file(letter, invalid=False)
-    memorandum_file_key = _upload_file(letter, invalid=False)
+    rules_file_key = 'COOP-DS0000101951'
+    memorandum_file_key = 'COOP-DS0000101952'
     filing_json['filing']['incorporationApplication']['cooperative']['rulesFileKey'] = rules_file_key
     filing_json['filing']['incorporationApplication']['cooperative']['memorandumFileKey'] = memorandum_file_key
     filing = factory_filing(Business(), filing_json, filing_type='incorporationApplication')
@@ -1125,24 +1125,19 @@ def test_delete_coop_ia_filing_in_draft_with_file_in_minio(session, client, jwt,
     filing.save()
 
     headers = create_header(jwt, [STAFF_ROLE], identifier)
-    with patch.object(RegistrationBootstrapService, 'deregister_bootstrap', return_value=HTTPStatus.OK):
-        with patch.object(RegistrationBootstrapService, 'delete_bootstrap', return_value=HTTPStatus.OK):
-            rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+    with patch.object(RegistrationBootstrapService, 'deregister_bootstrap', return_value=HTTPStatus.OK), \
+            patch.object(RegistrationBootstrapService, 'delete_bootstrap', return_value=HTTPStatus.OK), \
+            patch.object(business_filings.doc_service, 'delete_document') as mock_drs:
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
-            assert rv.status_code == HTTPStatus.OK
-            try:
-                MinioService.get_file_info(rules_file_key)
-            except S3Error as ex:
-                assert ex.code == 'NoSuchKey'
-
-            try:
-                MinioService.get_file_info(memorandum_file_key)
-            except S3Error as ex:
-                assert ex.code == 'NoSuchKey'
+    assert rv.status_code == HTTPStatus.OK
+    assert mock_drs.call_count == 2
 
 
-def test_delete_continuation_in_filing_with_authorization_files_in_draft(session, client, jwt, minio_server):
-    """Assert that a draft continuationIn filing can be deleted and authorization files are removed from Minio."""
+def test_delete_continuation_in_filing_with_authorization_files_in_draft(session, client, jwt):
+    """Assert that a draft continuationIn filing can be deleted and authorization files are removed from DRS."""
+    from legal_api.resources.v2.business.business_filings import business_filings
+
     identifier = 'CP1234568'
 
     b = factory_business(identifier)
@@ -1155,26 +1150,26 @@ def test_delete_continuation_in_filing_with_authorization_files_in_draft(session
             "files": []
         }
     }
-    file_key_1 = _upload_file(letter, invalid=False)
-    file_key_2 = _upload_file(letter, invalid=False)
+    file_key_1 = 'CORP-DS0000101951'
+    file_key_2 = 'CORP-DS0000101952'
     filing_json['filing']['continuationIn']['authorization']['files'] = [
         {"fileKey": file_key_1},
         {"fileKey": file_key_2}
     ]
     filing = factory_filing(b, filing_json, filing_type='continuationIn')
     headers = create_header(jwt, [STAFF_ROLE], identifier)
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs:
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
     assert rv.status_code == HTTPStatus.OK
-    for file_key in [file_key_1, file_key_2]:
-        try:
-            MinioService.get_file_info(file_key)
-        except S3Error as ex:
-            assert ex.code == 'NoSuchKey'
+    assert mock_drs.call_count == 2
 
 
-def test_delete_continuation_in_filing_with_affidavit_in_draft(session, client, jwt, minio_server):
-    """Assert that a draft continuationIn filing can be deleted and the affidavit file is removed from Minio."""
+def test_delete_continuation_in_filing_with_affidavit_in_draft(session, client, jwt):
+    """Assert that a draft continuationIn filing can be deleted and the affidavit file is removed from DRS."""
+    from legal_api.resources.v2.business.business_filings import business_filings
+
     identifier = 'CP1234567'
 
     b = factory_business(identifier)
@@ -1187,21 +1182,22 @@ def test_delete_continuation_in_filing_with_affidavit_in_draft(session, client, 
             "files": []
         }
     }
-    file_key = _upload_file(letter, invalid=False)
+    file_key = 'CORP-DS0000101953'
     filing_json['filing']['continuationIn']['foreignJurisdiction']['affidavitFileKey'] = file_key
     filing = factory_filing(b, filing_json, filing_type='continuationIn')
     headers = create_header(jwt, [STAFF_ROLE], identifier)
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs:
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
     assert rv.status_code == HTTPStatus.OK
-    try:
-        MinioService.get_file_info(file_key)
-    except S3Error as ex:
-        assert ex.code == 'NoSuchKey'
+    mock_drs.assert_called_once()
 
 
-def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, jwt, minio_server):
-    """Assert that a draft filing can be deleted."""
+def test_delete_dissolution_filing_in_draft_with_file_in_drs(session, client, jwt):
+    """Assert that a draft filing can be deleted and DRS file is removed."""
+    from legal_api.resources.v2.business.business_filings import business_filings
+
     identifier = 'CP7654321'
 
     b = factory_business(identifier)
@@ -1209,17 +1205,16 @@ def test_delete_dissolution_filing_in_draft_with_file_in_minio(session, client, 
     filing_json['filing']['header']['name'] = 'dissolution'
     filing_json['filing']['business']['legalType'] = 'CP'
     filing_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
-    file_key = _upload_file(letter, invalid=False)
+    file_key = 'COOP-DS0000101954'
     filing_json['filing']['dissolution']['affidavitFileKey'] = file_key
     filing = factory_filing(b, filing_json, filing_type='dissolution')
     headers = create_header(jwt, [STAFF_ROLE], identifier)
-    rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
+
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs:
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
     assert rv.status_code == HTTPStatus.OK
-    try:
-        MinioService.get_file_info(file_key)
-    except S3Error as ex:
-        assert ex.code == 'NoSuchKey'
+    mock_drs.assert_called_once()
 
 
 def test_delete_filing_block_completed(session, client, jwt):
@@ -2465,26 +2460,16 @@ def test_ta(session, requests_mock, client, jwt, monkeypatch, test_name, legal_t
         assert rv.json[0]['message'] == 'Permission Denied - transition filing is currently not available for this user and/or account.'
     
 
-@pytest.mark.parametrize('test_name,file_key,expect_drs', [
-    ('drs_key', 'COOP-DS0000101951', True),
-    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
-    ('legacy_bare_drs_id', 'DS0000100800', False),
-])
-def test_delete_uploaded_file_dispatch(session, test_name, file_key, expect_drs):
-    """Assert uploaded files are deleted from the DRS or Minio based on the file key shape."""
+def test_delete_uploaded_file_dispatch(session):
+    """Assert uploaded files are deleted from DRS."""
     from legal_api.resources.v2.business.business_filings import business_filings
 
-    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs, \
-            patch.object(MinioService, 'delete_file') as mock_minio:
+    file_key = 'COOP-DS0000101951'
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs:
         ListFilingResource.delete_uploaded_file(file_key)
 
-    if expect_drs:
-        mock_drs.assert_called_once()
-        assert mock_drs.call_args[0][0].file_key == file_key
-        mock_minio.assert_not_called()
-    else:
-        mock_drs.assert_not_called()
-        mock_minio.assert_called_once_with(file_key)
+    mock_drs.assert_called_once()
+    assert mock_drs.call_args[0][0].file_key == file_key
 
 
 def test_delete_dissolution_filing_in_draft_with_drs_file(session, client, jwt):
@@ -2502,11 +2487,9 @@ def test_delete_dissolution_filing_in_draft_with_drs_file(session, client, jwt):
     filing = factory_filing(b, filing_json, filing_type='dissolution')
     headers = create_header(jwt, [STAFF_ROLE], identifier)
 
-    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs, \
-            patch.object(MinioService, 'delete_file') as mock_minio:
+    with patch.object(business_filings.doc_service, 'delete_document') as mock_drs:
         rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{filing.id}', headers=headers)
 
     assert rv.status_code == HTTPStatus.OK
     mock_drs.assert_called_once()
     assert mock_drs.call_args[0][0].file_key == file_key
-    mock_minio.assert_not_called()

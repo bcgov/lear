@@ -2329,14 +2329,7 @@ def test_validate_foreign_jurisdiction(session, test_name, foreign_jurisdiction,
     ]
 )
 def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, expected_id):
-    """Test that DRS document keys retrieve content from DRS instead of MinIO."""
-
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None:
-            ["drs-upload"]
-            if flag == "enable-new-feature" else default
-    )
+    """Test that DRS document keys retrieve content from DRS."""
 
     monkeypatch.setattr(
         'legal_api.services.filings.validations.common_validations.doc_service.get_document',
@@ -2349,11 +2342,6 @@ def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, 
                     'content': b'test pdf content'
                 }
             )()
-    )
-
-    monkeypatch.setattr(
-        'legal_api.services.filings.validations.common_validations.MinioService.get_file',
-        lambda _: pytest.fail("MinIO should not be called for DRS documents")
     )
 
     data, size = _get_file_data(file_key)

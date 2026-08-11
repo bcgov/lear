@@ -655,7 +655,7 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
         )
     ])
 @pytest.mark.parametrize('cp_flag_enabled', [True, False])
-def test_validate_incorporation_role(session, minio_server, mocker, test_name,
+def test_validate_incorporation_role(session, mocker, test_name,
                                      legal_type, parties, expected_code, expected_msg,
                                      cp_flag_enabled):
     """Assert that incorporation parties roles can be validated."""
@@ -1631,7 +1631,7 @@ memorandum_file_key_path = '/filing/incorporationApplication/cooperative/memoran
                 'path': memorandum_file_key_path
             }]),
     ])
-def test_validate_cooperative_documents(session, mocker, minio_server, test_name, key, scenario, expected_code,
+def test_validate_cooperative_documents(session, mocker, test_name, key, scenario, expected_code,
                                         expected_msg):
     """Assert that validator validates cooperative documents correctly."""
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
