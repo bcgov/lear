@@ -30,8 +30,11 @@ from legal_api.services import NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
 from registry_schemas.example_data import (
-    CORRECTION_INCORPORATION, 
+    AMALGAMATION_OUT,
+    CORRECTION_INCORPORATION,
     CONTINUATION_IN_FILING_TEMPLATE,
+    CONTINUATION_OUT,
+    FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE
 )
 
@@ -825,7 +828,12 @@ def test_validate_continuation_out_date(session, app, jwt, filing_type, test_nam
     """Assert validate continuation_out_date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
-    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
+
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = identifier
@@ -870,7 +878,11 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
     """Assert validate continuation_out foreign jurisdiction."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
-    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = identifier
