@@ -22,7 +22,7 @@ from reportlab.lib.pagesizes import letter
 from legal_api.services.filings.validations.court_order import validate
 
 from tests.unit.models import factory_business
-from tests.unit.services.filings.test_utils import _upload_file
+from tests.unit.services.filings.test_utils import _upload_file, mock_drs_get_document
 from tests.unit.services.filings.validations import lists_are_equal
 
 
@@ -64,8 +64,9 @@ file_key_path = '/filing/courtOrder/fileKey'
             'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
             'path': file_key_path}])
     ])
-def test_court_order_file(session, test_name, expected_code, expected_msg):
+def test_court_order_file(session, monkeypatch, test_name, expected_code, expected_msg):
     """Assert valid court order."""
+    mock_drs_get_document(monkeypatch)
     business = factory_business('BC1234567')
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
 

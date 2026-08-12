@@ -31,7 +31,7 @@ from business_model.models import Business
 from legal_api.services import flags
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
-from tests.unit.services.filings.test_utils import _upload_file
+from tests.unit.services.filings.test_utils import _upload_file, mock_drs_get_document
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
 
@@ -351,9 +351,10 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
          }]),
     ]
 )
-def test_dissolution_affidavit(session, test_name, legal_type, dissolution_type, key, scenario,
+def test_dissolution_affidavit(session, monkeypatch, test_name, legal_type, dissolution_type, key, scenario,
                                identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that an affidavit can be validated."""
+    mock_drs_get_document(monkeypatch)
     # setup
     business = Business(identifier=identifier, legal_type=legal_type)
 

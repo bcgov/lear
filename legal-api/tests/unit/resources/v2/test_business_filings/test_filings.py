@@ -88,7 +88,6 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_pending_filing,
     factory_user,
 )
-from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.utils import create_header
 
 

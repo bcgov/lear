@@ -30,7 +30,7 @@ from legal_api.services.filings import validate
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
 from tests.unit.models import factory_business
-from tests.unit.services.filings.test_utils import _upload_file
+from tests.unit.services.filings.test_utils import _upload_file, mock_drs_get_document
 from tests.unit.services.filings.validations import lists_are_equal
 
 
@@ -513,9 +513,10 @@ memorandum_file_key_path = '/filing/alteration/memorandumFileKey'
             }]),
     ])
 @patch.object(PermissionService, 'check_user_permission', MagicMock(return_value=None))
-def test_validate_cooperative_documents(session, mocker, test_name, key, scenario, expected_code,
+def test_validate_cooperative_documents(session, monkeypatch, mocker, test_name, key, scenario, expected_code,
                                         expected_msg):
     """Assert that validator validates cooperative documents correctly."""
+    mock_drs_get_document(monkeypatch)
     identifier = 'CP1234567'
     business = factory_business(identifier)
 
