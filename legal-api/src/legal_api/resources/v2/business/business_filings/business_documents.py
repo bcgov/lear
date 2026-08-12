@@ -36,6 +36,7 @@ from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp
 from legal_api.services import MinioService, authorized
 from legal_api.services import doc_service as client_doc_service
+from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -232,6 +233,7 @@ def _get_receipt(business: Business, filing: Filing, token):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
 
     headers = {"Authorization": "Bearer " + token}
+    add_account_linking_key_header(headers)
 
     corp_name = _get_corp_name(business, filing.storage)
 

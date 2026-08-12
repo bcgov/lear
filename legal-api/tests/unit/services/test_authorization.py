@@ -545,6 +545,21 @@ def test_authorized_missing_args():
     assert not rv
 
 
+def test_call_auth_api_forwards_account_linking_key(app, jwt, requests_mock):
+    """Assert that _call_auth_api forwards the Account-Linking-Key header when present on the request."""
+    identifier = 'CP1234567'
+    with jwt_request_context(app, jwt, roles=[BASIC_USER], username='test-user',
+                             **{'Account-Linking-Key': 'test-linking-key'}):
+        auth_mock = requests_mock.get(
+            f"{app.config['AUTH_SVC_URL']}/entities/{identifier}/authorizations",
+            json={'roles': ['view']},
+            status_code=HTTPStatus.OK
+        )
+        authorized(identifier, jwt, ['view'])
+
+    assert auth_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
+
+
 def test_authorized_bad_url(monkeypatch, app, jwt):
     """Assert that an invalid auth service URL returns False."""
     identifier = 'CP1234567'
