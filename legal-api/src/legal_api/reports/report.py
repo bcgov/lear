@@ -84,29 +84,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             from legal_api.services import doc_service
             drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
             document_data, status = drs_response.content, drs_response.status_code
-        elif self._report_key == "affidavit" and status == HTTPStatus.OK:
-            # legacy storage never stamps, so the registrar's certification stamp is applied here
-            document_data = self._certify_uploaded_document(document_data)
         return current_app.response_class(
             response=document_data,
             status=status,
             mimetype="application/pdf"
         )
-
-    def _certify_uploaded_document(self, document_bytes: bytes) -> bytes:
-        """Apply the registrar's certification stamp when the document is downloaded.
-
-        Documents are never stamped on upload; the stamp is applied to each
-        served copy and the stored original is left unchanged.
-        """
-        from legal_api.services import PdfService
-        from legal_api.services.pdf_service import RegistrarStampData
-        business = self._business
-        if not business and self._filing.business_id:
-            business = Business.find_by_internal_id(self._filing.business_id)
-        identifier = business.identifier if business else self._filing.temp_reg
-        stamp_data = RegistrarStampData(self._filing.filing_date, identifier)
-        return PdfService().create_certified_copy(document_bytes, stamp_data).read()
 
     def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
