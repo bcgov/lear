@@ -14,7 +14,7 @@
 """Retrieve the extended data for the entity."""
 from http import HTTPStatus
 
-from flask import current_app, jsonify
+from flask import jsonify
 from flask_cors import cross_origin
 
 from business_model.models import Business, Filing, Jurisdiction
