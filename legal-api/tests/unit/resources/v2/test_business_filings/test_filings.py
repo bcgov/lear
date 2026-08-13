@@ -1803,6 +1803,34 @@ def test_coa(session, requests_mock, client, jwt, test_name, legal_type, identif
         assert 'futureEffectiveDate' not in rv.json['filing']['header']
 
 
+def test_create_invoice_forwards_account_linking_key(session, requests_mock, client, jwt):
+    """Assert that create_invoice forwards the Account-Linking-Key header when present on the request."""
+    identifier = 'CP1234567'
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['business']['identifier'] = identifier
+
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    factory_business_mailing_address(b)
+
+    pay_mock = requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
+                                  json={'id': 21322,
+                                        'statusCode': 'COMPLETED',
+                                        'isPaymentActionRequired': False},
+                                  status_code=HTTPStatus.CREATED)
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=coa,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier,
+                                           **{'Account-Linking-Key': 'test-linking-key'})
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert pay_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
+
+
 def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     """Assert if both rules update in sr, and rules file key is provided"""
     mocker.patch('legal_api.services.filings.validations.alteration.validate_pdf',
@@ -1910,7 +1938,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_xpro_business_in_colin',
                  return_value=[])
 
     if filing_status == Filing.Status.APPROVED.value:

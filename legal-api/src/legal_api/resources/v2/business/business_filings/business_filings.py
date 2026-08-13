@@ -71,6 +71,7 @@ from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.permissions import PermissionService
+from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
@@ -270,6 +271,7 @@ def patch_filings(identifier, filing_id=None):
         payment_svc_url = "{}/{}".format(current_app.config.get("PAYMENT_SVC_URL"), filing.payment_token)
         token = jwt.get_token_auth_header()
         headers = {"Authorization": "Bearer " + token}
+        add_account_linking_key_header(headers)
         rv = requests.delete(url=payment_svc_url, headers=headers, timeout=20.0)
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED):
             filing.reset_filing_to_draft()
@@ -386,6 +388,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 "Authorization": f"Bearer {jwt.get_token_auth_header()}",
                 "Content-Type": "application/json"
             }
+            add_account_linking_key_header(headers)
             payment_svc_url = current_app.config.get("PAYMENT_SVC_URL")
 
             if payment_token := filing_dict.get("filing", {}).get("header", {}).get("paymentToken"):
@@ -1056,6 +1059,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             token = user_jwt.get_token_auth_header()
             headers = {"Authorization": "Bearer " + token,
                        "Content-Type": "application/json"}
+            add_account_linking_key_header(headers)
             current_app.logger.debug(f"Pay api call - url: {payment_svc_url}, payload: {payload}")
             rv = requests.post(url=payment_svc_url,
                                json=payload,

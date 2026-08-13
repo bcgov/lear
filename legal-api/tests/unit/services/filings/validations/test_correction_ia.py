@@ -15,6 +15,7 @@
 
 import copy
 import datedelta
+import pycountry
 from datetime import datetime, timezone
 from freezegun import freeze_time
 from http import HTTPStatus
@@ -23,10 +24,19 @@ from unittest.mock import patch
 import pytest
 
 from business_model.models import Business, Resolution
+from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
-from registry_schemas.example_data import CORRECTION_INCORPORATION, INCORPORATION_FILING_TEMPLATE
+from registry_schemas.example_data import (
+    AMALGAMATION_OUT,
+    CORRECTION_INCORPORATION,
+    CONTINUATION_IN_FILING_TEMPLATE,
+    CONTINUATION_OUT,
+    FILING_HEADER,
+    INCORPORATION_FILING_TEMPLATE
+)
 
 from tests.unit import MockResponse
 from tests.unit.models import factory_business, factory_completed_filing
@@ -34,6 +44,7 @@ from tests.unit.services.filings.validations import lists_are_equal
 from tests.unit.services.utils import jwt_request_context
 
 
+date_format = '%Y-%m-%d'
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)
 
@@ -631,3 +642,280 @@ def test_new_legal_type(mock_get_parties, session, app, jwt, use_nr, new_name, l
         if (new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value,
                                Business.LegalTypes.COOP.value] and not mock_directors):
             assert 'Must have a minimum of three directors. File a change of director filing first.' in [e['error'] for e in err.msg]
+
+
+def test_validate_correction_continuation_in_incorporation_date(mocker, app, session, jwt):
+    """Assert that an error is raised if the correction continuation_in incorporation date is set to a future date."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    future_date = (dt.now() + timedelta(days=1)).date().isoformat()  # Set date to tomorrow
+    filing['filing']['correction']['continuationIn'] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'identifier': 'AB1234567',
+        'incorporationDate': future_date
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # Assert that the error list contains the appropriate error for future incorporation date
+    assert len(err.msg) == 1
+    assert err.msg[0]['error'] == 'Incorporation date cannot be in the future.'
+    assert err.msg[0]['path'] == '/filing/correction/continuationIn/incorporationDate'
+
+
+@pytest.mark.parametrize(
+    'test_name, identifier, legal_name, expected_errors',
+    [
+        (
+            'SUCCESS',
+            'C1234567',
+            'Test',
+            []
+        ),
+        (
+            'SUCCESS_IDENTIFIER_AT_MAX_LENGTH',
+            'A' * 50,
+            'Test',
+            []
+        ),
+        (
+            'SUCCESS_LEGAL_NAME_AT_MAX_LENGTH',
+            'C1234567',
+            'A' * 1000,
+            []
+        ),
+        (
+            'FAIL_IDENTIFIER_EXCEEDS_MAX_LENGTH',
+            'A' * 51,
+            'Test',
+            [
+                {
+                    'error': 'Identifier must not exceed 50 characters.',
+                    'path': '/filing/correction/continuationIn/identifier'
+                }
+            ]
+        ),
+        (
+            'FAIL_LEGAL_NAME_EXCEEDS_MAX_LENGTH',
+            'C1234567',
+            'A' * 1001,
+            [
+                {
+                    'error': 'Legal name must not exceed 1000 characters.',
+                    'path': '/filing/correction/continuationIn/legalName'
+                }
+            ]
+        ),
+        (
+            'FAIL_BOTH_EXCEED_MAX_LENGTH',
+            'A' * 51,
+            'A' * 1001,
+            [
+                {
+                    'error': 'Identifier must not exceed 50 characters.',
+                    'path': '/filing/correction/continuationIn/identifier'
+                },
+                {
+                    'error': 'Legal name must not exceed 1000 characters.',
+                    'path': '/filing/correction/continuationIn/legalName'
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
+                                                     test_name, identifier, legal_name, expected_errors):
+    """Assert that identifier and legalName enforce max length for continuation in filings.
+
+    The required (non-empty / non-whitespace) rule for these fields now lives in the schema;
+    see test_continuation_in_foreign_jurisdiction_name_rejected_by_schema.
+    """
+    _identifier = 'BC1234567'
+    business = factory_business(_identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = _identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    continuation_in = {
+        'country': 'US',
+        'region': 'WA',
+        'legalName': 'HAULER SERVICES',
+        'incorporationDate': dt.now().date().isoformat()
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+
+    if identifier is not None:
+        continuation_in['identifier'] = identifier
+
+    if legal_name is not None:
+        continuation_in['legalName'] = legal_name
+
+    filing['filing']['correction']['continuationIn'] = continuation_in
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    if expected_errors:
+        assert err.msg == expected_errors
+    else:
+        assert err is None
+
+
+def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session, jwt):
+    """Assert continuation EXPRO business with matching founding date."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    filing['filing']['correction']['continuationIn'] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'identifier': 'AB1234567',
+        'incorporationDate': dt.now().date().isoformat(),
+        'xpro': {
+            'identifier': 'A0077779',
+            'legalName': 'Test Company Inc.'
+        }
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
+        status_code=HTTPStatus.OK,
+        json=lambda: {
+            'business': {
+                'identifier': 'A0077779',
+                'legalName': 'Test Company Inc.'
+            }
+        }
+    ))
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert not err
+
+
+@pytest.mark.parametrize('filing_type', ['continuationOut', 'amalgamationOut'])
+@pytest.mark.parametrize(
+    'test_name, expected_code, message',
+    [
+        ('FAIL_IN_FUTURE', HTTPStatus.BAD_REQUEST, '{0} out date must be today or past.'),
+        ('SUCCESS_NO_CCO', None, None),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_validate_continuation_out_date(session, app, jwt, filing_type, test_name, expected_code, message):
+    """Assert validate continuation_out_date."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
+
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction'][filing_type] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'date': '2023-06-19'
+    }
+    del filing['filing']['correction']['commentOnly']
+
+    if test_name == 'FAIL_IN_FUTURE':
+        filing['filing']['correction'][filing_type]['date'] = \
+            (LegislationDatetime.now() + datedelta.datedelta(days=1)).strftime(date_format)
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name == 'FAIL_IN_FUTURE':
+        assert expected_code == err.code
+        assert message.format(filing_type.replace('Out', '').capitalize()) == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize('filing_type', ['continuationOut', 'amalgamationOut'])
+@pytest.mark.parametrize(
+    'test_name, expected_code, message',
+    [
+        ('FAIL_NO_COUNTRY', HTTPStatus.UNPROCESSABLE_ENTITY, None),
+        ('FAIL_INVALID_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('FAIL_REGION_BC', HTTPStatus.BAD_REQUEST, 'Region should not be BC.'),
+        ('FAIL_INVALID_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('FAIL_INVALID_US_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filing_type, test_name, expected_code, message):
+    """Assert validate continuation_out foreign jurisdiction."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction'][filing_type] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'date': '2023-06-19'
+    }
+    del filing['filing']['correction']['commentOnly']
+
+
+    if test_name == 'FAIL_NO_COUNTRY':
+        del filing['filing']['correction'][filing_type]['country']
+    elif test_name == 'FAIL_INVALID_COUNTRY':
+        filing['filing']['correction'][filing_type]['country'] = 'NONE'
+    elif test_name == 'FAIL_REGION_BC':
+        filing['filing']['correction'][filing_type]['region'] = 'BC'
+    elif test_name == 'FAIL_INVALID_REGION':
+        filing['filing']['correction'][filing_type]['region'] = 'NONE'
+    elif test_name == 'FAIL_INVALID_US_REGION':
+        filing['filing']['correction'][filing_type]['country'] = 'US'
+        filing['filing']['correction'][filing_type]['region'] = 'NONE'
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err
