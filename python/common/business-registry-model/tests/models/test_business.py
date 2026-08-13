@@ -420,6 +420,22 @@ def test_business_json(app, session):
     assert business.json() == d
 
 
+def test_business_json_sentinel_founding_date(app, session):
+    """Assert json() succeeds when founding_date is a year-1 COLIN sentinel."""
+    business = Business(
+        legal_name='VICTORIA HARBOUR RAILWAY COMPANY',
+        legal_type=Business.LegalTypes.RAILWAYS.value,
+        founding_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
+        identifier='RLY0000001',
+        state=Business.State.ACTIVE,
+    )
+
+    assert business.next_anniversary is None
+    business_json = business.json()
+    assert business_json['nextAnnualReport'] == ''
+    assert business_json['foundingDate'] == '0001-01-01T08:00:00+00:00'
+
+
 ALTERNATE_NAME_1 = "operating name 1"
 ALTERNATE_NAME_1_IDENTIFIER = "FM1111111"
 ALTERNATE_NAME_1_START_DATE = "2023-09-02"
