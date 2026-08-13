@@ -27,6 +27,7 @@ from .business_furnishings import get_furnishing_document
 from .business_parties import get_parties
 from .business_resolutions import get_resolutions
 from .business_account_settings import get_business_account_settings, update_business_account_settings
+from .business_extended import get_extended_data
 from .business_court_orders import get_court_orders
 from .business_share_classes import get_share_class
 from .business_tasks import get_tasks
