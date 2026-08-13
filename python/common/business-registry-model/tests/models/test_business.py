@@ -424,9 +424,13 @@ def test_business_json_sentinel_founding_date(app, session):
     """Assert json() succeeds when founding_date is a year-1 COLIN sentinel."""
     business = Business(
         legal_name='legal_name',
-        legal_type=Business.LegalTypes.COMP.value,
+        legal_type=Business.LegalTypes.COOP.value,
         founding_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
-        identifier='BC1234567',
+        last_coa_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
+        last_cod_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
+        last_ledger_timestamp=EPOCH_DATETIME,
+        identifier='CP1234567',
+        last_modified=EPOCH_DATETIME,
         state=Business.State.ACTIVE,
     )
 
@@ -434,6 +438,8 @@ def test_business_json_sentinel_founding_date(app, session):
     business_json = business.json()
     assert business_json['nextAnnualReport'] == ''
     assert business_json['foundingDate'] == '0001-01-01T08:00:00+00:00'
+    assert business_json['lastAddressChangeDate'] == ''
+    assert business_json['lastDirectorChangeDate'] == ''
 
 
 ALTERNATE_NAME_1 = "operating name 1"
