@@ -448,6 +448,13 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 }
             },
             Business.State.HISTORICAL: {
+                "correction": {
+                    "legalTypes": ["BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "warningTypes": [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        "business": [BusinessBlocker.DEFAULT]
+                    }
+                },
                 "courtOrder": {
                     "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
                 },

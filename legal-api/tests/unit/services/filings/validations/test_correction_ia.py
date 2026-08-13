@@ -15,6 +15,7 @@
 
 import copy
 import datedelta
+import pycountry
 from datetime import datetime, timezone
 from freezegun import freeze_time
 from http import HTTPStatus
@@ -23,13 +24,17 @@ from unittest.mock import patch
 import pytest
 
 from business_model.models import Business, Resolution
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
 from registry_schemas.example_data import (
-    CORRECTION_INCORPORATION, 
+    AMALGAMATION_OUT,
+    CORRECTION_INCORPORATION,
     CONTINUATION_IN_FILING_TEMPLATE,
+    CONTINUATION_OUT,
+    FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE
 )
 
@@ -39,6 +44,7 @@ from tests.unit.services.filings.validations import lists_are_equal
 from tests.unit.services.utils import jwt_request_context
 
 
+date_format = '%Y-%m-%d'
 INCORPORATION_APPLICATION = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
 CORRECTION = copy.deepcopy(CORRECTION_INCORPORATION)
 
@@ -808,3 +814,108 @@ def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session,
         err = validate(business, filing)
     assert not err
 
+
+@pytest.mark.parametrize('filing_type', ['continuationOut', 'amalgamationOut'])
+@pytest.mark.parametrize(
+    'test_name, expected_code, message',
+    [
+        ('FAIL_IN_FUTURE', HTTPStatus.BAD_REQUEST, '{0} out date must be today or past.'),
+        ('SUCCESS_NO_CCO', None, None),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_validate_continuation_out_date(session, app, jwt, filing_type, test_name, expected_code, message):
+    """Assert validate continuation_out_date."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
+
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction'][filing_type] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'date': '2023-06-19'
+    }
+    del filing['filing']['correction']['commentOnly']
+
+    if test_name == 'FAIL_IN_FUTURE':
+        filing['filing']['correction'][filing_type]['date'] = \
+            (LegislationDatetime.now() + datedelta.datedelta(days=1)).strftime(date_format)
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name == 'FAIL_IN_FUTURE':
+        assert expected_code == err.code
+        assert message.format(filing_type.replace('Out', '').capitalize()) == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize('filing_type', ['continuationOut', 'amalgamationOut'])
+@pytest.mark.parametrize(
+    'test_name, expected_code, message',
+    [
+        ('FAIL_NO_COUNTRY', HTTPStatus.UNPROCESSABLE_ENTITY, None),
+        ('FAIL_INVALID_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('FAIL_REGION_BC', HTTPStatus.BAD_REQUEST, 'Region should not be BC.'),
+        ('FAIL_INVALID_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('FAIL_INVALID_US_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filing_type, test_name, expected_code, message):
+    """Assert validate continuation_out foreign jurisdiction."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction'][filing_type] = {
+        'country': 'CA',
+        'region': 'AB',
+        'legalName': 'HAULER SERVICES',
+        'date': '2023-06-19'
+    }
+    del filing['filing']['correction']['commentOnly']
+
+
+    if test_name == 'FAIL_NO_COUNTRY':
+        del filing['filing']['correction'][filing_type]['country']
+    elif test_name == 'FAIL_INVALID_COUNTRY':
+        filing['filing']['correction'][filing_type]['country'] = 'NONE'
+    elif test_name == 'FAIL_REGION_BC':
+        filing['filing']['correction'][filing_type]['region'] = 'BC'
+    elif test_name == 'FAIL_INVALID_REGION':
+        filing['filing']['correction'][filing_type]['region'] = 'NONE'
+    elif test_name == 'FAIL_INVALID_US_REGION':
+        filing['filing']['correction'][filing_type]['country'] = 'US'
+        filing['filing']['correction'][filing_type]['region'] = 'NONE'
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err

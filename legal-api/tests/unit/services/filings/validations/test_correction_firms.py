@@ -90,6 +90,7 @@ def test_valid_firms_correction(app, session, jwt, test_name, filing):
 
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
 
     nr_res = copy.deepcopy(nr_response)
     nr_res['legalType'] = legal_type
@@ -121,6 +122,7 @@ def test_firms_correction_invalid_parties(app, session, jwt, test_name, filing, 
 
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
 
     del f['filing']['correction']['parties'][0]['roles'][0]
     nr_res = copy.deepcopy(nr_response)
@@ -189,6 +191,7 @@ def test_firms_correction_naics(app, session, jwt, test_name, filing, existing_n
 
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
     if correction_naics_code:
         f['filing']['correction']['business']['naics']['naicsCode'] = correction_naics_code
     else:
@@ -252,6 +255,7 @@ def test_firms_correction_start_date(app, session, jwt, test_name, filing, usern
 
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
     f['filing']['correction']['startDate'] = start_date.strftime('%Y-%m-%d')
 
     nr_res = copy.deepcopy(nr_response)
