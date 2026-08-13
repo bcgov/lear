@@ -123,6 +123,16 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
     def __init__(self):
         """Initialize with all values None."""
 
+    @property
+    def lear_state(self) -> str:
+        """Return the LEAR-style business state: only op-state ACT is active, everything else is historical.
+
+        Same rule as the tombstone migration (data-tool tombstone_utils) and the search
+        importers - keyed off CORP_OP_STATE.OP_STATE_TYP_CD (ACT/HIS), not the
+        fine-grained corp state code.
+        """
+        return 'ACTIVE' if self.corp_state_class == 'ACT' else 'HISTORICAL'
+
     def as_dict(self) -> Dict:
         """Return dict version of self."""
         return {
@@ -414,7 +424,9 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
             'identifier': business.corp_num,
             'legalName': business.corp_name,
             'legalType': business.corp_type,
-            'status': business.status,
+            # LEAR-style state, not COLIN's free-text status description - auth stores it
+            # verbatim and the dashboard filters on ACTIVE/HISTORICAL
+            'status': business.lear_state,
             'goodStanding': business.good_standing,
             'businessNumber': business.business_number,
             # find_by_identifier returns the COLIN 'True'/'False' string; normalize for callers
