@@ -331,6 +331,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         if filing.meta_data and (expiry_date := filing.meta_data.get(filing_name, {}).get("expiryDate")):
             filing_json[filing_name]["expiryDate"] = expiry_date
 
+        if filing.meta_data and (dissolution_date := filing.meta_data.get(filing_name, {}).get("dissolutionDate")):
+            filing_json[filing_name]["dissolutionDate"] = dissolution_date
+
         return jsonify({"filing": filing_json})
 
 
