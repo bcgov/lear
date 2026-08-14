@@ -33,7 +33,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.services import STAFF_ROLE, MinioService, colin, doc_service, flags, namex
+from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
@@ -591,19 +591,14 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     return None
 
 def _get_file_data(file_key: str) -> tuple[bytes, int]:
-    """Return (file_bytes, file_size) for a file_key, whether DRS-backed or legacy Minio."""
-    enabled_features: list[str] = flags.value("enable-new-feature", [])
-
-    if "drs-upload" in enabled_features and (match := DRS_KEY_PATTERN.match(file_key)):
+    """Return (file_bytes, file_size) for a DRS-backed file_key."""
+    if match := DRS_KEY_PATTERN.match(file_key):
         doc_class, drs_id = match.group(1), match.group(2)
         response = doc_service.get_document(drs_id, doc_class, doc_binary=True)
         if not response.ok:
             raise ValueError(f"DRS get_document failed: status={response.status_code}")
         return response.content, len(response.content)
 
-    file = MinioService.get_file(file_key)
-    file_info = MinioService.get_file_info(file_key)
-    return file.data, file_info.size
 
 def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate the parties name for COLIN sync."""

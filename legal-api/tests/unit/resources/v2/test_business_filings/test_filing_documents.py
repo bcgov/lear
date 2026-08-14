@@ -2193,17 +2193,14 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
     assert rv_data == expected
 
 
-@pytest.mark.parametrize('test_name,file_key,expect_drs', [
-    ('drs_key', 'CORP-DS0000101951', True),
-    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
-])
-def test_get_static_document_by_file_key_shape(session, client, jwt, mocker, test_name, file_key, expect_drs):
-    """Assert static documents are served from the DRS or Minio based on the file key shape."""
+def test_get_static_document_by_file_key_shape(session, client, jwt, mocker):
+    """Assert static documents are served from DRS."""
     from unittest.mock import MagicMock, patch
 
     from business_model.models import Document
     from legal_api.resources.v2.business.business_filings import business_documents
 
+    file_key = 'CORP-DS0000101951'
     identifier = 'CP7654321'
     business = factory_business(identifier)
     filing_json = copy.deepcopy(FILING_HEADER)
@@ -2215,19 +2212,11 @@ def test_get_static_document_by_file_key_shape(session, client, jwt, mocker, tes
 
     mocker.patch.object(business_documents, '_is_document_available', return_value=True)
     drs_response = MagicMock(content=b'drs-pdf', status_code=HTTPStatus.OK)
-    minio_response = MagicMock(data=b'minio-pdf', status=HTTPStatus.OK)
 
-    with patch.object(business_documents.client_doc_service, 'get_document', return_value=drs_response) as mock_drs, \
-            patch.object(business_documents.MinioService, 'get_file', return_value=minio_response) as mock_minio:
+    with patch.object(business_documents.client_doc_service, 'get_document', return_value=drs_response) as mock_drs:
         rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/static/{file_key}',
                         headers=create_header(jwt, [STAFF_ROLE], identifier, **{'accept': 'application/pdf'}))
 
     assert rv.status_code == HTTPStatus.OK
-    if expect_drs:
-        mock_drs.assert_called_once_with('DS0000101951', 'CORP', doc_binary=True)
-        mock_minio.assert_not_called()
-        assert rv.data == b'drs-pdf'
-    else:
-        mock_drs.assert_not_called()
-        mock_minio.assert_called_once_with(file_key)
-        assert rv.data == b'minio-pdf'
+    mock_drs.assert_called_once_with('DS0000101951', 'CORP', doc_binary=True)
+    assert rv.data == b'drs-pdf'

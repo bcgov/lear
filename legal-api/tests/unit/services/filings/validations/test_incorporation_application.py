@@ -29,7 +29,7 @@ from reportlab.lib.pagesizes import letter
 from business_model.models import Business
 from legal_api.services.filings import validate
 
-from tests.unit.services.filings.test_utils import _upload_file
+from tests.unit.services.filings.test_utils import _upload_file, mock_drs_get_document
 
 from . import create_party, create_party_address, lists_are_equal, create_officer
 from tests import not_github_ci
@@ -655,10 +655,11 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
         )
     ])
 @pytest.mark.parametrize('cp_flag_enabled', [True, False])
-def test_validate_incorporation_role(session, minio_server, mocker, test_name,
+def test_validate_incorporation_role(session, monkeypatch, mocker, test_name,
                                      legal_type, parties, expected_code, expected_msg,
                                      cp_flag_enabled):
     """Assert that incorporation parties roles can be validated."""
+    mock_drs_get_document(monkeypatch)
     mocker.patch.object(flags, 'value', return_value=["incorporationApplication-completingParty"] if cp_flag_enabled else [])
 
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
@@ -1631,9 +1632,10 @@ memorandum_file_key_path = '/filing/incorporationApplication/cooperative/memoran
                 'path': memorandum_file_key_path
             }]),
     ])
-def test_validate_cooperative_documents(session, mocker, minio_server, test_name, key, scenario, expected_code,
+def test_validate_cooperative_documents(session, monkeypatch, mocker, test_name, key, scenario, expected_code,
                                         expected_msg):
     """Assert that validator validates cooperative documents correctly."""
+    mock_drs_get_document(monkeypatch)
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 
                                        'certifiedBy': 'full name', 'authorizationReceived': True,

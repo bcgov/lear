@@ -61,7 +61,6 @@ from legal_api.resources.v2.business.bp import bp
 from legal_api.services import (
     STAFF_ROLE,
     SYSTEM_ROLE,
-    MinioService,
     RegistrationBootstrapService,
     authorized,
     doc_service,
@@ -226,7 +225,7 @@ def delete_filings(identifier, filing_id=None):
     filing.delete()
 
     with suppress(Exception):
-        ListFilingResource.delete_from_minio(filing_type, filing_json)
+        ListFilingResource.delete_uploaded_documents(filing_type, filing_json)
 
     if identifier.startswith("T") and filing.filing_type != Filing.FILINGS["noticeOfWithdrawal"]["name"]:
         bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
@@ -1121,19 +1120,17 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def delete_uploaded_file(file_key: str):
-        """Delete an uploaded file from the DRS or Minio based on the file key shape.
+        """Delete an uploaded file from the DRS based on the file key shape.
 
         DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
-        legacy Minio keys (UUIDs) do not match.
         """
         if re.match(r"^([A-Z]+)-(DS\d+)$", file_key):
             doc_service.delete_document(Document(file_key=file_key))
-        else:
-            MinioService.delete_file(file_key)
+
 
     @staticmethod
-    def delete_from_minio(filing_type: str, filing_json: dict):
-        """Delete the filing's uploaded files from the DRS or Minio."""
+    def delete_uploaded_documents(filing_type: str, filing_json: dict):
+        """Delete the filing's uploaded files from the DRS."""
         if (filing_type == Filing.FILINGS["incorporationApplication"].get("name")
                 and (cooperative := filing_json
                      .get("filing", {})
@@ -1164,7 +1161,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def delete_continuation_in_files(filing_json: dict):
-        """Delete continuation in files from minio."""
+        """Delete continuation in files from DRS."""
         continuation_in = filing_json.get("filing", {}).get("continuationIn", {})
 
         # Delete affidavit file

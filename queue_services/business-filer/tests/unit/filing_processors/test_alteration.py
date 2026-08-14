@@ -40,7 +40,6 @@ from typing import Final
 import pytest
 from business_model.models import Business, Filing, Document
 from business_model.models.document import DocumentType
-# from legal_api.services.minio import MinioService
 from registry_schemas.example_data import (
     ALTERATION,
     ALTERATION_FILING_TEMPLATE,
