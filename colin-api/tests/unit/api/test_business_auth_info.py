@@ -42,7 +42,8 @@ def _business(**overrides):
     business.corp_num = '0870226'
     business.corp_name = 'COLIN TEST COMPANY LTD.'
     business.corp_type = 'BC'
-    business.status = 'Active'
+    # CORP_OP_STATE.OP_STATE_TYP_CD - only ever ACT/HIS; drives the response's LEAR-style status
+    business.corp_state_class = 'ACT'
     business.good_standing = True
     business.business_number = '791861078BC0001'
     # COLIN returns admin_freeze as a 'True'/'False' string
@@ -96,13 +97,23 @@ def test_get_auth_info(client, mocker, authorized, mock_db):  # pylint: disable=
         'identifier': '0870226',
         'legalName': 'COLIN TEST COMPANY LTD.',
         'legalType': 'BC',
-        'status': 'Active',
+        'status': 'ACTIVE',
         'goodStanding': True,
         'businessNumber': '791861078BC0001',
         'adminFreeze': False,
         'email': 'registered.office@test.com',
         'passCode': PASS_CODE
     }
+
+
+def test_get_auth_info_maps_historical_state(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
+    """Assert a non-active corp (eg. amalgamated or dissolved) reports the LEAR-style HISTORICAL."""
+    mocker.patch.object(Business, 'find_by_identifier', return_value=_business(corp_state_class='HIS'))
+
+    rv = client.get(AUTH_INFO_URL)
+
+    assert rv.status_code == 200
+    assert rv.json['status'] == 'HISTORICAL'
 
 
 def test_get_auth_info_strips_bc_prefix(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
