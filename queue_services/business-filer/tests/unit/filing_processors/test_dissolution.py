@@ -41,7 +41,6 @@ import pytest
 
 from business_model.models import BatchProcessing, Batch, Business, Office, OfficeType, Party, PartyRole, Filing, Amalgamation, AmalgamatingBusiness
 from business_model.models.document import DocumentType
-# from legal_api.services.minio import MinioService
 from business_filer.common.legislation_datetime import LegislationDatetime
 
 from registry_schemas.example_data import DISSOLUTION, FILING_HEADER
@@ -242,10 +241,6 @@ def test_administrative_dissolution(app, session, legal_type, identifier, dissol
         assert documents[0].type == DocumentType.AFFIDAVIT.value
         affidavit_key = filing_json['filing']['dissolution']['affidavitFileKey']
         assert documents[0].file_key == affidavit_key
-        # assert MinioService.get_file(documents[0].file_key)
-        # affidavit_obj = MinioService.get_file(affidavit_key)
-        # assert affidavit_obj
-        # assert_pdf_contains_text('Filed on ', affidavit_obj.read())
 
     assert filing_meta.dissolution['dissolutionType'] == dissolution_type
 

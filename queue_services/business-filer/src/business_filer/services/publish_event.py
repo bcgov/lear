@@ -11,10 +11,8 @@ from business_filer.exceptions import PublishException
 from business_filer.services import Flags, gcp_queue
 from gcp_queue import SimpleCloudEvent, to_queue_message
 
-# DRS keys are formatted as "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951".
-# Legacy Minio keys (UUIDs) do not match this pattern.
+# DRS keys are formatted as "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951". 
 _DRS_KEY_PATTERN = re.compile(r"^[A-Z]+-DS\d+$")
-
 
 class PublishEvent:
     """Service to publish specific events onto the GCP Queue."""
