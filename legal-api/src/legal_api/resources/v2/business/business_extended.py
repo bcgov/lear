@@ -48,6 +48,7 @@ def get_extended_data(identifier, filing_type=None):
     else:
         return _get_all_extended_data(business, for_correction)
 
+
 def _get_extended_filing_data(business: Business, filing_type: str, for_correction: bool = False):
     supported_filing_types = [
         CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
