@@ -2438,13 +2438,15 @@ def test_nr_in_draft_filing_does_not_block(session):
 
 
 def test_nr_excludes_own_filing(session):
-    """Assert a filing's own NR does not block itself."""
+    """Assert a filing in PENDING status cannot be re-submitted (PUT is blocked by is_allowed),
+    so a filing cannot block itself — this test confirms PENDING status is correctly blocked."""
     filing_json = {
         'filing': {
             'header': {'name': 'incorporationApplication'},
             'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000005'}}
         }
     }
-    filing = factory_pending_filing(None, filing_json)
+    factory_pending_filing(None, filing_json)
 
-    assert _nr_in_pending_filing('NR 0000005', exclude_filing_id=filing.id) is False
+    # A second filing using the same NR should be blocked
+    assert _nr_in_pending_filing('NR 0000005') is True

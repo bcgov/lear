@@ -126,16 +126,13 @@ NR_BLOCKING_STATUSES = [
   ]
 
 
-def _nr_in_pending_filing(nr_number: str, exclude_filing_id: int | None = None) -> bool:
+def _nr_in_pending_filing(nr_number: str) -> bool:
     """Return True if the NR is already referenced in a non-draft/non-completed filing."""
     for filing_type in FILING_TYPES_WITH_NR:
-        query = Filing.query.filter(
+        if Filing.query.filter(
             Filing._status.in_([s.value for s in NR_BLOCKING_STATUSES]),
             Filing.filing_json['filing'][filing_type.value]['nameRequest']['nrNumber'].astext == nr_number
-        )
-        if exclude_filing_id:
-            query = query.filter(Filing.id != exclude_filing_id)
-        if query.first():
+        ).first():
             return True
     return False
 
