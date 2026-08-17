@@ -14,7 +14,7 @@
 """Retrieve the extended data for the entity."""
 from http import HTTPStatus
 
-from flask import jsonify
+from flask import jsonify, request
 from flask_cors import cross_origin
 
 from business_model.models import Business, Filing, Jurisdiction
@@ -27,9 +27,10 @@ from .bp import bp
 
 
 @bp.route("/<string:identifier>/extended/<string:filing_type>", methods=["GET", "OPTIONS"])
+@bp.route("/<string:identifier>/extended", methods=["GET", "OPTIONS"])
 @cross_origin()
 @jwt.requires_auth
-def get_extended_data(identifier, filing_type):
+def get_extended_data(identifier, filing_type=None):
     """Return a JSON of the extended data for a filing type."""
     business = Business.find_by_identifier(identifier)
     if not business:
@@ -37,11 +38,19 @@ def get_extended_data(identifier, filing_type):
 
     # check authorization
     if not authorized(identifier, jwt, action=["view"]):
-        return jsonify({"message":
-                        f"You are not authorized to view extended data for {filing_type} for {identifier}."}), \
+        return jsonify({"message": f"You are not authorized to view extended data for {identifier}."}), \
             HTTPStatus.UNAUTHORIZED
 
+    for_correction = str(request.args.get("forCorrection", None)).lower() == "true"
+
+    if filing_type:
+        return _get_extended_filing_data(business, filing_type, for_correction)
+    else:
+        return _get_all_extended_data(business, for_correction)
+
+def _get_extended_filing_data(business: Business, filing_type: str, for_correction: bool = False):
     supported_filing_types = [
+        CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
         CoreFiling.FilingTypes.AMALGAMATIONOUT,
         CoreFiling.FilingTypes.CONTINUATIONIN,
         CoreFiling.FilingTypes.CONTINUATIONOUT,
@@ -55,6 +64,22 @@ def get_extended_data(identifier, filing_type):
         return _get_continuation_out_data(business)
     elif filing_type == CoreFiling.FilingTypes.AMALGAMATIONOUT:
         return _get_amalgamation_out_data(business)
+    elif filing_type == CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION:
+        return _get_amalgamation_application_data(business, for_correction)
+
+
+def _get_all_extended_data(business: Business, for_correction):
+    continuation_in, continuation_in_status = _get_continuation_in_data(business)
+    continuation_out, continuation_out_status = _get_continuation_out_data(business)
+    amalgamation_out, amalgamation_out_status = _get_amalgamation_out_data(business)
+    amalgamation, amalgamation_status = _get_amalgamation_application_data(business, for_correction)
+
+    return {
+        **(continuation_in if continuation_in_status == HTTPStatus.OK else {}),
+        **(amalgamation if amalgamation_status == HTTPStatus.OK else {}),
+        **(continuation_out if continuation_out_status == HTTPStatus.OK else {}),
+        **(amalgamation_out if amalgamation_out_status == HTTPStatus.OK else {}),
+    }, HTTPStatus.OK
 
 
 def _get_continuation_in_data(business: Business):
@@ -125,5 +150,49 @@ def _get_amalgamation_out_data(business: Business):
             "country": business.jurisdiction,
             "region": business.foreign_jurisdiction_region,
             "legalName": business.foreign_legal_name
+        }
+    }, HTTPStatus.OK
+
+
+def _get_amalgamation_application_data(business: Business, for_correction: bool = False):
+    amalgamation = business.amalgamation.first()
+    if not amalgamation:
+        return jsonify({
+            "message": f"Could not find amalgamation data for {business.identifier}"
+        }), HTTPStatus.NOT_FOUND
+
+    amalgamating_businesses = []
+    for ting in amalgamation.amalgamating_businesses:
+        ting_info = {
+            "role": ting.role.name
+        }
+        if ting.business_id:
+            ting_business = Business.find_by_internal_id(ting.business_id)
+            ting_info.update({
+                "identifier": ting_business.identifier
+            })
+            if for_correction:
+                ting_info.update({
+                    "legalName": ting_business.legal_name,
+                    "legalType": ting_business.legal_type
+                })
+                mailing_address = ting_business.mailing_address.one_or_none()
+                if mailing_address:
+                    ting_info["mailingAddress"] = mailing_address.json
+        else:
+            ting_info.update({
+                "identifier": ting.foreign_identifier,
+                "foreignJurisdiction": {
+                    "country": ting.foreign_jurisdiction,
+                    "region": ting.foreign_jurisdiction_region
+                },
+                "legalName": ting.foreign_name
+            })
+        amalgamating_businesses.append(ting_info)
+
+    return {
+        "amalgamation": {
+            "amalgamatingBusinesses": amalgamating_businesses,
+            "courtApproval": amalgamation.court_approval
         }
     }, HTTPStatus.OK
