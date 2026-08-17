@@ -30,7 +30,7 @@ from business_account import AccountService
 from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Address, Business, Filing,PartyRole
+from business_model.models import Address, Business, Filing, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, MinioService, colin, doc_service, flags, namex
@@ -106,24 +106,24 @@ FILINGS_REQUIRING_AUTHORIZATION = {
 }
 DRS_KEY_PATTERN = re.compile(r"^([A-Z]+)-(DS\d+)$")
 
-FILING_TYPES_WITH_NR = [                                                                                                                                                                                                                  
-      CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,                                                                                                                                                                                       
-      CoreFiling.FilingTypes.REGISTRATION,                                                                                                                                                                                                 
-      CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,                                                                                                                                                                                        
-      CoreFiling.FilingTypes.CONTINUATIONIN,                                                                                                                                                                                               
-      CoreFiling.FilingTypes.ALTERATION,                                                                                                                                                                                                     
-      CoreFiling.FilingTypes.CHANGEOFNAME,                                                                                                                                                                                                 
-      CoreFiling.FilingTypes.CHANGEOFREGISTRATION,                                                                                                                                                                                           
-      CoreFiling.FilingTypes.CONVERSION,                                                                                                                                                                                                   
-  ]
+FILING_TYPES_WITH_NR = [
+    CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.REGISTRATION,
+    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
+    CoreFiling.FilingTypes.CONTINUATIONIN,
+    CoreFiling.FilingTypes.ALTERATION,
+    CoreFiling.FilingTypes.CHANGEOFNAME,
+    CoreFiling.FilingTypes.CHANGEOFREGISTRATION,
+    CoreFiling.FilingTypes.CONVERSION,
+]
 
 NR_BLOCKING_STATUSES = [
-      Filing.Status.PENDING,                                                                                                                                                                                                                 
-      Filing.Status.PAID,
-      Filing.Status.AWAITING_REVIEW,                                                                                                                                                                                                         
-      Filing.Status.CHANGE_REQUESTED,                                                                                                                                                                                                      
-      Filing.Status.APPROVED,
-  ]
+    Filing.Status.PENDING,
+    Filing.Status.PAID,
+    Filing.Status.AWAITING_REVIEW,
+    Filing.Status.CHANGE_REQUESTED,
+    Filing.Status.APPROVED,
+]
 
 
 def _nr_in_pending_filing(nr_number: str) -> bool:
@@ -131,7 +131,7 @@ def _nr_in_pending_filing(nr_number: str) -> bool:
     for filing_type in FILING_TYPES_WITH_NR:
         if Filing.query.filter(
             Filing._status.in_([s.value for s in NR_BLOCKING_STATUSES]),
-            Filing.filing_json['filing'][filing_type.value]['nameRequest']['nrNumber'].astext == nr_number
+            Filing.filing_json["filing"][filing_type.value]["nameRequest"]["nrNumber"].astext == nr_number
         ).first():
             return True
     return False
