@@ -131,7 +131,7 @@ def _nr_in_pending_filing(nr_number: str, exclude_filing_id: int | None = None) 
     for filing_type in FILING_TYPES_WITH_NR:
         query = Filing.query.filter(
             Filing._status.in_([s.value for s in NR_BLOCKING_STATUSES]),
-            Filing._filing_json[('filing', filing_type.value, 'nameRequest', 'nrNumber')].astext == nr_number
+            Filing.filing_json['filing'][filing_type.value]['nameRequest']['nrNumber'].astext == nr_number
         )
         if exclude_filing_id:
             query = query.filter(Filing.id != exclude_filing_id)

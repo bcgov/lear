@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from business_model.models import Business, Party, PartyRole, ShareClass
+from business_model.models import Business, Filing, Party, PartyRole, ShareClass
 from business_model.models.share_series import ShareSeries
 from legal_api.services import flags
 from legal_api.services.permissions import PermissionService
@@ -44,13 +44,14 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from tests.unit.models import factory_business, factory_party_role
+from tests.unit.models import factory_business, factory_party_role, factory_pending_filing
 
 from legal_api.services.filings.validations.common_validations import (
     EXCLUDED_WORDS_FOR_CLASS,
     EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
     _get_file_data,
+    _nr_in_pending_filing,
     is_officer_proprietor_replace_valid,
     validate_authorization_received,
     validate_certify_name,
@@ -2387,3 +2388,63 @@ def test_get_file_data_drs_failure(session, monkeypatch):
 
     with pytest.raises(ValueError, match="DRS get_document failed"):
         _get_file_data("CORP-DS0000101951")
+
+
+def test_nr_not_in_any_filing_passes(session):
+    """Assert NR not referenced in any filing passes."""
+    assert _nr_in_pending_filing('NR 0000001') is False
+
+
+def test_nr_in_pending_filing_blocks(session):
+    """Assert NR already in a PENDING filing blocks submission."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'incorporationApplication'},
+            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000002'}}
+        }
+    }
+    filing = factory_pending_filing(None, filing_json)
+
+    assert _nr_in_pending_filing('NR 0000002') is True
+
+
+def test_nr_in_paid_filing_blocks(session):
+    """Assert NR already in a PAID filing blocks submission."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'incorporationApplication'},
+            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000003'}}
+        }
+    }
+    filing = factory_pending_filing(None, filing_json)
+    filing.payment_completion_date = filing.filing_date
+    filing.save()
+
+    assert _nr_in_pending_filing('NR 0000003') is True
+
+
+def test_nr_in_draft_filing_does_not_block(session):
+    """Assert NR only in DRAFT filing does not block."""
+    filing = Filing()
+    filing.filing_json = {
+        'filing': {
+            'header': {'name': 'incorporationApplication'},
+            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000004'}}
+        }
+    }
+    filing.save()
+
+    assert _nr_in_pending_filing('NR 0000004') is False
+
+
+def test_nr_excludes_own_filing(session):
+    """Assert a filing's own NR does not block itself."""
+    filing_json = {
+        'filing': {
+            'header': {'name': 'incorporationApplication'},
+            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000005'}}
+        }
+    }
+    filing = factory_pending_filing(None, filing_json)
+
+    assert _nr_in_pending_filing('NR 0000005', exclude_filing_id=filing.id) is False
