@@ -180,6 +180,7 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
             "business-number",
             "business-registry-footer",
             "business-tombstone",
+            "business-tombstone-basic",
             "business-tombstone-out-filing",
             "consent",
             "consent-next-steps",

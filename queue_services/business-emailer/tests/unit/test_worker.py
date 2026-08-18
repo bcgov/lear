@@ -560,7 +560,8 @@ def test_involuntary_dissolution_stage_1_notification(app, db, session, mocker, 
             if furnishing_name == 'INVALID_NAME':
                 assert call_args is None
             else:
-                assert call_args[0][0]['content']['subject'] == f'Attention {business_identifier} - Test Business'
+                assert call_args[0][0]['content']['subject'] == \
+                    'Test Business - URGENT - Your business is in the process of being dissolved'
                 assert call_args[0][0]['recipients'] == 'test@test.com'
                 assert call_args[0][0]['content']['body']
 
