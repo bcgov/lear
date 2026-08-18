@@ -2390,63 +2390,58 @@ def test_get_file_data_drs_failure(session, monkeypatch):
         _get_file_data("CORP-DS0000101951")
 
 
-def test_nr_not_in_any_filing_passes(session):
-    """Assert NR not referenced in any filing passes."""
-    assert _nr_in_pending_filing('NR 0000001') is False
+@pytest.mark.parametrize(
+    "test_name, filing_type, status, has_nr, expected",
+    [
+        # All valid NR filing types in PENDING state are blocked
+        ("ia_pending", "incorporationApplication", "PENDING", True, True),
+        ("reg_pending", "registration", "PENDING", True, True),
+        ("amalg_pending", "amalgamationApplication", "PENDING", True, True),
+        ("cont_in_pending", "continuationIn", "PENDING", True, True),
+        ("alt_pending", "alteration", "PENDING", True, True),
+        ("con_name_pending", "changeOfName", "PENDING", True, True),
+        ("cor_reg_pending", "changeOfRegistration", "PENDING", True, True),
+        ("conv_pending", "conversion", "PENDING", True, True),
+        # PAID filing blocks
+        ("ia_paid", "incorporationApplication", "PAID", True, True),
+        # DRAFT filing does not block
+        ("ia_draft", "incorporationApplication", "DRAFT", True, False),
+        # Valid NR filing type but no NR information present — does not block
+        ("ia_no_nr", "incorporationApplication", "PENDING", False, False),
+        # Invalid NR filing type (dissolution is not in FILING_TYPES_WITH_NR) — does not block
+        ("dissolution_pending", "dissolution", "PENDING", True, False),
+    ]
+)
+def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, expected):
+    """Assert _nr_in_pending_filing blocks based on filing type, status, and NR presence."""
+    import random
+    nr_number = f"NR {random.randint(1000000, 9999999)}"
 
-
-def test_nr_in_pending_filing_blocks(session):
-    """Assert NR already in a PENDING filing blocks submission."""
+    # Some filing types require a sub-type field to satisfy the Filing model
+    required_subtype_fields = {
+        "amalgamationApplication": {"type": "regular"},
+        "dissolution": {"dissolutionType": "voluntary"},
+    }
+    base_data = dict(required_subtype_fields.get(filing_type, {}))
+    if has_nr:
+        base_data["nameRequest"] = {"nrNumber": nr_number}
+    filing_data = {filing_type: base_data}
     filing_json = {
-        'filing': {
-            'header': {'name': 'incorporationApplication'},
-            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000002'}}
+        "filing": {
+            "header": {"name": filing_type},
+            **filing_data,
         }
     }
-    filing = factory_pending_filing(None, filing_json)
 
-    assert _nr_in_pending_filing('NR 0000002') is True
+    if status == "PAID":
+        f = factory_pending_filing(None, filing_json)
+        f.payment_completion_date = f.filing_date
+        f.save()
+    elif status == "DRAFT":
+        f = Filing()
+        f.filing_json = filing_json
+        f.save()
+    else:  # PENDING
+        factory_pending_filing(None, filing_json)
 
-
-def test_nr_in_paid_filing_blocks(session):
-    """Assert NR already in a PAID filing blocks submission."""
-    filing_json = {
-        'filing': {
-            'header': {'name': 'incorporationApplication'},
-            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000003'}}
-        }
-    }
-    filing = factory_pending_filing(None, filing_json)
-    filing.payment_completion_date = filing.filing_date
-    filing.save()
-
-    assert _nr_in_pending_filing('NR 0000003') is True
-
-
-def test_nr_in_draft_filing_does_not_block(session):
-    """Assert NR only in DRAFT filing does not block."""
-    filing = Filing()
-    filing.filing_json = {
-        'filing': {
-            'header': {'name': 'incorporationApplication'},
-            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000004'}}
-        }
-    }
-    filing.save()
-
-    assert _nr_in_pending_filing('NR 0000004') is False
-
-
-def test_nr_excludes_own_filing(session):
-    """Assert a filing in PENDING status cannot be re-submitted (PUT is blocked by is_allowed),
-    so a filing cannot block itself — this test confirms PENDING status is correctly blocked."""
-    filing_json = {
-        'filing': {
-            'header': {'name': 'incorporationApplication'},
-            'incorporationApplication': {'nameRequest': {'nrNumber': 'NR 0000005'}}
-        }
-    }
-    factory_pending_filing(None, filing_json)
-
-    # A second filing using the same NR should be blocked
-    assert _nr_in_pending_filing('NR 0000005') is True
+    assert _nr_in_pending_filing(nr_number) is expected
