@@ -162,7 +162,7 @@ def format_extra_provincials(extra_provincials: list[str]) -> str:
         return ""
     if len(extra_provincials) == 1:
         return extra_provincials[0]
-    if len(extra_provincials) == 2:
+    if len(extra_provincials) == 2:  # noqa:PLR2004
         return f"{extra_provincials[0]} and {extra_provincials[1]}"
     return f'{", ".join(extra_provincials[:-1])}, and {extra_provincials[-1]}'
 
