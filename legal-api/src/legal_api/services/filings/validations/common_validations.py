@@ -30,7 +30,7 @@ from business_account import AccountService
 from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Address, Business, PartyRole
+from business_model.models import Address, Business, Filing, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
@@ -104,8 +104,40 @@ FILINGS_REQUIRING_AUTHORIZATION = {
     CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL,
     CoreFiling.FilingTypes.RESTORATION,
 }
-
 DRS_KEY_PATTERN = re.compile(r"^([A-Z]+)-(DS\d+)$")
+
+FILING_TYPES_WITH_NR = [
+    CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.REGISTRATION,
+    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
+    CoreFiling.FilingTypes.CONTINUATIONIN,
+    CoreFiling.FilingTypes.ALTERATION,
+    CoreFiling.FilingTypes.CHANGEOFNAME,
+    CoreFiling.FilingTypes.CHANGEOFREGISTRATION,
+    CoreFiling.FilingTypes.CONVERSION,
+]
+
+NR_BLOCKING_STATUSES = [
+    Filing.Status.PENDING,
+    Filing.Status.PAID,
+    Filing.Status.AWAITING_REVIEW,
+    Filing.Status.CHANGE_REQUESTED,
+    Filing.Status.APPROVED,
+]
+
+
+def _nr_in_pending_filing(nr_number: str) -> bool:
+    """Return True if the NR is already referenced in a non-draft/non-completed filing."""
+    for filing_type in FILING_TYPES_WITH_NR:
+        if Filing.query.filter(
+            Filing._status.in_([s.value for s in NR_BLOCKING_STATUSES]),
+            Filing.filing_json["filing"][filing_type.value]["nameRequest"]["nrNumber"].astext == nr_number
+        ).first():
+            return True
+    return False
+
+
+
 
 def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
     """Validate the resolution date of a share structure.
@@ -986,6 +1018,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     validation_result = namex.validate_nr(nr_response_json)
     if not validation_result["is_consumable"]:
         msg.append({"error": _("Name Request is not approved."), "path": nr_number_path})
+
+    # ensure NR is not already referenced in another pending/paid filing
+    if _nr_in_pending_filing(nr_number):
+        msg.append({"error": _("Name Request is already part of a pending filing."),
+                    "path": nr_number_path})
 
     # ensure NR request type code
     if accepted_request_types and nr_response_json["requestTypeCd"] not in accepted_request_types:
