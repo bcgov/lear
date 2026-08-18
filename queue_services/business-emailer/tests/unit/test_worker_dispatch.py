@@ -25,10 +25,8 @@ from business_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_out_notification,
-    appoint_receiver_notification,
     ar_reminder_notification,
     bn_notification,
-    cease_receiver_notification,
     consent_amalgamation_out_notification,
     filing_notification,
     mras_notification,
@@ -247,26 +245,6 @@ def test_notice_of_withdrawal_completed_dispatches(app, session, mocker, mock_se
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_appoint_receiver_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(appoint_receiver_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "appointReceiver", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(cease_receiver_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "ceaseReceiver", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 # --------------------------------------------------------------------------- #
 # filing_notification branch                                                #
 # --------------------------------------------------------------------------- #
@@ -278,6 +256,7 @@ def test_cease_receiver_completed_dispatches(app, session, mocker, mock_send_ema
     "changeOfAddress",
     "changeOfDirectors",
     "changeOfLiquidators",
+    "changeOfReceivers",
     "changeOfRegistration",
     "consentContinuationOut",
     "continuationIn",

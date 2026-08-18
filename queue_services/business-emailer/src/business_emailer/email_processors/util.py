@@ -53,6 +53,11 @@ FILING_TITLE = {
         "changeAddressLiquidator": "Liquidator (or Records) Address Change",
         "liquidationReport": "Liquidation Report",
     },
+    "changeOfReceivers": {
+        "appointReceiver": "Appoint Receiver/Receiver Manager",
+        "ceaseReceiver": "Cease Receiver or Receiver Manager",
+        "changeAddressReceiver": "Change of Address of Receiver/Receiver Manager",
+    },
 }
 
 FILING_TITLE_SHORT = {
@@ -157,6 +162,18 @@ FILING_ATTACHMENTS = {
         },
         "changeOfLiquidators-liquidationReport": {
             "attachments": ["Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfReceivers-appointReceiver": {
+            "attachments": ["Appoint Receiver/Receiver Manager", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfReceivers-ceaseReceiver": {
+            "attachments": ["Cease Receiver or Receiver Manager", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfReceivers-changeAddressReceiver": {
+            "attachments": ["Change of Address of Receiver/Receiver Manager", "Receipt"],
             "extraPdfTypes": [],
         },
         "consentContinuationOut": {

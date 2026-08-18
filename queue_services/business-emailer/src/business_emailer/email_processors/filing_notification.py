@@ -66,6 +66,7 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
         "alteration",
         "changeOfRegistration",
         "changeOfLiquidators",
+        "changeOfReceivers",
         "consentContinuationOut",
         "continuationOut",
         "dissolution",
@@ -314,6 +315,8 @@ def process(email_info: dict, token: str) -> dict | None:
     subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, filing_name_short)
     if filing_type in ["consentAmalgamationOut", "consentContinuationOut"]:
         subject = f"{business_name} - {filing_name_short} Granted"
+    elif filing_type == "changeOfReceivers":
+        subject = f"{business_name} - Confirmation of Receiver Change"
 
     return {
         "recipients": recipients,

@@ -46,10 +46,8 @@ from business_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_out_notification,
-    appoint_receiver_notification,
     ar_reminder_notification,
     bn_notification,
-    cease_receiver_notification,
     consent_amalgamation_out_notification,
     continuation_authorization_notification,
     filing_notification,
@@ -241,12 +239,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             send_email(email, token)
         elif etype == "noticeOfWithdrawal" and option == Filing.Status.COMPLETED.value:
             email = notice_of_withdrawal_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "appointReceiver" and option == Filing.Status.COMPLETED.value:
-            email = appoint_receiver_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "ceaseReceiver" and option == Filing.Status.COMPLETED.value:
-            email = cease_receiver_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype in FILING_TITLE:
             if email := filing_notification.process(email_msg["email"], token):
