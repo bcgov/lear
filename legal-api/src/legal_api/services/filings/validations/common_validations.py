@@ -33,7 +33,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Address, Business, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.services import STAFF_ROLE, MinioService, colin, doc_service, flags, namex
+from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
@@ -112,7 +112,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
 
     Rules:
     - If hasRightsOrRestrictions is true in any share class or series, resolution date is required.
-    - Only one resolution date is permitted.
+    - Only one resolution date is permitted (alteration and old correction).
     - Resolution date cannot be in the future.
     - Resolution date cannot be before the business founding date.
     """
@@ -121,7 +121,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
     resolution_dates = share_structure.get("resolutionDates", [])
 
     err_path = f"/filing/{filing_type}/shareStructure/resolutionDates"
-        
+
     msg = []
     if (
         (
@@ -135,6 +135,29 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
             "path": err_path
         })
 
+    if not resolution_dates:
+        return msg
+
+    if isinstance(resolution_dates[0], str):
+        # Kept for backward compatibility (existing alteration and correction filings)
+        msg.extend(_validate_resolution_dates_old_format(resolution_dates, business, err_path))
+    else:
+        # Did not include "Only one resolution date is permitted.", not required for correction
+        # If its required for alteration add while updating alteration filing
+        existing_ids = {resolution.id for resolution in business.resolutions.all()}
+        for idx, resolution_date in enumerate(resolution_dates):
+            if (resolution_id := resolution_date.get("id")) and (resolution_id not in existing_ids):
+                msg.append({
+                    "error": "Not a valid Resolution Id for this business.",
+                    "path": f"{err_path}/{idx}"
+                })
+            else:
+                msg.extend(_validate_resolution_date(resolution_date["date"], business, f"{err_path}/{idx}"))
+
+    return msg
+
+def _validate_resolution_dates_old_format(resolution_dates, business, err_path):
+    msg = []
     if len(resolution_dates) > 1:
         msg.append({
             "error": "Only one resolution date is permitted.",
@@ -142,22 +165,27 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
         })
 
     elif len(resolution_dates) == 1:
-        resolution_date_leg = date.fromisoformat(resolution_dates[0])
-        founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
-        today_leg = LegislationDatetime.datenow()
+        msg.extend(_validate_resolution_date(resolution_dates[0], business, err_path))
 
-        if resolution_date_leg > today_leg:
-            msg.append({
-                "error": "Resolution date cannot be in the future.",
-                "path": err_path
-            })
+    return msg
 
-        if resolution_date_leg < founding_date_leg:
-            msg.append({
-                "error": "Resolution date cannot be before the business founding date.",
-                "path": err_path
-            })
+def _validate_resolution_date(resolution_date_str: str, business, err_path: str) -> list[dict]:
+    resolution_date = date.fromisoformat(resolution_date_str)
+    founding_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+    today = LegislationDatetime.datenow()
 
+    msg = []
+    if resolution_date > today:
+        msg.append({
+            "error": "Resolution date cannot be in the future.",
+            "path": err_path
+        })
+
+    if resolution_date < founding_date:
+        msg.append({
+            "error": "Resolution date cannot be before the business founding date.",
+            "path": err_path
+        })
     return msg
 
 
@@ -563,19 +591,14 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
     return None
 
 def _get_file_data(file_key: str) -> tuple[bytes, int]:
-    """Return (file_bytes, file_size) for a file_key, whether DRS-backed or legacy Minio."""
-    enabled_features: list[str] = flags.value("enable-new-feature", [])
-
-    if "drs-upload" in enabled_features and (match := DRS_KEY_PATTERN.match(file_key)):
+    """Return (file_bytes, file_size) for a DRS-backed file_key."""
+    if match := DRS_KEY_PATTERN.match(file_key):
         doc_class, drs_id = match.group(1), match.group(2)
         response = doc_service.get_document(drs_id, doc_class, doc_binary=True)
         if not response.ok:
             raise ValueError(f"DRS get_document failed: status={response.status_code}")
         return response.content, len(response.content)
 
-    file = MinioService.get_file(file_key)
-    file_info = MinioService.get_file_info(file_key)
-    return file.data, file_info.size
 
 def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
     """Validate the parties name for COLIN sync."""
@@ -703,8 +726,7 @@ def validate_relationships( # noqa: PLR0913
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
         msg.extend(validate_relationship_entity_name(relationship, path))
-        msg.extend(validate_relationship_roles(relationship["roles"], role_types, path))
-        
+        msg.extend(validate_relationship_roles(relationship, role_types, path, business))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -842,17 +864,89 @@ def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str,
     return msg
 
 
-def validate_relationship_roles(roles: list[dict[str, str]],
+def validate_relationship_roles(relationship: dict,
                                 allowed_roles: list[PartyRole.RoleTypes],
-                                path: str) -> list:
+                                path: str,
+                                business: Business) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
+    earliest_allowed_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+
+    roles = relationship["roles"]
     for index, role in enumerate(roles):
         if role.get("roleType").lower().replace(" ", "_") not in converted_allowed_roles:
             err_msg = "Invalid role type for this filing."
             msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
         # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
+
+        appointment_date = date.fromisoformat(role.get("appointmentDate")) if role.get("appointmentDate") else None
+        cessation_date = date.fromisoformat(role.get("cessationDate")) if role.get("cessationDate") else None
+
+        msg.extend(_validate_relationship_date(appointment_date,
+                                              f"{path}/{index}/appointmentDate",
+                                              "Appointment",
+                                              earliest_allowed_date))
+        msg.extend(_validate_relationship_date(cessation_date,
+                                              f"{path}/{index}/cessationDate",
+                                              "Cessation",
+                                              earliest_allowed_date))
+
+        msg.extend(_validate_director_dates(appointment_date,
+                                              cessation_date,
+                                              f"{path}/{index}",
+                                              role))
+    return msg
+
+def _validate_director_dates(appointment_date: date, cessation_date: date, path: str, role: dict) -> list:
+    """Validate director dates."""
+    msg = []
+    if role.get("roleType").lower() != PartyRole.RoleTypes.DIRECTOR.value:
+        return msg
+
+    date_path = f"{path}/appointmentDate"
+    if not appointment_date and cessation_date:
+        msg.append({
+            "error": _("Appointment date is required when cessation date is present."),
+            "path": date_path
+        })
+    else:
+        msg.extend(_compare_director_dates(appointment_date, cessation_date, date_path))
+
+    return msg
+
+
+def _compare_director_dates(appointment_date: date, cessation_date: date, path: str) -> list:
+    """Validate director dates."""
+    msg = []
+    if appointment_date and cessation_date and appointment_date > cessation_date:
+        msg.append({
+            "error": _("Appointment date cannot be after cessation date."),
+            "path": path
+        })
+    return msg
+
+
+def _validate_relationship_date(date_value: date,
+                                path: str,
+                                error_name: str,
+                                earliest_allowed_date: date) -> list:
+    msg = []
+    if date_value is None:
+        return msg
+
+    today = LegislationDatetime.datenow()
+    if date_value > today:
+        msg.append({
+            "error": _(f"{error_name} date cannot be in the future."),
+            "path": path
+        })
+
+    if date_value < earliest_allowed_date:
+        msg.append({
+            "error": _(f"{error_name} date cannot be before the business founding date."),
+            "path": path
+        })
 
     return msg
 

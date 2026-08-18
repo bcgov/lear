@@ -1191,6 +1191,46 @@ def test_special_resolution_drs_report_type(session, filing_type, expected_repor
     assert response.status_code == HTTPStatus.OK
 
 
+@pytest.mark.parametrize('filing_type,report_key,expected_report_type', [
+    ('annualReport', 'annualReport', 'FILING'),
+    ('annualReport', 'changeOfDirectors', 'FILING-2'),
+    ('annualReport', 'changeOfAddress', 'FILING-4'),
+    ('changeOfDirectors', 'changeOfDirectors', 'FILING'),
+    ('changeOfAddress', 'changeOfAddress', 'FILING'),
+])
+def test_coop_annual_report_drs_report_types(session, filing_type, report_key, expected_report_type):
+    """Assert each legal filing bundled in a coop annual report uses a distinct DRS report type (#34457).
+
+    When stored with the same FILING report type as the annual report's own output, the DRS-first
+    lookup serves whichever of the documents was stored first, so every output shows the same content.
+    """
+    identifier = 'CP1234567'
+    business = factory_business(identifier=identifier, entity_type='CP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = filing_type
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'CP'
+    if filing_type == 'annualReport':
+        filing_json['filing']['annualReport'] = copy.deepcopy(ANNUAL_REPORT['filing']['annualReport'])
+    if report_key == 'changeOfDirectors':
+        filing_json['filing']['changeOfDirectors'] = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    if report_key == 'changeOfAddress':
+        filing_json['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._report_key = report_key
+    report._document_service = MagicMock()
+    report._document_service.get_filing_report_by_filing_id.return_value = (b'pdf', HTTPStatus.OK)
+
+    response = report._get_report()
+
+    report._document_service.get_filing_report_by_filing_id.assert_called_once_with(
+        identifier, filing.id, expected_report_type)
+    assert response.status_code == HTTPStatus.OK
+
+
 def _make_static_report_filing(identifier, document_type, file_key):
     """Create a completed coop dissolution filing with an uploaded document row."""
     from business_model.models import Document
@@ -1225,66 +1265,36 @@ def _make_pdf_bytes(text, pages=1):
     return buffer.getvalue()
 
 
-@pytest.mark.parametrize('test_name,file_key,expect_drs', [
-    ('drs_key', 'COOP-DS0000101951', True),
-    ('legacy_minio_key', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf', False),
-    ('legacy_bare_drs_id', 'DS0000100800', False),
+@pytest.mark.parametrize('test_name,file_key', [
+    ('drs_key', 'COOP-DS0000101951'),
 ])
-def test_get_static_report_drs_dispatch(session, test_name, file_key, expect_drs):
-    """Assert static report documents are served from the DRS or Minio based on the file key shape (#34300)."""
-    from legal_api.services import MinioService, doc_service
+def test_get_static_report_drs_dispatch(session, test_name, file_key):
+    """Assert static report documents are served from DRS (#34300)."""
+    from legal_api.services import doc_service
 
-    filing = _make_static_report_filing('CP1234567', 'court_order', file_key)
+    filing = _make_static_report_filing('CP1234567', 'coop_rules', file_key)
 
     report = Report(filing)
     drs_response = MagicMock(content=b'drs-pdf', status_code=HTTPStatus.OK)
-    minio_response = MagicMock(data=b'minio-pdf', status=HTTPStatus.OK)
-    with patch.object(doc_service, 'get_document', return_value=drs_response) as mock_drs, \
-            patch.object(MinioService, 'get_file', return_value=minio_response) as mock_minio:
-        response = report.get_pdf(report_type='uploadedCourtOrder')
+    with patch.object(doc_service, 'get_document', return_value=drs_response) as mock_drs:
+        response = report.get_pdf(report_type='certifiedRules')
 
-    if expect_drs:
-        mock_drs.assert_called_once_with('DS0000101951', 'COOP', doc_binary=True)
-        mock_minio.assert_not_called()
-        assert response.data == b'drs-pdf'
-    else:
-        mock_drs.assert_not_called()
-        mock_minio.assert_called_once_with(file_key)
-        assert response.data == b'minio-pdf'
+    mock_drs.assert_called_once_with('DS0000101951', 'COOP', doc_binary=True)
+    assert response.data == b'drs-pdf'
 
 
-@pytest.mark.parametrize('test_name,file_key', [
-    ('drs_backed', 'COOP-DS0000101951'),
-    ('minio_backed', '3c7aff7b-3351-4911-90fa-402189fdd94d.pdf'),
-])
-def test_affidavit_static_report_is_certified(session, test_name, file_key):
-    """Assert the uploaded coop dissolution affidavit is served with the registrar's certification stamp (#34300)."""
-    import io as _io
-
-    from pypdf import PdfReader
-
-    from legal_api.services import MinioService, doc_service
+def test_affidavit_static_report_certification(session):
+    """Assert DRS-served affidavit bytes pass through untouched (no double stamping, #34424)."""
+    from legal_api.services import doc_service
 
     identifier = 'CP1234567'
-    filing = _make_static_report_filing(identifier, 'affidavit', file_key)
+    filing = _make_static_report_filing(identifier, 'affidavit', 'COOP-DS0000101951')
     # two pages so the stamp can be shown to land on the first page only
     pdf_bytes = _make_pdf_bytes('Affidavit body', pages=2)
 
     drs_response = MagicMock(content=pdf_bytes, status_code=HTTPStatus.OK)
-    minio_response = MagicMock(data=pdf_bytes, status=HTTPStatus.OK)
-    with patch.object(doc_service, 'get_document', return_value=drs_response), \
-            patch.object(MinioService, 'get_file', return_value=minio_response):
+    with patch.object(doc_service, 'get_document', return_value=drs_response):
         response = Report(filing).get_pdf(report_type='affidavit')
 
-    stamped = PdfReader(_io.BytesIO(response.get_data()))
-    text = stamped.get_page(0).extract_text()
-    assert 'Affidavit body page 1' in text
-    # The stamp's text half, drawn by create_registrars_stamp.
-    assert 'Filed on' in text
-    assert identifier in text
-    # The "CERTIFIED COPY ... Registrar of Companies" box and the registrar's name are pixels
-    # inside the registrar_signature_and_text image, not pdf text, so they cannot be asserted
-    # via text extraction; assert the image itself instead. The source pdf has no images, so
-    # the single image on page 1 is the stamp, and none on page 2 proves first-page-only.
-    assert len(stamped.pages[0].images) == 1
-    assert len(stamped.pages[1].images) == 0
+    # DRS-served bytes pass through untouched (the DRS stamp, when configured, is already in them)
+    assert response.get_data() == pdf_bytes

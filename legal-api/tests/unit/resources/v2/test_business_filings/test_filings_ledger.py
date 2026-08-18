@@ -47,6 +47,13 @@ from tests.unit.models import (
 from tests.unit.services.utils import create_header
 
 REGISTER_CORRECTION_APPLICATION = 'Register Correction Application'
+
+
+def mock_auth(headers: dict):
+    """Return a stub for flask.request.headers.get."""
+    return lambda key, default=None: headers.get(key, default)
+
+
 def test_get_all_business_filings_only_one_in_ledger(app, session, client, jwt, monkeypatch, mock_drs_service, mocker):
     """Assert that the business info can be received in a valid JSONSchema format."""
     import copy
@@ -60,12 +67,9 @@ def test_get_all_business_filings_only_one_in_ledger(app, session, client, jwt, 
 
     print('test_get_all_business_filings - filing:', filings)
     headers=create_header(jwt, [STAFF_ROLE], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -90,12 +94,9 @@ def test_get_all_business_filings_multi_in_ledger(app, session, client, jwt, mon
             datetime.date(add_years(datetime(2001, 8, 5, 7, 7, 58, 272362), i)).isoformat()
         factory_filing(b, ar)
     headers=create_header(jwt, [STAFF_ROLE], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -111,12 +112,9 @@ def test_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service,
     business = factory_business(identifier=identifier, founding_date=founding_date, last_ar_date=None, entity_type=Business.LegalTypes.BCOMP.value)
     num_of_files = load_ledger(business, founding_date)
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -177,12 +175,9 @@ def test_ledger_comment_count(app, session, client, jwt, monkeypatch, mock_drs_s
         filing_storage.comments.append(comment)
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -222,12 +217,9 @@ def test_get_all_business_filings_permitted_statuses(app, session, client, jwt, 
     filing_storage.skip_status_listener = True
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -265,15 +257,23 @@ def test_ledger_court_order(app, session, client, jwt, test_name, file_number, o
             order_details=order_details,
             order_date=order_date
         ))
-        filing.save()
+        court_order = {"fileNumber": file_number}
+        if effect_of_order:
+            court_order["effectOfOrder"] = effect_of_order
+        if order_date:
+            court_order["orderDate"] = order_date.isoformat()
+        if order_details:
+            court_order["orderDetails"] = order_details
+        
+        filing._meta_data = {
+            "courtOrder": court_order
+        }
+    filing.save()
 
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -303,12 +303,9 @@ def test_ledger_display_name_annual_report(app, session, client, jwt, monkeypatc
     filing_storage._meta_data = meta_data
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -329,12 +326,9 @@ def test_ledger_display_unknown_name(app, session, client, jwt, monkeypatch, moc
     filing_storage._meta_data = meta_data
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -360,12 +354,9 @@ def test_ledger_display_alteration_report(app, session, client, jwt, monkeypatch
     filing_storage._meta_data = meta_data
     filing_storage.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -404,12 +395,9 @@ def test_ledger_display_restoration(app, session, client, jwt, restoration_type,
 
     factory_completed_filing(business, filing, filing_date=filing_date)
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -457,12 +445,9 @@ def test_ledger_display_incorporation(app, session, client, jwt, test_name, enti
                }
     f._meta_data = {**{'applicationDate': today}, **ia_meta}
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -480,12 +465,9 @@ def test_ledger_display_corrected_incorporation(app, session, client, jwt, monke
     original.parent_filing_id = correction.id
     original.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -520,12 +502,9 @@ def test_ledger_display_corrected_annual_report(app, session, client, jwt, monke
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -586,12 +565,9 @@ def test_ledger_redaction(app, session, client, jwt, test_name, submitter_role, 
         setattr(new_filing, 'skip_status_listener', True)  # skip status listener
         new_filing.save()
         headers=create_header(jwt, [jwt_role], identifier)
-        def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-            return headers[one]
-
         # test
         with app.test_request_context():
-            monkeypatch.setattr('flask.request.headers.get', mock_auth)
+            monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
             rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                             headers=headers)
     except Exception as err:
@@ -639,12 +615,9 @@ def test_ledger_display_special_resolution_correction(app, session, client, jwt,
     correction_2._meta_data = {**{'applicationDate': today}, **correction_2_meta}
     correction_2.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 
@@ -681,12 +654,9 @@ def test_ledger_display_non_special_resolution_correction_name(app, session, cli
     correction._meta_data = {**{'applicationDate': today}, **correction_meta}
     correction.save()
     headers=create_header(jwt, [UserRoles.system], identifier)
-    def mock_auth(one, two):  # pylint: disable=unused-argument; mocks of library methods
-        return headers[one]
-
     # test
     with app.test_request_context():
-        monkeypatch.setattr('flask.request.headers.get', mock_auth)
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
         rv = client.get(f'/api/v2/businesses/{identifier}/filings',
                         headers=headers)
 

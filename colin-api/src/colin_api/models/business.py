@@ -81,6 +81,13 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
              TypeCodes.ULC_CONTINUE_IN.value,
              TypeCodes.CCC_CONTINUE_IN.value]
 
+    # Corp types that auth may sync auth info (including the corp password) for.
+    # These are the COLIN businesses that can be affiliated in the business registry
+    # dashboard while not loaded in LEAR.
+    AUTH_INFO_TYPES = [TypeCodes.BC_COMP.value,
+                       TypeCodes.ULC_COMP.value,
+                       TypeCodes.CCC_COMP.value]
+
     NUMBERED_CORP_NAME_SUFFIX = {
         TypeCodes.BCOMP.value: 'B.C. LTD.',
         TypeCodes.BC_COMP.value: 'B.C. LTD.',
@@ -115,6 +122,16 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
 
     def __init__(self):
         """Initialize with all values None."""
+
+    @property
+    def lear_state(self) -> str:
+        """Return the LEAR-style business state: only op-state ACT is active, everything else is historical.
+
+        Same rule as the tombstone migration (data-tool tombstone_utils) and the search
+        importers - keyed off CORP_OP_STATE.OP_STATE_TYP_CD (ACT/HIS), not the
+        fine-grained corp state code.
+        """
+        return 'ACTIVE' if self.corp_state_class == 'ACT' else 'HISTORICAL'
 
     def as_dict(self) -> Dict:
         """Return dict version of self."""
@@ -373,6 +390,50 @@ class Business:  # pylint: disable=too-many-instance-attributes, too-many-public
 
             # pass through exception to caller
             raise err
+
+    @classmethod
+    def get_auth_info(cls, identifier: str) -> Dict:
+        """Return the info needed by auth to create/refresh an entity for a COLIN business.
+
+        The response contains the corporation password, so callers must be service
+        authenticated and must never log the result or pass it on to a browser.
+        Restricted to the corp types that can be affiliated while not loaded in LEAR.
+        """
+        # auth holds the prefixed identifier, COLIN stores the bare corp num. BC/ULC/CC all
+        # use the BC prefix, so it can be stripped without knowing the legal type first.
+        if identifier.startswith('BC'):
+            identifier = identifier[2:]
+
+        # acquire a single session from the pool and reuse it for both lookups
+        con = DB.connection
+        business = cls.find_by_identifier(identifier, corp_types=cls.AUTH_INFO_TYPES, con=con)
+
+        cursor = con.cursor()
+        cursor.execute(
+            """
+            select corp_password
+            from CORPORATION
+            where corp_num=:corp_num
+            """,
+            corp_num=identifier
+        )
+        result = cursor.fetchone()
+        pass_code = result[0] if result else None
+
+        return {
+            'identifier': business.corp_num,
+            'legalName': business.corp_name,
+            'legalType': business.corp_type,
+            # LEAR-style state, not COLIN's free-text status description - auth stores it
+            # verbatim and the dashboard filters on ACTIVE/HISTORICAL
+            'status': business.lear_state,
+            'goodStanding': business.good_standing,
+            'businessNumber': business.business_number,
+            # find_by_identifier returns the COLIN 'True'/'False' string; normalize for callers
+            'adminFreeze': business.admin_freeze == 'True',
+            'email': business.email,
+            'passCode': pass_code
+        }
 
     @classmethod
     def create_corporation(cls, con, filing_info: Dict):

@@ -78,11 +78,11 @@ DOCS_STATIC2 = {
     "staticDocuments": [
       {
         "name": "Unlimited Liability Corporation Information",
-        "url": "https://test.com/C9900863/filings/155753/documents/static/DS0000100741"
+        "url": "https://test.com/C9900863/filings/155753/documents/static/CORP-DS0000100741"
       },
       {
         "name": "20250107-Authorization1.pdf",
-        "url": "https://test.com/C9900863/filings/155753/documents/static/DS0000100740"
+        "url": "https://test.com/C9900863/filings/155753/documents/static/CORP-DS0000100740"
       }
     ]
   }
@@ -197,6 +197,31 @@ DRS_STATIC1 = [
     "url": ""
   }
 ]
+DOCS_STATIC3 = {
+  "documents": {
+    "affidavit": "https://test.com/CP1044808/filings/233801/documents/affidavit",
+    "certificateOfDissolution": "https://test.com/CP1044808/filings/233801/documents/certificateOfDissolution",
+    "legalFilings": [
+      {"dissolution": "https://test.com/CP1044808/filings/233801/documents/dissolution"}
+    ],
+    "receipt": "https://test.com/CP1044808/filings/233801/documents/receipt"
+  }
+}
+DRS_STATIC3 = [
+  {
+    "consumerDocumentId": "0100000527",
+    "dateCreated": "2026-06-29T19:19:32+00:00",
+    "datePublished": "2026-06-29T00:00:00+00:00",
+    "documentClass": "COOP",
+    "documentType": "COSD",
+    "documentTypeDescription": "Statement of Dissolution",
+    "entityIdentifier": "CP1044808",
+    "eventIdentifier": 233801,
+    "identifier": "DS0000101951",
+    "name": "",
+    "url": ""
+  }
+]
 DRS_STATIC2 = [
   {
     "consumerDocumentId": "0100000193",
@@ -225,6 +250,24 @@ DRS_STATIC2 = [
     "url": ""
   }
 ]
+DRS_TEST_DOC = {
+    "consumerDocumentId": "0100000527",
+    "dateCreated": "2026-06-29T19:19:32+00:00",
+    "datePublished": "2026-06-29T00:00:00+00:00",
+    "documentClass": "COOP",
+    "documentType": "COSD",
+    "documentTypeDescription": "Statement of Dissolution",
+    "entityIdentifier": "CP1044808",
+    "eventIdentifier": 233801,
+    "identifier": "DS0000101951",
+    "name": "",
+    "url": ""
+}
+STATIC_URL1 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/798da472-4f2d-4299-a3ee-84388d89f9ce.pdf"
+STATIC_URL2 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/CORP-DS0000101951"
+STATIC_URL3 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/CORP-DS0000101952"
+STATIC_URL4 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/COOP-DS0000101953"
+STATIC_URL5 = "https://test/business/api/v2/businesses/BC0888572/filings/3671021/documents/static/FIRM-DS0000101954"
 
 # testdata pattern is ({description}, {doc_data}, {drs_data}, {receipt}, {filing}, {noa}, {cert}, {static})
 TEST_FILING_UPDATE_DATA = [
@@ -233,6 +276,7 @@ TEST_FILING_UPDATE_DATA = [
     ("Colin docs", DOCS_COLIN, DRS_COLIN, "reportType=RECEIPT&drsId=DSR0000100896", "reportType=FILING&drsId=DSR0000100897", "reportType=NOA&drsId=DSR0000100898", "reportType=CERT&drsId=DSR0000100899", None),
     ("Static 1", DOCS_STATIC1, DRS_STATIC1, None, None, None, None, "documentClass=COOP&drsId=DS0000101630"),
     ("Static 2", DOCS_STATIC2, DRS_STATIC2, None, None, None, None, "documentClass=CORP&drsId=DS0000100741"),
+    ("Static 3", DOCS_STATIC3, DRS_STATIC3, None, None, None, None, "documentClass=COOP&drsId=DS0000101951"),
 ]
 # testdata pattern is ({description}, {doc_data}, {drs_data}, {receipt}, {filing}, {noa}, {cert}, {static}, {meta}, {filing_id})
 TEST_BUSINESS_UPDATE_DATA = [
@@ -241,6 +285,7 @@ TEST_BUSINESS_UPDATE_DATA = [
     ("Colin docs", DOCS_COLIN, DRS_COLIN, "reportType=RECEIPT&drsId=DSR0000100896", "reportType=FILING&drsId=DSR0000100897", "reportType=NOA&drsId=DSR0000100898", "reportType=CERT&drsId=DSR0000100899", None,  META_COLIN, 0),
     ("Static 1", DOCS_STATIC1, DRS_STATIC1, None, None, None, None, "documentClass=COOP&drsId=DS0000101630", META_MODERN, 233791),
     ("Static 2", DOCS_STATIC2, DRS_STATIC2, None, None, None, None, "documentClass=CORP&drsId=DS0000100741", META_MODERN, 155753),
+    ("Static 3", DOCS_STATIC3, DRS_STATIC3, None, None, None, None, "documentClass=COOP&drsId=DS0000101951", META_MODERN, 233801),
 ]
 # testdata pattern is ({has_data}, {report_key}, {report_type})
 TEST_REPORT_META_DATA = [
@@ -282,7 +327,32 @@ TEST_REPORT_META_DATA = [
     (True, "ceaseReceiver", "FILING"),
     (True, "default", "FILING"),
 ]
-
+# testdata pattern is ({match}, {url}, {name}, {drs_doc}, {drs_class}, {drs_type}, {drs_id}, {drs_filename})
+TEST_STATIC_DOC_MATCH_DATA = [
+   (True, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
+   (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL1, "Unlimited Liability Corporation Information", DRS_TEST_DOC, "CORP", "DIRECTOR_AFFIDAVIT", "DS0000101951", ""),
+   (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "FIRM", "CRTO", "DS0000101951", "Test court order"),
+   (True, STATIC_URL1, "Test court order", DRS_TEST_DOC, "COOP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (True, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Court Order 1234"),
+   (True, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
+   (False, STATIC_URL3, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", "Test court order.pdf"),
+   (False, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101952", ""),
+   (False, STATIC_URL2, "Test court order", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101952", None),
+   (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", ""),
+   (False, STATIC_URL1, "Court Order 1234", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+   (False, STATIC_URL1, None, DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+   (False, STATIC_URL1, "", DRS_TEST_DOC, "CORP", "COSD", "DS0000101951", "Court Order.pdf"),
+   (False, STATIC_URL1, "Unlimited Liability Corporation Information", DRS_TEST_DOC, "CORP", "CRTO", "DS0000101951", ""),
+ ]
+# testdata pattern is ({url}, {drs_id})
+TEST_STATIC_URL_DRS_ID_DATA = [
+   (STATIC_URL1, ""),
+   (STATIC_URL2, "DS0000101951"),
+   (STATIC_URL4, "DS0000101953"),
+   (STATIC_URL5, "DS0000101954"),
+]
 
 @pytest.mark.parametrize("has_data,report_key,report_type", TEST_REPORT_META_DATA)
 def test_report_meta_type(session, has_data, report_key, report_type):
@@ -361,6 +431,30 @@ def test_update_ledger_docs(session, desc, doc_data, drs_data, receipt, filing, 
         assert text_results.find("documentClass=") < 1
     else:
         assert text_results.find(static) > 0
+
+
+@pytest.mark.parametrize("match,url,name,drs_doc,drs_class,drs_type,drs_id,drs_filename", TEST_STATIC_DOC_MATCH_DATA)
+def test_match_static_doc(session, match, url, name, drs_doc, drs_class, drs_type, drs_id, drs_filename):
+    """Assert that DRS matching on static documents when building download URLs works as expected."""
+    doc = copy.deepcopy(drs_doc)
+    doc["documentClass"] = drs_class
+    doc["documentType"] = drs_type
+    doc["name"] = drs_filename
+    if drs_id:
+        doc["identifier"] = drs_id
+    static_doc = {
+        "name": name,
+        "url": url
+    }
+    result = DocumentService().is_static_doc_match(doc, static_doc)
+    assert result == match
+
+
+@pytest.mark.parametrize("url,drs_id", TEST_STATIC_URL_DRS_ID_DATA)
+def test_url_drs_id_doc(session, url, drs_id):
+    """Assert that extracting a DRS ID from a url file key when building download URLs works as expected."""
+    result = DocumentService().get_url_drs_id(url)
+    assert result == drs_id
 
 
 def test_create_document(app, session, mock_bearer_token, mock_doc_service):

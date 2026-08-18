@@ -14,10 +14,10 @@
 """Retrieve the court orders for the entity."""
 from http import HTTPStatus
 
-from flask import jsonify
+from flask import current_app, jsonify, url_for
 from flask_cors import cross_origin
 
-from business_model.models import Business, CourtOrder, Filing
+from business_model.models import Business, CourtOrder, Document, DocumentType, Filing
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -49,24 +49,39 @@ def get_court_orders(identifier, court_order_id=None):
     court_orders_list = CourtOrder.get_json_with_filing_type(business.id)
     return jsonify({
         "courtOrders": court_orders_list
-    })
+    }), HTTPStatus.OK
 
 
 def _get_court_order(business, court_order_id=None):
-    court_order = None
-    if court_order_id:
-        court_order = CourtOrder.get_by_id(court_order_id)
-        if court_order:
-            return _include_court_order_files(court_order), HTTPStatus.OK
+    if court_order := CourtOrder.get_by_id(court_order_id):
+        court_order_json = court_order.json
+        filing = Filing.find_by_id(court_order.filing_id)
+        if filing.filing_type == "courtOrder":
+            _include_court_order_files(court_order_json, filing, business)
+
+        return {"courtOrder": court_order_json}, HTTPStatus.OK
 
     return {"message": f"{business.identifier} court order not found"}, HTTPStatus.NOT_FOUND
 
 
-def _include_court_order_files(court_order):
-    """Return a JSON of the court orders."""
-    court_order_json = court_order.json
-    filing = Filing.find_by_id(court_order.filing_id)
-    if filing.filing_type == "courtOrder":
-        court_order_json["files"] = []  # TODO: implement
-
-    return {"courtOrder": court_order_json}
+def _include_court_order_files(court_order_json, filing, business):
+    documents = Document.find_all_by(filing.id, DocumentType.COURT_ORDER.value)
+    if documents:
+        base_url = current_app.config.get("BUSINESS_API_GW_URL")
+        doc_url = url_for(
+            "API2.get_documents",
+            identifier=business.identifier,
+            filing_id=filing.id,
+            legal_filing_name=None
+        )
+        files = []
+        for doc in documents:
+            file_name = doc.file_name
+            if not file_name:
+                file_name = f"Court Order {court_order_json.get('fileNumber')}"
+            files.append({
+                "fileName": file_name,
+                "fileKey": doc.file_key,
+                "url": f"{base_url}{doc_url}/static/{doc.file_key}",
+            })
+        court_order_json["files"] = files

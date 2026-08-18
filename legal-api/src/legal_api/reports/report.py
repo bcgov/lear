@@ -78,38 +78,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
         # DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
-        # legacy Minio keys (UUIDs) and bare DRS ids ("DS...") do not match.
-        if match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key or ""):
-            from legal_api.services import doc_service
-            drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
-            document_data, status = drs_response.content, drs_response.status_code
-        else:
-            from legal_api.services import MinioService
-            minio_response = MinioService.get_file(document.file_key)
-            document_data, status = minio_response.data, minio_response.status
-        if self._report_key == "affidavit" and status == HTTPStatus.OK:
-            # the affidavit is an uploaded document, so the registrar's certification stamp is applied here
-            document_data = self._certify_uploaded_document(document_data)
+        if not (match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key or "")):
+            return current_app.response_class(status=HTTPStatus.NOT_FOUND)
+        # the DRS applies the certified copy stamp itself for configured combinations
+        # (e.g. COOP-COSD), so DRS-served documents must not be stamped again here
+        from legal_api.services import doc_service
+        drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
+        document_data, status = drs_response.content, drs_response.status_code
         return current_app.response_class(
             response=document_data,
             status=status,
             mimetype="application/pdf"
         )
-
-    def _certify_uploaded_document(self, document_bytes: bytes) -> bytes:
-        """Apply the registrar's certification stamp when the document is downloaded.
-
-        Documents are never stamped on upload; the stamp is applied to each
-        served copy and the stored original is left unchanged.
-        """
-        from legal_api.services import PdfService
-        from legal_api.services.pdf_service import RegistrarStampData
-        business = self._business
-        if not business and self._filing.business_id:
-            business = Business.find_by_internal_id(self._filing.business_id)
-        identifier = business.identifier if business else self._filing.temp_reg
-        stamp_data = RegistrarStampData(self._filing.filing_date, identifier)
-        return PdfService().create_certified_copy(document_bytes, stamp_data).read()
 
     def _get_report(self, regenerate: bool = False):
         # Try to get report from DRS first: get to here if duplicate UI request before refreshing filing documents.
@@ -125,6 +105,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # the FILING report type with that filing's own report, or the DRS lookup below serves
             # whichever of the two documents was stored first (#34299).
             report_meta = {**report_meta, "reportType": ReportTypes.FILING_2.value}
+        if self._filing.filing_type == "annualReport" and \
+                (accompanying_type := {"changeOfDirectors": ReportTypes.FILING_2.value,
+                                       "changeOfAddress": ReportTypes.FILING_4.value}.get(self._report_key)):
+            # A coop annual report can bundle director and address changes as additional legal filings;
+            # each output must have its own report type or the DRS lookup below serves whichever of the
+            # documents was stored first (#34457).
+            report_meta = {**report_meta, "reportType": accompanying_type}
         report_type = report_meta.get("reportType")
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
@@ -2051,8 +2038,5 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "affidavit": {
             "documentType": "affidavit"
-        },
-        "uploadedCourtOrder": {
-            "documentType": "court_order"
         }
     }

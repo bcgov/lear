@@ -61,7 +61,6 @@ from legal_api.resources.v2.business.bp import bp
 from legal_api.services import (
     STAFF_ROLE,
     SYSTEM_ROLE,
-    MinioService,
     RegistrationBootstrapService,
     authorized,
     doc_service,
@@ -72,6 +71,7 @@ from legal_api.services.authz import is_allowed
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.permissions import PermissionService
+from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
@@ -225,7 +225,7 @@ def delete_filings(identifier, filing_id=None):
     filing.delete()
 
     with suppress(Exception):
-        ListFilingResource.delete_from_minio(filing_type, filing_json)
+        ListFilingResource.delete_uploaded_documents(filing_type, filing_json)
 
     if identifier.startswith("T") and filing.filing_type != Filing.FILINGS["noticeOfWithdrawal"]["name"]:
         bootstrap = RegistrationBootstrap.find_by_identifier(identifier)
@@ -271,6 +271,7 @@ def patch_filings(identifier, filing_id=None):
         payment_svc_url = "{}/{}".format(current_app.config.get("PAYMENT_SVC_URL"), filing.payment_token)
         token = jwt.get_token_auth_header()
         headers = {"Authorization": "Bearer " + token}
+        add_account_linking_key_header(headers)
         rv = requests.delete(url=payment_svc_url, headers=headers, timeout=20.0)
         if rv.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED):
             filing.reset_filing_to_draft()
@@ -328,6 +329,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
         if filing.meta_data and (expiry_date := filing.meta_data.get(filing_name, {}).get("expiryDate")):
             filing_json[filing_name]["expiryDate"] = expiry_date
+
+        if filing.meta_data and (dissolution_date := filing.meta_data.get(filing_name, {}).get("dissolutionDate")):
+            filing_json[filing_name]["dissolutionDate"] = dissolution_date
 
         return jsonify({"filing": filing_json})
 
@@ -387,6 +391,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 "Authorization": f"Bearer {jwt.get_token_auth_header()}",
                 "Content-Type": "application/json"
             }
+            add_account_linking_key_header(headers)
             payment_svc_url = current_app.config.get("PAYMENT_SVC_URL")
 
             if payment_token := filing_dict.get("filing", {}).get("header", {}).get("paymentToken"):
@@ -1057,6 +1062,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             token = user_jwt.get_token_auth_header()
             headers = {"Authorization": "Bearer " + token,
                        "Content-Type": "application/json"}
+            add_account_linking_key_header(headers)
             current_app.logger.debug(f"Pay api call - url: {payment_svc_url}, payload: {payload}")
             rv = requests.post(url=payment_svc_url,
                                json=payload,
@@ -1114,19 +1120,17 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def delete_uploaded_file(file_key: str):
-        """Delete an uploaded file from the DRS or Minio based on the file key shape.
+        """Delete an uploaded file from the DRS based on the file key shape.
 
         DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
-        legacy Minio keys (UUIDs) do not match.
         """
         if re.match(r"^([A-Z]+)-(DS\d+)$", file_key):
             doc_service.delete_document(Document(file_key=file_key))
-        else:
-            MinioService.delete_file(file_key)
+
 
     @staticmethod
-    def delete_from_minio(filing_type: str, filing_json: dict):
-        """Delete the filing's uploaded files from the DRS or Minio."""
+    def delete_uploaded_documents(filing_type: str, filing_json: dict):
+        """Delete the filing's uploaded files from the DRS."""
         if (filing_type == Filing.FILINGS["incorporationApplication"].get("name")
                 and (cooperative := filing_json
                      .get("filing", {})
@@ -1157,7 +1161,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def delete_continuation_in_files(filing_json: dict):
-        """Delete continuation in files from minio."""
+        """Delete continuation in files from DRS."""
         continuation_in = filing_json.get("filing", {}).get("continuationIn", {})
 
         # Delete affidavit file

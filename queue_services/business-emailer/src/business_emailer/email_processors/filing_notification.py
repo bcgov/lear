@@ -65,6 +65,7 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
     submitter_recipient_filings = [
         "alteration",
         "changeOfRegistration",
+        "changeOfLiquidators",
         "consentContinuationOut",
         "continuationOut",
         "dissolution",

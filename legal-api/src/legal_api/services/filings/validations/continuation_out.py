@@ -41,13 +41,11 @@ def validate(business: Business, filing: dict) -> Error | None:
     msg = []
     filing_type = "continuationOut"
 
-
-    if err := validate_continuation_out_date(filing, filing_type):
-        msg.extend(err)
-
-    if err := validate_foreign_jurisdiction(filing["filing"][filing_type]["foreignJurisdiction"],
-                                            f"/filing/{filing_type}/foreignJurisdiction"):
-        msg.extend(err)
+    msg.extend(validate_continuation_out_date(filing, f"/filing/{filing_type}/continuationOutDate"))
+    msg.extend(validate_foreign_jurisdiction(
+        filing["filing"][filing_type]["foreignJurisdiction"],
+        f"/filing/{filing_type}/foreignJurisdiction"
+    ))
 
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
@@ -60,10 +58,9 @@ def validate(business: Business, filing: dict) -> Error | None:
     return None
 
 
-def validate_continuation_out_date(filing: dict, filing_type: str) -> list:
+def validate_continuation_out_date(filing: dict, continuation_out_date_path: str) -> list:
     """Validate continuation out date."""
     msg = []
-    continuation_out_date_path = f"/filing/{filing_type}/continuationOutDate"
     continuation_out_date = get_date(filing, continuation_out_date_path)
 
     now = LegislationDatetime.now().date()

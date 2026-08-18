@@ -230,6 +230,35 @@ def test_get_tasks_error_filings(session, client, jwt):
     assert rv.json['tasks'][0]['task']['filing']['header']['filingId'] == filing.id
 
 
+def test_get_tasks_forwards_account_linking_key(app, session, client, jwt, requests_mock):
+    """Assert that the pay-api call forwards the Account-Linking-Key header when present on the request."""
+    from business_model.models import Filing
+    from tests.unit.models import AR_FILING
+
+    identifier = 'CP7654321'
+    b = factory_business(identifier, last_ar_date=datetime(2019, 8, 13))
+    factory_business_mailing_address(b)
+
+    filing = Filing()
+    filing.business_id = b.id
+    filing.filing_date = datetime(2019, 8, 5, 7, 7, 58, 272362)
+    filing.filing_json = AR_FILING
+    filing.payment_token = 2
+    filing.payment_status_code = 'CREATED'
+    filing.save()
+
+    pay_mock = requests_mock.get(f"{app.config.get('PAYMENT_SVC_URL')}/{filing.payment_token}",
+                                 json={'isPaymentActionRequired': False, 'paymentMethod': 'DIRECT_PAY'},
+                                 status_code=HTTPStatus.OK)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier,
+                                          **{'Account-Linking-Key': 'test-linking-key'}))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert pay_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
+
+
 def test_get_tasks_pending_correction_filings(session, client, jwt):
     """Assert that to-do list returns the error filings."""
     from freezegun import freeze_time

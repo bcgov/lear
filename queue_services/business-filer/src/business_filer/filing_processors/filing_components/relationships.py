@@ -213,6 +213,37 @@ def cease_relationships(
                 party_role.cessation_date = date_time
 
 
+def update_relationships_appointment_date(
+    relationships: list[dict],
+    business: Business,
+    allowed_roles: list[str]):
+    """Update the appointment date for the given parties for a business.
+    
+    Assumption: The structure has already been validated, upon submission.
+    """
+    def _get_info_by_role(roles: list[dict], role: str):
+        return next(
+            role_info for role_info in roles
+            if RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType", "").lower(), "") == role and
+            role_info.get("appointmentDate")
+        )
+    
+    existing_relationships = [
+        relationship
+        for relationship in relationships
+        if relationship.get("entity", {}).get("identifier") is not None
+    ]
+    for relationship in existing_relationships:
+        party_id = _str_to_int(relationship["entity"]["identifier"])
+        party_roles: list[PartyRole] = PartyRole.get_party_roles_by_party_id(business.id, party_id)
+
+        for party_role in party_roles:
+            if (party_role.role in allowed_roles
+                and (role_info := _get_info_by_role(relationship.get("roles", []), party_role.role))
+            ):
+                party_role.appointment_date = role_info.get("appointmentDate")
+
+
 def update_relationship_addresses(relationships: list[dict], business: Business) -> None:
     """Update the relationship addresses for existing party relationships.
     

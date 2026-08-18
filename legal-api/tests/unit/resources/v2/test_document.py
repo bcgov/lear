@@ -110,15 +110,6 @@ TEST_CLIENT_POST_DATA = [
 ]
 
 
-def test_documents_signature_get_returns_200(client, jwt, session, minio_server):  # pylint:disable=unused-argument
-    """Assert get documents/filename/signatures endpoint returns 200."""
-    headers = create_header(jwt, [STAFF_ROLE])
-    file_name = 'test_file.jpeg'
-    rv = client.get(f'/api/v2/documents/{file_name}/signatures', headers=headers, content_type='application/json')
-
-    assert rv.status_code == HTTPStatus.OK
-    assert 'key' in rv.json and 'preSignedUrl' in rv.json
-
 
 @pytest.mark.parametrize('desc,filing_type,entity_type,doc_type', TEST_CLIENT_POST_DATA)
 def test_create_client_document(session, client, jwt, desc, filing_type, entity_type, doc_type):

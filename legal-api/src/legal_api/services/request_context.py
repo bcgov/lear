@@ -23,6 +23,7 @@ from business_model.models import User
 class RequestContext:
     account_id: str | None = None
     user: User | None = None
+    account_linking_key: str | None = None
 
 
 def build_from_flask() -> RequestContext:
@@ -33,6 +34,8 @@ def build_from_flask() -> RequestContext:
     # Account header (configurable)
     account_id = request.headers.get("Account-Id", None)
 
+    account_linking_key = request.headers.get("Account-Linking-Key", None)
+
     # Token info and user
     token_info = getattr(g, "jwt_oidc_token_info", None)
     user = User.get_or_create_user_by_jwt(token_info) if token_info else None
@@ -40,6 +43,7 @@ def build_from_flask() -> RequestContext:
     return RequestContext(
         account_id=account_id,
         user=user,
+        account_linking_key=account_linking_key,
     )
 
 
@@ -52,3 +56,12 @@ def get_request_context() -> RequestContext:
         rc = build_from_flask()
         g.request_context = rc
     return rc
+
+
+def add_account_linking_key_header(headers: dict) -> None:
+    """Forward the incoming Account-Linking-Key header to an outgoing auth-api/pay-api call, if present."""
+    if not has_request_context():
+        return
+
+    if account_linking_key := request.headers.get("Account-Linking-Key"):
+        headers["Account-Linking-Key"] = account_linking_key

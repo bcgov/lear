@@ -1146,11 +1146,10 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test@example.co.uk', True),
     ('user@[192.168.1.1]', True),
     ('no_one@never.get', True),
-    ('"quoted"@example.com', True),
     ('user_name@domain.org', True),
     ('test123@test123.com', True),
     ('john.o\'smith@gov.bc.ca', True),
-    # Invalid email formats
+    # Invalid email formats.
     ('no_one@never.', False),
     ('invalid', False),
     ('@invalid.com', False),
@@ -1160,6 +1159,7 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test @example.com', False),
     ('test@ example.com', False),
     ('test@@example.com', False),
+    ('"quoted"@example.com', False),
 ])
 def test_contact_point_email_format_via_schema(session, email, is_valid):
     """The contactPoint email format is enforced by the schema (the same EMAIL_PATTERN the API used).
@@ -2329,14 +2329,7 @@ def test_validate_foreign_jurisdiction(session, test_name, foreign_jurisdiction,
     ]
 )
 def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, expected_id):
-    """Test that DRS document keys retrieve content from DRS instead of MinIO."""
-
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None:
-            ["drs-upload"]
-            if flag == "enable-new-feature" else default
-    )
+    """Test that DRS document keys retrieve content from DRS."""
 
     monkeypatch.setattr(
         'legal_api.services.filings.validations.common_validations.doc_service.get_document',
@@ -2349,11 +2342,6 @@ def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, 
                     'content': b'test pdf content'
                 }
             )()
-    )
-
-    monkeypatch.setattr(
-        'legal_api.services.filings.validations.common_validations.MinioService.get_file',
-        lambda _: pytest.fail("MinIO should not be called for DRS documents")
     )
 
     data, size = _get_file_data(file_key)

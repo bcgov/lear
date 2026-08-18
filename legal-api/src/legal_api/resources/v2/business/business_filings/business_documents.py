@@ -34,8 +34,9 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.reports import get_pdf
 from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp
-from legal_api.services import MinioService, authorized
+from legal_api.services import authorized
 from legal_api.services import doc_service as client_doc_service
+from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -121,22 +122,14 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
 
             return get_pdf(filing.storage, legal_filing_name)
         elif file_key and (document := Document.find_by_file_key(file_key)):
-            if document.filing_id == filing.id:  # make sure the file belongs to this filing
-                # DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
-                # legacy Minio keys (UUIDs) do not match.
-                if match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key):
-                    drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
-                    return current_app.response_class(
-                        response=drs_response.content,
-                        status=drs_response.status_code,
-                        mimetype=APP_PDF
-                    )
-                response = MinioService.get_file(document.file_key)
+            if document.filing_id == filing.id and (match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key)):  # make sure the file belongs to this filing
+                drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
                 return current_app.response_class(
-                    response=response.data,
-                    status=response.status,
+                    response=drs_response.content,
+                    status=drs_response.status_code,
                     mimetype=APP_PDF
                 )
+                
 
     return {}, HTTPStatus.NOT_FOUND
 
@@ -232,6 +225,7 @@ def _get_receipt(business: Business, filing: Filing, token):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
 
     headers = {"Authorization": "Bearer " + token}
+    add_account_linking_key_header(headers)
 
     corp_name = _get_corp_name(business, filing.storage)
 
@@ -340,7 +334,6 @@ def _regenerate_documents(business: Business, filing: Filing, query: RegenerateQ
 
     docs.pop("receipt", None)
     docs.pop("staticDocuments", None)
-    docs.pop("uploadedCourtOrder", None)
     doc_keys.extend(docs.keys())
 
     for doc_name in doc_keys:

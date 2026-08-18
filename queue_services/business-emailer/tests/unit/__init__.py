@@ -75,6 +75,7 @@ FILING_TYPE_MAPPER = {
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
+    'changeOfLiquidators': CHANGE_OF_LIQUIDATORS,
     'changeOfRegistration': CHANGE_OF_REGISTRATION,
     'consentContinuationOut': CONSENT_CONTINUATION_OUT,
     'continuationOut': CONTINUATION_OUT,

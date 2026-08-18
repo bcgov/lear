@@ -62,6 +62,35 @@ class BusinessPublicInfo(Resource):
             ), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+@cors_preflight('GET')
+@API.route('/<string:identifier>/auth-info', methods=['GET', 'OPTIONS'])
+class BusinessAuthInfo(Resource):
+    """Business info used by auth to create/refresh an entity for a COLIN business."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def get(identifier: str):
+        """Return the auth info for a COLIN business.
+
+        Service endpoint only - the response contains the corporation password so it must
+        never be proxied to a browser, and the payload must not be logged.
+        """
+        try:
+            auth_info = Business.get_auth_info(identifier)
+            return jsonify(auth_info), HTTPStatus.OK
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            return jsonify({'message': err.error}), err.status_code
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception. Only the identifier is logged - never the payload.
+            current_app.logger.error('Error retrieving auth info for %s: %s', identifier, type(err).__name__)
+            return jsonify(
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 @cors_preflight('GET, POST')
 @API.route('/<string:legal_type>/<string:identifier>', methods=['GET'])
 @API.route('/<string:legal_type>', methods=['POST'])
