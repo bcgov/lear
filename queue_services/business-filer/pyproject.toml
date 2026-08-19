@@ -1,6 +1,6 @@
 [project]
 name = "business-filer"
-version = "3.0.25"
+version = "3.0.26"
 description = "Business Registry Filer Service"
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
