@@ -76,6 +76,7 @@ FILING_TYPE_MAPPER = {
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
     'changeOfLiquidators': CHANGE_OF_LIQUIDATORS,
+    'changeOfReceivers': CHANGE_OF_RECEIVERS,
     'changeOfRegistration': CHANGE_OF_REGISTRATION,
     'consentContinuationOut': CONSENT_CONTINUATION_OUT,
     'continuationOut': CONTINUATION_OUT,
@@ -567,58 +568,6 @@ def prep_intent_to_liquidate_filing(session, identifier, payment_id, legal_type,
     filing.submitter_id = user.id
     if submitter_role:
         filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
-
-
-def prep_cease_receiver_filing(identifier, payment_id, legal_type, legal_name):
-    """Return a new Cease Receiver filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'changeOfReceivers'
-    filing_template['filing']['changeOfReceivers'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
-    filing_template['filing']['changeOfReceivers']['type'] = 'ceaseReceiver'
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-
-    filing.save()
-    return filing
-
-
-def prep_appoint_receiver_filing(identifier, payment_id, legal_type, legal_name):
-    """Return a new Appoint Receiver filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'changeOfReceivers'
-
-    filing_template['filing']['appointReceiver'] = copy.deepcopy(CHANGE_OF_RECEIVERS)
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
 
     filing.save()
     return filing
