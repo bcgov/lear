@@ -14,7 +14,7 @@
 """Snapshot of a COLIN business, normalized to LEAR structure."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional
 
 import pycountry
@@ -91,7 +91,7 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
     @staticmethod
     def _has_future_effective_filing(cursor, corp_num: str) -> bool:
         """Return whether any filing has an effective date still in the future."""
-        current_date = datetime.utcnow().strftime('%Y-%m-%d')
+        current_date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
         cursor.execute(
             """
             select count(*)
