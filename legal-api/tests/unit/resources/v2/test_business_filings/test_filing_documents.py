@@ -2220,3 +2220,45 @@ def test_get_static_document_by_file_key_shape(session, client, jwt, mocker):
     assert rv.status_code == HTTPStatus.OK
     mock_drs.assert_called_once_with('DS0000101951', 'CORP', doc_binary=True)
     assert rv.data == b'drs-pdf'
+
+
+def test_admin_dissolution_firm_documents_no_certificate(app, session, client, jwt, monkeypatch, mock_drs_service):
+    """Firm (SP/GP) administrative dissolution must build its document list without error.
+
+    Regression for bcgov/entity#33806: alter_outputs_dissolution did
+    outputs.remove('certificateOfDissolution') for administrative dissolutions, but
+    firms carry no certificate output, so the set.remove raised KeyError and the
+    documents/ledger endpoint returned HTTP 400 (surfacing as "deleted" ledger history).
+    """
+    identifier = 'FM7654321'
+    business = factory_business(identifier, entity_type='SP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['legalType'] = 'SP'
+    filing_json['filing']['dissolution'] = ADMIN_DISSOLUTION
+
+    filing = factory_filing(business, filing_json, filing_date=datetime.now(UTC))
+    filing.skip_status_listener = True
+    filing._status = Filing.Status.COMPLETED
+    filing._payment_completion_date = '2017-10-01'
+    lf = [list(x.keys()) for x in filing.legal_filings()]
+    legal_filings = [item for sublist in lf for item in sublist]
+    filing._meta_data = {'legalFilings': legal_filings}
+    filing.save()
+
+    account_id = '1'
+    headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
+        with requests_mock.Mocker() as m:
+            m.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
+                  json=[], status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+
+    assert rv.status_code == HTTPStatus.OK
+    documents = rv.json['documents']
+    assert 'certificateOfDissolution' not in documents
+    assert {'dissolution': f'{base_url}/api/v2/businesses/{identifier}/filings/{filing.id}/documents/dissolution'} \
+        in documents['legalFilings']
