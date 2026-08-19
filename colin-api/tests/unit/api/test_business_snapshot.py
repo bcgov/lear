@@ -147,8 +147,8 @@ def test_get_snapshot_single_connection_and_scope(client, mocker, authorized, mo
 
     # BC prefix stripped, same restriction as auth-info, and the pooled session is shared
     assert find.call_args.args[0] == '0870226'
-    assert find.call_args.kwargs['corp_types'] == ['BC', 'ULC', 'CC']
     assert find.call_args.kwargs['con'] is mock_db.connection
+    assert 'corp_types' not in find.call_args.kwargs
     assert mock_db.connection.cursor.call_count == 1
 
 
