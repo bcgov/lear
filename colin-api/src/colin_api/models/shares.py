@@ -58,6 +58,7 @@ class ShareClass(Share):  # pylint: disable=too-many-instance-attributes;
 
     # pylint: disable=too-few-public-methods
     currency_type = None
+    other_currency = None
     has_par_value = None
     par_value_amt = None
     series = None
@@ -77,6 +78,7 @@ class ShareClass(Share):  # pylint: disable=too-many-instance-attributes;
             'maxNumberOfShares': self.max_number_shares,
             'parValue': self.par_value_amt,
             'currency': self.currency_type,
+            'currencyAdditional': self.other_currency,
             'hasMaximumShares': self.has_max_shares == 'N' or False,
             'hasParValue': self.has_par_value == 'Y' or False,
             'hasRightsOrRestrictions': self.has_special_rights == 'Y' or False,
@@ -140,6 +142,7 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
                 row = dict(zip([x[0].lower() for x in description], row))
                 share_class = ShareClass()
                 share_class.currency_type = row['currency_typ_cd']
+                share_class.other_currency = row['other_currency']
                 share_class.has_max_shares = row['max_share_ind']
                 share_class.has_special_rights = row['spec_rights_ind']
                 share_class.has_par_value = row['par_value_ind']
