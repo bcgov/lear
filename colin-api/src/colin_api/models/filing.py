@@ -1298,7 +1298,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         """Get the list of all future effective filings for a business."""
         try:
             future_effective_filings = []
-            current_date = datetime.datetime.utcnow().strftime('%Y-%m-%d')
+            current_date = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d')
             cursor = DB.connection.cursor()
             cursor.execute(
                 """
