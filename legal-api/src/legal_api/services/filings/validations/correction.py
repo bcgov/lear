@@ -172,6 +172,40 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
 
     msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
     msg.extend(_validate_out_correction(filing_dict, filing_type))
+    msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
+
+
+def _validate_amalgamation_correction(filing_dict, filing_type, business: Business):
+    msg = []
+    if not (
+        amalgamating_businesses_json := filing_dict["filing"][filing_type].get("amalgamation", {})
+            .get("amalgamatingBusinesses", [])
+    ):
+        return msg
+    
+    amalgamation = business.amalgamation.first()
+    amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+    for idx, ting_json in enumerate(amalgamating_businesses_json):
+        path = f"/filing/{filing_type}/amalgamation/amalgamatingBusinesses/{idx}"
+        ting_id = ting_json["id"]
+        ting = next((ting for ting in amalgamating_businesses if ting.id == ting_id), None)
+        if not ting:
+            msg.append({"error": _("Amalgamating business not found."), "path": path})
+            continue
+
+        if ting.business_id:
+            msg.append({"error": _("Can only correct foreign businesses."), "path": path})
+            continue
+
+        msg.extend(
+            validate_foreign_jurisdiction(
+                ting_json["foreignJurisdiction"],
+                f"{path}/foreignJurisdiction",
+                is_region_bc_valid=True,
+                is_region_for_us_required=False
+            )
+        )
+    return msg
 
 
 def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
