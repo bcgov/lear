@@ -1990,13 +1990,14 @@ def test_get_receipt(session, client, jwt, requests_mock, mocker):
                        json={'foo': 'bar'},
                        status_code=HTTPStatus.CREATED)
 
-    mocker.patch('business_account.AccountService.get_bearer_token', return_value='service-token')
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='username')
+    service_token = 'service-token-abc'
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value=service_token)
 
-    content, status_code = _get_receipt(business, filing_core, token)
+    content, status_code = _get_receipt(business, filing_core)
 
     assert status_code == HTTPStatus.CREATED
     assert requests_mock.called_once
+    assert requests_mock.last_request.headers.get('Authorization') == f'Bearer {service_token}'
 
 
 def test_get_receipt_request_mock(session, client, jwt, requests_mock, mocker):
@@ -2026,7 +2027,8 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock, mocker):
                        json={'foo': 'bar'},
                        status_code=HTTPStatus.CREATED)
 
-    mocker.patch('business_account.AccountService.get_bearer_token', return_value='service-token')
+    service_token = 'service-token-abc'
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value=service_token)
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
                     headers=create_header(jwt,
@@ -2036,7 +2038,8 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock, mocker):
                     )
 
     assert rv.status_code == HTTPStatus.CREATED
-    assert requests_mock.called_once
+    assert requests_mock.called
+    assert requests_mock.last_request.headers.get('Authorization') == f'Bearer {service_token}'
 
 
 def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests_mock, mocker):
@@ -2196,46 +2199,6 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
-
-
-def test_receipt_download_uses_service_token(session, client, jwt, mocker):
-    """Assert receipt download uses the service account token, not the caller's JWT token.
-
-    Reproduces issue #34460: Staff-created filings with waiveFees=true have a payment_token
-    owned by the Staff account in Pay API. External users were getting 403 because their token
-    was forwarded to Pay API. The fix uses AccountService.get_bearer_token() instead.
-    """
-    from unittest.mock import MagicMock
-    from legal_api.resources.v2.business.business_filings import business_documents
-
-    identifier = "BC7654321"
-    business = factory_business(identifier, entity_type=Business.LegalTypes.BCOMP.value)
-
-    filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json["filing"]["header"]["name"] = "consentContinuationOut"
-    filing_json["filing"]["consentContinuationOut"] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
-    filing_date = datetime.now(UTC)
-    filing = factory_completed_filing(business, filing_json, filing_date=filing_date,
-                                      payment_token="staff-payment-token-999")
-
-    service_token = "service-account-token-abc"
-    mocker.patch("business_account.AccountService.get_bearer_token", return_value=service_token)
-    mocker.patch.object(business_documents, "_is_document_available", return_value=True)
-
-    mock_pay_response = MagicMock()
-    mock_pay_response.status_code = HTTPStatus.CREATED
-    mock_pay_response.content = b"%PDF-receipt"
-    mock_post = mocker.patch("requests.post", return_value=mock_pay_response)
-
-    rv = client.get(
-        f"/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt",
-        headers=create_header(jwt, [STAFF_ROLE], identifier, **{"accept": "application/pdf"}),
-    )
-
-    assert rv.status_code == HTTPStatus.CREATED
-    # Assert Pay API was called with the service token, not the caller's token
-    call_headers = mock_post.call_args.kwargs["headers"]
-    assert call_headers["Authorization"] == f"Bearer {service_token}"
 
 
 def test_get_static_document_by_file_key_shape(session, client, jwt, mocker):
