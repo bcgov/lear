@@ -41,7 +41,7 @@ from legal_api.services.filings.validations.common_validations import (
 )
 from legal_api.services.filings.validations.continuation_in import (
     validate_continuation_in_foreign_jurisdiction,
-    validate_continuation_in_xpro_business_in_colin,
+    validate_continuation_in_expro_business_in_colin,
 )
 from legal_api.services.filings.validations.continuation_out import validate_continuation_out_date
 from legal_api.services.filings.validations.incorporation_application import (
@@ -217,9 +217,9 @@ def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
             f"/filing/{filing_type}/continuationIn",
             skip_affidavit=True
         ))
-        msg.extend(validate_continuation_in_xpro_business_in_colin(
-            continuation_in.get("xpro"),
-            f"/filing/{filing_type}/continuationIn/xpro",
+        msg.extend(validate_continuation_in_expro_business_in_colin(
+            continuation_in.get("expro"),
+            f"/filing/{filing_type}/continuationIn/expro",
             skip_founding_date=True
         ))
     return msg

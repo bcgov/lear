@@ -61,7 +61,7 @@ def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-bra
         return Error(HTTPStatus.FORBIDDEN,
                      [{"error": babel(f"{legal_type} does not support continuation in filing.")}])
 
-    msg.extend(validate_continuation_in_xpro_business_in_colin(
+    msg.extend(validate_continuation_in_expro_business_in_colin(
         filing_json["filing"][filing_type].get("business"),
         f"/filing/{filing_type}/business"
     ))
@@ -250,17 +250,17 @@ def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
     return []
 
 
-def validate_continuation_in_xpro_business_in_colin(xpro: dict, path: str, skip_founding_date: bool = False) -> list:
+def validate_continuation_in_expro_business_in_colin(expro: dict, path: str, skip_founding_date: bool = False) -> list:
     """Validate continuation EXPRO business by making a call to Colin API."""
     msg = []
     business_identifier_path = f"{path}/identifier"
     business_legal_name_path = f"{path}/legalName"
     business_founding_date_path = f"{path}/foundingDate"
 
-    if xpro:
-        identifier = xpro["identifier"]
-        legal_name = xpro.get("legalName")
-        founding_date = xpro.get("foundingDate")
+    if expro:
+        identifier = expro["identifier"]
+        legal_name = expro.get("legalName")
+        founding_date = expro.get("foundingDate")
         response = colin.query_business(identifier)
         response_json = response.json()
         if response.status_code != HTTPStatus.OK:

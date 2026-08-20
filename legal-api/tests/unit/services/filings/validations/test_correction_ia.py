@@ -777,7 +777,7 @@ def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
         assert err is None
 
 
-def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session, jwt):
+def test_validate_continuation_in_expro_founding_date_match(mocker, app, session, jwt):
     """Assert continuation EXPRO business with matching founding date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='C')
@@ -793,7 +793,7 @@ def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session,
         'legalName': 'HAULER SERVICES',
         'identifier': 'AB1234567',
         'incorporationDate': dt.now().date().isoformat(),
-        'xpro': {
+        'expro': {
             'identifier': 'A0077779',
             'legalName': 'Test Company Inc.'
         }
