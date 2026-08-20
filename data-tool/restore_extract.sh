@@ -14,7 +14,8 @@ set -euo pipefail
 PGHOST="${PGHOST:-localhost}"        # or ‑‑host
 PGPORT="${PGPORT:-5432}"             # or ‑‑port
 PGUSER="${PGUSER:-postgres}"        # or ‑‑user
-PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
+PGDATABASE="${PGDATABASE:-colin-mig-corps-ctst}"     # or ‑‑dbname
+PGSCHEMA="${PGSCHEMA:-public}"
 # Optional PostgreSQL client binary directory. Leave empty to use PATH.
 # Example: PG_BIN=/path/to/postgresql/bin ./restore_extract.sh
 PG_BIN="${PG_BIN:-}"
@@ -51,7 +52,7 @@ PG_RESTORE_BIN="$(pg_tool pg_restore)"
 
 # Build a single “‑h … ‑p … ‑U …” string so every call is consistent
 pg_conn_opts() {
-  printf -- "-h %s -p %s -d %s -U %s" "$PGHOST" "$PGPORT" "$PGDATABASE" "$PGUSER"
+  printf -- "-h %s -p %s -d %s -U %s -n %s" "$PGHOST" "$PGPORT" "$PGDATABASE" "$PGUSER" "$PGSCHEMA"
 }
 
 # Pass arrays (e.g., RESTORE) as repeated --table switches
@@ -83,6 +84,9 @@ for arg in "$@"; do
   case "$arg" in
     --delta)
       delta_requested=true
+      ;;
+    --schema)
+      PGSCHEMA="${arg#--schema=}"
       ;;
     *)
       delta_args+=("$arg")
@@ -122,6 +126,7 @@ printf "🔄  Re‑importing Postgres from Oracle …\n"
 printf "🧹  Truncating existing rows …\n"
 printf "Truncating preserved tables.\n"
 "$PSQL_BIN" $(pg_conn_opts) -v ON_ERROR_STOP=1 -q <<SQL
+${PGSCHEMA:+SET search_path TO $PGSCHEMA;}
 TRUNCATE TABLE $(IFS=,; echo "${RESTORE[*]}") RESTART IDENTITY;
 SQL
 #  - RESTART IDENTITY zeros the sequences; we'll set them correctly later.
@@ -131,15 +136,26 @@ SQL
 # ── RESTORE DATA FOR THE PRESERVED TABLES                                   #
 ##############################################################################
 printf "🚚  Copying preserved rows (constraints temporarily disabled) …\n"
-"$PG_RESTORE_BIN" $(pg_conn_opts) --section=data --data-only \
+if [[ -n "$PGSCHEMA" ]]; then
+  "$PG_RESTORE_BIN" --section=data --data-only \
           --disable-triggers \
-          $(as_table_opts "${RESTORE[@]}") "$DUMP"
-
+          $(as_table_opts "${RESTORE[@]}") -f - "$DUMP" \
+  | sed -E "s/^SET search_path = public/SET search_path = ${PGSCHEMA}/; s/^(COPY|ALTER TABLE) public\\./\\1 ${PGSCHEMA}./" \
+  | "$PSQL_BIN" $(pg_conn_opts) -v ON_ERROR_STOP=1 -q
+else
+  "$PG_RESTORE_BIN" $(pg_conn_opts) --section=data --data-only \
+            --disable-triggers \
+            $(as_table_opts "${RESTORE[@]}") "$DUMP"
+fi
 ##############################################################################
 # ── FIX ANY SEQUENCES                                                       #
 ##############################################################################
 
 printf "🛠  Advancing sequences …\n"
-"$PSQL_BIN" $(pg_conn_opts) -f "$REPAIR_SEQUENCES_SQL"
+if [[ -n "$PGSCHEMA" ]]; then
+  "$PSQL_BIN" $(pg_conn_opts) -c "SET search_path TO ${PGSCHEMA}" -f "$REPAIR_SEQUENCES_SQL"
+else
+  "$PSQL_BIN" $(pg_conn_opts) -f "$REPAIR_SEQUENCES_SQL"
+fi
 
 printf "✅  Done. Preserved tables restored; sequences synchronised.\n"
