@@ -22,73 +22,20 @@ business lookup (find_by_identifier) is stubbed - what is exercised here is the 
 own behaviour: the corp password query, the corp type restriction, response shape and
 error mapping.
 """
-from types import SimpleNamespace
-from unittest.mock import MagicMock
-
-import pytest
-
 from colin_api.exceptions import BusinessNotFoundException
 from colin_api.models import Business
-from colin_api.utils.auth import jwt as _jwt
+from tests.unit import build_business, bypass_auth
 
 
 AUTH_INFO_URL = '/api/v1/businesses/BC0870226/auth-info'
 PASS_CODE = '111111111'
 
 
-def _business(**overrides):
-    """Return a Business object as find_by_identifier would build it."""
-    business = Business()
-    business.corp_num = '0870226'
-    business.corp_name = 'COLIN TEST COMPANY LTD.'
-    business.corp_type = 'BC'
-    # CORP_OP_STATE.OP_STATE_TYP_CD - only ever ACT/HIS; drives the response's LEAR-style status
-    business.corp_state_class = 'ACT'
-    business.good_standing = True
-    business.business_number = '791861078BC0001'
-    # COLIN returns admin_freeze as a 'True'/'False' string
-    business.admin_freeze = 'False'
-    business.email = 'registered.office@test.com'
-    for key, value in overrides.items():
-        setattr(business, key, value)
-    return business
-
-
-def _bypass_auth(mocker, roles_valid=True):
-    """Stub out token validation on the jwt manager.
-
-    The attribute names differ between flask-jwt-oidc releases (and validate_roles has taken
-    different arities), so patch whichever the installed version exposes. MagicMock accepts
-    any signature, so this holds across versions.
-    """
-    for attr in ('_require_auth_validation', '_validate_token', 'validate_token'):
-        if hasattr(_jwt, attr):
-            mocker.patch.object(_jwt, attr, return_value=None)
-    mocker.patch.object(_jwt, 'validate_roles', return_value=roles_valid)
-
-
-@pytest.fixture
-def authorized(mocker):
-    """Bypass the colin service role check - the gate itself is asserted separately."""
-    _bypass_auth(mocker)
-
-
-@pytest.fixture
-def mock_db(mocker):
-    """Mock the Oracle connection, exposing the connection and cursor for assertions."""
-    cursor = MagicMock()
-    cursor.fetchone.return_value = (PASS_CODE,)
-    connection = MagicMock()
-    connection.cursor.return_value = cursor
-    db = MagicMock()
-    db.connection = connection
-    mocker.patch('colin_api.models.business.DB', db)
-    return SimpleNamespace(connection=connection, cursor=cursor)
-
-
 def test_get_auth_info(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
     """Assert the auth info needed by auth is returned for a COLIN corp."""
-    mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
+    mocker.patch.object(Business, 'find_by_identifier', return_value=build_business())
+    # the corp password row - conftest's mock_db defaults fetchone to a count-style (0,)
+    mock_db.cursor.fetchone.return_value = (PASS_CODE,)
 
     rv = client.get(AUTH_INFO_URL)
 
@@ -108,7 +55,7 @@ def test_get_auth_info(client, mocker, authorized, mock_db):  # pylint: disable=
 
 def test_get_auth_info_maps_historical_state(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
     """Assert a non-active corp (eg. amalgamated or dissolved) reports the LEAR-style HISTORICAL."""
-    mocker.patch.object(Business, 'find_by_identifier', return_value=_business(corp_state_class='HIS'))
+    mocker.patch.object(Business, 'find_by_identifier', return_value=build_business(corp_state_class='HIS'))
 
     rv = client.get(AUTH_INFO_URL)
 
@@ -118,7 +65,7 @@ def test_get_auth_info_maps_historical_state(client, mocker, authorized, mock_db
 
 def test_get_auth_info_strips_bc_prefix(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
     """Assert the BC prefix is stripped, since COLIN stores the bare corp number."""
-    find = mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
+    find = mocker.patch.object(Business, 'find_by_identifier', return_value=build_business())
 
     assert client.get(AUTH_INFO_URL).status_code == 200
 
@@ -134,7 +81,7 @@ def test_get_auth_info_restricted_to_in_scope_corp_types(client, mocker, authori
     The response carries a credential, so the surface is limited to the corp types that can
     be affiliated from COLIN while not loaded in LEAR.
     """
-    find = mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
+    find = mocker.patch.object(Business, 'find_by_identifier', return_value=build_business())
 
     client.get(AUTH_INFO_URL)
 
@@ -143,7 +90,7 @@ def test_get_auth_info_restricted_to_in_scope_corp_types(client, mocker, authori
 
 def test_get_auth_info_queries_corp_password(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
     """Assert the passcode is read from the corporation corp_password column."""
-    mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
+    mocker.patch.object(Business, 'find_by_identifier', return_value=build_business())
 
     client.get(AUTH_INFO_URL)
 
@@ -157,7 +104,7 @@ def test_get_auth_info_reuses_single_connection(client, mocker, authorized,
     DB.connection acquires a session from a pool capped at 10, so the business lookup and
     the passcode lookup must share one.
     """
-    find = mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
+    find = mocker.patch.object(Business, 'find_by_identifier', return_value=build_business())
 
     client.get(AUTH_INFO_URL)
 
@@ -169,7 +116,7 @@ def test_get_auth_info_reuses_single_connection(client, mocker, authorized,
 def test_get_auth_info_normalizes_admin_freeze(client, mocker, authorized,
                                                mock_db):  # pylint: disable=unused-argument
     """Assert COLIN's 'True'/'False' string is returned as a real boolean."""
-    mocker.patch.object(Business, 'find_by_identifier', return_value=_business(admin_freeze='True'))
+    mocker.patch.object(Business, 'find_by_identifier', return_value=build_business(admin_freeze='True'))
 
     rv = client.get(AUTH_INFO_URL)
 
@@ -179,7 +126,7 @@ def test_get_auth_info_normalizes_admin_freeze(client, mocker, authorized,
 
 def test_get_auth_info_without_passcode(client, mocker, authorized, mock_db):  # pylint: disable=unused-argument
     """Assert a business with no corp password returns a null passcode rather than failing."""
-    mocker.patch.object(Business, 'find_by_identifier', return_value=_business())
+    mocker.patch.object(Business, 'find_by_identifier', return_value=build_business())
     mock_db.cursor.fetchone.return_value = None
 
     rv = client.get(AUTH_INFO_URL)
@@ -212,7 +159,7 @@ def test_get_auth_info_handles_unexpected_error(client, mocker, authorized,
 
 def test_get_auth_info_requires_colin_service_role(client, mocker):
     """Assert the endpoint is gated on the colin service role."""
-    _bypass_auth(mocker, roles_valid=False)
+    bypass_auth(mocker, roles_valid=False)
 
     rv = client.get(AUTH_INFO_URL)
 

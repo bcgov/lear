@@ -1,6 +1,8 @@
 """Model imports."""
+
 from .address import Address
 from .business import Business
+from .business_snapshot import BusinessSnapshot
 from .cont_out import ContOut
 from .corp_involved import CorpInvolved
 from .corp_name import CorpName
