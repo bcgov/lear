@@ -119,7 +119,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
 
         if legal_filing_name:
             if legal_filing_name.lower().startswith("receipt"):
-                return _get_receipt(business, filing, jwt.get_token_auth_header())
+                return _get_receipt(business, filing)
 
             return get_pdf(filing.storage, legal_filing_name)
         elif file_key and (document := Document.find_by_file_key(file_key)):
@@ -207,7 +207,7 @@ def _get_document_list(business: Business, filing: Filing):
     return jsonify(document_list), HTTPStatus.OK
 
 
-def _get_receipt(business: Business, filing: Filing, token):
+def _get_receipt(business: Business, filing: Filing):
     """Get the receipt for the filing."""
     if filing.status not in (
             Filing.Status.COMPLETED,
