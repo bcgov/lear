@@ -1123,3 +1123,15 @@ def test_dissolution_delay_returns_none(app, session):
     result = process_filing(filing, 'dissolution', 'COMPLETED')
 
     assert result is None
+
+
+def test_dissolution_involuntary_returns_none(app, session):
+    """Assert that an involuntary dissolution filing does not send the dissolution email.
+
+    Involuntary dissolution is notified via the stage 1 furnishing email instead.
+    """
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', 'COMPLETED', 'dissolution', 'involuntary')
+
+    result = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    assert result is None
