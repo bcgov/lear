@@ -14,8 +14,8 @@ set -euo pipefail
 PGHOST="${PGHOST:-localhost}"        # or ‑‑host
 PGPORT="${PGPORT:-5432}"             # or ‑‑port
 PGUSER="${PGUSER:-postgres}"        # or ‑‑user
-PGDATABASE="${PGDATABASE:-colin-mig-corps-ctst}"     # or ‑‑dbname
-PGSCHEMA="${PGSCHEMA:-public}"
+PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
+PGSCHEMA="${PGSCHEMA:-}"
 # Optional PostgreSQL client binary directory. Leave empty to use PATH.
 # Example: PG_BIN=/path/to/postgresql/bin ./restore_extract.sh
 PG_BIN="${PG_BIN:-}"
@@ -52,7 +52,7 @@ PG_RESTORE_BIN="$(pg_tool pg_restore)"
 
 # Build a single “‑h … ‑p … ‑U …” string so every call is consistent
 pg_conn_opts() {
-  printf -- "-h %s -p %s -d %s -U %s -n %s" "$PGHOST" "$PGPORT" "$PGDATABASE" "$PGUSER" "$PGSCHEMA"
+  printf -- "-h %s -p %s -d %s -U %s" "$PGHOST" "$PGPORT" "$PGDATABASE" "$PGUSER"
 }
 
 # Pass arrays (e.g., RESTORE) as repeated --table switches
@@ -85,7 +85,7 @@ for arg in "$@"; do
     --delta)
       delta_requested=true
       ;;
-    --schema)
+    --schema=*)
       PGSCHEMA="${arg#--schema=}"
       ;;
     *)
@@ -123,6 +123,10 @@ printf "🔄  Re‑importing Postgres from Oracle …\n"
 ##############################################################################
 # -- EMPTY the tables but keep their structure                               #
 ##############################################################################
+if [[ -n "$PGSCHEMA" ]]; then
+  printf "Disabling RI Constraints" "$PGSCHEMA"
+  "$PSQL_BIN" $(pg_conn_opts) -v ON_ERROR_STOP=1 -c "CALL ${PGSCHEMA}.colin_fk_drop_all(NULL);"
+fi
 printf "🧹  Truncating existing rows …\n"
 printf "Truncating preserved tables.\n"
 "$PSQL_BIN" $(pg_conn_opts) -v ON_ERROR_STOP=1 -q <<SQL
@@ -154,6 +158,8 @@ fi
 printf "🛠  Advancing sequences …\n"
 if [[ -n "$PGSCHEMA" ]]; then
   "$PSQL_BIN" $(pg_conn_opts) -c "SET search_path TO ${PGSCHEMA}" -f "$REPAIR_SEQUENCES_SQL"
+  printf "Enabling RI Constraints" "$PGSCHEMA"
+  "$PSQL_BIN" $(pg_conn_opts) -v ON_ERROR_STOP=1 -c "CALL ${PGSCHEMA}.colin_fk_restore_all(NULL);"
 else
   "$PSQL_BIN" $(pg_conn_opts) -f "$REPAIR_SEQUENCES_SQL"
 fi
