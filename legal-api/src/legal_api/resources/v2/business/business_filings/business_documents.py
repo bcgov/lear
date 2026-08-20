@@ -26,10 +26,10 @@ from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
 from pydantic import BaseModel
 
+from business_account import AccountService
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Document, UserRoles
 from business_model.models import Filing as FilingModel
-from business_account import AccountService
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.reports import get_pdf
@@ -40,7 +40,6 @@ from legal_api.services import doc_service as client_doc_service
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
-
 
 DOCUMENTS_BASE_ROUTE: Final[str] = "/<string:identifier>/filings/<int:filing_id>/documents"
 PARAM_REPORT_TYPE: Final[str] = "reportType"
@@ -225,7 +224,7 @@ def _get_receipt(business: Business, filing: Filing, token):
         filing.filing_type == "noticeOfWithdrawal"
     ):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
-    service_token = AccountService.get_bearer_token()  
+    service_token = AccountService.get_bearer_token()
     headers = {"Authorization": "Bearer " + service_token}
     add_account_linking_key_header(headers)
 
