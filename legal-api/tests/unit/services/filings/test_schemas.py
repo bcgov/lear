@@ -64,6 +64,6 @@ def test_validate_schema_bad_cr(app):
         err = schemas.validate_against_schema(cr)
 
     assert {'error': "", 'path': 'filing', 'context': []}.keys() == err.msg[0].keys()
-    assert "is not valid under any of the given schemas" in err.msg[0]['error']
+    assert "'this_first_name_maximum_length_is_over' is too long" == err.msg[0]['error']
     
     assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY

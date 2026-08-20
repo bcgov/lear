@@ -40,8 +40,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_structure,
 )
 from legal_api.services.filings.validations.continuation_in import (
-    validate_continuation_in_foreign_jurisdiction,
     validate_continuation_in_expro_business_in_colin,
+    validate_continuation_in_foreign_jurisdiction,
 )
 from legal_api.services.filings.validations.continuation_out import validate_continuation_out_date
 from legal_api.services.filings.validations.incorporation_application import (
