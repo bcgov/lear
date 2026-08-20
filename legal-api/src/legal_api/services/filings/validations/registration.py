@@ -18,15 +18,17 @@ from typing import Final
 
 import pycountry
 from dateutil.relativedelta import relativedelta
+from flask import g, has_request_context
 from flask.globals import request_ctx
 from flask_babel import _ as babel
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, PartyRole
+from business_model.models import Business, PartyRole, User
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, NaicsService, flags
 from legal_api.services.filings.validations.common_validations import (
+    is_same_str,
     validate_court_order,
     validate_name_request,
     validate_offices_addresses,
@@ -73,6 +75,7 @@ def validate(registration_json: dict) -> Error | None:
     msg.extend(validate_naics(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
+    msg.extend(validate_completing_party_name(registration_json))
     msg.extend(validate_parties_addresses(registration_json, filing_type))
     msg.extend(validate_start_date(registration_json))
     msg.extend(validate_offices(registration_json))
@@ -159,6 +162,52 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
             msg.append({"error": "Proprietor is not valid for a General Partnership.", "path": party_path})
         if completing_parties < 1 or partner_parties < min_partners:
             msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
+
+    return msg
+
+
+def validate_completing_party_name(filing: dict, filing_type="registration") -> list:
+    """Validate the completing party name matches the submitting user's name.
+
+    Clients cannot edit the completing party (it is pre-populated from their login),
+    so the submitted name must match their user record; staff enter it manually from
+    a paper form and API gateway users have their own workflow, so both are skipped.
+    """
+    api_login_source = "API_GW"  # jwt loginSource of an API gateway user
+    msg = []
+    current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
+    if (not current_user
+            or jwt.validate_roles(current_user, [STAFF_ROLE])
+            or current_user.get("loginSource") == api_login_source):
+        return msg
+
+    officer = None
+    for party in filing["filing"][filing_type].get("parties", []):
+        roles = party.get("roles", [])
+        if any(role.get("roleType", "").lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value
+               for role in roles):
+            officer = party.get("officer", {})
+            break
+    if not officer or officer.get("partyType") != "person":
+        return msg
+
+    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
+        return msg
+
+    user_name = " ".join(" ".join(
+        filter(None, [user.firstname, user.middlename, user.lastname])
+    ).split())
+    if not user_name:
+        return msg  # user record has no name to verify against
+
+    filing_name = " ".join(" ".join(
+        filter(None, [officer.get("firstName"), officer.get("middleName"), officer.get("lastName")])
+    ).split())
+    if not is_same_str(filing_name, user_name):
+        msg.append({
+            "error": "Completing party name must match the name of the logged in user.",
+            "path": f"/filing/{filing_type}/parties"
+        })
 
     return msg
 

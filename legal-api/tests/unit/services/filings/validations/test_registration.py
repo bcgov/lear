@@ -21,7 +21,7 @@ import pytest
 from dateutil.relativedelta import relativedelta
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business
+from business_model.models import Business, User
 from legal_api.services import NaicsService, NameXService, flags 
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
@@ -444,3 +444,47 @@ def test_registration_completing_party_validation(app, session, jwt):
             break
     assert permission_error is not None, "Permission error not found in validation messages."
                 
+
+@pytest.mark.parametrize(
+    'test_name, roles, login_source, user_name, expected_error', [
+        ('client_name_matches', [BASIC_USER], 'BCSC', ('Joe', 'P', 'Swanson'), None),
+        ('client_long_name_matches', [BASIC_USER], 'BCSC',
+         ('Josephakis Vasilliadopolous Constantinople', None, 'Swanson'), None),
+        ('client_name_mismatch', [BASIC_USER], 'BCSC', ('Different', None, 'Person'),
+         'Completing party name must match the name of the logged in user.'),
+        ('client_no_user_record', [BASIC_USER], 'BCSC', None, None),
+        ('staff_skipped', [STAFF_ROLE], 'IDIR', ('Different', None, 'Person'), None),
+        ('api_gw_skipped', [BASIC_USER], 'API_GW', ('Different', None, 'Person'), None),
+    ]
+)
+def test_validate_completing_party_name(app, session, jwt, test_name, roles, login_source, user_name, expected_error):
+    """Assert the completing party name is validated against the user record for client filings."""
+    filing = copy.deepcopy(GP_REGISTRATION)
+    if test_name == 'client_long_name_matches':
+        filing['filing']['registration']['parties'][0]['officer']['firstName'] = \
+            'Josephakis Vasilliadopolous Constantinople'
+        filing['filing']['registration']['parties'][0]['officer']['middleName'] = ''
+
+    if user_name:
+        firstname, middlename, lastname = user_name
+        user = User(username='cp-test-user', firstname=firstname, middlename=middlename, lastname=lastname,
+                    sub='sub', iss='iss', idp_userid='123', login_source=login_source)
+        user.save()
+
+    naics_response = {
+        'code': REGISTRATION['business']['naics']['naicsCode'],
+        'classTitle': REGISTRATION['business']['naics']['naicsDescription']
+    }
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('GP')):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with jwt_request_context(app, jwt, roles, login_source=login_source):
+                err = validate(None, filing)
+
+    if expected_error:
+        assert err is not None
+        assert any(msg['error'] == expected_error for msg in err.msg)
+    else:
+        assert err is None or all(
+            msg['error'] != 'Completing party name must match the name of the logged in user.'
+            for msg in err.msg
+        )
