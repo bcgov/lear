@@ -36,6 +36,7 @@ class DocumentType(Enum):
     COOP_MEMORANDUM = 'coop_memorandum'
     COURT_ORDER = 'court_order'
     DIRECTOR_AFFIDAVIT = 'director_affidavit'
+    SUPPORTING_DOCUMENT = 'supporting_document'
 
 
 class Document(db.Model, Versioned):
