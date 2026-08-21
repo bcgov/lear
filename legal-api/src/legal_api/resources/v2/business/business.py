@@ -151,14 +151,14 @@ def get_businesses_colin_snapshot(identifier: str):
         # a business in LEAR is managed here - its COLIN data may be stale
         return jsonify({"message": f"{identifier} is managed in the Business Registry."}), HTTPStatus.NOT_FOUND
 
-    response = colin.get_snapshot(identifier)
-    if response is not None and response.status_code == HTTPStatus.NOT_FOUND:
+    snapshot_json, status_code = colin.get_snapshot(identifier)
+    if status_code == HTTPStatus.NOT_FOUND:
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
-    if response is None or response.status_code != HTTPStatus.OK:
+    if snapshot_json is None or status_code != HTTPStatus.OK:
         return jsonify({"message": f"Unable to retrieve {identifier} data from COLIN."}), \
             HTTPStatus.INTERNAL_SERVER_ERROR
 
-    return jsonify(response.json()), HTTPStatus.OK
+    return jsonify(snapshot_json), HTTPStatus.OK
 
 
 @bp.route("", methods=["POST"])

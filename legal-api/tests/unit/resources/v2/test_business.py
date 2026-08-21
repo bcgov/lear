@@ -1264,6 +1264,8 @@ def test_get_businesses_colin_snapshot_lear_business(app, session, client, jwt, 
      HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to retrieve BC0870226 data from COLIN.'),
     ('colin down', {'exc': exceptions.ConnectTimeout},
      HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to retrieve BC0870226 data from COLIN.'),
+    ('colin non-json body', {'text': '<html>bad gateway</html>'},
+     HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to retrieve BC0870226 data from COLIN.'),
 ])
 def test_get_businesses_colin_snapshot_colin_failures(app, session, client, jwt, mocker, requests_mock,
                                                       test_name, colin_response_kwargs,

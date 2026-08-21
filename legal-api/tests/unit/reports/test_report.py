@@ -1065,10 +1065,7 @@ def test_set_amalgamating_businesses_foreign(
 
     def mock_colin(id_):
         colin_call_count['count'] += 1
-        resp = MagicMock()
-        resp.status_code = colin_status
-        resp.json.return_value = {'business': {'jurisdiction': colin_jurisdiction}}
-        return resp
+        return {'business': {'jurisdiction': colin_jurisdiction}}, colin_status
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin)
 
@@ -1139,7 +1136,7 @@ def test_set_amalgamating_businesses_foreign_non_a_prefix(session, monkeypatch):
 
     def mock_colin_no_call(id_):
         colin_call_count['count'] += 1
-        return MagicMock()
+        return None, None
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin_no_call)
 

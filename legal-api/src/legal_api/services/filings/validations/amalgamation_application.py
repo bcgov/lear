@@ -436,12 +436,12 @@ def _validate_amalgamating_business(  # pylint: disable=too-many-arguments
         amalgamating_business_path) -> list:
     """Validate a TING business from its normalized info (LEAR row or COLIN snapshot)."""
     msg = []
-    if business_info["state"] == Business.State.HISTORICAL.name:
+    if business_info.get("state") == Business.State.HISTORICAL.name:
         msg.append({
             "error": f"Cannot amalgamate with {identifier} which is in historical state.",
             "path": amalgamating_business_path
         })
-    elif business_info["hasFutureEffectiveFiling"]:
+    elif business_info.get("hasFutureEffectiveFiling"):
         msg.append({
             "error": f"{identifier} has a draft, pending or future effective filing.",
             "path": amalgamating_business_path
@@ -452,7 +452,7 @@ def _validate_amalgamating_business(  # pylint: disable=too-many-arguments
             "path": amalgamating_business_path
         })
 
-    if business_info["adminFreeze"]:
+    if business_info.get("adminFreeze"):
         msg.append({
             "error": f"{identifier} is frozen.",
             "path": amalgamating_business_path
@@ -472,7 +472,7 @@ def _validate_amalgamating_business(  # pylint: disable=too-many-arguments
             if error:
                 return msg
 
-        if not business_info["goodStanding"]:
+        if not business_info.get("goodStanding"):
             error = _check_aml_permission_or_default_error(
                 msg,
                 "Permission Denied - You do not have permissions to amalgamate a business not in good standing.",
@@ -489,13 +489,16 @@ def _validate_amalgamating_business(  # pylint: disable=too-many-arguments
 
 def _find_colin_business(identifier: str) -> tuple:
     """Return (colin business dict | None, fetch_failed) for a business not found in LEAR."""
-    response = colin.get_snapshot(identifier)
-    if response is None or response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
+    snapshot_json, status_code = colin.get_snapshot(identifier)
+    if status_code is None or status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
         return None, True
-    if response.status_code != HTTPStatus.OK:
+    if status_code != HTTPStatus.OK:
         return None, False
+    if snapshot_json is None:
+        # a 200 with a non-JSON body is an infrastructure failure - retryable, not "not found"
+        return None, True
 
-    business_json = (response.json() or {}).get("business") or {}
+    business_json = snapshot_json.get("business") or {}
     if business_json.get("legalType") not in COLIN_AMALGAMATION_LEGAL_TYPES:
         return None, False
     return business_json, False
@@ -583,9 +586,9 @@ def _find_primary_or_holding_data(filing_section: dict, role: str) -> dict | Non
     if business := Business.find_by_identifier(identifier):
         return _full_business_data_from_lear(business)
 
-    response = colin.get_snapshot(identifier)
-    if response is not None and response.status_code == HTTPStatus.OK:
-        return response.json() or None
+    snapshot_json, status_code = colin.get_snapshot(identifier)
+    if status_code == HTTPStatus.OK:
+        return snapshot_json or None
     return None
 
 

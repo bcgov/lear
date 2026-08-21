@@ -157,8 +157,7 @@ def test_dba_registration(mocker, app, session, jwt):
             with patch.object(flags, 'is_on', return_value=True):
                 with patch('legal_api.services.filings.validations.common_validations.Business.find_by_identifier', return_value=None):
                     with patch('legal_api.services.filings.validations.common_validations.colin.query_business') as mock_colin:
-                        mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
-                        mock_colin.return_value = mock_response
+                        mock_colin.return_value = (None, HTTPStatus.NOT_FOUND)
                         with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
                             with jwt_request_context(app, jwt, [BASIC_USER]):
                                 err = validate(None, DBA_REGISTRATION)
@@ -335,8 +334,7 @@ def test_invalid_business_address(app, session, jwt, test_name, filing):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
             with patch('legal_api.services.filings.validations.common_validations.Business.find_by_identifier', return_value=None):
                 with patch('legal_api.services.filings.validations.common_validations.colin.query_business') as mock_colin:
-                    mock_response = type('Response', (), {'status_code': HTTPStatus.NOT_FOUND})()
-                    mock_colin.return_value = mock_response
+                    mock_colin.return_value = (None, HTTPStatus.NOT_FOUND)
                     with patch('legal_api.services.filings.validations.common_validations.PermissionService.check_user_permission', return_value=None):
                         with jwt_request_context(app, jwt, [BASIC_USER]):
                             err = validate(None, filing)

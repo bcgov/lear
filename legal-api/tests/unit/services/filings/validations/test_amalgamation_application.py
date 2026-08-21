@@ -1104,7 +1104,7 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
     # a business not in LEAR is looked up in COLIN - not there either
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
-                 return_value=MockResponse({}, HTTPStatus.NOT_FOUND))
+                 return_value=({'message': 'not found'}, HTTPStatus.NOT_FOUND))
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(None, filing, account_id)
@@ -1833,7 +1833,7 @@ COLIN_IDENTIFIER = 'BC0870226'
 
 
 def _mock_colin_snapshot_response(status_code=HTTPStatus.OK, **overrides):
-    """Return a mocked colin-api snapshot response, business fields overridable."""
+    """Return a mocked colin-api snapshot (json, status code), business fields overridable."""
     business = {
         'identifier': COLIN_IDENTIFIER,
         'legalName': 'COLIN TEST COMPANY LTD.',
@@ -1846,7 +1846,7 @@ def _mock_colin_snapshot_response(status_code=HTTPStatus.OK, **overrides):
         'hasFutureEffectiveFiling': False
     }
     business.update(overrides)
-    return MockResponse({'business': business}, status_code)
+    return {'business': business}, status_code
 
 
 def _setup_colin_amalgamation_mocks(mocker, affiliated=True):
@@ -1904,9 +1904,9 @@ def test_colin_amalgamating_business(mocker, app, session, jwt, test_status, exp
         'NOT_GOOD_STANDING': _mock_colin_snapshot_response(goodStanding=False),
         'GOOD_STANDING_UNKNOWN': _mock_colin_snapshot_response(goodStanding=None),
         'OUT_OF_SCOPE_TYPE': _mock_colin_snapshot_response(legalType='CP'),
-        'COLIN_404': MockResponse({'message': 'not found'}, HTTPStatus.NOT_FOUND),
-        'COLIN_500': MockResponse({}, HTTPStatus.INTERNAL_SERVER_ERROR),
-        'COLIN_DOWN': None,
+        'COLIN_404': ({'message': 'not found'}, HTTPStatus.NOT_FOUND),
+        'COLIN_500': ({}, HTTPStatus.INTERNAL_SERVER_ERROR),
+        'COLIN_DOWN': (None, None),
     }
     get_snapshot = mocker.patch(
         'legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
@@ -2235,7 +2235,7 @@ def _full_colin_snapshot():
                'addressCity': 'Victoria', 'addressRegion': 'BC', 'addressCountry': 'CA',
                'postalCode': 'V1V 1V1', 'deliveryInstructions': None}
     return {
-        **_mock_colin_snapshot_response().json(),
+        **_mock_colin_snapshot_response()[0],
         'parties': [{
             'officer': {'firstName': 'COLIN', 'middleInitial': '', 'lastName': 'DIRECTOR',
                         'organizationName': ''},
@@ -2292,7 +2292,7 @@ def test_short_form_match_colin(mocker, app, session, jwt, test_status):
 
     _setup_colin_amalgamation_mocks(mocker)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
-                 return_value=MockResponse(snapshot))
+                 return_value=(snapshot, HTTPStatus.OK))
 
     with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)

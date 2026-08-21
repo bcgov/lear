@@ -261,9 +261,8 @@ def validate_continuation_in_expro_business_in_colin(expro: dict, path: str, ski
         identifier = expro["identifier"]
         legal_name = expro.get("legalName")
         founding_date = expro.get("foundingDate")
-        response = colin.query_business(identifier)
-        response_json = response.json() if response is not None and response.status_code == HTTPStatus.OK else None
-        if response_json is None:
+        response_json, response_status = colin.query_business(identifier)
+        if response_json is None or response_status != HTTPStatus.OK:
             msg.append({"error": "Could not fetch business data for company from Colin.",
                         "path": business_identifier_path})
         elif legal_name != response_json["business"]["legalName"]:
