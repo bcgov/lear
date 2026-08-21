@@ -182,7 +182,7 @@ def _create_continuation_in_business(business):
         'legalName': 'HAULER SERVICES',
         'identifier': 'AB1234567',
         'incorporationDate': '2020-01-01',
-        'xpro': {
+        'expro': {
             'identifier': 'A0077779',
             'legalName': 'Test Company Inc.'
         }
@@ -194,8 +194,8 @@ def _create_continuation_in_business(business):
         identifier=data['identifier'],
         legal_name=data['legalName'],
         incorporation_date=LegislationDatetime.as_utc_timezone_from_legislation_date_str(data['incorporationDate']),
-        expro_identifier=data['xpro']['identifier'],
-        expro_legal_name=data['xpro']['legalName']
+        expro_identifier=data['expro']['identifier'],
+        expro_legal_name=data['expro']['legalName']
     )
     business.jurisdictions.append(jurisdiction)
     business.save()

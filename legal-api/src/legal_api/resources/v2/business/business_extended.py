@@ -102,7 +102,7 @@ def _get_continuation_in_data(business: Business):
         "incorporationDate": incorporation_date
     }
     if jurisdiction.expro_identifier or jurisdiction.expro_legal_name:
-        continuation_in["xpro"] = {
+        continuation_in["expro"] = {
             "identifier": jurisdiction.expro_identifier,
             "legalName": jurisdiction.expro_legal_name
         }
