@@ -44,7 +44,7 @@ class ColinService:
 
     @staticmethod
     @cache.cached(make_cache_key=get_colin_cache_key, unless=skip_colin_cache, response_filter=is_cacheable_response)
-    def call_colin_api(path: str, token: str | None = None, use_cache = True) -> Response:
+    def call_colin_api(path: str, token: str | None = None, use_cache = True) -> Response | None:
         """Return the colin api response for the given endpoint path."""
         current_app.logger.debug(f"Colin get {path}...")
         timeout = current_app.config.get("COLIN_TIMEOUT", 20)
@@ -76,7 +76,6 @@ class ColinService:
 
         except (exceptions.ConnectionError,
                 exceptions.Timeout,
-                ValueError,
                 Exception) as err:
             current_app.logger.debug(err.with_traceback(None))
             current_app.logger.error(f"Colin connection failure, url: {colin_url}")

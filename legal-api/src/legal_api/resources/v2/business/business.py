@@ -143,12 +143,6 @@ def get_businesses_public(identifier: str, slim = False):
 def get_businesses_colin_snapshot(identifier: str):
     """Return the snapshot data of a COLIN business not yet managed in LEAR."""
     if not authorized(identifier, jwt, action=["view"]):
-        current_app.logger.warning(
-            "Unauthorized request for colin snapshot: %s, from username: %s, accountId: %s, app-name: %s",
-            identifier,
-            g.jwt_oidc_token_info.get("preferred_username"),
-            request.args.get("account"),
-            request.headers.get("app-name"))
         return jsonify({"message":
                         f"You are not authorized to view business {identifier}."}), \
             HTTPStatus.UNAUTHORIZED
