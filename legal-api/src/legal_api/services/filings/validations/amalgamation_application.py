@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Amalgamation Application filing."""
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import Final
 
@@ -19,7 +20,7 @@ from flask.globals import request_ctx
 from flask_babel import _ as babel
 
 from business_account import AccountService
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, OfficeType, PartyRole
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, flags
 from legal_api.services.filings.validations.common_validations import (
@@ -85,19 +86,13 @@ def validate(amalgamation_json: dict, account_id) -> Error | None:
     msg.extend(validate_parties_names(amalgamation_json, filing_type, legal_type))
     msg.extend(validate_parties_addresses(amalgamation_json, filing_type))
 
+    structural_errors = _structural_validation_errors(amalgamation_json, legal_type, filing_type)
     if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
-        msg.extend(validate_offices(amalgamation_json, legal_type, filing_type))
-        msg.extend(validate_offices_addresses(amalgamation_json, filing_type))
-        err = validate_share_structure(amalgamation_json, filing_type, legal_type)
-        if err:
-            msg.extend(err)
-        err = validate_share_currency(amalgamation_json, filing_type)
-        if err:
-            msg.extend(err)
-
-        err = validate_parties_delivery_address(amalgamation_json, legal_type, filing_type)
-        if err:
-            msg.extend(err)
+        msg.extend(structural_errors)
+    else:
+        # short-form: the filing must mirror the primary/holding business's current data
+        msg.extend(validate_primary_or_holding_match(amalgamation_json, filing_type, amalgamation_type))
+        msg.extend(_augment_with_source_update_hint(structural_errors, amalgamation_type))
 
     msg.extend(validate_amalgamation_court_order(amalgamation_json, filing_type))
     msg.extend(validate_amalgamating_businesses(amalgamation_json,
@@ -131,6 +126,43 @@ def _validate_name_request_section(amalgamation_json, amalgamation_type, legal_t
         }]
 
     return validate_name_request(amalgamation_json, legal_type, filing_type)
+
+
+def _structural_validation_errors(amalgamation_json, legal_type, filing_type) -> list:
+    """Validate the office, share structure and party address data.
+
+    Sections are gated on presence: short-form filings are not schema-required to carry
+    them (a missing section gets its own required-section error from the match validation).
+    """
+    filing_section = amalgamation_json.get("filing", {}).get(filing_type, {})
+    msg = []
+    if "offices" in filing_section:
+        msg.extend(validate_offices(amalgamation_json, legal_type, filing_type))
+        msg.extend(validate_offices_addresses(amalgamation_json, filing_type))
+    if "shareStructure" in filing_section:
+        if err := validate_share_structure(amalgamation_json, filing_type, legal_type):
+            msg.extend(err)
+        if err := validate_share_currency(amalgamation_json, filing_type):
+            msg.extend(err)
+    if err := validate_parties_delivery_address(amalgamation_json, legal_type, filing_type):
+        msg.extend(err)
+    return msg
+
+
+def _primary_or_holding_role(amalgamation_type: str) -> str:
+    """Return the TED-defining role for a short-form amalgamation type."""
+    return (AmalgamatingBusiness.Role.primary.name
+            if amalgamation_type == Amalgamation.AmalgamationTypes.horizontal.name
+            else AmalgamatingBusiness.Role.holding.name)
+
+
+def _augment_with_source_update_hint(errors: list, amalgamation_type: str) -> list:
+    """Point short-form structural problems at the source business - they cannot be fixed in this filing."""
+    role = _primary_or_holding_role(amalgamation_type)
+    for error in errors:
+        error["error"] += (f" This data comes from the {role} business - its information must be "
+                           "corrected outside of this filing before this amalgamation can be filed.")
+    return errors
 
 
 def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
@@ -467,6 +499,201 @@ def _find_colin_business(identifier: str) -> tuple:
     if business_json.get("legalType") not in COLIN_AMALGAMATION_LEGAL_TYPES:
         return None, False
     return business_json, False
+
+
+def validate_primary_or_holding_match(amalgamation_json, filing_type, amalgamation_type) -> list:
+    """Ensure the filing has the primary/holding business's current data.
+
+    A short-form amalgamation adopts the primary/holding business's legal name, directors,
+    offices and share structure. The filing must record exactly what will be applied, so the
+    submitted sections are compared against that business's current data (LEAR row or COLIN
+    snapshot). A mismatch means the draft is stale and must be refreshed.
+    """
+    filing_section = amalgamation_json.get("filing", {}).get(filing_type, {})
+    role = _primary_or_holding_role(amalgamation_type)
+    source = _find_primary_or_holding_data(filing_section, role)
+    if source is None:
+        # a missing or unresolvable primary/holding business is reported by the TING validations
+        return []
+
+    msg = []
+    section_path = f"/filing/{filing_type}"
+    refresh_hint = "Refresh the draft with the business's current data."
+
+    if legal_name := filing_section.get("nameRequest", {}).get("legalName"):
+        if legal_name.strip() != ((source.get("business") or {}).get("legalName") or "").strip():
+            msg.append({
+                "error": f"Legal name does not match the {role} business. {refresh_hint}",
+                "path": f"{section_path}/nameRequest/legalName"
+            })
+    else:
+        msg.append({
+            "error": f"Legal name of the {role} business is required for a short-form amalgamation.",
+            "path": f"{section_path}/nameRequest/legalName"
+        })
+
+    if offices := filing_section.get("offices"):
+        if _norm_offices(offices) != _norm_offices(source.get("offices")):
+            msg.append({
+                "error": f"Offices do not match the {role} business's current offices. {refresh_hint}",
+                "path": f"{section_path}/offices"
+            })
+    else:
+        msg.append({
+            "error": f"Offices of the {role} business are required for a short-form amalgamation.",
+            "path": f"{section_path}/offices"
+        })
+
+    if share_structure := filing_section.get("shareStructure"):
+        if _norm_share_classes(share_structure.get("shareClasses")) != _norm_share_classes(source.get("shareClasses")):
+            msg.append({
+                "error": f"Share structure does not match the {role} business's current share structure. "
+                         f"{refresh_hint}",
+                "path": f"{section_path}/shareStructure"
+            })
+        source_dates = [resolution.get("date") for resolution in source.get("resolutions") or []]
+        if _norm_resolution_dates(share_structure.get("resolutionDates")) != _norm_resolution_dates(source_dates):
+            msg.append({
+                "error": f"Resolution dates do not match the {role} business's current resolution dates. "
+                         f"{refresh_hint}",
+                "path": f"{section_path}/shareStructure/resolutionDates"
+            })
+    else:
+        msg.append({
+            "error": f"Share structure of the {role} business is required for a short-form amalgamation.",
+            "path": f"{section_path}/shareStructure"
+        })
+
+    if _norm_directors(filing_section.get("parties")) != _norm_directors(source.get("parties")):
+        msg.append({
+            "error": f"Directors do not match the {role} business's current directors. {refresh_hint}",
+            "path": f"{section_path}/parties"
+        })
+
+    return msg
+
+
+def _find_primary_or_holding_data(filing_section: dict, role: str) -> dict | None:
+    """Return the primary/holding business's current data in the same shape as COLIN snapshot."""
+    entry = next((business_json for business_json in filing_section.get("amalgamatingBusinesses") or []
+                  if business_json.get("role") == role and not business_json.get("foreignJurisdiction")), None)
+    if not (entry and (identifier := entry.get("identifier"))):
+        return None
+
+    if business := Business.find_by_identifier(identifier):
+        return _full_business_data_from_lear(business)
+
+    response = colin.get_snapshot(identifier)
+    if response is not None and response.status_code == HTTPStatus.OK:
+        return response.json() or None
+    return None
+
+
+def _full_business_data_from_lear(business: Business) -> dict:
+    """Return the business's current snapshot data (what the filer applies for amalgamation)."""
+    offices = {}
+    for office in business.offices.all():
+        if office.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
+            offices[office.office_type] = {
+                f"{address.address_type}Address": address.json for address in office.addresses
+            }
+    directors = []
+    for party_role in PartyRole.get_active_directors(business.id, datetime.now(UTC).date()):
+        # party_role.json carries a singular 'role' - reshape to the snapshot's roles list
+        director = party_role.json
+        director["roles"] = [{"roleType": "Director"}]
+        directors.append(director)
+    return {
+        "business": {"legalName": business.legal_name},
+        "parties": directors,
+        "offices": offices,
+        "shareClasses": [share_class.json for share_class in business.share_classes.all()],
+        "resolutions": [{"date": resolution.resolution_date.isoformat()} for resolution in business.resolutions],
+    }
+
+
+_ADDRESS_MATCH_FIELDS: Final = ("streetAddress", "streetAddressAdditional", "addressCity", "addressRegion",
+                                "addressCountry", "postalCode", "deliveryInstructions")
+
+
+def _norm_value(value):
+    """Strip strings and collapse empties so '' and a missing key compare equal."""
+    if isinstance(value, str):
+        value = value.strip()
+    return value if value not in ("", None) else None
+
+
+def _norm_number(value):
+    """Coerce numbers so 1, 1.0 and '1' compare equal."""
+    try:
+        return float(value) if value not in ("", None) else None
+    except (TypeError, ValueError):
+        return _norm_value(value)
+
+
+def _norm_address(address: dict | None) -> tuple | None:
+    if not address:
+        return None
+    return tuple(_norm_value(address.get(field)) for field in _ADDRESS_MATCH_FIELDS)
+
+
+def _norm_offices(offices: dict | None) -> dict:
+    return {
+        office_type: (_norm_address(office.get("deliveryAddress")), _norm_address(office.get("mailingAddress")))
+        for office_type, office in (offices or {}).items()
+        if office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]
+    }
+
+
+def _norm_directors(parties: list | None) -> set:
+    directors = set()
+    for party in parties or []:
+        if not any((party_role.get("roleType") or "").lower() == PartyRole.RoleTypes.DIRECTOR.value
+                   for party_role in party.get("roles") or []):
+            continue
+        officer = party.get("officer") or {}
+        directors.add((
+            _norm_value(officer.get("firstName")),
+            _norm_value(officer.get("middleInitial")),
+            _norm_value(officer.get("lastName")),
+            _norm_value(officer.get("organizationName")),
+            _norm_address(party.get("deliveryAddress")),
+        ))
+    return directors
+
+
+def _norm_share_classes(share_classes: list | None) -> set:
+    # Can skip:
+    # - ids (DB artifact)
+    # - priority (is synthesized from the COLIN class id)
+    # - currencyAdditional (is only set with currency OTHER)
+    return {
+        (
+            _norm_value(share_class.get("name")),
+            bool(share_class.get("hasMaximumShares")),
+            _norm_number(share_class.get("maxNumberOfShares")),
+            bool(share_class.get("hasParValue")),
+            _norm_number(share_class.get("parValue")),
+            _norm_value(share_class.get("currency")),
+            bool(share_class.get("hasRightsOrRestrictions")),
+            tuple(sorted((_norm_share_series(series) for series in share_class.get("series") or []), key=repr)),
+        )
+        for share_class in share_classes or []
+    }
+
+
+def _norm_share_series(series: dict) -> tuple:
+    return (
+        _norm_value(series.get("name")),
+        bool(series.get("hasMaximumShares")),
+        _norm_number(series.get("maxNumberOfShares")),
+        bool(series.get("hasRightsOrRestrictions")),
+    )
+
+
+def _norm_resolution_dates(dates: list | None) -> set:
+    """Return the dates as YYYY-MM-DD strings (tolerates datetimes and date objects)."""
+    return {str(date)[:10] for date in dates or [] if date}
 
 
 def _validate_amalgamation_type(  # pylint: disable=too-many-arguments

@@ -20,13 +20,26 @@ from datetime import date, datetime, timezone
 import pytest
 from freezegun import freeze_time
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
+from business_model.models import (
+    Address,
+    AmalgamatingBusiness,
+    Amalgamation,
+    Business,
+    Filing,
+    Office,
+    Party,
+    PartyRole,
+    Resolution,
+    ShareClass,
+    ShareSeries,
+)
 from legal_api.errors import Error
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
+from tests.unit.models import factory_address, factory_business, factory_business_office
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 from tests.unit.services.utils import jwt_request_context
 
@@ -1500,6 +1513,8 @@ def test_amalgamating_business_roles(mocker, app, session, jwt, amalgamation_typ
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_primary_or_holding_match',
+                 return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
@@ -1553,6 +1568,8 @@ def test_amalgamation_legal_type_mismatch(mocker, app, session, jwt, legal_type,
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_primary_or_holding_match',
+                 return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
@@ -1593,6 +1610,8 @@ def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_primary_or_holding_match',
+                 return_value=[])
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
                  return_value=False)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
@@ -1616,12 +1635,13 @@ def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_
         (Amalgamation.AmalgamationTypes.regular.name, Business.LegalTypes.BCOMP.value, True, True, True),
         (Amalgamation.AmalgamationTypes.regular.name, Business.LegalTypes.BCOMP.value, True, False, True),
 
-        (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, False, True, True),
+        # structural share checks apply to short-form too - inherited bad data must be fixed at the source
+        (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, False, True, False),
         (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, False, False, True),
         (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, True, True, True),
         (Amalgamation.AmalgamationTypes.horizontal.name, Business.LegalTypes.BCOMP.value, True, False, True),
 
-        (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, False, True, True),
+        (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, False, True, False),
         (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, False, False, True),
         (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, True, True, True),
         (Amalgamation.AmalgamationTypes.vertical.name, Business.LegalTypes.BCOMP.value, True, False, True),
@@ -2019,6 +2039,8 @@ def test_colin_holding_business_legal_type_match(mocker, app, session, jwt, resu
     _setup_colin_amalgamation_mocks(mocker)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
                  return_value=_mock_colin_snapshot_response())
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_primary_or_holding_match',
+                 return_value=[])
 
     with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)
@@ -2028,3 +2050,273 @@ def test_colin_holding_business_legal_type_match(mocker, app, session, jwt, resu
         assert type_error in [x['error'] for x in err.msg]
     else:
         assert not err
+
+
+REFRESH_HINT = "Refresh the draft with the business's current data."
+SOURCE_UPDATE_HINT = ('This data comes from the holding business - its information must be '
+                      'corrected outside of this filing before this amalgamation can be filed.')
+
+
+def _factory_short_form_source_business(identifier='BC7654321', share_class_name='Class A Shares'):
+    """Create a holding/primary business with offices, a director, shares and a resolution."""
+    business = factory_business(identifier, entity_type=Business.LegalTypes.COMP.value)
+    for office_type in ['registeredOffice', 'recordsOffice']:
+        office = Office(office_type=office_type)
+        for address_type in [Address.MAILING, Address.DELIVERY]:
+            office.addresses.append(Address(city='Victoria', street=f'{identifier} {office_type} {address_type} St',
+                                            postal_code='V1V 1V1', country='CA', region='BC',
+                                            address_type=address_type))
+        business.offices.append(office)
+
+    share_class = ShareClass(name=share_class_name, priority=1, max_share_flag=True, max_shares=1000,
+                             par_value_flag=True, par_value=0.85, currency='CAD', special_rights_flag=True,
+                             business_id=business.id)
+    share_class.series.append(ShareSeries(name='Series A1 Shares', priority=1, max_share_flag=True,
+                                          max_shares=500, special_rights_flag=False))
+    share_class.save()
+
+    business.resolutions.append(Resolution(resolution_date=date(2020, 5, 13),
+                                           resolution_type=Resolution.ResolutionType.SPECIAL.value))
+
+    party = Party(first_name='DIRECTOR', last_name='ONE', party_type=Party.PartyTypes.PERSON.value)
+    party.delivery_address = factory_address(f'{identifier} director street', 'delivery')
+    party.save()
+    business.party_roles.append(PartyRole(role=PartyRole.RoleTypes.DIRECTOR.value,
+                                          appointment_date=datetime(2020, 1, 1),
+                                          party_id=party.id))
+    business.save()
+    return business
+
+
+def _without_nones(value):
+    """Drop None-valued keys - model json emits them where the filing schema wants the key absent."""
+    if isinstance(value, dict):
+        return {k: _without_nones(v) for k, v in value.items() if v is not None}
+    if isinstance(value, list):
+        return [_without_nones(v) for v in value]
+    return value
+
+
+def _short_form_filing_from_lear(business):
+    """Return a vertical amalgamation filing populated with the holding business's current data."""
+    filing = _get_amalg_template()
+    aml = filing['filing']['amalgamationApplication']
+    aml['type'] = Amalgamation.AmalgamationTypes.vertical.name
+    aml['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': business.identifier},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1111111'}
+    ]
+    aml['nameRequest'] = {'legalType': business.legal_type, 'legalName': business.legal_name}
+    aml['offices'] = _without_nones({
+        office.office_type: {f'{address.address_type}Address': address.json for address in office.addresses}
+        for office in business.offices.all()
+    })
+    # no scrub here - the share class schema requires parValue/currency present even when null
+    aml['shareStructure'] = {
+        'shareClasses': [share_class.json for share_class in business.share_classes.all()],
+        'resolutionDates': [resolution.resolution_date.isoformat() for resolution in business.resolutions]
+    }
+
+    completing_party = copy.deepcopy(AMALGAMATION_APPLICATION['parties'][0])
+    completing_party['roles'] = [role for role in completing_party['roles']
+                                 if role['roleType'] == 'Completing Party']
+    directors = []
+    for party_role in PartyRole.get_active_directors(business.id, date.today()):
+        director = party_role.json
+        director['roles'] = [{'roleType': 'Director', 'appointmentDate': director.pop('appointmentDate')}]
+        director.pop('role', None)
+        directors.append(director)
+    aml['parties'] = _without_nones([completing_party] + directors)
+    return filing
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_msg',
+    [
+        ('SUCCESS', None),
+        ('STALE_LEGAL_NAME', f'Legal name does not match the holding business. {REFRESH_HINT}'),
+        ('STALE_OFFICE', f"Offices do not match the holding business's current offices. {REFRESH_HINT}"),
+        ('STALE_SHARES',
+         f"Share structure does not match the holding business's current share structure. {REFRESH_HINT}"),
+        ('STALE_DIRECTORS', f"Directors do not match the holding business's current directors. {REFRESH_HINT}"),
+        ('STALE_RESOLUTIONS',
+         f"Resolution dates do not match the holding business's current resolution dates. {REFRESH_HINT}"),
+    ]
+)
+def test_short_form_match_lear(app, session, jwt, test_status, expected_msg):
+    """Assert a short-form filing must carry the LEAR holding business's current data."""
+    account_id = '123456'
+    holding = _factory_short_form_source_business()
+    factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
+    filing = _short_form_filing_from_lear(holding)
+    aml = filing['filing']['amalgamationApplication']
+
+    if test_status == 'STALE_LEGAL_NAME':
+        aml['nameRequest']['legalName'] = 'A NAME THE BUSINESS NO LONGER HAS LTD.'
+    elif test_status == 'STALE_OFFICE':
+        aml['offices']['registeredOffice']['deliveryAddress']['streetAddress'] = 'a street they moved away from'
+    elif test_status == 'STALE_SHARES':
+        aml['shareStructure']['shareClasses'][0]['parValue'] = 99.99
+    elif test_status == 'STALE_DIRECTORS':
+        aml['parties'] = [party for party in aml['parties']
+                          if not any(role['roleType'] == 'Director' for role in party['roles'])]
+    elif test_status == 'STALE_RESOLUTIONS':
+        aml['shareStructure']['resolutionDates'] = []
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    if test_status == 'SUCCESS':
+        assert not err, err.msg
+    else:
+        assert expected_msg in [x['error'] for x in err.msg]
+
+
+def test_short_form_match_lear_ignores_db_artifacts(app, session, jwt):
+    """Assert ids, priorities and numeric formatting differences do not fail the match."""
+    account_id = '123456'
+    holding = _factory_short_form_source_business()
+    factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
+    filing = _short_form_filing_from_lear(holding)
+    aml = filing['filing']['amalgamationApplication']
+
+    # the UI round-trips values the comparator must not be sensitive to
+    aml['offices']['registeredOffice']['deliveryAddress'].pop('id', None)
+    aml['shareStructure']['shareClasses'][0].pop('id', None)
+    aml['shareStructure']['shareClasses'][0]['priority'] = 42
+    aml['shareStructure']['shareClasses'][0]['parValue'] = 0.850
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert not err
+
+
+def test_short_form_missing_sections(app, session, jwt):
+    """Assert a short-form filing without the adopted data sections is rejected."""
+    account_id = '123456'
+    holding = _factory_short_form_source_business()
+    factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
+    filing = _short_form_filing_from_lear(holding)
+    aml = filing['filing']['amalgamationApplication']
+    del aml['offices']
+    del aml['shareStructure']
+    del aml['nameRequest']['legalName']
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    errors = [x['error'] for x in err.msg]
+    assert 'Legal name of the holding business is required for a short-form amalgamation.' in errors
+    assert 'Offices of the holding business are required for a short-form amalgamation.' in errors
+    assert 'Share structure of the holding business is required for a short-form amalgamation.' in errors
+
+
+def test_short_form_structural_error_names_the_source(app, session, jwt):
+    """Assert an inherited structural problem points the user at the source business."""
+    account_id = '123456'
+    # a legacy share class name that predates the ' Shares' suffix rule
+    holding = _factory_short_form_source_business(share_class_name='Class A Common')
+    factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
+    filing = _short_form_filing_from_lear(holding)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    structural_error = next(x['error'] for x in err.msg if "must end with ' Shares'" in x['error'])
+    # the data matches the holding business, so the fix lives there - not in this filing
+    assert SOURCE_UPDATE_HINT in structural_error
+    assert not any('does not match' in x['error'] for x in err.msg)
+
+
+def _full_colin_snapshot():
+    """Return a complete colin snapshot - business plus the sections the match validation reads."""
+    address = {'id': 1, 'streetAddress': '123 Colin St', 'streetAddressAdditional': None,
+               'addressCity': 'Victoria', 'addressRegion': 'BC', 'addressCountry': 'CA',
+               'postalCode': 'V1V 1V1', 'deliveryInstructions': None}
+    return {
+        **_mock_colin_snapshot_response().json(),
+        'parties': [{
+            'officer': {'firstName': 'COLIN', 'middleInitial': '', 'lastName': 'DIRECTOR',
+                        'organizationName': ''},
+            'deliveryAddress': dict(address),
+            'mailingAddress': dict(address),
+            'roles': [{'roleType': 'Director'}]
+        }],
+        'offices': {
+            'registeredOffice': {'deliveryAddress': dict(address), 'mailingAddress': dict(address)},
+            'recordsOffice': {'deliveryAddress': dict(address), 'mailingAddress': dict(address)}
+        },
+        'shareClasses': [{
+            'id': 100, 'name': 'Class A Shares', 'priority': 100, 'hasMaximumShares': True,
+            'maxNumberOfShares': 10000, 'hasParValue': False, 'parValue': None, 'currency': None,
+            'currencyAdditional': None, 'hasRightsOrRestrictions': False, 'series': []
+        }],
+        'resolutions': [{'date': '2010-10-10'}]
+    }
+
+
+@pytest.mark.parametrize('test_status', ['SUCCESS', 'STALE_LEGAL_NAME'])
+def test_short_form_match_colin(mocker, app, session, jwt, test_status):
+    """Assert the short-form match runs against a COLIN holding business's snapshot."""
+    account_id = '123456'
+    snapshot = _full_colin_snapshot()
+
+    filing = _get_amalg_template()
+    aml = filing['filing']['amalgamationApplication']
+    aml['type'] = Amalgamation.AmalgamationTypes.vertical.name
+    aml['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': COLIN_IDENTIFIER},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'}
+    ]
+    aml['nameRequest'] = {'legalType': Business.LegalTypes.COMP.value,
+                          'legalName': snapshot['business']['legalName']}
+    aml['offices'] = _without_nones(snapshot['offices'])
+    # no scrub here - the share class schema requires parValue/currency present even when null
+    aml['shareStructure'] = {'shareClasses': copy.deepcopy(snapshot['shareClasses']),
+                             'resolutionDates': ['2010-10-10']}
+    completing_party = copy.deepcopy(AMALGAMATION_APPLICATION['parties'][0])
+    completing_party['roles'] = [role for role in completing_party['roles']
+                                 if role['roleType'] == 'Completing Party']
+    directors = []
+    for director in copy.deepcopy(snapshot['parties']):
+        # the UI normalizes snapshot parties into filing shape - drop empties, stamp type and role
+        director['officer'] = {k: v for k, v in director['officer'].items() if v not in (None, '')}
+        director['officer']['partyType'] = 'person'
+        director['roles'] = [{'roleType': 'Director', 'appointmentDate': '2010-10-10'}]
+        directors.append(director)
+    aml['parties'] = _without_nones([completing_party] + directors)
+
+    if test_status == 'STALE_LEGAL_NAME':
+        aml['nameRequest']['legalName'] = 'A NAME COLIN DOES NOT HAVE LTD.'
+
+    _setup_colin_amalgamation_mocks(mocker)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=MockResponse(snapshot))
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    if test_status == 'SUCCESS':
+        assert not err, err.msg
+    else:
+        assert f'Legal name does not match the holding business. {REFRESH_HINT}' in [x['error'] for x in err.msg]
+
+
+def test_regular_amalgamation_skips_short_form_match(mocker, app, session):
+    """Assert the primary/holding match validation never runs for a regular amalgamation."""
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+    match_mock = mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.validate_primary_or_holding_match',
+        return_value=[])
+
+    err = validate(None, filing)
+
+    assert not err
+    match_mock.assert_not_called()
