@@ -55,15 +55,12 @@ def test_validate_schema_bad_cr(app):
     """Assert that an invalid AR returns an error."""
     # validate_schema(json_data: Dict = None) -> Tuple(int, str):
     cr = copy.deepcopy(CORRECTION_REGISTRATION)
-    cr['filing']['correction']['parties'][0]['officer']['firstName'] = \
-        'this_first_name_maximum_length_is_over'
-    cr['filing']['correction']['parties'][0]['officer']['middleName'] = \
-        'this_first_name_maximum_length_is_over'
+    cr['filing']['correction']['parties'][0]['officer']['firstName'] = 'a' * 61
 
     with app.app_context():
         err = schemas.validate_against_schema(cr)
 
-    assert {'error': "", 'path': 'filing', 'context': []}.keys() == err.msg[0].keys()
-    assert "'this_first_name_maximum_length_is_over' is too long" == err.msg[0]['error']
+    assert "is too long" in err.msg[0]['error']
+    assert err.msg[0]['path'] == 'correction/parties/0/officer/firstName'
     
     assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
