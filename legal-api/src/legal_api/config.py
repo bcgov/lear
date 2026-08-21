@@ -57,6 +57,10 @@ class _Config:  # pylint: disable=too-few-public-methods
     REPORT_API_GOTENBERG_URL = os.getenv("REPORT_API_GOTENBERG_URL", "https://")
 
     COLIN_URL = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
+    try:
+        COLIN_TIMEOUT = int(os.getenv("COLIN_TIMEOUT", "20"))
+    except (TypeError, ValueError):
+        COLIN_TIMEOUT = 20
 
     LEGAL_API_BASE_URL = f"{BUSINESS_API_GW_URL + BUSINESS_API_VERSION_2}/businesses"
 
@@ -309,6 +313,7 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
     AUTH_SVC_URL = "https://AUTH_SVC_URL"
     ACCOUNT_SVC_AUTH_URL = "https://ACCOUNT_SVC_AUTH_URL"
+    COLIN_URL = "https://COLIN_API_URL/api/v1"
     ACCOUNT_SVC_CLIENT_SECRET = None
 
     BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")

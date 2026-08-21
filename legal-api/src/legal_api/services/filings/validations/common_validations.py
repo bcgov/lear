@@ -1557,7 +1557,7 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
                 business_found = Business.find_by_identifier(business_identifier) is not None
                 if not business_found:
                     colin_business = colin.query_business(business_identifier)
-                    business_found = colin_business.status_code == HTTPStatus.OK
+                    business_found = colin_business is not None and colin_business.status_code == HTTPStatus.OK
 
             if business_found:
                 continue

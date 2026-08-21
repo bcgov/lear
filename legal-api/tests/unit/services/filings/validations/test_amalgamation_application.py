@@ -23,7 +23,6 @@ from freezegun import freeze_time
 from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
 from legal_api.errors import Error
 from legal_api.services import NameXService, STAFF_ROLE, BASIC_USER, flags
-from legal_api.services.filings.validations.amalgamation_application import _validate_foreign_businesses
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
@@ -35,9 +34,10 @@ from tests.unit.services.utils import jwt_request_context
 class MockResponse:
     """Mock http response."""
 
-    def __init__(self, json_data):
+    def __init__(self, json_data, status_code=HTTPStatus.OK):
         """Initialize mock http response."""
         self.json_data = json_data
+        self.status_code = status_code
 
     def json(self):
         """Return mock json data."""
@@ -824,6 +824,41 @@ def test_is_business_historical(mocker, app, session, jwt, test_status, expected
 @pytest.mark.parametrize(
     'test_status, expected_code, expected_msg',
     [
+        ('FAIL', HTTPStatus.BAD_REQUEST, 'BC1234567 is frozen.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_is_business_frozen(mocker, app, session, jwt, test_status, expected_code, expected_msg):
+    """Assert an admin-frozen amalgamating business cannot amalgamate, staff included."""
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+
+    def mock_find_by_identifier(identifier):
+        return Business(identifier=identifier,
+                        legal_type=Business.LegalTypes.BCOMP.value,
+                        state=Business.State.ACTIVE,
+                        admin_freeze=test_status == 'FAIL')
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(None, filing)
+
+    # validate outcomes
+    if test_status == 'SUCCESS':
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_code, expected_msg',
+    [
         ('FAIL', HTTPStatus.BAD_REQUEST, 'BC1234567 has a draft, pending or future effective filing.'),
         ('SUCCESS', None, None)
     ]
@@ -1054,6 +1089,9 @@ def test_is_business_not_found(mocker, app, session, jwt, test_status, expected_
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    # a business not in LEAR is looked up in COLIN - not there either
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=MockResponse({}, HTTPStatus.NOT_FOUND))
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(None, filing, account_id)
@@ -1768,3 +1806,225 @@ def test_amalgamation_permission_and_completing_party_flag(mocker, app, session,
     else:
         assert err is None
  
+
+# ---- COLIN amalgamating businesses (corps not loaded in LEAR) ----
+
+COLIN_IDENTIFIER = 'BC0870226'
+
+
+def _mock_colin_snapshot_response(status_code=HTTPStatus.OK, **overrides):
+    """Return a mocked colin-api snapshot response, business fields overridable."""
+    business = {
+        'identifier': COLIN_IDENTIFIER,
+        'legalName': 'COLIN TEST COMPANY LTD.',
+        'legalType': Business.LegalTypes.COMP.value,
+        'state': Business.State.ACTIVE.name,
+        'goodStanding': True,
+        'adminFreeze': False,
+        'foundingDate': '2000-01-01T08:00:00+00:00',
+        'taxId': '791861078BC0001',
+        'hasFutureEffectiveFiling': False
+    }
+    business.update(overrides)
+    return MockResponse({'business': business}, status_code)
+
+
+def _setup_colin_amalgamation_mocks(mocker, affiliated=True):
+    """Wire the standard mocks: one LEAR TING plus one identifier not in LEAR."""
+    def mock_find_by_identifier(identifier):
+        if identifier == COLIN_IDENTIFIER:
+            return None
+        return Business(identifier=identifier,
+                        founding_date=datetime.now(timezone.utc),
+                        state=Business.State.ACTIVE,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 side_effect=lambda identifier, account_id: affiliated or identifier != COLIN_IDENTIFIER)
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_msg',
+    [
+        ('SUCCESS', None),
+        ('HISTORICAL', f'Cannot amalgamate with {COLIN_IDENTIFIER} which is in historical state.'),
+        ('FUTURE_EFFECTIVE', f'{COLIN_IDENTIFIER} has a draft, pending or future effective filing.'),
+        ('FROZEN', f'{COLIN_IDENTIFIER} is frozen.'),
+        ('NOT_AFFILIATED', f'{COLIN_IDENTIFIER} is not affiliated with the currently '
+                           'selected BC Registries account.'),
+        ('NOT_GOOD_STANDING', f'{COLIN_IDENTIFIER} is not in good standing.'),
+        ('GOOD_STANDING_UNKNOWN', f'{COLIN_IDENTIFIER} is not in good standing.'),
+        ('OUT_OF_SCOPE_TYPE', f'A business with identifier:{COLIN_IDENTIFIER} not found.'),
+        ('COLIN_404', f'A business with identifier:{COLIN_IDENTIFIER} not found.'),
+        ('COLIN_500', f'Unable to verify {COLIN_IDENTIFIER} - COLIN is unavailable, try again.'),
+        ('COLIN_DOWN', f'Unable to verify {COLIN_IDENTIFIER} - COLIN is unavailable, try again.'),
+    ]
+)
+def test_colin_amalgamating_business(mocker, app, session, jwt, test_status, expected_msg):
+    """Assert a COLIN BC/ULC/CC corp not loaded in LEAR is validated from its snapshot."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': COLIN_IDENTIFIER}
+    ]
+
+    _setup_colin_amalgamation_mocks(mocker, affiliated=test_status != 'NOT_AFFILIATED')
+
+    snapshot_responses = {
+        'HISTORICAL': _mock_colin_snapshot_response(state=Business.State.HISTORICAL.name),
+        'FUTURE_EFFECTIVE': _mock_colin_snapshot_response(hasFutureEffectiveFiling=True),
+        'FROZEN': _mock_colin_snapshot_response(adminFreeze=True),
+        'NOT_GOOD_STANDING': _mock_colin_snapshot_response(goodStanding=False),
+        'GOOD_STANDING_UNKNOWN': _mock_colin_snapshot_response(goodStanding=None),
+        'OUT_OF_SCOPE_TYPE': _mock_colin_snapshot_response(legalType='CP'),
+        'COLIN_404': MockResponse({'message': 'not found'}, HTTPStatus.NOT_FOUND),
+        'COLIN_500': MockResponse({}, HTTPStatus.INTERNAL_SERVER_ERROR),
+        'COLIN_DOWN': None,
+    }
+    get_snapshot = mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+        return_value=snapshot_responses.get(test_status, _mock_colin_snapshot_response()))
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    get_snapshot.assert_called_once_with(COLIN_IDENTIFIER)
+
+    if expected_msg is None:
+        assert not err
+    else:
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert expected_msg == err.msg[0]['error']
+
+
+def test_colin_amalgamating_business_staff_skips_account_checks(mocker, app, session, jwt):
+    """Assert staff can amalgamate an unaffiliated, not-in-good-standing COLIN corp."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': COLIN_IDENTIFIER}
+    ]
+
+    _setup_colin_amalgamation_mocks(mocker, affiliated=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=_mock_colin_snapshot_response(goodStanding=False))
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert not err
+
+
+def test_colin_amalgamating_business_multiple_tings(mocker, app, session, jwt):
+    """Assert each COLIN TING is fetched once and validated from its own snapshot."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': COLIN_IDENTIFIER},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC0870227'}
+    ]
+
+    def mock_find_by_identifier(identifier):
+        return None
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    get_snapshot = mocker.patch(
+        'legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+        side_effect=[_mock_colin_snapshot_response(),
+                     _mock_colin_snapshot_response(identifier='BC0870227')])
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert not err
+    assert [call.args[0] for call in get_snapshot.call_args_list] == [COLIN_IDENTIFIER, 'BC0870227']
+
+
+def test_colin_ccc_ting_satisfies_ccc_rule(mocker, app, session, jwt):
+    """Assert a COLIN CC TING counts for the resulting-CC rule."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = Business.LegalTypes.BC_CCC.value
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': COLIN_IDENTIFIER}
+    ]
+
+    _setup_colin_amalgamation_mocks(mocker)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=_mock_colin_snapshot_response(legalType=Business.LegalTypes.BC_CCC.value))
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert not err
+
+
+def test_colin_ting_name_is_adoptable(mocker, app, session, jwt):
+    """Assert a regular amalgamation can adopt the name of a COLIN TING of the same type."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest'] = {
+        'legalType': Business.LegalTypes.COMP.value,
+        'legalName': 'COLIN TEST COMPANY LTD.'
+    }
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': COLIN_IDENTIFIER}
+    ]
+
+    _setup_colin_amalgamation_mocks(mocker)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=_mock_colin_snapshot_response())
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert not err
+
+
+@pytest.mark.parametrize(
+    'resulting_legal_type, expect_error',
+    [
+        (Business.LegalTypes.COMP.value, False),
+        (Business.LegalTypes.BCOMP.value, True)
+    ]
+)
+def test_colin_holding_business_legal_type_match(mocker, app, session, jwt, resulting_legal_type, expect_error):
+    """Assert the short-form legal-type match runs against a COLIN holding business."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.vertical.name
+    filing['filing']['amalgamationApplication']['nameRequest'] = {'legalType': resulting_legal_type}
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.holding.name, 'identifier': COLIN_IDENTIFIER},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'}
+    ]
+
+    _setup_colin_amalgamation_mocks(mocker)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=_mock_colin_snapshot_response())
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    type_error = 'Legal type should be same as the legal type in primary or holding business.'
+    if expect_error:
+        assert type_error in [x['error'] for x in err.msg]
+    else:
+        assert not err

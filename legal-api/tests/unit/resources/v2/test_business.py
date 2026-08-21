@@ -25,9 +25,12 @@ import pytest
 
 import registry_schemas
 from business_common.utils.datetime import datetime
+from requests import exceptions
+
 from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
 from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
 from legal_api.services import flags
+from legal_api.services.cache import cache
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
@@ -1187,3 +1190,90 @@ def test_set_ar_reminder(session, mocker, client, jwt, identifier, ar_reminder, 
     if message == 'arReminder flag updated':
         business = Business.find_by_identifier(identifier)
         assert business.send_ar_ind == ar_reminder
+
+
+COLIN_SNAPSHOT = {
+    'business': {'identifier': 'BC0870226', 'legalType': 'BC', 'legalName': '0870226 B.C. LTD.'},
+    'parties': [],
+    'offices': {},
+    'shareClasses': [],
+    'resolutions': []
+}
+
+
+def _mock_colin_snapshot(app, requests_mock, mocker, **response_kwargs):
+    """Mock the colin-api snapshot call and the service token it needs."""
+    cache.clear()  # cached snapshot responses would leak between tests
+    mocker.patch('legal_api.services.colin.AccountService.get_bearer_token', return_value='service-token')
+    return requests_mock.get(f"{app.config['COLIN_URL']}/businesses/BC0870226/snapshot", **response_kwargs)
+
+
+@pytest.mark.parametrize('test_name, role, auth_roles', [
+    ('staff', STAFF_ROLE, None),
+    ('authorized public user', PUBLIC_USER, ['view']),
+])
+def test_get_businesses_colin_snapshot(app, session, client, jwt, mocker, requests_mock, test_name, role, auth_roles):
+    """Assert the colin snapshot is passed through for an authorized user."""
+    identifier = 'BC0870226'
+    colin_mock = _mock_colin_snapshot(app, requests_mock, mocker, json=COLIN_SNAPSHOT)
+    if auth_roles is not None:
+        requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                          json={'roles': auth_roles})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/colin-snapshot',
+                    headers=create_header(jwt, [role], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json == COLIN_SNAPSHOT
+    assert colin_mock.call_count == 1
+    assert colin_mock.last_request.headers['Authorization'] == 'Bearer service-token'
+
+
+def test_get_businesses_colin_snapshot_unauthorized(app, session, client, jwt, mocker, requests_mock):
+    """Assert a user without the view role cannot access the colin snapshot."""
+    identifier = 'BC0870226'
+    colin_mock = _mock_colin_snapshot(app, requests_mock, mocker, json=COLIN_SNAPSHOT)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/colin-snapshot',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier))
+
+    assert rv.status_code == HTTPStatus.UNAUTHORIZED
+    assert rv.json['message'] == f'You are not authorized to view business {identifier}.'
+    assert not colin_mock.called
+
+
+def test_get_businesses_colin_snapshot_lear_business(app, session, client, jwt, mocker, requests_mock):
+    """Assert a business managed in LEAR is not served stale COLIN data."""
+    identifier = 'BC0870226'
+    factory_business(identifier)
+    colin_mock = _mock_colin_snapshot(app, requests_mock, mocker, json=COLIN_SNAPSHOT)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/colin-snapshot',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json['message'] == f'{identifier} is managed in the Business Registry.'
+    assert not colin_mock.called
+
+
+@pytest.mark.parametrize('test_name, colin_response_kwargs, expected_status, expected_message', [
+    ('colin 404', {'status_code': HTTPStatus.NOT_FOUND, 'json': {'message': 'not found'}},
+     HTTPStatus.NOT_FOUND, 'BC0870226 not found'),
+    ('colin 500', {'status_code': HTTPStatus.INTERNAL_SERVER_ERROR, 'json': {}},
+     HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to retrieve BC0870226 data from COLIN.'),
+    ('colin down', {'exc': exceptions.ConnectTimeout},
+     HTTPStatus.INTERNAL_SERVER_ERROR, 'Unable to retrieve BC0870226 data from COLIN.'),
+])
+def test_get_businesses_colin_snapshot_colin_failures(app, session, client, jwt, mocker, requests_mock,
+                                                      test_name, colin_response_kwargs,
+                                                      expected_status, expected_message):
+    """Assert colin not-found and failure responses map to the proxy's error responses."""
+    identifier = 'BC0870226'
+    _mock_colin_snapshot(app, requests_mock, mocker, **colin_response_kwargs)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/colin-snapshot',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == expected_status
+    assert rv.json['message'] == expected_message

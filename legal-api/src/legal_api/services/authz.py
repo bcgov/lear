@@ -93,6 +93,7 @@ def _call_auth_api(path: str, token: str) -> Response:
                         backoff_factor=0.1,
                         status_forcelist=[500, 502, 503, 504])
         http.mount("http://", HTTPAdapter(max_retries=retries))
+        http.mount("https://", HTTPAdapter(max_retries=retries))
         resp = http.get(url=auth_url, headers=headers)
         current_app.logger.debug(f"Auth get {path} response status: {resp.status_code!s}")
         return resp

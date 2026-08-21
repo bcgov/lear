@@ -21,7 +21,7 @@ from flask_babel import _ as babel
 from business_account import AccountService
 from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, PartyRole
 from legal_api.errors import Error
-from legal_api.services import STAFF_ROLE, flags
+from legal_api.services import STAFF_ROLE, colin, flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_effective_date,
@@ -42,6 +42,13 @@ from legal_api.services.filings.validations.incorporation_application import (
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
+
+# COLIN corps not loaded in LEAR that can amalgamate
+COLIN_AMALGAMATION_LEGAL_TYPES: Final = [
+    Business.LegalTypes.COMP.value,
+    Business.LegalTypes.BC_ULC_COMPANY.value,
+    Business.LegalTypes.BC_CCC.value,
+]
 
 
 def validate(amalgamation_json: dict, account_id) -> Error | None:
@@ -154,13 +161,15 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
     business_identifiers = []
     duplicate_businesses = []
     adoptable_names = []
-    primary_or_holding_business = None
+    primary_or_holding_legal_type = None
     amalgamating_business_roles = {
         AmalgamatingBusiness.Role.amalgamating.name: 0,
         AmalgamatingBusiness.Role.holding.name: 0,
         AmalgamatingBusiness.Role.primary.name: 0
     }
     amalgamating_businesses = {}
+    colin_businesses = {}
+    colin_fetch_failures = []
 
     # collect data for validation
     for amalgamating_business_json in amalgamating_businesses_json:
@@ -178,14 +187,28 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
             if (identifier.startswith("A") and
                     foreign_jurisdiction.get("country") == "CA" and foreign_jurisdiction.get("region") == "BC"):
                 is_any_expro_a = True
-        elif business := Business.find_by_identifier(identifier):
+            continue
+
+        if business := Business.find_by_identifier(identifier):
             amalgamating_businesses[identifier] = business
-            is_any_business[business.legal_type] = True
-            if legal_type == business.legal_type:
-                adoptable_names.append(business.legal_name)
-            if amalgamating_business_json["role"] in [AmalgamatingBusiness.Role.primary.name,
-                                                      AmalgamatingBusiness.Role.holding.name]:
-                primary_or_holding_business = business
+            ting_legal_type, ting_legal_name = business.legal_type, business.legal_name
+        else:
+            # not foreign and not in LEAR - maybe a COLIN corp that can amalgamate
+            colin_business, colin_fetch_failed = _find_colin_business(identifier)
+            if not colin_business:
+                if colin_fetch_failed:
+                    colin_fetch_failures.append(identifier)
+                continue
+            colin_businesses[identifier] = colin_business
+            ting_legal_type, ting_legal_name = colin_business["legalType"], colin_business["legalName"]
+
+        # aggregate bookkeeping (CC/ULC mixes, name adoption, type match) shared by LEAR and COLIN TINGs
+        is_any_business[ting_legal_type] = True
+        if legal_type == ting_legal_type:
+            adoptable_names.append(ting_legal_name)
+        if amalgamating_business_json["role"] in [AmalgamatingBusiness.Role.primary.name,
+                                                  AmalgamatingBusiness.Role.holding.name]:
+            primary_or_holding_legal_type = ting_legal_type
 
     is_any_bc_company = (is_any_business[Business.LegalTypes.BCOMP.value] or
                          is_any_business[Business.LegalTypes.COMP.value] or
@@ -205,12 +228,30 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
                                                     f"{amalgamating_businesses_path}/{index}"))
         else:
             identifier = amalgamating_business_json.get("identifier")
-            amalgamating_business = amalgamating_businesses.get(identifier)
-            msg.extend(_validate_lear_businesses(identifier,
-                                                 amalgamating_business,
-                                                 account_id,
-                                                 is_staff,
-                                                 f"{amalgamating_businesses_path}/{index}"))
+            amalgamating_business_path = f"{amalgamating_businesses_path}/{index}"
+            if amalgamating_business := amalgamating_businesses.get(identifier):
+                business_info = _business_info_from_lear(amalgamating_business, is_staff)
+            elif colin_business := colin_businesses.get(identifier):
+                business_info = colin_business
+            elif identifier in colin_fetch_failures:
+                # COLIN could not be reached - a clear retryable error, not "not found"
+                msg.append({
+                    "error": f"Unable to verify {identifier} - COLIN is unavailable, try again.",
+                    "path": amalgamating_business_path
+                })
+                continue
+            else:
+                msg.append({
+                    "error": f"A business with identifier:{identifier} not found.",
+                    "path": amalgamating_business_path
+                })
+                continue
+
+            msg.extend(_validate_amalgamating_business(identifier,
+                                                       business_info,
+                                                       account_id,
+                                                       is_staff,
+                                                       amalgamating_business_path))
 
     if duplicate_businesses:
         msg.append({
@@ -232,15 +273,15 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
             "path": f"/filing/{filing_type}/nameRequest/legalName"
         })
 
-    if primary_or_holding_business:
+    if primary_or_holding_legal_type:
         continued_types_map = {
             Business.LegalTypes.CONTINUE_IN.value: Business.LegalTypes.COMP.value,
             Business.LegalTypes.BCOMP_CONTINUE_IN.value: Business.LegalTypes.BCOMP.value,
             Business.LegalTypes.ULC_CONTINUE_IN.value: Business.LegalTypes.BC_ULC_COMPANY.value,
             Business.LegalTypes.CCC_CONTINUE_IN.value: Business.LegalTypes.BC_CCC.value
         }
-        legal_type_to_compare = continued_types_map.get(primary_or_holding_business.legal_type,
-                                                        primary_or_holding_business.legal_type)
+        legal_type_to_compare = continued_types_map.get(primary_or_holding_legal_type,
+                                                        primary_or_holding_legal_type)
         if legal_type_to_compare != legal_type:
             msg.append({
                 "error": "Legal type should be same as the legal type in primary or holding business.",
@@ -344,63 +385,88 @@ def _check_aml_permission_or_default_error(msg: list, message: str, default_erro
             return True
         return False
 
-def _validate_lear_businesses(  # pylint: disable=too-many-arguments
+def _business_info_from_lear(business: Business, is_staff: bool) -> dict:
+    """Normalize a LEAR business row to the snapshot shape shared by TING validation."""
+    return {
+        "state": business.state.name if business.state else None,
+        "hasFutureEffectiveFiling": _has_pending_filing(business),
+        "adminFreeze": business.admin_freeze,
+        # good_standing costs a filing-history query and only the non-staff checks read it
+        "goodStanding": True if is_staff else business.good_standing,
+    }
+
+
+def _validate_amalgamating_business(  # pylint: disable=too-many-arguments
         identifier,
-        amalgamating_business,
+        business_info,
         account_id,
         is_staff,
         amalgamating_business_path) -> list:
+    """Validate a TING business from its normalized info (LEAR row or COLIN snapshot)."""
     msg = []
-    if amalgamating_business:
-        if amalgamating_business.state == Business.State.HISTORICAL:
-            msg.append({
-                "error": f"Cannot amalgamate with {identifier} which is in historical state.",
-                "path": amalgamating_business_path
-            })
-        elif _has_pending_filing(amalgamating_business):
-            msg.append({
-                "error": f"{identifier} has a draft, pending or future effective filing.",
-                "path": amalgamating_business_path
-            })
-        elif Business.is_pending_amalgamating_business(identifier):
-            msg.append({
-                "error": f"{identifier} is part of a future effective amalgamation filing.",
-                "path": amalgamating_business_path
-            })
+    if business_info["state"] == Business.State.HISTORICAL.name:
+        msg.append({
+            "error": f"Cannot amalgamate with {identifier} which is in historical state.",
+            "path": amalgamating_business_path
+        })
+    elif business_info["hasFutureEffectiveFiling"]:
+        msg.append({
+            "error": f"{identifier} has a draft, pending or future effective filing.",
+            "path": amalgamating_business_path
+        })
+    elif Business.is_pending_amalgamating_business(identifier):
+        msg.append({
+            "error": f"{identifier} is part of a future effective amalgamation filing.",
+            "path": amalgamating_business_path
+        })
 
-        if not is_staff:
-            if not _is_business_affliated(identifier, account_id):
-                error = _check_aml_permission_or_default_error(
-                    msg,
-                    "Permission Denied - You do not have permissions to amalgamate an unaffiliated business.",
-                    {
-                        "error": (f"{identifier} is not affiliated with the currently "
-                                  "selected BC Registries account."),
-                        "path": amalgamating_business_path
-                    }
-                    )
-                if error:
-                    return msg
-                
-            if not amalgamating_business.good_standing:
-                error = _check_aml_permission_or_default_error(
+    if business_info["adminFreeze"]:
+        msg.append({
+            "error": f"{identifier} is frozen.",
+            "path": amalgamating_business_path
+        })
+
+    if not is_staff:
+        if not _is_business_affliated(identifier, account_id):
+            error = _check_aml_permission_or_default_error(
+                msg,
+                "Permission Denied - You do not have permissions to amalgamate an unaffiliated business.",
+                {
+                    "error": (f"{identifier} is not affiliated with the currently "
+                              "selected BC Registries account."),
+                    "path": amalgamating_business_path
+                }
+            )
+            if error:
+                return msg
+
+        if not business_info["goodStanding"]:
+            error = _check_aml_permission_or_default_error(
                 msg,
                 "Permission Denied - You do not have permissions to amalgamate a business not in good standing.",
                 {
                     "error": f"{identifier} is not in good standing.",
                     "path": amalgamating_business_path
                 }
-                )
-                if error:
-                    return msg
-               
-    else:
-        msg.append({
-            "error": f"A business with identifier:{identifier} not found.",
-            "path": amalgamating_business_path
-        })
+            )
+            if error:
+                return msg
 
     return msg
+
+
+def _find_colin_business(identifier: str) -> tuple:
+    """Return (colin business dict | None, fetch_failed) for a business not found in LEAR."""
+    response = colin.get_snapshot(identifier)
+    if response is None or response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
+        return None, True
+    if response.status_code != HTTPStatus.OK:
+        return None, False
+
+    business_json = (response.json() or {}).get("business") or {}
+    if business_json.get("legalType") not in COLIN_AMALGAMATION_LEGAL_TYPES:
+        return None, False
+    return business_json, False
 
 
 def _validate_amalgamation_type(  # pylint: disable=too-many-arguments
