@@ -22,11 +22,13 @@ from legal_api.services.permissions import PermissionService
 import pytest
 from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGISTRATION
 
-from business_model.models import Business
+from business_model.models import Business, User
 from legal_api.services import NaicsService, NameXService, flags
+from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings.validations.change_of_registration import validate
 
 from tests.unit.services.filings.validations import create_party, create_party_address
+from tests.unit.services.utils import jwt_request_context
 
 
 now = datetime.now().strftime('%Y-%m-%d')
@@ -325,4 +327,38 @@ def test_change_of_registration_permission_checks(mock_is_officer_replace, mock_
     assert err
     assert err.code == HTTPStatus.FORBIDDEN
     assert 'DBA' in err.msg[0]['message']
-   
+
+
+@pytest.mark.parametrize(
+    'test_name, roles, user_name, expected_error', [
+        ('client_name_matches', [BASIC_USER], ('Joe', 'P', 'Swanson'), None),
+        ('client_name_mismatch', [BASIC_USER], ('Different', None, 'Person'),
+         'Completing party name must match the name of the logged in user.'),
+        ('staff_skipped', [STAFF_ROLE], ('Different', None, 'Person'), None),
+    ]
+)
+def test_change_of_registration_completing_party_name(app, session, jwt, test_name, roles, user_name, expected_error):
+    """Assert the completing party name is validated against the user record for client filings."""
+    filing = copy.deepcopy(GP_CHANGE_OF_REGISTRATION)
+    business = Business(identifier=filing['filing']['business']['identifier'],
+                        legal_type=filing['filing']['business']['legalType'])
+
+    firstname, middlename, lastname = user_name
+    login_source = 'IDIR' if STAFF_ROLE in roles else 'BCSC'
+    user = User(username='cp-test-user', firstname=firstname, middlename=middlename, lastname=lastname,
+                sub='sub', iss='iss', idp_userid='123', login_source=login_source)
+    user.save()
+
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with jwt_request_context(app, jwt, roles, login_source=login_source):
+                err = validate(business, filing)
+
+    if expected_error:
+        assert err is not None
+        assert any(msg['error'] == expected_error for msg in err.msg)
+    else:
+        assert err is None or all(
+            msg['error'] != 'Completing party name must match the name of the logged in user.'
+            for msg in err.msg
+        )
