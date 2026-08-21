@@ -243,17 +243,25 @@ def _create_amalgation_business(business, for_correction=False):
         filing_id=filing.id,
         business_id=business.id,
     )
-    amalgamation.amalgamating_businesses.append(AmalgamatingBusiness(
+    amalgamation.save()
+
+    ting1 = AmalgamatingBusiness(
         role=AmalgamatingBusiness.Role.amalgamating,
-        business_id=amalgamating_business.id
-    ))
-    amalgamation.amalgamating_businesses.append(AmalgamatingBusiness(
+        business_id=amalgamating_business.id,
+        amalgamation_id=amalgamation.id
+    )
+    ting1.save()
+    amalgamating_business_json[0]['id'] = ting1.id
+
+    ting2 = AmalgamatingBusiness(
         role=AmalgamatingBusiness.Role.amalgamating,
         foreign_jurisdiction=amalgamating_business_json[1]['foreignJurisdiction']['country'],
         foreign_jurisdiction_region=amalgamating_business_json[1]['foreignJurisdiction']['region'],
         foreign_name=amalgamating_business_json[1]['legalName'],
-        foreign_identifier=amalgamating_business_json[1]['identifier']
-    ))
-    business.amalgamation.append(amalgamation)
-    business.save()
+        foreign_identifier=amalgamating_business_json[1]['identifier'],
+        amalgamation_id=amalgamation.id
+    )
+    ting2.save()
+    amalgamating_business_json[1]['id'] = ting2.id
+
     return data

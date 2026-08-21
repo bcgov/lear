@@ -165,6 +165,7 @@ def _get_amalgamation_application_data(business: Business, for_correction: bool 
     amalgamating_businesses = []
     for ting in amalgamation.amalgamating_businesses:
         ting_info = {
+            "id": ting.id,
             "role": ting.role.name
         }
         if ting.business_id:
