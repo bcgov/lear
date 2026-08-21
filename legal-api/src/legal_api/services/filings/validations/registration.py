@@ -75,7 +75,6 @@ def validate(registration_json: dict) -> Error | None:
     msg.extend(validate_naics(registration_json))
     msg.extend(validate_business_type(registration_json, legal_type))
     msg.extend(validate_party(registration_json, legal_type))
-    msg.extend(validate_completing_party_name(registration_json))
     msg.extend(validate_parties_addresses(registration_json, filing_type))
     msg.extend(validate_start_date(registration_json))
     msg.extend(validate_offices(registration_json))
@@ -163,6 +162,8 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
         if completing_parties < 1 or partner_parties < min_partners:
             msg.append({"error": "2 Partners and a Completing Party are required.", "path": party_path})
 
+    msg.extend(validate_completing_party_name(filing, filing_type))
+
     return msg
 
 
@@ -191,15 +192,12 @@ def validate_completing_party_name(filing: dict, filing_type="registration") -> 
     if not officer or officer.get("partyType") != "person":
         return msg
 
-    if not (user := User.find_by_jwt_token(g.jwt_oidc_token_info)):
+    if not (user := User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)):
         return msg
 
     user_name = " ".join(" ".join(
         filter(None, [user.firstname, user.middlename, user.lastname])
     ).split())
-    if not user_name:
-        return msg  # user record has no name to verify against
-
     filing_name = " ".join(" ".join(
         filter(None, [officer.get("firstName"), officer.get("middleName"), officer.get("lastName")])
     ).split())
