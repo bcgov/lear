@@ -31,6 +31,7 @@ from legal_api.services import (
     SYSTEM_ROLE,
     RegistrationBootstrapService,
     check_warnings,
+    colin,
     flags,
 )
 from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
@@ -134,6 +135,30 @@ def get_businesses_public(identifier: str, slim = False):
     business_json["warnings"] = check_warnings(business)
 
     return jsonify(business=business_json)
+
+
+@bp.route("/<string:identifier>/colin-snapshot", methods=["GET"])
+@cross_origin()
+@jwt.requires_auth
+def get_businesses_colin_snapshot(identifier: str):
+    """Return the snapshot data of a COLIN business not yet managed in LEAR."""
+    if not authorized(identifier, jwt, action=["view"]):
+        return jsonify({"message":
+                        f"You are not authorized to view business {identifier}."}), \
+            HTTPStatus.UNAUTHORIZED
+
+    if Business.find_by_identifier(identifier):
+        # a business in LEAR is managed here - its COLIN data may be stale
+        return jsonify({"message": f"{identifier} is managed in the Business Registry."}), HTTPStatus.NOT_FOUND
+
+    snapshot_json, status_code = colin.get_snapshot(identifier)
+    if status_code == HTTPStatus.NOT_FOUND:
+        return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
+    if snapshot_json is None or status_code != HTTPStatus.OK:
+        return jsonify({"message": f"Unable to retrieve {identifier} data from COLIN."}), \
+            HTTPStatus.INTERNAL_SERVER_ERROR
+
+    return jsonify(snapshot_json), HTTPStatus.OK
 
 
 @bp.route("", methods=["POST"])

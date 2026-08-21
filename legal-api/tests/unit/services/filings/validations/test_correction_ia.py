@@ -801,14 +801,14 @@ def test_validate_continuation_in_expro_founding_date_match(mocker, app, session
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
-        status_code=HTTPStatus.OK,
-        json=lambda: {
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
+        {
             'business': {
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.'
             }
-        }
+        },
+        HTTPStatus.OK
     ))
 
     with jwt_request_context(app, jwt, [BASIC_USER]):

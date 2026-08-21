@@ -92,11 +92,8 @@ def _make_ting_business(identifier='BC1234567', legal_name='Ting Corp Ltd.'):
 
 
 def _make_colin_response(status_code, jurisdiction=None):
-    """Return a mock HTTP response imitating a ColinService.query_business result."""
-    resp = MagicMock()
-    resp.status_code = status_code
-    resp.json.return_value = {'business': {'jurisdiction': jurisdiction}}
-    return resp
+    """Return a (json, status code) tuple imitating a ColinService.query_business result."""
+    return {'business': {'jurisdiction': jurisdiction}}, status_code
 
 
 @pytest.mark.parametrize('test_name, identifier, foreign_name, country_code, region_code, expected_id, expected_name, expected_jurisdiction', [

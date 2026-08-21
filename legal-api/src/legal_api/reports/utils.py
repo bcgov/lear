@@ -73,15 +73,13 @@ def get_formatted_amalg_business_data(
         region_code = foreign_region_code
         # FUTURE: rework this once expros are in lear
         # Check if this is an expro
-        if (identifier
-            and identifier.startswith("A")
-            and (colin_resp := ColinService.query_business(identifier))
-            and colin_resp.status_code == HTTPStatus.OK
-        ):
-            # this is an expro so set the identifier (it is the BC expro identifier)
-            display_identifier = identifier
-            # overwrite the region_code if jurisdiction is available in the response
-            region_code = colin_resp.json().get("business", {}).get("jurisdiction")
+        if identifier and identifier.startswith("A"):
+            colin_json, colin_status = ColinService.query_business(identifier)
+            if colin_json is not None and colin_status == HTTPStatus.OK:
+                # this is an expro so set the identifier (it is the BC expro identifier)
+                display_identifier = identifier
+                # overwrite the region_code if jurisdiction is available in the response
+                region_code = colin_json.get("business", {}).get("jurisdiction")
             
     else:
         if not ting_business:
