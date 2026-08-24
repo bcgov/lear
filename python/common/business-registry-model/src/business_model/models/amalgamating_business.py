@@ -46,6 +46,8 @@ class AmalgamatingBusiness(db.Model, Versioned):  # pylint: disable=too-many-ins
     foreign_jurisdiction_region = db.Column('foreign_jurisdiction_region', db.String(10))
     foreign_name = db.Column('foreign_name', db.String(100))
     foreign_identifier = db.Column('foreign_identifier', db.String(50))
+    # a business in COLIN that is not loaded in LEAR (and is not a foreign business)
+    colin_identifier = db.Column('colin_identifier', db.String(10))
 
     # parent keys
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'), index=True)
