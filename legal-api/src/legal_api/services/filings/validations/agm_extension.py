@@ -45,13 +45,12 @@ def validate(business: Business, filing: dict) -> Error | None:
     agm_year = get_int(filing, agm_year_path)
 
     if agm_year:
-        current_year = LegislationDatetime.now().year
         founding_year = (
             LegislationDatetime.as_legislation_timezone(business.founding_date).year
-            if business.founding_date else current_year - 2
+            if business.founding_date else None
         )
 
-        if agm_year < founding_year:
+        if founding_year and agm_year < founding_year:
             msg.append({
                 "error": "AGM year cannot be earlier than the incorporation year.",
                 "path": agm_year_path
