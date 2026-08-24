@@ -737,12 +737,12 @@ def test_validate_incorporation_share_classes(session, mocker, test_name, legal_
     'amalgamation_type, expected_code',
     [
         (Amalgamation.AmalgamationTypes.regular.name, HTTPStatus.UNPROCESSABLE_ENTITY),
-        (Amalgamation.AmalgamationTypes.vertical.name, None),
-        (Amalgamation.AmalgamationTypes.horizontal.name, None),
+        (Amalgamation.AmalgamationTypes.vertical.name, HTTPStatus.UNPROCESSABLE_ENTITY),
+        (Amalgamation.AmalgamationTypes.horizontal.name, HTTPStatus.UNPROCESSABLE_ENTITY),
     ]
 )
 def test_validate_amalgamation_office_or_share_required(session, mocker, amalgamation_type, expected_code):
-    """Assert that amalgamation offices/shareStructure required can be validated."""
+    """Assert the schema requires offices/shareStructure for every amalgamation type."""
     filing = _get_amalg_template()
     filing['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
     filing['filing']['amalgamationApplication']['type'] = amalgamation_type
@@ -2193,7 +2193,7 @@ def test_short_form_match_lear_ignores_db_artifacts(app, session, jwt):
 
 
 def test_short_form_missing_sections(app, session, jwt):
-    """Assert a short-form filing without the adopted data sections is rejected."""
+    """Assert a short-form filing without the adopted data sections is rejected by the schema."""
     account_id = '123456'
     holding = _factory_short_form_source_business()
     factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
@@ -2201,15 +2201,26 @@ def test_short_form_missing_sections(app, session, jwt):
     aml = filing['filing']['amalgamationApplication']
     del aml['offices']
     del aml['shareStructure']
-    del aml['nameRequest']['legalName']
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_short_form_missing_legal_name(app, session, jwt):
+    """Assert the match validation requires the adopted legal name (the schema does not)."""
+    account_id = '123456'
+    holding = _factory_short_form_source_business()
+    factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
+    filing = _short_form_filing_from_lear(holding)
+    del filing['filing']['amalgamationApplication']['nameRequest']['legalName']
 
     with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
         err = validate(None, filing, account_id)
 
     errors = [x['error'] for x in err.msg]
     assert 'Legal name of the holding business is required for a short-form amalgamation.' in errors
-    assert 'Offices of the holding business are required for a short-form amalgamation.' in errors
-    assert 'Share structure of the holding business is required for a short-form amalgamation.' in errors
 
 
 def test_short_form_structural_error_names_the_source(app, session, jwt):
