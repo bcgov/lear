@@ -76,7 +76,7 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
         del filing['filing']['dissolution']['affidavitFileKey']
         del filing['filing']['dissolution']['parties']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -117,7 +117,7 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
         del filing['filing']['dissolution']['dissolutionStatementType']
 
     # perform test
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -181,7 +181,7 @@ def test_dissolution_party_roles(session, legal_type, dissolution_type, roles, e
         p = create_party([role], i + 1, mailing_addr, delivery_addr)
         filing['filing']['dissolution']['parties'].append(p)
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
 
@@ -244,7 +244,7 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
         if address_validation == 'liquidator_only_non_ca_address':
             filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'US'
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -318,7 +318,7 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
         resolution_date_time = datetime.strptime(resolution_date_str, '%Y-%m-%d')
         business.founding_date = resolution_date_time - timedelta(days=1000)
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -424,7 +424,7 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
     from legal_api.services.filings import validate as _validate
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = _validate(business, filing)
@@ -499,7 +499,7 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
         filing['filing']['dissolution']['details'] = "Some Details"
         del filing['filing']['dissolution']['affidavitFileKey']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -574,7 +574,7 @@ def test_dissolution_custodian_name(session, test_status, legal_type, dissolutio
     if first_name is not None:
         officer['firstName'] = first_name
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -686,7 +686,7 @@ def test_dissolution_good_standing_permission(session, test_name, good_standing,
         patch.object(Business, 'good_standing', new_callable=lambda: good_standing),
         patch.object(PermissionService, 'check_user_permission', return_value=permission_error),
         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None),
-        patch.object(dissolution, 'validate_affidavit', return_value=None),
+        patch.object(dissolution, 'validate_affidavit', return_value=[]),
         patch.object(dissolution, 'check_good_standing_permission', return_value=permission_error if not good_standing  and not has_permission and flag_enabled else None),
         patch.object(dissolution, 'validate_permission_and_completing_party', return_value=None),
         patch.object(dissolution, '_check_dissolution_permission', return_value=None),

@@ -1948,7 +1948,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
         'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.check_and_update_nr',
         return_value=None)
     mocker.patch('legal_api.resources.v2.business.business_filings.business_filings.publish_to_queue', return_value=None)
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',

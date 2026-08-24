@@ -1212,7 +1212,7 @@ def test_validate_court_order_with_flag_on(session, has_permission, expected_err
         result = validate_court_order('/filing/alteration/courtOrder', court_order)
 
     if has_permission:
-        assert result is None
+        assert result == []
     else:
         assert isinstance(result, list)
         assert len(result) == 1

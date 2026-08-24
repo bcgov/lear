@@ -325,7 +325,7 @@ def _validate_party_address(party, idx, address_type, require_bc):
     return msg
 
 
-def validate_affidavit(filing_json, legal_type, dissolution_type) -> list | None:
+def validate_affidavit(filing_json, legal_type, dissolution_type) -> list:
     """Validate affidavit document of the filing.
 
     This needs not to be validated for administrative dissolution
