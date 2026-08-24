@@ -49,7 +49,5 @@ def _validate_court_order(filing):
     """Validate court order."""
     if court_order := filing.get("filing", {}).get("putBackOn", {}).get("courtOrder", None):
         court_order_path: Final = "/filing/putBackOn/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
+        return validate_court_order(court_order_path, court_order)
     return []

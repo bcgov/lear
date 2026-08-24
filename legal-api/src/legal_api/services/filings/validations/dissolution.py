@@ -106,10 +106,7 @@ def validate(business: Business, dissolution: dict) -> Error | None:
         # Common validation for addresses
         msg.extend(validate_parties_addresses(dissolution, filing_type))
 
-    err = validate_affidavit(dissolution, business.legal_type, dissolution_type)
-    if err:
-        msg.extend(err)
-
+    msg.extend(validate_affidavit(dissolution, business.legal_type, dissolution_type))
 
     msg.extend(_validate_court_order(dissolution))
 
@@ -333,8 +330,9 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> list | None
 
     This needs not to be validated for administrative dissolution
     """
+    msg = []
     if dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY]:
-        return None
+        return msg
 
     if legal_type == Business.LegalTypes.COOP.value:
         affidavit_file_key_path = "/filing/dissolution/affidavitFileKey"
@@ -342,21 +340,19 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> list | None
 
         # Validate key values exist
         if not affidavit_file_key:
-            return [{"error": _("A valid affidavit key is required."),
-                     "path": affidavit_file_key_path}]
+            msg.append({"error": _("A valid affidavit key is required."),
+                     "path": affidavit_file_key_path})
 
-        return validate_pdf(affidavit_file_key, affidavit_file_key_path)
+        msg.extend(validate_pdf(affidavit_file_key, affidavit_file_key_path))
 
-    return None
+    return msg
 
 
 def _validate_court_order(filing):
     """Validate court order."""
     if court_order := filing.get("filing", {}).get("dissolution", {}).get("courtOrder", None):
         court_order_path: Final = "/filing/dissolution/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
+        return validate_court_order(court_order_path, court_order)
     return []
 
 

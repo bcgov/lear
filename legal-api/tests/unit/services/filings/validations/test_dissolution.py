@@ -397,7 +397,7 @@ def test_dissolution_affidavit(session, monkeypatch, test_name, legal_type, diss
 @pytest.mark.parametrize(
     'test_status, file_number, effect_of_order, expected_code, expected_msg',
     [
-        ('FAIL', None, 'planOfArrangement', HTTPStatus.BAD_REQUEST, 'Court order file number is required.'),
+        ('FAIL', None, 'planOfArrangement', HTTPStatus.UNPROCESSABLE_ENTITY, "'fileNumber' is a required property"),
         ('FAIL', '12345678901234567890', 'invalid', HTTPStatus.BAD_REQUEST, 'Invalid effectOfOrder.'),
         ('SUCCESS', '12345678901234567890', 'planOfArrangement', None, None)
     ]
@@ -422,10 +422,12 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
     filing['filing']['dissolution']['courtOrder'] = court_order
 
+    from legal_api.services.filings import validate as _validate
+
     with patch.object(dissolution, 'validate_affidavit', return_value=None), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
-        err = validate(business, filing)
+        err = _validate(business, filing)
 
     # validate outcomes
     if test_status == 'FAIL':

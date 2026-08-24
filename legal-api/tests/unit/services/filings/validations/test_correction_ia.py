@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pytest
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Resolution
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, CourtOrder, Resolution
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     CORRECTION_INCORPORATION,
     CONTINUATION_IN_FILING_TEMPLATE,
     CONTINUATION_OUT,
+    COURT_ORDER_FILING_TEMPLATE,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE
 )
@@ -1081,3 +1082,141 @@ def _create_amalgation_business(business):
         else:
             amalgamating_business_json[1]['id'] = ting.id
     return data, filing
+
+
+@pytest.mark.parametrize('invalid_court_order, error_msg', [
+    ({
+        'fileNumber': '123456789012345678901',  # long fileNumber
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }, "'123456789012345678901' is too long"),
+    ({
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }, "'fileNumber' is a required property"),
+    ({
+        'fileNumber': 'Valid file number',
+        'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
+        'effectOfOrder': 'planOfArrangement'
+    }, "'a2021-01-30T09:56:01' is not a 'date-time'"),
+    ({
+        'fileNumber': 'Valid file number',
+        'orderDate': (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        'effectOfOrder': 'planOfArrangement'
+    }, "Court order date cannot be in the future."),
+    ({
+        'fileNumber': 'Valid File Number',
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'invalid'  # Invalid effectOfOrder
+    }, 'Invalid effectOfOrder.')
+])
+def test_validate_invalid_court_order(app, jwt, session, invalid_court_order, error_msg):
+    """Assert not valid court order."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    del filing['filing']['correction']['commentOnly']
+    filing['filing']['correction']['courtOrder'] = invalid_court_order
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert err
+    assert err.msg[0]['error'] == error_msg
+
+
+@pytest.mark.parametrize('invalid_court_order, error_msg', [
+    ({
+        'fileNumber': '123456789012345678901',  # long fileNumber
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }, "'123456789012345678901' is too long"),
+    ({
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }, "'fileNumber' is a required property"),
+    ({
+        'fileNumber': 'Valid file number',
+        'orderDate': 'a2021-01-30T09:56:01',  # Invalid date
+        'effectOfOrder': 'planOfArrangement'
+    }, "'a2021-01-30T09:56:01' is not a 'date-time'"),
+    ({
+        'fileNumber': 'Valid file number',
+        'orderDate': (datetime.now(timezone.utc) + timedelta(days=1)).isoformat(),
+        'effectOfOrder': 'planOfArrangement'
+    }, "Court order date cannot be in the future."),
+    ({
+        'fileNumber': 'Valid File Number',
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'invalid'  # Invalid effectOfOrder
+    }, 'Invalid effectOfOrder.')
+])
+def test_validate_invalid_court_orders_new(app, jwt, session, invalid_court_order, error_msg):
+    """Assert not valid court order."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    ia_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = ia_filing.id
+    del filing['filing']['correction']['commentOnly']
+    invalid_court_order["filingId"] = ia_filing.id
+
+    filing['filing']['correction']['courtOrders'] = [invalid_court_order]
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert err
+    assert err.msg[0]['error'] == error_msg
+
+
+@pytest.mark.parametrize('invalid_court_order, error_msg', [
+    ({
+        'fileNumber': '123456789012345678901',  # long fileNumber
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }, "'123456789012345678901' is too long"),
+    ({
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'planOfArrangement'
+    }, "'fileNumber' is a required property"),
+    ({
+        'fileNumber': 'Valid File Number',
+        'orderDate': '2021-01-30T09:56:01+01:00',
+        'effectOfOrder': 'invalid'  # Invalid effectOfOrder
+    }, 'Invalid effectOfOrder.')
+])
+def test_validate_invalid_court_orders_old(app, jwt, session, invalid_court_order, error_msg):
+    """Assert not valid court order."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    ia_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    court_order_filing = factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
+    court_order = CourtOrder(
+        filing_id=court_order_filing.id,
+        business_id=business.id,
+        effect_of_order='planOfArrangement',
+        order_details='Court order details'
+    )
+    court_order.save()
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = ia_filing.id
+    del filing['filing']['correction']['commentOnly']
+    invalid_court_order["filingId"] = ia_filing.id
+    invalid_court_order["id"] = court_order.id
+
+    filing['filing']['correction']['courtOrders'] = [invalid_court_order]
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert err
+    assert err.msg[0]['error'] == error_msg

@@ -61,9 +61,7 @@ def validate(business: Business, filing: dict) -> Error | None:
 
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_court_order(court_order_path, court_order))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

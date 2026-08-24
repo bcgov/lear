@@ -20,7 +20,7 @@ from dateutil.relativedelta import relativedelta
 from flask.globals import request_ctx
 from flask_babel import _
 
-from business_model.models import Business, Filing, PartyRole
+from business_model.models import Business, CourtOrder, Filing, PartyRole
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
@@ -170,9 +170,53 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         msg.extend(validate_share_currency(filing_dict, filing_type, business))
         msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
 
+    if filing_dict.get("filing", {}).get("correction", {}).get("courtOrder", None):
+        msg.extend(court_order_validation(filing_dict))
+
     msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
     msg.extend(_validate_out_correction(filing_dict, filing_type))
     msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
+    msg.extend(_validate_court_orders_correction(filing_dict, business))
+
+
+def _validate_court_orders_correction(filing_dict, business: Business):
+    msg = []
+    if not (orders := filing_dict["filing"]["correction"].get("courtOrders")):
+        return msg
+
+    corrected_filing_type = filing_dict["filing"]["correction"]["correctedFilingType"]
+    new_court_orders = []
+    court_orders_db = CourtOrder.get_json_with_filing_type(business.id)
+    for idx, order in enumerate(orders):
+        path = f"/filing/correction/courtOrders/{idx}"
+        is_file_or_details_required = False
+        if order_id := order.get("id"):
+            court_order_db = next((o for o in court_orders_db if o["id"] == order_id), None)
+            if not court_order_db:
+                msg.append({"error": _("Court order not found."), "path": path})
+            else:
+                is_file_or_details_required = (court_order_db["filingType"] == "courtOrder")
+        elif order.get("filingId") != filing_dict["filing"]["correction"]["correctedFilingId"]:
+            msg.append({"error": _("Filing Id does not match corrected filing Id."), "path": path})
+        else:
+            if (
+                (
+                    court_order_db := next(
+                        (o for o in court_orders_db if o["filingType"] == corrected_filing_type), None
+                    )
+                ) and next((o for o in orders if o["id"] == court_order_db["id"]), None)
+            ):
+                msg.append({"error": _("Only one court order can be added per filing."), "path": path})
+
+            is_file_or_details_required = (corrected_filing_type == "courtOrder")
+            new_court_orders.append(order)
+
+        msg.extend(validate_court_order(path, order, is_file_or_details_required))
+
+    if len(new_court_orders) > 1:
+        msg.append({"error": _("Only one court order can be added."), "path": "/filing/correction/courtOrders"})
+
+    return msg
 
 
 def _validate_amalgamation_correction(filing_dict, filing_type, business: Business):
@@ -367,9 +411,7 @@ def court_order_validation(filing):
     """Validate court order."""
     court_order_path: Final = "/filing/correction/courtOrder"
     if get_str(filing, court_order_path):
-        err = validate_court_order(court_order_path, filing["filing"]["correction"]["courtOrder"])
-        if err:
-            return err
+        return validate_court_order(court_order_path, filing["filing"]["correction"]["courtOrder"])
     return []
 
 
@@ -380,11 +422,9 @@ def rules_change_validation(filing):
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
     if rules_file_key:
-        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
-        if rules_err:
-            msg.extend(rules_err)
-        return msg
-    return []
+        msg.extend(validate_pdf(rules_file_key, rules_file_key_path))
+
+    return msg
 
 
 def memorandum_change_validation(filing):
@@ -394,8 +434,6 @@ def memorandum_change_validation(filing):
     memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
 
     if memorandum_file_key:
-        rules_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
-        if rules_err:
-            msg.extend(rules_err)
-        return msg
-    return []
+        msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
+
+    return msg
