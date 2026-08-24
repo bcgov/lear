@@ -6,15 +6,24 @@
         <title>Certificate of Amalgamation</title>
         <meta charset="UTF-8">
         <meta name="author" content="BC Registries and Online Services">
-        [[common/certificateStyle.html]]
+        [[amalgamation/certificateStyle.html]]
         {% if enable_sandbox %}
             [[common/certificateWatermark.html]]
         {% endif %}
     </head>
     <body>
+        <div class="cert-incorp-number-repeated">
+            Incorporation Number: {{ business.identifier }}
+        </div>
+        <div class="cert-seal-repeated">
+            [[common/certificateSeal.html]]
+        </div>
+        <div class="cert-electronic-repeated">
+            <div class="electronic-cert">ELECTRONIC CERTIFICATE</div>
+        </div>
+        <div class="cert-border-bg"></div>
         <div class="outer-container">
             <div class="outer-container-header">
-                <div class="business-number">Incorporation Number: {{ business.identifier }}</div>
                 [[common/correctedOnCertificate.html]]
             </div>      
 
@@ -30,23 +39,40 @@
                 <div class="certify-clause-container">
                     <div>I hereby certify that the following corporations were amalgamated under the name</div>
                     <div class="company-name-header">{{ business.legalName }}</div>
-                    <div>on {{ effective_date_time }}</div>
-                    <div class="mt-2">
-                    {% for entity in amalgamatingBusinesses %}
-                        {% if entity != amalgamatingBusinesses[0] %}
-                        <span>, and </span>
-                        {% endif %}
-                    <span class="upper-text">{{ entity.legalName }} ({{ entity.identifier }})</span>
-                    {% endfor %}
-                    </div>
-                    <div class="cert-separator"></div>
-                    <div class="cert-issued-by">
-                        <div>Issued under my hand at Victoria, British Columbia</div>
-                        <div>on {{ business.formatted_founding_date }}</div>
+                    <div class="certify-date">on {{ effective_date_time }}</div>
+                    <div class="amalgamation-businesses">
+                        {% for entity in amalgamatingBusinesses %}
+                            <div class="amalgamation-business">
+                                {% if entity != amalgamatingBusinesses[0] %}
+                                    <span>, and </span>
+                                {% endif %}
+
+                                {% if entity.isBcCompany %}
+                                    <span class="upper-text">{{ entity.legalName }}</span>
+                                    <span>, incorporation number {{ entity.identifier }}</span>
+
+                                {% elif entity.isExtraprovincial %}
+                                    <span class="upper-text">{{ entity.legalName }}</span>
+                                    <span>, a foreign corporation incorporated under the laws of </span>
+                                    <span class="upper-text">{{ entity.jurisdiction }}</span>
+                                    <span>
+                                        and registered as an extraprovincial company under the laws of
+                                        British Columbia with certificate number {{ entity.identifier }}
+                                    </span>
+
+                                {% else %}
+                                    <span class="upper-text">{{ entity.legalName }}</span>
+                                    <span>
+                                        , a foreign corporation incorporated under the laws of
+                                    </span>
+                                    <span class="upper-text">{{ entity.jurisdiction }}</span>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
+        [[amalgamation/certificateFooter.html]]
     </body>
-    [[common/certificateFooter.html]]
 </html>
