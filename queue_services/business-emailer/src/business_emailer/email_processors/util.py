@@ -165,15 +165,15 @@ FILING_ATTACHMENTS = {
             "extraPdfTypes": [],
         },
         "changeOfReceivers-appointReceiver": {
-            "attachments": ["Appoint Receiver/Receiver Manager", "Receipt"],
+            "attachments": ["Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfReceivers-ceaseReceiver": {
-            "attachments": ["Cease Receiver or Receiver Manager", "Receipt"],
+            "attachments": ["Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfReceivers-changeAddressReceiver": {
-            "attachments": ["Change of Address of Receiver/Receiver Manager", "Receipt"],
+            "attachments": ["Receipt"],
             "extraPdfTypes": [],
         },
         "consentContinuationOut": {
