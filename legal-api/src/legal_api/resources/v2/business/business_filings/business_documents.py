@@ -26,6 +26,7 @@ from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
 from pydantic import BaseModel
 
+from business_account import AccountService
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Document, UserRoles
 from business_model.models import Filing as FilingModel
@@ -118,7 +119,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
 
         if legal_filing_name:
             if legal_filing_name.lower().startswith("receipt"):
-                return _get_receipt(business, filing, jwt.get_token_auth_header())
+                return _get_receipt(business, filing)
 
             return get_pdf(filing.storage, legal_filing_name)
         elif file_key and (document := Document.find_by_file_key(file_key)):
@@ -206,7 +207,7 @@ def _get_document_list(business: Business, filing: Filing):
     return jsonify(document_list), HTTPStatus.OK
 
 
-def _get_receipt(business: Business, filing: Filing, token):
+def _get_receipt(business: Business, filing: Filing):
     """Get the receipt for the filing."""
     if filing.status not in (
             Filing.Status.COMPLETED,
@@ -223,8 +224,8 @@ def _get_receipt(business: Business, filing: Filing, token):
         filing.filing_type == "noticeOfWithdrawal"
     ):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
-
-    headers = {"Authorization": "Bearer " + token}
+    service_token = AccountService.get_bearer_token()
+    headers = {"Authorization": "Bearer " + service_token}
     add_account_linking_key_header(headers)
 
     corp_name = _get_corp_name(business, filing.storage)

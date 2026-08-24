@@ -1962,7 +1962,7 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
     assert rv_data == expected
 
 
-def test_get_receipt(session, client, jwt, requests_mock):
+def test_get_receipt(session, client, jwt, requests_mock, mocker):
     """Assert that a receipt is generated."""
     from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
 
@@ -1990,15 +1990,17 @@ def test_get_receipt(session, client, jwt, requests_mock):
                        json={'foo': 'bar'},
                        status_code=HTTPStatus.CREATED)
 
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='username')
+    service_token = 'service-token-abc'
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value=service_token)
 
-    content, status_code = _get_receipt(business, filing_core, token)
+    content, status_code = _get_receipt(business, filing_core)
 
     assert status_code == HTTPStatus.CREATED
     assert requests_mock.called_once
+    assert requests_mock.last_request.headers.get('Authorization') == f'Bearer {service_token}'
 
 
-def test_get_receipt_request_mock(session, client, jwt, requests_mock):
+def test_get_receipt_request_mock(session, client, jwt, requests_mock, mocker):
     """Assert that a receipt is generated."""
     from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
 
@@ -2025,6 +2027,9 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
                        json={'foo': 'bar'},
                        status_code=HTTPStatus.CREATED)
 
+    service_token = 'service-token-abc'
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value=service_token)
+
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
                     headers=create_header(jwt,
                                           [STAFF_ROLE],
@@ -2033,10 +2038,11 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
                     )
 
     assert rv.status_code == HTTPStatus.CREATED
-    assert requests_mock.called_once
+    assert requests_mock.called
+    assert requests_mock.last_request.headers.get('Authorization') == f'Bearer {service_token}'
 
 
-def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests_mock):
+def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests_mock, mocker):
     """Assert that the receipt call forwards the Account-Linking-Key header when present on the request."""
     identifier = 'CP7654321'
     business = factory_business(identifier)
@@ -2059,6 +2065,8 @@ def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests
     pay_mock = requests_mock.post(f"{current_app.config.get('PAYMENT_SVC_URL')}/{payment_id}/receipts",
                                   json={'foo': 'bar'},
                                   status_code=HTTPStatus.CREATED)
+
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value='service-token')
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
                     headers=create_header(jwt,
