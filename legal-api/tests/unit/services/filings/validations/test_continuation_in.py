@@ -808,16 +808,16 @@ def test_validate_continuation_in_expro_business_in_colin_founding_date_mismatch
         'foundingDate': '2009-07-23T07:00:00.000+00:00'
     }
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
-        status_code=HTTPStatus.OK,
-        json=lambda: {
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
+        {
             'business': {
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.',
                 # Different founding date to trigger validation error
                 'foundingDate': '2010-01-01T18:21:13-00:00'
             }
-        }
+        },
+        HTTPStatus.OK
     ))
 
     err = validate_continuation_in_expro_business_in_colin(
@@ -838,15 +838,15 @@ def test_validate_continuation_in_expro_business_in_colin_founding_date_match(mo
         'foundingDate': '2009-07-23T18:31:24-00:00'
     }
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
-        status_code=HTTPStatus.OK,
-        json=lambda: {
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
+        {
             'business': {
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.',
                 'foundingDate': '2009-07-23T18:31:24-00:00'
             }
-        }
+        },
+        HTTPStatus.OK
     ))
 
     err = validate_continuation_in_expro_business_in_colin(

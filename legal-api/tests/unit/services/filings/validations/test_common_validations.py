@@ -1059,8 +1059,8 @@ def test_validate_party_role_firms(mock_permission_service, mock_business, mock_
     else:
         mock_business.find_by_identifier.return_value = None
     
-    mock_response = type('Response', (), {'status_code': HTTPStatus.OK if business_in_colin else HTTPStatus.NOT_FOUND})()
-    mock_colin.query_business.return_value = mock_response
+    mock_colin.query_business.return_value = \
+        ({'business': {}}, HTTPStatus.OK) if business_in_colin else (None, HTTPStatus.NOT_FOUND)
 
     if has_permission:
         mock_permission_service.check_user_permission.return_value = None

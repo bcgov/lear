@@ -14,7 +14,6 @@
 
 """Test-Suite to ensure that the Business Report class is working as expected."""
 from http import HTTPStatus
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -148,12 +147,10 @@ def test_set_amalgamation_details(
     colin_call_count = {'count': 0}
 
     def mock_colin(identifier):
-        resp = MagicMock()
         colin_call_count['count'] += 1
-        resp.status_code = colin_status
         if colin_status == HTTPStatus.OK:
-            resp.json.return_value = {'business': {'jurisdiction': colin_jurisdiction}}
-        return resp
+            return {'business': {'jurisdiction': colin_jurisdiction}}, colin_status
+        return None, colin_status
 
     business_json = set_amalgamation_details(
         app, jwt, session, monkeypatch,
