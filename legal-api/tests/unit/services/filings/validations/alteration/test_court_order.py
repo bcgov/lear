@@ -17,6 +17,7 @@ import pytest
 
 from registry_schemas.example_data import COURT_ORDER_FILING_TEMPLATE
 from legal_api.services.filings import validate
+from legal_api.services.filings.validations.court_order import validate_court_order
 
 from tests.unit.models import factory_business
 

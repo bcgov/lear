@@ -1220,3 +1220,56 @@ def test_validate_invalid_court_orders_old(app, jwt, session, invalid_court_orde
         err = validate(business, filing)
     assert err
     assert err.msg[0]['error'] == error_msg
+
+
+@pytest.mark.parametrize('test_name, error_msg', [
+    ("court_order_not_found", "Court order not found."),
+    ("filing_id_does_not_match", "Filing Id does not match corrected filing Id."),
+    ("multiple_court_orders", "Only one court order can be added."),
+    ("multiple_court_orders_existing", "Only one court order can be added per filing."),
+])
+def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
+    """Assert not valid court order."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    invalid_court_order = {
+        'fileNumber': '123456789',
+        'effectOfOrder': 'planOfArrangement',
+        'orderDetails': 'Court order details',
+        "filingId": 5645646
+    }
+    ia_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    court_order_filing = factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
+    court_order = CourtOrder(
+        filing_id=ia_filing.id,
+        business_id=business.id,
+        effect_of_order='planOfArrangement',
+        order_details='Court order details'
+    )
+    court_order.save()
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = ia_filing.id
+    del filing['filing']['correction']['commentOnly']
+    if test_name == "court_order_not_found":
+        invalid_court_order["filingId"] = ia_filing.id
+        invalid_court_order["id"] = 99999999
+        filing['filing']['correction']['courtOrders'] = [invalid_court_order]
+    elif test_name == "filing_id_does_not_match":
+        invalid_court_order["filingId"] = 6546456
+        filing['filing']['correction']['courtOrders'] = [invalid_court_order]
+    elif test_name == "multiple_court_orders":
+        invalid_court_order["filingId"] = ia_filing.id
+        filing['filing']['correction']['courtOrders'] = [invalid_court_order, invalid_court_order]
+    elif test_name == "multiple_court_orders_existing":
+        invalid_court_order["filingId"] = ia_filing.id
+        invalid_court_order2 = copy.deepcopy(invalid_court_order)
+        invalid_court_order2["id"] = court_order.id
+        filing['filing']['correction']['courtOrders'] = [invalid_court_order, invalid_court_order2]
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert err
+    assert err.msg[0]['error'] == error_msg

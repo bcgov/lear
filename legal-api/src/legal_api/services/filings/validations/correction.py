@@ -204,7 +204,7 @@ def _validate_court_orders_correction(filing_dict, business: Business):
                     court_order_db := next(
                         (o for o in court_orders_db if o["filingType"] == corrected_filing_type), None
                     )
-                ) and next((o for o in orders if o["id"] == court_order_db["id"]), None)
+                ) and next((o for o in orders if o.get("id") == court_order_db["id"]), None)
             ):
                 msg.append({"error": _("Only one court order can be added per filing."), "path": path})
 

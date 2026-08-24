@@ -342,8 +342,8 @@ def validate_affidavit(filing_json, legal_type, dissolution_type) -> list:
         if not affidavit_file_key:
             msg.append({"error": _("A valid affidavit key is required."),
                      "path": affidavit_file_key_path})
-
-        msg.extend(validate_pdf(affidavit_file_key, affidavit_file_key_path))
+        else:
+            msg.extend(validate_pdf(affidavit_file_key, affidavit_file_key_path))
 
     return msg
 
