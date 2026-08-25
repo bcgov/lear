@@ -2379,29 +2379,33 @@ def test_get_file_data_drs_failure(session, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "test_name, filing_type, status, has_nr, expected",
+    "test_name, filing_type, status, has_nr, expected, exclude_own_id",
     [
         # All valid NR filing types in PENDING state are blocked
-        ("ia_pending", "incorporationApplication", "PENDING", True, True),
-        ("reg_pending", "registration", "PENDING", True, True),
-        ("amalg_pending", "amalgamationApplication", "PENDING", True, True),
-        ("cont_in_pending", "continuationIn", "PENDING", True, True),
-        ("alt_pending", "alteration", "PENDING", True, True),
-        ("con_name_pending", "changeOfName", "PENDING", True, True),
-        ("cor_reg_pending", "changeOfRegistration", "PENDING", True, True),
-        ("conv_pending", "conversion", "PENDING", True, True),
+        ("ia_pending", "incorporationApplication", "PENDING", True, True, False),
+        ("reg_pending", "registration", "PENDING", True, True, False),
+        ("amalg_pending", "amalgamationApplication", "PENDING", True, True, False),
+        ("cont_in_pending", "continuationIn", "PENDING", True, True, False),
+        ("alt_pending", "alteration", "PENDING", True, True, False),
+        ("con_name_pending", "changeOfName", "PENDING", True, True, False),
+        ("cor_reg_pending", "changeOfRegistration", "PENDING", True, True, False),
+        ("conv_pending", "conversion", "PENDING", True, True, False),
         # PAID filing blocks
-        ("ia_paid", "incorporationApplication", "PAID", True, True),
+        ("ia_paid", "incorporationApplication", "PAID", True, True, False),
         # DRAFT filing does not block
-        ("ia_draft", "incorporationApplication", "DRAFT", True, False),
+        ("ia_draft", "incorporationApplication", "DRAFT", True, False, False),
         # Valid NR filing type but no NR information present — does not block
-        ("ia_no_nr", "incorporationApplication", "PENDING", False, False),
+        ("ia_no_nr", "incorporationApplication", "PENDING", False, False, False),
         # Invalid NR filing type (dissolution is not in FILING_TYPES_WITH_NR) — does not block
-        ("dissolution_pending", "dissolution", "PENDING", True, False),
+        ("dissolution_pending", "dissolution", "PENDING", True, False, False),
+        # exclude_filing_id: excluding self does not block (continuationIn 2-step approval fix)
+        ("cont_in_self_exclude", "continuationIn", "PENDING", True, False, True),
+        # exclude_filing_id: excluding a different id still blocks
+        ("cont_in_other_exclude", "continuationIn", "PENDING", True, True, False),
     ]
 )
-def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, expected):
-    """Assert _nr_in_pending_filing blocks based on filing type, status, and NR presence."""
+def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, expected, exclude_own_id):
+    """Assert _nr_in_pending_filing blocks based on filing type, status, NR presence, and exclusion."""
     import random
     nr_number = f"NR {random.randint(1000000, 9999999)}"
 
@@ -2430,6 +2434,7 @@ def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, e
         f.filing_json = filing_json
         f.save()
     else:  # PENDING
-        factory_pending_filing(None, filing_json)
+        f = factory_pending_filing(None, filing_json)
 
-    assert _nr_in_pending_filing(nr_number) is expected
+    exclude_filing_id = f.id if exclude_own_id else None
+    assert _nr_in_pending_filing(nr_number, exclude_filing_id=exclude_filing_id) is expected

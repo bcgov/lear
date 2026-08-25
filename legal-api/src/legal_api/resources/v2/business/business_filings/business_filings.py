@@ -155,7 +155,7 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
             business_validate = business
-        err = validate(business_validate, json_input, payment_account_id)
+        err = validate(business_validate, json_input, payment_account_id, filing_id=filing_id)
         if err or query.only_validate:
             if err:
                 json_input["errors"] = err.msg

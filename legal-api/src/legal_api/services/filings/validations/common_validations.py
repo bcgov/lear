@@ -126,13 +126,16 @@ NR_BLOCKING_STATUSES = [
 ]
 
 
-def _nr_in_pending_filing(nr_number: str) -> bool:
+def _nr_in_pending_filing(nr_number: str, exclude_filing_id: int | None = None) -> bool:
     """Return True if the NR is already referenced in a non-draft/non-completed filing."""
     for filing_type in FILING_TYPES_WITH_NR:
-        if Filing.query.filter(
+        query = Filing.query.filter(
             Filing._status.in_([s.value for s in NR_BLOCKING_STATUSES]),
             Filing.filing_json["filing"][filing_type.value]["nameRequest"]["nrNumber"].astext == nr_number
-        ).first():
+        )
+        if exclude_filing_id:
+            query = query.filter(Filing.id != exclude_filing_id)
+        if query.first():
             return True
     return False
 
@@ -978,7 +981,8 @@ def _validate_relationship_date(date_value: date,
 def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
-                          accepted_request_types: list | None = None) -> list:
+                          accepted_request_types: list | None = None,
+                          filing_id: int | None = None) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -1012,7 +1016,7 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
         msg.append({"error": _("Name Request is not approved."), "path": nr_number_path})
 
     # ensure NR is not already referenced in another pending/paid filing
-    if _nr_in_pending_filing(nr_number):
+    if _nr_in_pending_filing(nr_number, exclude_filing_id=filing_id):
         msg.append({"error": _("Name Request is already part of a pending filing."),
                     "path": nr_number_path})
 

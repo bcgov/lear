@@ -43,7 +43,7 @@ from legal_api.services.utils import get_bool, get_str
 FOREIGN_JURISDICTION_IDENTIFIER_MAX_LENGTH = 50
 FOREIGN_JURISDICTION_LEGAL_NAME_MAX_LENGTH = 1000
 
-def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-branches;
+def validate(filing_json: dict, filing_id: int | None = None) -> Error | None:  # pylint: disable=too-many-branches;
     """Validate the Continuation In filing."""
     filing_type = "continuationIn"
     if not filing_json:
@@ -73,7 +73,7 @@ def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-bra
         foreign_jurisdiction,
         f"/filing/{filing_type}/foreignJurisdiction"
     ))
-    msg.extend(validate_name_request(filing_json, legal_type, filing_type))
+    msg.extend(validate_name_request(filing_json, legal_type, filing_type, filing_id=filing_id))
 
     if get_bool(filing_json, "/filing/continuationIn/isApproved"):
         msg.extend(validate_offices(filing_json, legal_type, filing_type))
