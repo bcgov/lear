@@ -53,7 +53,15 @@ from tests.unit.models import factory_business
           HTTPStatus.BAD_REQUEST, 'Allotted period to request extension has expired.'),
         ('FAIL_SUBSEQUENT_AGM_MORE_EXT_EXCEED_LIMIT', '2022-10-01',
          {'year': '2023','isFirstAgm': False, 'extReqForAgmYear': True, 'prevAgmRefDate':'2023-06-01', 'expireDateCurrExt':'2024-06-01'},
-          HTTPStatus.BAD_REQUEST, 'Company has received the maximum 12 months of allowable extensions.')
+          HTTPStatus.BAD_REQUEST, 'Company has received the maximum 12 months of allowable extensions.'),
+        ('SUCCESS_AGM_YEAR_EQUALS_INCORPORATION', '2023-10-01',
+         {'year': '2023', 'isFirstAgm': True, 'extReqForAgmYear': False,
+         'totalApprovedExt': 6, 'extensionDuration': 6},
+         None, None),
+        ('FAIL_AGM_YEAR_BEFORE_INCORPORATION', '2023-10-01',
+         {'year': '2022', 'isFirstAgm': True, 'extReqForAgmYear': False,
+         'totalApprovedExt': 6, 'extensionDuration': 6},
+         HTTPStatus.BAD_REQUEST, 'AGM year cannot be earlier than the incorporation year.'),
     ]
 )
 def test_validate_agm_extension(session, mocker, test_name, founding_date, agm_ext_json, expected_code, message, monkeypatch):
