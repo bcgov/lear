@@ -40,8 +40,8 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_structure,
 )
 from legal_api.services.filings.validations.continuation_in import (
+    validate_continuation_in_expro_business_in_colin,
     validate_continuation_in_foreign_jurisdiction,
-    validate_continuation_in_xpro_business_in_colin,
 )
 from legal_api.services.filings.validations.continuation_out import validate_continuation_out_date
 from legal_api.services.filings.validations.incorporation_application import (
@@ -172,6 +172,40 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
 
     msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
     msg.extend(_validate_out_correction(filing_dict, filing_type))
+    msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
+
+
+def _validate_amalgamation_correction(filing_dict, filing_type, business: Business):
+    msg = []
+    if not (
+        amalgamating_businesses_json := filing_dict["filing"][filing_type].get("amalgamation", {})
+            .get("amalgamatingBusinesses", [])
+    ):
+        return msg
+    
+    amalgamation = business.amalgamation.first()
+    amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+    for idx, ting_json in enumerate(amalgamating_businesses_json):
+        path = f"/filing/{filing_type}/amalgamation/amalgamatingBusinesses/{idx}"
+        ting_id = ting_json["id"]
+        ting = next((ting for ting in amalgamating_businesses if ting.id == ting_id), None)
+        if not ting:
+            msg.append({"error": _("Amalgamating business not found."), "path": path})
+            continue
+
+        if ting.business_id:
+            msg.append({"error": _("Can only correct foreign businesses."), "path": path})
+            continue
+
+        msg.extend(
+            validate_foreign_jurisdiction(
+                ting_json["foreignJurisdiction"],
+                f"{path}/foreignJurisdiction",
+                is_region_bc_valid=True,
+                is_region_for_us_required=False
+            )
+        )
+    return msg
 
 
 def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
@@ -183,9 +217,9 @@ def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
             f"/filing/{filing_type}/continuationIn",
             skip_affidavit=True
         ))
-        msg.extend(validate_continuation_in_xpro_business_in_colin(
-            continuation_in.get("xpro"),
-            f"/filing/{filing_type}/continuationIn/xpro",
+        msg.extend(validate_continuation_in_expro_business_in_colin(
+            continuation_in.get("expro"),
+            f"/filing/{filing_type}/continuationIn/expro",
             skip_founding_date=True
         ))
     return msg

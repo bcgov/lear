@@ -44,7 +44,6 @@ def test_court_order_json(session):
     """Assert that court order json property works."""
     business = factory_business('CP1234567')
     filing = factory_filing(business, data_dict={'filing': {'header': {'name': 'courtOrder'}}})
-    from datetime import timezone
     order_date = datetime.now(UTC)
 
     court_order = CourtOrder(
@@ -61,7 +60,7 @@ def test_court_order_json(session):
     assert co_json['id'] == court_order.id
     assert co_json['filingId'] == filing.id
     assert co_json['fileNumber'] == '12345'
-    assert co_json['orderDate'] == order_date
+    assert co_json['orderDate'] == order_date.isoformat()
     assert co_json['effectOfOrder'] == 'planOfArrangement'
     assert co_json['orderDetails'] == 'Some details'
 

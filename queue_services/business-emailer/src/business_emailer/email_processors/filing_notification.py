@@ -66,6 +66,7 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
         "alteration",
         "changeOfRegistration",
         "changeOfLiquidators",
+        "changeOfReceivers",
         "consentContinuationOut",
         "continuationOut",
         "dissolution",
@@ -211,7 +212,8 @@ def _skip_email_check(status: str, filing: Filing, legal_type: str, filing_name:
     invalid_data = not legal_type or not filing_name or not business_identifier
     skipped_coop_filing_types = ["annualReport", "changeOfDirectors", "changeOfAddress"]
     invalid_coop_filing = legal_type == Business.LegalTypes.COOP.value and filing.filing_type in skipped_coop_filing_types
-    invalid_dissolution_filing = filing.filing_type == "dissolution" and filing.filing_sub_type == "delay"
+    # no email for delay, involuntary handled separately
+    invalid_dissolution_filing = filing.filing_type == "dissolution" and filing.filing_sub_type in ["delay", "involuntary"]
 
     return invalid_status or invalid_data or invalid_coop_filing or invalid_dissolution_filing
 
@@ -314,6 +316,8 @@ def process(email_info: dict, token: str) -> dict | None:
     subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, filing_name_short)
     if filing_type in ["consentAmalgamationOut", "consentContinuationOut"]:
         subject = f"{business_name} - {filing_name_short} Granted"
+    elif filing_type == "changeOfReceivers":
+        subject = f"{business_name} - Confirmation of Receiver Change"
 
     return {
         "recipients": recipients,

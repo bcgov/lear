@@ -14,7 +14,6 @@
 
 """Test-Suite to ensure that the Business Report class is working as expected."""
 from http import HTTPStatus
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -113,22 +112,29 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
         assert template_data['entityAct']
 
 
-@pytest.mark.parametrize('foreign_id,foreign_country,foreign_region,colin_status,colin_jurisdiction,expected_id,expected_jurisdiction,expected_mock_calls',[
-    ('A1234567', 'CA', 'BC', 200, 'ON', 'A1234567', 'Ontario', 1),
-    ('A1234567', 'CA', 'BC', 200, 'FD', 'A1234567', 'Federal', 1),
-    ('A1234567', 'CA', 'BC', 200, None, 'A1234567', 'N/A', 1),
-    ('A1234567', 'US', 'WA', 404, None, 'N/A', 'United States', 1),
-    ('UK1234567', 'GB', None, None, None, 'N/A', 'United Kingdom', 0),
-], ids=[
-    'expro province',
-    'expro federal',
-    'expro no jurisdiction',
-    'Non expro with expro like identifier',
-    'Non expro',
-])
+@pytest.mark.parametrize(
+    'foreign_id,foreign_country,foreign_region,colin_status,colin_jurisdiction,'
+    'expected_id,expected_jurisdiction,expected_mock_calls,'
+    'expected_is_bc_company,expected_is_extraprovincial',
+    [
+        ('A1234567', 'CA', 'BC', 200, 'ON', 'A1234567', 'Ontario', 1, False, True),
+        ('A1234567', 'CA', 'BC', 200, 'FD', 'A1234567', 'Federal', 1, False, True),
+        ('A1234567', 'CA', 'BC', 200, None, 'A1234567', 'N/A', 1, False, True),
+        ('A1234567', 'US', 'WA', 404, None, 'N/A', 'United States', 1, False, False),
+        ('UK1234567', 'GB', None, None, None, 'N/A', 'United Kingdom', 0, False, False),
+    ], 
+    ids=[
+        'expro province',
+        'expro federal',
+        'expro no jurisdiction',
+        'Non expro with expro like identifier',
+        'Non expro',
+    ],
+)
 def test_set_amalgamation_details(
     session, app, jwt, monkeypatch, foreign_id, foreign_country, foreign_region,
-    colin_status, colin_jurisdiction, expected_id, expected_jurisdiction, expected_mock_calls
+    colin_status, colin_jurisdiction, expected_id, expected_jurisdiction, expected_mock_calls,
+    expected_is_bc_company, expected_is_extraprovincial
 ):
     """Assert that expros resolve as expected. 
     
@@ -148,12 +154,10 @@ def test_set_amalgamation_details(
     colin_call_count = {'count': 0}
 
     def mock_colin(identifier):
-        resp = MagicMock()
         colin_call_count['count'] += 1
-        resp.status_code = colin_status
         if colin_status == HTTPStatus.OK:
-            resp.json.return_value = {'business': {'jurisdiction': colin_jurisdiction}}
-        return resp
+            return {'business': {'jurisdiction': colin_jurisdiction}}, colin_status
+        return None, colin_status
 
     business_json = set_amalgamation_details(
         app, jwt, session, monkeypatch,
@@ -169,6 +173,8 @@ def test_set_amalgamation_details(
     assert entity['identifier'] == expected_id
     assert entity['jurisdiction'] == expected_jurisdiction
     assert entity['legalName'] == foreign_name
+    assert entity['isBcCompany'] is expected_is_bc_company
+    assert entity['isExtraprovincial'] is expected_is_extraprovincial
 
 
 @pytest.mark.parametrize('has_receiver, cessation_date, expected_count', [
@@ -216,3 +222,4 @@ def test_summary_includes_receivers(session, app, jwt, has_receiver, cessation_d
 
         if expected_count > 0:
             assert template_data['receivers'][0]['role'] == 'receiver'
+

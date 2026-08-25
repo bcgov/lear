@@ -367,6 +367,9 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('COMPLETED', 'changeOfLiquidators', 'ceaseLiquidator', None, None, 'BC1234567'),
     ('COMPLETED', 'changeOfLiquidators', 'changeAddressLiquidator', None, None, 'BC1234567'),
     ('COMPLETED', 'changeOfLiquidators', 'liquidationReport', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfReceivers', 'appointReceiver', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfReceivers', 'ceaseReceiver', None, None, 'BC1234567'),
+    ('COMPLETED', 'changeOfReceivers', 'changeAddressReceiver', None, None, 'BC1234567'),
 ])
 def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock_user_email, mock_auth_recipient,
                                   status, filing_type, filing_sub_type, submitter_role, legal_type, identifier):
@@ -381,7 +384,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     # test processor
     email = process_filing(filing, filing_type, status)
 
-    if filing_type in ['alteration', 'changeOfLiquidators', 'consentContinuationOut', 'continuationOut', 'dissolution']:
+    if filing_type in ['alteration', 'changeOfLiquidators', 'changeOfReceivers', 'consentContinuationOut', 'continuationOut', 'dissolution']:
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
         else:
@@ -546,6 +549,18 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     ('changeOfLiquidators', 'liquidationReport', None, 'COMPLETED', False, False, [
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
     ]),
+    ('changeOfReceivers', 'appointReceiver', None, 'COMPLETED', False, False, [
+        {'fileName': 'Appoint Receiver/Receiver Manager.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfReceivers', 'ceaseReceiver', None, 'COMPLETED', False, False, [
+        {'fileName': 'Cease Receiver or Receiver Manager.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('changeOfReceivers', 'changeAddressReceiver', None, 'COMPLETED', False, False, [
+        {'fileName': 'Change of Address of Receiver/Receiver Manager.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
 ], ids=[
     'alteration - PAID no name change',
     'alteration - PAID name change included',
@@ -573,7 +588,10 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'changeOfLiquidators - appointLiquidator',
     'changeOfLiquidators - ceaseLiquidator',
     'changeOfLiquidators - changeAddressLiquidator',
-    'changeOfLiquidators - liquidationReport (receipt only)'
+    'changeOfLiquidators - liquidationReport (receipt only)',
+    'changeOfReceivers - appointReceiver',
+    'changeOfReceivers - ceaseReceiver',
+    'changeOfReceivers - changeAddressReceiver'
 ])
 def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email, mock_auth_recipient,
                                         filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments):
@@ -781,6 +799,30 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'COMPLETED',
         'You have successfully filed your liquidation report with the BC Business Registry',
         'test business - Successful Liquidation Report',
+        []
+    ),
+    (
+        'changeOfReceivers',
+        'appointReceiver',
+        'COMPLETED',
+        'Your receiver/receiver manager information has been successfully updated',
+        'test business - Confirmation of Receiver Change',
+        []
+    ),
+    (
+        'changeOfReceivers',
+        'ceaseReceiver',
+        'COMPLETED',
+        'Your receiver/receiver manager information has been successfully updated',
+        'test business - Confirmation of Receiver Change',
+        []
+    ),
+    (
+        'changeOfReceivers',
+        'changeAddressReceiver',
+        'COMPLETED',
+        'Your receiver/receiver manager information has been successfully updated',
+        'test business - Confirmation of Receiver Change',
         []
     ),
 ])
@@ -1077,6 +1119,18 @@ def test_correction_filing_header_and_subject(session, config, mock_pdfs, mock_r
 def test_dissolution_delay_returns_none(app, session):
     """Assert that a delay of dissolution filing does not send the dissolution email."""
     filing = prep_maintenance_filing(session, 'BC1234567', '1', 'COMPLETED', 'dissolution', 'delay')
+
+    result = process_filing(filing, 'dissolution', 'COMPLETED')
+
+    assert result is None
+
+
+def test_dissolution_involuntary_returns_none(app, session):
+    """Assert that an involuntary dissolution filing does not send the dissolution email.
+
+    Involuntary dissolution is notified via the stage 1 furnishing email instead.
+    """
+    filing = prep_maintenance_filing(session, 'BC1234567', '1', 'COMPLETED', 'dissolution', 'involuntary')
 
     result = process_filing(filing, 'dissolution', 'COMPLETED')
 

@@ -290,6 +290,8 @@ class _Config():  # pylint: disable=too-few-public-methods
     MIG_GROUP_IDS = os.getenv('MIG_GROUP_IDS')
     MIG_BATCH_IDS = os.getenv('MIG_BATCH_IDS')
 
+    SAVE_DEMIGRATED_LEAR_FILINGS = os.getenv('SAVE_DEMIGRATED_LEAR_FILINGS', 'False') == 'True'
+
     # ------------------------------------------------------------------------------------------
     # Auth-only flows (auth_processing tracking)
     # ------------------------------------------------------------------------------------------

@@ -58,14 +58,17 @@ class CourtOrder(db.Model, Versioned):
 
     @property
     def json(self) -> dict:
-        return {
+        data = {
             "id": self.id,
             "filingId": self.filing_id,
             "fileNumber": self.file_number,
-            "orderDate": self.order_date,
             "effectOfOrder": self.effect_of_order,
             "orderDetails": self.order_details
         }
+        if self.order_date:
+            data["orderDate"] = self.order_date.isoformat()
+
+        return data
   
     def save(self):
         db.session.add(self)

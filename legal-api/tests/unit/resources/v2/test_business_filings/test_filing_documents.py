@@ -1962,7 +1962,7 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
     assert rv_data == expected
 
 
-def test_get_receipt(session, client, jwt, requests_mock):
+def test_get_receipt(session, client, jwt, requests_mock, mocker):
     """Assert that a receipt is generated."""
     from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
 
@@ -1990,15 +1990,17 @@ def test_get_receipt(session, client, jwt, requests_mock):
                        json={'foo': 'bar'},
                        status_code=HTTPStatus.CREATED)
 
-    token = helper_create_jwt(jwt, roles=[STAFF_ROLE], username='username')
+    service_token = 'service-token-abc'
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value=service_token)
 
-    content, status_code = _get_receipt(business, filing_core, token)
+    content, status_code = _get_receipt(business, filing_core)
 
     assert status_code == HTTPStatus.CREATED
     assert requests_mock.called_once
+    assert requests_mock.last_request.headers.get('Authorization') == f'Bearer {service_token}'
 
 
-def test_get_receipt_request_mock(session, client, jwt, requests_mock):
+def test_get_receipt_request_mock(session, client, jwt, requests_mock, mocker):
     """Assert that a receipt is generated."""
     from legal_api.resources.v2.business.business_filings.business_documents import _get_receipt
 
@@ -2025,6 +2027,9 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
                        json={'foo': 'bar'},
                        status_code=HTTPStatus.CREATED)
 
+    service_token = 'service-token-abc'
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value=service_token)
+
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
                     headers=create_header(jwt,
                                           [STAFF_ROLE],
@@ -2033,10 +2038,11 @@ def test_get_receipt_request_mock(session, client, jwt, requests_mock):
                     )
 
     assert rv.status_code == HTTPStatus.CREATED
-    assert requests_mock.called_once
+    assert requests_mock.called
+    assert requests_mock.last_request.headers.get('Authorization') == f'Bearer {service_token}'
 
 
-def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests_mock):
+def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests_mock, mocker):
     """Assert that the receipt call forwards the Account-Linking-Key header when present on the request."""
     identifier = 'CP7654321'
     business = factory_business(identifier)
@@ -2059,6 +2065,8 @@ def test_get_receipt_forwards_account_linking_key(session, client, jwt, requests
     pay_mock = requests_mock.post(f"{current_app.config.get('PAYMENT_SVC_URL')}/{payment_id}/receipts",
                                   json={'foo': 'bar'},
                                   status_code=HTTPStatus.CREATED)
+
+    mocker.patch('business_account.AccountService.get_bearer_token', return_value='service-token')
 
     rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt',
                     headers=create_header(jwt,
@@ -2220,3 +2228,45 @@ def test_get_static_document_by_file_key_shape(session, client, jwt, mocker):
     assert rv.status_code == HTTPStatus.OK
     mock_drs.assert_called_once_with('DS0000101951', 'CORP', doc_binary=True)
     assert rv.data == b'drs-pdf'
+
+
+def test_admin_dissolution_firm_documents_no_certificate(app, session, client, jwt, monkeypatch, mock_drs_service):
+    """Firm (SP/GP) administrative dissolution must build its document list without error.
+
+    Regression for bcgov/entity#33806: alter_outputs_dissolution did
+    outputs.remove('certificateOfDissolution') for administrative dissolutions, but
+    firms carry no certificate output, so the set.remove raised KeyError and the
+    documents/ledger endpoint returned HTTP 400 (surfacing as "deleted" ledger history).
+    """
+    identifier = 'FM7654321'
+    business = factory_business(identifier, entity_type='SP')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'dissolution'
+    filing_json['filing']['business']['legalType'] = 'SP'
+    filing_json['filing']['dissolution'] = ADMIN_DISSOLUTION
+
+    filing = factory_filing(business, filing_json, filing_date=datetime.now(UTC))
+    filing.skip_status_listener = True
+    filing._status = Filing.Status.COMPLETED
+    filing._payment_completion_date = '2017-10-01'
+    lf = [list(x.keys()) for x in filing.legal_filings()]
+    legal_filings = [item for sublist in lf for item in sublist]
+    filing._meta_data = {'legalFilings': legal_filings}
+    filing.save()
+
+    account_id = '1'
+    headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
+    with app.test_request_context():
+        monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
+        with requests_mock.Mocker() as m:
+            m.get(f"{app.config['AUTH_SVC_URL']}/orgs/{account_id}/products?include_hidden=true",
+                  json=[], status_code=HTTPStatus.OK)
+            rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents',
+                            headers=headers)
+
+    assert rv.status_code == HTTPStatus.OK
+    documents = rv.json['documents']
+    assert 'certificateOfDissolution' not in documents
+    assert {'dissolution': f'{base_url}/api/v2/businesses/{identifier}/filings/{filing.id}/documents/dissolution'} \
+        in documents['legalFilings']

@@ -23,13 +23,14 @@ from unittest.mock import patch
 
 import pytest
 
-from business_model.models import Business, Resolution
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Resolution
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings import validate
 from registry_schemas.example_data import (
+    AMALGAMATION_APPLICATION,
     AMALGAMATION_OUT,
     CORRECTION_INCORPORATION,
     CONTINUATION_IN_FILING_TEMPLATE,
@@ -776,7 +777,7 @@ def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
         assert err is None
 
 
-def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session, jwt):
+def test_validate_continuation_in_expro_founding_date_match(mocker, app, session, jwt):
     """Assert continuation EXPRO business with matching founding date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='C')
@@ -792,7 +793,7 @@ def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session,
         'legalName': 'HAULER SERVICES',
         'identifier': 'AB1234567',
         'incorporationDate': dt.now().date().isoformat(),
-        'xpro': {
+        'expro': {
             'identifier': 'A0077779',
             'legalName': 'Test Company Inc.'
         }
@@ -800,14 +801,14 @@ def test_validate_continuation_in_xpro_founding_date_match(mocker, app, session,
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
-        status_code=HTTPStatus.OK,
-        json=lambda: {
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
+        {
             'business': {
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.'
             }
-        }
+        },
+        HTTPStatus.OK
     ))
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
@@ -919,3 +920,164 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
             assert message == err.msg[0]['error']
     else:
         assert not err
+
+
+def test_validate_correction_amalgamation_ting_not_found(mocker, app, session, jwt):
+    """Assert that an error is raised if the correction amalgamation filing has an id that doesn't exist"""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing_type = 'amalgamationApplication'
+    data, corrected_filing = _create_amalgation_business(business)
+    del data['amalgamatingBusinesses'][0]
+    data['amalgamatingBusinesses'][0]['id'] = 986546516
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction']['amalgamation'] = data
+    filing['filing']['business']['legalType'] = 'BC'
+    del filing['filing']['correction']['commentOnly']
+
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    assert len(err.msg) == 1
+    assert err.msg[0]['error'] == 'Amalgamating business not found.'
+    assert err.msg[0]['path'] == '/filing/correction/amalgamation/amalgamatingBusinesses/0'
+
+
+@pytest.mark.parametrize(
+    'test_name, expected_code, message',
+    [
+        ('FAIL_NO_COUNTRY', HTTPStatus.UNPROCESSABLE_ENTITY, None),
+        ('FAIL_INVALID_COUNTRY', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('FAIL_INVALID_REGION', HTTPStatus.BAD_REQUEST, 'Invalid region.'),
+        ('SUCCESS', None, None)
+    ]
+)
+def test_validate_correction_amalgamation_foreign_jurisdiction(mocker, app, session, jwt, test_name, expected_code, message):
+    """Assert that an error is raised if the correction amalgamation filing has an invalid business"""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing_type = 'amalgamationApplication'
+    data, corrected_filing = _create_amalgation_business(business)
+    del data['amalgamatingBusinesses'][0]
+
+    if test_name == 'FAIL_NO_COUNTRY':
+        del data['amalgamatingBusinesses'][0]['foreignJurisdiction']['country']
+    elif test_name == 'FAIL_INVALID_COUNTRY':
+        data['amalgamatingBusinesses'][0]['foreignJurisdiction']['country'] = 'NONE'
+    elif test_name == 'FAIL_INVALID_REGION':
+        data['amalgamatingBusinesses'][0]['foreignJurisdiction']['region'] = 'NONE'
+    elif test_name == 'FAIL_INVALID_US_REGION':
+        data['amalgamatingBusinesses'][0]['foreignJurisdiction']['country'] = 'US'
+        data['amalgamatingBusinesses'][0]['foreignJurisdiction']['region'] = 'NONE'
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction']['amalgamation'] = data
+    filing['filing']['business']['legalType'] = 'BC'
+    del filing['filing']['correction']['commentOnly']
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err
+
+
+def test_validate_correction_amalgamation_ting_invalid(mocker, app, session, jwt):
+    """Assert that an error is raised if the correction amalgamation filing has an invalid business"""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing_type = 'amalgamationApplication'
+    data, corrected_filing = _create_amalgation_business(business)
+    data['amalgamatingBusinesses'][0]['foreignJurisdiction'] = {
+        'country': 'CA',
+        'region': 'AB',
+    }
+    data['amalgamatingBusinesses'][0]['legalName'] = 'HAULER SERVICES'
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction']['amalgamation'] = data
+    filing['filing']['business']['legalType'] = 'BC'
+    del filing['filing']['correction']['commentOnly']
+
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    assert len(err.msg) == 1
+    assert err.msg[0]['error'] == 'Can only correct foreign businesses.'
+    assert err.msg[0]['path'] == '/filing/correction/amalgamation/amalgamatingBusinesses/0'
+
+
+def _create_amalgation_business(business):
+    amalgamating_identifier = 'BC1234567'
+    amalgamating_business = factory_business(amalgamating_identifier, entity_type='BC')
+    filing_type = "amalgamationApplication"
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing'][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing_json['filing']['header']['name'] = filing_type
+
+    filing = factory_completed_filing(business, filing_json)
+    amalgamating_business_json = [
+        {
+            'role': 'amalgamating',
+            'identifier': amalgamating_identifier
+        },
+        {
+            'role': 'amalgamating',
+            'foreignJurisdiction': {
+                'country': 'CA',
+                'region': 'AB',
+            },
+            'legalName': 'HAULER SERVICES',
+            'identifier': 'AB1234567'
+        }
+    ]
+
+    data = {
+        'courtApproval': False,
+        'amalgamatingBusinesses':amalgamating_business_json
+    }
+    amalgamation = Amalgamation(
+        amalgamation_type=Amalgamation.AmalgamationTypes.regular,
+        amalgamation_date=LegislationDatetime.now(),
+        court_approval=False,
+        filing_id=filing.id,
+        business_id=business.id,
+    )
+    amalgamation.amalgamating_businesses.append(AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        business_id=amalgamating_business.id
+    ))
+    amalgamation.amalgamating_businesses.append(AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        foreign_jurisdiction=amalgamating_business_json[1]['foreignJurisdiction']['country'],
+        foreign_jurisdiction_region=amalgamating_business_json[1]['foreignJurisdiction']['region'],
+        foreign_name=amalgamating_business_json[1]['legalName'],
+        foreign_identifier=amalgamating_business_json[1]['identifier']
+    ))
+    business.amalgamation.append(amalgamation)
+    business.save()
+    for ting in amalgamation.amalgamating_businesses.all():
+        if ting.business_id:
+            amalgamating_business_json[0]['id'] = ting.id
+        else:
+            amalgamating_business_json[1]['id'] = ting.id
+    return data, filing

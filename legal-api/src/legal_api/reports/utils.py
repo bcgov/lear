@@ -65,6 +65,9 @@ def get_formatted_amalg_business_data(
     ting_business: Business | None = None
 ):
     """Return the amalgamation business data for the report output."""
+    is_bc_company = False
+    is_extraprovincial = False
+
     if foreign_name:
         # Set identifier to 'N/A' for foreign businesses (we are showing the 'Number in BC' in the output)
         display_identifier = "N/A"
@@ -73,15 +76,14 @@ def get_formatted_amalg_business_data(
         region_code = foreign_region_code
         # FUTURE: rework this once expros are in lear
         # Check if this is an expro
-        if (identifier
-            and identifier.startswith("A")
-            and (colin_resp := ColinService.query_business(identifier))
-            and colin_resp.status_code == HTTPStatus.OK
-        ):
-            # this is an expro so set the identifier (it is the BC expro identifier)
-            display_identifier = identifier
-            # overwrite the region_code if jurisdiction is available in the response
-            region_code = colin_resp.json().get("business", {}).get("jurisdiction")
+        if identifier and identifier.startswith("A"):
+            colin_json, colin_status = ColinService.query_business(identifier)
+            if colin_json is not None and colin_status == HTTPStatus.OK:
+                # this is an expro so set the identifier (it is the BC expro identifier)
+                display_identifier = identifier
+                is_extraprovincial = True
+                # overwrite the region_code if jurisdiction is available in the response
+                region_code = colin_json.get("business", {}).get("jurisdiction")
             
     else:
         if not ting_business:
@@ -93,11 +95,14 @@ def get_formatted_amalg_business_data(
         business_legal_name = ting_business.legal_name
         country_code = "CA"
         region_code = "BC"
+        is_bc_company = True
 
     jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
     
     return {
         "legalName": business_legal_name or "N/A",
         "identifier": display_identifier or "N/A",
-        "jurisdiction": jurisdiction or "N/A"
+        "jurisdiction": jurisdiction or "N/A",
+        "isBcCompany": is_bc_company,
+        "isExtraprovincial": is_extraprovincial
     }

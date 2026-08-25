@@ -1951,7 +1951,7 @@ def test_submit_or_resubmit_filing(session, client, jwt, mocker, requests_mock, 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_xpro_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     if filing_status == Filing.Status.APPROVED.value:
