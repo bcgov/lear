@@ -797,7 +797,5 @@ def validate_amalgamation_court_order(filing: dict, filing_type) -> list:
     """Validate court order."""
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
+        return validate_court_order(court_order_path, court_order)
     return []

@@ -18,7 +18,6 @@ from flask_babel import _ as babel
 
 from business_model.models import Business
 from legal_api.errors import Error
-from legal_api.services.utils import get_str
 
 
 def validate(business: Business, registrars_order: dict) -> Error | None:
@@ -27,16 +26,16 @@ def validate(business: Business, registrars_order: dict) -> Error | None:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
     msg = []
 
-    effect_of_order = get_str(registrars_order, "/filing/registrarsOrder/effectOfOrder")
-    if effect_of_order:
+    data = registrars_order["filing"]["registrarsOrder"]
+    path = "/filing/registrarsOrder"
+    if effect_of_order := data.get("effectOfOrder"):
         if effect_of_order == "planOfArrangement":
-            file_number = get_str(registrars_order, "/filing/registrarsOrder/fileNumber")
-            if not file_number:
+            if not data.get("fileNumber"):
                 msg.append({"error": babel(
                     "Court Order Number is required when this filing is pursuant to a Plan of Arrangement."),
-                    "path": "/filing/registrarsOrder/fileNumber"})
+                    "path": f"{path}/fileNumber"})
         else:
-            msg.append({"error": babel("Invalid effectOfOrder."), "path": "/filing/registrarsOrder/effectOfOrder"})
+            msg.append({"error": babel("Invalid effectOfOrder."), "path": f"{path}/effectOfOrder"})
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)

@@ -209,8 +209,7 @@ def validate_continuation_in_foreign_jurisdiction(
     ):
         affidavit_file_key_path = f"{foreign_jurisdiction_path}/affidavitFileKey"
         if file_key := foreign_jurisdiction.get("affidavitFileKey"):
-            if err := validate_pdf(file_key, affidavit_file_key_path, False):
-                msg.extend(err)
+            msg.extend(validate_pdf(file_key, affidavit_file_key_path, False))
         else:
             msg.append({"error": "Affidavit from the directors is required.", "path": affidavit_file_key_path})
 
@@ -234,8 +233,7 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str, 
     for index, file in enumerate(file_list):
         file_key = file["fileKey"]
         file_key_path = f"{authorization_path}/files/{index}/fileKey"
-        if err := validate_pdf(file_key, file_key_path, False):
-            msg.extend(err)
+        msg.extend(validate_pdf(file_key, file_key_path, False))
 
     return msg
 
@@ -244,9 +242,7 @@ def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
     """Validate court order."""
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
+        return validate_court_order(court_order_path, court_order)
     return []
 
 

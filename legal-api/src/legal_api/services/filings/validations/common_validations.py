@@ -533,48 +533,41 @@ def validate_share_currency(filing_json, filing_type, business=None):
     return msg
 
 
-def validate_court_order(court_order_path, court_order):
+def validate_court_order(
+    court_order_path: str,
+    court_order: dict,
+    is_file_or_details_required: bool = False
+) -> list[dict]:
     """Validate the courtOrder data of the filing."""
     msg = []
 
-    # TODO remove it when the issue with schema validation is fixed
-    min_file_number_length: Final = 5
-    max_file_number_length: Final = 20
-    if "fileNumber" not in court_order:
-        err_path = court_order_path + "/fileNumber"
-        msg.append({"error": "Court order file number is required.", "path": err_path})
-    elif (
-        len(court_order["fileNumber"]) < min_file_number_length or
-        len(court_order["fileNumber"]) > max_file_number_length
-    ):
-        err_path = court_order_path + "/fileNumber"
-        msg.append({"error": "Length of court order file number must be from 5 to 20 characters.",
-                    "path": err_path})
-
-    if (effect_of_order := court_order.get("effectOfOrder", None)) and effect_of_order != "planOfArrangement":
+    if (effect_of_order := court_order.get("effectOfOrder")) and effect_of_order != "planOfArrangement":
         msg.append({"error": "Invalid effectOfOrder.", "path": f"{court_order_path}/effectOfOrder"})
 
-    court_order_date_path = court_order_path + "/orderDate"
-    if "orderDate" in court_order:
-        try:
-            court_order_date = dt.fromisoformat(court_order["orderDate"])
-            if court_order_date.timestamp() > datetime.now(UTC).timestamp():
-                err_path = court_order_date_path
-                msg.append({"error": "Court order date cannot be in the future.", "path": err_path})
-        except ValueError:
-            err_path = court_order_date_path
-            msg.append({"error": "Invalid court order date format.", "path": err_path})
-            
+    if order_date := court_order.get("orderDate"):
+        court_order_date = dt.fromisoformat(order_date)
+        if court_order_date.timestamp() > datetime.now(UTC).timestamp():
+            msg.append({"error": "Court order date cannot be in the future.", "path": f"{court_order_path}/orderDate"})
+
+    if is_file_or_details_required:
+        file_key_path = f"{court_order_path}/fileKey"
+        file_key = court_order.get("fileKey")
+
+        if not court_order.get("orderDetails") and not file_key:
+            msg.append({"error": _("Court Order is required (in orderDetails/fileKey)."), "path": court_order_path})
+
+        if file_key:
+            msg.extend(validate_pdf(file_key, file_key_path))
+
     if flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
         message = "Permission Denied - You do not have permissions add court order details in this filing."
         permission_error = PermissionService.check_user_permission(required_permission, message=message)
         if permission_error:
             msg.append({"error": permission_error.msg[0].get("message", message), "path": court_order_path})
-    if msg:
-        return msg
 
-    return None
+    return msg
+
 
 def check_good_standing_permission(business: Business) -> Error | None:
     """Check if user has permission to file for a business not in good standing."""
@@ -587,6 +580,7 @@ def check_good_standing_permission(business: Business) -> Error | None:
     required_permission = ListActionsPermissionsAllowed.OVERRIDE_NIGS.value
     message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
     return PermissionService.check_user_permission(required_permission, message=message)
+
 
 def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list | None:
     """Validate the PDF file."""
@@ -617,10 +611,8 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         current_app.logger.debug(f"Error validating PDF: {ex}")
         msg.append({"error": _("Invalid file."), "path": file_key_path})
 
-    if msg:
-        return msg
+    return msg
 
-    return None
 
 def _get_file_data(file_key: str) -> tuple[bytes, int]:
     """Return (file_bytes, file_size) for a DRS-backed file_key."""

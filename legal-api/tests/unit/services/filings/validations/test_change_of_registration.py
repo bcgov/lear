@@ -272,7 +272,7 @@ def test_invalid_business_address(session, test_name, filing):
 @pytest.mark.parametrize(
     'test_status, file_number, effect_of_order, expected_code, expected_msg',
     [
-        ('FAIL', None, 'planOfArrangement', HTTPStatus.BAD_REQUEST, 'Court order file number is required.'),
+        ('FAIL', None, 'planOfArrangement', HTTPStatus.UNPROCESSABLE_ENTITY, "'fileNumber' is a required property"),
         ('FAIL', '12345678901234567890', 'invalid', HTTPStatus.BAD_REQUEST, 'Invalid effectOfOrder.'),
         ('SUCCESS', '12345678901234567890', 'planOfArrangement', None, None)
     ]
@@ -290,9 +290,11 @@ def test_change_of_registration_court_orders(session, test_status, file_number, 
     business = Business(identifier=filing['filing']['business']['identifier'],
                         legal_type=filing['filing']['business']['legalType'])
 
+    from legal_api.services.filings import validate as _validate
+
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            err = validate(business, filing)
+            err = _validate(business, filing)
 
     # validate outcomes
     if test_status == 'FAIL':

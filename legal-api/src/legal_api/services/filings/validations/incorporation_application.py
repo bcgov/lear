@@ -298,15 +298,11 @@ def validate_cooperative_documents(incorporation_json: dict):
 
     rules_file_key = cooperative["rulesFileKey"]
     rules_file_key_path = "/filing/incorporationApplication/cooperative/rulesFileKey"
-    rules_err = validate_pdf(rules_file_key, rules_file_key_path)
-    if rules_err:
-        msg.extend(rules_err)
+    msg.extend(validate_pdf(rules_file_key, rules_file_key_path))
 
     memorandum_file_key = cooperative["memorandumFileKey"]
     memorandum_file_key_path = "/filing/incorporationApplication/cooperative/memorandumFileKey"
-    memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
-    if memorandum_err:
-        msg.extend(memorandum_err)
+    msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
 
     return msg
 
@@ -315,9 +311,7 @@ def validate_ia_court_order(filing: dict) -> list:
     """Validate court order."""
     if court_order := filing.get("filing", {}).get("incorporationApplication", {}).get("courtOrder", None):
         court_order_path: Final = "/filing/incorporationApplication/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
+        return validate_court_order(court_order_path, court_order)
     return []
 
 def _validate_incorporation_permission(

@@ -76,9 +76,7 @@ def court_order_validation(filing):
     """Validate court order."""
     court_order_path: Final = "/filing/alteration/courtOrder"
     if get_str(filing, court_order_path):
-        err = validate_court_order(court_order_path, filing["filing"]["alteration"]["courtOrder"])
-        if err:
-            return err
+        return validate_court_order(court_order_path, filing["filing"]["alteration"]["courtOrder"])
     return []
 
 
@@ -207,15 +205,10 @@ def rules_change_validation(filing):
         error_msg = "Cannot provide both file upload and rules change in SR"
         msg.append({"error": babel(error_msg),
                     "path": rules_file_key_path + " and " + rules_change_in_sr_path})
-        return msg
+    elif rules_file_key:
+        msg.extend(validate_pdf(rules_file_key, rules_file_key_path))
 
-    if rules_file_key:
-        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
-        if rules_err:
-            msg.extend(rules_err)
-        return msg
-
-    return []
+    return msg
 
 
 def memorandum_change_validation(filing):
@@ -231,11 +224,7 @@ def memorandum_change_validation(filing):
         error_msg = "Cannot provide both file upload and memorandum change in SR"
         msg.append({"error": babel(error_msg),
                     "path": memorandum_file_key + " and " + memorandum_change_in_sr_path})
-        return msg
-
-    if memorandum_file_key:
-        memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
-        if memorandum_err:
-            msg.extend(memorandum_err)
+    elif memorandum_file_key:
+        msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
 
     return msg

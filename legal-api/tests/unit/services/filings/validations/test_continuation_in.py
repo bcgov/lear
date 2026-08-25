@@ -85,7 +85,7 @@ def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
             'consumptionDate': ''
         }]
     }
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
@@ -124,7 +124,7 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     filing['filing']['continuationIn']['parties'] = []
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -168,7 +168,7 @@ def test_continuation_in_parties_invalid_role(mocker, app, session, parties, exp
         p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
         filing['filing']['continuationIn']['parties'].append(p)
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin', return_value=[])
 
@@ -375,7 +375,7 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
     recoffice['mailingAddress']['addressCountry'] = mailing_country
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -681,7 +681,7 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
         share_structure['shareClasses'][0]['series'][1]['name'] = series_name_2
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -723,7 +723,7 @@ def test_continuation_in_court_orders(mocker, app, session,
     filing['filing']['continuationIn']['courtOrder'] = court_order
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -761,7 +761,7 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
     del filing['filing']['continuationIn']['foreignJurisdiction']['affidavitFileKey']
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -787,7 +787,7 @@ def test_validate_continuation_in_expro_business_in_colin(mocker, app, session, 
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -882,7 +882,7 @@ def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
     }
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_foreign_jurisdiction', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
 
     # Run the validation function
     foreign_jurisdiction = filing['filing']['continuationIn']['foreignJurisdiction']
@@ -913,7 +913,7 @@ def test_validate_before_and_after_approval(mocker, app, session, test_status, i
     del filing['filing']['continuationIn']['parties']
     del filing['filing']['continuationIn']['shareStructure']
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -973,7 +973,7 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
                     share_class.pop('series', None)
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
@@ -1016,7 +1016,7 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
             del filing['filing']['continuationIn']['parties'][0]['deliveryAddress']
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin', return_value=[])
 
@@ -1079,7 +1079,7 @@ def test_validate_continuation_in_effective_date(mocker, app, session, jwt, test
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'CBEN'
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin', return_value=[])
 
@@ -1190,7 +1190,7 @@ def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_foreign_jurisdiction',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
 
     err = validate_continuation_in_foreign_jurisdiction('C', foreign_jurisdiction, '/filing/continuationIn/foreignJurisdiction')
 
