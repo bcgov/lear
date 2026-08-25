@@ -70,9 +70,19 @@ def test_valid_amalgamating_business_save(session):
     )
     amalgamating_business_2.save()
 
+    amalgamating_business_3 = AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        colin_identifier="BC7654321",
+        amalgamation_id=amalgamation.id
+    )
+    amalgamating_business_3.save()
+
     # verify
     assert amalgamating_business_1.id
     assert amalgamating_business_2.id
+    assert amalgamating_business_3.id
+    assert amalgamating_business_3.colin_identifier == "BC7654321"
+    assert amalgamating_business_3.business_id is None
     for type in AmalgamatingBusiness.Role:
         assert type in [AmalgamatingBusiness.Role.holding,
                         AmalgamatingBusiness.Role.amalgamating,
