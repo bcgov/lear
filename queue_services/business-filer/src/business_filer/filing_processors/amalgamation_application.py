@@ -65,7 +65,7 @@ def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
     db.session.add(business)
 
 
-def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals
+def process(business: Business,  # noqa: PLR0912
             filing: dict,
             filing_rec: Filing,
             filing_meta: FilingMeta):
