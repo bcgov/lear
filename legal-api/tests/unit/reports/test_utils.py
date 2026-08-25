@@ -92,11 +92,8 @@ def _make_ting_business(identifier='BC1234567', legal_name='Ting Corp Ltd.'):
 
 
 def _make_colin_response(status_code, jurisdiction=None):
-    """Return a mock HTTP response imitating a ColinService.query_business result."""
-    resp = MagicMock()
-    resp.status_code = status_code
-    resp.json.return_value = {'business': {'jurisdiction': jurisdiction}}
-    return resp
+    """Return a (json, status code) tuple imitating a ColinService.query_business result."""
+    return {'business': {'jurisdiction': jurisdiction}}, status_code
 
 
 @pytest.mark.parametrize('test_name, identifier, foreign_name, country_code, region_code, expected_id, expected_name, expected_jurisdiction', [
@@ -131,6 +128,9 @@ def test_get_formatted_amalg_business_data_foreign_non_expro(
     assert result['identifier'] == expected_id
     assert result['legalName'] == expected_name
     assert result['jurisdiction'] == expected_jurisdiction
+    assert result['isBcCompany'] is False
+    assert result['isExtraprovincial'] is False
+
     # COLIN must NOT be called for identifiers that do not start with 'A'
     assert colin_call_count['count'] == 0
 
@@ -168,6 +168,8 @@ def test_get_formatted_amalg_business_data_foreign_expro_colin_200(
     assert result['identifier'] == expected_id
     assert result['legalName'] == foreign_name
     assert result['jurisdiction'] == expected_jurisdiction
+    assert result['isBcCompany'] is False
+    assert result['isExtraprovincial'] is True
     assert colin_call_count['count'] == 1
 
 
@@ -194,6 +196,8 @@ def test_get_formatted_amalg_business_data_foreign_a_prefix_colin_non_200(app, m
     assert result['identifier'] == 'N/A'
     assert result['legalName'] == foreign_name
     assert result['jurisdiction'] == 'United States'
+    assert result['isBcCompany'] is False
+    assert result['isExtraprovincial'] is False
     assert colin_call_count['count'] == 1
 
 
@@ -213,6 +217,8 @@ def test_get_formatted_amalg_business_data_bc_business_with_ting(app):
     assert result['identifier'] == 'BC9876543'
     assert result['legalName'] == 'Ting Corp Ltd.'
     assert result['jurisdiction'] == 'British Columbia'
+    assert result['isBcCompany'] is True
+    assert result['isExtraprovincial'] is False
 
 
 def test_get_formatted_amalg_business_data_raises_when_no_foreign_name_and_no_ting(app):
@@ -250,4 +256,6 @@ def test_get_formatted_amalg_business_data_foreign_no_identifier_skips_colin(app
 
     assert result['identifier'] == 'N/A'
     assert result['legalName'] == 'No ID Foreign Corp'
+    assert result['isBcCompany'] is False
+    assert result['isExtraprovincial'] is False
     assert not colin_called['called']

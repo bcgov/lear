@@ -25,7 +25,7 @@ from business_common.utils.datetime import datetime as dt, timedelta
 from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
-from legal_api.services.filings.validations.continuation_in import validate_business_in_colin, _validate_foreign_jurisdiction
+from legal_api.services.filings.validations.continuation_in import validate_continuation_in_foreign_jurisdiction, validate_continuation_in_expro_business_in_colin
 from registry_schemas.example_data import CONTINUATION_IN
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
@@ -56,17 +56,24 @@ def _mock_nr_response(legal_type):
     })
 
 
+def _get_continuation_in_template():
+    """Return the Amalgamation Application filing template."""
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'authorizationReceived': True,
+                                  'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing']['business'] = {'identifier': 'T1234567'}
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    return filing
+
+
 def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
     """Assert that nr is invalid."""
     monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         )
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     invalid_nr_response = {
@@ -78,8 +85,8 @@ def test_invalid_nr_continuation_in(mocker, app, session, monkeypatch):
             'consumptionDate': ''
         }]
     }
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(invalid_nr_response)):
         err = validate(None, filing)
@@ -110,21 +117,17 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
         Business.LegalTypes.ULC_CONTINUE_IN.value: 1,
         Business.LegalTypes.CCC_CONTINUE_IN.value: 3
     }
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     filing['filing']['continuationIn']['parties'] = []
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     err = validate(None, filing)
@@ -150,16 +153,7 @@ def test_continuation_in_parties_missing_role(mocker, app, session, legal_type, 
 )
 def test_continuation_in_parties_invalid_role(mocker, app, session, parties, expected_msg):
     """Assert that continuation in party roles can be validated for invalid roles."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {
-        'name': 'continuationIn',
-        'date': '2019-04-08',
-        'certifiedBy': 'full name',
-        'authorizationReceived': True,
-        'email': 'no_one@never.get',
-        'filingId': 1
-    }
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
     filing['filing']['continuationIn']['nameRequest']['legalType'] = Business.LegalTypes.CONTINUE_IN.value
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -174,9 +168,9 @@ def test_continuation_in_parties_invalid_role(mocker, app, session, parties, exp
         p = create_party(party['roles'], index + 1, mailing_addr, delivery_addr)
         filing['filing']['continuationIn']['parties'].append(p)
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin', return_value=[])
 
     err = validate(None, filing)
 
@@ -359,11 +353,7 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -385,10 +375,10 @@ def test_validate_continuation_in_office(session, mocker, test_name, legal_type,
     recoffice['mailingAddress']['addressCountry'] = mailing_country
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     err = validate(None, filing)
@@ -652,11 +642,7 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -695,10 +681,10 @@ def test_validate_continuation_in_share_classes(session, mocker, test_name, lega
         share_structure['shareClasses'][0]['series'][1]['name'] = series_name_2
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     # perform test
@@ -726,11 +712,7 @@ def test_continuation_in_court_orders(mocker, app, session,
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
@@ -741,10 +723,10 @@ def test_continuation_in_court_orders(mocker, app, session,
     filing['filing']['continuationIn']['courtOrder'] = court_order
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     err = validate(None, filing)
@@ -772,21 +754,17 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
 
     del filing['filing']['continuationIn']['foreignJurisdiction']['affidavitFileKey']
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     err = validate(None, filing)
@@ -798,38 +776,30 @@ def test_continuation_in_foreign_jurisdiction(mocker, app, session, legal_type, 
         assert not err
 
 
-def test_validate_business_in_colin(mocker, app, session, monkeypatch):
+def test_validate_continuation_in_expro_business_in_colin(mocker, app, session, monkeypatch):
     """Assert valid continuation EXPRO business"""
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'C'
     filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=(404, {}))
 
     err = validate(None, filing)
     assert err.code == HTTPStatus.BAD_REQUEST
 
 
-def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session):
+def test_validate_continuation_in_expro_business_in_colin_founding_date_mismatch(mocker, app, session):
     """Assert continuation EXPRO business with founding date mismatch."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     
     # Add the EXPRO business data to simulate a mismatch in founding date
     filing['filing']['continuationIn']['business'] = {
@@ -838,30 +808,28 @@ def test_validate_business_in_colin_founding_date_mismatch(mocker, app, session)
         'foundingDate': '2009-07-23T07:00:00.000+00:00'
     }
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
-        status_code=HTTPStatus.OK,
-        json=lambda: {
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
+        {
             'business': {
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.',
                 # Different founding date to trigger validation error
                 'foundingDate': '2010-01-01T18:21:13-00:00'
             }
-        }
+        },
+        HTTPStatus.OK
     ))
 
-    err = validate_business_in_colin(filing, 'continuationIn')
+    err = validate_continuation_in_expro_business_in_colin(
+        filing["filing"]["continuationIn"].get("business"),
+        f"/filing/continuationIn/business")
     assert err[0]['error'] == 'Founding date does not match with founding date from Colin.'
     assert err[0]['path'] == '/filing/continuationIn/business/foundingDate'
 
 
-def test_validate_business_in_colin_founding_date_match(mocker, app, session):
+def test_validate_continuation_in_expro_business_in_colin_founding_date_match(mocker, app, session):
     """Assert continuation EXPRO business with matching founding date."""
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     
     # Add the EXPRO business data with a matching founding date
     filing['filing']['continuationIn']['business'] = {
@@ -870,18 +838,20 @@ def test_validate_business_in_colin_founding_date_match(mocker, app, session):
         'foundingDate': '2009-07-23T18:31:24-00:00'
     }
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=mocker.Mock(
-        status_code=HTTPStatus.OK,
-        json=lambda: {
+    mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
+        {
             'business': {
                 'identifier': 'A0077779',
                 'legalName': 'Test Company Inc.',
                 'foundingDate': '2009-07-23T18:31:24-00:00'
             }
-        }
+        },
+        HTTPStatus.OK
     ))
 
-    err = validate_business_in_colin(filing, 'continuationIn')
+    err = validate_continuation_in_expro_business_in_colin(
+        filing["filing"]["continuationIn"].get("business"),
+        f"/filing/continuationIn/business")
     assert len(err) == 0
 
 
@@ -912,10 +882,11 @@ def test_validate_foreign_jurisdiction_incorporation_date(mocker, app, session):
     }
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_foreign_jurisdiction', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
 
     # Run the validation function
-    err = _validate_foreign_jurisdiction(filing, 'continuationIn', 'CCC')
+    foreign_jurisdiction = filing['filing']['continuationIn']['foreignJurisdiction']
+    err = validate_continuation_in_foreign_jurisdiction('CCC', foreign_jurisdiction, '/filing/continuationIn/foreignJurisdiction')
 
     # Assert that the error list contains the appropriate error for future incorporation date
     assert len(err) == 1
@@ -936,20 +907,16 @@ def test_validate_before_and_after_approval(mocker, app, session, test_status, i
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     )
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = is_approved
     del filing['filing']['continuationIn']['offices']
     del filing['filing']['continuationIn']['parties']
     del filing['filing']['continuationIn']['shareStructure']
 
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     err = validate(None, filing)
@@ -991,11 +958,7 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
         'legal_api.services.flags.value',
         lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
     ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -1010,10 +973,10 @@ def test_continuation_in_share_class_series_validation(mocker, app, session, leg
                     share_class.pop('series', None)
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin',
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
                  return_value=[])
 
     err = validate(None, filing)
@@ -1040,11 +1003,7 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
             'legal_api.services.flags.value',
             lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         ) 
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
+    filing = _get_continuation_in_template()
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -1057,9 +1016,9 @@ def test_continuation_in_parties_delivery_address_validation(mocker, app, sessio
             del filing['filing']['continuationIn']['parties'][0]['deliveryAddress']
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin', return_value=[])
 
     err = validate(None, filing)
 
@@ -1078,11 +1037,18 @@ now = date(2020, 9, 17)
         ('SUCCESS', '2020-09-18T00:00:00+00:00', None, None),
         ('SUCCESS', None, None, None),
         ('FAIL_INVALID_DATE_TIME_FORMAT', '2020-09-44T00:00:00z',
-            HTTPStatus.UNPROCESSABLE_CONTENT, [{
-                'path': 'filing/header/effectiveDate',
-                'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
-                'context': []
-            }]),
+            HTTPStatus.UNPROCESSABLE_CONTENT, [
+                {
+                    'path': 'filing/header/effectiveDate',
+                    'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                    'context': []
+                },
+                {
+                    'path': 'filing/header/effectiveDate',
+                    'error': "'2020-09-44T00:00:00z' is not a 'date-time'",
+                    'context': []
+                }
+            ]),
         ('FAIL_INVALID_DATE_TIME_MINIMUM', '2020-09-17T00:01:00+00:00',
             HTTPStatus.BAD_REQUEST, [{
                 'error': 'Invalid Datetime, effective date must be a minimum of 2 minutes ahead.',
@@ -1101,15 +1067,11 @@ def test_validate_continuation_in_effective_date(mocker, app, session, jwt, test
             'legal_api.services.flags.value',
             lambda flag, default=None: "C CBEN CCC CUL"  if flag == 'supported-continuation-in-entities' else default
         )
-    filing = {'filing': {}}
-    filing['filing']['header'] = {'name': 'continuationIn', 'date': '2019-04-08',
-                                  'certifiedBy': 'full name', 'authorizationReceived': True,
-                                  'email': 'no_one@never.get', 'filingId': 1}
+    filing = _get_continuation_in_template()
 
     if effective_date is not None:
         filing['filing']['header']['effectiveDate'] = effective_date
 
-    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN)
     filing['filing']['continuationIn']['isApproved'] = True
 
     filing['filing']['continuationIn']['nameRequest'] = {}
@@ -1117,9 +1079,9 @@ def test_validate_continuation_in_effective_date(mocker, app, session, jwt, test
     filing['filing']['continuationIn']['nameRequest']['legalType'] = 'CBEN'
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_roles', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_name_request', return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_business_in_colin', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin', return_value=[])
 
     # perform test
     with freeze_time(now):
@@ -1219,17 +1181,18 @@ def test_validate_foreign_jurisdiction_field_lengths(mocker, app, session,
         }
     }
 
+    foreign_jurisdiction = filing['filing']['continuationIn']['foreignJurisdiction']
     if identifier is not None:
-        filing['filing']['continuationIn']['foreignJurisdiction']['identifier'] = identifier
+        foreign_jurisdiction['identifier'] = identifier
 
     if legal_name is not None:
-        filing['filing']['continuationIn']['foreignJurisdiction']['legalName'] = legal_name
+        foreign_jurisdiction['legalName'] = legal_name
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.validate_foreign_jurisdiction',
                  return_value=[])
-    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=None)
+    mocker.patch('legal_api.services.filings.validations.continuation_in.validate_pdf', return_value=[])
 
-    err = _validate_foreign_jurisdiction(filing, 'continuationIn', 'C')
+    err = validate_continuation_in_foreign_jurisdiction('C', foreign_jurisdiction, '/filing/continuationIn/foreignJurisdiction')
 
     assert err == expected_errors
 

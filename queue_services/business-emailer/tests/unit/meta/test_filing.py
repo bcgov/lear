@@ -137,6 +137,27 @@ def test_alter_outputs_dissolution_noop_for_non_dissolution():
     assert 'certificateOfDissolution' in result
 
 
+def test_alter_outputs_dissolution_firm_administrative_no_cert_no_raise():
+    # Firms (SP/GP) have no certificateOfDissolution in their outputs, so admin
+    # dissolution suppression must be a no-op, not a KeyError. Regression for
+    # bcgov/entity#33806 (admin dissolution 400'd the ledger for firms).
+    filing = _filing(filing_type='dissolution', filing_sub_type='administrative',
+                     json_legal_type=Business.LegalTypes.SOLE_PROP)
+    outputs = set()
+    result = FilingMeta.alter_outputs_dissolution(filing, outputs)
+    assert result == set()
+
+
+def test_alter_outputs_dissolution_coop_voluntary_missing_docs_no_raise():
+    # certifiedRules/certifiedMemorandum may be absent from outputs; suppression
+    # must discard silently rather than raising KeyError.
+    filing = _filing(filing_type='dissolution', filing_sub_type='voluntary',
+                     json_legal_type=Business.LegalTypes.COOP)
+    outputs = {'certificateOfDissolution'}
+    result = FilingMeta.alter_outputs_dissolution(filing, outputs)
+    assert result == {'certificateOfDissolution'}
+
+
 # --------------------------------------------------------------------------- #
 # alter_outputs_special_resolution                                            #
 # --------------------------------------------------------------------------- #
@@ -168,6 +189,17 @@ def test_alter_outputs_special_resolution_noop_for_other_types():
     outputs = {'certifiedMemorandum'}
     result = FilingMeta.alter_outputs_special_resolution(filing, outputs)
     assert 'certifiedMemorandum' in result
+
+
+def test_alter_outputs_special_resolution_missing_docs_no_raise():
+    # certifiedMemorandum/certifiedRules may be absent from outputs; suppression
+    # must discard silently rather than raising KeyError (same class of bug as
+    # bcgov/entity#33806).
+    filing = _filing(filing_type='specialResolution',
+                     meta_data={'legalFilings': [], 'alteration': {}})
+    outputs = set()
+    result = FilingMeta.alter_outputs_special_resolution(filing, outputs)
+    assert result == set()
 
 
 # --------------------------------------------------------------------------- #

@@ -44,7 +44,7 @@ def validate(business: Business, filing: dict) -> Error | None:
     is_valid_co_date = True
     is_valid_foreign_jurisdiction = True
 
-    if err := validate_amalgamation_out_date(filing, filing_type):
+    if err := validate_amalgamation_out_date(filing, f"/filing/{filing_type}/amalgamationOutDate"):
         msg.extend(err)
         is_valid_co_date = False
 
@@ -58,9 +58,7 @@ def validate(business: Business, filing: dict) -> Error | None:
 
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_court_order(court_order_path, court_order))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -96,10 +94,9 @@ def validate_active_cao(business: Business, filing: dict, filing_type: str) -> l
     return msg
 
 
-def validate_amalgamation_out_date(filing: dict, filing_type: str) -> list:
+def validate_amalgamation_out_date(filing: dict, amalgamation_out_date_path: str) -> list:
     """Validate amalgamation out date."""
     msg = []
-    amalgamation_out_date_path = f"/filing/{filing_type}/amalgamationOutDate"
     amalgamation_out_date = get_date(filing, amalgamation_out_date_path)
 
     now = LegislationDatetime.now().date()

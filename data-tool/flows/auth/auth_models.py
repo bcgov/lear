@@ -97,6 +97,7 @@ class AuthCreatePlan:
     fail_if_missing_email: bool = False
     dry_run: bool = False
     allow_entity_creation_for_affiliations: bool = True
+    invite_is_reminder: bool = False
 
 
 @dataclass(frozen=True)

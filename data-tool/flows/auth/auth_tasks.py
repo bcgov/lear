@@ -568,11 +568,14 @@ def perform_auth_create_for_corp(
                     config=config,
                     identifier=identifier,
                     email=email,
-                    token=token
+                    token=token,
+                    is_reminder=plan.invite_is_reminder,
                 )
                 current_operation = None
                 code = _status_code(status)
                 detail_parts.append(f'invite:{code}')
+                if plan.invite_is_reminder:
+                    detail_parts.append('invite:reminder')
                 if code == int(HTTPStatus.OK):
                     invite_action = AuthComponentStatus.SUCCESS
                 else:
@@ -592,6 +595,7 @@ def perform_auth_create_for_corp(
                         status=invite_action,
                         status_code=code,
                         error=None if invite_action == AuthComponentStatus.SUCCESS else f'send_invite:{code}',
+                        detail='invite:reminder' if plan.invite_is_reminder else None,
                     )
 
     except Exception as e:

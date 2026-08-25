@@ -28,10 +28,10 @@ from registry_schemas.example_data import FILING_HEADER, DISSOLUTION, SPECIAL_RE
 from reportlab.lib.pagesizes import letter
 
 from business_model.models import Business
-from legal_api.services import MinioService, flags
+from legal_api.services import flags
 from legal_api.services.filings.validations import dissolution
 from legal_api.services.filings.validations.dissolution import validate
-from tests.unit.services.filings.test_utils import _upload_file
+from tests.unit.services.filings.test_utils import _upload_file, mock_drs_get_document
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
 
@@ -76,7 +76,7 @@ def test_dissolution_type(session, test_status, legal_type, dissolution_type,
         del filing['filing']['dissolution']['affidavitFileKey']
         del filing['filing']['dissolution']['parties']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -117,7 +117,7 @@ def test_dissolution_statement_type(session, test_status, legal_type, dissolutio
         del filing['filing']['dissolution']['dissolutionStatementType']
 
     # perform test
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -181,7 +181,7 @@ def test_dissolution_party_roles(session, legal_type, dissolution_type, roles, e
         p = create_party([role], i + 1, mailing_addr, delivery_addr)
         filing['filing']['dissolution']['parties'].append(p)
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
 
@@ -244,7 +244,7 @@ def test_dissolution_address(session, test_status, legal_type, address_validatio
         if address_validation == 'liquidator_only_non_ca_address':
             filing['filing']['dissolution']['parties'][1]['mailingAddress']['addressCountry'] = 'US'
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -318,7 +318,7 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
         resolution_date_time = datetime.strptime(resolution_date_str, '%Y-%m-%d')
         business.founding_date = resolution_date_time - timedelta(days=1000)
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -351,9 +351,10 @@ def test_dissolution_special_resolution(session, test_name, legal_type, dissolut
          }]),
     ]
 )
-def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dissolution_type, key, scenario,
+def test_dissolution_affidavit(session, monkeypatch, test_name, legal_type, dissolution_type, key, scenario,
                                identifier, expected_code, expected_msg):  # pylint: disable=too-many-arguments
     """Assert that an affidavit can be validated."""
+    mock_drs_get_document(monkeypatch)
     # setup
     business = Business(identifier=identifier, legal_type=legal_type)
 
@@ -391,15 +392,12 @@ def test_dissolution_affidavit(session, minio_server, test_name, legal_type, dis
     else:
         assert err is None
 
-    # Cleanup
-    if file_key := filing['filing']['dissolution'].get('affidavitFileKey', None):
-        MinioService.delete_file(file_key)
 
 
 @pytest.mark.parametrize(
     'test_status, file_number, effect_of_order, expected_code, expected_msg',
     [
-        ('FAIL', None, 'planOfArrangement', HTTPStatus.BAD_REQUEST, 'Court order file number is required.'),
+        ('FAIL', None, 'planOfArrangement', HTTPStatus.UNPROCESSABLE_ENTITY, "'fileNumber' is a required property"),
         ('FAIL', '12345678901234567890', 'invalid', HTTPStatus.BAD_REQUEST, 'Invalid effectOfOrder.'),
         ('SUCCESS', '12345678901234567890', 'planOfArrangement', None, None)
     ]
@@ -424,10 +422,12 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
 
     filing['filing']['dissolution']['courtOrder'] = court_order
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    from legal_api.services.filings import validate as _validate
+
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
-        err = validate(business, filing)
+        err = _validate(business, filing)
 
     # validate outcomes
     if test_status == 'FAIL':
@@ -499,7 +499,7 @@ def test_dissolution_custodian_email(session, test_status, legal_type, dissoluti
         filing['filing']['dissolution']['details'] = "Some Details"
         del filing['filing']['dissolution']['affidavitFileKey']
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -574,7 +574,7 @@ def test_dissolution_custodian_name(session, test_status, legal_type, dissolutio
     if first_name is not None:
         officer['firstName'] = first_name
 
-    with patch.object(dissolution, 'validate_affidavit', return_value=None), \
+    with patch.object(dissolution, 'validate_affidavit', return_value=[]), \
          patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None), \
             patch('legal_api.services.filings.validations.dissolution.check_good_standing_permission', return_value=None):
         err = validate(business, filing)
@@ -686,7 +686,7 @@ def test_dissolution_good_standing_permission(session, test_name, good_standing,
         patch.object(Business, 'good_standing', new_callable=lambda: good_standing),
         patch.object(PermissionService, 'check_user_permission', return_value=permission_error),
         patch.object(dissolution, 'validate_dissolution_parties_roles', return_value=None),
-        patch.object(dissolution, 'validate_affidavit', return_value=None),
+        patch.object(dissolution, 'validate_affidavit', return_value=[]),
         patch.object(dissolution, 'check_good_standing_permission', return_value=permission_error if not good_standing  and not has_permission and flag_enabled else None),
         patch.object(dissolution, 'validate_permission_and_completing_party', return_value=None),
         patch.object(dissolution, '_check_dissolution_permission', return_value=None),

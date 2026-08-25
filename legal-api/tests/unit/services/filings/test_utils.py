@@ -13,16 +13,18 @@
 # limitations under the License.
 """Test suite to ensure the Common Utilities are working correctly."""
 import io
+import random
 from datetime import date
 
-import requests
 from hypothesis import example, given
 from hypothesis.strategies import text
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
-from legal_api.services import MinioService
 from legal_api.services.utils import get_date, get_str
+
+# In-memory store mapping DRS file key -> PDF bytes, used by _upload_file and drs_document_mock.
+_drs_store: dict = {}
 
 
 @given(f=text(), p=text())
@@ -50,13 +52,31 @@ def test_get_str(f, p):
 
 
 def _upload_file(page_size, invalid):
-    signed_url = MinioService.create_signed_put_url('cooperative-test.pdf')
-    key = signed_url.get('key')
-    pre_signed_put = signed_url.get('preSignedUrl')
+    """Create a PDF, store it in _drs_store keyed by a DRS file key, and return the key."""
+    pdf_data = _create_pdf_file(page_size, invalid).read()
+    drs_id = f'DS{random.randint(1000000000, 9999999999)}'
+    file_key = f'COOP-{drs_id}'
+    _drs_store[file_key] = pdf_data
+    return file_key
 
-    requests.put(pre_signed_put, data=_create_pdf_file(page_size, invalid).read(),
-                 headers={'Content-Type': 'application/octet-stream'})
-    return key
+
+def mock_drs_get_document(monkeypatch):
+    """Monkeypatch doc_service.get_document to serve PDF bytes from _drs_store.
+
+    Call this at the start of any test that uses _upload_file and then calls validate_pdf.
+    Works with pytest monkeypatch fixture.
+    """
+    from unittest.mock import MagicMock
+
+    import legal_api.services.filings.validations.common_validations as cv
+
+    def _side_effect(drs_id, doc_class, doc_binary=True):
+        file_key = f'{doc_class}-{drs_id}'
+        pdf_bytes = _drs_store.get(file_key, b'')
+        return MagicMock(ok=True, content=pdf_bytes)
+
+    monkeypatch.setattr(cv, 'doc_service',
+                        MagicMock(get_document=MagicMock(side_effect=_side_effect)))
 
 
 def _create_pdf_file(page_size, invalid):

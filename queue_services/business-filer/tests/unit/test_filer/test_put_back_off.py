@@ -53,7 +53,7 @@ def tests_filer_put_back_off(session):
     assert business.state == Business.State.HISTORICAL
     assert business.state_filing_id == filing.id
     assert business.restoration_expiry_date is None
-    assert filing.order_details == final_filing.order_details
+    assert filing.details == final_filing.details
     
     assert filing_meta.put_back_off['reason'] == 'Limited Restoration Expired'
     assert filing_meta.put_back_off['expiryDate'] == LegislationDatetime.format_as_legislation_date(expiry)

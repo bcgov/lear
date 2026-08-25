@@ -19,16 +19,16 @@ import pytest
 import requests_mock
 from business_model.models import Filing
 
-from business_emailer.email_processors import continuation_in_notification
+from business_emailer.email_processors import continuation_authorization_notification
 from tests.unit import CONTACT_POINT, prep_bootstrap_filing
 
 
 @pytest.mark.parametrize('status, subject, content', [
-    (Filing.Status.APPROVED.value, 'Authorization Approved', 'Results of your Continuation Authorization'),
-    (Filing.Status.AWAITING_REVIEW.value, 'Authorization Documents Received', 'We have received your Continuation Authorization documents'),
-    (Filing.Status.CHANGE_REQUESTED.value, 'Changes Needed to Authorization', 'Make changes to your Continuation Authorization'),
-    (Filing.Status.REJECTED.value, 'Authorization Rejected', 'rejected'),
-    ('RESUBMITTED', 'Authorization Updates Received', 'your updated'),
+    (Filing.Status.APPROVED.value, 'Continuation Authorization Results', 'Results of your Continuation Authorization'),
+    (Filing.Status.AWAITING_REVIEW.value, 'Continuation Authorization Documents Received', 'We have received your Continuation Authorization documents'),
+    (Filing.Status.CHANGE_REQUESTED.value, 'Change Requested for your Continuation Authorization', 'Change Requested to your Continuation Authorization'),
+    (Filing.Status.REJECTED.value, 'Continuation Authorization Results', 'Results of your Continuation Authorization'),
+    ('RESUBMITTED', 'Updated Continuation Authorization Documents Received', 'We have received your updated Continuation Authorization documents'),
 ])
 def test_continuation_in_notification(app, session, mocker, status, subject, content):
     """Assert Continuation review notification is created."""
@@ -37,8 +37,8 @@ def test_continuation_in_notification(app, session, mocker, status, subject, con
     token = 'token'
 
     # test processor
-    with patch.object(continuation_in_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
-        email = continuation_in_notification.process(
+    with patch.object(continuation_authorization_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+        email = continuation_authorization_notification.process(
             {'filingId': filing.id, 'type': 'continuationIn', 'option': status}, token)
 
         assert CONTACT_POINT in email['recipients']
@@ -65,7 +65,7 @@ def test_continuation_in_attachments_resubmitted(session, mocker, config):
             content=b'pdf_content_1',
             status_code=200,
         )
-        output = continuation_in_notification.process(
+        output = continuation_authorization_notification.process(
             {'filingId': filing.id, 'type': 'continuationIn', 'option': 'RESUBMITTED'}, token)
 
     attachments = output['content']['attachments']

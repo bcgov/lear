@@ -34,15 +34,50 @@ FILING_TITLE = {
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
+    "consentContinuationOut": "Consent to Continue Out",
     "continuationIn": "Continuation Application",
+    "continuationOut": "Continuation Out",
+    "correction": "Correction",
+    "dissolution": {
+        "administrative": "Dissolution Application",
+        "voluntary": "Voluntary Dissolution Application"
+    },
     "incorporationApplication": "Incorporation Application",
     "registration": "Registration",
+    "specialResolution": "Special Resolution",
+    "restoration": "Restoration",
+    "changeOfLiquidators": {
+        "intentToLiquidate": "Statement of Intent to Liquidate",
+        "appointLiquidator": "Notice of Liquidator Appointment",
+        "ceaseLiquidator": "Notice of Liquidator Cessation",
+        "changeAddressLiquidator": "Liquidator (or Records) Address Change",
+        "liquidationReport": "Liquidation Report",
+    },
+    "changeOfReceivers": {
+        "appointReceiver": "Appoint Receiver/Receiver Manager",
+        "ceaseReceiver": "Cease Receiver or Receiver Manager",
+        "changeAddressReceiver": "Change of Address of Receiver/Receiver Manager",
+    },
 }
 
 FILING_TITLE_SHORT = {
     "amalgamationApplication": "Amalgamation",
     "continuationIn": "Continuation In",
-    "incorporationApplication": "Incorporation"
+    "changeOfLiquidators": {
+        "intentToLiquidate": "Intent to Liquidate",
+        "appointLiquidator": "Liquidator Appointment",
+        "ceaseLiquidator": "Liquidator Cessation",
+        "changeAddressLiquidator": "Liquidator (or Records) Address Change",
+        "liquidationReport": "Liquidation Report",
+    },
+    "dissolution": "Dissolution",
+    "incorporationApplication": "Incorporation",
+    "restoration": {
+        "fullRestoration": "Restoration",
+        "limitedRestoration": "Restoration",
+        "limitedRestorationExtension": "Extension of Limited Restoration",
+        "limitedRestorationToFull": "Conversion to Full Restoration",
+    }
 }
 
 FILING_ATTACHMENTS = {
@@ -59,17 +94,29 @@ FILING_ATTACHMENTS = {
             "attachments": ["Director Change","Receipt"],
             "extraPdfTypes": [],
         },
+        "correction": {
+            "attachments": ["Register Correction Application","Certificate of Name Correction","Certified Rules","Certified Memorandum","Receipt"],
+            "extraPdfTypes": ["certificateOfNameCorrection","certifiedRules","certifiedMemorandum"]
+        },
+        "dissolution-voluntary": {
+            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Certified Affidavit","Certified Special Resolution","Receipt"],
+            "extraPdfTypes": ["certificateOfDissolution","affidavit","specialResolution"],
+        },
+        "dissolution-administrative": {
+            "attachments": ["Dissolution Application","Certified Affidavit","Certified Special Resolution","Receipt"],
+            "extraPdfTypes": ["affidavit","specialResolution"],
+        },
         "incorporationApplication": {
-            "attachments": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Memorandum","Receipt"],
+            "attachments": ["Incorporation Application","Certificate of Incorporation","Certified Rules","Certified Memorandum","Receipt"],
             "extraPdfTypes": ["certificateOfIncorporation","certifiedRules","certifiedMemorandum"],
-        }
+        },
+        "specialResolution": {
+            "attachments": ["Special Resolution","Special Resolution Application","Certificate of Name Change","Certified Rules","Receipt"],
+            "extraPdfTypes": ["specialResolutionApplication","certificateOfNameChange","certifiedRules"],
+        },
     },
     "CORP": {
         "alteration": {
-            "attachments": ["Alteration","Notice of Articles","Receipt"],
-            "extraPdfTypes": ["noticeOfArticles"],
-        },
-        "alteration-con": {
             "attachments": ["Alteration","Notice of Articles","Certificate of Name Change","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfNameChange"],
         },
@@ -97,19 +144,95 @@ FILING_ATTACHMENTS = {
             "attachments": ["Director Change","Notice of Articles","Receipt"],
             "extraPdfTypes": ["noticeOfArticles"],
         },
+         "changeOfLiquidators-intentToLiquidate": {
+            "attachments": ["Statement of Intent to Liquidate", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-appointLiquidator": {
+            "attachments": ["Notice to Appoint Liquidators", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-ceaseLiquidator": {
+            "attachments": ["Notice to Cease Liquidators", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-changeAddressLiquidator": {
+            "attachments": ["Liquidators (or Records) Change of Address", "Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfLiquidators-liquidationReport": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfReceivers-appointReceiver": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfReceivers-ceaseReceiver": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": [],
+        },
+        "changeOfReceivers-changeAddressReceiver": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": [],
+        },
+        "consentContinuationOut": {
+            "attachments": ["Continue Out Application", "Letter of Consent", "Receipt"],
+            "extraPdfTypes": ["letterOfConsent"]
+        },
         "continuationIn": {
             "attachments": ["Continuation Application","Notice of Articles","Certificate of Continuation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfContinuation"],
         },
+        "continuationOut": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": []
+        },
+        "correction": {
+            "attachments": ["Register Correction Application","Notice of Articles","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles"]
+        },
+        "dissolution-voluntary": {
+            "attachments": ["Voluntary Dissolution Application","Certificate of Dissolution","Receipt"],
+            "extraPdfTypes": ["certificateOfDissolution"],
+        },
+        "dissolution-administrative": {
+            "attachments": ["Dissolution Application","Receipt"],
+            "extraPdfTypes": [],
+        },
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfIncorporation"],
+        },
+        "restoration-fullRestoration": {
+            "attachments": ["Full Restoration Application","Notice of Articles","Certificate of Restoration","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfRestoration"],
+        },
+        "restoration-limitedRestoration": {
+            "attachments": ["Limited Restoration Application","Notice of Articles","Certificate of Restoration","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfRestoration"],
+        },
+        "restoration-limitedRestorationExtension": {
+            "attachments": ["Limited Restoration Extension Application","Notice of Articles","Certificate of Restoration","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfRestoration"],
+        },
+        "restoration-limitedRestorationToFull": {
+            "attachments": ["Conversion to Full Restoration Application","Notice of Articles","Certificate of Restoration","Receipt"],
+            "extraPdfTypes": ["noticeOfArticles","certificateOfRestoration"],
         }
     },
     "FIRM": {
         "changeOfRegistration": {
             "attachments": ["Change of Registration", "Amended Registration Statement", "Receipt"],
             "extraPdfTypes": ["amendedRegistrationStatement"],
+        },
+        "correction": {
+            "attachments": ["Register Correction Application","Corrected Registration Statement","Receipt"],
+            "extraPdfTypes": ["correctedRegistrationStatement"]
+        },
+        "dissolution-voluntary": {
+            "attachments": ["Statement of Dissolution","Receipt"],
+            "extraPdfTypes": [],
         },
         "registration": {
             "attachments": ["Statement of Registration","Receipt"],

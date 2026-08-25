@@ -34,34 +34,48 @@ DRS_REPORT_PARAMS: str = "?reportType={report_type}&drsId={drs_id}"
 DRS_DOCUMENT_PARAMS: str = "?documentClass={document_class}&drsId={drs_id}"
 # Used for audit trail and db queries.
 BUSINESS_API_ACCOUNT_ID: str = "business-api"
+# Each output key may map to more than one DRS documentClass-documentType combination.
 FILING_DOCUMENTS = {
-    "certifiedRules": {
+    "certifiedRules": [{
         "documentType": "COOP_RULES",
         "documentClass": "COOP"
-    },
-    "certifiedMemorandum": {
+    }],
+    "certifiedMemorandum": [{
         "documentType": "COOP_MEMORANDUM",
         "documentClass": "COOP"
-    },
-    "affidavit": {
-        "documentType": "CORP_AFFIDAVIT",  # "COSD",
+    }],
+    "affidavit": [{
+        "documentType": "COSD",
+        "documentClass": "COOP"
+    }, {
+        "documentType": "CORP_AFFIDAVIT",
         "documentClass": "CORP"
-    },
-    "uploadedCourtOrder": {
-        "documentType": "CRT",
+    }],
+    "continuationIn": [{
+        "documentType": "CNTA",
         "documentClass": "CORP"
-    }
+    }],
+    "continuationOut": [{
+        "documentType": "CNTO",
+        "documentClass": "CORP"
+    }]
 }
+# Map to DRS document based on the default static document name set when the client does not submit a filename.
+# Included for migrated minio docs where submissions with no filename were allowed.
 STATIC_DOCUMENTS = {
     "Unlimited Liability Corporation Information": {
-        "documentType": "DIRECTOR_AFFIDAVIT",
-        "documentClass": "CORP"
+        "documentType": "DIRECTOR_AFFIDAVIT"
+    },
+    "Court Order": {
+        "documentType": "CRTO"
     }
 }
 APP_JSON = "application/json"
 APP_PDF = "application/pdf"
 DOC_PATH = "/documents"
 BEARER = "Bearer "
+DS_ID_PREFIX = "DS"
+DS_KEY_TOKENS = 2
 
 
 class ReportTypes(BaseEnum):
@@ -276,7 +290,7 @@ class DocumentService:
                 doc_list = self._update_legal_filing(doc_list, query_params)
             elif report_type.startswith("FILING"):
                 # Additional filings
-                doc_list = self._update_additional_filing(doc_list, query_params)
+                doc_list = self._update_additional_filing(doc_list, query_params, report_type)
             elif report_type == "CERT":
                 doc_list = self._update_certificate(doc_list, query_params)
             elif doc.get("documentClass"):
@@ -320,7 +334,7 @@ class DocumentService:
                     doc_list = self._update_legal_filing(doc_list, query_params)
                 elif report_type.startswith("FILING"):
                     # Additional filings
-                    doc_list = self._update_additional_filing(doc_list, query_params)
+                    doc_list = self._update_additional_filing(doc_list, query_params, report_type)
                 elif report_type == "CERT":
                     doc_list = self._update_certificate(doc_list, query_params)
                 elif doc.get("documentClass"):
@@ -340,7 +354,8 @@ class DocumentService:
         headers = self._get_request_headers(BUSINESS_API_ACCOUNT_ID, APP_PDF)
         url: str = self.url.replace(DOC_PATH, "")
         get_url = GET_REPORT_PATH
-        if report_type in [ReportTypes.FILING.value, ReportTypes.FILING_2.value, ReportTypes.NOA.value]:
+        if report_type in [ReportTypes.FILING.value, ReportTypes.FILING_2.value, ReportTypes.FILING_4.value,
+                           ReportTypes.NOA.value]:
             get_url = GET_REPORT_CERTIFIED_PATH
         get_url = get_url.format(url=url, product=self.product_code, drsId=drs_id)
         response = requests.get(url=get_url, headers=headers)
@@ -500,10 +515,10 @@ class DocumentService:
                 return response2
         return report_response
 
-
     def _update_static_document(self, doc: dict, doc_list: list) -> list:
         """
         Update static document urls in the document_list if a DRS match is found.
+        For static documents try obtaining download URL params from the file key first (DRS key).
 
         docs: The DRS document information to match on.
         doc_list: The business list of reports/documents for the filing.
@@ -516,22 +531,72 @@ class DocumentService:
         for key in doc_list:
             if key == "staticDocuments":
                 for static_doc in doc_list.get("staticDocuments"):
-                    name: str = static_doc.get("name")
-                    if (name and name == doc.get("name")) or (
-                            name and STATIC_DOCUMENTS.get(name) and
-                            doc.get("documentClass") == STATIC_DOCUMENTS[name].get("documentClass") and
-                            doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
-                        ):
+                    if self.is_static_doc_match(doc, static_doc):
                         static_doc["url"] = static_doc["url"] + query_params
                         break
-            elif (
-                FILING_DOCUMENTS.get(key) and
-                doc.get("documentClass") == FILING_DOCUMENTS[key].get("documentClass") and
-                doc.get("documentType") == FILING_DOCUMENTS[key].get("documentType")
+            elif any(
+                doc.get("documentClass") == combo.get("documentClass") and
+                doc.get("documentType") == combo.get("documentType")
+                for combo in FILING_DOCUMENTS.get(key, [])
             ):
                 doc_list[key] = doc_list[key] + query_params
                 break
         return doc_list
+
+    def get_url_drs_id(self, url: str) -> str:
+        """
+        Try to extract a DRS ID from the static document url (either minio or DRS).
+
+        url: URL to use.
+        return: DRS ID if url ends with DRS file key.
+        """
+        file_key: str = str(url).split("/")[-1]
+        if file_key:
+            tokens = file_key.split("-")
+            if (
+                len(tokens) == DS_KEY_TOKENS and
+                tokens[0] in ("COOP", "FIRM", "CORP") and
+                str(tokens[1]).startswith(DS_ID_PREFIX)
+            ):
+                return tokens[1]
+        return ""
+
+
+    def is_static_doc_match(self, doc: dict, static_doc: dict) -> bool:
+        """
+        Match the current DRS document with a ledger filing static document entry.
+        Try obtaining download URL params from the file key first (DRS key).
+
+        doc: Current DRS document to match with static document.
+        doc_list: The business list of reports/documents for the filing.
+        return: True if the DRS doc matches the static document information.
+        """
+        # Name is the ledger link name and should always exist, otherwise there is a defect somewhere else.
+        name: str = static_doc.get("name", "")
+        if not name or str(static_doc.get("url")).find("documentClass=") > 0:
+            return False
+        drs_id = self.get_url_drs_id(static_doc.get("url", ""))
+        if drs_id:
+            return drs_id == doc.get("identifier")
+        doc_name: str = doc.get("name", "")
+        if (doc_name):
+            if name.removesuffix(".pdf") == doc_name.removesuffix(".pdf"):
+                return True
+            if (
+                STATIC_DOCUMENTS.get(name) and
+                doc.get("documentType") == STATIC_DOCUMENTS[name].get("documentType")
+            ):
+                return True
+        # Try partial matching static doc name with default name.
+        for key, value in STATIC_DOCUMENTS.items():
+            if (
+                name.startswith(str(key)) and
+                (doc_name.startswith(str(key)) or doc_name == "") and
+                value.get("documentType") == doc.get("documentType")
+            ):
+                return True
+        return False
+
 
     def _get_request_headers(self, account_id: str, accept_mime_type = None) -> dict:
         """
@@ -559,11 +624,20 @@ class DocumentService:
             legal_filing[filing_key] = legal_filing[filing_key] + drs_params
         return doc_list
 
-    def _update_additional_filing(self, doc_list: dict, drs_params: str) -> dict:
+    def _update_additional_filing(self, doc_list: dict, drs_params: str, report_type: str | None = None) -> dict:
         """Conditionally add the DRS params to the additional filing document url."""
+        # Local import: report.py imports this module.
+        from legal_api.reports.report import ReportMeta
+
         if doc_list.get("specialResolutionApplication"):  # Not in configuration
             doc_list["specialResolutionApplication"] = doc_list["specialResolutionApplication"] + drs_params
             return doc_list
+        for legal_filing in (doc_list.get("legalFilings") or [])[1:]:
+            # A special resolution accompanying another filing is stored as FILING-2 (#34299); decorate
+            # its legal filing entry so the fallback below cannot attach the params to another output.
+            if "specialResolution" in legal_filing:
+                legal_filing["specialResolution"] = legal_filing["specialResolution"] + drs_params
+                return doc_list
         if doc_list.get("legalFilings"):
             legal_filing = doc_list["legalFilings"][0]
             filing_key = next(iter(legal_filing.keys()))
@@ -576,6 +650,11 @@ class DocumentService:
                                 not str(output).startswith("certificate") and
                                 doc_list.get(output)
                             ):
+                                # A DRS record only maps to an output configured with the same
+                                # report type (e.g. skip legacy FILING-2 letters of consent).
+                                output_report_type = ReportMeta.reports.get(output, {}).get("reportType")
+                                if report_type and output_report_type and output_report_type != report_type:
+                                    continue
                                 doc_list[output] = doc_list[output] + drs_params
                                 break
         return doc_list

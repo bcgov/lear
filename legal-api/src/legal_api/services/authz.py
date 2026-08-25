@@ -33,7 +33,7 @@ from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
-from legal_api.services.request_context import get_request_context
+from legal_api.services.request_context import add_account_linking_key_header, get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
 
 SYSTEM_ROLE = "system"
@@ -86,12 +86,14 @@ def _call_auth_api(path: str, token: str) -> Response:
     auth_url += path
 
     headers = {"Authorization": "Bearer " + token}
+    add_account_linking_key_header(headers)
     try:
         http = Session()
         retries = Retry(total=5,
                         backoff_factor=0.1,
                         status_forcelist=[500, 502, 503, 504])
         http.mount("http://", HTTPAdapter(max_retries=retries))
+        http.mount("https://", HTTPAdapter(max_retries=retries))
         resp = http.get(url=auth_url, headers=headers)
         current_app.logger.debug(f"Auth get {path} response status: {resp.status_code!s}")
         return resp
@@ -153,6 +155,14 @@ def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
     Assumes the JWT is already validated.
     """
     return bool(jwt.validate_roles(request_ctx.current_user, roles))
+
+
+def has_any_roles(jwt: JwtManager, roles: list[str]) -> bool:
+    """Assert the users JWT has any of the required role(s).
+
+    Assumes the JWT is already validated.
+    """
+    return any(bool(jwt.validate_roles(request_ctx.current_user, [role])) for role in roles)
 
 
 def get_allowable_filings_dict(is_authorization: bool = False):
@@ -439,6 +449,13 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 }
             },
             Business.State.HISTORICAL: {
+                "correction": {
+                    "legalTypes": ["BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "warningTypes": [WarningType.MISSING_REQUIRED_BUSINESS_INFO],
+                        "business": [BusinessBlocker.DEFAULT]
+                    }
+                },
                 "courtOrder": {
                     "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
                 },

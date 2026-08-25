@@ -151,12 +151,17 @@ def validate_restoration_court_order(filing: dict, restoration_type: str, limite
     msg = []
     if court_order := filing.get("filing", {}).get("restoration", {}).get("courtOrder", None):
         court_order_path: Final = "/filing/restoration/courtOrder"
-        if err := validate_court_order(court_order_path, court_order):
-            msg.extend(err)
-    elif (restoration_type in ("fullRestoration", "limitedRestoration") and \
-            get_str(filing, APPROVAL_TYPE_PATH) == "courtOrder") or (restoration_type in ("limitedRestorationExtension", "limitedRestorationToFull") and \
-            limited_restoration.approval_type == "courtOrder" and \
-            not court_order):
+        msg.extend(validate_court_order(court_order_path, court_order))
+    elif (
+        (
+            restoration_type in ("fullRestoration", "limitedRestoration") and
+            get_str(filing, APPROVAL_TYPE_PATH) == "courtOrder"
+        ) or
+        (
+            restoration_type in ("limitedRestorationExtension", "limitedRestorationToFull") and
+            limited_restoration.approval_type == "courtOrder"
+        )
+    ):
         msg.append({"error": "Must provide Court Order Number.", "path": "/filing/restoration/courtOrder/fileNumber"})
 
     return msg

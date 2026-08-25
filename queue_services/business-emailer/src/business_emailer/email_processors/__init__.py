@@ -81,8 +81,7 @@ def get_recipients(option: str, filing_json: dict, token: str | None = None, fil
         ):
             recipients = f"{recipients}, {', '.join(party_emails)}"
 
-    elif not is_coop:
-        # only add business email recipient for non-coop
+    else:
         recipients = get_recipient_from_auth(identifier, token)
 
     return recipients
@@ -99,7 +98,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
         f'{current_app.config.get("AUTH_URL")}/entities/{identifier}',
         headers=headers
     )
-    contacts = contact_info.json()["contacts"]
+    contacts = (contact_info.json()).get("contacts")
 
     if not contacts:
         current_app.logger.error("Queue Error: No email in business (%s) profile to send output to.", identifier, exc_info=True)
@@ -111,7 +110,7 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
 def get_user_email_from_auth(user_name: str, token: str) -> str:
     """Get user email from auth."""
     user_info = get_user_from_auth(user_name, token)
-    contacts = user_info.json()["contacts"]
+    contacts = (user_info.json()).get("contacts")
 
     if not contacts:
         return user_info.json().get("email")  # idir user
@@ -181,6 +180,12 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
             "business-number",
             "business-registry-footer",
             "business-tombstone",
+            "business-tombstone-basic",
+            "business-tombstone-out-filing",
+            "consent",
+            "consent-next-steps",
+            "continuation-application-details",
+            "out-details",
             "what-happens-next"
         ]
     else:
@@ -191,7 +196,6 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
             "business-info",
             "business-information",
             "consent-letter-information",
-            "continuation-application-details",
             "reg-business-info",
             "cra-notice",
             "nr-footer",
@@ -219,25 +223,6 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
     return template_code
 
 
-def get_jurisdictions(identifier: str, token: str) -> dict:
-    """Get jurisdictions call."""
-    headers = {
-        "Accept": "application/json",
-        "Authorization": f"Bearer {token}"
-    }
-
-    response = requests.get(
-        f'{current_app.config.get("LEGAL_API_URL")}/mras/{identifier}', headers=headers
-    )
-    if response.status_code != HTTPStatus.OK:
-        return None
-    try:
-        return response.json()
-    except Exception:
-        current_app.logger.error("Failed to get MRAS response")
-        return None
-
-
 def get_filing_document(business_identifier, filing_id, document_type, token, regenerate=False):
     """Get the filing documents."""
     headers = {
@@ -251,7 +236,7 @@ def get_filing_document(business_identifier, filing_id, document_type, token, re
         f'/documents/{document_type}', headers=headers, params=params
     )
 
-    if document.status_code != HTTPStatus.OK:
+    if document.status_code not in [HTTPStatus.OK, HTTPStatus.CREATED]:
         current_app.logger.error("Failed to get %s pdf for filing: %s", document_type, filing_id)
         return None
     try:
@@ -292,28 +277,21 @@ def _add_filing_document_pdf(  # noqa: PLR0913
     token: str,
     business: dict,
     filing: Filing,
+    file_attachment_name: str | None = None,
     regenerate=False
 ):
     """Add the specified filing document pdf to the pdfs list."""
     # File name
-    file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
+    if not (file_name := file_attachment_name):
+        file_name = (document_type[0].upper() + " ".join(re.findall("[a-zA-Z][^A-Z]*", document_type[1:]))).replace(" Of ", " of ")
+
     if document_type == "annualReport" and (ar_date := filing.filing_json["filing"].get("annualReport", {}).get("annualReportDate")):
         file_name = f"{ar_date[:4]} {file_name}"
-    elif document_type == "changeOfAddress":
-        file_name = "Address Change"
-    elif document_type == "changeOfDirectors":
-        file_name = "Director Change"
-    elif document_type == "registration":
-        file_name = "Statement of Registration"
-    elif document_type == "continuationIn":
-        file_name = "Continuation Application"
-    elif document_type == "amalgamationApplication":
-        amalgamation_application_names = {
-            Amalgamation.AmalgamationTypes.regular.name: "Amalgamation Application (Regular)",
-            Amalgamation.AmalgamationTypes.vertical.name: "Amalgamation Application Short-form (Vertical)",
-            Amalgamation.AmalgamationTypes.horizontal.name: "Amalgamation Application Short-form (Horizontal)"
-        }
-        file_name = amalgamation_application_names.get(filing.filing_sub_type, file_name)
+
+    if (filing.filing_type == "dissolution" and business.get("legalType") == Business.LegalTypes.COOP.value
+            and document_type in ["affidavit", "specialResolution"]):
+        # coop dissolution affidavit and special resolution attachments are certified copies
+        file_name = f"Certified {file_name}"
 
     # Get pdf and add it to the list
     filing_pdf_encoded = get_filing_document(business["identifier"], filing.id, document_type, token, regenerate=regenerate)
@@ -326,70 +304,37 @@ def _add_filing_document_pdf(  # noqa: PLR0913
                 "attachOrder": str(attach_order)
             }
         )
-        return attach_order + 1
+        attach_order += 1
 
-
-def _add_receipt_pdf(  # noqa: PLR0913
-    pdfs: list[dict],
-    attach_order: int,
-    token: str,
-    business: dict,
-    filing: Filing,
-    filing_date_time: str,
-    effective_date: str
-):
-    """Add the filing receipt pdf to the pdfs list."""
-    headers = {
-        "Accept": "application/pdf",
-        "Authorization": f"Bearer {token}"
-    }
-    if not (corp_name := business.get("legalName")):  # pylint: disable=superfluous-parens
-        legal_type = business.get("legalType")
-        corp_name = Business.BUSINESSES.get(legal_type, {}).get("numberedDescription")
-
-    receipt = requests.post(
-        f'{current_app.config.get("PAY_API_URL")}/{filing.payment_token}/receipts',
-        json={
-            "corpName": corp_name,
-            "filingDateTime": filing_date_time,
-            "effectiveDateTime": effective_date if effective_date != filing_date_time else "",
-            "filingIdentifier": str(filing.id),
-            "businessNumber": business.get("taxId", "")
-        },
-        headers=headers
-    )
-    if receipt.status_code != HTTPStatus.CREATED:
-        current_app.logger.error("Failed to get receipt pdf for filing: %s", filing.id)
-    else:
-        receipt_encoded = base64.b64encode(receipt.content)
-        pdfs.append(
-            {
-                "fileName": "Receipt.pdf",
-                "fileBytes": receipt_encoded.decode("utf-8"),
-                "fileUrl": "",
-                "attachOrder": str(attach_order)
-            }
-        )
-        return attach_order + 1
+    return attach_order
 
 
 def get_pdfs(  # noqa: PLR0913
     token: str,
     business: dict,
     filing: Filing,
-    filing_date_time: str,
-    effective_date: str,
     extra_pdf_type_list: list[str],
+    filing_attachment_name: str | None,
     regenerate=False
 ) -> list:
     """Get the pdfs for the filing output."""
     pdfs = []
     attach_order = 1
-    # add filing application document
-    attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, regenerate=regenerate)
+    filings_with_unimplemented_outputs = ["amalgamationOut", "consentAmalgamationOut", "continuationOut"]
+    receipt_only_sub_filings = [
+        ("changeOfLiquidators", "liquidationReport"),
+        ("changeOfReceivers", "appointReceiver"),
+        ("changeOfReceivers", "ceaseReceiver"),
+        ("changeOfReceivers", "changeAddressReceiver"),
+    ]
+
+    filing_key = (filing.filing_type, filing.filing_sub_type)
+    if filing.filing_type not in filings_with_unimplemented_outputs and filing_key not in receipt_only_sub_filings:
+        # add filing application document
+        attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, filing_attachment_name, regenerate=regenerate)
     # add extra documents
     for pdf_type in extra_pdf_type_list:
         attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)
     # add receipt
-    attach_order = _add_receipt_pdf(pdfs, attach_order, token, business, filing, filing_date_time, effective_date)
+    attach_order = _add_filing_document_pdf(pdfs, attach_order, "receipt", token, business, filing, regenerate=regenerate)
     return pdfs

@@ -1,7 +1,7 @@
 /*
 This file contains all functions and stored procedures for approved address record transpose updates. The changes
 only apply to active parties and offices belonging to active businesses. See the comment for the procedure
-"colin_address_transpose" for a summary of the specific changes. 
+"colin_address_transpose" for a summary of the specific changes.
 
 The transpose changes are intended to be run as part of a colin data migration before the extract is loaed into
 the target, modernized business database.
@@ -9,13 +9,13 @@ the target, modernized business database.
 Usage:
 1. Compile all the functions and stored procedures in this file.
 2. Run the procedure to transpose the addresses (takes approximately 7 minutes):
-   call colin_address_transpose();
+   call colin_address_transpose(NULL);
 
 Example address ID's and these instructions are in this spreadsheet:
 https://docs.google.com/spreadsheets/d/1-BLTklhdiW0401sN6I68inF1-retATANyTZDswBwGcQ/edit?gid=642728421#gid=642728421
 
 
--- Uncomment and executed to drop all address transpose functions and procedures.
+-- Uncomment and execute to drop all address transpose routines.
 drop procedure colin_address_transpose;
 drop procedure colin_address_transpose_cleanup;
 drop procedure colin_address_transpose_city;
@@ -31,9 +31,22 @@ drop function colin_update_address_pcode;
 drop function colin_update_address_country;
 */
 
+-- OUT parameters cannot replace zero-OUT procedure contracts in place.
+-- Recreate the procedure signatures atomically.
+BEGIN;
+DROP PROCEDURE IF EXISTS public.colin_address_transpose();
+DROP PROCEDURE IF EXISTS public.colin_address_transpose_cleanup();
+DROP PROCEDURE IF EXISTS public.colin_address_transpose_city();
+DROP PROCEDURE IF EXISTS public.colin_address_duplicate_region();
+DROP PROCEDURE IF EXISTS public.colin_address_transpose_region();
+DROP PROCEDURE IF EXISTS public.colin_address_duplicate_pcode();
+DROP PROCEDURE IF EXISTS public.colin_address_transpose_pcode();
+DROP PROCEDURE IF EXISTS public.colin_address_duplicate_country();
+DROP PROCEDURE IF EXISTS public.colin_address_transpose_country();
+
 
 --
--- Try and extract a Canada or US postal code from address text: city, then address_line_3, then address_line_2  
+-- Try and extract a Canada or US postal code from address text: city, then address_line_3, then address_line_2
 --
 create or replace function public.colin_update_address_pcode(v_text character varying,
                                                              v_remove boolean,
@@ -63,8 +76,8 @@ begin
   elsif not v_us then
     return null;
   else
-    if position('BOX' in test_val) > 0 or position('PO ' in test_val) > 0  or position('P.O ' in test_val) > 0 
-                or position('POB ' in test_val) > 0 
+    if position('BOX' in test_val) > 0 or position('PO ' in test_val) > 0  or position('P.O ' in test_val) > 0
+                or position('POB ' in test_val) > 0
                 or position('CP ' in test_val) > 0 then
       return null;
     end if;
@@ -81,7 +94,7 @@ begin
           return test_code;
         end if;
       end if;
-    elsif REGEXP_MATCHES(REPLACE(test_code, '-', ''),'^[0-9]+$','gi') is not null then 
+    elsif REGEXP_MATCHES(REPLACE(test_code, '-', ''),'^[0-9]+$','gi') is not null then
       if v_remove then
         return trim(substr(TRIM(v_text), 1, length(TRIM(v_text)) - length(test_code)));
       else
@@ -169,7 +182,7 @@ begin
          else
            return country[2];
          end if;
-       elsif country[1] in ('PEOPLES REPUBLIC OF CHINA', 'P R OF CHINA', 'TAIWAN REPUBLIC OF CHINA', 'EAST MALAYSIA', 'HONG KONG') and 
+       elsif country[1] in ('PEOPLES REPUBLIC OF CHINA', 'P R OF CHINA', 'TAIWAN REPUBLIC OF CHINA', 'EAST MALAYSIA', 'HONG KONG') and
              POSITION(country[1] in test_text) > 0 then
          if v_remove then
            return trim(substr(TRIM(v_text), 1, length(TRIM(v_text)) - length(country[1])));
@@ -185,7 +198,7 @@ $$;
 
 
 --
--- Try and extract a Canada province/region code from address text: city, then address_line_3, then address_line_2  
+-- Try and extract a Canada province/region code from address text: city, then address_line_3, then address_line_2
 --
 create or replace function public.colin_update_address_ca_province(v_text character varying, v_remove boolean) returns character varying
   immutable
@@ -198,8 +211,8 @@ declare
                             ARRAY['B .C.','BC'],
                             ARRAY['B. C.','BC'],
                             ARRAY['BC,','BC'],
-                            ARRAY['B.C. )','BC'],                            
-                            ARRAY['BC)','BC'],                            
+                            ARRAY['B.C. )','BC'],
+                            ARRAY['BC)','BC'],
                             ARRAY['BC','BC'],
                             ARRAY['B.C.,','BC'],
                             ARRAY['B.C.','BC'],
@@ -208,7 +221,7 @@ declare
                             ARRAY['BC.','BC'],
                             ARRAY['B,C.','BC'],
                             ARRAY['B.C..','BC'],
-                            ARRAY['B.C .','BC'],                        
+                            ARRAY['B.C .','BC'],
                             ARRAY['AB','AB'],
                             ARRAY['ALBERTA','AB'],
                             ARRAY['SK','SK'],
@@ -262,7 +275,7 @@ $$;
 
 
 --
--- Try and extract a US state code from address text: city, then address_line_3, then address_line_2  
+-- Try and extract a US state code from address text: city, then address_line_3, then address_line_2
 --
 create or replace function public.colin_update_address_us_state(v_text character varying, v_remove boolean) returns character varying
   immutable
@@ -323,11 +336,16 @@ $$;
 
 --
 -- Transpose corp_party address mailing and delivery country from addr_line3 and addr_line2.
--- call colin_address_transpose_country();
+-- call colin_address_transpose_country(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_transpose_country()
+CREATE OR REPLACE PROCEDURE public.colin_address_transpose_country(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Delivery/Mailing line 3
     update address
@@ -372,6 +390,8 @@ BEGIN
             a.addr_line_3 like '%VIETNAM%')
     )
     and colin_update_address_country(addr_line_3, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Delivery/Mailing line 2
@@ -417,19 +437,27 @@ BEGIN
             a.addr_line_2 like '%VIETNAM%')
     )
     and colin_update_address_country(addr_line_2, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
 
 --
 -- Remove duplicate country from city, address line 3, address line 2.
--- call colin_address_duplicate_country();
+-- call colin_address_duplicate_country(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_duplicate_country()
+CREATE OR REPLACE PROCEDURE public.colin_address_duplicate_country(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Corp party delivery/mailing city
     update address
@@ -481,6 +509,8 @@ BEGIN
             a.city like '%VIETNAM%')
     )
     and country_typ_cd = colin_update_address_country(city, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 3
@@ -531,6 +561,8 @@ BEGIN
             a.addr_line_3 like '%VIETNAM%')
     )
     and country_typ_cd = colin_update_address_country(addr_line_3, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 2
@@ -581,19 +613,27 @@ BEGIN
             a.addr_line_2 like '%VIETNAM%')
     )
     and country_typ_cd = colin_update_address_country(addr_line_2, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
 
 --
 -- Transpose corp_party address mailing and delivery postal/us zip code from city, addr_line3, and addr_line2.
--- call colin_address_transpose_pcode();
+-- call colin_address_transpose_pcode(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_transpose_pcode()
+CREATE OR REPLACE PROCEDURE public.colin_address_transpose_pcode(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Corp party delivery/mailing city
     update address
@@ -614,6 +654,8 @@ BEGIN
        and length(trim(a.city)) > 5
     )
       and colin_update_address_pcode(city, false, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
     update address
        set postal_cd = colin_update_address_pcode(city, false, true),
@@ -633,6 +675,8 @@ BEGIN
        and length(trim(a.city)) >= 5
     )
       and colin_update_address_pcode(city, false, true) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 3
@@ -654,6 +698,8 @@ BEGIN
        and length(trim(a.addr_line_3)) > 5
     )
       and colin_update_address_pcode(addr_line_3, false, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
     update address
        set postal_cd = colin_update_address_pcode(addr_line_3, false, true),
@@ -673,6 +719,8 @@ BEGIN
        and length(trim(a.addr_line_3)) >= 5
     )
       and colin_update_address_pcode(addr_line_3, false, true) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 2
@@ -694,6 +742,8 @@ BEGIN
        and length(trim(a.addr_line_2)) > 5
     )
       and colin_update_address_pcode(addr_line_2, false, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
     update address
        set postal_cd = colin_update_address_pcode(addr_line_2, false, true),
@@ -713,6 +763,8 @@ BEGIN
        and length(trim(a.addr_line_2)) >= 5
     )
       and colin_update_address_pcode(addr_line_2, false, true) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Office delivery/mailing city
@@ -734,19 +786,27 @@ BEGIN
        and length(trim(a.city)) > 5
     )
       and colin_update_address_pcode(city, false, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
 
 --
 -- Format and remove duplicate CA postal codes from city, address line 3, address line 2.
--- call colin_address_duplicate_pcode();
+-- call colin_address_duplicate_pcode(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_duplicate_pcode()
+CREATE OR REPLACE PROCEDURE public.colin_address_duplicate_pcode(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Corp party format delivery/mailing
     update address
@@ -764,6 +824,8 @@ BEGIN
        and a.postal_cd is not null and length(trim(a.postal_cd)) = 6
        and a.postal_cd ~ '^[A-Za-z]\d[A-Za-z]\d[A-Za-z]\d$'
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Office format delivery/mailing
@@ -782,6 +844,8 @@ BEGIN
        and a.postal_cd is not null and length(trim(a.postal_cd)) = 6
        and a.postal_cd ~ '^[A-Za-z]\d[A-Za-z]\d[A-Za-z]\d$'
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing city
@@ -804,6 +868,8 @@ BEGIN
        and trim(right(a.city, 7)) ~ '^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$'
     )
       and postal_cd = colin_update_address_pcode(city, false, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 3
@@ -826,6 +892,8 @@ BEGIN
        and trim(right(a.addr_line_3, 7)) ~ '^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$'
     )
       and postal_cd = colin_update_address_pcode(addr_line_3, false, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 2
@@ -848,18 +916,27 @@ BEGIN
        and trim(right(a.addr_line_2, 7)) ~ '^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$'
     )
       and postal_cd = colin_update_address_pcode(addr_line_2, false, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
+
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
 
 --
 -- Transpose corp_party address mailing and delivery province/region code from city, addr_line3, and addr_line2.
--- call colin_address_transpose_region();
+-- call colin_address_transpose_region(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_transpose_region()
+CREATE OR REPLACE PROCEDURE public.colin_address_transpose_region(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Corp party city - some instances after previous transpose steps.
     update address
@@ -888,11 +965,13 @@ BEGIN
             a.city like '%SASKATCHEWAN' or
             a.city like '% ONTARIO' or
             a.city like '% NEWFOUNDLAND' or
-            a.city like '% ALBERTA%' or 
+            a.city like '% ALBERTA%' or
             a.city like '% NOVA SCOTIA' or
             a.city like '% YUKON')
     )
       and colin_update_address_ca_province(city, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
     update address
        set province = colin_update_address_us_state(city, false),
@@ -926,6 +1005,8 @@ BEGIN
             a.city like '% NY %')
     )
       and colin_update_address_us_state(city, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
 
@@ -956,11 +1037,13 @@ BEGIN
             a.addr_line_3 like '%SASKATCHEWAN' or
             a.addr_line_3 like '% ONTARIO' or
             a.addr_line_3 like '% NEWFOUNDLAND' or
-            a.addr_line_3 like '% ALBERTA%' or 
+            a.addr_line_3 like '% ALBERTA%' or
             a.addr_line_3 like '% NOVA SCOTIA' or
             a.addr_line_3 like '% YUKON')
     )
       and colin_update_address_ca_province(addr_line_3, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
     update address
        set province = colin_update_address_us_state(addr_line_3, false),
@@ -994,6 +1077,8 @@ BEGIN
             a.addr_line_3 like '% NY %')
     )
       and colin_update_address_us_state(addr_line_3, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 2
@@ -1023,11 +1108,13 @@ BEGIN
             a.addr_line_2 like '%SASKATCHEWAN' or
             a.addr_line_2 like '% ONTARIO' or
             a.addr_line_2 like '% NEWFOUNDLAND' or
-            a.addr_line_2 like '% ALBERTA%' or 
+            a.addr_line_2 like '% ALBERTA%' or
             a.addr_line_2 like '% NOVA SCOTIA' or
             a.addr_line_2 like '% YUKON')
     )
       and colin_update_address_ca_province(addr_line_2, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
     update address
        set province = colin_update_address_us_state(addr_line_2, false),
@@ -1061,18 +1148,27 @@ BEGIN
             a.addr_line_2 like '% NY %')
     )
       and colin_update_address_us_state(addr_line_2, false) is not null;
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
+
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
 
 --
 -- Remove duplicate corp_party address mailing and delivery province/region codes from city, addr_line3, and addr_line2.
--- call colin_address_duplicate_region();
+-- call colin_address_duplicate_region(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_duplicate_region()
+CREATE OR REPLACE PROCEDURE public.colin_address_duplicate_region(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Corp party delivery/mailing city
     update address
@@ -1099,11 +1195,13 @@ BEGIN
             a.city like '%SASKATCHEWAN' or
             a.city like '% ONTARIO' or
             a.city like '% NEWFOUNDLAND' or
-            a.city like '% ALBERTA%' or 
+            a.city like '% ALBERTA%' or
             a.city like '% NOVA SCOTIA' or
             a.city like '% YUKON')
     )
     and province = colin_update_address_ca_province(city, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 3
@@ -1131,11 +1229,13 @@ BEGIN
             a.addr_line_3 like '%SASKATCHEWAN' or
             a.addr_line_3 like '% ONTARIO' or
             a.addr_line_3 like '% NEWFOUNDLAND' or
-            a.addr_line_3 like '% ALBERTA%' or 
+            a.addr_line_3 like '% ALBERTA%' or
             a.addr_line_3 like '% NOVA SCOTIA' or
             a.addr_line_3 like '% YUKON')
     )
     and province = colin_update_address_ca_province(addr_line_3, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 2
@@ -1163,24 +1263,32 @@ BEGIN
             a.addr_line_2 like '%SASKATCHEWAN' or
             a.addr_line_2 like '% ONTARIO' or
             a.addr_line_2 like '% NEWFOUNDLAND' or
-            a.addr_line_2 like '% ALBERTA%' or 
+            a.addr_line_2 like '% ALBERTA%' or
             a.addr_line_2 like '% NOVA SCOTIA' or
             a.addr_line_2 like '% YUKON')
     )
     and province = colin_update_address_ca_province(addr_line_2, false);
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
 
 --
 -- Transpose office and corp_party address mailing and delivery null city from addr_line3, and addr_line2.
--- call colin_address_transpose_city();
+-- call colin_address_transpose_city(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_transpose_city()
+CREATE OR REPLACE PROCEDURE public.colin_address_transpose_city(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Corp party delivery/mailing line 3
     update address
@@ -1203,6 +1311,8 @@ BEGIN
        and upper(a.addr_line_3) not like '%ALSO KNOWN %'
        and upper(a.addr_line_3) not like '%AKA:%'
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Corp party delivery/mailing line 2
@@ -1226,6 +1336,8 @@ BEGIN
        and upper(a.addr_line_2) not like '%ALSO KNOWN %'
        and upper(a.addr_line_2) not like '%AKA:%'
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Office delivery/mailing line 3
@@ -1249,6 +1361,8 @@ BEGIN
        and upper(a.addr_line_3) not like '%ALSO KNOWN %'
        and upper(a.addr_line_3) not like '%AKA:%'
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Office delivery/mailing line 2
@@ -1272,8 +1386,11 @@ BEGIN
        and upper(a.addr_line_2) not like '%ALSO KNOWN %'
        and upper(a.addr_line_2) not like '%AKA:%'
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
@@ -1281,11 +1398,16 @@ $$;
 --
 -- Final transpose step: cleanup.
 -- Remove trailing comma characters from city, addresses lines 2 and 3.
--- call colin_address_transpose_cleanup();
+-- call colin_address_transpose_cleanup(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_transpose_cleanup()
+CREATE OR REPLACE PROCEDURE public.colin_address_transpose_cleanup(
+    OUT row_occurrences bigint
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_step_rows bigint := 0;
+    v_phase_rows bigint := 0;
 BEGIN
     -- Remove trailing comma corp party delivery/mailing city: 20928
     update address
@@ -1299,9 +1421,11 @@ BEGIN
        and cs.end_event_id is null
        and (cp.end_event_id is null or cp.end_event_id = 0)
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.city is not null 
+       and a.city is not null
        and right(a.city, 1) = ','
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Remove trailing comma corp party delivery/mailing line 3: 1109
@@ -1316,9 +1440,11 @@ BEGIN
        and cs.end_event_id is null
        and (cp.end_event_id is null or cp.end_event_id = 0)
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.addr_line_3 is not null 
+       and a.addr_line_3 is not null
        and right(a.addr_line_3, 1) = ','
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Remove trailing comma corp party delivery/mailing line 2: 14957
@@ -1333,9 +1459,11 @@ BEGIN
        and cs.end_event_id is null
        and (cp.end_event_id is null or cp.end_event_id = 0)
        and (cp.mailing_addr_id = a.addr_id or cp.delivery_addr_id = a.addr_id)
-       and a.addr_line_2 is not null 
+       and a.addr_line_2 is not null
        and right(a.addr_line_2, 1) = ','
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Remove trailing comma office delivery/mailing city: 1665
@@ -1350,9 +1478,11 @@ BEGIN
        and cs.end_event_id is null
        and (o.end_event_id is null or o.end_event_id = 0)
        and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.city is not null 
+       and a.city is not null
        and right(a.city, 1) = ','
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Remove trailing comma office delivery/mailing line 3: 992
@@ -1367,9 +1497,11 @@ BEGIN
        and cs.end_event_id is null
        and (o.end_event_id is null or o.end_event_id = 0)
        and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.addr_line_3 is not null 
+       and a.addr_line_3 is not null
        and right(a.addr_line_3, 1) = ','
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
     -- Remove trailing comma office delivery/mailing line 2: 87
@@ -1384,11 +1516,14 @@ BEGIN
        and cs.end_event_id is null
        and (o.end_event_id is null or o.end_event_id = 0)
        and (o.mailing_addr_id = a.addr_id or o.delivery_addr_id = a.addr_id)
-       and a.addr_line_2 is not null 
+       and a.addr_line_2 is not null
        and right(a.addr_line_2, 1) = ','
     );
+    GET DIAGNOSTICS v_step_rows = ROW_COUNT;
+    v_phase_rows := v_phase_rows + v_step_rows;
     COMMIT;
 
+    row_occurrences := v_phase_rows;
 END;
 $$;
 
@@ -1403,19 +1538,56 @@ $$;
 -- 6. Remove duplicate corp_party address mailing and delivery CA province/region codes from city, addr_line3, and addr_line2.
 -- 7. Transpose office and corp_party address mailing and delivery null city from addr_line3 and addr_line2.
 -- 8. Remove trailing comma characters from city, addr_line3, addr_line2.
--- call colin_address_transpose();
+-- call colin_address_transpose(NULL);
 --
-CREATE OR REPLACE PROCEDURE public.colin_address_transpose()
+CREATE OR REPLACE PROCEDURE public.colin_address_transpose(
+    OUT result json
+)
 LANGUAGE plpgsql
 AS $$
+DECLARE
+    v_country_rows bigint;
+    v_duplicate_country_rows bigint;
+    v_pcode_rows bigint;
+    v_duplicate_pcode_rows bigint;
+    v_region_rows bigint;
+    v_duplicate_region_rows bigint;
+    v_city_rows bigint;
+    v_cleanup_rows bigint;
+    v_started_at timestamp with time zone := clock_timestamp();
 BEGIN
-call colin_address_transpose_country();
-call colin_address_duplicate_country();
-call colin_address_transpose_pcode();
-call colin_address_duplicate_pcode();
-call colin_address_transpose_region();
-call colin_address_duplicate_region();
-call colin_address_transpose_city();
-call colin_address_transpose_cleanup();
+    CALL public.colin_address_transpose_country(v_country_rows);
+    CALL public.colin_address_duplicate_country(v_duplicate_country_rows);
+    CALL public.colin_address_transpose_pcode(v_pcode_rows);
+    CALL public.colin_address_duplicate_pcode(v_duplicate_pcode_rows);
+    CALL public.colin_address_transpose_region(v_region_rows);
+    CALL public.colin_address_duplicate_region(v_duplicate_region_rows);
+    CALL public.colin_address_transpose_city(v_city_rows);
+    CALL public.colin_address_transpose_cleanup(v_cleanup_rows);
+
+    result := json_build_object(
+        'country', v_country_rows,
+        'country_duplicates', v_duplicate_country_rows,
+        'postal_code', v_pcode_rows,
+        'postal_code_duplicates', v_duplicate_pcode_rows,
+        'region', v_region_rows,
+        'region_duplicates', v_duplicate_region_rows,
+        'city', v_city_rows,
+        'cleanup', v_cleanup_rows,
+        'total', v_country_rows
+            + v_duplicate_country_rows
+            + v_pcode_rows
+            + v_duplicate_pcode_rows
+            + v_region_rows
+            + v_duplicate_region_rows
+            + v_city_rows
+            + v_cleanup_rows,
+        'elapsed_seconds', EXTRACT(EPOCH FROM (clock_timestamp() - v_started_at))
+    );
 END;
 $$;
+
+COMMENT ON PROCEDURE public.colin_address_transpose() IS
+'Returns one JSON value with all eight phase row-update counts, their total, and elapsed wall-clock seconds.';
+
+COMMIT;

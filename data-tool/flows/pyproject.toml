@@ -1,0 +1,17 @@
+[project]
+name = "common"
+version = "1.0.0"
+description = "Shared Utilities"
+authors = []
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.setuptools]
+packages = ["common"]
+
+[tool.setuptools.package-dir]
+common = "common"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

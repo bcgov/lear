@@ -46,25 +46,16 @@ from business_emailer.email_processors import (
     agm_extension_notification,
     agm_location_change_notification,
     amalgamation_out_notification,
-    appoint_receiver_notification,
     ar_reminder_notification,
     bn_notification,
-    cease_receiver_notification,
     consent_amalgamation_out_notification,
-    consent_continuation_out_notification,
-    continuation_in_notification,
-    continuation_out_notification,
-    correction_notification,
-    dissolution_notification,
+    continuation_authorization_notification,
     filing_notification,
-    intent_to_liquidate_notification,
     involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
     notice_of_withdrawal_notification,
     nr_notification,
-    restoration_notification,
-    special_resolution_notification,
 )
 from business_emailer.email_processors.util import FILING_TITLE
 from business_emailer.exceptions import EmailException, QueueException
@@ -166,6 +157,7 @@ def send_email(email: dict, token: str):
         )
         current_app.logger.debug("NOTIFY API response: %s", resp.status_code)
         if resp.status_code != HTTPStatus.OK:
+            current_app.logger.debug("NOTIFY API error: %s", resp.json())
             raise EmailException
     except Exception:
         # this should log the error and put the email msg back on the queue
@@ -235,51 +227,24 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
             email = agm_extension_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "dissolution":
-            email = dissolution_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "restoration":
-            email_object = restoration_notification.process(email_msg["email"], token)
-            send_email(email_object, token)
-        elif etype == "correction":
-            email = correction_notification.process(email_msg["email"], token)
-            send_email(email, token)
         elif etype == "consentAmalgamationOut":
             email = consent_amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "amalgamationOut":
             email = amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "consentContinuationOut" and option == Filing.Status.COMPLETED.value:
-            email = consent_continuation_out_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "continuationOut" and option == Filing.Status.COMPLETED.value:
-            email = continuation_out_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "specialResolution":
-            email = special_resolution_notification.process(email_msg["email"], token)
-            send_email(email, token)
         elif etype == "continuationIn" and option in ReviewStatus._member_names_:
             # Special case for review step of continuation in filing. Regular filing notifications are handled by the filing_notification processor.
-            email = continuation_in_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "intentToLiquidate":
-            email = intent_to_liquidate_notification.process(email_msg["email"], token)
+            email = continuation_authorization_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "noticeOfWithdrawal" and option == Filing.Status.COMPLETED.value:
             email = notice_of_withdrawal_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "appointReceiver" and option == Filing.Status.COMPLETED.value:
-            email = appoint_receiver_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "ceaseReceiver" and option == Filing.Status.COMPLETED.value:
-            email = cease_receiver_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype in FILING_TITLE:
             if email := filing_notification.process(email_msg["email"], token):
                 send_email(email, token)
             else:
-                # should only be if this was for a coops filing
+                # should only be if this was for a coops filing or an invalid publish option
                 current_app.logger.debug("No email to send for: %s", email_msg)
         else:
             current_app.logger.debug("No email to send for: %s", email_msg)

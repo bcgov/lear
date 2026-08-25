@@ -137,3 +137,6 @@ jobs/sftp-*/archive
 # ruff
 **/.ruff_cache
 
+# Delta restore run artifacts
+data-tool/scripts/generated/delta_restore/
+

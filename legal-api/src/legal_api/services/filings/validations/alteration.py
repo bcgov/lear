@@ -46,9 +46,11 @@ def validate(business: Business, filing: dict) -> Error:  # pylint: disable=too-
         error = PermissionService.check_user_permission(required_permission, message=message)
         if error:
            return error
-    msg.extend(type_change_validation(filing, business))
-    msg.extend(company_name_validation(filing, business))
-    msg.extend(share_structure_validation(filing, business))
+    new_legal_type_path: Final = "/filing/alteration/business/legalType"
+    new_legal_type = get_str(filing, new_legal_type_path)
+    msg.extend(validate_type_change(filing, business, new_legal_type_path))
+    msg.extend(company_name_validation(filing, business, new_legal_type))
+    msg.extend(share_structure_validation(filing, business, new_legal_type))
     msg.extend(court_order_validation(filing))
     msg.extend(rules_change_validation(filing))
     msg.extend(memorandum_change_validation(filing))
@@ -74,16 +76,13 @@ def court_order_validation(filing):
     """Validate court order."""
     court_order_path: Final = "/filing/alteration/courtOrder"
     if get_str(filing, court_order_path):
-        err = validate_court_order(court_order_path, filing["filing"]["alteration"]["courtOrder"])
-        if err:
-            return err
+        return validate_court_order(court_order_path, filing["filing"]["alteration"]["courtOrder"])
     return []
 
 
-def share_structure_validation(filing, business: Business):
+def share_structure_validation(filing, business: Business, new_legal_type: str):
     """Validate share structure."""
     share_structure_path: Final = "/filing/alteration/shareStructure"
-    new_legal_type = get_str(filing, "/filing/alteration/business/legalType")
 
     if get_str(filing, share_structure_path):
         err = validate_share_structure(filing, "alteration", new_legal_type or business.legal_type)
@@ -95,13 +94,12 @@ def share_structure_validation(filing, business: Business):
     return []
 
 
-def company_name_validation(filing, business: Business):
+def company_name_validation(filing, business: Business, new_legal_type: str):
     """Validate company name."""
     msg = []
     if filing["filing"]["header"].get("source") == "COLIN":
         return msg
 
-    new_legal_type = get_str(filing, "/filing/alteration/business/legalType")
     if get_str(filing, "/filing/alteration/nameRequest/nrNumber"):
         accepted_request_types = [
             "BEC", "CCC", "CCP", "CCR", "CUL",  # name change types
@@ -126,10 +124,9 @@ def company_name_validation(filing, business: Business):
     return msg
 
 
-def type_change_validation(filing, business: Business):
+def validate_type_change(filing, business: Business, legal_type_path: str):
     """Validate type change."""
     msg = []
-    legal_type_path: Final = "/filing/alteration/business/legalType"
     new_legal_type = get_str(filing, legal_type_path)
 
     # Valid type changes
@@ -208,15 +205,10 @@ def rules_change_validation(filing):
         error_msg = "Cannot provide both file upload and rules change in SR"
         msg.append({"error": babel(error_msg),
                     "path": rules_file_key_path + " and " + rules_change_in_sr_path})
-        return msg
+    elif rules_file_key:
+        msg.extend(validate_pdf(rules_file_key, rules_file_key_path))
 
-    if rules_file_key:
-        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
-        if rules_err:
-            msg.extend(rules_err)
-        return msg
-
-    return []
+    return msg
 
 
 def memorandum_change_validation(filing):
@@ -232,11 +224,7 @@ def memorandum_change_validation(filing):
         error_msg = "Cannot provide both file upload and memorandum change in SR"
         msg.append({"error": babel(error_msg),
                     "path": memorandum_file_key + " and " + memorandum_change_in_sr_path})
-        return msg
-
-    if memorandum_file_key:
-        memorandum_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
-        if memorandum_err:
-            msg.extend(memorandum_err)
+    elif memorandum_file_key:
+        msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
 
     return msg

@@ -316,7 +316,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.3.32"
+version = "3.4.11"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -336,14 +336,14 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2025.1,<2026.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.73"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.82"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "295ecb7a24620142f1a18af02fb191df4cafcc85"
+resolved_reference = "71fbd531a0a89db74d9182922eed949bb8104b0b"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -2266,22 +2266,6 @@ files = [
 ]
 
 [[package]]
-name = "minio"
-version = "7.0.2"
-description = "MinIO Python SDK for Amazon S3 Compatible Cloud Storage"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "minio-7.0.2-py3-none-any.whl", hash = "sha256:0e69575a0b1b64bce9f158b52b5914953f902a21032966d070ab0d14ceef8962"},
-    {file = "minio-7.0.2.tar.gz", hash = "sha256:f2f6022cfe4694d946972efef2a752f87d08cc030940faa50a640088772953c8"},
-]
-
-[package.dependencies]
-certifi = "*"
-urllib3 = "*"
-
-[[package]]
 name = "multidict"
 version = "6.7.1"
 description = "multidict implementation"
@@ -3352,7 +3336,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.73"
+version = "2.18.82"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -3370,8 +3354,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.73"
-resolved_reference = "e6999a46b6e38c52cc79f0e5a3c9fcbd0c473434"
+reference = "2.18.82"
+resolved_reference = "7dd37ea586adceff8f5b0d775a9c27eabd2d5135"
 
 [[package]]
 name = "reportlab"
@@ -4436,4 +4420,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "38eb06e163c276a193e17597b91b0b3b3a58f445a1d060dfda9f4d68d813871e"
+content-hash = "ae5d62d00a5b3878147fc84676d7da2a7a5399bc4e2d03bdbdedca7bd9eb32bb"

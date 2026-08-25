@@ -1,8 +1,9 @@
+import re
 import uuid
 from datetime import UTC, datetime
 
 # if TYPE_CHECKING:
-from business_model.models import Business, Filing
+from business_model.models import Business, Document, Filing
 from flask import Flask
 
 from business_filer.common.filing import FilingTypes
@@ -10,6 +11,8 @@ from business_filer.exceptions import PublishException
 from business_filer.services import Flags, gcp_queue
 from gcp_queue import SimpleCloudEvent, to_queue_message
 
+# DRS keys are formatted as "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951". 
+_DRS_KEY_PATTERN = re.compile(r"^[A-Z]+-DS\d+$")
 
 class PublishEvent:
     """Service to publish specific events onto the GCP Queue."""
@@ -77,6 +80,39 @@ class PublishEvent:
 
         except Exception as err:  # pylint: disable=broad-except;
             raise PublishException(err) from err
+
+    @staticmethod
+    def publish_drs_update_message(app: Flask, business: Business, filing: Filing):
+        """Publish a drs update record message for each DRS document uploaded with the filing.
+
+        Updates the document record(s) with filing/business information once a filing completes,
+        so the document shows up correctly in the ledger and is searchable in the DRS UI.
+        """
+        try:
+            subject = app.config.get("DOC_UPDATE_REC_TOPIC")
+            documents = Document.query.filter_by(filing_id=filing.id).all()
+            for document in documents:
+                if not PublishEvent._is_drs_document(document.file_key):
+                    continue
+                data = {
+                    "accountId": "business-api",
+                    "fileKey": document.file_key,
+                    "businessIdentifier": business.identifier if business else None,
+                    "filingDate": filing.completion_date.isoformat() if filing.completion_date else None,
+                    "filingId": filing.id
+                }
+                data = {k: v for k, v in data.items() if v is not None}
+
+                ce = PublishEvent._create_cloud_event(app, business, filing, subject, data)
+                gcp_queue.publish(subject, to_queue_message(ce))
+
+        except Exception as err:  # pylint: disable=broad-except;
+            raise PublishException(err) from err
+
+    @staticmethod
+    def _is_drs_document(file_key: str) -> bool:
+        """Return True if the file_key is a DRS key."""
+        return bool(file_key) and bool(_DRS_KEY_PATTERN.match(file_key))
 
     @staticmethod
     def publish_mras_email(app: Flask, business: Business, filing: Filing):

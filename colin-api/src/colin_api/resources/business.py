@@ -21,7 +21,7 @@ from flask import current_app, jsonify, request
 from flask_restx import Namespace, Resource, cors
 
 from colin_api.exceptions import GenericException
-from colin_api.models import Business, CorpName
+from colin_api.models import Business, BusinessSnapshot, CorpName
 from colin_api.resources.db import DB
 from colin_api.utils.auth import COLIN_SVC_ROLE, jwt
 from colin_api.utils.util import cors_preflight
@@ -50,6 +50,60 @@ class BusinessPublicInfo(Resource):
             if not business:
                 return jsonify({'message': f'{identifier} not found'}), HTTPStatus.NOT_FOUND
             return jsonify(business.as_slim_dict()), HTTPStatus.OK
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            return jsonify({'message': err.error}), err.status_code
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception
+            current_app.logger.error(err.with_traceback(None))
+            return jsonify(
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET')
+@API.route('/<string:identifier>/auth-info', methods=['GET', 'OPTIONS'])
+class BusinessAuthInfo(Resource):
+    """Business info used by auth to create/refresh an entity for a COLIN business."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def get(identifier: str):
+        """Return the auth info for a COLIN business.
+
+        Service endpoint only - the response contains the corporation password so it must
+        never be proxied to a browser, and the payload must not be logged.
+        """
+        try:
+            auth_info = Business.get_auth_info(identifier)
+            return jsonify(auth_info), HTTPStatus.OK
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            return jsonify({'message': err.error}), err.status_code
+
+        except Exception as err:  # pylint: disable=broad-except; want to catch all errors
+            # general catch-all exception. Only the identifier is logged - never the payload.
+            current_app.logger.error('Error retrieving auth info for %s: %s', identifier, type(err).__name__)
+            return jsonify(
+                {'message': 'Error when trying to retrieve business record from COLIN'}
+            ), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@cors_preflight('GET')
+@API.route('/<string:identifier>/snapshot', methods=['GET', 'OPTIONS'])
+class BusinessSnapshotInfo(Resource):
+    """LEAR-shaped snapshot of a COLIN business."""
+
+    @staticmethod
+    @cors.crossdomain(origin='*')
+    @jwt.requires_roles([COLIN_SVC_ROLE])
+    def get(identifier: str):
+        """Return the business/parties/offices/shareClasses/resolutions snapshot."""
+        try:
+            snapshot = BusinessSnapshot.get_snapshot(identifier)
+            return jsonify(snapshot), HTTPStatus.OK
 
         except GenericException as err:  # pylint: disable=duplicate-code
             return jsonify({'message': err.error}), err.status_code

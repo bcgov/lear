@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests to assure the Court Order is validated properly."""
+import copy
 import pytest
 
-from legal_api.services.filings.validations.common_validations import validate_court_order
+from registry_schemas.example_data import COURT_ORDER_FILING_TEMPLATE
+from legal_api.services.filings import validate
+from legal_api.services.filings.validations.court_order import validate_court_order
+
+from tests.unit.models import factory_business
 
 
 @pytest.mark.parametrize('invalid_court_order', [
@@ -40,10 +45,13 @@ from legal_api.services.filings.validations.common_validations import validate_c
 ])
 def test_validate_invalid_court_orders(session, invalid_court_order):
     """Assert not valid court orders."""
-    msg = validate_court_order('/filing/alteration/courtOrder', invalid_court_order)
+    business = factory_business('BC1234567')
+    filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
+    filing['filing']['courtOrder'] = invalid_court_order
+    err = validate(business, filing)
 
-    assert msg
-    assert len(msg) > 0
+    assert err
+    assert len(err.msg) > 0
 
 
 @pytest.mark.parametrize('valid_court_order', [

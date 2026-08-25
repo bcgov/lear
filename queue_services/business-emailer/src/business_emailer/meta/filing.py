@@ -877,22 +877,22 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing.filing_type == "dissolution":
             # Suppress Certificate of Dissolution for Admin Dissolution
             if filing.filing_sub_type == "administrative":
-                outputs.remove("certificateOfDissolution")
+                outputs.discard("certificateOfDissolution")
             # Suppress Certified Memorandum and Certified Rules for Coop Voluntary Dissolution
             if filing.filing_sub_type == "voluntary" and filing.json_legal_type == Business.LegalTypes.COOP:
-                outputs.remove("certifiedRules")
-                outputs.remove("certifiedMemorandum")
+                outputs.discard("certifiedRules")
+                outputs.discard("certifiedMemorandum")
         return outputs
 
     @staticmethod
     def alter_outputs_special_resolution(filing, outputs):
         """Handle output file list modification for special resolution."""
         if filing.filing_type == "specialResolution":
-            outputs.remove("certifiedMemorandum")
+            outputs.discard("certifiedMemorandum")
             if "changeOfName" in filing.meta_data.get("legalFilings", []):
                 outputs.add("certificateOfNameChange")
             if not filing.meta_data.get("alteration", {}).get("uploadNewRules"):
-                outputs.remove("certifiedRules")
+                outputs.discard("certifiedRules")
         return outputs
 
     @staticmethod

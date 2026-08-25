@@ -1,6 +1,6 @@
 [project]
 name = "legal-api"
-version = "3.1.0"
+version = "3.1.18"
 description = ""
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
@@ -25,7 +25,6 @@ dependencies = [
     # FUTURE: look at removing
     "strict-rfc3339 (==0.7)",
     # FUTURE: look at removing restriction
-    "minio (==7.0.2)",
     "pypdf (>=6.12.1)",
     "reportlab (>=4.5.0)",
     # FUTURE: look at removing restriction

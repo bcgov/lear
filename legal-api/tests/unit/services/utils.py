@@ -31,7 +31,8 @@ jwt_json_token_header = {
 }
 
 
-def helper_create_jwt_json_token_claims(roles: List[str] = [], username: str = 'test-user'):
+def helper_create_jwt_json_token_claims(roles: List[str] = [], username: str = 'test-user',
+                                        login_source: str = 'IDIR', extra_claims: dict = None):
     """Create a jwt token claims"""
     return {
         'iss': 'https://example.localdomain/auth/realms/example',
@@ -42,18 +43,24 @@ def helper_create_jwt_json_token_claims(roles: List[str] = [], username: str = '
         'jti': 'flask-jwt-oidc-test-support',
         'typ': 'Bearer',
         'username': f'{username}',
+        # name matches the completing party officer in the registry_schemas example filings
+        'firstname': 'Joe P',
+        'lastname': 'Swanson',
         'idp_userid': '123',
-        'loginSource': 'IDIR',
+        'loginSource': login_source,
         'realm_access': {
             'roles': [] + roles
-        }
+        },
+        **(extra_claims or {}),
     }
 
 
-def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: str = 'test-user'):
+def helper_create_jwt(jwt_manager: JwtManager, roles: List[str] = [], username: str = 'test-user',
+                      login_source: str = 'IDIR', extra_claims: dict = None):
     """Create a jwt bearer token with the correct keys, roles and username."""
     token_header = jwt_json_token_header
-    token_claims = helper_create_jwt_json_token_claims(roles=roles, username=username)
+    token_claims = helper_create_jwt_json_token_claims(roles=roles, username=username, login_source=login_source,
+                                                       extra_claims=extra_claims)
     return jwt_manager.create_jwt(token_claims, token_header)
 
 
@@ -73,14 +80,18 @@ def jwt_request_context(app,
                         jwt_manager: JwtManager,
                         roles: List[str] = [],
                         username: str = 'test-user',
-                        account_id: str = '1'):
+                        account_id: str = '1',
+                        login_source: str = 'IDIR',
+                        extra_claims: dict = None,
+                        **kwargs):
     """Push a Flask request context with a valid JWT and populate
     request_ctx.current_user the way the @jwt.has_one_of_roles decorator
     would in production. Used by tests that call authz functions directly
     instead of routing through a JWT-decorated view.
     """
-    token = helper_create_jwt(jwt_manager, roles=roles, username=username)
-    headers = {'Authorization': f'Bearer {token}', 'Account-Id': account_id}
+    token = helper_create_jwt(jwt_manager, roles=roles, username=username, login_source=login_source,
+                              extra_claims=extra_claims)
+    headers = {'Authorization': f'Bearer {token}', 'Account-Id': account_id, **kwargs}
     with app.test_request_context(headers=headers):
         jwt_manager._require_auth_validation()
         yield

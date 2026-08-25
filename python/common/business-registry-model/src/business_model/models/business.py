@@ -316,6 +316,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     amalgamation = db.relationship('Amalgamation', lazy='dynamic')
     batch_processing = db.relationship('BatchProcessing', lazy='dynamic')
     jurisdictions = db.relationship('Jurisdiction', lazy='dynamic')
+    court_orders = db.relationship('CourtOrder', lazy='dynamic')
 
     @hybrid_property
     def identifier(self):
@@ -366,6 +367,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
     @property
     def next_anniversary(self):
         """Retrieve the next anniversary date for which an AR filing is due."""
+        if not self.founding_date or self.founding_date.year <= 1:
+            return None
         _founding_date = LegislationDatetime.as_legislation_timezone(self.founding_date)
         next_ar_year = (self.last_ar_year if self.last_ar_year else _founding_date.year) + 1
         no_of_years_to_add = next_ar_year - _founding_date.year
@@ -670,6 +673,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 (self.last_ar_year if self.last_ar_year else self.founding_date.year) + 1
             )
 
+        next_anniversary = self.next_anniversary
         d = {
             **slim_json,
             'arMinDate': ar_min_date.isoformat() if ar_min_date else '',
@@ -685,7 +689,7 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
             'naicsKey': self.naics_key,
             'naicsCode': self.naics_code,
             'naicsDescription': self.naics_description,
-            'nextAnnualReport': self.next_anniversary.isoformat(),
+            'nextAnnualReport': next_anniversary.isoformat() if next_anniversary else '',
             'noDissolution': self.no_dissolution,
             'associationType': self.association_type,
             'allowedActions': self.allowable_actions,
@@ -724,9 +728,9 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
 
     def _extend_json(self, d):
         """Include conditional fields to json."""
-        if self.last_coa_date:
+        if self.last_coa_date and self.last_coa_date.year > 1:
             d['lastAddressChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_coa_date)
-        if self.last_cod_date:
+        if self.last_cod_date and self.last_cod_date.year > 1:
             d['lastDirectorChangeDate'] = LegislationDatetime.format_as_legislation_date(self.last_cod_date)
 
         if self.dissolution_date:

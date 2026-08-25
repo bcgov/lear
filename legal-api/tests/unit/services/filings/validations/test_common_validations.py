@@ -19,7 +19,7 @@ from unittest.mock import patch
 
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from business_model.models import Business, Party, PartyRole, ShareClass
+from business_model.models import Business, Filing, Party, PartyRole, ShareClass
 from business_model.models.share_series import ShareSeries
 from legal_api.services import flags
 from legal_api.services.permissions import PermissionService
@@ -44,12 +44,14 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
-from tests.unit.models import factory_business, factory_party_role
+from tests.unit.models import factory_business, factory_party_role, factory_pending_filing
 
 from legal_api.services.filings.validations.common_validations import (
     EXCLUDED_WORDS_FOR_CLASS,
     EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
+    _get_file_data,
+    _nr_in_pending_filing,
     is_officer_proprietor_replace_valid,
     validate_authorization_received,
     validate_certify_name,
@@ -603,6 +605,38 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
             assert errors[0]['error'] == 'Certified by field is required.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
+@pytest.mark.parametrize('test_name, roles, login_source, certified_by, expected_error', [
+    ('api_user_missing', [], 'API_GW', '', 'Certified by field is required.'),
+    ('api_user_whitespace', [], 'API_GW', ' John Doe ', 'Certified by field cannot start or end with whitespace.'),
+    ('api_user_valid', [], 'API_GW', 'John Doe', None),
+    ('staff_missing', ['staff'], 'IDIR', '', 'Certified by field is required.'),
+    ('staff_valid', ['staff'], 'IDIR', 'John Doe', None),
+    ('public_user_not_required', [], 'BCSC', '', None),
+])
+def test_validate_certified_by_corps_completing_party(app, session, test_name, roles,
+                                                      login_source, certified_by, expected_error):
+    """Corps IA requires certifiedBy for staff and API users (API users identified by loginSource)."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['header']['certifiedBy'] = certified_by
+    filing['filing']['incorporationApplication'] = INCORPORATION
+
+    with (
+        patch('legal_api.services.filings.validations.common_validations.jwt.validate_roles',
+              side_effect=lambda user, required: bool(set(required) & set(roles))),
+        app.test_request_context()
+    ):
+        from flask.globals import request_ctx
+        request_ctx.current_user = {'sub': 'test-user', 'loginSource': login_source}
+        errors = validate_certified_by(filing, 'incorporationApplication', 'BEN')
+
+    if expected_error:
+        assert errors
+        assert errors[0]['error'] == expected_error
+        assert errors[0]['path'] == '/filing/header/certifiedBy'
+    else:
+        assert errors == []
+
+
 @pytest.mark.parametrize(
     'legal_type',
     [
@@ -1025,8 +1059,8 @@ def test_validate_party_role_firms(mock_permission_service, mock_business, mock_
     else:
         mock_business.find_by_identifier.return_value = None
     
-    mock_response = type('Response', (), {'status_code': HTTPStatus.OK if business_in_colin else HTTPStatus.NOT_FOUND})()
-    mock_colin.query_business.return_value = mock_response
+    mock_colin.query_business.return_value = \
+        ({'business': {}}, HTTPStatus.OK) if business_in_colin else (None, HTTPStatus.NOT_FOUND)
 
     if has_permission:
         mock_permission_service.check_user_permission.return_value = None
@@ -1113,11 +1147,10 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test@example.co.uk', True),
     ('user@[192.168.1.1]', True),
     ('no_one@never.get', True),
-    ('"quoted"@example.com', True),
     ('user_name@domain.org', True),
     ('test123@test123.com', True),
     ('john.o\'smith@gov.bc.ca', True),
-    # Invalid email formats
+    # Invalid email formats.
     ('no_one@never.', False),
     ('invalid', False),
     ('@invalid.com', False),
@@ -1127,6 +1160,7 @@ def test_is_officer_proprietor_replace_valid(session, test_name, legal_type, exi
     ('test @example.com', False),
     ('test@ example.com', False),
     ('test@@example.com', False),
+    ('"quoted"@example.com', False),
 ])
 def test_contact_point_email_format_via_schema(session, email, is_valid):
     """The contactPoint email format is enforced by the schema (the same EMAIL_PATTERN the API used).
@@ -1178,7 +1212,7 @@ def test_validate_court_order_with_flag_on(session, has_permission, expected_err
         result = validate_court_order('/filing/alteration/courtOrder', court_order)
 
     if has_permission:
-        assert result is None
+        assert result == []
     else:
         assert isinstance(result, list)
         assert len(result) == 1
@@ -2286,3 +2320,116 @@ def test_validate_foreign_jurisdiction(session, test_name, foreign_jurisdiction,
         is_region_for_us_required=is_region_for_us_required
     )
     assert errors == expected_errors
+
+@pytest.mark.parametrize(
+    'file_key, expected_class, expected_id',
+    [
+        ('CORP-DS0000101951', 'CORP', 'DS0000101951'),
+        ('COOP-DS0000101952', 'COOP', 'DS0000101952'),
+        ('FIRM-DS0000101953', 'FIRM', 'DS0000101953'),
+    ]
+)
+def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, expected_id):
+    """Test that DRS document keys retrieve content from DRS."""
+
+    monkeypatch.setattr(
+        'legal_api.services.filings.validations.common_validations.doc_service.get_document',
+        lambda drs_id, doc_class, doc_binary=True:
+            type(
+                'Response',
+                (),
+                {
+                    'ok': True,
+                    'content': b'test pdf content'
+                }
+            )()
+    )
+
+    data, size = _get_file_data(file_key)
+
+    assert data == b'test pdf content'
+    assert size == len(b'test pdf content')
+
+
+def test_get_file_data_drs_failure(session, monkeypatch):
+    """Test that DRS retrieval errors raise an exception."""
+
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None:
+            ["drs-upload"]
+            if flag == "enable-new-feature" else default
+    )
+
+    monkeypatch.setattr(
+        'legal_api.services.filings.validations.common_validations.doc_service.get_document',
+        lambda *args, **kwargs:
+            type(
+                'Response',
+                (),
+                {
+                    'ok': False,
+                    'status_code': 404
+                }
+            )()
+    )
+
+    with pytest.raises(ValueError, match="DRS get_document failed"):
+        _get_file_data("CORP-DS0000101951")
+
+
+@pytest.mark.parametrize(
+    "test_name, filing_type, status, has_nr, expected",
+    [
+        # All valid NR filing types in PENDING state are blocked
+        ("ia_pending", "incorporationApplication", "PENDING", True, True),
+        ("reg_pending", "registration", "PENDING", True, True),
+        ("amalg_pending", "amalgamationApplication", "PENDING", True, True),
+        ("cont_in_pending", "continuationIn", "PENDING", True, True),
+        ("alt_pending", "alteration", "PENDING", True, True),
+        ("con_name_pending", "changeOfName", "PENDING", True, True),
+        ("cor_reg_pending", "changeOfRegistration", "PENDING", True, True),
+        ("conv_pending", "conversion", "PENDING", True, True),
+        # PAID filing blocks
+        ("ia_paid", "incorporationApplication", "PAID", True, True),
+        # DRAFT filing does not block
+        ("ia_draft", "incorporationApplication", "DRAFT", True, False),
+        # Valid NR filing type but no NR information present — does not block
+        ("ia_no_nr", "incorporationApplication", "PENDING", False, False),
+        # Invalid NR filing type (dissolution is not in FILING_TYPES_WITH_NR) — does not block
+        ("dissolution_pending", "dissolution", "PENDING", True, False),
+    ]
+)
+def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, expected):
+    """Assert _nr_in_pending_filing blocks based on filing type, status, and NR presence."""
+    import random
+    nr_number = f"NR {random.randint(1000000, 9999999)}"
+
+    # Some filing types require a sub-type field to satisfy the Filing model
+    required_subtype_fields = {
+        "amalgamationApplication": {"type": "regular"},
+        "dissolution": {"dissolutionType": "voluntary"},
+    }
+    base_data = dict(required_subtype_fields.get(filing_type, {}))
+    if has_nr:
+        base_data["nameRequest"] = {"nrNumber": nr_number}
+    filing_data = {filing_type: base_data}
+    filing_json = {
+        "filing": {
+            "header": {"name": filing_type},
+            **filing_data,
+        }
+    }
+
+    if status == "PAID":
+        f = factory_pending_filing(None, filing_json)
+        f.payment_completion_date = f.filing_date
+        f.save()
+    elif status == "DRAFT":
+        f = Filing()
+        f.filing_json = filing_json
+        f.save()
+    else:  # PENDING
+        factory_pending_filing(None, filing_json)
+
+    assert _nr_in_pending_filing(nr_number) is expected

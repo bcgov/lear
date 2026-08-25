@@ -57,6 +57,10 @@ class _Config:  # pylint: disable=too-few-public-methods
     REPORT_API_GOTENBERG_URL = os.getenv("REPORT_API_GOTENBERG_URL", "https://")
 
     COLIN_URL = f"{os.getenv('COLIN_API_URL', '')}{os.getenv('COLIN_API_VERSION', '')}"
+    try:
+        COLIN_TIMEOUT = int(os.getenv("COLIN_TIMEOUT", "20"))
+    except (TypeError, ValueError):
+        COLIN_TIMEOUT = 20
 
     LEGAL_API_BASE_URL = f"{BUSINESS_API_GW_URL + BUSINESS_API_VERSION_2}/businesses"
 
@@ -137,12 +141,6 @@ class _Config:  # pylint: disable=too-few-public-methods
     # legislative timezone for future effective dating
     LEGISLATIVE_TIMEZONE = os.getenv("LEGISLATIVE_TIMEZONE", "America/Vancouver")
 
-    # Minio configuration values
-    MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT")
-    MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
-    MINIO_ACCESS_SECRET = os.getenv("MINIO_ACCESS_SECRET")
-    MINIO_BUCKET_BUSINESSES = os.getenv("MINIO_BUCKET_BUSINESSES", "businesses")
-    MINIO_SECURE = True
 
     # determines which year of NAICS data will be used to drive NAICS search
     NAICS_YEAR = int(os.getenv("NAICS_YEAR", "2022"))
@@ -303,12 +301,6 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
 4H8UZcVFN95vEKxJiLRjAmj6g273pu9kK4ymXNEjWWJn
 -----END RSA PRIVATE KEY-----"""
 
-    # Minio variables
-    MINIO_ENDPOINT = "http://dummy-minio-url"
-    MINIO_ACCESS_KEY = "minio"
-    MINIO_ACCESS_SECRET = "minio123"
-    MINIO_BUCKET_BUSINESSES = "businesses"
-    MINIO_SECURE = False
 
     # determines which year of NAICS data will be used to drive NAICS search;
     # matches the test seed data loaded by business_model_migrations
@@ -321,6 +313,8 @@ NrQw+2OdQACBJiEHsdZzAkBcsTk7frTH4yGx0VfHxXDPjfTj4wmD6gZIlcIr9lZg
     PAYMENT_SVC_URL = "https://PAY_SVC_URL/api/v1/payment-requests"
     AUTH_SVC_URL = "https://AUTH_SVC_URL"
     ACCOUNT_SVC_AUTH_URL = "https://ACCOUNT_SVC_AUTH_URL"
+    COLIN_URL = "https://COLIN_API_URL/api/v1"
+    ACCOUNT_SVC_CLIENT_SECRET = None
 
     BUSINESS_SCHEMA_ID = os.getenv("BUSINESS_SCHEMA_ID", "TEST_BUSINESS_SCHEMA_ID")
     BUSINESS_CRED_DEF_ID = os.getenv("BUSINESS_CRED_DEF_ID", "TEST_BUSINESS_SCHEMA_ID")

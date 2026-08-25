@@ -61,9 +61,18 @@ def validate(filing_json: dict) -> Error | None:  # pylint: disable=too-many-bra
         return Error(HTTPStatus.FORBIDDEN,
                      [{"error": babel(f"{legal_type} does not support continuation in filing.")}])
 
-    msg.extend(validate_business_in_colin(filing_json, filing_type))
+    msg.extend(validate_continuation_in_expro_business_in_colin(
+        filing_json["filing"][filing_type].get("business"),
+        f"/filing/{filing_type}/business"
+    ))
     msg.extend(validate_continuation_in_authorization(filing_json, filing_type, legal_type))
-    msg.extend(_validate_foreign_jurisdiction(filing_json, filing_type, legal_type))
+
+    foreign_jurisdiction = filing_json["filing"][filing_type]["foreignJurisdiction"]
+    msg.extend(validate_continuation_in_foreign_jurisdiction(
+        legal_type,
+        foreign_jurisdiction,
+        f"/filing/{filing_type}/foreignJurisdiction"
+    ))
     msg.extend(validate_name_request(filing_json, legal_type, filing_type))
 
     if get_bool(filing_json, "/filing/continuationIn/isApproved"):
@@ -161,13 +170,14 @@ def _validate_incorporation_date(incorporation_date: str, incorporation_date_pat
     return msg
 
 
-def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_type: str) -> list:
+def validate_continuation_in_foreign_jurisdiction(
+    legal_type: str,
+    foreign_jurisdiction: dict,
+    foreign_jurisdiction_path: str,
+    skip_affidavit: bool = False
+) -> list:
     """Validate continuation in foreign jurisdiction."""
     msg = []
-    foreign_jurisdiction = filing_json["filing"][filing_type]["foreignJurisdiction"]
-    incorporation_date = filing_json["filing"][filing_type]["foreignJurisdiction"]["incorporationDate"]
-    foreign_jurisdiction_path = f"/filing/{filing_type}/foreignJurisdiction"
-    incorporation_date_path = f"/filing/{filing_type}/foreignJurisdiction/incorporationDate"
 
     # identifier required (non-empty / non-whitespace) is enforced by the schema
     # (business-schemas continuation_in foreignJurisdiction.identifier pattern).
@@ -189,16 +199,22 @@ def _validate_foreign_jurisdiction(filing_json: dict, filing_type: str, legal_ty
 
     if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
         msg.extend(err)
-    elif (legal_type == Business.LegalTypes.ULC_CONTINUE_IN.value and
-          foreign_jurisdiction["country"] == "CA" and
-          ((region := foreign_jurisdiction.get("region")) and region == "AB")):
+
+    # Skip affidavit if skip_affidavit is True (correction)
+    if (
+            not skip_affidavit and
+            legal_type == Business.LegalTypes.ULC_CONTINUE_IN.value and
+            foreign_jurisdiction.get("country") == "CA" and
+            foreign_jurisdiction.get("region") == "AB"
+    ):
         affidavit_file_key_path = f"{foreign_jurisdiction_path}/affidavitFileKey"
         if file_key := foreign_jurisdiction.get("affidavitFileKey"):
-            if err := validate_pdf(file_key, affidavit_file_key_path, False):
-                msg.extend(err)
+            msg.extend(validate_pdf(file_key, affidavit_file_key_path, False))
         else:
             msg.append({"error": "Affidavit from the directors is required.", "path": affidavit_file_key_path})
 
+    incorporation_date = foreign_jurisdiction["incorporationDate"]
+    incorporation_date_path = f"{foreign_jurisdiction_path}/incorporationDate"
     msg.extend(_validate_incorporation_date(incorporation_date, incorporation_date_path))
 
     return msg
@@ -217,8 +233,7 @@ def validate_continuation_in_authorization(filing_json: dict, filing_type: str, 
     for index, file in enumerate(file_list):
         file_key = file["fileKey"]
         file_key_path = f"{authorization_path}/files/{index}/fileKey"
-        if err := validate_pdf(file_key, file_key_path, False):
-            msg.extend(err)
+        msg.extend(validate_pdf(file_key, file_key_path, False))
 
     return msg
 
@@ -227,32 +242,29 @@ def validate_continuation_in_court_order(filing: dict, filing_type) -> list:
     """Validate court order."""
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
-        err = validate_court_order(court_order_path, court_order)
-        if err:
-            return err
+        return validate_court_order(court_order_path, court_order)
     return []
 
 
-def validate_business_in_colin(filing_json: dict, filing_type: str) -> list:
+def validate_continuation_in_expro_business_in_colin(expro: dict, path: str, skip_founding_date: bool = False) -> list:
     """Validate continuation EXPRO business by making a call to Colin API."""
     msg = []
-    business_identifier_path = f"/filing/{filing_type}/business/identifier"
-    business_legal_name_path = f"/filing/{filing_type}/business/legalName"
-    business_founding_date_path = f"/filing/{filing_type}/business/foundingDate"
+    business_identifier_path = f"{path}/identifier"
+    business_legal_name_path = f"{path}/legalName"
+    business_founding_date_path = f"{path}/foundingDate"
 
-    if filing_json["filing"][filing_type].get("business"):
-        identifier = filing_json["filing"][filing_type]["business"]["identifier"]
-        legal_name = filing_json["filing"][filing_type]["business"].get("legalName")
-        founding_date = filing_json["filing"][filing_type]["business"].get("foundingDate")
-        response = colin.query_business(identifier)
-        response_json = response.json()
-        if response.status_code != HTTPStatus.OK:
+    if expro:
+        identifier = expro["identifier"]
+        legal_name = expro.get("legalName")
+        founding_date = expro.get("foundingDate")
+        response_json, response_status = colin.query_business(identifier)
+        if response_json is None or response_status != HTTPStatus.OK:
             msg.append({"error": "Could not fetch business data for company from Colin.",
                         "path": business_identifier_path})
         elif legal_name != response_json["business"]["legalName"]:
             msg.append({"error": "Legal name does not match with company legal name from Colin.",
                         "path": business_legal_name_path})
-        elif founding_date != response_json["business"]["foundingDate"]:
+        elif not skip_founding_date and founding_date != response_json["business"]["foundingDate"]:
             msg.append({"error": "Founding date does not match with founding date from Colin.",
                         "path": business_founding_date_path})
 

@@ -20,12 +20,15 @@ from dateutil.relativedelta import relativedelta
 from flask.globals import request_ctx
 from flask_babel import _
 
-from business_model.models import Business, Filing, PartyRole
+from business_model.models import Business, CourtOrder, Filing, PartyRole
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
+from legal_api.services.filings.validations.alteration import validate_type_change
+from legal_api.services.filings.validations.amalgamation_out import validate_amalgamation_out_date
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
+    validate_foreign_jurisdiction,
     validate_name_request,
     validate_offices_addresses,
     validate_parties_addresses,
@@ -36,6 +39,11 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_currency,
     validate_share_structure,
 )
+from legal_api.services.filings.validations.continuation_in import (
+    validate_continuation_in_expro_business_in_colin,
+    validate_continuation_in_foreign_jurisdiction,
+)
+from legal_api.services.filings.validations.continuation_out import validate_continuation_out_date
 from legal_api.services.filings.validations.incorporation_application import (
     validate_coop_parties_mailing_address,
     validate_roles,
@@ -79,6 +87,11 @@ def validate(business: Business, filing: dict) -> Error:
         path = "/filing/correction/correctedFilingId"
         msg.append({"error": _("Corrected filing is not a valid filing for this business."), "path": path})
 
+    elif corrected_filing.filing_type != filing["filing"]["correction"]["correctedFilingType"]:
+        path = "/filing/correction/correctedFilingType"
+        msg.append({"error": _("The corrected filing type does not match filing type of corrected filing."),
+                    "path": path})
+
     # skip all the other validation checks if comment only correction
     if not is_comment_only_correction:
         if filing.get("filing", {}).get("correction", {}).get("parties", None):
@@ -100,18 +113,21 @@ def validate(business: Business, filing: dict) -> Error:
             ))
         if filing.get("filing", {}).get("correction", {}).get("offices", None):
             msg.extend(validate_offices_addresses(filing, filing_type))
-        # validations for firms
-        if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-            _validate_firms_correction(business, filing, business.legal_type, msg)
-        elif business.legal_type in Business.CORPS:
-            _validate_corps_correction(business, filing, business.legal_type, msg)
-        elif business.legal_type == Business.LegalTypes.COOP.value:
-            _validate_special_resolution_correction(filing, business.legal_type, msg)
+
+        _validate_type_specific_props(business, filing, msg)
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
     return None
+
+def _validate_type_specific_props(business: Business, filing: dict, msg: list):
+    if business.legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
+        _validate_firms_correction(business, filing, business.legal_type, msg)
+    elif business.legal_type in Business.CORPS:
+        _validate_corps_correction(business, filing, business.legal_type, msg)
+    elif business.legal_type == Business.LegalTypes.COOP.value:
+        _validate_special_resolution_correction(filing, business.legal_type, msg)
 
 
 def _validate_firms_correction(business: Business, filing, legal_type, msg):
@@ -129,6 +145,13 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
 
 def _validate_corps_correction(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
+    if new_legal_type := filing_dict.get("filing", {}).get("correction", {}).get("newLegalType"):
+        if business.legal_type == new_legal_type:
+            # This is not a valid type change
+            path = "/filing/correction/newLegalType"
+            msg.append({"error": _("New legal type must be different from current legal type."), "path": path})
+        else:
+            msg.extend(validate_type_change(filing_dict, business, "/filing/correction/newLegalType"))
     if filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
@@ -144,30 +167,137 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         if err:
             msg.extend(err)
 
-        err = validate_share_currency(filing_dict, filing_type, business)
-        if err:
-            msg.extend(err)
+        msg.extend(validate_share_currency(filing_dict, filing_type, business))
+        msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
 
-        err = validate_resolution_date_in_share_structure(filing_dict, filing_type, business)
-        if err:
-            msg.extend(err)
+    if filing_dict.get("filing", {}).get("correction", {}).get("courtOrder", None):
+        msg.extend(court_order_validation(filing_dict))
+
+    msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
+    msg.extend(_validate_out_correction(filing_dict, filing_type))
+    msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
+    msg.extend(_validate_court_orders_correction(filing_dict, business))
+
+
+def _validate_court_orders_correction(filing_dict, business: Business):
+    """Validate court orders for a correction filing.
+
+    - If the court order has an Id, verifies it exists in the database for the business.
+    - If the court order does not have an Id, verifies its filingId matches the corrected filing Id.
+    - Verifies that only one court order is associated with the corrected filing in the database.
+    - Verifies that no more than one new court order is being added in the correction.
+    - Performs common validation on court order details.
+    """
+    msg = []
+    if not (orders := filing_dict["filing"]["correction"].get("courtOrders")):
+        return msg
+
+    corrected_filing_id = filing_dict["filing"]["correction"]["correctedFilingId"]
+    new_court_orders = []
+    court_orders_db = CourtOrder.get_json_with_filing_type(business.id)
+    for idx, order in enumerate(orders):
+        path = f"/filing/correction/courtOrders/{idx}"
+        is_file_or_details_required = False
+        if order_id := order.get("id"):
+            court_order_db = next((o for o in court_orders_db if o["id"] == order_id), None)
+            if not court_order_db:
+                msg.append({"error": _("Court order not found."), "path": path})
+            else:
+                is_file_or_details_required = (court_order_db["filingType"] == "courtOrder")
+        elif order.get("filingId") == corrected_filing_id:
+            if next((o for o in court_orders_db if o["filingId"] == corrected_filing_id), None):
+                msg.append({"error": _("Only one court order can be added per filing."), "path": path})
+
+            is_file_or_details_required = (filing_dict["filing"]["correction"]["correctedFilingType"] == "courtOrder")
+            new_court_orders.append(order)
+        else:
+            msg.append({"error": _("Filing Id does not match corrected filing Id."), "path": path})
+
+
+        msg.extend(validate_court_order(path, order, is_file_or_details_required))
+
+    if len(new_court_orders) > 1:
+        msg.append({"error": _("Only one court order can be added."), "path": "/filing/correction/courtOrders"})
+
+    return msg
+
+
+def _validate_amalgamation_correction(filing_dict, filing_type, business: Business):
+    msg = []
+    if not (
+        amalgamating_businesses_json := filing_dict["filing"][filing_type].get("amalgamation", {})
+            .get("amalgamatingBusinesses", [])
+    ):
+        return msg
+    
+    amalgamation = business.amalgamation.first()
+    amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+    for idx, ting_json in enumerate(amalgamating_businesses_json):
+        path = f"/filing/{filing_type}/amalgamation/amalgamatingBusinesses/{idx}"
+        ting_id = ting_json["id"]
+        ting = next((ting for ting in amalgamating_businesses if ting.id == ting_id), None)
+        if not ting:
+            msg.append({"error": _("Amalgamating business not found."), "path": path})
+            continue
+
+        if ting.business_id:
+            msg.append({"error": _("Can only correct foreign businesses."), "path": path})
+            continue
+
+        msg.extend(
+            validate_foreign_jurisdiction(
+                ting_json["foreignJurisdiction"],
+                f"{path}/foreignJurisdiction",
+                is_region_bc_valid=True,
+                is_region_for_us_required=False
+            )
+        )
+    return msg
+
+
+def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
+    msg = []
+    if continuation_in := filing_dict["filing"][filing_type].get("continuationIn"):
+        msg.extend(validate_continuation_in_foreign_jurisdiction(
+            legal_type,
+            continuation_in,
+            f"/filing/{filing_type}/continuationIn",
+            skip_affidavit=True
+        ))
+        msg.extend(validate_continuation_in_expro_business_in_colin(
+            continuation_in.get("expro"),
+            f"/filing/{filing_type}/continuationIn/expro",
+            skip_founding_date=True
+        ))
+    return msg
+
+
+def _validate_out_correction(filing_dict, filing_type):
+    msg = []
+    if continuation_out := filing_dict["filing"][filing_type].get("continuationOut"):
+        msg.extend(validate_continuation_out_date(filing_dict, f"/filing/{filing_type}/continuationOut/date"))
+        msg.extend(validate_foreign_jurisdiction(continuation_out, f"/filing/{filing_type}/continuationOut"))
+    elif amalgamation_out := filing_dict["filing"][filing_type].get("amalgamationOut"):
+        msg.extend(validate_amalgamation_out_date(filing_dict, f"/filing/{filing_type}/amalgamationOut/date"))
+        msg.extend(validate_foreign_jurisdiction(amalgamation_out, f"/filing/{filing_type}/amalgamationOut"))
+    return msg
 
 
 def _validate_special_resolution_correction(filing_dict, legal_type, msg):
     filing_type = "correction"
     if filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("resolution", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("resolution", None):
         msg.extend(validate_resolution_content(filing_dict, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("signingDate", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("signingDate", None):
         msg.extend(validate_signing_date(filing_dict, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("signatory", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("signatory", None):
         msg.extend(validate_signatory_name(filing_dict, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("courtOrder", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         msg.extend(court_order_validation(filing_dict))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("rulesFileKey", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("rulesFileKey", None):
         msg.extend(rules_change_validation(filing_dict))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("memorandumFileKey", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("memorandumFileKey", None):
         msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get("filing", {})):
         _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg)
@@ -284,9 +414,7 @@ def court_order_validation(filing):
     """Validate court order."""
     court_order_path: Final = "/filing/correction/courtOrder"
     if get_str(filing, court_order_path):
-        err = validate_court_order(court_order_path, filing["filing"]["correction"]["courtOrder"])
-        if err:
-            return err
+        return validate_court_order(court_order_path, filing["filing"]["correction"]["courtOrder"])
     return []
 
 
@@ -297,11 +425,9 @@ def rules_change_validation(filing):
     rules_file_key: Final = get_str(filing, rules_file_key_path)
 
     if rules_file_key:
-        rules_err = validate_pdf(rules_file_key, rules_file_key_path)
-        if rules_err:
-            msg.extend(rules_err)
-        return msg
-    return []
+        msg.extend(validate_pdf(rules_file_key, rules_file_key_path))
+
+    return msg
 
 
 def memorandum_change_validation(filing):
@@ -311,8 +437,6 @@ def memorandum_change_validation(filing):
     memorandum_file_key: Final = get_str(filing, memorandum_file_key_path)
 
     if memorandum_file_key:
-        rules_err = validate_pdf(memorandum_file_key, memorandum_file_key_path)
-        if rules_err:
-            msg.extend(rules_err)
-        return msg
-    return []
+        msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
+
+    return msg

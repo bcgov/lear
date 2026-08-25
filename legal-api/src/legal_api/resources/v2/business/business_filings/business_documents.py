@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity documents.
 """
+import re
 from http import HTTPStatus
 from typing import Final
 
@@ -25,6 +26,7 @@ from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
 from pydantic import BaseModel
 
+from business_account import AccountService
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Document, UserRoles
 from business_model.models import Filing as FilingModel
@@ -33,7 +35,9 @@ from legal_api.exceptions import ErrorCode, get_error_message
 from legal_api.reports import get_pdf
 from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp
-from legal_api.services import MinioService, authorized
+from legal_api.services import authorized
+from legal_api.services import doc_service as client_doc_service
+from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight
 
@@ -115,17 +119,18 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
 
         if legal_filing_name:
             if legal_filing_name.lower().startswith("receipt"):
-                return _get_receipt(business, filing, jwt.get_token_auth_header())
+                return _get_receipt(business, filing)
 
             return get_pdf(filing.storage, legal_filing_name)
         elif file_key and (document := Document.find_by_file_key(file_key)):
-            if document.filing_id == filing.id:  # make sure the file belongs to this filing
-                response = MinioService.get_file(document.file_key)
+            if document.filing_id == filing.id and (match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key)):  # make sure the file belongs to this filing
+                drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
                 return current_app.response_class(
-                    response=response.data,
-                    status=response.status,
+                    response=drs_response.content,
+                    status=drs_response.status_code,
                     mimetype=APP_PDF
                 )
+                
 
     return {}, HTTPStatus.NOT_FOUND
 
@@ -202,7 +207,7 @@ def _get_document_list(business: Business, filing: Filing):
     return jsonify(document_list), HTTPStatus.OK
 
 
-def _get_receipt(business: Business, filing: Filing, token):
+def _get_receipt(business: Business, filing: Filing):
     """Get the receipt for the filing."""
     if filing.status not in (
             Filing.Status.COMPLETED,
@@ -219,8 +224,9 @@ def _get_receipt(business: Business, filing: Filing, token):
         filing.filing_type == "noticeOfWithdrawal"
     ):
         effective_date = LegislationDatetime.format_as_report_string(filing.storage.effective_date)
-
-    headers = {"Authorization": "Bearer " + token}
+    service_token = AccountService.get_bearer_token()
+    headers = {"Authorization": "Bearer " + service_token}
+    add_account_linking_key_header(headers)
 
     corp_name = _get_corp_name(business, filing.storage)
 
@@ -329,7 +335,6 @@ def _regenerate_documents(business: Business, filing: Filing, query: RegenerateQ
 
     docs.pop("receipt", None)
     docs.pop("staticDocuments", None)
-    docs.pop("uploadedCourtOrder", None)
     doc_keys.extend(docs.keys())
 
     for doc_name in doc_keys:

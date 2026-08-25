@@ -17,7 +17,7 @@ from typing import Final
 
 from flask_babel import _
 
-from business_common.utils.datetime import datetime
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business
 from legal_api.errors import Error
 from legal_api.services.utils import get_date, get_str
@@ -74,12 +74,14 @@ def validate_resolution_date(business: Business, filing_json: dict) -> list | No
         msg.append({"error": _("Resolution date is required."), "path": resolution_date_path})
         return msg
 
-    if resolution_date < business.founding_date.date():
+    founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+
+    if resolution_date < founding_date_leg:
         msg.append({"error": _("Resolution date cannot be earlier than the incorporation date."),
                     "path": resolution_date_path})
         return msg
 
-    if resolution_date > datetime.utcnow().date():
+    if resolution_date > LegislationDatetime.datenow():
         msg.append({"error": _("Resolution date cannot be in the future."),
                     "path": resolution_date_path})
         return msg
@@ -99,7 +101,7 @@ def validate_signing_date(filing_json: dict, filing_type: str = "specialResoluti
         msg.append({"error": _("Signing date is required."), "path": signing_date_path})
         return msg
 
-    if signing_date > datetime.utcnow().date():
+    if signing_date > LegislationDatetime.datenow():
         msg.append({"error": _("Signing date cannot be in the future."),
                     "path": signing_date_path})
         return msg

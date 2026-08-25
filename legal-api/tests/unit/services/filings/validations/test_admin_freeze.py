@@ -22,7 +22,6 @@ from reportlab.lib.pagesizes import letter
 from legal_api.services.filings.validations.admin_freeze import validate
 
 from tests.unit.models import factory_business
-from tests.unit.services.filings.test_utils import _upload_file
 from tests.unit.services.filings.validations import lists_are_equal
 
 

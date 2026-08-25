@@ -25,7 +25,6 @@ import requests_mock
 from flask import Flask
 from flask_migrate import Migrate, upgrade
 from ldclient.integrations.test_data import TestData
-from minio.error import S3Error
 from sqlalchemy import event, text
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.sql.functions import now as _sqla_now
@@ -211,71 +210,6 @@ def session(database_setup):
     connection.close()
 
 
-@pytest.fixture()
-def minio_server(monkeypatch):
-    """Create the minio services that the integration tests will use."""
-    mock_url = 'https://dummy-minio-url.com/businesses'
-    minio_mock = Mock()
-
-    def _presigned_url_side_effect(bucket_name, key, *args, **kwargs):
-        return f'{mock_url}/{key}'
-
-    def _put_object_side_effect(bucket_name, key, data, *args, **kwargs):
-        # The 'data' argument is a file-like object, read its content.
-        # Ensure it's read to the end for completeness, but typically only one read is needed.
-        file_content = data.read()
-        minio_mock.stored_objects[key] = file_content
-        return None
-
-    def _get_object_side_effect(bucket_name, key, *args, **kwargs):
-        if key in minio_mock.stored_objects:
-            mock_file = Mock()
-            mock_file.data = minio_mock.stored_objects[key]
-            return mock_file
-        raise S3Error("NoSuchKey", "Object does not exist", None, None, None, None)
-
-    def _get_info_side_effect(bucket_name, key, *args, **kwargs):
-        if key in minio_mock.stored_objects:
-            mock_file = Mock()
-            mock_file.size = len(minio_mock.stored_objects[key])
-            return mock_file
-        raise S3Error("NoSuchKey", "Object does not exist", None, None, None, None)
-
-    def _remove_object_side_effect(bucket_name, key, *args, **kwargs):
-        if key in minio_mock.stored_objects:
-            del minio_mock.stored_objects[key]
-        return None
-
-    minio_mock.stored_objects = {}
-
-    minio_mock.presigned_get_object.side_effect = _presigned_url_side_effect
-    minio_mock.presigned_put_object.side_effect = _presigned_url_side_effect
-    minio_mock.stat_object.side_effect = _get_info_side_effect
-    minio_mock.get_object.side_effect = _get_object_side_effect
-    minio_mock.remove_object.side_effect = _remove_object_side_effect
-    minio_mock.put_object.side_effect = _put_object_side_effect
-
-    monkeypatch.setattr('legal_api.services.minio.MinioService._get_client', lambda: minio_mock)
-    with requests_mock.Mocker() as mock:
-        def _mock_put_side_effect(request, context):
-            key = request.url.replace(f'{mock_url}/', '', 1)
-            minio_mock.stored_objects[key] = request.body
-            context.status_code = HTTPStatus.CREATED
-            return None
-
-        def _mock_get_side_effect(request, context):
-            key = request.url.replace(f'{mock_url}/', '', 1)
-            content = minio_mock.stored_objects.get(key)
-            if content is not None:
-                context.status_code = HTTPStatus.OK
-                return content
-            else:
-                raise S3Error("NoSuchKey", "Object does not exist", None, None, None, None)
-
-        mock.put(re.compile(f"{mock_url}.*"), json=_mock_put_side_effect)
-        mock.get(re.compile(f"{mock_url}.*"), content=_mock_get_side_effect)
-
-        yield minio_mock
 
 
 @pytest.fixture(scope="function")

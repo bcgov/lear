@@ -107,12 +107,16 @@ def test_substitute_template_parts_md_replaces_footer_marker(app):
 
 
 def test_substitute_template_parts_md_replaces_all_md_parts(app):
-    """Assert that substitute_template_parts with file_type='md' replaces all five markdown common parts."""
+    """Assert that substitute_template_parts with file_type='md' replaces all markdown common parts."""
     template = (
         "[[attachments.md]]\n"
         "[[business-number.md]]\n"
         "[[business-registry-footer.md]]\n"
         "[[business-tombstone.md]]\n"
+        "[[business-tombstone-out-filing.md]]\n"
+        "[[consent.md]]\n"
+        "[[consent-next-steps.md]]\n"
+        "[[out-details.md]]\n"
         "[[what-happens-next.md]]"
     )
     with app.app_context():
@@ -122,6 +126,10 @@ def test_substitute_template_parts_md_replaces_all_md_parts(app):
         '[[business-number.md]]',
         '[[business-registry-footer.md]]',
         '[[business-tombstone.md]]',
+        '[[business-tombstone-out-filing.md]]',
+        '[[consent.md]]',
+        '[[consent-next-steps.md]]',
+        '[[out-details.md]]',
         '[[what-happens-next.md]]',
     ]:
         assert marker not in result
@@ -314,6 +322,18 @@ def test_get_recipients_mras_option_excludes_party_emails(app, filing_type):
     assert 'comp@example.com' not in result
 
 
+def test_get_recipients_dissolution_includes_party_emails(app):
+    """Assert that dissolution recipients include the custodian party email."""
+    filing_json = _make_filing_json(
+        'dissolution',
+        parties=[{'officer': {'email': 'custodian@example.com'}, 'roles': [{'roleType': 'Custodian'}]}]
+    )
+    with app.app_context():
+        result = get_recipients('COMPLETED', filing_json, None, 'dissolution')
+    assert CONTACT_POINT in result
+    assert 'custodian@example.com' in result
+
+
 def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
     """Assert that a missing contactPoint email is coalesced to an empty string (not None)."""
     filing_json = _make_filing_json(
@@ -326,23 +346,8 @@ def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
     assert result == ''
 
 
-def test_get_recipients_coop_identifier_skips_auth_call(app):
-    """Assert that CP (coop) identifiers return empty string without calling get_recipient_from_auth."""
-    filing_json = {
-        'filing': {
-            'header': {'name': 'annualReport'},
-            'business': {'identifier': 'CP1234567'},
-        }
-    }
-    with app.app_context():
-        with patch('business_emailer.email_processors.get_recipient_from_auth') as mock_auth:
-            result = get_recipients('COMPLETED', filing_json, token='token', filing_type='annualReport')
-    assert result == ''
-    mock_auth.assert_not_called()
-
-
-def test_get_recipients_non_coop_identifier_calls_get_recipient_from_auth(app):
-    """Assert that non-coop identifiers call get_recipient_from_auth for the business email."""
+def test_get_recipients_calls_get_recipient_from_auth(app):
+    """Assert that get_recipients calls get_recipient_from_auth for the business email."""
     filing_json = {
         'filing': {
             'header': {'name': 'annualReport'},

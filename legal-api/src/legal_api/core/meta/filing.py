@@ -1051,22 +1051,22 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         if filing.filing_type == "dissolution":
             # Suppress Certificate of Dissolution for Admin Dissolution
             if filing.filing_sub_type == "administrative":
-                outputs.remove("certificateOfDissolution")
+                outputs.discard("certificateOfDissolution")
             # Suppress Certified Memorandum and Certified Rules for Coop Voluntary Dissolution
             if filing.filing_sub_type == "voluntary" and filing.json_legal_type == Business.LegalTypes.COOP:
-                outputs.remove("certifiedRules")
-                outputs.remove("certifiedMemorandum")
+                outputs.discard("certifiedRules")
+                outputs.discard("certifiedMemorandum")
         return outputs
 
     @staticmethod
     def alter_outputs_special_resolution(filing, outputs):
         """Handle output file list modification for special resolution."""
         if filing.filing_type == "specialResolution":
-            outputs.remove("certifiedMemorandum")
+            outputs.discard("certifiedMemorandum")
             if "changeOfName" in filing.meta_data.get("legalFilings", []):
                 outputs.add("certificateOfNameChange")
             if not filing.meta_data.get("alteration", {}).get("uploadNewRules"):
-                outputs.remove("certifiedRules")
+                outputs.discard("certifiedRules")
         return outputs
 
     @staticmethod
@@ -1074,28 +1074,53 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         """Get static documents."""
         outputs = []
         if filing.filing_type == "continuationIn":
-            continuation_in = filing.meta_data.get("continuationIn", {})
-            if file_key := continuation_in.get("affidavitFileKey"):
+            FilingMeta._get_continuation_in_static_documents(filing, url_prefix, outputs)
+        elif filing.filing_type == "continuationOut":
+            FilingMeta._get_continuation_out_static_documents(filing, url_prefix, outputs)
+        elif filing.filing_type == "courtOrder":
+            FilingMeta._get_court_order_static_documents(filing, url_prefix, outputs)
+        return outputs
+
+    @staticmethod
+    def _get_continuation_in_static_documents(filing, url_prefix, outputs):
+        continuation_in = filing.meta_data.get("continuationIn", {})
+        if file_key := continuation_in.get("affidavitFileKey"):
+            outputs.append({
+                "name": "Unlimited Liability Corporation Information",
+                "url": f"{url_prefix}/{file_key}"
+            })
+        if authorization_files := continuation_in.get("authorizationFiles"):
+            for file in authorization_files:
+                file_key = file.get("fileKey")
                 outputs.append({
-                    "name": "Unlimited Liability Corporation Information",
+                    "name": file.get("fileName"),
                     "url": f"{url_prefix}/{file_key}"
                 })
-            if authorization_files := continuation_in.get("authorizationFiles"):
-                for file in authorization_files:
-                    file_key = file.get("fileKey")
-                    outputs.append({
-                        "name": file.get("fileName"),
-                        "url": f"{url_prefix}/{file_key}"
-                    })
-        elif filing.filing_type == "continuationOut":
-            continuation_out = filing.meta_data.get("continuationOut", {})
-            for file in continuation_out.get("uploadedDocuments", []):
-                if file_key := file.get("fileKey"):
-                    outputs.append({
-                        "name": file.get("fileName"),
-                        "url": f"{url_prefix}/{file_key}"
-                    })
-        return outputs
+
+    @staticmethod
+    def _get_continuation_out_static_documents(filing, url_prefix, outputs):
+        continuation_out = filing.meta_data.get("continuationOut", {})
+        for file in continuation_out.get("uploadedDocuments", []):
+            if file_key := file.get("fileKey"):
+                outputs.append({
+                    "name": file.get("fileName"),
+                    "url": f"{url_prefix}/{file_key}"
+                })
+
+    @staticmethod
+    def _get_court_order_static_documents(filing, url_prefix, outputs):
+        court_order = filing.meta_data.get("courtOrder", {})
+        if files := court_order.get("files"):
+            for file in files:
+                file_key = file.get("fileKey")
+                file_name = file.get("fileName")
+                if file_name.lower().endswith(".pdf"):
+                    # This may not be required. Doing this to align with the current behavior
+                    file_name = file_name[:-4]
+                outputs.append({
+                    "name": file_name,
+                    "url": f"{url_prefix}/{file_key}"
+                })
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str | None = None) -> str:

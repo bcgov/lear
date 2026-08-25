@@ -21,7 +21,8 @@ from http import HTTPStatus
 from typing import Final
 
 import pycountry
-from flask import current_app, g, request
+from flask import current_app, g, has_request_context, request
+from flask.globals import request_ctx
 from flask_babel import _
 from pypdf import PdfReader
 
@@ -29,10 +30,10 @@ from business_account import AccountService
 from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Address, Business, PartyRole
+from business_model.models import Address, Business, Filing, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
-from legal_api.services import MinioService, colin, flags, namex
+from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
 from legal_api.services.utils import get_str
@@ -103,13 +104,47 @@ FILINGS_REQUIRING_AUTHORIZATION = {
     CoreFiling.FilingTypes.NOTICEOFWITHDRAWAL,
     CoreFiling.FilingTypes.RESTORATION,
 }
+DRS_KEY_PATTERN = re.compile(r"^([A-Z]+)-(DS\d+)$")
+
+FILING_TYPES_WITH_NR = [
+    CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.REGISTRATION,
+    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
+    CoreFiling.FilingTypes.CONTINUATIONIN,
+    CoreFiling.FilingTypes.ALTERATION,
+    CoreFiling.FilingTypes.CHANGEOFNAME,
+    CoreFiling.FilingTypes.CHANGEOFREGISTRATION,
+    CoreFiling.FilingTypes.CONVERSION,
+]
+
+NR_BLOCKING_STATUSES = [
+    Filing.Status.PENDING,
+    Filing.Status.PAID,
+    Filing.Status.AWAITING_REVIEW,
+    Filing.Status.CHANGE_REQUESTED,
+    Filing.Status.APPROVED,
+]
+
+
+def _nr_in_pending_filing(nr_number: str) -> bool:
+    """Return True if the NR is already referenced in a non-draft/non-completed filing."""
+    for filing_type in FILING_TYPES_WITH_NR:
+        if Filing.query.filter(
+            Filing._status.in_([s.value for s in NR_BLOCKING_STATUSES]),
+            Filing.filing_json["filing"][filing_type.value]["nameRequest"]["nrNumber"].astext == nr_number
+        ).first():
+            return True
+    return False
+
+
+
 
 def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
     """Validate the resolution date of a share structure.
 
     Rules:
     - If hasRightsOrRestrictions is true in any share class or series, resolution date is required.
-    - Only one resolution date is permitted.
+    - Only one resolution date is permitted (alteration and old correction).
     - Resolution date cannot be in the future.
     - Resolution date cannot be before the business founding date.
     """
@@ -118,7 +153,7 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
     resolution_dates = share_structure.get("resolutionDates", [])
 
     err_path = f"/filing/{filing_type}/shareStructure/resolutionDates"
-        
+
     msg = []
     if (
         (
@@ -132,6 +167,29 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
             "path": err_path
         })
 
+    if not resolution_dates:
+        return msg
+
+    if isinstance(resolution_dates[0], str):
+        # Kept for backward compatibility (existing alteration and correction filings)
+        msg.extend(_validate_resolution_dates_old_format(resolution_dates, business, err_path))
+    else:
+        # Did not include "Only one resolution date is permitted.", not required for correction
+        # If its required for alteration add while updating alteration filing
+        existing_ids = {resolution.id for resolution in business.resolutions.all()}
+        for idx, resolution_date in enumerate(resolution_dates):
+            if (resolution_id := resolution_date.get("id")) and (resolution_id not in existing_ids):
+                msg.append({
+                    "error": "Not a valid Resolution Id for this business.",
+                    "path": f"{err_path}/{idx}"
+                })
+            else:
+                msg.extend(_validate_resolution_date(resolution_date["date"], business, f"{err_path}/{idx}"))
+
+    return msg
+
+def _validate_resolution_dates_old_format(resolution_dates, business, err_path):
+    msg = []
     if len(resolution_dates) > 1:
         msg.append({
             "error": "Only one resolution date is permitted.",
@@ -139,22 +197,27 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
         })
 
     elif len(resolution_dates) == 1:
-        resolution_date_leg = date.fromisoformat(resolution_dates[0])
-        founding_date_leg = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
-        today_leg = LegislationDatetime.datenow()
+        msg.extend(_validate_resolution_date(resolution_dates[0], business, err_path))
 
-        if resolution_date_leg > today_leg:
-            msg.append({
-                "error": "Resolution date cannot be in the future.",
-                "path": err_path
-            })
+    return msg
 
-        if resolution_date_leg < founding_date_leg:
-            msg.append({
-                "error": "Resolution date cannot be before the business founding date.",
-                "path": err_path
-            })
+def _validate_resolution_date(resolution_date_str: str, business, err_path: str) -> list[dict]:
+    resolution_date = date.fromisoformat(resolution_date_str)
+    founding_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+    today = LegislationDatetime.datenow()
 
+    msg = []
+    if resolution_date > today:
+        msg.append({
+            "error": "Resolution date cannot be in the future.",
+            "path": err_path
+        })
+
+    if resolution_date < founding_date:
+        msg.append({
+            "error": "Resolution date cannot be before the business founding date.",
+            "path": err_path
+        })
     return msg
 
 
@@ -470,48 +533,41 @@ def validate_share_currency(filing_json, filing_type, business=None):
     return msg
 
 
-def validate_court_order(court_order_path, court_order):
+def validate_court_order(
+    court_order_path: str,
+    court_order: dict,
+    is_file_or_details_required: bool = False
+) -> list[dict]:
     """Validate the courtOrder data of the filing."""
     msg = []
 
-    # TODO remove it when the issue with schema validation is fixed
-    min_file_number_length: Final = 5
-    max_file_number_length: Final = 20
-    if "fileNumber" not in court_order:
-        err_path = court_order_path + "/fileNumber"
-        msg.append({"error": "Court order file number is required.", "path": err_path})
-    elif (
-        len(court_order["fileNumber"]) < min_file_number_length or
-        len(court_order["fileNumber"]) > max_file_number_length
-    ):
-        err_path = court_order_path + "/fileNumber"
-        msg.append({"error": "Length of court order file number must be from 5 to 20 characters.",
-                    "path": err_path})
-
-    if (effect_of_order := court_order.get("effectOfOrder", None)) and effect_of_order != "planOfArrangement":
+    if (effect_of_order := court_order.get("effectOfOrder")) and effect_of_order != "planOfArrangement":
         msg.append({"error": "Invalid effectOfOrder.", "path": f"{court_order_path}/effectOfOrder"})
 
-    court_order_date_path = court_order_path + "/orderDate"
-    if "orderDate" in court_order:
-        try:
-            court_order_date = dt.fromisoformat(court_order["orderDate"])
-            if court_order_date.timestamp() > datetime.now(UTC).timestamp():
-                err_path = court_order_date_path
-                msg.append({"error": "Court order date cannot be in the future.", "path": err_path})
-        except ValueError:
-            err_path = court_order_date_path
-            msg.append({"error": "Invalid court order date format.", "path": err_path})
-            
+    if order_date := court_order.get("orderDate"):
+        court_order_date = dt.fromisoformat(order_date)
+        if court_order_date.timestamp() > datetime.now(UTC).timestamp():
+            msg.append({"error": "Court order date cannot be in the future.", "path": f"{court_order_path}/orderDate"})
+
+    if is_file_or_details_required:
+        file_key_path = f"{court_order_path}/fileKey"
+        file_key = court_order.get("fileKey")
+
+        if not court_order.get("orderDetails") and not file_key:
+            msg.append({"error": _("Court Order is required (in orderDetails/fileKey)."), "path": court_order_path})
+
+        if file_key:
+            msg.extend(validate_pdf(file_key, file_key_path))
+
     if flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
         message = "Permission Denied - You do not have permissions add court order details in this filing."
         permission_error = PermissionService.check_user_permission(required_permission, message=message)
         if permission_error:
             msg.append({"error": permission_error.msg[0].get("message", message), "path": court_order_path})
-    if msg:
-        return msg
 
-    return None
+    return msg
+
 
 def check_good_standing_permission(business: Business) -> Error | None:
     """Check if user has permission to file for a business not in good standing."""
@@ -525,12 +581,13 @@ def check_good_standing_permission(business: Business) -> Error | None:
     message = "Permission Denied - You do not have permissions send not in good standing business in this filing."
     return PermissionService.check_user_permission(required_permission, message=message)
 
+
 def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list | None:
     """Validate the PDF file."""
     msg = []
     try:
-        file = MinioService.get_file(file_key)
-        open_pdf_file = io.BytesIO(file.data)
+        file_data, file_size = _get_file_data(file_key)
+        open_pdf_file = io.BytesIO(file_data)
         pdf_reader = PdfReader(open_pdf_file)
 
         # Check that all pages in the pdf are letter size and able to be processed.
@@ -543,9 +600,8 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
             msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
                         "path": file_key_path})
 
-        file_info = MinioService.get_file_info(file_key)
         max_file_size: Final = 30000000
-        if file_info.size > max_file_size:
+        if file_size > max_file_size:
             msg.append({"error": _("File exceeds maximum size."), "path": file_key_path})
 
         if pdf_reader.is_encrypted:
@@ -555,10 +611,17 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
         current_app.logger.debug(f"Error validating PDF: {ex}")
         msg.append({"error": _("Invalid file."), "path": file_key_path})
 
-    if msg:
-        return msg
+    return msg
 
-    return None
+
+def _get_file_data(file_key: str) -> tuple[bytes, int]:
+    """Return (file_bytes, file_size) for a DRS-backed file_key."""
+    if match := DRS_KEY_PATTERN.match(file_key):
+        doc_class, drs_id = match.group(1), match.group(2)
+        response = doc_service.get_document(drs_id, doc_class, doc_binary=True)
+        if not response.ok:
+            raise ValueError(f"DRS get_document failed: status={response.status_code}")
+        return response.content, len(response.content)
 
 
 def validate_parties_names(filing_json: dict, filing_type: str, legal_type: str) -> list:
@@ -687,8 +750,7 @@ def validate_relationships( # noqa: PLR0913
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
         msg.extend(validate_relationship_entity_name(relationship, path))
-        msg.extend(validate_relationship_roles(relationship["roles"], role_types, path))
-        
+        msg.extend(validate_relationship_roles(relationship, role_types, path, business))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -826,17 +888,89 @@ def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str,
     return msg
 
 
-def validate_relationship_roles(roles: list[dict[str, str]],
+def validate_relationship_roles(relationship: dict,
                                 allowed_roles: list[PartyRole.RoleTypes],
-                                path: str) -> list:
+                                path: str,
+                                business: Business) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
+    earliest_allowed_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+
+    roles = relationship["roles"]
     for index, role in enumerate(roles):
         if role.get("roleType").lower().replace(" ", "_") not in converted_allowed_roles:
             err_msg = "Invalid role type for this filing."
             msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
         # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
+
+        appointment_date = date.fromisoformat(role.get("appointmentDate")) if role.get("appointmentDate") else None
+        cessation_date = date.fromisoformat(role.get("cessationDate")) if role.get("cessationDate") else None
+
+        msg.extend(_validate_relationship_date(appointment_date,
+                                              f"{path}/{index}/appointmentDate",
+                                              "Appointment",
+                                              earliest_allowed_date))
+        msg.extend(_validate_relationship_date(cessation_date,
+                                              f"{path}/{index}/cessationDate",
+                                              "Cessation",
+                                              earliest_allowed_date))
+
+        msg.extend(_validate_director_dates(appointment_date,
+                                              cessation_date,
+                                              f"{path}/{index}",
+                                              role))
+    return msg
+
+def _validate_director_dates(appointment_date: date, cessation_date: date, path: str, role: dict) -> list:
+    """Validate director dates."""
+    msg = []
+    if role.get("roleType").lower() != PartyRole.RoleTypes.DIRECTOR.value:
+        return msg
+
+    date_path = f"{path}/appointmentDate"
+    if not appointment_date and cessation_date:
+        msg.append({
+            "error": _("Appointment date is required when cessation date is present."),
+            "path": date_path
+        })
+    else:
+        msg.extend(_compare_director_dates(appointment_date, cessation_date, date_path))
+
+    return msg
+
+
+def _compare_director_dates(appointment_date: date, cessation_date: date, path: str) -> list:
+    """Validate director dates."""
+    msg = []
+    if appointment_date and cessation_date and appointment_date > cessation_date:
+        msg.append({
+            "error": _("Appointment date cannot be after cessation date."),
+            "path": path
+        })
+    return msg
+
+
+def _validate_relationship_date(date_value: date,
+                                path: str,
+                                error_name: str,
+                                earliest_allowed_date: date) -> list:
+    msg = []
+    if date_value is None:
+        return msg
+
+    today = LegislationDatetime.datenow()
+    if date_value > today:
+        msg.append({
+            "error": _(f"{error_name} date cannot be in the future."),
+            "path": path
+        })
+
+    if date_value < earliest_allowed_date:
+        msg.append({
+            "error": _(f"{error_name} date cannot be before the business founding date."),
+            "path": path
+        })
 
     return msg
 
@@ -876,6 +1010,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     validation_result = namex.validate_nr(nr_response_json)
     if not validation_result["is_consumable"]:
         msg.append({"error": _("Name Request is not approved."), "path": nr_number_path})
+
+    # ensure NR is not already referenced in another pending/paid filing
+    if _nr_in_pending_filing(nr_number):
+        msg.append({"error": _("Name Request is already part of a pending filing."),
+                    "path": nr_number_path})
 
     # ensure NR request type code
     if accepted_request_types and nr_response_json["requestTypeCd"] not in accepted_request_types:
@@ -1298,7 +1437,25 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
 
     if legal_type in Business.CORPS:
-        return msg  # certifiedBy is not required for corporations
+        # the completing party statement takes its name from certifiedBy for staff and API users,
+        # so certifiedBy is required for them on a corp incorporation application
+        api_login_source = "API_GW"  # jwt loginSource of an API gateway user
+        current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
+        if (filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION
+                and current_user
+                and (jwt.validate_roles(current_user, [STAFF_ROLE])
+                     or current_user.get("loginSource") == api_login_source)):
+            if not certified_by:
+                msg.append({
+                    "error": "Certified by field is required.",
+                    "path": "/filing/header/certifiedBy"
+                })
+            elif certified_by != certified_by.strip():
+                msg.append({
+                    "error": "Certified by field cannot start or end with whitespace.",
+                    "path": "/filing/header/certifiedBy"
+                })
+        return msg  # certifiedBy is not otherwise required for corporations
     is_cert_filing = filing_type in FILINGS_REQUIRING_CERTIFICATION
 
     is_client_correction = (
@@ -1391,8 +1548,8 @@ def validate_party_role_firms(parties: list, filing_type: str) -> list:
             if business_identifier:
                 business_found = Business.find_by_identifier(business_identifier) is not None
                 if not business_found:
-                    colin_business = colin.query_business(business_identifier)
-                    business_found = colin_business.status_code == HTTPStatus.OK
+                    _, colin_status = colin.query_business(business_identifier)
+                    business_found = colin_status == HTTPStatus.OK
 
             if business_found:
                 continue

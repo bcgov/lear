@@ -13,6 +13,7 @@ import base64
 import copy
 import json
 import os
+import re
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
@@ -76,11 +77,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_static_report(self):
         document_type = ReportMeta.static_reports[self._report_key]["documentType"]
         document: Document = self._filing.documents.filter(Document.type == document_type).first()
-        from legal_api.services import MinioService
-        response = MinioService.get_file(document.file_key)
+        # DRS-backed keys are "{documentClass}-{documentServiceId}", e.g. "COOP-DS0000101951";
+        if not (match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key or "")):
+            return current_app.response_class(status=HTTPStatus.NOT_FOUND)
+        # the DRS applies the certified copy stamp itself for configured combinations
+        # (e.g. COOP-COSD), so DRS-served documents must not be stamped again here
+        from legal_api.services import doc_service
+        drs_response = doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
+        document_data, status = drs_response.content, drs_response.status_code
         return current_app.response_class(
-            response=response.data,
-            status=response.status,
+            response=document_data,
+            status=status,
             mimetype="application/pdf"
         )
 
@@ -93,6 +100,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         report_meta: dict = ReportMeta.reports.get(self._report_key)
         if not report_meta:
             report_meta = ReportMeta.reports.get("default")
+        if self._report_key == "specialResolution" and self._filing.filing_type != "specialResolution":
+            # A special resolution accompanying another filing (e.g. a coop dissolution) must not share
+            # the FILING report type with that filing's own report, or the DRS lookup below serves
+            # whichever of the two documents was stored first (#34299).
+            report_meta = {**report_meta, "reportType": ReportTypes.FILING_2.value}
+        if self._filing.filing_type == "annualReport" and \
+                (accompanying_type := {"changeOfDirectors": ReportTypes.FILING_2.value,
+                                       "changeOfAddress": ReportTypes.FILING_4.value}.get(self._report_key)):
+            # A coop annual report can bundle director and address changes as additional legal filings;
+            # each output must have its own report type or the DRS lookup below serves whichever of the
+            # documents was stored first (#34457).
+            report_meta = {**report_meta, "reportType": accompanying_type}
         report_type = report_meta.get("reportType")
         if business_identifier and not regenerate:  # Skip if regenerating and replacing DRS doc.
             document, status = self._document_service.get_filing_report_by_filing_id(
@@ -185,6 +204,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         """
         template_path = current_app.config.get("REPORT_TEMPLATE_PATH")
         template_parts = [
+            "amalgamation/certificateFooter",
+            "amalgamation/certificateStyle",
             "amalgamation/amalgamatingCorp",
             "amalgamation/amalgamationName",
             "amalgamation/amalgamationStmt",
@@ -346,7 +367,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_certificate_of_restoration_data(filing)
         elif self._report_key == "restoration":
             self._format_restoration_data(filing)
-        elif self._report_key in {"letterOfConsent", "letterOfConsentAmalgamationOut"}:
+        elif self._report_key in {"letterOfConsent", "letterOfConsentAmalgamationOut", "consentContinuationOut"}:
             self._format_consent_continuation_amalgamation_out_data(filing)
         elif self._report_key == "correction":
             self._format_correction_data(filing)
@@ -411,10 +432,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         )
 
         if is_corp_incorp and incorp_compparty_stmnt_enabled:
-            if self._filing.submitter_roles in [UserRoles.staff]:
+            # staff and API gateway users supply the completing party name via header certifiedBy;
+            # for API users the token resolves to the account name, not a user name, so it can't be
+            # sourced from the submitter (API users are identified by the jwt loginSource, not a role).
+            api_login_source = "API_GW"  # jwt loginSource of an API gateway user
+            submitter = self._filing.filing_submitter
+            if (self._filing.submitter_roles == UserRoles.staff
+                    or (submitter and submitter.login_source == api_login_source)):
                 filing["header"]["certifiedBy"] = self._filing.filing_json["filing"]["header"].get("certifiedBy")
             else:
-                filing["header"]["certifiedBy"] = self._filing.filing_submitter.display_name
+                filing["header"]["certifiedBy"] = submitter.display_name
 
             if not filing["header"]["certifiedBy"]:
                 raise BusinessException(
@@ -1496,7 +1523,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
-        filing_source = "specialResolution" if self._filing.filing_type == "specialResolution" else "correction"
+        # coop dissolutions carry a specialResolution section alongside the dissolution filing, so
+        # source the resolution from it rather than defaulting to the (empty) correction section
+        filing_source = "specialResolution" \
+            if self._filing.filing_type == "specialResolution" or filing.get("specialResolution") \
+            else "correction"
         filing["header"]["displayName"] = display_name
         resolution_date_str = filing.get(filing_source, {}).get("resolutionDate", None)
         signing_date_str = filing.get(filing_source, {}).get("signingDate", None)
@@ -1949,6 +1980,11 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
             "fileName": "letterOfConsentAmalgamationOut",
             "reportType": ReportTypes.FILING_2.value  # change to filing-3 to omit stamp
         },
+        "consentContinuationOut": {
+            "filingDescription": "Continue Out Application",
+            "fileName": "consentContinuationOut",
+            "reportType": ReportTypes.FILING.value
+        },
         "letterOfAgmExtension": {
             "filingDescription": "Letter Of AGM Extension",
             "fileName": "letterOfAgmExtension",
@@ -2004,8 +2040,5 @@ class ReportMeta:  # pylint: disable=too-few-public-methods
         },
         "affidavit": {
             "documentType": "affidavit"
-        },
-        "uploadedCourtOrder": {
-            "documentType": "court_order"
         }
     }
