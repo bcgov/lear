@@ -2,6 +2,7 @@ DO $$
 DECLARE
   r record;
   max_val bigint;
+  sch text := current_schema();
 BEGIN
   FOR r IN
     -- For SERIAL/IDENTITY columns (auto-dependency from sequence to column)
@@ -14,6 +15,7 @@ BEGIN
     JOIN pg_attribute col
            ON col.attrelid = tbl.oid AND col.attnum = d.refobjsubid
     WHERE  seq.relkind = 'S'
+      AND tbl.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = sch)
     UNION ALL
     -- For columns with DEFAULT nextval('sequence') (normal dependency from column default to sequence)
     SELECT
@@ -26,14 +28,15 @@ BEGIN
     JOIN pg_attribute col ON col.attrelid = ad.adrelid AND col.attnum = ad.adnum
     JOIN pg_class tbl ON tbl.oid = ad.adrelid
     WHERE d.deptype = 'n'
+      AND tbl.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = sch)
   LOOP
-    EXECUTE format('SELECT MAX(%I) FROM %I', r.col, r.tbl) INTO max_val;
+    EXECUTE format('SELECT MAX(%I) FROM %I.%I', r.col, sch, r.tbl) INTO max_val;
     IF max_val IS NULL THEN
       -- Table is empty, reset sequence to start at 1. The next call to nextval() will return 1.
-      EXECUTE format('SELECT setval(%L, 1, false);', r.seq);
+      EXECUTE format('SELECT setval(%L, 1, false);', format('%I.%I', sch, r.seq));
     ELSE
       -- Table has data, set sequence so nextval() returns max_val + 1.
-      EXECUTE format('SELECT setval(%L, %s);', r.seq, max_val);
+      EXECUTE format('SELECT setval(%L, %s);', format('%I.%I', sch, r.seq), max_val);
     END IF;
   END LOOP;
 END;
