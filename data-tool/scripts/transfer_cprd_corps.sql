@@ -3,9 +3,7 @@ vset cli.settings.transfer_threads=4
 vset format.date=YYYY-MM-dd'T'hh:mm:ss'Z'
 vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
 
---connect cprd_pg;
-connect local_colin_staging;
-
+connect cprd_pg;
 
 -- Serialize COLIN extract refreshes on this target DB so subset/full runs cannot overlap.
 SELECT pg_advisory_lock(
@@ -89,7 +87,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -144,7 +142,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -182,7 +180,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -219,7 +217,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -258,7 +256,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -309,7 +307,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -348,7 +346,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -386,7 +384,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -470,7 +468,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -510,7 +508,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -545,7 +543,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -594,7 +592,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -627,7 +625,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -660,7 +658,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -697,7 +695,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -742,7 +740,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -778,7 +776,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -817,7 +815,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -860,7 +858,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -933,7 +931,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1018,7 +1016,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1057,7 +1055,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1097,7 +1095,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1134,7 +1132,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1175,7 +1173,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1212,7 +1210,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1247,7 +1245,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1302,7 +1300,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1350,7 +1348,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1390,7 +1388,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1430,7 +1428,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1471,7 +1469,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('RLY')
+        and c.CORP_TYP_CD in ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1537,11 +1535,6 @@ ALTER TABLE share_struct_cls ENABLE TRIGGER ALL;
 ALTER TABLE notification ENABLE TRIGGER ALL;
 ALTER TABLE notification_resend ENABLE TRIGGER ALL;
 ALTER TABLE party_notification ENABLE TRIGGER ALL;
-
--- Normalize active-corp party/office addresses while the subset-run advisory lock is held.
--- The result-bearing CALL returns one JSON value with phase counts, their total, and elapsed seconds.
-SET search_path TO public;
-CALL public.colin_address_transpose(NULL);
 
 -- Release COLIN extract refresh advisory lock.
 SELECT pg_advisory_unlock(

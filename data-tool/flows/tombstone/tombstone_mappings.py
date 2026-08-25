@@ -68,6 +68,9 @@ class EventFilings(str, Enum):
     # CONVOTHER Change of Directors
     CONVOTHER_OTCDR = 'CONVOTHER_OTCDR'
 
+    # Change of Name
+    FILE_OTNCN = 'FILE_OTNCN'
+
     # Consent Continuation Out
     FILE_CONTO = 'FILE_CONTO'
 
@@ -283,6 +286,9 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     # CONVOTHER Change of Directors
     EventFilings.CONVOTHER_OTCDR: 'changeOfDirectors',
 
+    # Change of Name
+    EventFilings.FILE_OTNCN: ['conversion', 'changeOfName'],
+
     EventFilings.FILE_CONTO: 'consentContinuationOut',
     EventFilings.FILE_COUTI: 'continuationOut',
 
@@ -460,6 +466,8 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
 
     # CONVOTHER Change of Directors
     EventFilings.CONVOTHER_OTCDR: 'Notice of Change of Directors',
+    # Change of Name
+    EventFilings.FILE_OTNCN: 'Notice of Change of Name',
 
     EventFilings.FILE_CONTO: '6 Months Consent to Continue Out',
     EventFilings.FILE_COUTI: 'Instrument of Continuation Out',

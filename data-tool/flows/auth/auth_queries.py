@@ -15,7 +15,7 @@ from .auth_selection import (
 )
 
 # Match the existing tombstone corp type cohort by default.
-CORP_TYPE_FILTER = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE')"
+CORP_TYPE_FILTER = "('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'RLY', 'LIB')"
 _UNSET = object()
 
 

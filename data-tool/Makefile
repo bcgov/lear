@@ -128,6 +128,10 @@ run-verify-colin-updates: ## Run verify COLIN updates flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/verify_colin_updates_flow.py
 
+run-verify-migration: ## Run migration verification (COLIN Oracle -> LEAR)
+	. $(VENV_DIR)/bin/activate && \
+	python flows/verify_migration_flow.py	
+
 run-verify-auth: ## Run verify Auth flow and write summary/detail CSVs plus scenario TXT copy list
 	. $(VENV_DIR)/bin/activate && \
 	$(AUTH_MODULE_RUNNER) auth.verify_auth_flow
@@ -155,6 +159,7 @@ run-auth-invite: ## Run auth invitation flow
 run-auth-delete: ## Run auth delete flow
 	. $(VENV_DIR)/bin/activate && \
 	$(AUTH_MODULE_RUNNER) auth.auth_delete_flow
+
 
 test-delta-restore: ## Run delta restore static/sql smoke harness
 	./tests/delta_restore/run_tests.sh
