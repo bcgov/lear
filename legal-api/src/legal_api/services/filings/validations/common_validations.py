@@ -132,7 +132,7 @@ def _nr_in_pending_filing(nr_number: str, exclude_filing_id: int | None = None) 
     exclude_filing_id: the ID of the filing currently being validated. Some filings (e.g.
     continuationIn) go through a 2-step staff review — the filing sits in AWAITING_REVIEW
     while staff approves it. Without this exclusion, the 2-step approval would find the
-    same filing in AWAITING_REVIEW and incorrectly block itself with a duplicate-NR error.
+    same filing in APPROVED and incorrectly block itself with a duplicate-NR error.
     Excluding the current filing ensures only *other* filings are checked.
     """
     for filing_type in FILING_TYPES_WITH_NR:
