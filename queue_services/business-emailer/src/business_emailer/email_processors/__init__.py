@@ -321,7 +321,12 @@ def get_pdfs(  # noqa: PLR0913
     pdfs = []
     attach_order = 1
     filings_with_unimplemented_outputs = ["amalgamationOut", "consentAmalgamationOut", "continuationOut"]
-    receipt_only_sub_filings = [("changeOfLiquidators", "liquidationReport")]
+    receipt_only_sub_filings = [
+        ("changeOfLiquidators", "liquidationReport"),
+        ("changeOfReceivers", "appointReceiver"),
+        ("changeOfReceivers", "ceaseReceiver"),
+        ("changeOfReceivers", "changeAddressReceiver"),
+    ]
 
     filing_key = (filing.filing_type, filing.filing_sub_type)
     if filing.filing_type not in filings_with_unimplemented_outputs and filing_key not in receipt_only_sub_filings:

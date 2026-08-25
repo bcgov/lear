@@ -32,8 +32,6 @@ The following document is attached to this email:
 
 - {{ attachment_name }}
 
-This document is also available through your [BC Business Registry account]({{ entity_dashboard_url }}).
-
 ---
 
 [[business-registry-footer.md]]

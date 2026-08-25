@@ -550,16 +550,13 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
     ]),
     ('changeOfReceivers', 'appointReceiver', None, 'COMPLETED', False, False, [
-        {'fileName': 'Appoint Receiver/Receiver Manager.pdf', 'content': 'pdf_content_filing', 'order': '1'},
-        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
     ]),
     ('changeOfReceivers', 'ceaseReceiver', None, 'COMPLETED', False, False, [
-        {'fileName': 'Cease Receiver or Receiver Manager.pdf', 'content': 'pdf_content_filing', 'order': '1'},
-        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
     ]),
     ('changeOfReceivers', 'changeAddressReceiver', None, 'COMPLETED', False, False, [
-        {'fileName': 'Change of Address of Receiver/Receiver Manager.pdf', 'content': 'pdf_content_filing', 'order': '1'},
-        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
     ]),
 ], ids=[
     'alteration - PAID no name change',
@@ -589,9 +586,9 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'changeOfLiquidators - ceaseLiquidator',
     'changeOfLiquidators - changeAddressLiquidator',
     'changeOfLiquidators - liquidationReport (receipt only)',
-    'changeOfReceivers - appointReceiver',
-    'changeOfReceivers - ceaseReceiver',
-    'changeOfReceivers - changeAddressReceiver'
+    'changeOfReceivers - appointReceiver (receipt only)',
+    'changeOfReceivers - ceaseReceiver (receipt only)',
+    'changeOfReceivers - changeAddressReceiver (receipt only)'
 ])
 def test_maintenance_filing_attachments(session, config, mock_recipients, mock_user_email, mock_auth_recipient,
                                         filing_type, filing_sub_type, legal_type, status, has_name_change, has_rule_change, expected_attachments):

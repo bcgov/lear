@@ -106,12 +106,17 @@ def process(email_info: dict, token: str) -> dict:
     number_description = "Registration" \
         if business.legal_type == Business.LegalTypes.EXTRA_PRO_A.value else "Incorporation"
 
+    business_number = None
+    if len(business.tax_id or "") > 9:  # noqa: PLR2004
+        # Only show if bn15 is saved, format for ux
+        business_number = business.tax_id.replace("BC", " BC")
+
     body = jnja_template.render(
         action=content["action"],
         attachment_name=content["attachment_name"],
         business_identifier=business_identifier,
         business_name=business_name,
-        business_number=business.tax_id,
+        business_number=business_number,
         delay_type=content["delay_type"],
         entity_dashboard_url=entity_dashboard_url,
         extra_provincials_display=format_extra_provincials(extra_provincials),

@@ -142,6 +142,41 @@ def test_involuntary_dissolution_stage_1_notification_extra_provincials(app, ses
             assert 'British Columbia' not in body
 
 
+@pytest.mark.parametrize(
+        'test_name, tax_id, expected_display', [
+            ('BN15', '123456789BC0001', '123456789 BC0001'),
+            ('BN9_OMITTED', '123456789', None),
+            ('NO_BN_OMITTED', None, None),
+        ]
+)
+def test_involuntary_dissolution_stage_1_notification_business_number(app, session, test_name,
+                                                                      tax_id, expected_display):
+    """Assert that the business number is only displayed when a bn15 is saved, formatted for ux."""
+    token = 'token'
+    business = create_business('BC1234567', 'BC', 'Test Business')
+    business.tax_id = tax_id
+    business.save()
+    furnishing = create_furnishing(session, business=business,
+                                   furnishing_name=Furnishing.FurnishingName.DISSOLUTION_COMMENCEMENT_NO_AR)
+    message_payload = {
+        'furnishing': {
+            'type': 'INVOLUNTARY_DISSOLUTION',
+            'furnishingId': furnishing.id,
+            'furnishingName': furnishing.furnishing_name
+        }
+    }
+
+    with patch.object(involuntary_dissolution_stage_1_notification, '_get_pdfs', return_value=[]):
+        with patch.object(involuntary_dissolution_stage_1_notification, 'get_jurisdictions', return_value=None):
+            email = involuntary_dissolution_stage_1_notification.process(message_payload, token)
+
+            body = email['content']['body']
+            if expected_display:
+                assert f'**Business Number:** {expected_display}' in body
+            else:
+                assert '**Business Number:**' not in body
+
+
 def test_involuntary_dissolution_stage_1_notification_xpro_skips_mras(app, session):
     """Assert that XPRO furnishings do not look up MRAS jurisdictions."""
     token = 'token'
