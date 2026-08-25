@@ -32,6 +32,7 @@ from legal_api.reports.report import Report
 from registry_schemas.example_data import (
     AGM_LOCATION_CHANGE,
     ALTERATION_FILING_TEMPLATE,
+    AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
@@ -1151,6 +1152,70 @@ def test_set_amalgamating_businesses_foreign_non_a_prefix(session, monkeypatch):
     assert entry['legalName'] == foreign_name
     assert entry['jurisdiction'] == 'United Kingdom'
     assert colin_call_count['count'] == 0
+
+
+def test_set_amalgamating_businesses_colin(session, monkeypatch):
+    """Assert a COLIN business entry (identifier only, no LEAR row) resolves its name from COLIN."""
+    colin_identifier = 'BC5556667'
+
+    amalgamating_businesses = [
+        {
+            'role': 'amalgamating',
+            'identifier': colin_identifier,
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    def mock_colin(id_):
+        assert id_ == colin_identifier
+        return {'business': {'legalName': 'Colin Corp Ltd.'}}, HTTPStatus.OK
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin)
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['identifier'] == colin_identifier
+    assert entry['legalName'] == 'Colin Corp Ltd.'
+    assert entry['jurisdiction'] == 'British Columbia'
+
+
+def test_format_amalgamation_data_uses_filing_json(session):
+    """Assert short-form report data comes from the filing json - not rebuilt from the primary/holding DB rows."""
+    identifier = 'BC9900002'
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'amalgamationApplication'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'BC'
+    filing_json['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    aml = filing_json['filing']['amalgamationApplication']
+    aml['type'] = 'vertical'
+    aml['amalgamatingBusinesses'] = [
+        {'role': 'holding', 'identifier': 'US7654321', 'legalName': 'Foreign Holding Corp',
+         'foreignJurisdiction': {'country': 'US', 'region': 'WA'}}
+    ]
+    aml['shareStructure']['resolutionDates'] = ['2020-05-13']
+
+    business = factory_business(identifier=identifier, entity_type='BC')
+    filing = factory_completed_filing(business, filing_json)
+
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'amalgamationApplication'
+
+    filing_data = report._filing.filing_json['filing']
+    report._format_amalgamation_data(filing_data)
+
+    assert filing_data['nameRequest']['legalName'] == aml['nameRequest']['legalName']
+    assert len(filing_data['offices']) == len(aml['offices'])
+    assert len(filing_data['parties']) == len(aml['parties'])
+    assert filing_data['shareClasses'] == aml['shareStructure']['shareClasses']
+    assert filing_data['resolutions'] == [{'date': 'May 13, 2020'}]
 
 
 @pytest.mark.parametrize('filing_type,expected_report_type', [

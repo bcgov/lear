@@ -23,7 +23,12 @@ from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
 from tests.unit.models import factory_address, factory_business, factory_business_mailing_address, factory_party_role
-from tests.unit.reports import make_amalgamation_filing_mock, make_foreign_amalgamating_business, set_amalgamation_details
+from tests.unit.reports import (
+    make_amalgamation_filing_mock,
+    make_colin_amalgamating_business,
+    make_foreign_amalgamating_business,
+    set_amalgamation_details,
+)
 
 
 @pytest.mark.parametrize(
@@ -175,6 +180,30 @@ def test_set_amalgamation_details(
     assert entity['legalName'] == foreign_name
     assert entity['isBcCompany'] is expected_is_bc_company
     assert entity['isExtraprovincial'] is expected_is_extraprovincial
+
+
+def test_set_amalgamation_details_colin_business(session, app, jwt, monkeypatch):
+    """Assert a COLIN amalgamating business renders from the COLIN lookup with BC jurisdiction."""
+    colin_identifier = 'BC5556667'
+    ab = make_colin_amalgamating_business(colin_identifier)
+
+    def mock_colin(identifier):
+        assert identifier == colin_identifier
+        return {'business': {'legalName': 'Colin Corp Ltd.'}}, HTTPStatus.OK
+
+    business_json = set_amalgamation_details(
+        app, jwt, session, monkeypatch,
+        amalgamating_businesses_list=[ab],
+        colin_query_side_effect=mock_colin,
+    )
+
+    entities = business_json.get('amalgamatedEntities', [])
+    assert len(entities) == 1
+    entity = entities[0]
+
+    assert entity['identifier'] == colin_identifier
+    assert entity['legalName'] == 'Colin Corp Ltd.'
+    assert entity['jurisdiction'] == 'British Columbia'
 
 
 @pytest.mark.parametrize('has_receiver, cessation_date, expected_count', [

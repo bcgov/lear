@@ -593,10 +593,15 @@ class BusinessDocument:
                                                                             amalgamation.id)
                 for amalgamating_business in amalgamating_businesses:
                     ting_business = None
+                    identifier = amalgamating_business.foreign_identifier
                     if not (foreign_name := amalgamating_business.foreign_name):
-                        ting_business = VersionedBusinessDetailsService.get_business_revision_obj(amalgamation_application,
-                                                                                                  amalgamating_business.business_id)
-                    amalgamated_businesses_info = get_formatted_amalg_business_data(amalgamating_business.foreign_identifier,
+                        if amalgamating_business.colin_identifier:
+                            # a COLIN business not loaded in LEAR - name is resolved from COLIN
+                            identifier = amalgamating_business.colin_identifier
+                        else:
+                            ting_business = VersionedBusinessDetailsService.get_business_revision_obj(amalgamation_application,
+                                                                                                      amalgamating_business.business_id)
+                    amalgamated_businesses_info = get_formatted_amalg_business_data(identifier,
                                                                                     foreign_name,
                                                                                     amalgamating_business.foreign_jurisdiction,
                                                                                     amalgamating_business.foreign_jurisdiction_region,

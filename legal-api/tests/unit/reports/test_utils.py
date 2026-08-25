@@ -221,12 +221,12 @@ def test_get_formatted_amalg_business_data_bc_business_with_ting(app):
     assert result['isExtraprovincial'] is False
 
 
-def test_get_formatted_amalg_business_data_raises_when_no_foreign_name_and_no_ting(app):
-    """Assert that BusinessException with UNPROCESSABLE_ENTITY is raised when neither foreign_name nor ting_business is provided."""
+def test_get_formatted_amalg_business_data_raises_when_nothing_identifies_the_business(app):
+    """Assert that BusinessException with UNPROCESSABLE_ENTITY is raised when there is no foreign_name, ting_business or identifier."""
     with app.app_context():
         with pytest.raises(BusinessException) as exc_info:
             get_formatted_amalg_business_data(
-                identifier='BC1234567',
+                identifier=None,
                 foreign_name=None,
                 foreign_country_code=None,
                 foreign_region_code=None,
@@ -234,6 +234,56 @@ def test_get_formatted_amalg_business_data_raises_when_no_foreign_name_and_no_ti
             )
 
     assert exc_info.value.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
+
+
+def test_get_formatted_amalg_business_data_colin_business(app, monkeypatch):
+    """Assert a COLIN business (identifier only, no LEAR row) resolves its name from COLIN with BC jurisdiction."""
+    colin_identifier = 'BC5556667'
+    colin_call_count = {'count': 0}
+
+    def mock_colin(id_):
+        colin_call_count['count'] += 1
+        return {'business': {'legalName': 'Colin Corp Ltd.'}}, HTTPStatus.OK
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin)
+
+    with app.app_context():
+        result = get_formatted_amalg_business_data(
+            identifier=colin_identifier,
+            foreign_name=None,
+            foreign_country_code=None,
+            foreign_region_code=None,
+            ting_business=None,
+        )
+
+    assert result['identifier'] == colin_identifier
+    assert result['legalName'] == 'Colin Corp Ltd.'
+    assert result['jurisdiction'] == 'British Columbia'
+    assert colin_call_count['count'] == 1
+
+
+@pytest.mark.parametrize('colin_response', [
+    (None, None),
+    ({'message': 'not found'}, HTTPStatus.NOT_FOUND),
+], ids=['colin down', 'colin 404'])
+def test_get_formatted_amalg_business_data_colin_business_unavailable(app, monkeypatch, colin_response):
+    """Assert a COLIN business renders with an N/A name (not an error) when COLIN cannot provide one."""
+    colin_identifier = 'BC5556667'
+
+    monkeypatch.setattr(ColinService, 'query_business', lambda id_: colin_response)
+
+    with app.app_context():
+        result = get_formatted_amalg_business_data(
+            identifier=colin_identifier,
+            foreign_name=None,
+            foreign_country_code=None,
+            foreign_region_code=None,
+            ting_business=None,
+        )
+
+    assert result['identifier'] == colin_identifier
+    assert result['legalName'] == 'N/A'
+    assert result['jurisdiction'] == 'British Columbia'
 
 
 def test_get_formatted_amalg_business_data_foreign_no_identifier_skips_colin(app, monkeypatch):

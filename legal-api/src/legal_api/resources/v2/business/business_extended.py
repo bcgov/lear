@@ -20,7 +20,7 @@ from flask_cors import cross_origin
 from business_model.models import Business, Filing, Jurisdiction
 from business_model.utils.legislation_datetime import LegislationDatetime
 from legal_api.core import Filing as CoreFiling
-from legal_api.services import authorized
+from legal_api.services import authorized, colin
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -181,6 +181,17 @@ def _get_amalgamation_application_data(business: Business, for_correction: bool 
                 mailing_address = ting_business.mailing_address.one_or_none()
                 if mailing_address:
                     ting_info["mailingAddress"] = mailing_address.json
+        elif ting.colin_identifier:
+            # a COLIN business not loaded in LEAR
+            ting_info.update({
+                "identifier": ting.colin_identifier
+            })
+            if for_correction:
+                colin_json, colin_status = colin.query_business(ting.colin_identifier)
+                if colin_status == HTTPStatus.OK:
+                    ting_info.update({
+                        "legalName": (colin_json or {}).get("business", {}).get("legalName")
+                    })
         else:
             ting_info.update({
                 "identifier": ting.foreign_identifier,

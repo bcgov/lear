@@ -85,17 +85,29 @@ def get_formatted_amalg_business_data(
                 # overwrite the region_code if jurisdiction is available in the response
                 region_code = colin_json.get("business", {}).get("jurisdiction")
             
-    else:
-        if not ting_business:
-            raise BusinessException(
-                "Error: Tried to process an amalgamating business which is not a foreign business or a ting business",
-                HTTPStatus.UNPROCESSABLE_ENTITY)
-
+    elif ting_business:
         display_identifier = ting_business._identifier
         business_legal_name = ting_business.legal_name
         country_code = "CA"
         region_code = "BC"
         is_bc_company = True
+
+    elif identifier:
+        # a COLIN business not loaded in LEAR - resolve its name from COLIN at render time
+        colin_json, colin_status = ColinService.query_business(identifier)
+        business_legal_name = None
+        if colin_status == HTTPStatus.OK:
+            business_legal_name = (colin_json or {}).get("business", {}).get("legalName")
+        if not business_legal_name:
+            current_app.logger.error("Unable to get COLIN legal name for amalgamating business %s", identifier)
+        display_identifier = identifier
+        country_code = "CA"
+        region_code = "BC"
+
+    else:
+        raise BusinessException(
+            "Error: Tried to process an amalgamating business which is not a foreign business or a ting business",
+            HTTPStatus.UNPROCESSABLE_ENTITY)
 
     jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
     

@@ -22,12 +22,9 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_, text
 
-from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
     Address,
     Alias,
-    AmalgamatingBusiness,
-    Amalgamation,
     BatchProcessing,
     Business,
     Filing,
@@ -43,7 +40,7 @@ from business_model.models import (
 from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 from legal_api.exceptions import BusinessException
-from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
+from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -75,17 +72,6 @@ def get_completed_filings_for_colin():
                     _set_relationship_parties(business, filing, inner_filing_json)
             except Exception as ex:
                 current_app.logger.error(f"correction: filingId={filing.id}, error: {ex!s}")
-                # to skip this filing and block subsequent filing from syncing in update-colin-filings
-                filing_json["filing"]["header"]["name"] = None
-
-        elif (filing.filing_type == "amalgamationApplication" and
-              filing_json["filing"]["amalgamationApplication"]["type"] in [
-                  Amalgamation.AmalgamationTypes.horizontal.name,
-                  Amalgamation.AmalgamationTypes.vertical.name]):
-            try:
-                set_from_primary_or_holding_business_data(filing_json, filing)
-            except Exception as ex:
-                current_app.logger.error(f"amalgamation: filingId={filing.id}, error: {ex!s}")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json["filing"]["header"]["name"] = None
 
@@ -269,80 +255,6 @@ def has_share_changed(filing: Filing) -> bool:
                               [int(share_class["id"]) for share_class in share_classes]))
                           .exists())
     return bool(db.session.query(share_series_query).scalar())
-
-
-def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
-    """Set legal_name, director, office and shares from holding/primary business."""
-    amalgamation_filing = filing_json["filing"]["amalgamationApplication"]
-    primary_or_holding = next(x for x in amalgamation_filing["amalgamatingBusinesses"]
-                              if x["role"] in [AmalgamatingBusiness.Role.holding.name,
-                                               AmalgamatingBusiness.Role.primary.name])
-
-    ting_business = Business.find_by_identifier(primary_or_holding["identifier"])
-    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing, ting_business.id)
-
-    amalgamation_filing["nameRequest"]["legalName"] = primary_or_holding_business.legal_name
-
-    _set_parties(primary_or_holding_business, filing, amalgamation_filing)
-    _set_offices(primary_or_holding_business, amalgamation_filing, filing.id, filing.transaction_id)
-    _set_shares(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
-
-
-def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
-    parties = []
-    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing,
-                                                                              primary_or_holding_business.id,
-                                                                              role=PartyRole.RoleTypes.DIRECTOR.value)
-    # copy director
-    for director_json in parties_version:
-        director_json["roles"] = [{
-            "roleType": "Director",
-            "appointmentDate": LegislationDatetime.format_as_legislation_date(filing.effective_date)
-        }]
-        parties.append(director_json)
-
-    # copy completing party from filing json
-    for party_info in amalgamation_filing.get("parties"):
-        if comp_party_role := next((x for x in party_info.get("roles")
-                                    if x["roleType"].lower() == "completing party"), None):
-            party_info["roles"] = [comp_party_role]  # override roles to have only completing party
-            parties.append(party_info)
-            break
-    amalgamation_filing["parties"] = parties
-
-
-def _set_offices(primary_or_holding_business, amalgamation_filing, filing_id, transaction_id):
-    # copy offices
-    amalgamation_filing["offices"] = VersionedBusinessDetailsService.get_office_revision(filing_id,
-                                                                                         transaction_id,
-                                                                                         primary_or_holding_business.id)
-
-
-def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id):
-    """Set shares from holding/primary business."""
-    # Copy shares
-    share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
-                                                                             primary_or_holding_business.id)
-    amalgamation_filing["shareStructure"] = {"shareClasses": share_classes}
-
-    # Get resolution dates using versioned query
-    resolution_version = VersioningProxy.version_class(db.session(), Resolution)
-    resolutions_query = (
-        db.session.query(resolution_version.resolution_date)
-        .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
-        .filter(resolution_version.operation_type != OPERATION_TYPE_DELETE)  # Exclude deleted records
-        .filter(resolution_version.business_id == primary_or_holding_business.id)
-        .filter(or_(
-            resolution_version.end_transaction_id.is_(None),  # Records not yet ended
-            resolution_version.end_transaction_id > transaction_id  # Records ended after our transaction
-        ))
-        .order_by(resolution_version.transaction_id)
-        .all()
-    )
-
-    business_dates = [res.resolution_date.isoformat() for res in resolutions_query]
-    if business_dates:
-        amalgamation_filing["shareStructure"]["resolutionDates"] = business_dates
 
 
 def _map_entity_to_officer(entity: dict[str, str]):
