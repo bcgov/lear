@@ -1240,14 +1240,6 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
         "filingId": 5645646
     }
     ia_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
-    court_order_filing = factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
-    court_order = CourtOrder(
-        filing_id=ia_filing.id,
-        business_id=business.id,
-        effect_of_order='planOfArrangement',
-        order_details='Court order details'
-    )
-    court_order.save()
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = identifier
@@ -1264,6 +1256,14 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
         invalid_court_order["filingId"] = ia_filing.id
         filing['filing']['correction']['courtOrders'] = [invalid_court_order, invalid_court_order]
     elif test_name == "multiple_court_orders_existing":
+        court_order = CourtOrder(
+            filing_id=ia_filing.id,
+            business_id=business.id,
+            effect_of_order='planOfArrangement',
+            order_details='Court order details'
+        )
+        court_order.save()
+
         invalid_court_order["filingId"] = ia_filing.id
         invalid_court_order2 = copy.deepcopy(invalid_court_order)
         invalid_court_order2["id"] = court_order.id

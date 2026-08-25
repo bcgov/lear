@@ -180,11 +180,19 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
 
 
 def _validate_court_orders_correction(filing_dict, business: Business):
+    """Validate court orders for a correction filing.
+
+    - If the court order has an Id, verifies it exists in the database for the business.
+    - If the court order does not have an Id, verifies its filingId matches the corrected filing Id.
+    - Verifies that only one court order is associated with the corrected filing in the database.
+    - Verifies that no more than one new court order is being added in the correction.
+    - Performs common validation on court order details.
+    """
     msg = []
     if not (orders := filing_dict["filing"]["correction"].get("courtOrders")):
         return msg
 
-    corrected_filing_type = filing_dict["filing"]["correction"]["correctedFilingType"]
+    corrected_filing_id = filing_dict["filing"]["correction"]["correctedFilingId"]
     new_court_orders = []
     court_orders_db = CourtOrder.get_json_with_filing_type(business.id)
     for idx, order in enumerate(orders):
@@ -196,20 +204,15 @@ def _validate_court_orders_correction(filing_dict, business: Business):
                 msg.append({"error": _("Court order not found."), "path": path})
             else:
                 is_file_or_details_required = (court_order_db["filingType"] == "courtOrder")
-        elif order.get("filingId") != filing_dict["filing"]["correction"]["correctedFilingId"]:
-            msg.append({"error": _("Filing Id does not match corrected filing Id."), "path": path})
-        else:
-            if (
-                (
-                    court_order_db := next(
-                        (o for o in court_orders_db if o["filingType"] == corrected_filing_type), None
-                    )
-                ) and next((o for o in orders if o.get("id") == court_order_db["id"]), None)
-            ):
+        elif order.get("filingId") == corrected_filing_id:
+            if next((o for o in court_orders_db if o["filingId"] == corrected_filing_id), None):
                 msg.append({"error": _("Only one court order can be added per filing."), "path": path})
 
-            is_file_or_details_required = (corrected_filing_type == "courtOrder")
+            is_file_or_details_required = (filing_dict["filing"]["correction"]["correctedFilingType"] == "courtOrder")
             new_court_orders.append(order)
+        else:
+            msg.append({"error": _("Filing Id does not match corrected filing Id."), "path": path})
+
 
         msg.extend(validate_court_order(path, order, is_file_or_details_required))
 
@@ -284,17 +287,17 @@ def _validate_special_resolution_correction(filing_dict, legal_type, msg):
     filing_type = "correction"
     if filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("resolution", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("resolution", None):
         msg.extend(validate_resolution_content(filing_dict, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("signingDate", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("signingDate", None):
         msg.extend(validate_signing_date(filing_dict, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("signatory", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("signatory", None):
         msg.extend(validate_signatory_name(filing_dict, filing_type))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("courtOrder", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         msg.extend(court_order_validation(filing_dict))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("rulesFileKey", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("rulesFileKey", None):
         msg.extend(rules_change_validation(filing_dict))
-    if filing_dict.get("filing", {}).get(filing_type, {}).get("correction", {}).get("memorandumFileKey", None):
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("memorandumFileKey", None):
         msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get("filing", {})):
         _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg)
