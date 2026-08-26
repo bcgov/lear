@@ -74,17 +74,7 @@ def get_formatted_amalg_business_data(
         business_legal_name = foreign_name or "N/A"
         country_code = foreign_country_code
         region_code = foreign_region_code
-        # FUTURE: rework this once expros are in lear
-        # Check if this is an expro
-        if identifier and identifier.startswith("A"):
-            colin_json, colin_status = ColinService.query_business(identifier)
-            if colin_json is not None and colin_status == HTTPStatus.OK:
-                # this is an expro so set the identifier (it is the BC expro identifier)
-                display_identifier = identifier
-                is_extraprovincial = True
-                # overwrite the region_code if jurisdiction is available in the response
-                region_code = colin_json.get("business", {}).get("jurisdiction")
-            
+
     elif ting_business:
         display_identifier = ting_business._identifier
         business_legal_name = ting_business.legal_name
@@ -93,16 +83,28 @@ def get_formatted_amalg_business_data(
         is_bc_company = True
 
     elif identifier:
-        # a COLIN business not loaded in LEAR - resolve its name from COLIN at render time
+        # a COLIN business not loaded in LEAR - resolve its name and type from COLIN at render time
         colin_json, colin_status = ColinService.query_business(identifier)
-        business_legal_name = None
-        if colin_status == HTTPStatus.OK:
-            business_legal_name = (colin_json or {}).get("business", {}).get("legalName")
-        if not business_legal_name:
-            current_app.logger.error("Unable to get COLIN legal name for amalgamating business %s", identifier)
+        colin_business = (colin_json or {}).get("business") if colin_status == HTTPStatus.OK else None
+        is_extraprovincial = bool(colin_business and
+                                  colin_business.get("legalType") == Business.LegalTypes.EXTRA_PRO_A.value)
+        if (
+            not colin_business or
+            not (business_legal_name := colin_business.get("legalName")) or
+            not colin_business.get("legalType") or
+            (is_extraprovincial and not colin_business.get("jurisdiction"))
+        ):
+            # Needed COLIN data cannot be resolved, so the amalgamation report should not be generated
+            current_app.logger.error("Unable to get COLIN data for amalgamating business %s (status %s)",
+                                     identifier, colin_status)
+            raise BusinessException(
+                f"Unable to get COLIN data for amalgamating business {identifier}",
+                HTTPStatus.SERVICE_UNAVAILABLE)
+
         display_identifier = identifier
         country_code = "CA"
-        region_code = "BC"
+        region_code = colin_business["jurisdiction"] if is_extraprovincial else "BC"
+        is_bc_company = not is_extraprovincial
 
     else:
         raise BusinessException(

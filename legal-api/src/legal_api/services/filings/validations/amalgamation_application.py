@@ -49,6 +49,8 @@ COLIN_AMALGAMATION_LEGAL_TYPES: Final = [
     Business.LegalTypes.COMP.value,
     Business.LegalTypes.BC_ULC_COMPANY.value,
     Business.LegalTypes.BC_CCC.value,
+    # extraprovincials get the foreign-corporation rule set, not the COLIN TING checks
+    Business.LegalTypes.EXTRA_PRO_A.value,
 ]
 
 
@@ -201,6 +203,7 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
     }
     amalgamating_businesses = {}
     colin_businesses = {}
+    expro_businesses = {}
     colin_fetch_failures = []
 
     # collect data for validation
@@ -214,11 +217,8 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         business_identifiers.append(identifier)
 
         # Check if its a foreign business
-        if foreign_jurisdiction := amalgamating_business_json.get("foreignJurisdiction"):
+        if amalgamating_business_json.get("foreignJurisdiction"):
             is_any_foreign = True
-            if (identifier.startswith("A") and
-                    foreign_jurisdiction.get("country") == "CA" and foreign_jurisdiction.get("region") == "BC"):
-                is_any_expro_a = True
             continue
 
         if business := Business.find_by_identifier(identifier):
@@ -230,6 +230,10 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
             if not colin_business:
                 if colin_fetch_failed:
                     colin_fetch_failures.append(identifier)
+                continue
+            if colin_business["legalType"] == Business.LegalTypes.EXTRA_PRO_A.value:
+                is_any_expro_a = True
+                expro_businesses[identifier] = colin_business
                 continue
             colin_businesses[identifier] = colin_business
             ting_legal_type, ting_legal_name = colin_business["legalType"], colin_business["legalName"]
@@ -265,6 +269,17 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
                 business_info = _business_info_from_lear(amalgamating_business, is_staff)
             elif colin_business := colin_businesses.get(identifier):
                 business_info = colin_business
+            elif expro_business := expro_businesses.get(identifier):
+                # extraprovincial: the foreign-corporation rule set, with the name from COLIN;
+                # skips the affiliation/state/good-standing checks exactly as a foreign entry does
+                msg.extend(_validate_foreign_rules(is_staff,
+                                                   is_any_bc_company,
+                                                   is_any_business[Business.LegalTypes.BC_ULC_COMPANY.value],
+                                                   legal_type,
+                                                   expro_business["legalName"],
+                                                   amalgamating_business_json["role"],
+                                                   amalgamating_business_path))
+                continue
             elif identifier in colin_fetch_failures:
                 # COLIN could not be reached - a clear retryable error, not "not found"
                 msg.append({
@@ -356,12 +371,35 @@ def _validate_foreign_businesses(  # noqa: PLR0913
     if is_staff:
         msg.extend(validate_foreign_jurisdiction(amalgamating_business["foreignJurisdiction"],
                                                  f"{amalgamating_business_path}/foreignJurisdiction",
-                                                 is_region_bc_valid=True,
+                                                 is_region_bc_valid=False,
                                                  is_region_for_us_required=False))
 
+    msg.extend(_validate_foreign_rules(is_staff,
+                                       is_any_bc_company,
+                                       is_any_ulc,
+                                       legal_type,
+                                       foreign_legal_name,
+                                       amalgamating_business["role"],
+                                       amalgamating_business_path))
+
+    return msg
+
+
+def _validate_foreign_rules(  # noqa: PLR0913
+        is_staff,
+        is_any_bc_company,
+        is_any_ulc,
+        legal_type,
+        legal_name,
+        role,
+        amalgamating_business_path) -> list:
+    """Validate the rules shared by foreign corporations and extraprovincial (A) corps."""
+    msg = []
+
+    if is_staff:
         if legal_type == Business.LegalTypes.BC_ULC_COMPANY.value and is_any_bc_company:
             msg.append({
-                "error": (f"{foreign_legal_name} foreign corporation must not amalgamate with "
+                "error": (f"{legal_name} foreign corporation must not amalgamate with "
                           "a BC company to form a BC Unlimited Liability Company."),
                 "path": amalgamating_business_path
             })
@@ -369,14 +407,14 @@ def _validate_foreign_businesses(  # noqa: PLR0913
         if is_any_ulc:
             msg.append({
                 "error": ("A BC Unlimited Liability Company cannot amalgamate with "
-                          f"a foreign company {foreign_legal_name}."),
+                          f"a foreign company {legal_name}."),
                 "path": amalgamating_business_path
             })
 
-        if amalgamating_business["role"] in [AmalgamatingBusiness.Role.primary.name,
-                                             AmalgamatingBusiness.Role.holding.name]:
+        if role in [AmalgamatingBusiness.Role.primary.name,
+                    AmalgamatingBusiness.Role.holding.name]:
             msg.append({
-                "error": f"A {foreign_legal_name} foreign corporation cannot be marked as Primary or Holding.",
+                "error": f"A {legal_name} foreign corporation cannot be marked as Primary or Holding.",
                 "path": amalgamating_business_path
             })
     elif flags.is_on("enabled-deeper-permission-action"):
@@ -392,7 +430,7 @@ def _validate_foreign_businesses(  # noqa: PLR0913
             return msg
     else:
         msg.append({
-            "error": (f"{foreign_legal_name} foreign corporation cannot "
+            "error": (f"{legal_name} foreign corporation cannot "
                     "be amalgamated except by Registries staff."),
             "path": amalgamating_business_path
         })
@@ -499,7 +537,7 @@ def _find_colin_business(identifier: str) -> tuple:
         return None, True
 
     business_json = snapshot_json.get("business") or {}
-    if business_json.get("legalType") not in COLIN_AMALGAMATION_LEGAL_TYPES:
+    if not business_json.get("legalName") or business_json.get("legalType") not in COLIN_AMALGAMATION_LEGAL_TYPES:
         return None, False
     return business_json, False
 

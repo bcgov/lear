@@ -146,15 +146,27 @@ def test_get_business_extended_amalgamation_colin_ting(app, session, client, jwt
     ting.save()
 
     colin_call_count = {'count': 0}
+    mailing_address = {
+        'streetAddress': '123 Fake St',
+        'streetAddressAdditional': None,
+        'addressCity': 'Victoria',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V8V 8V8',
+        'deliveryInstructions': None
+    }
 
-    def mock_colin(id_):
+    def mock_colin_snapshot(id_):
         colin_call_count['count'] += 1
         assert id_ == colin_identifier
-        return {'business': {'legalName': 'Colin Corp Ltd.'}}, HTTPStatus.OK
+        return {
+            'business': {'legalName': 'Colin Corp Ltd.', 'legalType': 'BC', 'jurisdiction': 'BC'},
+            'offices': {'registeredOffice': {'mailingAddress': mailing_address}}
+        }, HTTPStatus.OK
 
-    # staticmethod: the endpoint calls query_business through the colin singleton instance,
+    # staticmethod: the endpoint calls get_snapshot through the colin singleton instance,
     # so a bare function would get bound and receive the instance as its argument
-    monkeypatch.setattr(ColinService, 'query_business', staticmethod(mock_colin))
+    monkeypatch.setattr(ColinService, 'get_snapshot', staticmethod(mock_colin_snapshot))
 
     query_string = '?forCorrection=true' if for_correction else ''
     rv = client.get(f'/api/v2/businesses/{identifier}/extended/amalgamationApplication{query_string}',
@@ -169,6 +181,9 @@ def test_get_business_extended_amalgamation_colin_ting(app, session, client, jwt
     }
     if for_correction:
         expected_entry['legalName'] = 'Colin Corp Ltd.'
+        expected_entry['legalType'] = 'BC'
+        expected_entry['jurisdiction'] = 'BC'
+        expected_entry['mailingAddress'] = mailing_address
     assert rv.json['amalgamation']['amalgamatingBusinesses'] == [expected_entry]
     assert colin_call_count['count'] == (1 if for_correction else 0)
 

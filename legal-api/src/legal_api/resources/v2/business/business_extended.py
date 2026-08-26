@@ -187,11 +187,18 @@ def _get_amalgamation_application_data(business: Business, for_correction: bool 
                 "identifier": ting.colin_identifier
             })
             if for_correction:
-                colin_json, colin_status = colin.query_business(ting.colin_identifier)
-                if colin_status == HTTPStatus.OK:
+                snapshot_json, snapshot_status = colin.get_snapshot(ting.colin_identifier)
+                if snapshot_status == HTTPStatus.OK:
+                    snapshot_business = (snapshot_json or {}).get("business") or {}
                     ting_info.update({
-                        "legalName": (colin_json or {}).get("business", {}).get("legalName")
+                        "legalName": snapshot_business.get("legalName"),
+                        "legalType": snapshot_business.get("legalType"),
+                        "jurisdiction": snapshot_business.get("jurisdiction")
                     })
+                    mailing_address = (((snapshot_json or {}).get("offices") or {})
+                                       .get("registeredOffice") or {}).get("mailingAddress")
+                    if mailing_address:
+                        ting_info["mailingAddress"] = mailing_address
         else:
             ting_info.update({
                 "identifier": ting.foreign_identifier,

@@ -135,53 +135,82 @@ def test_get_formatted_amalg_business_data_foreign_non_expro(
     assert colin_call_count['count'] == 0
 
 
-@pytest.mark.parametrize('test_name, colin_jurisdiction, expected_id, expected_jurisdiction', [
-    ('expro-on-province', 'ON', 'A1234567', 'Ontario'),
-    ('expro-federal', 'FD', 'A1234567', 'Federal'),
-    ('expro-no-jurisdiction-in-colin', None, 'A1234567', 'N/A'),
+@pytest.mark.parametrize('test_name, colin_jurisdiction, expected_jurisdiction', [
+    ('expro-on-province', 'ON', 'Ontario'),
+    ('expro-federal', 'FD', 'Federal'),
 ], ids=[
     'expro ON province',
     'expro FD federal',
-    'expro no jurisdiction in colin',
 ])
-def test_get_formatted_amalg_business_data_foreign_expro_colin_200(
-        app, monkeypatch, test_name, colin_jurisdiction, expected_id, expected_jurisdiction):
-    """Assert that a foreign business whose identifier starts with A and COLIN returns 200 is treated as an expro."""
-    foreign_identifier = 'A1234567'
-    foreign_name = 'Expro Corp'
+def test_get_formatted_amalg_business_data_expro(
+        app, monkeypatch, test_name, colin_jurisdiction, expected_jurisdiction):
+    """Assert an extraprovincial (identifier-only A entry) resolves its name and home jurisdiction from COLIN."""
+    expro_identifier = 'A1234567'
     colin_call_count = {'count': 0}
 
     def mock_colin(id_):
         colin_call_count['count'] += 1
-        return _make_colin_response(HTTPStatus.OK, jurisdiction=colin_jurisdiction)
+        return {'business': {'legalName': 'Expro Corp', 'legalType': 'A',
+                             'jurisdiction': colin_jurisdiction}}, HTTPStatus.OK
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin)
 
     with app.app_context():
         result = get_formatted_amalg_business_data(
-            identifier=foreign_identifier,
-            foreign_name=foreign_name,
-            foreign_country_code='CA',
-            foreign_region_code='BC',
+            identifier=expro_identifier,
+            foreign_name=None,
+            foreign_country_code=None,
+            foreign_region_code=None,
+            ting_business=None,
         )
 
-    assert result['identifier'] == expected_id
-    assert result['legalName'] == foreign_name
+    assert result['identifier'] == expro_identifier
+    assert result['legalName'] == 'Expro Corp'
     assert result['jurisdiction'] == expected_jurisdiction
     assert result['isBcCompany'] is False
     assert result['isExtraprovincial'] is True
     assert colin_call_count['count'] == 1
 
 
-def test_get_formatted_amalg_business_data_foreign_a_prefix_colin_non_200(app, monkeypatch):
-    """Assert that a foreign A-prefix business where COLIN returns non-200 keeps N/A identifier and original jurisdiction."""
+@pytest.mark.parametrize('colin_response', [
+    (None, None),
+    ({'message': 'not found'}, HTTPStatus.NOT_FOUND),
+    ({'business': {'legalType': 'BC', 'jurisdiction': 'BC'}}, HTTPStatus.OK),
+    ({'business': {'legalName': 'Colin Corp Ltd.', 'jurisdiction': 'BC'}}, HTTPStatus.OK),
+    ({'business': {'legalName': 'Expro Corp', 'legalType': 'A', 'jurisdiction': None}}, HTTPStatus.OK),
+], ids=[
+    'colin down',
+    'colin 404',
+    'missing legal name',
+    'missing legal type',
+    'expro missing jurisdiction',
+])
+def test_get_formatted_amalg_business_data_colin_incomplete_fails_loudly(app, monkeypatch, colin_response):
+    """Assert a COLIN entry fails loudly when COLIN can't provide the data the render needs."""
+    monkeypatch.setattr(ColinService, 'query_business', lambda id_: colin_response)
+
+    with app.app_context():
+        with pytest.raises(BusinessException) as exc_info:
+            get_formatted_amalg_business_data(
+                identifier='A1234567',
+                foreign_name=None,
+                foreign_country_code=None,
+                foreign_region_code=None,
+                ting_business=None,
+            )
+
+    assert exc_info.value.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+
+
+def test_get_formatted_amalg_business_data_foreign_a_prefix_never_calls_colin(app, monkeypatch):
+    """Assert a foreign entry is rendered from the filing alone, even with an A-prefix identifier."""
     foreign_identifier = 'A1234567'
-    foreign_name = 'Would-be Expro Corp'
+    foreign_name = 'Foreign Corp'
     colin_call_count = {'count': 0}
 
     def mock_colin(id_):
         colin_call_count['count'] += 1
-        return _make_colin_response(HTTPStatus.NOT_FOUND)
+        return _make_colin_response(HTTPStatus.OK)
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin)
 
@@ -198,7 +227,7 @@ def test_get_formatted_amalg_business_data_foreign_a_prefix_colin_non_200(app, m
     assert result['jurisdiction'] == 'United States'
     assert result['isBcCompany'] is False
     assert result['isExtraprovincial'] is False
-    assert colin_call_count['count'] == 1
+    assert colin_call_count['count'] == 0
 
 
 def test_get_formatted_amalg_business_data_bc_business_with_ting(app):
@@ -243,7 +272,7 @@ def test_get_formatted_amalg_business_data_colin_business(app, monkeypatch):
 
     def mock_colin(id_):
         colin_call_count['count'] += 1
-        return {'business': {'legalName': 'Colin Corp Ltd.'}}, HTTPStatus.OK
+        return {'business': {'legalName': 'Colin Corp Ltd.', 'legalType': 'BC'}}, HTTPStatus.OK
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin)
 
@@ -259,31 +288,9 @@ def test_get_formatted_amalg_business_data_colin_business(app, monkeypatch):
     assert result['identifier'] == colin_identifier
     assert result['legalName'] == 'Colin Corp Ltd.'
     assert result['jurisdiction'] == 'British Columbia'
+    assert result['isBcCompany'] is True
+    assert result['isExtraprovincial'] is False
     assert colin_call_count['count'] == 1
-
-
-@pytest.mark.parametrize('colin_response', [
-    (None, None),
-    ({'message': 'not found'}, HTTPStatus.NOT_FOUND),
-], ids=['colin down', 'colin 404'])
-def test_get_formatted_amalg_business_data_colin_business_unavailable(app, monkeypatch, colin_response):
-    """Assert a COLIN business renders with an N/A name (not an error) when COLIN cannot provide one."""
-    colin_identifier = 'BC5556667'
-
-    monkeypatch.setattr(ColinService, 'query_business', lambda id_: colin_response)
-
-    with app.app_context():
-        result = get_formatted_amalg_business_data(
-            identifier=colin_identifier,
-            foreign_name=None,
-            foreign_country_code=None,
-            foreign_region_code=None,
-            ting_business=None,
-        )
-
-    assert result['identifier'] == colin_identifier
-    assert result['legalName'] == 'N/A'
-    assert result['jurisdiction'] == 'British Columbia'
 
 
 def test_get_formatted_amalg_business_data_foreign_no_identifier_skips_colin(app, monkeypatch):
