@@ -1028,26 +1028,22 @@ def _make_report_with_amalgamating_businesses(amalgamating_businesses_list, sess
 
 
 @pytest.mark.parametrize(
-    'test_name, foreign_jurisdiction, foreign_region, colin_status, colin_jurisdiction, expected_id, expected_jurisdiction',
+    'test_name, foreign_jurisdiction, foreign_region, expected_jurisdiction',
     [
-        ('expro-on', 'CA', 'BC', HTTPStatus.OK, 'ON', 'A1234567', 'Ontario'),
-        ('expro-federal', 'CA', 'BC', HTTPStatus.OK, 'FD', 'A1234567', 'Federal'),
-        ('a-prefix-colin-404', 'US', 'WA', HTTPStatus.NOT_FOUND, None, 'N/A', 'United States'),
+        ('a-prefix-identifier', 'US', 'WA', 'United States'),
+        ('ca-province', 'CA', 'AB', 'Alberta'),
     ],
     ids=[
-        '_set_amalgamating_businesses: expro ON',
-        '_set_amalgamating_businesses: expro FD federal',
-        '_set_amalgamating_businesses: A-prefix colin 404 stays N/A',
+        '_set_amalgamating_businesses: foreign with A-prefix identifier',
+        '_set_amalgamating_businesses: foreign CA province',
     ]
 )
 def test_set_amalgamating_businesses_foreign(
         session, monkeypatch, test_name,
-        foreign_jurisdiction, foreign_region,
-        colin_status, colin_jurisdiction,
-        expected_id, expected_jurisdiction):
-    """Assert that _set_amalgamating_businesses correctly formats foreign and expro entries."""
+        foreign_jurisdiction, foreign_region, expected_jurisdiction):
+    """Assert a foreign entry renders from the filing alone - N/A identifier, COLIN never called."""
     foreign_identifier = 'A1234567'
-    foreign_name = 'Foreign Expro Corp'
+    foreign_name = 'Foreign Corp'
 
     amalgamating_businesses = [
         {
@@ -1066,7 +1062,7 @@ def test_set_amalgamating_businesses_foreign(
 
     def mock_colin(id_):
         colin_call_count['count'] += 1
-        return {'business': {'jurisdiction': colin_jurisdiction}}, colin_status
+        return None, None
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin)
 
@@ -1078,8 +1074,54 @@ def test_set_amalgamating_businesses_foreign(
     entry = ting_businesses[0]
 
     assert entry['legalName'] == foreign_name
-    assert entry['identifier'] == expected_id
+    assert entry['identifier'] == 'N/A'
     assert entry['jurisdiction'] == expected_jurisdiction
+    assert colin_call_count['count'] == 0
+
+
+@pytest.mark.parametrize(
+    'colin_jurisdiction, expected_jurisdiction',
+    [
+        ('ON', 'Ontario'),
+        ('FD', 'Federal'),
+    ],
+    ids=[
+        '_set_amalgamating_businesses: expro ON',
+        '_set_amalgamating_businesses: expro FD federal',
+    ]
+)
+def test_set_amalgamating_businesses_expro(session, monkeypatch, colin_jurisdiction, expected_jurisdiction):
+    """Assert an expro entry (identifier only) resolves its name and home jurisdiction from COLIN."""
+    expro_identifier = 'A1234567'
+
+    amalgamating_businesses = [
+        {
+            'role': 'amalgamating',
+            'identifier': expro_identifier,
+        }
+    ]
+
+    report = _make_report_with_amalgamating_businesses(amalgamating_businesses, session)
+
+    def mock_colin(id_):
+        assert id_ == expro_identifier
+        return {'business': {'legalName': 'Expro Corp', 'legalType': 'A',
+                             'jurisdiction': colin_jurisdiction}}, HTTPStatus.OK
+
+    monkeypatch.setattr(ColinService, 'query_business', mock_colin)
+
+    filing = report._filing.filing_json['filing']
+    report._set_amalgamating_businesses(filing)
+
+    ting_businesses = filing.get('amalgamatingBusinesses', [])
+    assert len(ting_businesses) == 1
+    entry = ting_businesses[0]
+
+    assert entry['identifier'] == expro_identifier
+    assert entry['legalName'] == 'Expro Corp'
+    assert entry['jurisdiction'] == expected_jurisdiction
+    assert entry['isBcCompany'] is False
+    assert entry['isExtraprovincial'] is True
 
 
 def test_set_amalgamating_businesses_bc_domestic(session, monkeypatch):
@@ -1169,7 +1211,7 @@ def test_set_amalgamating_businesses_colin(session, monkeypatch):
 
     def mock_colin(id_):
         assert id_ == colin_identifier
-        return {'business': {'legalName': 'Colin Corp Ltd.'}}, HTTPStatus.OK
+        return {'business': {'legalName': 'Colin Corp Ltd.', 'legalType': 'BC'}}, HTTPStatus.OK
 
     monkeypatch.setattr(ColinService, 'query_business', mock_colin)
 
