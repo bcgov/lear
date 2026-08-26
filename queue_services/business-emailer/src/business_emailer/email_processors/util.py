@@ -149,15 +149,15 @@ FILING_ATTACHMENTS = {
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-appointLiquidator": {
-            "attachments": ["Notice to Appoint Liquidators", "Receipt"],
+            "attachments": ["Liquidator Appointment", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-ceaseLiquidator": {
-            "attachments": ["Notice to Cease Liquidators", "Receipt"],
+            "attachments": ["Liquidator Cessation", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-changeAddressLiquidator": {
-            "attachments": ["Liquidators (or Records) Change of Address", "Receipt"],
+            "attachments": ["Liquidator (or Records) Address Change", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-liquidationReport": {
