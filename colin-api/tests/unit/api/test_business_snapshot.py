@@ -142,7 +142,8 @@ def test_get_snapshot_null_good_standing(client, mocker, authorized, mock_db,
     assert rv.json['business']['goodStanding'] is None
 
 
-def test_get_snapshot_extraprovincial(client, mocker, authorized, mock_db, mock_lookups):  # pylint: disable=unused-argument
+def test_get_snapshot_extraprovincial(client, mocker, authorized, mock_db,
+                                      mock_lookups):  # pylint: disable=unused-argument
     """Assert an extraprovincial (A) corp snapshots with its home jurisdiction data."""
     find = mocker.patch.object(Business, 'find_by_identifier', return_value=build_business(
         corp_num='A0077777',
