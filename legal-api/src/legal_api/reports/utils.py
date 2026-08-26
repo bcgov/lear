@@ -65,56 +65,58 @@ def get_formatted_amalg_business_data(
     ting_business: Business | None = None
 ):
     """Return the amalgamation business data for the report output."""
-    is_bc_company = False
-    is_extraprovincial = False
-
     if foreign_name:
         # Set identifier to 'N/A' for foreign businesses (we are showing the 'Number in BC' in the output)
-        display_identifier = "N/A"
-        business_legal_name = foreign_name or "N/A"
-        country_code = foreign_country_code
-        region_code = foreign_region_code
+        return _format_amalg_business_data(identifier, foreign_name, "N/A",
+                                           foreign_country_code, foreign_region_code)
+    if ting_business:
+        return _format_amalg_business_data(identifier, ting_business.legal_name, ting_business._identifier,
+                                           "CA", "BC", is_bc_company=True)
+    if identifier:
+        return _colin_amalg_business_data(identifier)
 
-    elif ting_business:
-        display_identifier = ting_business._identifier
-        business_legal_name = ting_business.legal_name
-        country_code = "CA"
-        region_code = "BC"
-        is_bc_company = True
+    raise BusinessException(
+        "Error: Tried to process an amalgamating business which is not a foreign business or a ting business",
+        HTTPStatus.UNPROCESSABLE_ENTITY)
 
-    elif identifier:
-        # a COLIN business not loaded in LEAR - resolve its name and type from COLIN at render time
-        colin_json, colin_status = ColinService.query_business(identifier)
-        colin_business = (colin_json or {}).get("business") if colin_status == HTTPStatus.OK else None
-        is_extraprovincial = bool(colin_business and
-                                  colin_business.get("legalType") == Business.LegalTypes.EXTRA_PRO_A.value)
-        if (
-            not colin_business or
-            not (business_legal_name := colin_business.get("legalName")) or
-            not colin_business.get("legalType") or
-            (is_extraprovincial and not colin_business.get("jurisdiction"))
-        ):
-            # Needed COLIN data cannot be resolved, so the amalgamation report should not be generated
-            current_app.logger.error("Unable to get COLIN data for amalgamating business %s (status %s)",
-                                     identifier, colin_status)
-            raise BusinessException(
-                f"Unable to get COLIN data for amalgamating business {identifier}",
-                HTTPStatus.SERVICE_UNAVAILABLE)
 
-        display_identifier = identifier
-        country_code = "CA"
-        region_code = colin_business["jurisdiction"] if is_extraprovincial else "BC"
-        is_bc_company = not is_extraprovincial
-
-    else:
+def _colin_amalg_business_data(identifier: str) -> dict:
+    """Return the data of a COLIN business not loaded in LEAR, resolved from COLIN at render time."""
+    colin_json, colin_status = ColinService.query_business(identifier)
+    colin_business = (colin_json or {}).get("business") if colin_status == HTTPStatus.OK else None
+    is_extraprovincial = bool(colin_business and
+                              colin_business.get("legalType") == Business.LegalTypes.EXTRA_PRO_A.value)
+    if (
+        not colin_business or
+        not (business_legal_name := colin_business.get("legalName")) or
+        not colin_business.get("legalType") or
+        (is_extraprovincial and not colin_business.get("jurisdiction"))
+    ):
+        # Needed COLIN data cannot be resolved, so the amalgamation report should not be generated
+        current_app.logger.error("Unable to get COLIN data for amalgamating business %s (status %s)",
+                                 identifier, colin_status)
         raise BusinessException(
-            "Error: Tried to process an amalgamating business which is not a foreign business or a ting business",
-            HTTPStatus.UNPROCESSABLE_ENTITY)
+            f"Unable to get COLIN data for amalgamating business {identifier}",
+            HTTPStatus.SERVICE_UNAVAILABLE)
 
+    region_code = colin_business["jurisdiction"] if is_extraprovincial else "BC"
+    return _format_amalg_business_data(identifier, business_legal_name, identifier, "CA", region_code,
+                                       is_bc_company=not is_extraprovincial,
+                                       is_extraprovincial=is_extraprovincial)
+
+
+def _format_amalg_business_data(  # noqa: PLR0913
+        identifier: str | None,
+        legal_name: str | None,
+        display_identifier: str | None,
+        country_code: str | None,
+        region_code: str | None,
+        is_bc_company: bool = False,
+        is_extraprovincial: bool = False) -> dict:
     jurisdiction = get_amalg_formatted_jurisdiction(identifier, country_code, region_code)
-    
+
     return {
-        "legalName": business_legal_name or "N/A",
+        "legalName": legal_name or "N/A",
         "identifier": display_identifier or "N/A",
         "jurisdiction": jurisdiction or "N/A",
         "isBcCompany": is_bc_company,
