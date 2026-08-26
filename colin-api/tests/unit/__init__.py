@@ -78,6 +78,8 @@ def build_business(**overrides):
     # convert_to_json_datetime emits a '-00:00' suffix
     business.founding_date = '2000-01-01T08:00:00-00:00'
     business.email = 'registered.office@test.com'
+    # find_by_identifier resolves 'BC' for non-XPRO corps; home_* stay None
+    business.jurisdiction = 'BC'
     for key, value in overrides.items():
         setattr(business, key, value)
     return business
