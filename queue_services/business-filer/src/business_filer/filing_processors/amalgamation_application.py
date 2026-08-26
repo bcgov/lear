@@ -14,13 +14,12 @@
 """File processing rules and actions for the amalgamation application of a business."""
 import copy
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, OfficeType, PartyRole
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
 from business_model.models.db import db
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import (
-    JSON_ROLE_CONVERTER,
     aliases,
     business_info,
     filings,
@@ -46,6 +45,14 @@ def create_amalgamating_businesses(amalgamation_filing: dict, amalgamation: Amal
         elif business := Business.find_by_identifier(identifier):
             amalgamating_business.business_id = business.id
             dissolve_amalgamating_business(business, filing_rec)
+        elif identifier:
+            # a business in COLIN that is not loaded in LEAR - validated against the COLIN
+            # snapshot at submission; the colin sync write-back moves the corp to HAM
+            amalgamating_business.colin_identifier = identifier
+        else:
+            raise QueueException(
+                f"amalgamationApplication {filing_rec.id} has an amalgamating business "
+                "with no identifier and no foreign jurisdiction.")
 
         amalgamation.amalgamating_businesses.append(amalgamating_business)
 
@@ -58,7 +65,7 @@ def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
     db.session.add(business)
 
 
-def process(business: Business,  # pylint: disable=too-many-branches, too-many-locals
+def process(business: Business,  # noqa: PLR0912
             filing: dict,
             filing_rec: Filing,
             filing_meta: FilingMeta):
@@ -90,17 +97,14 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
     create_amalgamating_businesses(amalgamation_filing, amalgamation, filing_rec)
     if amalgamation.amalgamation_type in [Amalgamation.AmalgamationTypes.horizontal.name,
                                           Amalgamation.AmalgamationTypes.vertical.name]:
-        # Include/Replace legal_name, director, office and shares from holding/primary business (won't be a foreign)
-        amalgamating_business = next(x for x in amalgamation.amalgamating_businesses
-                                     if x.role in [AmalgamatingBusiness.Role.holding.name,
-                                                   AmalgamatingBusiness.Role.primary.name])
-        primary_or_holding_business = Business.find_by_internal_id(amalgamating_business.business_id)
-
-        business_info_obj["legalName"] = primary_or_holding_business.legal_name
-
-        _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing)
-        _set_offices(primary_or_holding_business, amalgamation_filing)
-        _set_shares(primary_or_holding_business, amalgamation_filing)
+        # legal-api validation guarantees these sections mirror the primary/holding business
+        missing = [section for section in ("offices", "parties", "shareStructure")
+                   if not amalgamation_filing.get(section)]
+        if not business_info_obj.get("legalName"):
+            missing.append("nameRequest.legalName")
+        if missing:
+            raise QueueException(
+                f"amalgamationApplication {filing_rec.id} short-form filing missing: {missing}")
 
     # Initial insert of the business record
     business = Business()
@@ -140,68 +144,3 @@ def process(business: Business,  # pylint: disable=too-many-branches, too-many-l
     filing_rec._filing_json = amalgamation_json  # pylint: disable=protected-access; bypass to update filing data
 
     return business, filing_rec, filing_meta
-
-
-def _set_parties(primary_or_holding_business, filing_rec, amalgamation_filing):
-    parties = []
-    active_directors = PartyRole.get_active_directors(primary_or_holding_business.id,
-                                                      filing_rec.effective_date.date())
-    # copy director
-    for director in active_directors:
-        director_json = director.json
-        director_json["roles"] = [{
-            "roleType": "Director",
-            "appointmentDate": filing_rec.effective_date.isoformat()
-        }]
-
-        # cleanup director json
-        del director_json["officer"]["id"]
-        del director_json["role"]
-        del director_json["appointmentDate"]
-        if "cessationDate" in director_json:
-            del director_json["cessationDate"]
-        if "deliveryAddress" in director_json:
-            del director_json["deliveryAddress"]["id"]
-        if "mailingAddress" in director_json:
-            del director_json["mailingAddress"]["id"]
-
-        parties.append(director_json)
-
-    # copy completing party from filing json
-    for party_info in amalgamation_filing.get("parties"):
-        if comp_party_role := next((x for x in party_info.get("roles")
-                                    if JSON_ROLE_CONVERTER.get(x["roleType"].lower(), "")
-                                    == PartyRole.RoleTypes.COMPLETING_PARTY.value), None):
-            party_info["roles"] = [comp_party_role]  # override roles to have only completing party
-            parties.append(party_info)
-            break
-    amalgamation_filing["parties"] = parties
-
-
-def _set_offices(primary_or_holding_business, amalgamation_filing):
-    # copy offices
-    offices = {}
-    officelist = primary_or_holding_business.offices.all()
-    for i in officelist:
-        if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
-            offices[i.office_type] = {}
-            for address in i.addresses:
-                address_json = address.json
-                del address_json["id"]
-                offices[i.office_type][f"{address.address_type}Address"] = address_json
-    amalgamation_filing["offices"] = offices
-
-
-def _set_shares(primary_or_holding_business, amalgamation_filing):
-    # copy shares
-    share_classes = []
-    for share_class in primary_or_holding_business.share_classes.all():
-        share_class_json = share_class.json
-        del share_class_json["id"]
-        for series in share_class_json.get("series", []):
-            del series["id"]
-        share_classes.append(share_class_json)
-    amalgamation_filing["shareStructure"] = {"shareClasses": share_classes}
-    business_dates = [item.resolution_date.isoformat() for item in primary_or_holding_business.resolutions]
-    if business_dates:
-        amalgamation_filing["shareStructure"]["resolutionDates"] = business_dates
