@@ -2154,11 +2154,9 @@ def test_expro_amalgamating_business(mocker, app, session, jwt, test_status, exp
         assert expected_msg in [x['error'] for x in err.msg]
 
 
-def test_expro_amalgamating_business_staff_only(mocker, app, session, jwt):
-    """Assert a non-staff user cannot amalgamate an extraprovincial."""
-    account_id = '123456'
+def _setup_basic_expro_amalgamation(mocker) -> dict:
+    """Wire the standard expro mocks and return a filing with one LEAR TING plus one expro entry."""
     filing = _get_amalg_template()
-    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
         {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': EXPRO_IDENTIFIER}
@@ -2181,6 +2179,14 @@ def test_expro_amalgamating_business_staff_only(mocker, app, session, jwt):
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
                  return_value=_mock_expro_snapshot_response())
+    return filing
+
+
+def test_expro_amalgamating_business_staff_only(mocker, app, session, jwt):
+    """Assert a non-staff user cannot amalgamate an extraprovincial."""
+    account_id = '123456'
+    filing = _setup_basic_expro_amalgamation(mocker)
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
         err = validate(None, filing, account_id)
@@ -2193,31 +2199,9 @@ def test_expro_amalgamating_business_staff_only(mocker, app, session, jwt):
 def test_expro_name_not_adoptable(mocker, app, session, jwt):
     """Assert an expro's name is not an adoptable name for the resulting business."""
     account_id = '123456'
-    filing = _get_amalg_template()
+    filing = _setup_basic_expro_amalgamation(mocker)
     filing['filing']['amalgamationApplication']['nameRequest'].pop('nrNumber', None)
     filing['filing']['amalgamationApplication']['nameRequest']['legalName'] = 'EXPRO TEST COMPANY LTD.'
-    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
-        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
-        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': EXPRO_IDENTIFIER}
-    ]
-
-    def mock_find_by_identifier(identifier):
-        if identifier == EXPRO_IDENTIFIER:
-            return None
-        return Business(identifier=identifier,
-                        founding_date=datetime.now(timezone.utc),
-                        state=Business.State.ACTIVE,
-                        legal_type=Business.LegalTypes.BCOMP.value)
-
-    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
-                 return_value=[])
-    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
-                 return_value=False)
-    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
-                 return_value=True)
-    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
-    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
-                 return_value=_mock_expro_snapshot_response())
 
     with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
         err = validate(None, filing, account_id)
