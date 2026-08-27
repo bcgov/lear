@@ -300,11 +300,15 @@ def test_short_form_amalgamation_missing_sections(app, session, missing_section)
     assert 'short-form filing missing' in excinfo.value.error
 
 
-def test_colin_amalgamating_business(app, session):
+@pytest.mark.parametrize('colin_identifier_prefix', [
+    'BC',  # a BC corp in COLIN not yet loaded in LEAR
+    'A',  # an extraprovincial company (identifier-only entry, same path)
+])
+def test_colin_amalgamating_business(app, session, colin_identifier_prefix):
     """Assert a COLIN business (not loaded in LEAR) is persisted by identifier and not dissolved."""
     filing_type = 'amalgamationApplication'
     amalgamating_identifier = f'BC{random.randint(1000000, 9999999)}'
-    colin_identifier = f'BC{random.randint(1000000, 9999999)}'
+    colin_identifier = f'{colin_identifier_prefix}{random.randint(1000000, 9999999)}'
     next_corp_num = f'BC{random.randint(1000000, 9999999)}'
 
     amalgamating_business_id = create_entity(amalgamating_identifier, 'BC', 'amalgamating business').id

@@ -2250,7 +2250,8 @@ SOURCE_UPDATE_HINT = ('This data comes from the holding business - its informati
                       'corrected outside of this filing before this amalgamation can be filed.')
 
 
-def _factory_short_form_source_business(identifier='BC7654321', share_class_name='Class A Shares'):
+def _factory_short_form_source_business(identifier='BC7654321', share_class_name='Class A Shares',
+                                        middle_initial=None):
     """Create a holding/primary business with offices, a director, shares and a resolution."""
     business = factory_business(identifier, entity_type=Business.LegalTypes.COMP.value)
     for office_type in ['registeredOffice', 'recordsOffice']:
@@ -2271,7 +2272,8 @@ def _factory_short_form_source_business(identifier='BC7654321', share_class_name
     business.resolutions.append(Resolution(resolution_date=date(2020, 5, 13),
                                            resolution_type=Resolution.ResolutionType.SPECIAL.value))
 
-    party = Party(first_name='DIRECTOR', last_name='ONE', party_type=Party.PartyTypes.PERSON.value)
+    party = Party(first_name='DIRECTOR', middle_initial=middle_initial, last_name='ONE',
+                  party_type=Party.PartyTypes.PERSON.value)
     party.delivery_address = factory_address(f'{identifier} director street', 'delivery')
     party.save()
     business.party_roles.append(PartyRole(role=PartyRole.RoleTypes.DIRECTOR.value,
@@ -2363,6 +2365,31 @@ def test_short_form_match_lear(app, session, jwt, test_status, expected_msg):
         assert not err, err.msg
     else:
         assert expected_msg in [x['error'] for x in err.msg]
+
+
+@pytest.mark.parametrize('test_status', ['SUCCESS', 'MISMATCH'])
+def test_short_form_match_director_middle_name(app, session, jwt, test_status):
+    """Assert the comparator accepts the UI's officer "middleName" against the source's "middleInitial"."""
+    account_id = '123456'
+    holding = _factory_short_form_source_business(middle_initial='M')
+    factory_business('BC1111111', entity_type=Business.LegalTypes.COMP.value)
+    filing = _short_form_filing_from_lear(holding)
+    aml = filing['filing']['amalgamationApplication']
+
+    # the UI submits directors with "middleName" (renamed from the API's "middleInitial")
+    for party in aml['parties']:
+        officer = party['officer']
+        if officer.pop('middleInitial', None):
+            officer['middleName'] = 'M' if test_status == 'SUCCESS' else 'X'
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    if test_status == 'SUCCESS':
+        assert not err, err.msg
+    else:
+        assert f"Directors do not match the holding business's current directors. {REFRESH_HINT}" in \
+            [x['error'] for x in err.msg]
 
 
 def test_short_form_match_lear_ignores_db_artifacts(app, session, jwt):
