@@ -1,6 +1,6 @@
 [project]
 name = "legal-api"
-version = "3.1.20"
+version = "3.1.19a"
 description = ""
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
