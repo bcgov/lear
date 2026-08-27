@@ -9,8 +9,11 @@
                <tr>
                   <td class="col-33">
                      <div class="section-sub-title">
-                        <span class="capitalize-text">{{ party.officer.lastName }}</span>,
+                        <span class="capitalize-text">{{ party.officer.lastName }}</span>
+                        {% if party.officer.firstName or party.officer.middleName %},{% endif %}
+                        {% if party.officer.firstName %}
                         <span class="capitalize-text">{{ party.officer.firstName }}</span>
+                        {% endif %}
                         {% if party.officer.middleName %}
                            <span class="capitalize-text">{{ party.officer.middleName }}</span>
                         {% endif %}
@@ -42,7 +45,9 @@
       <div class="section-title mt-4">Completing Party Statement</div>
       <div class="section-data mt-4">
          I,
-         <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% if ns.cp.officer.firstName %}
+            <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% endif %}
          {% if ns.cp.officer.middleName %}
             <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
          {% endif %}
@@ -56,7 +61,9 @@
       <div class="section-title mt-4">Completing Party Statement</div>
       <div class="section-data mt-4">
          I,
-         <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% if ns.cp.officer.firstName %}
+            <span class="capitalize-text">{{ ns.cp.officer.firstName }}</span>
+         {% endif %}
          {% if ns.cp.officer.middleName %}
             <span class="capitalize-text">{{ ns.cp.officer.middleName }}</span>
          {% endif %}

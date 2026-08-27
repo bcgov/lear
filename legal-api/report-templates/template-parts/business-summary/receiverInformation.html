@@ -10,8 +10,11 @@
           {% if party.officer.partyType == 'organization' %}
             <span class="upper-text section-sub-title">{{ party.officer.organizationName }}</span>
           {% else %}
-            <span class="upper-text section-sub-title">{{ party.officer.lastName }}</span>,
-            <span class="upper-text section-sub-title">{{ party.officer.firstName }}</span>
+            <span class="upper-text section-sub-title">{{ party.officer.lastName }}</span>
+            {% if party.officer.firstName or party.officer.middleInitial %},{% endif %}
+            {% if party.officer.firstName %}
+              <span class="upper-text section-sub-title">{{ party.officer.firstName }}</span>
+            {% endif %}
             {% if party.officer.middleInitial %}
               <span class="upper-text section-sub-title">{{ party.officer.middleInitial }}</span>
             {% endif %}

@@ -113,25 +113,25 @@ def create_party(business_id: int, party_info: dict, create: bool = True) -> Par
     """Create a new party or get them if they already exist."""
     party = None
     if not (middle_initial := party_info["officer"].get("middleInitial")):
-        middle_initial = party_info["officer"].get("middleName", "")
+        middle_initial = party_info["officer"].get("middleName") or ""
 
     if create:
         party = PartyRole.find_party_by_name(
             business_id=business_id,
-            first_name=party_info["officer"].get("firstName", "").upper(),
-            last_name=party_info["officer"].get("lastName", "").upper(),
+            first_name=(party_info["officer"].get("firstName") or "").upper(),
+            last_name=(party_info["officer"].get("lastName") or "").upper(),
             middle_initial=middle_initial.upper(),
-            org_name=party_info["officer"].get("organizationName", "").upper()
+            org_name=(party_info["officer"].get("organizationName") or "").upper()
         )
     if not party:
         party = Party(
-            first_name=party_info["officer"].get("firstName", "").upper(),
-            last_name=party_info["officer"].get("lastName", "").upper(),
+            first_name=(party_info["officer"].get("firstName") or "").upper(),
+            last_name=(party_info["officer"].get("lastName") or "").upper(),
             middle_initial=middle_initial.upper(),
-            title=party_info.get("title", "").upper(),
-            organization_name=party_info["officer"].get("organizationName", "").upper(),
-            email=party_info["officer"].get("email") or "",
-            identifier=party_info["officer"].get("identifier") or "",
+            title=(party_info.get("title") or ""),
+            organization_name=(party_info["officer"].get("organizationName") or "").upper(),
+            email=(party_info["officer"].get("email") or ""),
+            identifier=(party_info["officer"].get("identifier") or ""),
             party_type=party_info["officer"].get("partyType")
         )
 
@@ -158,10 +158,10 @@ def create_role(party: Party, role_info: dict) -> PartyRole:
 
 def update_director(director: PartyRole, new_info: dict) -> PartyRole:
     """Update director with new info."""
-    director.party.first_name = new_info["officer"].get("firstName", "").upper()
-    director.party.middle_initial = new_info["officer"].get("middleInitial", "").upper()
-    director.party.last_name = new_info["officer"].get("lastName", "").upper()
-    director.party.title = new_info.get("title", "").upper()
+    director.party.first_name = (new_info["officer"].get("firstName") or "").upper()
+    director.party.middle_initial = (new_info["officer"].get("middleInitial") or "").upper()
+    director.party.last_name = (new_info["officer"].get("lastName") or "").upper()
+    director.party.title = (new_info.get("title") or "").upper()
 
     if director.party.delivery_address:
         director.party.delivery_address = update_address(

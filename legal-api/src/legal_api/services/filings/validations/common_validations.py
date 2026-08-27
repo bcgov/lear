@@ -662,18 +662,18 @@ def validate_party_name(party: dict, party_path: str, legal_type: str) -> list: 
 
     if party_type == "person":
 
-        first_name = officer.get("firstName", None)
-        stripped_first_name = first_name.strip()
-        if (legal_type in Business.CORPS) and (not stripped_first_name):
-            msg.append({"error": f"{party_roles_str} first name is required", "path": f"{party_path}"})
-        elif first_name != stripped_first_name:
-            msg.append({
-                "error": f"{party_roles_str} first name cannot start or end with whitespace",
-                "path": party_path
-            })
-        elif len(first_name) > custom_allowed_max_length:
-            err_msg = f"{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters"
-            msg.append({"error": err_msg, "path": party_path})
+        if first_name := officer.get("firstName", None):
+            stripped_first_name = first_name.strip()
+            if (legal_type in Business.CORPS) and (not stripped_first_name):
+                msg.append({"error": f"{party_roles_str} first name is required", "path": f"{party_path}"})
+            elif first_name != stripped_first_name:
+                msg.append({
+                    "error": f"{party_roles_str} first name cannot start or end with whitespace",
+                    "path": party_path
+                })
+            elif len(first_name) > custom_allowed_max_length:
+                err_msg = f"{party_roles_str} first name cannot be longer than {custom_allowed_max_length} characters"
+                msg.append({"error": err_msg, "path": party_path})
 
         middle_initial = officer.get("middleInitial", None)
         # Only validate middle initial if it exists and contains non-whitespace characters

@@ -283,8 +283,8 @@ def validate_directors_name(cod: dict) -> list:
     """Return error messages if a director's name fields are invalid.
 
     Rules:
-    - firstName and lastName are required (non-empty) for all directors.
-    - prevFirstName and prevLastName are required when "nameChanged" is in actions.
+    - lastName is required (non-empty) for all directors.
+    - prevLastName is required when "nameChanged" is in actions.
     - No leading or trailing whitespace.
     - All name fields have a maximum length of 30 characters.
     """
@@ -294,7 +294,7 @@ def validate_directors_name(cod: dict) -> list:
 
     name_fields = ["firstName", "middleInitial", "lastName",
                    "prevFirstName", "prevMiddleInitial", "prevLastName"]
-    name_changed_required_fields = ["prevFirstName", "prevLastName"]
+    name_changed_required_fields = ["prevLastName"]
 
     for idx, director in enumerate(directors):
         officer = director.get("officer", {})
@@ -305,8 +305,8 @@ def validate_directors_name(cod: dict) -> list:
             value = officer.get(field)
             path = f"/filing/changeOfDirectors/directors/{idx}/officer/{field}"
 
-            # firstName/lastName required (non-empty) is enforced by the schema
-            # (business-schemas directors person firstName/lastName pattern).
+            # lastName required (non-empty) is enforced by the schema
+            # (business-schemas directors person lastName pattern).
 
             # Check prev first/last required when nameChanged
             if field in name_changed_required_fields and is_name_changed and (not value or not value.strip()):

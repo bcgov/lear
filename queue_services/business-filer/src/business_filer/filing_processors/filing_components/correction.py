@@ -214,12 +214,13 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
         for party_info in parties:
             for director in directors:
-                existing_director_name = \
-                    director.party.first_name + director.party.middle_initial + director.party.last_name
-                current_new_director_name = \
-                    party_info["officer"].get("firstName") + party_info["officer"].get("middleInitial", "") + \
-                    party_info["officer"].get("lastName")
-                if existing_director_name.upper() == current_new_director_name.upper():
+                current_new_director_name = " ".join([
+                    x.strip() for x in [
+                        party_info["officer"].get("firstName"),
+                        party_info["officer"].get("middleInitial"),
+                        party_info["officer"].get("lastName")
+                    ] if x and x.strip()]).upper()
+                if director.party.name == current_new_director_name:
                     party_info["officer"]["id"] = director.party.id
                     break
 
@@ -258,14 +259,14 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
 def _update_party(party_info):
     party = Party.find_by_id(party_id=party_info.get("officer").get("id"))
     if party:
-        party.first_name = party_info["officer"].get("firstName", "").upper()
-        party.last_name = party_info["officer"].get("lastName", "").upper()
-        party.middle_initial = party_info["officer"].get("middleName", "").upper()
-        party.title = party_info.get("title", "").upper()
-        party.organization_name = party_info["officer"].get("organizationName", "").upper()
+        party.first_name = (party_info["officer"].get("firstName") or "").upper()
+        party.last_name = (party_info["officer"].get("lastName") or "").upper()
+        party.middle_initial = (party_info["officer"].get("middleName") or "").upper()
+        party.title = (party_info.get("title") or "").upper()
+        party.organization_name = (party_info["officer"].get("organizationName") or "").upper()
         party.party_type = party_info["officer"].get("partyType")
-        party.email = party_info["officer"].get("email", "").lower()
-        party.identifier = party_info["officer"].get("identifier", "").upper()
+        party.email = (party_info["officer"].get("email") or "").lower()
+        party.identifier = (party_info["officer"].get("identifier") or "").upper()
         # add addresses to party
         if party.delivery_address:
             party.delivery_address = update_address(party.delivery_address, party_info.get("deliveryAddress"))
