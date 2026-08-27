@@ -99,7 +99,7 @@ def test_get_tasks_no_filings(session, client, jwt):
 
 def test_get_tasks_sentinel_founding_date_skips_ar(session, client, jwt):
     """Assert COLIN year-1 sentinel founding date does not generate thousands of AR todos."""
-    identifier = 'RLY0000004'
+    identifier = 'BC1234567'
     factory_business(
         identifier,
         founding_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
@@ -113,7 +113,7 @@ def test_get_tasks_sentinel_founding_date_skips_ar(session, client, jwt):
         t for t in rv.json.get('tasks')
         if t.get('task', {}).get('todo', {}).get('header', {}).get('name') == 'annualReport'
     ]
-    assert ar_tasks == []
+    assert len(ar_tasks) == 0
 
 
 def test_get_tasks_next_year(session, client, jwt):
