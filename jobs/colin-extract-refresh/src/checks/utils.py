@@ -76,7 +76,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, sco
         FROM event e
         JOIN {join_ctes} c
             ON c.corp_num = e.corp_num
-        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '12' HOUR
+        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
         {frozen_ctes}
     ) SELECT le.EVENT_ID,
         le.corp_num,
@@ -243,5 +243,6 @@ def prune_candidates_from_account(pruning_corps_list: list, target_schema: str) 
 
 def get_cutoff_timestamp_query(target_schema: str) -> str:
     return f"""
-    SELECT extracted_at FROM {target_schema}.colin_extract_version
+    SELECT extracted_at AT TIME ZONE 'America/Los_Angeles' as extracted_at
+    FROM {target_schema}.colin_extract_version
     """
