@@ -535,15 +535,15 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfLiquidators', 'appointLiquidator', None, 'COMPLETED', False, False, [
-        {'fileName': 'Notice to Appoint Liquidators.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Liquidator Appointment.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfLiquidators', 'ceaseLiquidator', None, 'COMPLETED', False, False, [
-        {'fileName': 'Notice to Cease Liquidators.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Liquidator Cessation.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfLiquidators', 'changeAddressLiquidator', None, 'COMPLETED', False, False, [
-        {'fileName': 'Liquidators (or Records) Change of Address.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Liquidator (or Records) Address Change.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfLiquidators', 'liquidationReport', None, 'COMPLETED', False, False, [
