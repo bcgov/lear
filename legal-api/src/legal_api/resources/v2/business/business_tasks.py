@@ -151,7 +151,7 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         tasks.append(task)
         order += 1
 
-    # Skip AR todos when founding date is the COLIN year-1 sentinel / unknown. Without this,
+    # Skip AR todos when founding date is the COLIN year 0001 (for legacy data like railways). Without this,
     # a sentinel founding_date of 0001-01-01 generates ~2000 AR todos and a multi-MB /tasks payload.
     unknown_founding_date = (
         not business.founding_date or business.founding_date.year <= 1
