@@ -86,6 +86,10 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
             'foundingDate': cls._to_iso_datetime(business.founding_date),
             'taxId': business.business_number,
             'hasFutureEffectiveFiling': cls._has_future_effective_filing(cursor, business.corp_num),
+            'jurisdiction': business.jurisdiction,
+            'homeJurisdictionNumber': business.home_juris_num,
+            'homeCompanyName': business.home_company_nme,
+            'homeRecognitionDate': cls._to_iso_datetime(business.home_recogn_dt),
         }
 
     @staticmethod

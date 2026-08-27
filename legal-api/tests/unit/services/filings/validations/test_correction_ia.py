@@ -1027,6 +1027,48 @@ def test_validate_correction_amalgamation_ting_invalid(mocker, app, session, jwt
     assert err.msg[0]['path'] == '/filing/correction/amalgamation/amalgamatingBusinesses/0'
 
 
+def test_validate_correction_amalgamation_colin_ting(mocker, app, session, jwt):
+    """Assert a COLIN (incl. extraprovincial) ting is not correctable and errors cleanly."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing_type = 'amalgamationApplication'
+    data, corrected_filing = _create_amalgation_business(business)
+
+    # swap in a COLIN-identifier ting (an extraprovincial)
+    amalgamation = business.amalgamation.first()
+    colin_ting = AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        colin_identifier='A7654321'
+    )
+    amalgamation.amalgamating_businesses.append(colin_ting)
+    business.save()
+    # schema-valid correction entry attempting to attach foreign data to the COLIN ting
+    data['amalgamatingBusinesses'] = [
+        {
+            'role': 'amalgamating',
+            'identifier': 'A7654321',
+            'id': colin_ting.id,
+            'legalName': 'NOT A FOREIGN CO',
+            'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}
+        }
+    ]
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction']['amalgamation'] = data
+    filing['filing']['business']['legalType'] = 'BC'
+    del filing['filing']['correction']['commentOnly']
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    assert len(err.msg) == 1
+    assert err.msg[0]['error'] == 'Can only correct foreign businesses.'
+    assert err.msg[0]['path'] == '/filing/correction/amalgamation/amalgamatingBusinesses/0'
+
+
 def _create_amalgation_business(business):
     amalgamating_identifier = 'BC1234567'
     amalgamating_business = factory_business(amalgamating_identifier, entity_type='BC')

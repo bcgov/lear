@@ -240,7 +240,8 @@ def _validate_amalgamation_correction(filing_dict, filing_type, business: Busine
             msg.append({"error": _("Amalgamating business not found."), "path": path})
             continue
 
-        if ting.business_id:
+        if ting.business_id or ting.colin_identifier:
+            # LEAR and COLIN (incl. extraprovincial) entries carry no correctable filing data
             msg.append({"error": _("Can only correct foreign businesses."), "path": path})
             continue
 

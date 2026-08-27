@@ -1805,10 +1805,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
             identifier = amalgamating_business.get('identifier')
 
-            if ((foreign_jurisdiction := amalgamating_business.get('foreignJurisdiction', {})) and
-                not (identifier.startswith('A') and  # is expro
-                     foreign_jurisdiction.get('country') == 'CA' and
-                     foreign_jurisdiction.get('region') == 'BC')):
+            if foreign_jurisdiction := amalgamating_business.get('foreignJurisdiction'):
                 corp_involved.home_juri_num = identifier
                 corp_involved.foreign_nme = amalgamating_business.get('legalName')
 

@@ -36,7 +36,11 @@ def test_get_snapshot(client, mocker, authorized, mock_db, mock_lookups):  # pyl
             'adminFreeze': False,
             'foundingDate': '2000-01-01T08:00:00+00:00',
             'taxId': '791861078BC0001',
-            'hasFutureEffectiveFiling': False
+            'hasFutureEffectiveFiling': False,
+            'jurisdiction': 'BC',
+            'homeJurisdictionNumber': None,
+            'homeCompanyName': None,
+            'homeRecognitionDate': None
         },
         'parties': [{
             'officer': {
@@ -136,6 +140,31 @@ def test_get_snapshot_null_good_standing(client, mocker, authorized, mock_db,
 
     assert rv.status_code == 200
     assert rv.json['business']['goodStanding'] is None
+
+
+def test_get_snapshot_extraprovincial(client, mocker, authorized, mock_db,
+                                      mock_lookups):  # pylint: disable=unused-argument
+    """Assert an extraprovincial (A) corp snapshots with its home jurisdiction data."""
+    find = mocker.patch.object(Business, 'find_by_identifier', return_value=build_business(
+        corp_num='A0077777',
+        corp_type='A',
+        jurisdiction='ON',
+        home_juris_num='1234567',
+        home_company_nme='HOME COMPANY INC.',
+        home_recogn_dt='1999-01-01T08:00:00-00:00'
+    ))
+
+    rv = client.get('/api/v1/businesses/A0077777/snapshot')
+
+    assert rv.status_code == 200
+    # no BC-strip on an A identifier
+    assert find.call_args.args[0] == 'A0077777'
+    assert rv.json['business']['identifier'] == 'A0077777'
+    assert rv.json['business']['legalType'] == 'A'
+    assert rv.json['business']['jurisdiction'] == 'ON'
+    assert rv.json['business']['homeJurisdictionNumber'] == '1234567'
+    assert rv.json['business']['homeCompanyName'] == 'HOME COMPANY INC.'
+    assert rv.json['business']['homeRecognitionDate'] == '1999-01-01T08:00:00+00:00'
 
 
 def test_get_snapshot_single_connection_and_scope(client, mocker, authorized, mock_db,

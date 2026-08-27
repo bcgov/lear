@@ -45,6 +45,19 @@ def make_foreign_amalgamating_business(foreign_identifier, foreign_name='Foreign
     ab.foreign_identifier = foreign_identifier
     ab.foreign_jurisdiction = foreign_jurisdiction
     ab.foreign_jurisdiction_region = foreign_jurisdiction_region
+    ab.colin_identifier = None
+    return ab
+
+
+def make_colin_amalgamating_business(colin_identifier):
+    """Return a lightweight mock that behaves like an AmalgamatingBusiness for a COLIN business."""
+    ab = MagicMock()
+    ab.foreign_name = None
+    ab.foreign_identifier = None
+    ab.foreign_jurisdiction = None
+    ab.foreign_jurisdiction_region = None
+    ab.colin_identifier = colin_identifier
+    ab.business_id = None
     return ab
 
 

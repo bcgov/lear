@@ -1306,18 +1306,25 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
             'role': AmalgamatingBusiness.Role.amalgamating.name,
             'identifier': 'BC1234567'
         },
+        # FAIL: an extraprovincial, submitted as an identifier-only COLIN entry;
+        # SUCCESS: a true foreign entry
         {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'identifier': 'A1234567'
+        } if test_status == 'FAIL' else {
             'role': AmalgamatingBusiness.Role.amalgamating.name,
             'legalName': 'Foreign Co.',
             'foreignJurisdiction': {
                 'country': 'CA',
-                'region': 'BC'
+                'region': 'AB'
             },
-            'identifier': 'A1234567' if test_status == 'FAIL' else '7654321'
+            'identifier': '7654321'
         }
     ]
 
     def mock_find_by_identifier(identifier):
+        if identifier.startswith('A'):
+            return None
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.BC_CCC.value)
 
@@ -1328,6 +1335,10 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
     mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
                  return_value=True)
     mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=_mock_colin_snapshot_response(identifier='A1234567',
+                                                            legalName='EXPRO TEST COMPANY LTD.',
+                                                            legalType=Business.LegalTypes.EXTRA_PRO_A.value))
 
     with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
         err = validate(None, filing, account_id)
@@ -1602,9 +1613,19 @@ def test_horizontal_amalgamation(mocker, app, session, jwt, test_name, expected_
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][0]['role'] = \
         AmalgamatingBusiness.Role.primary.name
     if test_name == 'FAIL_EXPRO':
-        filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][1]['foreignJurisdiction']['region'] = 'BC'
+        # an extraprovincial is an identifier-only COLIN entry
+        filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][1] = {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'identifier': 'A1234567'
+        }
+        mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                     return_value=_mock_colin_snapshot_response(identifier='A1234567',
+                                                                legalName='EXPRO TEST COMPANY LTD.',
+                                                                legalType=Business.LegalTypes.EXTRA_PRO_A.value))
 
     def mock_find_by_identifier(identifier):
+        if identifier.startswith('A'):
+            return None
         return Business(identifier=identifier,
                         legal_type=Business.LegalTypes.COMP.value)
 
@@ -2050,6 +2071,178 @@ def test_colin_holding_business_legal_type_match(mocker, app, session, jwt, resu
         assert type_error in [x['error'] for x in err.msg]
     else:
         assert not err
+
+
+EXPRO_IDENTIFIER = 'A1234567'
+
+
+def _mock_expro_snapshot_response(**overrides):
+    """Return a mocked colin-api snapshot for an extraprovincial (A) corp."""
+    return _mock_colin_snapshot_response(identifier=EXPRO_IDENTIFIER,
+                                         legalName='EXPRO TEST COMPANY LTD.',
+                                         legalType=Business.LegalTypes.EXTRA_PRO_A.value,
+                                         jurisdiction='ON',
+                                         **overrides)
+
+
+@pytest.mark.parametrize(
+    'test_status, expected_msg',
+    [
+        ('SUCCESS', None),
+        # foreign rules apply; state/affiliation/good-standing checks do not
+        ('HISTORICAL_IGNORED', None),
+        ('NOT_GOOD_STANDING_IGNORED', None),
+        ('HORIZONTAL', 'A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.'),
+        ('HOLDING_ROLE', 'A EXPRO TEST COMPANY LTD. foreign corporation cannot be marked as Primary or Holding.'),
+        ('ULC_TING', 'A BC Unlimited Liability Company cannot amalgamate with '
+                     'a foreign company EXPRO TEST COMPANY LTD..'),
+    ]
+)
+def test_expro_amalgamating_business(mocker, app, session, jwt, test_status, expected_msg):
+    """Assert an identifier-only extraprovincial entry gets the foreign rule set with COLIN's name."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    expro_role = (AmalgamatingBusiness.Role.holding.name if test_status == 'HOLDING_ROLE'
+                  else AmalgamatingBusiness.Role.amalgamating.name)
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234568'},
+        {'role': expro_role, 'identifier': EXPRO_IDENTIFIER}
+    ]
+    if test_status == 'HORIZONTAL':
+        filing['filing']['amalgamationApplication']['type'] = Amalgamation.AmalgamationTypes.horizontal.name
+        filing['filing']['amalgamationApplication']['amalgamatingBusinesses'][0]['role'] = \
+            AmalgamatingBusiness.Role.primary.name
+
+    def mock_find_by_identifier(identifier):
+        if identifier == EXPRO_IDENTIFIER:
+            return None
+        legal_type = (Business.LegalTypes.BC_ULC_COMPANY.value if test_status == 'ULC_TING'
+                      else Business.LegalTypes.BCOMP.value)
+        return Business(identifier=identifier,
+                        founding_date=datetime.now(timezone.utc),
+                        state=Business.State.ACTIVE,
+                        legal_type=legal_type)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    # the expro entry never consults affiliation - fail loudly if it does
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 side_effect=lambda identifier, account_id: identifier != EXPRO_IDENTIFIER)
+
+    snapshot_responses = {
+        'HISTORICAL_IGNORED': _mock_expro_snapshot_response(state=Business.State.HISTORICAL.name),
+        'NOT_GOOD_STANDING_IGNORED': _mock_expro_snapshot_response(goodStanding=False),
+    }
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=snapshot_responses.get(test_status, _mock_expro_snapshot_response()))
+    # short-form data match is out of scope here (only reached by the HORIZONTAL case)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_primary_or_holding_match',
+                 return_value=[])
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    if expected_msg is None:
+        assert not err
+    else:
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert expected_msg in [x['error'] for x in err.msg]
+
+
+def _setup_basic_expro_amalgamation(mocker) -> dict:
+    """Wire the standard expro mocks and return a filing with one LEAR TING plus one expro entry."""
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': EXPRO_IDENTIFIER}
+    ]
+
+    def mock_find_by_identifier(identifier):
+        if identifier == EXPRO_IDENTIFIER:
+            return None
+        return Business(identifier=identifier,
+                        founding_date=datetime.now(timezone.utc),
+                        state=Business.State.ACTIVE,
+                        legal_type=Business.LegalTypes.BCOMP.value)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.colin.get_snapshot',
+                 return_value=_mock_expro_snapshot_response())
+    return filing
+
+
+def test_expro_amalgamating_business_staff_only(mocker, app, session, jwt):
+    """Assert a non-staff user cannot amalgamate an extraprovincial."""
+    account_id = '123456'
+    filing = _setup_basic_expro_amalgamation(mocker)
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+
+    with jwt_request_context(app, jwt, [BASIC_USER], 'basic-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert ('EXPRO TEST COMPANY LTD. foreign corporation cannot be amalgamated except by Registries staff.'
+            in [x['error'] for x in err.msg])
+
+
+def test_expro_name_not_adoptable(mocker, app, session, jwt):
+    """Assert an expro's name is not an adoptable name for the resulting business."""
+    account_id = '123456'
+    filing = _setup_basic_expro_amalgamation(mocker)
+    filing['filing']['amalgamationApplication']['nameRequest'].pop('nrNumber', None)
+    filing['filing']['amalgamationApplication']['nameRequest']['legalName'] = 'EXPRO TEST COMPANY LTD.'
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert ('Adopt a name that have the same business type as the resulting business.'
+            in [x['error'] for x in err.msg])
+
+
+def test_foreign_business_region_bc_rejected(mocker, app, session, jwt):
+    """Assert a foreign entry in region BC is rejected."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234567'},
+        {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'legalName': 'EXPRO TEST COMPANY LTD.',
+            'foreignJurisdiction': {'country': 'CA', 'region': 'BC'},
+            'identifier': EXPRO_IDENTIFIER
+        }
+    ]
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('business_model.models.business.Business.find_by_identifier',
+                 side_effect=lambda identifier: Business(identifier=identifier,
+                                                         founding_date=datetime.now(timezone.utc),
+                                                         state=Business.State.ACTIVE,
+                                                         legal_type=Business.LegalTypes.BCOMP.value))
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert 'Region should not be BC.' in [x['error'] for x in err.msg]
 
 
 REFRESH_HINT = "Refresh the draft with the business's current data."

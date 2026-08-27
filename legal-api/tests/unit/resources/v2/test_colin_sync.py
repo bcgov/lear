@@ -23,10 +23,12 @@ from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 from legal_api.services.authz import COLIN_SVC_ROLE
 from registry_schemas.example_data import (
+    AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
     CORRECTION_AR,
     CORRECTION_COL,
-    CORRECTION_COR
+    CORRECTION_COR,
+    FILING_HEADER
 )
 from tests.unit.services.utils import create_header
 from tests.unit.models import (
@@ -236,3 +238,40 @@ def test_get_completed_filings_for_colin_corps_correction(session, client, jwt):
     assert len(director['roles']) == 1
     assert director['roles'][0]['roleType'] == 'Director'
     assert director['roles'][0]['appointmentDate']
+
+def test_get_completed_filings_for_colin_short_form_amalgamation(session, client, jwt):
+    """Assert a short-form amalgamation sync payload is the stored filing json, passed through unchanged."""
+    identifier = 'BC7654322'
+    b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['header']['name'] = 'amalgamationApplication'
+    filing_json['filing']['business']['identifier'] = identifier
+    filing_json['filing']['business']['legalType'] = 'BC'
+    filing_json['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    aml = filing_json['filing']['amalgamationApplication']
+    aml['type'] = 'vertical'
+    aml['nameRequest']['legalName'] = 'Holding Business Ltd.'
+    aml['amalgamatingBusinesses'] = [
+        {'role': 'holding', 'identifier': 'BC5556667'},
+        {'role': 'amalgamating', 'identifier': 'BC5556668'}
+    ]
+    aml['shareStructure']['resolutionDates'] = ['2020-05-13']
+
+    filing = factory_completed_filing(b, filing_json)
+    assert filing.status == Filing.Status.COMPLETED.value
+
+    rv = client.get('/api/v2/businesses/internal/filings',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.OK
+    filings = rv.json.get('filings')
+    assert len(filings) == 1
+    synced = filings[0]['filing']
+    # the header is never poisoned and the certified sections flow through untouched
+    assert synced['header']['name'] == 'amalgamationApplication'
+    assert synced['amalgamationApplication']['nameRequest']['legalName'] == 'Holding Business Ltd.'
+    assert synced['amalgamationApplication']['offices'] == aml['offices']
+    assert synced['amalgamationApplication']['parties'] == aml['parties']
+    assert synced['amalgamationApplication']['shareStructure'] == aml['shareStructure']
+    assert synced['amalgamationApplication']['amalgamatingBusinesses'] == aml['amalgamatingBusinesses']
