@@ -76,7 +76,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, sco
         FROM event e
         JOIN {join_ctes} c
             ON c.corp_num = e.corp_num
-        WHERE e.event_timestmp > TIMESTAMP '{timestamp}' - INTERVAL '2' HOUR
+        WHERE e.event_timestmp > FROM_TZ ( TIMESTAMP '{timestamp}','UTC') AT TIME ZONE 'America/Vancouver') - INTERVAL '2' HOUR
         {frozen_ctes}
     ) SELECT le.EVENT_ID,
         le.corp_num,
@@ -207,9 +207,7 @@ def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list, targ
     AND email_used_count = 1
     AND director_count = 1
     AND address_all_any_bad_count = 0
-    AND meets_share_criteria = true
     AND has_bar_filing = false
-    AND directors_within_bc = true
     AND is_bad_email = false
     AND is_email_excluded = false
     AND is_migration_excluded = false
